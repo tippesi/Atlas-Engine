@@ -1,14 +1,14 @@
 struct TerrainMaterial {
-	
-	uint idx;
+    
+    uint idx;
 
-	float roughness;
-	float metalness;
-	float ao;
+    float roughness;
+    float metalness;
+    float ao;
 
-	float displacementScale;
-	float normalScale;
+    float displacementScale;
+    float normalScale;
 
-	float tiling;
+    float tiling;
 
 };

@@ -7,27 +7,27 @@
 
 vec3 EvaluateDiffuseBRDF(Surface surface) {
 
-	// Perceptual roughness to roughness
-	float roughness = max(sqr(surface.material.roughness), 0.00001);
+    // Perceptual roughness to roughness
+    float roughness = max(sqr(surface.material.roughness), 0.00001);
 
-	float disneyDiffuse = RenormalizedDisneyDiffuse(surface.NdotV,
-		surface.NdotL, surface.LdotH, roughness);
+    float disneyDiffuse = RenormalizedDisneyDiffuse(surface.NdotV,
+        surface.NdotL, surface.LdotH, roughness);
 
-	return (1.0 - surface.material.metalness) * surface.material.baseColor * 
-		disneyDiffuse * INV_PI;
+    return (1.0 - surface.material.metalness) * surface.material.baseColor * 
+        disneyDiffuse * INV_PI;
 
 }
 
 vec3 EvaluateSpecularBRDF(Surface surface) {
 
     // Perceptual roughness to roughness
-	float roughness = max(sqr(surface.material.roughness), 0.00001);
+    float roughness = max(sqr(surface.material.roughness), 0.00001);
 
     vec3 F = FresnelSchlick(surface.F0, surface.F90, surface.LdotH);
-	float G = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, roughness);
-	float D = DistributionGGX(surface.NdotH, roughness);
-	
-	return F * D * G;
+    float G = VisibilitySmithGGXCorrelated(surface.NdotV, surface.NdotL, roughness);
+    float D = DistributionGGX(surface.NdotH, roughness);
+    
+    return F * D * G;
 
 }
 

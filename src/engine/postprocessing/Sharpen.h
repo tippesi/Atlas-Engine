@@ -5,21 +5,21 @@
 
 namespace Atlas {
 
-	namespace PostProcessing {
+    namespace PostProcessing {
 
-		class Sharpen {
+        class Sharpen {
 
-		public:
-			Sharpen() = default;
+        public:
+            Sharpen() = default;
 
-			Sharpen(float factor) : enable(true), factor(factor) {}
+            Sharpen(float factor) : enable(true), factor(factor) {}
 
-			bool enable = false;
-			float factor = 0.25f;
+            bool enable = false;
+            float factor = 0.25f;
 
-		};
+        };
 
-	}
+    }
 
 }
 

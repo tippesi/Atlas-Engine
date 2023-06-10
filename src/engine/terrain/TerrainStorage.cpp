@@ -3,67 +3,67 @@
 
 namespace Atlas {
 
-	namespace Terrain {
+    namespace Terrain {
 
-		TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength,
-			int32_t materialResolution, int32_t materialCount) : rootNodeCount(rootNodeCount), 
-			LoDCount(LoDCount), materialResolution(materialResolution), materialCount(materialCount) {
+        TerrainStorage::TerrainStorage(int32_t rootNodeCount, int32_t LoDCount, float sideLength,
+            int32_t materialResolution, int32_t materialCount) : rootNodeCount(rootNodeCount), 
+            LoDCount(LoDCount), materialResolution(materialResolution), materialCount(materialCount) {
 
-			cells.resize(LoDCount);
-			LoDSideLengths = new int32_t[LoDCount];
+            cells.resize(LoDCount);
+            LoDSideLengths = new int32_t[LoDCount];
 
-			baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
-				materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-			roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-			aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
-                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-			normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
+            baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
-			displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
+            roughnessMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            aoMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            normalMaps = Atlas::Texture::Texture2DArray(materialResolution,
+                materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            displacementMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8_UNORM,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
 
-			materials.resize(materialCount);
+            materials.resize(materialCount);
 
-			for (int32_t i = 0; i < LoDCount; i++) {
+            for (int32_t i = 0; i < LoDCount; i++) {
 
-				cells[i] = std::vector<TerrainStorageCell>(rootNodeCount * (int32_t)powf(4, (float)i), this);
-				LoDSideLengths[i] = (int32_t)sqrtf((float)rootNodeCount * powf(4.0f, (float)i));
+                cells[i] = std::vector<TerrainStorageCell>(rootNodeCount * (int32_t)powf(4, (float)i), this);
+                LoDSideLengths[i] = (int32_t)sqrtf((float)rootNodeCount * powf(4.0f, (float)i));
 
-				for (int32_t x = 0; x < LoDSideLengths[i]; x++) {
-					for (int32_t y = 0; y < LoDSideLengths[i]; y++) {
-						cells[i][x * LoDSideLengths[i] + y].x = x;
-						cells[i][x * LoDSideLengths[i] + y].y = y;
-						cells[i][x * LoDSideLengths[i] + y].LoD = i;
-						cells[i][x * LoDSideLengths[i] + y].position = vec2((float)x, (float)y) * sideLength;
-					}
-				}
+                for (int32_t x = 0; x < LoDSideLengths[i]; x++) {
+                    for (int32_t y = 0; y < LoDSideLengths[i]; y++) {
+                        cells[i][x * LoDSideLengths[i] + y].x = x;
+                        cells[i][x * LoDSideLengths[i] + y].y = y;
+                        cells[i][x * LoDSideLengths[i] + y].LoD = i;
+                        cells[i][x * LoDSideLengths[i] + y].position = vec2((float)x, (float)y) * sideLength;
+                    }
+                }
 
-				sideLength /= 2.0f;
+                sideLength /= 2.0f;
 
-			}
+            }
 
-		}
+        }
 
-		TerrainStorageCell* TerrainStorage::GetCell(int32_t x, int32_t y, int32_t LoD) {
+        TerrainStorageCell* TerrainStorage::GetCell(int32_t x, int32_t y, int32_t LoD) {
 
-			if (x < 0 || x >= LoDSideLengths[LoD] || y < 0 || y >= LoDSideLengths[LoD])
-				return nullptr;
+            if (x < 0 || x >= LoDSideLengths[LoD] || y < 0 || y >= LoDSideLengths[LoD])
+                return nullptr;
 
-			return &cells[LoD][x * LoDSideLengths[LoD] + y];
+            return &cells[LoD][x * LoDSideLengths[LoD] + y];
 
-		}
+        }
 
-		int32_t TerrainStorage::GetCellCount(int32_t LoD) {
+        int32_t TerrainStorage::GetCellCount(int32_t LoD) {
 
-			return (int32_t)cells[LoD].size();
+            return (int32_t)cells[LoD].size();
 
-		}
+        }
 
         void TerrainStorage::BeginMaterialWrite() {
 
@@ -74,27 +74,27 @@ namespace Atlas {
 
         }
 
-		void TerrainStorage::WriteMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::WriteMaterial(int32_t slot, Ref<Material> material) {
 
-			materials[slot] = material;
+            materials[slot] = material;
 
-			if (material->HasBaseColorMap()) {
+            if (material->HasBaseColorMap()) {
                 BlitImageToImageArray(material->baseColorMap->image, baseColorMaps.image, slot);
-			}
-			if (material->HasRoughnessMap()) {
+            }
+            if (material->HasRoughnessMap()) {
                 BlitImageToImageArray(material->roughnessMap->image, roughnessMaps.image, slot);
-			}
-			if (material->HasAoMap()) {
+            }
+            if (material->HasAoMap()) {
                 BlitImageToImageArray(material->aoMap->image, aoMaps.image, slot);
-			}
-			if (material->HasNormalMap()) {
+            }
+            if (material->HasNormalMap()) {
                 BlitImageToImageArray(material->normalMap->image, normalMaps.image, slot);
-			}
-			if (material->HasDisplacementMap()) {
+            }
+            if (material->HasDisplacementMap()) {
                 BlitImageToImageArray(material->displacementMap->image, displacementMaps.image, slot);
-			}
+            }
 
-		}
+        }
 
         void TerrainStorage::EndMaterialWrite() {
 
@@ -120,17 +120,17 @@ namespace Atlas {
 
         }
 
-		void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
 
-			materials[slot] = nullptr;
+            materials[slot] = nullptr;
 
-		}
+        }
 
-		std::vector<Ref<Material>> TerrainStorage::GetMaterials() {
+        std::vector<Ref<Material>> TerrainStorage::GetMaterials() {
 
-			return materials;
+            return materials;
 
-		}
+        }
 
         void TerrainStorage::BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
             Ref<Graphics::Image>& dstImage, int32_t slot) {
@@ -159,6 +159,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

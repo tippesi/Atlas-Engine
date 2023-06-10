@@ -8,19 +8,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class AORenderer : public Renderer {
+        class AORenderer : public Renderer {
 
-		public:
-			AORenderer() = default;
+        public:
+            AORenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) RTUniforms {
                 float radius;
                 int32_t frameSeed;
@@ -32,8 +32,8 @@ namespace Atlas {
                 int32_t frameCount;
             };
 
-			Filter blurFilter;
-			Helper::RayTracingHelper helper;
+            Filter blurFilter;
+            Helper::RayTracingHelper helper;
 
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
@@ -50,9 +50,9 @@ namespace Atlas {
             Buffer::UniformBuffer ssSamplesUniformBuffer;
             Buffer::UniformBuffer blurWeightsUniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

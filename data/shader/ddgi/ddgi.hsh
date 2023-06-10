@@ -16,217 +16,217 @@ layout(set = 2, binding = 24) uniform sampler2DArray irradianceVolume;
 layout(set = 2, binding = 25) uniform sampler2DArray momentsVolume;
 
 layout(std430, set = 2, binding = 19) buffer ProbeStates {
-	vec4 probeStates[];
+    vec4 probeStates[];
 };
 
 layout(std430, set = 2, binding = 20) buffer ProbeOffsets {
-	vec4 probeOffsets[];
+    vec4 probeOffsets[];
 };
 
 layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
     vec4 volumeMin;
-	vec4 volumeMax;
-	ivec4 volumeProbeCount;
-	vec4 cellSize;
+    vec4 volumeMax;
+    ivec4 volumeProbeCount;
+    vec4 cellSize;
 
-	float volumeBias;
+    float volumeBias;
 
-	int volumeIrradianceRes;
-	int volumeMomentsRes;
+    int volumeIrradianceRes;
+    int volumeMomentsRes;
 
-	uint rayCount;
-	uint inactiveRayCount;
+    uint rayCount;
+    uint inactiveRayCount;
 
-	float hysteresis;
+    float hysteresis;
 
-	float volumeGamma;
-	float volumeStrength;
+    float volumeGamma;
+    float volumeStrength;
 
-	float depthSharpness;
-	int optimizeProbes;
+    float depthSharpness;
+    int optimizeProbes;
 
-	int volumeEnabled;
+    int volumeEnabled;
 } ddgiData;
 
 struct RayHit {
-	vec3 direction;
-	vec3 radiance;
-	float hitDistance;
+    vec3 direction;
+    vec3 radiance;
+    float hitDistance;
 };
 
 struct PackedRayHit {
-	vec4 data;
+    vec4 data;
 };
 
 RayHit UnpackRayHit(PackedRayHit compressed) {
-	RayHit hit;
+    RayHit hit;
 
-	hit.direction.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
-	hit.radiance.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
-	vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
+    hit.direction.xy = unpackHalf2x16(floatBitsToUint(compressed.data.x));
+    hit.radiance.xy = unpackHalf2x16(floatBitsToUint(compressed.data.y));
+    vec2 comn = unpackHalf2x16(floatBitsToUint(compressed.data.z));
 
-	hit.direction.z = comn.x;
-	hit.radiance.z = comn.y;
+    hit.direction.z = comn.x;
+    hit.radiance.z = comn.y;
 
-	hit.hitDistance = compressed.data.w;
+    hit.hitDistance = compressed.data.w;
 
-	return hit;
+    return hit;
 }
 
 PackedRayHit PackRayHit(RayHit hit) {
-	PackedRayHit compressed;
+    PackedRayHit compressed;
 
-	// Maximum possible value for float16 is 65.5 * 10^4
-	hit.radiance = min(hit.radiance, 3200.0);
+    // Maximum possible value for float16 is 65.5 * 10^4
+    hit.radiance = min(hit.radiance, 3200.0);
 
-	vec2 comn = vec2(hit.direction.z, hit.radiance.z);
-	compressed.data.x = uintBitsToFloat(packHalf2x16(hit.direction.xy));
-	compressed.data.y = uintBitsToFloat(packHalf2x16(hit.radiance.xy));
-	compressed.data.z = uintBitsToFloat(packHalf2x16(comn));
-	compressed.data.w = hit.hitDistance;
+    vec2 comn = vec2(hit.direction.z, hit.radiance.z);
+    compressed.data.x = uintBitsToFloat(packHalf2x16(hit.direction.xy));
+    compressed.data.y = uintBitsToFloat(packHalf2x16(hit.radiance.xy));
+    compressed.data.z = uintBitsToFloat(packHalf2x16(comn));
+    compressed.data.w = hit.hitDistance;
 
-	return compressed;
+    return compressed;
 }
 
 uint GetProbeRayCount(uint state) {
-	return state == PROBE_STATE_INACTIVE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
+    return state == PROBE_STATE_INACTIVE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
 }
 
 vec3 GetProbePosition(ivec3 probeIdx) {
-	return ddgiData.volumeMin.xyz + vec3(probeIdx) * ddgiData.cellSize.xyz;
+    return ddgiData.volumeMin.xyz + vec3(probeIdx) * ddgiData.cellSize.xyz;
 }
 
 uint GetProbeState(uint idx) {
-	return floatBitsToUint(probeStates[idx].x);
+    return floatBitsToUint(probeStates[idx].x);
 }
 
 vec3 GetProbeOffset(uint idx) {
-	return probeOffsets[idx].xyz;
+    return probeOffsets[idx].xyz;
 }
 
 ivec3 GetNearestProbe(vec3 position) {
-	vec3 localPosition = position - ddgiData.volumeMin.xyz;
-	return ivec3(round(localPosition / ddgiData.cellSize.xyz));
+    vec3 localPosition = position - ddgiData.volumeMin.xyz;
+    return ivec3(round(localPosition / ddgiData.cellSize.xyz));
 }
 
 uint GetProbeIdx(ivec3 probe) {
-	return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy);
+    return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy);
 }
 
 ivec3 GetProbeGridCoord(uint idx) {
-	return Unflatten3D(int(idx), ddgiData.volumeProbeCount.xzy).xzy;
+    return Unflatten3D(int(idx), ddgiData.volumeProbeCount.xzy).xzy;
 }
 
 bool IsInsideVolume(vec3 position) {
-	return !any(lessThan(position, ddgiData.volumeMin.xyz))
-		&& !any(greaterThan(position, ddgiData.volumeMax.xyz));
+    return !any(lessThan(position, ddgiData.volumeMin.xyz))
+        && !any(greaterThan(position, ddgiData.volumeMax.xyz));
 }
 
 vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSize, float volumeRes) {
 
-	vec3 coord = vec3(probeRes * vec2(probeIndex.xz) + vec2(1.0), float(probeIndex.y));
-	coord.xy *= texelSize;
+    vec3 coord = vec3(probeRes * vec2(probeIndex.xz) + vec2(1.0), float(probeIndex.y));
+    coord.xy *= texelSize;
 
-	vec2 localCoord = octCoord * float(volumeRes) * texelSize;
-	coord.xy += localCoord;
+    vec2 localCoord = octCoord * float(volumeRes) * texelSize;
+    coord.xy += localCoord;
 
-	return coord;
+    return coord;
 
 }
 
 vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
-	float minAxialDistance = min3(ddgiData.cellSize.xyz);
-	vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * 
-		(0.75 * minAxialDistance) * ddgiData.volumeBias;
+    float minAxialDistance = min3(ddgiData.cellSize.xyz);
+    vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * 
+        (0.75 * minAxialDistance) * ddgiData.volumeBias;
 
-	vec2 irrRes = vec2(ddgiData.volumeIrradianceRes + 2);
-	vec2 totalResolution = vec2(ddgiData.volumeProbeCount.xz) * irrRes;
-	vec2 irrTexelSize = 1.0 / totalResolution;
-	vec2 irrOctCoord = UnitVectorToOctahedron(N);
+    vec2 irrRes = vec2(ddgiData.volumeIrradianceRes + 2);
+    vec2 totalResolution = vec2(ddgiData.volumeProbeCount.xz) * irrRes;
+    vec2 irrTexelSize = 1.0 / totalResolution;
+    vec2 irrOctCoord = UnitVectorToOctahedron(N);
 
-	vec2 momRes = vec2(ddgiData.volumeMomentsRes + 2);
-	totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
-	vec2 momTexelSize = 1.0 / totalResolution;
+    vec2 momRes = vec2(ddgiData.volumeMomentsRes + 2);
+    totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
+    vec2 momTexelSize = 1.0 / totalResolution;
 
-	vec3 localPosition = biasedP - ddgiData.volumeMin.xyz;
-	ivec3 baseCell = ivec3(localPosition / ddgiData.cellSize.xyz);
+    vec3 localPosition = biasedP - ddgiData.volumeMin.xyz;
+    ivec3 baseCell = ivec3(localPosition / ddgiData.cellSize.xyz);
 
-	float sumWeight = 0.0;
-	vec3 sumIrradiance = vec3(0.0);
+    float sumWeight = 0.0;
+    vec3 sumIrradiance = vec3(0.0);
 
-	float sumWeightCheb = 0.0;
-	vec3 sumIrradianceCheb = vec3(0.0);
+    float sumWeightCheb = 0.0;
+    vec3 sumIrradianceCheb = vec3(0.0);
 
-	vec3 alpha = localPosition / ddgiData.cellSize.xyz - vec3(baseCell);
+    vec3 alpha = localPosition / ddgiData.cellSize.xyz - vec3(baseCell);
 
-	for (int i = 0; i < 8; i++) {
-		ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
-		ivec3 gridCell = min(baseCell + offset, ddgiData.volumeProbeCount.xyz - ivec3(1));
+    for (int i = 0; i < 8; i++) {
+        ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
+        ivec3 gridCell = min(baseCell + offset, ddgiData.volumeProbeCount.xyz - ivec3(1));
 
-		uint probeIdx = GetProbeIdx(gridCell);
-		uint probeState = GetProbeState(probeIdx);
-		if (probeState == PROBE_STATE_INACTIVE) continue;
+        uint probeIdx = GetProbeIdx(gridCell);
+        uint probeState = GetProbeState(probeIdx);
+        if (probeState == PROBE_STATE_INACTIVE) continue;
 
-		vec3 probeOffset = probeOffsets[probeIdx].xyz;
-		vec3 probePos = vec3(gridCell) * ddgiData.cellSize.xyz +
-			probeOffset + ddgiData.volumeMin.xyz;
-		vec3 pointToProbe = probePos - P;
-		vec3 L = normalize(pointToProbe);
+        vec3 probeOffset = probeOffsets[probeIdx].xyz;
+        vec3 probePos = vec3(gridCell) * ddgiData.cellSize.xyz +
+            probeOffset + ddgiData.volumeMin.xyz;
+        vec3 pointToProbe = probePos - P;
+        vec3 L = normalize(pointToProbe);
 
-		vec3 biasedProbeToPosition = biasedP - probePos;
-		float biasedDistToProbe = length(biasedProbeToPosition);
-		biasedProbeToPosition /= biasedDistToProbe;
+        vec3 biasedProbeToPosition = biasedP - probePos;
+        float biasedDistToProbe = length(biasedProbeToPosition);
+        biasedProbeToPosition /= biasedDistToProbe;
 
-		vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
+        vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
 
-		// Should be used when the chebyshev test is weighted more
-		//float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
-		float weight = dot(L, geometryNormal);
-		if (weight < 0.0) continue;
+        // Should be used when the chebyshev test is weighted more
+        //float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
+        float weight = dot(L, geometryNormal);
+        if (weight < 0.0) continue;
 
-		vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
-		vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
-		vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
-		float mean = temp.x;
-		float mean2 = temp.y;
+        vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
+        vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
+        vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
+        float mean = temp.x;
+        float mean2 = temp.y;
 
-		float weightCheb = weight;
+        float weightCheb = weight;
 
-		if (biasedDistToProbe > mean) {			
-			float variance = abs(mean * mean - mean2);
-			float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
-			weight *= max(0.0, visibility * visibility * visibility);
-		}
+        if (biasedDistToProbe > mean) {            
+            float variance = abs(mean * mean - mean2);
+            float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
+            weight *= max(0.0, visibility * visibility * visibility);
+        }
 
-		weight = max(0.000001, weight);
-		weightCheb = max(0.000001, weightCheb);
+        weight = max(0.000001, weight);
+        weightCheb = max(0.000001, weightCheb);
 
-		float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
-		weight *= trilinearWeight;
-		weightCheb *= trilinearWeight;
+        float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
+        weight *= trilinearWeight;
+        weightCheb *= trilinearWeight;
 
-		vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
-		vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
+        vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
+        vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
 
-		sumIrradiance += weight * irradiance;
-		sumIrradianceCheb += weightCheb * irradiance;
-		sumWeight += weight;
-		sumWeightCheb += weightCheb;
-	}
+        sumIrradiance += weight * irradiance;
+        sumIrradianceCheb += weightCheb * irradiance;
+        sumWeight += weight;
+        sumWeightCheb += weightCheb;
+    }
 
-	if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
-	vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
-		sqr(sumIrradiance / sumWeight), 1.0), 0.0);
+    if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
+        sqr(sumIrradiance / sumWeight), 1.0), 0.0);
 
-	// Due to the texture format we loose a bit of energy
-	irradiance *= 1.0989;
+    // Due to the texture format we loose a bit of energy
+    irradiance *= 1.0989;
 
-	return irradiance;
+    return irradiance;
 
 }
 
 vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
-	// Use "normal" normal as geometry normal 
-	return GetLocalIrradiance(P, V, N, N);
+    // Use "normal" normal as geometry normal 
+    return GetLocalIrradiance(P, V, N, N);
 }

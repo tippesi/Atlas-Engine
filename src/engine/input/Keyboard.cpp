@@ -6,119 +6,119 @@
 
 namespace Atlas {
 
-	namespace Input {
+    namespace Input {
 
-		KeyboardHandler::KeyboardHandler() {
+        KeyboardHandler::KeyboardHandler() {
 
-			RegisterEvent();
+            RegisterEvent();
 
-		}
+        }
 
-		KeyboardHandler::KeyboardHandler(const KeyboardHandler& that) {
+        KeyboardHandler::KeyboardHandler(const KeyboardHandler& that) {
 
-			RegisterEvent();
+            RegisterEvent();
 
-			DeepCopy(that);
+            DeepCopy(that);
 
-		}
+        }
 
-		KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) :
-				speed(speed), reactivity(reactivity) {
+        KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) :
+                speed(speed), reactivity(reactivity) {
 
-			RegisterEvent();
+            RegisterEvent();
 
-			location = camera->location;
-			
-		}
+            location = camera->location;
+            
+        }
 
-		KeyboardHandler::~KeyboardHandler() {
+        KeyboardHandler::~KeyboardHandler() {
 
-			Events::EventManager::KeyboardEventDelegate.Unsubscribe(eventHandle);
+            Events::EventManager::KeyboardEventDelegate.Unsubscribe(eventHandle);
 
-		}
+        }
 
-		KeyboardHandler& KeyboardHandler::operator=(const KeyboardHandler& that) {
+        KeyboardHandler& KeyboardHandler::operator=(const KeyboardHandler& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				DeepCopy(that);
+                DeepCopy(that);
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		void KeyboardHandler::Update(Camera* camera, float deltaTime) {
+        void KeyboardHandler::Update(Camera* camera, float deltaTime) {
 
-			location += camera->direction * movement.x * deltaTime * speed;
-			location += camera->right * movement.y * deltaTime * speed;
+            location += camera->direction * movement.x * deltaTime * speed;
+            location += camera->right * movement.y * deltaTime * speed;
 
-			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-			camera->location = glm::mix(camera->location, location, progress);
+            camera->location = glm::mix(camera->location, location, progress);
 
-		}
+        }
 
-		void KeyboardHandler::Reset(Camera* camera) {
+        void KeyboardHandler::Reset(Camera* camera) {
 
-			location = camera->location;
+            location = camera->location;
 
-		}
+        }
 
-		void KeyboardHandler::RegisterEvent() {
+        void KeyboardHandler::RegisterEvent() {
 
-			auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
-			eventHandle = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+            auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
+            eventHandle = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
-		}
+        }
 
-		void KeyboardHandler::KeyboardEventHandler(Events::KeyboardEvent event) {
+        void KeyboardHandler::KeyboardEventHandler(Events::KeyboardEvent event) {
 
-			if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
-				movement.x += 1.0f;
-			}
+            if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.x += 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
-				movement.x -= 1.0f;
-			}
+            if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
+                movement.x -= 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
-				movement.x -= 1.0f;
-			}
+            if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.x -= 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
-				movement.x += 1.0f;
-			}
+            if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
+                movement.x += 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
-				movement.y += 1.0f;
-			}
+            if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.y += 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
-				movement.y -= 1.0f;
-			}
+            if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
+                movement.y -= 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
-				movement.y -= 1.0f;
-			}
+            if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.y -= 1.0f;
+            }
 
-			if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
-				movement.y += 1.0f;
-			}
+            if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
+                movement.y += 1.0f;
+            }
 
-		}
+        }
 
-		void KeyboardHandler::DeepCopy(const KeyboardHandler& that) {
+        void KeyboardHandler::DeepCopy(const KeyboardHandler& that) {
 
-			speed = that.speed;
-			reactivity = that.reactivity;
+            speed = that.speed;
+            reactivity = that.reactivity;
 
-			location = that.location;
-			movement = that.movement;
+            location = that.location;
+            movement = that.movement;
 
-		}
+        }
 
-	}
+    }
 
 }

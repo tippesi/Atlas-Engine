@@ -5,20 +5,20 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		class StaticMeshActor : public MeshActor {
+        class StaticMeshActor : public MeshActor {
 
-		public:
-			StaticMeshActor() : MeshActor(nullptr) {}
+        public:
+            StaticMeshActor() : MeshActor(nullptr) {}
 
-			StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix);
+            StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix);
 
-			void SetMatrix() {}
+            void SetMatrix() {}
 
-		};
+        };
 
-	}
+    }
 
 }
 

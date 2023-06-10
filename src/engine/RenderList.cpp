@@ -7,11 +7,11 @@
 
 namespace Atlas {
 
-	RenderList::RenderList()  {
+    RenderList::RenderList()  {
 
 
 
-	}
+    }
 
     void RenderList::NewFrame() {
 
@@ -77,7 +77,7 @@ namespace Atlas {
 
     }
 
-	void RenderList::Add(Actor::MeshActor *actor) {
+    void RenderList::Add(Actor::MeshActor *actor) {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
@@ -89,11 +89,11 @@ namespace Atlas {
             meshToActorMap[actor->mesh].push_back(actor);
         }
 
-	}
+    }
 
-	void RenderList::Update(Camera* camera) {
+    void RenderList::Update(Camera* camera) {
 
-		auto cameraLocation = camera->GetLocation();
+        auto cameraLocation = camera->GetLocation();
 
         auto& pass = passes.back();
         auto type = pass.type;
@@ -116,60 +116,60 @@ namespace Atlas {
         lastActorMatrices.reserve(maxActorCount);
         impostorMatrices.reserve(maxImpostorCount);
 
-		for (auto& [mesh, actors] : meshToActorMap) {
+        for (auto& [mesh, actors] : meshToActorMap) {
             if (!actors.size()) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
-			auto hasImpostor = mesh->impostor != nullptr;
-			auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
-				&& type != RenderPassType::Shadow;
+            auto hasImpostor = mesh->impostor != nullptr;
+            auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
+                && type != RenderPassType::Shadow;
 
-			auto typeDistance = type == RenderPassType::Shadow ?
-				mesh->impostorShadowDistance : mesh->impostorDistance;
-			auto sqdDistance = typeDistance * typeDistance;
+            auto typeDistance = type == RenderPassType::Shadow ?
+                mesh->impostorShadowDistance : mesh->impostorDistance;
+            auto sqdDistance = typeDistance * typeDistance;
 
             MeshInstances instances;
 
             instances.offset = currentActorMatrices.size();
             instances.impostorOffset = impostorMatrices.size();
 
-			if (hasImpostor) {
-				for (auto actor : actors) {
-					auto distance = glm::distance2(
-						vec3(actor->globalMatrix[3]),
-						cameraLocation);
+            if (hasImpostor) {
+                for (auto actor : actors) {
+                    auto distance = glm::distance2(
+                        vec3(actor->globalMatrix[3]),
+                        cameraLocation);
 
-					if (distance < sqdDistance || !hasImpostor) {
-						currentActorMatrices.push_back(actor->globalMatrix);
-						if (needsHistory) lastActorMatrices.push_back(actor->lastGlobalMatrix);
-					}
-					else {
-						impostorMatrices.push_back(actor->globalMatrix);
-					}
-				}
-			}
-			else {
-				for (auto actor : actors) {
-					currentActorMatrices.push_back(actor->globalMatrix);
-					if (mesh->mobility != Mesh::MeshMobility::Stationary) {
-						lastActorMatrices.push_back(actor->lastGlobalMatrix);
-					}
+                    if (distance < sqdDistance || !hasImpostor) {
+                        currentActorMatrices.push_back(actor->globalMatrix);
+                        if (needsHistory) lastActorMatrices.push_back(actor->lastGlobalMatrix);
+                    }
+                    else {
+                        impostorMatrices.push_back(actor->globalMatrix);
+                    }
+                }
+            }
+            else {
+                for (auto actor : actors) {
+                    currentActorMatrices.push_back(actor->globalMatrix);
+                    if (mesh->mobility != Mesh::MeshMobility::Stationary) {
+                        lastActorMatrices.push_back(actor->lastGlobalMatrix);
+                    }
                     else {
                         // For now push back anyways
                         lastActorMatrices.push_back(actor->globalMatrix);
                     }
-				}
-			}
+                }
+            }
 
             instances.count = currentActorMatrices.size() - instances.offset;
             instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
             meshToInstancesMap[mesh] = instances;
 
-		}
+        }
 
-	}
+    }
 
-	void RenderList::FillBuffers() {
+    void RenderList::FillBuffers() {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 

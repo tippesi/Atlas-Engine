@@ -9,61 +9,61 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class RenderBatch {
+        class RenderBatch {
 
-		public:
-			RenderBatch();
+        public:
+            RenderBatch();
 
-			void AddLine(vec3 from, vec3 to, vec3 fromColor = vec3(1.0f),
-				vec3 toColor = vec3(1.0f));
+            void AddLine(vec3 from, vec3 to, vec3 fromColor = vec3(1.0f),
+                vec3 toColor = vec3(1.0f));
 
-			size_t GetLineCount() const;
+            size_t GetLineCount() const;
 
-			void SetLineWidth(float width);
+            void SetLineWidth(float width);
 
-			float GetLineWidth() const;
+            float GetLineWidth() const;
 
-			void AddTriangle(vec3 v0, vec3 v1, vec3 v2,
-				vec3 v0Color, vec3 v1Color, vec3 v2Color);
+            void AddTriangle(vec3 v0, vec3 v1, vec3 v2,
+                vec3 v0Color, vec3 v1Color, vec3 v2Color);
 
-			size_t GetTriangleCount() const;
+            size_t GetTriangleCount() const;
 
-			void TransferData();
+            void TransferData();
 
-			void BindLineBuffer();
+            void BindLineBuffer();
 
-			void BindTriangleBuffer();
+            void BindTriangleBuffer();
 
-			void Clear();
+            void Clear();
 
-		private:
-			// Line data
-			Buffer::VertexArray lineVertexArray;
-			Buffer::VertexBuffer lineVertices;
-			Buffer::VertexBuffer lineColors;
+        private:
+            // Line data
+            Buffer::VertexArray lineVertexArray;
+            Buffer::VertexBuffer lineVertices;
+            Buffer::VertexBuffer lineColors;
 
-			std::vector<vec3> lineVertexData;
-			std::vector<vec3> lineColorData;
+            std::vector<vec3> lineVertexData;
+            std::vector<vec3> lineColorData;
 
-			float lineWidth = 1.0f;
+            float lineWidth = 1.0f;
 
-			bool lineDataValid = true;
+            bool lineDataValid = true;
 
-			// Triangle data
-			Buffer::VertexArray triangleVertexArray;
-			Buffer::VertexBuffer triangleVertices;
-			Buffer::VertexBuffer triangleColors;
+            // Triangle data
+            Buffer::VertexArray triangleVertexArray;
+            Buffer::VertexBuffer triangleVertices;
+            Buffer::VertexBuffer triangleColors;
 
-			std::vector<vec3> triangleVertexData;
-			std::vector<vec3> triangleColorData;
+            std::vector<vec3> triangleVertexData;
+            std::vector<vec3> triangleColorData;
 
-			bool triangleDataValid = true;
+            bool triangleDataValid = true;
 
-		};
+        };
 
-	}
+    }
 
 }
 

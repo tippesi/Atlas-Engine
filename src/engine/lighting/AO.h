@@ -7,29 +7,29 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class AO {
+        class AO {
 
-		public:
-			AO(int32_t sampleCount = 16);
+        public:
+            AO(int32_t sampleCount = 16);
 
-			void SetSampleCount(int32_t sampleCount);
+            void SetSampleCount(int32_t sampleCount);
 
-			int32_t sampleCount = 16;
+            int32_t sampleCount = 16;
 
-			float radius = 3.0f;
-			float strength = 1.0f;
+            float radius = 3.0f;
+            float strength = 1.0f;
 
-			bool enable = true;
-			bool rt = false;
+            bool enable = true;
+            bool rt = false;
 
-			Texture::Texture2D noiseTexture;
-			std::vector<vec4> samples;
+            Texture::Texture2D noiseTexture;
+            std::vector<vec4> samples;
 
-		};
+        };
 
-	}
+    }
 
 }
 

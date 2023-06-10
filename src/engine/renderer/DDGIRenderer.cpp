@@ -5,16 +5,16 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void DDGIRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-			Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
+            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+            Helper::GeometryHelper::GenerateSphereVertexArray(sphereArray, 10, 10);
 
-			rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
+            rayHitBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
             rayGenUniformBuffer = Buffer::UniformBuffer(sizeof(RayGenUniforms));
             rayHitUniformBuffer = Buffer::UniformBuffer(sizeof(RayHitUniforms));
 
@@ -34,84 +34,84 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
-		}
+        }
 
-		void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			auto volume = scene->irradianceVolume;
-			if (!volume || !volume->enable || !volume->update)
-				return;
+            auto volume = scene->irradianceVolume;
+            if (!volume || !volume->enable || !volume->update)
+                return;
 
-			Graphics::Profiler::BeginQuery("DDGI");
+            Graphics::Profiler::BeginQuery("DDGI");
 
-			// Try to get a shadow map
-			Lighting::Shadow* shadow = nullptr;
-			if (!scene->sky.sun) {
-				auto lights = scene->GetLights();
-				for (auto& light : lights) {
-					if (light->type == AE_DIRECTIONAL_LIGHT) {
-						shadow = light->GetShadow();
-					}
-				}
-			}
-			else {
-				shadow = scene->sky.sun->GetShadow();
-			}
+            // Try to get a shadow map
+            Lighting::Shadow* shadow = nullptr;
+            if (!scene->sky.sun) {
+                auto lights = scene->GetLights();
+                for (auto& light : lights) {
+                    if (light->type == AE_DIRECTIONAL_LIGHT) {
+                        shadow = light->GetShadow();
+                    }
+                }
+            }
+            else {
+                shadow = scene->sky.sun->GetShadow();
+            }
 
-			rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
-			
-			auto& internalVolume = volume->internal;
-			internalVolume.SwapTextures();
+            rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
+            
+            auto& internalVolume = volume->internal;
+            internalVolume.SwapTextures();
 
-			auto totalProbeCount = volume->probeCount.x *
-				volume->probeCount.y *
-				volume->probeCount.z;
+            auto totalProbeCount = volume->probeCount.x *
+                volume->probeCount.y *
+                volume->probeCount.z;
 
-			auto rayCount = volume->rayCount;
-			auto rayCountInactive = volume->rayCountInactive;
+            auto rayCount = volume->rayCount;
+            auto rayCountInactive = volume->rayCountInactive;
 
-			auto totalRayCount = rayCount * totalProbeCount;
+            auto totalRayCount = rayCount * totalProbeCount;
 
-			Graphics::Profiler::BeginQuery("Scene update");
+            Graphics::Profiler::BeginQuery("Scene update");
 
-			if (totalRayCount != rayHitBuffer.GetElementCount()) {
-				helper.SetRayBufferSize(totalRayCount);
-				rayHitBuffer.SetSize(totalRayCount);
-				helper.SetScene(scene, 8);
-			}
+            if (totalRayCount != rayHitBuffer.GetElementCount()) {
+                helper.SetRayBufferSize(totalRayCount);
+                rayHitBuffer.SetSize(totalRayCount);
+                helper.SetScene(scene, 8);
+            }
 
-			auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
-			auto [lastIrradianceArray, lastMomentsArray] = internalVolume.GetLastProbes();
+            auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
+            auto [lastIrradianceArray, lastMomentsArray] = internalVolume.GetLastProbes();
 
-			auto& rayDirBuffer = internalVolume.rayDirBuffer;
-			auto& rayDirInactiveBuffer = internalVolume.rayDirInactiveBuffer;
-			auto& probeStateBuffer = internalVolume.probeStateBuffer;
-			auto& probeOffsetBuffer = internalVolume.probeOffsetBuffer;
+            auto& rayDirBuffer = internalVolume.rayDirBuffer;
+            auto& rayDirInactiveBuffer = internalVolume.rayDirInactiveBuffer;
+            auto& probeStateBuffer = internalVolume.probeStateBuffer;
+            auto& probeOffsetBuffer = internalVolume.probeOffsetBuffer;
 
-			helper.SetScene(scene, 8, volume->sampleEmissives);
-			helper.UpdateLights();
+            helper.SetScene(scene, 8, volume->sampleEmissives);
+            helper.UpdateLights();
 
             commandList->BindBuffer(probeStateBuffer.Get(), 2, 19);
             commandList->BindBuffer(probeOffsetBuffer.Get(), 2, 20);
 
-			Graphics::Profiler::EndAndBeginQuery("Ray generation");
+            Graphics::Profiler::EndAndBeginQuery("Ray generation");
 
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
-			helper.DispatchRayGen(commandList, rayGenPipeline, volume->probeCount, false,
-				[&]() {
-					using namespace Common;
+            helper.DispatchRayGen(commandList, rayGenPipeline, volume->probeCount, false,
+                [&]() {
+                    using namespace Common;
 
-					auto theta = acosf(2.0f * float(rand()) / float(RAND_MAX) - 1.0f);
-					auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
+                    auto theta = acosf(2.0f * float(rand()) / float(RAND_MAX) - 1.0f);
+                    auto phi = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
 
-					auto dir = glm::vec3(
-						2.0f * Random::SampleUniformFloat() - 1.0f,
-						2.0f * Random::SampleUniformFloat() - 1.0f,
-						2.0f * Random::SampleUniformFloat() - 1.0f
-					);
+                    auto dir = glm::vec3(
+                        2.0f * Random::SampleUniformFloat() - 1.0f,
+                        2.0f * Random::SampleUniformFloat() - 1.0f,
+                        2.0f * Random::SampleUniformFloat() - 1.0f
+                    );
 
-					auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
-					auto rot = mat3(glm::rotate(epsilon, dir));
+                    auto epsilon = glm::two_pi<float>() * float(rand()) / float(RAND_MAX);
+                    auto rot = mat3(glm::rotate(epsilon, dir));
 
                     auto uniforms = RayGenUniforms {
                         .rotationMatrix = mat4(rot)
@@ -121,8 +121,8 @@ namespace Atlas {
                     commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
                     commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
                     commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 2);
-				}
-			);
+                }
+            );
 
             Graphics::Profiler::EndAndBeginQuery("Ray evaluation");
 
@@ -130,8 +130,8 @@ namespace Atlas {
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 25);
 
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
-			helper.DispatchHitClosest(commandList, rayHitPipeline, false,
-				[&]() {
+            helper.DispatchHitClosest(commandList, rayHitPipeline, false,
+                [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();
 
@@ -165,11 +165,11 @@ namespace Atlas {
                     }
                     rayHitUniformBuffer.SetData(&uniforms, 0, 1);
 
-					// Use this buffer instead of the default writeRays buffer of the helper
+                    // Use this buffer instead of the default writeRays buffer of the helper
                     commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
                     commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 2);
-				}
-			);
+                }
+            );
 
             commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
             commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
@@ -181,10 +181,10 @@ namespace Atlas {
 
             Graphics::Profiler::EndAndBeginQuery("Update probes");
 
-			ivec3 probeCount = volume->probeCount;
+            ivec3 probeCount = volume->probeCount;
 
-			// Update the probes
-			{
+            // Update the probes
+            {
                 Graphics::Profiler::BeginQuery("Update irradiance");
 
                 commandList->BindImage(irradianceArray.image, 3, 0);
@@ -192,7 +192,7 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(probeIrradianceUpdatePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-				commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
                 Graphics::Profiler::EndAndBeginQuery("Update moments");
 
@@ -202,25 +202,25 @@ namespace Atlas {
                 pipeline = PipelineManager::GetPipeline(probeMomentsUpdatePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-				commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
                 Graphics::Profiler::EndQuery();
-			}
+            }
 
             Graphics::Profiler::EndAndBeginQuery("Update probe states");
 
-			// Update the states of the probes
-			{
+            // Update the states of the probes
+            {
                 auto pipeline = PipelineManager::GetPipeline(probeStatePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
                 commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
-			}
+            }
 
             Graphics::Profiler::EndAndBeginQuery("Update probe edges");
 
-			// Copy the probe edges
-			{
+            // Copy the probe edges
+            {
                 commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
@@ -257,9 +257,9 @@ namespace Atlas {
                 commandList->BindImage(momentsArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
-			}
+            }
 
-			helper.InvalidateRayBuffer(commandList);
+            helper.InvalidateRayBuffer(commandList);
 
             commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -273,14 +273,14 @@ namespace Atlas {
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList, std::unordered_map<void*, uint16_t>& materialMap) {
 
-			auto volume = scene->irradianceVolume;
-			if (!volume || !volume->enable || !volume->update || !volume->debug)
-				return;
+            auto volume = scene->irradianceVolume;
+            if (!volume || !volume->enable || !volume->update || !volume->debug)
+                return;
 
             auto shaderConfig = ShaderConfig {
                 {"ddgi/probeDebug.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -296,11 +296,11 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-			probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
-			probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
-			probeDebugOffsetMaterial.emissiveColor = vec3(0.0f, 0.0f, 1.0f);
+            probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
+            probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+            probeDebugOffsetMaterial.emissiveColor = vec3(0.0f, 0.0f, 1.0f);
 
-			sphereArray.Bind(commandList);
+            sphereArray.Bind(commandList);
 
             ProbeDebugConstants constants = {
                 .probeMaterialIdx = uint32_t(materialMap[&probeDebugMaterial]),
@@ -310,11 +310,11 @@ namespace Atlas {
             };
             commandList->PushConstants("constants", &constants);
 
-			auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
+            auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
             commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));
 
-		}
+        }
 
-	}
+    }
 
 }

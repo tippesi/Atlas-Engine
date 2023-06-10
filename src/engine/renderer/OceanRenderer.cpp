@@ -5,13 +5,13 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		void OceanRenderer::Init(Graphics::GraphicsDevice* device) {
+        void OceanRenderer::Init(Graphics::GraphicsDevice* device) {
 
             this->device = device;
 
-			Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
+            Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
 
             causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
 
@@ -31,33 +31,33 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
-		}
+        }
 
-		void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			if (!scene->ocean || !scene->ocean->enable)
-				return;
+            if (!scene->ocean || !scene->ocean->enable)
+                return;
 
-			Graphics::Profiler::BeginQuery("Ocean");
+            Graphics::Profiler::BeginQuery("Ocean");
 
-			auto ocean = scene->ocean;
+            auto ocean = scene->ocean;
 
             ocean->simulation.Compute(commandList);
 
-			auto sun = scene->sky.sun.get();
-			if (!sun) {
-				auto lights = scene->GetLights();
-				for (auto& light : lights) {
-					if (light->type == AE_DIRECTIONAL_LIGHT) {
-						sun = static_cast<Lighting::DirectionalLight*>(light);
-					}
-				}
+            auto sun = scene->sky.sun.get();
+            if (!sun) {
+                auto lights = scene->GetLights();
+                for (auto& light : lights) {
+                    if (light->type == AE_DIRECTIONAL_LIGHT) {
+                        sun = static_cast<Lighting::DirectionalLight*>(light);
+                    }
+                }
 
-				if (!sun) return;
-			}
+                if (!sun) return;
+            }
 
-			vec3 direction = normalize(sun->direction);
+            vec3 direction = normalize(sun->direction);
 
             Light lightUniform;
             lightUniform.direction = vec4(sun->direction, 0.0);
@@ -99,15 +99,15 @@ namespace Atlas {
             lightUniformBuffer.SetData(&lightUniform, 0, 1);
             lightUniformBuffer.Bind(commandList, 3, 12);
 
-			{
+            {
                 Graphics::Profiler::BeginQuery("Caustics");
 
-				const int32_t groupSize = 8;
-				auto res = ivec2(target->GetWidth(), target->GetHeight());
+                const int32_t groupSize = 8;
+                auto res = ivec2(target->GetWidth(), target->GetHeight());
 
-				ivec2 groupCount = res / groupSize;
-				groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-				groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+                ivec2 groupCount = res / groupSize;
+                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
                 auto pipeline = PipelineManager::GetPipeline(causticPipelineConfig);
 
@@ -117,16 +117,16 @@ namespace Atlas {
                 auto depthImage = target->lightingFrameBuffer->GetDepthImage();
 
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
-				commandList->BindImage(lightingImage, 3, 1);
+                commandList->BindImage(lightingImage, 3, 1);
 
                 commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-				commandList->PushConstants("constants", &ocean->translation.y);
+                commandList->PushConstants("constants", &ocean->translation.y);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
-			}
+            }
 
-			// Update local texture copies
+            // Update local texture copies
             {
                 auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
                 if (refractionTexture.width != colorImage->width ||
@@ -168,19 +168,19 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
-			
-			{
+            
+            {
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
                 commandList->BeginRenderPass(target->lightingFrameBufferWithStencil->renderPass,
                     target->lightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);
-				auto pipeline = PipelineManager::GetPipeline(config);
+                auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
 
-				vertexArray.Bind(commandList);
+                vertexArray.Bind(commandList);
 
                 Uniforms uniforms = {
                     .translation = vec4(ocean->translation, 1.0f),
@@ -201,41 +201,41 @@ namespace Atlas {
                     .terrainSideLength = -1.0f,
                 };
 
-				ocean->simulation.displacementMap.Bind(commandList, 3, 0);
-				ocean->simulation.normalMap.Bind(commandList, 3, 1);
+                ocean->simulation.displacementMap.Bind(commandList, 3, 0);
+                ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-				ocean->foamTexture.Bind(commandList, 3, 2);
+                ocean->foamTexture.Bind(commandList, 3, 2);
 
-				if (scene->sky.GetProbe()) {
+                if (scene->sky.GetProbe()) {
                     scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
                 }
 
-				refractionTexture.Bind(commandList, 3, 4);
-				depthTexture.Bind(commandList, 3, 5);
+                refractionTexture.Bind(commandList, 3, 4);
+                depthTexture.Bind(commandList, 3, 5);
 
-				if (scene->terrain) {
-					if (scene->terrain->shoreLine.IsValid()) {
+                if (scene->terrain) {
+                    if (scene->terrain->shoreLine.IsValid()) {
                         auto terrain = scene->terrain;
 
                         uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
                         uniforms.terrainSideLength = scene->terrain->sideLength;
                         uniforms.terrainHeightScale = scene->terrain->heightScale;
 
-						scene->terrain->shoreLine.Bind(commandList, 3, 9);
+                        scene->terrain->shoreLine.Bind(commandList, 3, 9);
 
-					}
-				}
+                    }
+                }
 
-				if (ocean->rippleTexture.IsValid()) {
-					ocean->rippleTexture.Bind(commandList, 3, 10);
-				}
+                if (ocean->rippleTexture.IsValid()) {
+                    ocean->rippleTexture.Bind(commandList, 3, 10);
+                }
 
                 uniformBuffer.SetData(&uniforms, 0, 1);
                 uniformBuffer.Bind(commandList, 3, 11);
 
-				auto renderList = ocean->GetRenderList();
+                auto renderList = ocean->GetRenderList();
 
-				for (auto node : renderList) {
+                for (auto node : renderList) {
 
                     PushConstants constants = {
                         .nodeSideLength = node->sideLength,
@@ -252,17 +252,17 @@ namespace Atlas {
 
                     commandList->DrawIndexed(vertexArray.GetIndexComponent().elementCount);
 
-				}
+                }
 
                 commandList->EndRenderPass();
 
-				Graphics::Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
 
-			}
+            }
 
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
         PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool wireframe) {
 
@@ -285,6 +285,6 @@ namespace Atlas {
         }
 
 
-	}
+    }
 
 }

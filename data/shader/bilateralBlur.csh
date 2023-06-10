@@ -22,11 +22,11 @@ layout(set = 3, binding = 3) uniform sampler2D normalTexture;
 #endif
 
 layout(push_constant) uniform constants {
-	int kernelSize;
+    int kernelSize;
 } pushConstants;
 
 layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
-	vec4 data[32];
+    vec4 data[32];
 } weights;
 
 const float normalPhi = 32.0;
@@ -124,7 +124,7 @@ void main() {
 
         float depthDiff = abs(centerDepth - depth);
         float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
-		weight *= depthWeight;
+        weight *= depthWeight;
 #endif
 #ifdef NORMAL_WEIGHT
         vec3 normal = normals[sharedDataOffset - i];
@@ -145,7 +145,7 @@ void main() {
 
         float depthDiff = abs(centerDepth - depth);
         float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
-		weight *= depthWeight;
+        weight *= depthWeight;
 #endif
 #ifdef NORMAL_WEIGHT
         vec3 normal = normals[sharedDataOffset + i];

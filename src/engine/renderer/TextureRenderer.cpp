@@ -3,88 +3,88 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void TextureRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture2D* texture, float x, float y, float width, float height, bool alphaBlending, bool invert) {
 
 
-			float viewportWidth = (float)viewport->width;
-			float viewportHeight = (float)viewport->height;
+            float viewportWidth = (float)viewport->width;
+            float viewportHeight = (float)viewport->height;
 
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2D(commandList, viewport, texture, x, y, width, height,
+            RenderTexture2D(commandList, viewport, texture, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert);
 
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture2D* texture, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
+            vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             Draw(commandList, viewport, texture, 0.0f, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert, "TEXTURE2D");
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
             bool alphaBlending, bool invert) {
 
-			float viewportWidth = (float)(viewport->width);
-			float viewportHeight = (float)(viewport->height);
+            float viewportWidth = (float)(viewport->width);
+            float viewportHeight = (float)(viewport->height);
 
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture2DArray(commandList, viewport, texture, depth, x, y, width, height,
+            RenderTexture2DArray(commandList, viewport, texture, depth, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert);
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
+            vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             Draw(commandList, viewport, texture, depth, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert, "TEXTURE2D_ARRAY");
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
             bool alphaBlending, bool invert) {
 
-			float viewportWidth = (float)(viewport->width);
-			float viewportHeight = (float)(viewport->height);
+            float viewportWidth = (float)(viewport->width);
+            float viewportHeight = (float)(viewport->height);
 
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderTexture3D(commandList, viewport, texture, depth, x, y, width, height,
+            RenderTexture3D(commandList, viewport, texture, depth, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert);
 
-		}
+        }
 
-		void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
             Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
+            vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             Draw(commandList, viewport, texture, depth, x, y, width, height,
                 clipArea, blendArea, alphaBlending, invert, "TEXTURE3D");
 
-		}
+        }
 
         void TextureRenderer::Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
             float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
@@ -143,6 +143,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

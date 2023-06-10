@@ -2,15 +2,15 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
-		MeshData::MeshData(const MeshData& that) {
+        MeshData::MeshData(const MeshData& that) {
 
-			DeepCopy(that);
+            DeepCopy(that);
 
-		}
+        }
 
-		MeshData::MeshData() {
+        MeshData::MeshData() {
 
             indices = DataComponent<uint32_t>(ComponentFormat::UnsignedInt);
 
@@ -19,133 +19,133 @@ namespace Atlas {
             normals = DataComponent<vec4>(ComponentFormat::PackedFloat);
             tangents = DataComponent<vec4>(ComponentFormat::PackedFloat);
 
-		}
+        }
 
-		MeshData& MeshData::operator=(const MeshData& that) {
+        MeshData& MeshData::operator=(const MeshData& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				DeepCopy(that);
+                DeepCopy(that);
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		void MeshData::SetIndexCount(int32_t count) {
+        void MeshData::SetIndexCount(int32_t count) {
 
-			indexCount = count;
+            indexCount = count;
 
-		}
+        }
 
-		int32_t MeshData::GetIndexCount() const {
+        int32_t MeshData::GetIndexCount() const {
 
-			return indexCount;
+            return indexCount;
 
-		}
+        }
 
-		void MeshData::SetVertexCount(int32_t count) {
+        void MeshData::SetVertexCount(int32_t count) {
 
-			vertexCount = count;
+            vertexCount = count;
 
-		}
+        }
 
-		int32_t MeshData::GetVertexCount() const {
+        int32_t MeshData::GetVertexCount() const {
 
-			return vertexCount;
+            return vertexCount;
 
-		}
+        }
 
-		void MeshData::SetTransform(mat4 transform) {
+        void MeshData::SetTransform(mat4 transform) {
 
-			auto hasNormals = normals.ContainsData();
-			auto hasTangents = tangents.ContainsData();
+            auto hasNormals = normals.ContainsData();
+            auto hasTangents = tangents.ContainsData();
 
-			auto& vertex = vertices.Get();
-			auto& normal = normals.Get();
-			auto& tangent = tangents.Get();
+            auto& vertex = vertices.Get();
+            auto& normal = normals.Get();
+            auto& tangent = tangents.Get();
 
-			auto matrix = transform;
+            auto matrix = transform;
 
-			auto min = vec3(std::numeric_limits<float>::max());
-			auto max = vec3(-std::numeric_limits<float>::max());
+            auto min = vec3(std::numeric_limits<float>::max());
+            auto max = vec3(-std::numeric_limits<float>::max());
 
-			for (int32_t i = 0; i < vertexCount; i++) {
+            for (int32_t i = 0; i < vertexCount; i++) {
 
-				auto v = vec4(vertex[i], 1.0f);
+                auto v = vec4(vertex[i], 1.0f);
 
-				v = matrix * v;
+                v = matrix * v;
 
-				min = glm::min(min, vec3(v));
-				max = glm::max(max, vec3(v));
+                min = glm::min(min, vec3(v));
+                max = glm::max(max, vec3(v));
 
-				vertex[i] = v;
+                vertex[i] = v;
 
-				if (hasNormals) {
-					auto n = vec4(vec3(normal[i]), 0.0f);
+                if (hasNormals) {
+                    auto n = vec4(vec3(normal[i]), 0.0f);
 
-					n = vec4(normalize(vec3(matrix * n)), normal[i].w);
+                    n = vec4(normalize(vec3(matrix * n)), normal[i].w);
 
                     normal[i] = n;
-				}
-				if (hasTangents) {
+                }
+                if (hasTangents) {
                     auto t = vec4(vec3(tangent[i]), 0.0f);
 
                     t = vec4(normalize(vec3(matrix * t)), tangent[i].w);
 
                     tangent[i] = t;
-				}
+                }
 
-			}
+            }
 
-			vertices.Set(vertex);
+            vertices.Set(vertex);
 
-			if (hasNormals)
-				normals.Set(normal);
+            if (hasNormals)
+                normals.Set(normal);
 
-			if(hasTangents)
-				tangents.Set(tangent);
+            if(hasTangents)
+                tangents.Set(tangent);
 
-			aabb = Volume::AABB(min, max);
+            aabb = Volume::AABB(min, max);
 
-			this->transform = transform;
+            this->transform = transform;
 
-		}
+        }
 
-		void MeshData::DeepCopy(const MeshData& that) {
+        void MeshData::DeepCopy(const MeshData& that) {
 
-			filename = that.filename;
+            filename = that.filename;
 
-			indices = that.indices;
+            indices = that.indices;
 
-			vertices = that.vertices;
-			texCoords = that.texCoords;
-			normals = that.normals;
-			tangents = that.tangents;
+            vertices = that.vertices;
+            texCoords = that.texCoords;
+            normals = that.normals;
+            tangents = that.tangents;
 
-			indexCount = that.indexCount;
-			vertexCount = that.vertexCount;
+            indexCount = that.indexCount;
+            vertexCount = that.vertexCount;
 
-			primitiveType = that.primitiveType;
+            primitiveType = that.primitiveType;
 
-			aabb = that.aabb;
+            aabb = that.aabb;
 
-			materials.clear();
-			subData.clear();
+            materials.clear();
+            subData.clear();
 
-			materials.resize(that.materials.size());
-			subData.resize(that.subData.size());
+            materials.resize(that.materials.size());
+            subData.resize(that.subData.size());
 
-			// We need to refresh the pointers in the sub data
-			for (size_t i = 0; i < that.subData.size(); i++) {
-				materials[i] = that.materials[i];
-				subData[i] = that.subData[i];
-				subData[i].material = &materials[i];
-			}
+            // We need to refresh the pointers in the sub data
+            for (size_t i = 0; i < that.subData.size(); i++) {
+                materials[i] = that.materials[i];
+                subData[i] = that.subData[i];
+                subData[i].material = &materials[i];
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

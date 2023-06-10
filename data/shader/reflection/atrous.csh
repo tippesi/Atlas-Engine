@@ -40,7 +40,7 @@ struct PackedPixelData {
 shared PackedPixelData pixelData[sharedDataSize];
 
 layout(push_constant) uniform constants {
-	int stepSize;
+    int stepSize;
     float strength;
 } pushConstants;
 
@@ -75,9 +75,9 @@ PixelData UnpackPixelData(PackedPixelData compressed) {
 void LoadGroupSharedData() {
 
     ivec2 resolution = imageSize(outputImage);
-	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
 
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
     for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
         ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
         ivec2 texel = localOffset + workGroupOffset;

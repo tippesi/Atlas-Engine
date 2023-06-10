@@ -59,7 +59,7 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
 
     // Don't use the global inverse matrices here, since we also render the cubemap with this shader
-	vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord, uniforms.ipMatrix);
+    vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord, uniforms.ipMatrix);
 #ifndef ENVIRONMENT_PROBE
     vec3 worldPos = vec3(uniforms.ivMatrix * vec4(viewPos, 1.0));
 #else

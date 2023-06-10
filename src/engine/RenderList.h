@@ -14,9 +14,9 @@
 
 namespace Atlas {
 
-	class RenderList {
+    class RenderList {
 
-	public:
+    public:
         struct MeshInstances {
             size_t offset;
             size_t count;
@@ -40,7 +40,7 @@ namespace Atlas {
             std::map<Mesh::Mesh*, MeshInstances> meshToInstancesMap;
         };
 
-		RenderList();
+        RenderList();
 
         void NewFrame();
 
@@ -52,11 +52,11 @@ namespace Atlas {
 
         Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
-		void Add(Actor::MeshActor *actor);
+        void Add(Actor::MeshActor *actor);
 
-		void Update(Camera* camera);
+        void Update(Camera* camera);
 
-		void FillBuffers();
+        void FillBuffers();
 
         std::vector<mat4> currentActorMatrices;
         std::vector<mat4> lastActorMatrices;
@@ -68,7 +68,7 @@ namespace Atlas {
 
         std::vector<Pass> passes;
 
-	};
+    };
 
 }
 

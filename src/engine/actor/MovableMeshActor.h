@@ -10,10 +10,10 @@ namespace Atlas {
         class MovableMeshActor : public MeshActor {
 
         public:
-			MovableMeshActor() : MeshActor(nullptr) {}
+            MovableMeshActor() : MeshActor(nullptr) {}
 
-			explicit MovableMeshActor(Mesh::Mesh* mesh, mat4 matrix = mat4(1.0f))
-				: MeshActor(mesh) { this->SetMatrix(matrix); }
+            explicit MovableMeshActor(Mesh::Mesh* mesh, mat4 matrix = mat4(1.0f))
+                : MeshActor(mesh) { this->SetMatrix(matrix); }
 
         };
 

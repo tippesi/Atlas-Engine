@@ -3,71 +3,71 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void TextRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::MultiBufferedBit
                                | Buffer::BufferUsageBits::HostAccessBit;
-			instanceBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4), 16384);
+            instanceBuffer = Buffer::Buffer(bufferUsage, sizeof(vec4), 16384);
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
 
-		}
+        }
 
-		void TextRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
+        void TextRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
 
-			return;
+            return;
 
-		}
+        }
 
-		void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
             const std::string& text, float x, float y, vec4 color, float scale,
             const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
-			float width = (float)(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
-			float height = (float)(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
+            float width = (float)(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
+            float height = (float)(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
 
-			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
-			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+            vec4 clipArea = vec4(0.0f, 0.0f, width, height);
+            vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			RenderOutlined(commandList, viewport, font, text, x, y, color, vec4(1.0f), 0.0f,
+            RenderOutlined(commandList, viewport, font, text, x, y, color, vec4(1.0f), 0.0f,
                 clipArea, blendArea, scale, frameBuffer);
 
-		}
+        }
 
-		void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
             const std::string& text, float x, float y, vec4 color, vec4 clipArea, vec4 blendArea,
             float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             RenderOutlined(commandList, viewport, font, text, x, y, color, vec4(1.0f), 0.0f,
                 clipArea, blendArea, scale, frameBuffer);
 
-		}
+        }
 
-		void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
             float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             float width = (float)(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
             float height = (float)(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
 
-			vec4 clipArea = vec4(0.0f, 0.0f, width, height);
-			vec4 blendArea = vec4(0.0f, 0.0f, width, height);
+            vec4 clipArea = vec4(0.0f, 0.0f, width, height);
+            vec4 blendArea = vec4(0.0f, 0.0f, width, height);
 
-			RenderOutlined(commandList, viewport, font, text, x, y, color, outlineColor, outlineScale,
-				clipArea, blendArea, scale, frameBuffer);
+            RenderOutlined(commandList, viewport, font, text, x, y, color, outlineColor, outlineScale,
+                clipArea, blendArea, scale, frameBuffer);
 
-		}
+        }
 
-		void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
             vec4 clipArea, vec4 blendArea, float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
-			int32_t characterCount;
+            int32_t characterCount;
 
             auto pipelineConfig = GeneratePipelineConfig(frameBuffer);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -77,7 +77,7 @@ namespace Atlas {
             float width = float(frameBuffer == nullptr ? viewport->width : frameBuffer->extent.width);
             float height = float(frameBuffer == nullptr ? viewport->height : frameBuffer->extent.height);
 
-			auto instances = CalculateCharacterInstances(font, text, &characterCount);
+            auto instances = CalculateCharacterInstances(font, text, &characterCount);
             instanceBuffer.SetData(instances.data(), frameCharacterCount, characterCount);
 
             Uniforms uniforms {
@@ -102,57 +102,57 @@ namespace Atlas {
             commandList->BindBuffer(instanceBuffer.GetMultiBuffer(), 3, 2);
             commandList->BindBuffer(uniformBuffer.Get(), 3, 3);
 
-			vertexArray.Bind(commandList);
+            vertexArray.Bind(commandList);
             commandList->Draw(4, uint32_t(characterCount), 0, frameCharacterCount);
 
             frameCharacterCount += characterCount;
 
-		}
+        }
 
-		void TextRenderer::Update() {
+        void TextRenderer::Update() {
 
             frameCharacterCount = 0;
 
-		}
+        }
 
-		std::vector<vec4> TextRenderer::CalculateCharacterInstances(Font* font, const std::string& text,
+        std::vector<vec4> TextRenderer::CalculateCharacterInstances(Font* font, const std::string& text,
             int32_t* characterCount) {
 
-			*characterCount = 0;
+            *characterCount = 0;
 
-			auto instances = std::vector<vec4>(text.length());
+            auto instances = std::vector<vec4>(text.length());
 
-			int32_t index = 0;
+            int32_t index = 0;
 
-			float xOffset = 0.0f;
+            float xOffset = 0.0f;
 
-			auto ctext = text.c_str();
+            auto ctext = text.c_str();
 
-			auto nextGlyph = font->GetGlyphUTF8(ctext);
+            auto nextGlyph = font->GetGlyphUTF8(ctext);
 
-			while (nextGlyph->codepoint) {
+            while (nextGlyph->codepoint) {
 
-				Glyph* glyph = nextGlyph;
+                Glyph* glyph = nextGlyph;
 
-				// Just visible characters should be rendered.
-				if (glyph->codepoint > 32 && glyph->texArrayIndex < AE_GPU_GLYPH_COUNT) {
-					instances[index].x = glyph->offset.x + xOffset;
-					instances[index].y = glyph->offset.y + font->ascent;
-					instances[index].z = (float)glyph->texArrayIndex;
-					index++;
-				}
+                // Just visible characters should be rendered.
+                if (glyph->codepoint > 32 && glyph->texArrayIndex < AE_GPU_GLYPH_COUNT) {
+                    instances[index].x = glyph->offset.x + xOffset;
+                    instances[index].y = glyph->offset.y + font->ascent;
+                    instances[index].z = (float)glyph->texArrayIndex;
+                    index++;
+                }
 
-				nextGlyph = font->GetGlyphUTF8(ctext);
+                nextGlyph = font->GetGlyphUTF8(ctext);
 
-				xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
+                xOffset += glyph->advance + glyph->kern[nextGlyph->codepoint];
 
-			}
+            }
 
-			*characterCount = index;
+            *characterCount = index;
 
-			return instances;
+            return instances;
 
-		}
+        }
 
         PipelineConfig TextRenderer::GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
@@ -175,6 +175,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

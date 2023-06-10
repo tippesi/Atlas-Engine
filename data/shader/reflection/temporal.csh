@@ -61,17 +61,17 @@ float Luma(vec3 color) {
 }
 
 vec3 FetchTexel(ivec2 texel) {
-	
-	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
-	return color;
+    
+    vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
+    return color;
 
 }
 
 void LoadGroupSharedData() {
 
-	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
 
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
     for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
         ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
         ivec2 texel = localOffset + workGroupOffset;
@@ -290,7 +290,7 @@ void main() {
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-	Material material = UnpackMaterial(materialIdx);
+    Material material = UnpackMaterial(materialIdx);
 
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;

@@ -4,72 +4,72 @@
 
 namespace Atlas {
 
-	namespace Tools {
+    namespace Tools {
 
-		PerformanceCounter::PerformanceCounter() {
+        PerformanceCounter::PerformanceCounter() {
 
-			Reset();
+            Reset();
 
-		}
+        }
 
-		void PerformanceCounter::Reset() {
+        void PerformanceCounter::Reset() {
 
-			stamps.clear();
-			Stamp();
+            stamps.clear();
+            Stamp();
 
-		}
+        }
 
-		PerformanceCounter::TimeStamp PerformanceCounter::Stamp() {
+        PerformanceCounter::TimeStamp PerformanceCounter::Stamp() {
 
-			TimeStamp stamp;
+            TimeStamp stamp;
 
-			stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetPerformanceCounter();
 
-			if (stamps.size()) {
-				auto resetStamp = stamps[0];
-				stamp.delta = (stamp.stamp - resetStamp.stamp) * 1000.0 / (double)
-					SDL_GetPerformanceFrequency();
-			}
+            if (stamps.size()) {
+                auto resetStamp = stamps[0];
+                stamp.delta = (stamp.stamp - resetStamp.stamp) * 1000.0 / (double)
+                    SDL_GetPerformanceFrequency();
+            }
 
-			stamps.push_back(stamp);
+            stamps.push_back(stamp);
 
-			return stamp;
+            return stamp;
 
-		}
+        }
 
-		PerformanceCounter::TimeStamp PerformanceCounter::Stamp(TimeStamp inStamp) {
+        PerformanceCounter::TimeStamp PerformanceCounter::Stamp(TimeStamp inStamp) {
 
-			TimeStamp stamp;
+            TimeStamp stamp;
 
-			stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetPerformanceCounter();
 
-			stamp.delta = (stamp.stamp - inStamp.stamp) * 1000.0 / (double)
-				SDL_GetPerformanceFrequency();
+            stamp.delta = (stamp.stamp - inStamp.stamp) * 1000.0 / (double)
+                SDL_GetPerformanceFrequency();
 
-			stamps.push_back(stamp);
+            stamps.push_back(stamp);
 
-			return stamp;
+            return stamp;
 
-		}
+        }
 
-		PerformanceCounter::TimeStamp PerformanceCounter::StepStamp() {
+        PerformanceCounter::TimeStamp PerformanceCounter::StepStamp() {
 
-			TimeStamp stamp;
+            TimeStamp stamp;
 
-			stamp.stamp = (double)SDL_GetPerformanceCounter();
+            stamp.stamp = (double)SDL_GetPerformanceCounter();
 
-			if (stamps.size()) {
-				auto prevStamp = stamps[stamps.size() - 1];
-				stamp.delta = (stamp.stamp - prevStamp.stamp) * 1000.0 / (double)
-					SDL_GetPerformanceFrequency();
-			}
+            if (stamps.size()) {
+                auto prevStamp = stamps[stamps.size() - 1];
+                stamp.delta = (stamp.stamp - prevStamp.stamp) * 1000.0 / (double)
+                    SDL_GetPerformanceFrequency();
+            }
 
-			stamps.push_back(stamp);
+            stamps.push_back(stamp);
 
-			return stamp;
+            return stamp;
 
-		}
+        }
 
-	}
+    }
 
 }

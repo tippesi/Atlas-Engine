@@ -6,19 +6,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TerrainShadowRenderer : public Renderer {
+        class TerrainShadowRenderer : public Renderer {
 
-		public:
-			TerrainShadowRenderer() = default;
+        public:
+            TerrainShadowRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
             struct alignas(16) PushConstants {
@@ -48,9 +48,9 @@ namespace Atlas {
 
             Buffer::UniformBuffer uniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

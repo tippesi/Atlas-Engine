@@ -81,18 +81,18 @@ void main() {
         pixel.y > imageSize(volumetricCloudImage).y)
         return;
 
-	vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricCloudImage));
+    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricCloudImage));
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
     int sampleIdx = int(uniforms.frameSeed);
-	blueNoiseVec = vec4(
-			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
+    blueNoiseVec = vec4(
+            SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+            SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 3, scramblingRankingTexture, sobolSequenceTexture)
-			);
+            );
 
     vec4 scattering = ComputeVolumetricClouds(pixelPos, depth, texCoord);
     imageStore(volumetricCloudImage, pixel, scattering);
@@ -100,7 +100,7 @@ void main() {
 }
 
 const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
-		0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
+        0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
 
 float GetDitherOffset(int idx) {
 
@@ -118,20 +118,20 @@ float GetNoiseOffset(int idx) {
 
 vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 
-	vec3 L = pos - origin;
-	float DT = dot(L, direction);
-	float r2 = radius * radius;
-	
-	float ct2 = dot(L, L) - DT * DT;
-	
-	if (ct2 > r2)
-		return vec2(-1.0);
-	
-	float AT = sqrt(r2 - ct2);
-	float BT = AT;
-	
-	float AO = DT - AT;
-	float BO = DT + BT;
+    vec3 L = pos - origin;
+    float DT = dot(L, direction);
+    float r2 = radius * radius;
+    
+    float ct2 = dot(L, L) - DT * DT;
+    
+    if (ct2 > r2)
+        return vec2(-1.0);
+    
+    float AT = sqrt(r2 - ct2);
+    float BT = AT;
+    
+    float AO = DT - AT;
+    float BO = DT + BT;
 
     float minDist = min(AO, BO);
     float maxDist = max(AO, BO);
@@ -309,10 +309,10 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
 
     // Primary noise always uses index 0
     float noiseValue = GetNoiseOffset(int(0));
-	rayOrigin += stepVector * noiseValue;
+    rayOrigin += stepVector * noiseValue;
  
     vec3 integration = vec3(0.0);
-	vec3 rayPos = rayOrigin + rayDirection * inDist;
+    vec3 rayPos = rayOrigin + rayDirection * inDist;
 
     vec4 extinction = vec4(1.0);
     vec3 scattering = vec3(0.0);

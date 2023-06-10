@@ -53,17 +53,17 @@ const ivec2 pixelOffsets[4] = ivec2[4](
 );
 
 float FetchTexel(ivec2 texel) {
-	
-	float value = max(texelFetch(currentTexture, texel, 0).r, 0);
-	return value;
+    
+    float value = max(texelFetch(currentTexture, texel, 0).r, 0);
+    return value;
 
 }
 
 void LoadGroupSharedData() {
 
-	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
 
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
     for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
         ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
         ivec2 texel = localOffset + workGroupOffset;

@@ -20,12 +20,12 @@ uniform float rowCount;
 uniform float columnCount;
 
 vec2 GetOffset(float index) {
-	
-	float x = mod(index, rowCount) / rowCount;
-	float y = floor(index / rowCount) / columnCount;
-	
-	return vec2(x, y);
-	
+    
+    float x = mod(index, rowCount) / rowCount;
+    float y = floor(index / rowCount) / columnCount;
+    
+    return vec2(x, y);
+    
 }
 #endif
 
@@ -35,40 +35,40 @@ vec2 GetOffset(float index) {
 
 void main() {
 
-	vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0f) / 2.0f;
-	float depth = texture(depthTexture, texCoord).r;
-	
-	vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0f));
-	vec3 objectPos = vec3(inverseModelMatrix * vec4(worldPos, 1.0f));	
-	
-	if (1.0f - abs(objectPos.x) < 0.0f ||
-		1.0f - abs(objectPos.y) < 0.0f ||
-		1.0f - abs(objectPos.z) < 0.0f)
-		discard;
-	
-	vec2 textureCoord = 0.5f * objectPos.xz + 0.5f;
+    vec2 texCoord = ((fTexCoordProj.xy / fTexCoordProj.z) + 1.0f) / 2.0f;
+    float depth = texture(depthTexture, texCoord).r;
+    
+    vec3 worldPos = vec3(ivMatrix * vec4(ConvertDepthToViewSpace(depth, texCoord), 1.0f));
+    vec3 objectPos = vec3(inverseModelMatrix * vec4(worldPos, 1.0f));    
+    
+    if (1.0f - abs(objectPos.x) < 0.0f ||
+        1.0f - abs(objectPos.y) < 0.0f ||
+        1.0f - abs(objectPos.z) < 0.0f)
+        discard;
+    
+    vec2 textureCoord = 0.5f * objectPos.xz + 0.5f;
 
 #ifdef ANIMATION
-	float animationFrameCount = rowCount * columnCount;
-	float time = mod(timeInMilliseconds, animationLength) / animationLength;
-	float sheetProgression = time * animationFrameCount;
-	
-	float prevFrameIndex = floor(sheetProgression);
-	float nextFrameIndex = mod(prevFrameIndex + 1.0f, animationFrameCount);
-	
-	texCoord = GetOffset(prevFrameIndex) + textureCoord / vec2(rowCount, columnCount);
-	
-	vec4 prevFrame = texture(decalTexture, texCoord);
-	
-	texCoord = GetOffset(nextFrameIndex) + textureCoord / vec2(rowCount, columnCount);
-	
-	vec4 nextFrame = texture(decalTexture, texCoord);
-	
-	fragColor = mix(prevFrame, nextFrame, fract(sheetProgression));
+    float animationFrameCount = rowCount * columnCount;
+    float time = mod(timeInMilliseconds, animationLength) / animationLength;
+    float sheetProgression = time * animationFrameCount;
+    
+    float prevFrameIndex = floor(sheetProgression);
+    float nextFrameIndex = mod(prevFrameIndex + 1.0f, animationFrameCount);
+    
+    texCoord = GetOffset(prevFrameIndex) + textureCoord / vec2(rowCount, columnCount);
+    
+    vec4 prevFrame = texture(decalTexture, texCoord);
+    
+    texCoord = GetOffset(nextFrameIndex) + textureCoord / vec2(rowCount, columnCount);
+    
+    vec4 nextFrame = texture(decalTexture, texCoord);
+    
+    fragColor = mix(prevFrame, nextFrame, fract(sheetProgression));
 #else
-	fragColor = texture(decalTexture, textureCoord);
+    fragColor = texture(decalTexture, textureCoord);
 #endif
 
-	fragColor *= color;
+    fragColor *= color;
 
 }

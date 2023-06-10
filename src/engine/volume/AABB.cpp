@@ -20,106 +20,106 @@ namespace Atlas {
 
         bool AABB::IsInside(vec3 point) {
 
-        	return point.x >= min.x && point.x <= max.x &&
-        		point.y >= min.y && point.y <= max.y &&
-        		point.z >= min.z && point.z <= max.z;
+            return point.x >= min.x && point.x <= max.x &&
+                point.y >= min.y && point.y <= max.y &&
+                point.z >= min.z && point.z <= max.z;
 
         }
 
         bool AABB::IsInside(AABB aabb) {
 
-        	return IsInside(aabb.min) && IsInside(aabb.max);
+            return IsInside(aabb.min) && IsInside(aabb.max);
 
         }
 
-		AABB AABB::Transform(mat4 matrix) {
+        AABB AABB::Transform(mat4 matrix) {
 
-			vec3 cube[] = { vec3(min.x, min.y, min.z), vec3(min.x, min.y, max.z),
-				vec3(max.x, min.y, min.z), vec3(max.x, min.y, max.z),
-				vec3(min.x, max.y, min.z), vec3(min.x, max.y, max.z),
-				vec3(max.x, max.y, min.z), vec3(max.x, max.y, max.z) };
+            vec3 cube[] = { vec3(min.x, min.y, min.z), vec3(min.x, min.y, max.z),
+                vec3(max.x, min.y, min.z), vec3(max.x, min.y, max.z),
+                vec3(min.x, max.y, min.z), vec3(min.x, max.y, max.z),
+                vec3(max.x, max.y, min.z), vec3(max.x, max.y, max.z) };
 
-			for (uint8_t i = 0; i < 8; i++) {
-				auto homogeneous = matrix * vec4(cube[i], 1.0f);
-				cube[i] = vec3(homogeneous) / homogeneous.w;
-			}
+            for (uint8_t i = 0; i < 8; i++) {
+                auto homogeneous = matrix * vec4(cube[i], 1.0f);
+                cube[i] = vec3(homogeneous) / homogeneous.w;
+            }
 
-			vec3 min = cube[0], max = cube[0];
+            vec3 min = cube[0], max = cube[0];
 
-			for (uint8_t i = 1; i < 8; i++) {
-				min.x = glm::min(min.x, cube[i].x);
-				min.y = glm::min(min.y, cube[i].y);
-				min.z = glm::min(min.z, cube[i].z);
+            for (uint8_t i = 1; i < 8; i++) {
+                min.x = glm::min(min.x, cube[i].x);
+                min.y = glm::min(min.y, cube[i].y);
+                min.z = glm::min(min.z, cube[i].z);
 
-				max.x = glm::max(max.x, cube[i].x);
-				max.y = glm::max(max.y, cube[i].y);
-				max.z = glm::max(max.z, cube[i].z);
-			}
+                max.x = glm::max(max.x, cube[i].x);
+                max.y = glm::max(max.y, cube[i].y);
+                max.z = glm::max(max.z, cube[i].z);
+            }
 
-			return AABB(min, max);
+            return AABB(min, max);
 
-		}
+        }
 
-		AABB AABB::Translate(vec3 translation) {
+        AABB AABB::Translate(vec3 translation) {
 
-			return AABB(min + translation, max + translation);
+            return AABB(min + translation, max + translation);
 
-		}
+        }
 
-		AABB AABB::Scale(float scale) {
+        AABB AABB::Scale(float scale) {
 
-			auto center = 0.5f * (min + max);
-			auto scaledMin = center + scale * (min - center);
-			auto scaledMax = center + scale * (max - center);
+            auto center = 0.5f * (min + max);
+            auto scaledMin = center + scale * (min - center);
+            auto scaledMax = center + scale * (max - center);
 
-			return AABB(scaledMin, scaledMax);
+            return AABB(scaledMin, scaledMax);
 
-		}
+        }
 
-		void AABB::Grow(AABB aabb) {
+        void AABB::Grow(AABB aabb) {
 
-			max = glm::max(max, aabb.max);
-			min = glm::min(min, aabb.min);
+            max = glm::max(max, aabb.max);
+            min = glm::min(min, aabb.min);
 
-		}
+        }
 
-		void AABB::Grow(glm::vec3 vector) {
+        void AABB::Grow(glm::vec3 vector) {
 
-			max = glm::max(vector, max);
-			min = glm::min(vector, min);
+            max = glm::max(vector, max);
+            min = glm::min(vector, min);
 
-		}
+        }
 
-		void AABB::Intersect(AABB aabb) {
+        void AABB::Intersect(AABB aabb) {
 
-			min = glm::max(min, aabb.min);
-			max = glm::min(max, aabb.max);
+            min = glm::max(min, aabb.min);
+            max = glm::min(max, aabb.max);
 
-		}
+        }
 
-		float AABB::GetSurfaceArea() const {
-			auto dimension = max - min;
+        float AABB::GetSurfaceArea() const {
+            auto dimension = max - min;
 
-			return 2.0f * (dimension.x * dimension.y +
-				dimension.y * dimension.z +
-				dimension.z * dimension.x);
-		}
+            return 2.0f * (dimension.x * dimension.y +
+                dimension.y * dimension.z +
+                dimension.z * dimension.x);
+        }
 
-		std::vector<vec3> AABB::GetCorners() {
+        std::vector<vec3> AABB::GetCorners() {
 
-			std::vector<vec3> corners;
+            std::vector<vec3> corners;
 
-			vec3 cube[] = { vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
-				vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
-				vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
-				vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z) };
+            vec3 cube[] = { vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
+                vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
+                vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
+                vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z) };
 
-			for (uint8_t i = 0; i < 8; i++)
-				corners.push_back(cube[i]);
+            for (uint8_t i = 0; i < 8; i++)
+                corners.push_back(cube[i]);
 
-			return corners;
+            return corners;
 
-		}
+        }
 
     }
 

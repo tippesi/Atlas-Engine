@@ -33,25 +33,25 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class MainRenderer {
+        class MainRenderer {
 
-		public:
-			MainRenderer() = default;
+        public:
+            MainRenderer() = default;
 
-			void Init(Graphics::GraphicsDevice* device);
+            void Init(Graphics::GraphicsDevice* device);
 
-			/**
+            /**
              *
              * @param window
              * @param target
              * @param camera
              * @param scene
              */
-			void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
-				RenderBatch* batch = nullptr);
+            void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
+                RenderBatch* batch = nullptr);
 
             /**
              *
@@ -63,7 +63,7 @@ namespace Atlas {
             void PathTraceScene(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Texture::Texture2D* texture = nullptr);
 
-			/**
+            /**
              *
              * @param window
              * @param color
@@ -74,10 +74,10 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 bool alphaBlending = false);
+            void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+                                 bool alphaBlending = false);
 
-			/**
+            /**
              *
              * @param window
              * @param color
@@ -90,16 +90,16 @@ namespace Atlas {
              * @param alphaBlending
              * @param framebuffer
              */
-			void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-								 vec4 clipArea, vec4 blendArea, bool alphaBlending = false);
+            void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+                                 vec4 clipArea, vec4 blendArea, bool alphaBlending = false);
 
-			/**
-			 *
-			 * @param viewport
-			 * @param camera
-			 * @param batch
-			 */
-			void RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch);
+            /**
+             *
+             * @param viewport
+             * @param camera
+             * @param batch
+             */
+            void RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch);
 
             /**
              * Renders the scene into an environment probe
@@ -108,43 +108,43 @@ namespace Atlas {
              * @param scene The scene which should be rendered-
              * @note The render target must have the same resolution as the probe.
              */
-			void RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene);
+            void RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene);
 
-			/**
-			 * Filters an environment probe.
-			 * @param probe The environment probe.
-			 * @note A probe has to be filtered to support image based lighting
-			 */
-			void FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList);
+            /**
+             * Filters an environment probe.
+             * @param probe The environment probe.
+             * @note A probe has to be filtered to support image based lighting
+             */
+            void FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList);
 
-			/**
+            /**
              * Update of the renderer
              * @warning Must be called every frame
              */
-			void Update();
+            void Update();
 
-			TextRenderer textRenderer;
-			TextureRenderer textureRenderer;
-			OceanRenderer oceanRenderer;
-			AtmosphereRenderer atmosphereRenderer;
+            TextRenderer textRenderer;
+            TextureRenderer textureRenderer;
+            OceanRenderer oceanRenderer;
+            AtmosphereRenderer atmosphereRenderer;
             PathTracingRenderer pathTracingRenderer;
 
-		private:
-			struct PackedMaterial {
+        private:
+            struct PackedMaterial {
 
-				int32_t baseColor;
-				int32_t emissiveColor;
-				int32_t transmissionColor;
+                int32_t baseColor;
+                int32_t emissiveColor;
+                int32_t transmissionColor;
 
-				uint32_t emissiveIntensityTiling;
+                uint32_t emissiveIntensityTiling;
 
-				int32_t data0;
-				int32_t data1;
-				int32_t data2;
+                int32_t data0;
+                int32_t data1;
+                int32_t data2;
 
-				int32_t features;
+                int32_t features;
 
-			};
+            };
 
             struct alignas(16) GlobalUniforms {
                 mat4 vMatrix;
@@ -189,53 +189,53 @@ namespace Atlas {
 
             void SetUniforms(Scene::Scene* scene, Camera* camera);
 
-			void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
-				std::unordered_map<void*, uint16_t>& materialMap);
+            void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+                std::unordered_map<void*, uint16_t>& materialMap);
 
             void FillRenderList(Scene::Scene* scene, Camera* camera);
 
-			void PreintegrateBRDF();
+            void PreintegrateBRDF();
 
             Graphics::GraphicsDevice* device = nullptr;
 
-			Texture::Texture2D dfgPreintegrationTexture;
+            Texture::Texture2D dfgPreintegrationTexture;
 
             Ref<Graphics::MultiBuffer> globalUniformBuffer;
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
 
-			Buffer::VertexArray vertexArray;
-			Buffer::VertexArray cubeVertexArray;
+            Buffer::VertexArray vertexArray;
+            Buffer::VertexArray cubeVertexArray;
 
-			OpaqueRenderer opaqueRenderer;
-			TerrainRenderer terrainRenderer;
-			ShadowRenderer shadowRenderer;
-			VegetationRenderer vegetationRenderer;
-			TerrainShadowRenderer terrainShadowRenderer;
-			DecalRenderer decalRenderer;
-			DirectLightRenderer directLightRenderer;
-			IndirectLightRenderer indirectLightRenderer;
+            OpaqueRenderer opaqueRenderer;
+            TerrainRenderer terrainRenderer;
+            ShadowRenderer shadowRenderer;
+            VegetationRenderer vegetationRenderer;
+            TerrainShadowRenderer terrainShadowRenderer;
+            DecalRenderer decalRenderer;
+            DirectLightRenderer directLightRenderer;
+            IndirectLightRenderer indirectLightRenderer;
 
-			TemporalAARenderer taaRenderer;
-			SkyboxRenderer skyboxRenderer;
-			PostProcessRenderer postProcessRenderer;
-			GBufferDownscaleRenderer downscaleRenderer;
-			DDGIRenderer ddgiRenderer;
-			AORenderer aoRenderer;
-			RTReflectionRenderer rtrRenderer;
+            TemporalAARenderer taaRenderer;
+            SkyboxRenderer skyboxRenderer;
+            PostProcessRenderer postProcessRenderer;
+            GBufferDownscaleRenderer downscaleRenderer;
+            DDGIRenderer ddgiRenderer;
+            AORenderer aoRenderer;
+            RTReflectionRenderer rtrRenderer;
             SSSRenderer sssRenderer;
-			VolumetricRenderer volumetricRenderer;
-			VolumetricCloudRenderer volumetricCloudRenderer;
+            VolumetricRenderer volumetricRenderer;
+            VolumetricCloudRenderer volumetricCloudRenderer;
 
             RenderList renderList;
 
-			std::vector<vec2> haltonSequence;
-			size_t haltonIndex = 0;
+            std::vector<vec2> haltonSequence;
+            size_t haltonIndex = 0;
             uint32_t frameCount = 0;
 
-		};
+        };
 
-	}
+    }
 
 }
 

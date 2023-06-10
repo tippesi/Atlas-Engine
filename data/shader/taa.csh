@@ -15,7 +15,7 @@ layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
 
 layout(push_constant) uniform constants {
-	vec2 resolution;
+    vec2 resolution;
     vec2 invResolution;
     vec2 jitter;
 } PushConstants;
@@ -55,13 +55,13 @@ const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2;
 
 vec3 RGBToYCoCg(vec3 RGB) {
 
-	return RGBToYCoCgMatrix * RGB;
+    return RGBToYCoCgMatrix * RGB;
 
 }
 
 vec3 YCoCgToRGB(vec3 YCoCg) {
 
-	return YCoCgToRGBMatrix * YCoCg;
+    return YCoCgToRGBMatrix * YCoCg;
 
 }
 
@@ -77,38 +77,38 @@ float Luma(vec3 color) {
 }
 
 vec3 Tonemap(vec3 color) {
-	
-	return color / (1.0 + Luma(color));
-	
+    
+    return color / (1.0 + Luma(color));
+    
 }
 
 vec3 InverseTonemap(vec3 color) {
-	
-	return color / (1.0 - Luma(color));
-	
+    
+    return color / (1.0 - Luma(color));
+    
 }
 
 vec3 FetchTexel(ivec2 texel) {
-	
-	vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
+    
+    vec3 color = max(texelFetch(currentTexture, texel, 0).rgb, 0);
 
 #ifdef TAA_TONE
-	color = Tonemap(color);
+    color = Tonemap(color);
 #endif
 
 #ifdef TAA_YCOCG
     color = RGBToYCoCg(color);
 #endif
 
-	return color;
+    return color;
 
 }
 
 void LoadGroupSharedData() {
 
-	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(1);
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(1);
 
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
     for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
         ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
         ivec2 texel = localOffset + workGroupOffset;
@@ -132,7 +132,7 @@ void LoadLocalData() {
 
         vec4 data = sharedNeighbourhood[sharedMemoryOffset];
         localNeighbourhood[i] = data.rgb;
-		localDepths[i] = data.a;
+        localDepths[i] = data.a;
     }
 
 }
@@ -237,7 +237,7 @@ vec4 SampleHistory(vec2 texCoord) {
 #endif
 
 #ifdef TAA_TONE
-	historyColor.rgb = Tonemap(historyColor.rgb);
+    historyColor.rgb = Tonemap(historyColor.rgb);
 #endif
 
 #ifdef TAA_YCOCG
@@ -330,7 +330,7 @@ void main() {
 
     // 5 sample cross pattern
     vec3 crossMin = min(tc, min(ml, min(mc, min(mr, bc))));
-	vec3 crossMax = max(tc, max(ml, max(mc, max(mr, bc))));
+    vec3 crossMax = max(tc, max(ml, max(mc, max(mr, bc))));
 
     // Average both bounding boxes to get a more rounded shape
     vec3 localNeighbourhoodMin = 0.5 * (boxMin + crossMin);
@@ -389,7 +389,7 @@ void main() {
 #endif
 
 #ifdef TAA_TONE
-	historyColor.rgb = InverseTonemap(historyColor.rgb);
+    historyColor.rgb = InverseTonemap(historyColor.rgb);
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 

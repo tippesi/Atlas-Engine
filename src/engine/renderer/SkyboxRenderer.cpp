@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void SkyboxRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -13,10 +13,10 @@ namespace Atlas {
 
         }
 
-		void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("Skybox");
+            Graphics::Profiler::BeginQuery("Skybox");
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -59,8 +59,8 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

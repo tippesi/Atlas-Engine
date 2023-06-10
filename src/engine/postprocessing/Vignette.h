@@ -5,32 +5,32 @@
 
 namespace Atlas {
 
-	namespace PostProcessing {
+    namespace PostProcessing {
 
-		class Vignette {
+        class Vignette {
 
-		public:
-			Vignette() = default;
+        public:
+            Vignette() = default;
 
-			///
-			/// \param offset
-			/// \param power
-			/// \param strength
-			/// \param color
-			Vignette(float offset, float power, float strength, vec3 color = vec3(0.0f)) :
-					enable(true), offset(offset), power(power), strength(strength), color(color) { };
+            ///
+            /// \param offset
+            /// \param power
+            /// \param strength
+            /// \param color
+            Vignette(float offset, float power, float strength, vec3 color = vec3(0.0f)) :
+                    enable(true), offset(offset), power(power), strength(strength), color(color) { };
 
-			bool enable = false;
+            bool enable = false;
 
-			float offset;
-			float power;
-			float strength;
+            float offset;
+            float power;
+            float strength;
 
-			vec3 color;
+            vec3 color;
 
-		};
+        };
 
-	}
+    }
 
 }
 

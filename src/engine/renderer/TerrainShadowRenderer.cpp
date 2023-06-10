@@ -3,44 +3,44 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		void TerrainShadowRenderer::Init(Graphics::GraphicsDevice* device) {
+        void TerrainShadowRenderer::Init(Graphics::GraphicsDevice* device) {
 
             this->device = device;
 
-		}
+        }
 
-		void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target,
+        void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			if (!scene->terrain)
-				return;
+            if (!scene->terrain)
+                return;
 
             Graphics::Profiler::BeginQuery("Terrain shadows");
 
-			auto terrain = scene->terrain;
+            auto terrain = scene->terrain;
 
-			terrain->distanceVertexArray.Bind(commandList);
+            terrain->distanceVertexArray.Bind(commandList);
 
-			auto lights = scene->GetLights();
+            auto lights = scene->GetLights();
 
-			if (scene->sky.sun) {
-				lights.push_back(scene->sky.sun.get());
-			}
+            if (scene->sky.sun) {
+                lights.push_back(scene->sky.sun.get());
+            }
 
             LightMap usedLightMap;
 
-			for (auto light : lights) {
+            for (auto light : lights) {
 
-				if (!light->GetShadow()) {
-					continue;
-				}
+                if (!light->GetShadow()) {
+                    continue;
+                }
 
-				if (!light->GetShadow()->update ||
-					!light->GetShadow()->allowTerrain) {
-					continue;
-				}
+                if (!light->GetShadow()->update ||
+                    !light->GetShadow()->allowTerrain) {
+                    continue;
+                }
 
                 auto shadow = light->GetShadow();
                 auto frameBuffer = GetOrCreateFrameBuffer(light);
@@ -54,7 +54,7 @@ namespace Atlas {
                 // We don't want to render to the long range component if it exists
                 auto componentCount = light->GetShadow()->componentCount;
 
-				for (int32_t i = 0; i < componentCount; i++) {
+                for (int32_t i = 0; i < componentCount; i++) {
 
                     auto component = &shadow->components[i];
 
@@ -70,20 +70,20 @@ namespace Atlas {
 
                     commandList->BindPipeline(pipeline);
 
-					auto frustum = Volume::Frustum(component->terrainFrustumMatrix);
+                    auto frustum = Volume::Frustum(component->terrainFrustumMatrix);
 
-					mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
-					
-					// Use middle of near plane as camera origin
-					auto corners = frustum.GetCorners();
-					auto center = corners[4] + 0.5f * (corners[5] - corners[4])
-						+ 0.5f * (corners[6] - corners[4]);
+                    mat4 lightSpace = component->projectionMatrix * component->viewMatrix;
+                    
+                    // Use middle of near plane as camera origin
+                    auto corners = frustum.GetCorners();
+                    auto center = corners[4] + 0.5f * (corners[5] - corners[4])
+                        + 0.5f * (corners[6] - corners[4]);
 
-					terrain->UpdateRenderlist(&frustum, center);
+                    terrain->UpdateRenderlist(&frustum, center);
 
-					for (auto node : terrain->renderList) {
+                    for (auto node : terrain->renderList) {
 
-						node->cell->heightField.Bind(commandList, 3, 0);
+                        node->cell->heightField.Bind(commandList, 3, 0);
 
                         auto tileScale = terrain->resolution * powf(2.0f,
                             (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
@@ -108,21 +108,21 @@ namespace Atlas {
 
                         commandList->DrawIndexed(terrain->distanceVertexArray.GetIndexComponent().elementCount);
 
-					}
+                    }
 
                     commandList->EndRenderPass();
 
-				}
+                }
 
-			}
+            }
 
             lightMap = usedLightMap;
 
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+        PipelineConfig TerrainShadowRenderer::GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
             Ref<Terrain::Terrain> &terrain) {
 
             const auto shaderConfig = ShaderConfig {
@@ -140,7 +140,7 @@ namespace Atlas {
 
             return PipelineConfig(shaderConfig, pipelineDesc);
 
-		}
+        }
 
         Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light *light) {
 
@@ -171,6 +171,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

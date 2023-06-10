@@ -5,15 +5,15 @@
 
 namespace Atlas {
 
-	namespace Ocean {
+    namespace Ocean {
 
-		class OceanState {
+        class OceanState {
 
 
 
-		};
+        };
 
-	}
+    }
 
 }
 

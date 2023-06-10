@@ -6,38 +6,38 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class ImpostorShadowRenderer : public Renderer {
+        class ImpostorShadowRenderer : public Renderer {
 
-		public:
-			ImpostorShadowRenderer();
+        public:
+            ImpostorShadowRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
-				mat4 viewMatrix, mat4 projectionMatrix, vec3 location);
+            void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
+                mat4 viewMatrix, mat4 projectionMatrix, vec3 location);
 
-		private:
-			void GetUniforms();
+        private:
+            void GetUniforms();
 
-			Buffer::VertexArray vertexArray;
+            Buffer::VertexArray vertexArray;
 
             /*
             OldShader::OldShader shader;
 
-			OldShader::Uniform* vMatrix = nullptr;
-			OldShader::Uniform* pMatrix = nullptr;
-			OldShader::Uniform* cameraLocation = nullptr;
+            OldShader::Uniform* vMatrix = nullptr;
+            OldShader::Uniform* pMatrix = nullptr;
+            OldShader::Uniform* cameraLocation = nullptr;
 
-			OldShader::Uniform* center = nullptr;
-			OldShader::Uniform* radius = nullptr;
+            OldShader::Uniform* center = nullptr;
+            OldShader::Uniform* radius = nullptr;
 
-			OldShader::Uniform* views = nullptr;
-			OldShader::Uniform* cutoff = nullptr;
+            OldShader::Uniform* views = nullptr;
+            OldShader::Uniform* cutoff = nullptr;
              */
 
-		};
+        };
 
-	}
+    }
 
 }
 

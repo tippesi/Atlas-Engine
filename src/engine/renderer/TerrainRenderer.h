@@ -6,34 +6,34 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TerrainRenderer : public Renderer {
+        class TerrainRenderer : public Renderer {
 
-		public:
-			TerrainRenderer() = default;
+        public:
+            TerrainRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, Graphics::CommandList* commandList,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
-		private:
-			void GetUniforms();
+        private:
+            void GetUniforms();
 
-			struct TerrainMaterial {
-				uint32_t idx;
-				
-				float roughness;
-				float metalness;
-				float ao;
-				float displacementScale;
-				float normalScale;
-				float tiling;
+            struct TerrainMaterial {
+                uint32_t idx;
+                
+                float roughness;
+                float metalness;
+                float ao;
+                float displacementScale;
+                float normalScale;
+                float tiling;
 
-				float padding1;
-			};
+                float padding1;
+            };
 
             struct alignas(16) Uniforms {
 
@@ -73,9 +73,9 @@ namespace Atlas {
 
             PipelineConfig GeneratePipelineConfig(RenderTarget* target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig);
-		};
+        };
 
-	}
+    }
 
 }
 

@@ -55,21 +55,21 @@ vec3 DFG(float NdotV, float alpha) {
 
 void main() {
 
-	ivec2 size = imageSize(textureOut);
-	ivec2 coord = ivec2(gl_GlobalInvocationID);
-	
-	if (coord.x < size.x &&
-		coord.y < size.y) {
+    ivec2 size = imageSize(textureOut);
+    ivec2 coord = ivec2(gl_GlobalInvocationID);
+    
+    if (coord.x < size.x &&
+        coord.y < size.y) {
 
         float NdotV = (float(coord.x) + 0.5) / float(size.x);
         float roughness = (float(coord.y) + 0.5) / float(size.y);
-		
+        
         // We can later sample with the linear/perceptual roughness
         // If we want to sample with roughness, just remove the square
-		vec3 dfg = DFG(NdotV, roughness * roughness);
+        vec3 dfg = DFG(NdotV, roughness * roughness);
 
-		imageStore(textureOut, coord, vec4(dfg, 1.0));
-		
-	}
+        imageStore(textureOut, coord, vec4(dfg, 1.0));
+        
+    }
 
 }

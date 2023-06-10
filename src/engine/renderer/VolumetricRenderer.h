@@ -7,19 +7,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class VolumetricRenderer : public Renderer {
+        class VolumetricRenderer : public Renderer {
 
-		public:
-			VolumetricRenderer() = default;
+        public:
+            VolumetricRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) Cascade {
                 float distance;
                 float texelSize;
@@ -82,7 +82,7 @@ namespace Atlas {
                 int fogEnabled;
             };
 
-			Filter blurFilter;
+            Filter blurFilter;
 
             PipelineConfig volumetricPipelineConfig;
 
@@ -97,9 +97,9 @@ namespace Atlas {
 
             Ref<Graphics::Sampler> shadowSampler;
 
-		};
+        };
 
-	}
+    }
 
 }
 

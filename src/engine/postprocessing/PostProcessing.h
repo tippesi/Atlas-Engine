@@ -10,24 +10,24 @@
 
 namespace Atlas {
 
-	namespace PostProcessing {
+    namespace PostProcessing {
 
-		class PostProcessing {
+        class PostProcessing {
 
-		public:
-			float saturation = 1.0f;
+        public:
+            float saturation = 1.0f;
             float whitePoint = 10.0f;
 
-			bool filmicTonemapping = false;
+            bool filmicTonemapping = false;
 
-			TAA taa;
-			Vignette vignette;
-			ChromaticAberration chromaticAberration;
-			Sharpen sharpen;
+            TAA taa;
+            Vignette vignette;
+            ChromaticAberration chromaticAberration;
+            Sharpen sharpen;
 
-		};
+        };
 
-	}
+    }
 
 }
 

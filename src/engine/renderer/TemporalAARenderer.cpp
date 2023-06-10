@@ -5,7 +5,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void TemporalAARenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -16,20 +16,20 @@ namespace Atlas {
 
         }
 
-		void TemporalAARenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void TemporalAARenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("TAA");
+            Graphics::Profiler::BeginQuery("TAA");
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-			auto res = ivec2(target->GetWidth(), target->GetHeight());
+            auto res = ivec2(target->GetWidth(), target->GetHeight());
 
-			const int32_t groupSize = 8;
-			ivec2 groupCount = res / groupSize;
-			groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-			groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+            const int32_t groupSize = 8;
+            ivec2 groupCount = res / groupSize;
+            groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+            groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -65,10 +65,10 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

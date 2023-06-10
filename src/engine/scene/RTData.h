@@ -11,141 +11,141 @@
 
 namespace Atlas {
 
-	// Forward-declare class to use it as a friend
-	namespace Renderer::Helper {
-		class RayTracingHelper;
-	}
+    // Forward-declare class to use it as a friend
+    namespace Renderer::Helper {
+        class RayTracingHelper;
+    }
 
-	namespace Scene {
+    namespace Scene {
 
-		class Scene;
+        class Scene;
 
-		class RTData {
+        class RTData {
 
-			friend Renderer::Helper::RayTracingHelper;
+            friend Renderer::Helper::RayTracingHelper;
 
-		public:
-			RTData() = default;
+        public:
+            RTData() = default;
 
-			RTData(Scene* scene);
+            RTData(Scene* scene);
 
-			void Update();
+            void Update();
 
-			void UpdateMaterials(bool updateTextures = false);
+            void UpdateMaterials(bool updateTextures = false);
 
-			void UpdateTextures();
+            void UpdateTextures();
 
             void Clear();
 
-		private:
-			struct GPUTriangle {
-				vec4 v0;
-				vec4 v1;
-				vec4 v2;
-				vec4 d0;
-				vec4 d1;
-			};
+        private:
+            struct GPUTriangle {
+                vec4 v0;
+                vec4 v1;
+                vec4 v2;
+                vec4 d0;
+                vec4 d1;
+            };
 
-			struct BVHTriangle {
-				vec4 v0;
-				vec4 v1;
-				vec4 v2;
-			};
+            struct BVHTriangle {
+                vec4 v0;
+                vec4 v1;
+                vec4 v2;
+            };
 
-			struct GPUTextureLevel {
-				int32_t layer = 0;
+            struct GPUTextureLevel {
+                int32_t layer = 0;
 
-				int32_t x = 0;
-				int32_t y = 0;
+                int32_t x = 0;
+                int32_t y = 0;
 
-				int32_t width = 0;
-				int32_t height = 0;
+                int32_t width = 0;
+                int32_t height = 0;
 
-				int32_t valid = -1;
-			};
+                int32_t valid = -1;
+            };
 
-			struct GPUTexture {
-				GPUTextureLevel level0;
-				GPUTextureLevel level1;
-				GPUTextureLevel level2;
-				GPUTextureLevel level3;
-				GPUTextureLevel level4;
+            struct GPUTexture {
+                GPUTextureLevel level0;
+                GPUTextureLevel level1;
+                GPUTextureLevel level2;
+                GPUTextureLevel level3;
+                GPUTextureLevel level4;
 
-				int32_t valid = -1;
-			};
+                int32_t valid = -1;
+            };
 
-			struct GPUMaterial {
-				vec3 baseColor;
-				vec3 emissiveColor;
+            struct GPUMaterial {
+                vec3 baseColor;
+                vec3 emissiveColor;
 
-				float opacity;
+                float opacity;
 
-				float roughness;
-				float metalness;
-				float ao;
+                float roughness;
+                float metalness;
+                float ao;
 
-				float reflectance;
+                float reflectance;
 
-				float normalScale;
+                float normalScale;
 
-				int32_t invertUVs;
-				int32_t twoSided;
+                int32_t invertUVs;
+                int32_t twoSided;
 
-				GPUTexture baseColorTexture;
-				GPUTexture opacityTexture;
-				GPUTexture normalTexture;
-				GPUTexture roughnessTexture;
-				GPUTexture metalnessTexture;
-				GPUTexture aoTexture;
-			};
+                GPUTexture baseColorTexture;
+                GPUTexture opacityTexture;
+                GPUTexture normalTexture;
+                GPUTexture roughnessTexture;
+                GPUTexture metalnessTexture;
+                GPUTexture aoTexture;
+            };
 
-			struct GPUAABB {
-				vec3 min;
-				vec3 max;
-			};
+            struct GPUAABB {
+                vec3 min;
+                vec3 max;
+            };
 
-			struct GPUBVHNode {
-				GPUAABB leftAABB;
-				GPUAABB rightAABB;
-				int32_t leftPtr = 0;
-				int32_t rightPtr = 0;
+            struct GPUBVHNode {
+                GPUAABB leftAABB;
+                GPUAABB rightAABB;
+                int32_t leftPtr = 0;
+                int32_t rightPtr = 0;
 
-				int32_t padding0;
-				int32_t padding1;
-			};
+                int32_t padding0;
+                int32_t padding1;
+            };
 
-			struct GPULight {
-				vec4 data0;
-				vec4 data1;
-				vec4 N;
-			};
+            struct GPULight {
+                vec4 data0;
+                vec4 data1;
+                vec4 N;
+            };
 
-			std::unordered_map<Material*, int32_t> UpdateMaterials(std::vector<GPUMaterial>& materials,
-				bool updateTextures);
+            std::unordered_map<Material*, int32_t> UpdateMaterials(std::vector<GPUMaterial>& materials,
+                bool updateTextures);
 
-			GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
+            GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
 
-			GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
+            GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
-			Scene* scene;
+            Scene* scene;
 
-			Buffer::Buffer triangleBuffer;
-			Buffer::Buffer bvhTriangleBuffer;
-			Buffer::Buffer materialBuffer;
-			Buffer::Buffer nodeBuffer;
+            Buffer::Buffer triangleBuffer;
+            Buffer::Buffer bvhTriangleBuffer;
+            Buffer::Buffer materialBuffer;
+            Buffer::Buffer nodeBuffer;
 
-			Texture::TextureAtlas baseColorTextureAtlas;
-			Texture::TextureAtlas opacityTextureAtlas;
-			Texture::TextureAtlas normalTextureAtlas;
-			Texture::TextureAtlas roughnessTextureAtlas;
-			Texture::TextureAtlas metalnessTextureAtlas;
-			Texture::TextureAtlas aoTextureAtlas;
+            Texture::TextureAtlas baseColorTextureAtlas;
+            Texture::TextureAtlas opacityTextureAtlas;
+            Texture::TextureAtlas normalTextureAtlas;
+            Texture::TextureAtlas roughnessTextureAtlas;
+            Texture::TextureAtlas metalnessTextureAtlas;
+            Texture::TextureAtlas aoTextureAtlas;
 
-			std::vector<GPULight> triangleLights;
+            std::vector<GPULight> triangleLights;
 
-		};
+        };
 
-	}
+    }
 
 }
 

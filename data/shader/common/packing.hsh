@@ -1,69 +1,69 @@
 // Components will be in range [-1:1]
 vec4 unpackUnitVector(int compressed) {
 
-	vec4 vector;
-	
-	vector.x = float((compressed >> 0) & 1023) / 1023.0 * 2.0 - 1.0;
-	vector.y = float((compressed >> 10) & 1023) / 1023.0 * 2.0 - 1.0;
-	vector.z = float((compressed >> 20) & 1023) / 1023.0 * 2.0 - 1.0;
-	vector.w = float((compressed >> 30) & 3) - 1.0;
+    vec4 vector;
+    
+    vector.x = float((compressed >> 0) & 1023) / 1023.0 * 2.0 - 1.0;
+    vector.y = float((compressed >> 10) & 1023) / 1023.0 * 2.0 - 1.0;
+    vector.z = float((compressed >> 20) & 1023) / 1023.0 * 2.0 - 1.0;
+    vector.w = float((compressed >> 30) & 3) - 1.0;
 
-	return vector;
+    return vector;
 
 }
 
 // Components are allowed to be in range [-1:1]
 int packUnitVector(vec4 vector) {
-	
-	int comp = 0;
-	
-	comp |= int(((vector.x * 0.5 + 0.5) * 1023.0)) << 0;
-	comp |= int(((vector.y * 0.5 + 0.5) * 1023.0)) << 10;
-	comp |= int(((vector.z * 0.5 + 0.5) * 1023.0)) << 20;
-	comp |= int(((vector.w * 0.5 + 0.5) * 2.0)) << 30;
+    
+    int comp = 0;
+    
+    comp |= int(((vector.x * 0.5 + 0.5) * 1023.0)) << 0;
+    comp |= int(((vector.y * 0.5 + 0.5) * 1023.0)) << 10;
+    comp |= int(((vector.z * 0.5 + 0.5) * 1023.0)) << 20;
+    comp |= int(((vector.w * 0.5 + 0.5) * 2.0)) << 30;
 
-	return comp;	
-	
+    return comp;    
+    
 }
 
 // Components are allowed to be in range [-1:1]
 int packUnitVector(vec3 vector) {
 
-	return packUnitVector(vec4(vector, 0.0));
+    return packUnitVector(vec4(vector, 0.0));
 
 }
 
 // Components will be in range [0:1]
 vec4 unpackColorVector(int compressed) {
 
-	vec4 vector;
-	
-	vector.x = float((compressed >> 0) & 1023) / 1023.0;
-	vector.y = float((compressed >> 10) & 1023) / 1023.0;
-	vector.z = float((compressed >> 20) & 1023) / 1023.0;
-	vector.w = float((compressed >> 30) & 3) / 3.0;
+    vec4 vector;
+    
+    vector.x = float((compressed >> 0) & 1023) / 1023.0;
+    vector.y = float((compressed >> 10) & 1023) / 1023.0;
+    vector.z = float((compressed >> 20) & 1023) / 1023.0;
+    vector.w = float((compressed >> 30) & 3) / 3.0;
 
-	return vector;
+    return vector;
 
 }
 
 // Components are allowed to be in range [0:1]
 int packColorVector(vec4 vector) {
 
-	int comp = 0;
-	
-	comp |= int((vector.x * 1023.0)) << 0;
-	comp |= int((vector.y * 1023.0)) << 10;
-	comp |= int((vector.z * 1023.0)) << 20;
-	comp |= int((vector.w * 3.0)) << 30;
+    int comp = 0;
+    
+    comp |= int((vector.x * 1023.0)) << 0;
+    comp |= int((vector.y * 1023.0)) << 10;
+    comp |= int((vector.z * 1023.0)) << 20;
+    comp |= int((vector.w * 3.0)) << 30;
 
-	return comp;	
+    return comp;    
 
 }
 
 // Components are allowed to be in range [0:1]
 int packColorVector(vec3 vector) {
 
-	return packColorVector(vec4(vector, 0.0));
+    return packColorVector(vec4(vector, 0.0));
 
 }

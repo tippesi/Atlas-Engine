@@ -18,8 +18,8 @@ vec2 Hammersley(uint i, uint N) {
 float GDFG(float NdotV, float NdotL, float alpha) {
 
     float alpha2 = alpha * alpha;
-	float GGXL = NdotV * sqrt((-NdotL * alpha2 + NdotL) * NdotL + alpha2);
-	float GGXV = NdotL * sqrt((-NdotV * alpha2 + NdotV) * NdotV + alpha2);
+    float GGXL = NdotV * sqrt((-NdotL * alpha2 + NdotL) * NdotL + alpha2);
+    float GGXV = NdotL * sqrt((-NdotV * alpha2 + NdotV) * NdotV + alpha2);
     return (2.0 * NdotL) / (GGXL + GGXV);
 
 }

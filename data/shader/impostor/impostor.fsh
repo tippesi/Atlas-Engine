@@ -43,8 +43,8 @@ void main() {
     vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS))).rgba;
 
     baseColor = weight0VS * baseColor0 + 
-		weight1VS * baseColor1 + 
-		  weight2VS * baseColor2;
+        weight1VS * baseColor1 + 
+          weight2VS * baseColor2;
 #else
     baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS))).rgba;
 #endif
@@ -60,15 +60,15 @@ void main() {
     vec3 normal2 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index2VS))).rgb - 1.0;
 
     normalFS = weight0VS * normal0 + 
-		weight1VS * normal1 + 
-		weight2VS * normal2;
+        weight1VS * normal1 + 
+        weight2VS * normal2;
 #else
-	normalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
+    normalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
 #endif
 
     normalFS = normalize(vec3(vMatrix * vec4(normalFS, 0.0)));
     // We want the normal always two face the camera for two sided materials
-	normalFS *= -dot(normalFS, positionVS);
+    normalFS *= -dot(normalFS, positionVS);
     normalFS = 0.5 * normalFS + 0.5;
 
 #ifdef INTERPOLATION
@@ -77,22 +77,22 @@ void main() {
     vec3 matInfo2 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index2VS))).rgb;
 
     vec3 matInfo = weight0VS * matInfo0 + 
-		weight1VS * matInfo1 + 
-		weight2VS * matInfo2;
+        weight1VS * matInfo1 + 
+        weight2VS * matInfo2;
 
     roughnessMetalnessAoFS = matInfo;
 #else
-	roughnessMetalnessAoFS = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(indexVS))).rgb;
+    roughnessMetalnessAoFS = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(indexVS))).rgb;
 #endif
 
     // Calculate velocity
-	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
-	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
+    vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
+    vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= jitterLast;
-	ndcC -= jitterCurrent;
+    ndcL -= jitterLast;
+    ndcC -= jitterCurrent;
 
-	velocityFS = (ndcL - ndcC) * 0.5;
+    velocityFS = (ndcL - ndcC) * 0.5;
 
     materialIdxFS = materialIdx;
 

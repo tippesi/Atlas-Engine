@@ -8,20 +8,20 @@ struct Fog {
 
 // https://developer.amd.com/wordpress/media/2012/10/Wenzel-Real-time_Atmospheric_Effects_in_Games.pdf
 float ComputeVolumetricFog(Fog fog, vec3 viewPos, vec3 worldPos) {
-	viewPos.y -= fog.height;
-	worldPos.y -= fog.height;
+    viewPos.y -= fog.height;
+    worldPos.y -= fog.height;
 
-	vec3 viewToWorldPos = worldPos - viewPos;
+    vec3 viewToWorldPos = worldPos - viewPos;
 
-	float fogIntegration = length(viewToWorldPos) * 
-		exp(-fog.heightFalloff * viewPos.y);
+    float fogIntegration = length(viewToWorldPos) * 
+        exp(-fog.heightFalloff * viewPos.y);
 
-	float t = fog.heightFalloff * viewToWorldPos.y;
-	if (abs(t) > 0.0001) {
-		fogIntegration *= (1.0 - exp(-t)) / t;
-	}
+    float t = fog.heightFalloff * viewToWorldPos.y;
+    if (abs(t) > 0.0001) {
+        fogIntegration *= (1.0 - exp(-t)) / t;
+    }
 
-	return exp(-fog.density * fogIntegration);
+    return exp(-fog.density * fogIntegration);
 }
 
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf

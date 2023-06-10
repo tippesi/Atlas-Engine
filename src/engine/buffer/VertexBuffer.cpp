@@ -5,17 +5,17 @@
 
 namespace Atlas {
 
-	namespace Buffer {
+    namespace Buffer {
 
 
-		VertexBuffer::VertexBuffer(VkFormat format, size_t elementCount, void* data)
+        VertexBuffer::VertexBuffer(VkFormat format, size_t elementCount, void* data)
             : format(format), elementSize(Graphics::GetFormatSize(format)) {
 
             if (elementCount) {
                 SetSize(elementCount, data);
             }
 
-		}
+        }
 
         void VertexBuffer::SetSize(size_t elementCount, void *data) {
 
@@ -33,11 +33,11 @@ namespace Atlas {
 
         }
 
-		void VertexBuffer::SetData(void *data, size_t offset, size_t length) {
+        void VertexBuffer::SetData(void *data, size_t offset, size_t length) {
 
             buffer->SetData(data, offset * elementSize, length * elementSize);
 
-		}
+        }
 
         void VertexBuffer::Reallocate(void *data) {
 
@@ -55,6 +55,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

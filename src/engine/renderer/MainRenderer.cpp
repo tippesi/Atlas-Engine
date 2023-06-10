@@ -15,7 +15,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void MainRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -49,9 +49,9 @@ namespace Atlas {
             aoRenderer.Init(device);
             rtrRenderer.Init(device);
             sssRenderer.Init(device);
-			directLightRenderer.Init(device);
-			indirectLightRenderer.Init(device);
-			skyboxRenderer.Init(device);
+            directLightRenderer.Init(device);
+            indirectLightRenderer.Init(device);
+            skyboxRenderer.Init(device);
             atmosphereRenderer.Init(device);
             oceanRenderer.Init(device);
             volumetricCloudRenderer.Init(device);
@@ -65,8 +65,8 @@ namespace Atlas {
 
         }
 
-		void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
-			Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
+        void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
+            Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
@@ -91,17 +91,17 @@ namespace Atlas {
 
             FillRenderList(scene, camera);
 
-			if (scene->vegetation)
-				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
+            if (scene->vegetation)
+                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
 
-			std::vector<PackedMaterial> materials;
-			std::unordered_map<void*, uint16_t> materialMap;
+            std::vector<PackedMaterial> materials;
+            std::unordered_map<void*, uint16_t> materialMap;
 
-			PrepareMaterials(scene, materials, materialMap);
+            PrepareMaterials(scene, materials, materialMap);
 
             SetUniforms(scene, camera);
 
-			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
 
             auto materialBufferDesc = Graphics::BufferDesc {
@@ -210,17 +210,17 @@ namespace Atlas {
 
             aoRenderer.Render(viewport, target, camera, scene, commandList);
 
-			rtrRenderer.Render(viewport, target, camera, scene, commandList);
+            rtrRenderer.Render(viewport, target, camera, scene, commandList);
 
             sssRenderer.Render(viewport, target, camera, scene, commandList);
 
-			{
+            {
                 Graphics::Profiler::BeginQuery("Lighting pass");
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-				directLightRenderer.Render(viewport, target, camera, scene, commandList);
+                directLightRenderer.Render(viewport, target, camera, scene, commandList);
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -233,13 +233,13 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                 Graphics::Profiler::EndQuery();
-			}
+            }
 
             oceanRenderer.Render(viewport, target, camera, scene, commandList);
 
             downscaleRenderer.Downscale(target, commandList);
 
-			{
+            {
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
 
                 volumetricRenderer.Render(viewport, target, camera, scene, commandList);
@@ -259,7 +259,7 @@ namespace Atlas {
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
 
-		}
+        }
 
         void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
             Scene::Scene *scene, Texture::Texture2D *texture) {
@@ -298,7 +298,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Post processing");
 
             commandList->BeginRenderPass(device->swapChain, true);
-			
+            
             textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), false, true);
 
@@ -313,310 +313,310 @@ namespace Atlas {
 
         }
 
-		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-			bool alphaBlending) {
+        void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+            bool alphaBlending) {
 
             /*
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
+            float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
+            float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
 
-			if (x > viewportWidth || y > viewportHeight ||
-				y + height < 0 || x + width < 0) {
-				return;
-			}
+            if (x > viewportWidth || y > viewportHeight ||
+                y + height < 0 || x + width < 0) {
+                return;
+            }
 
-			vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-			vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
+            vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
-			RenderRectangle(viewport, color, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
+            RenderRectangle(viewport, color, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
             */
 
-		}
+        }
 
-		void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-			vec4 clipArea, vec4 blendArea, bool alphaBlending) {
+        void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
+            vec4 clipArea, vec4 blendArea, bool alphaBlending) {
 
             /*
-			float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-			float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
+            float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
+            float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
 
-			if (x > viewportWidth || y > viewportHeight ||
-				y + height < 0 || x + width < 0) {
-				return;
-			}
+            if (x > viewportWidth || y > viewportHeight ||
+                y + height < 0 || x + width < 0) {
+                return;
+            }
 
-			vertexArray.Bind();
+            vertexArray.Bind();
 
-			rectangleShader.Bind();
+            rectangleShader.Bind();
 
-			glDisable(GL_CULL_FACE);
+            glDisable(GL_CULL_FACE);
 
-			if (framebuffer) {
-				framebuffer->Bind(true);
-			}
-			else {
-				glViewport(0, 0, viewport->width, viewport->height);
-			}
+            if (framebuffer) {
+                framebuffer->Bind(true);
+            }
+            else {
+                glViewport(0, 0, viewport->width, viewport->height);
+            }
 
-			if (alphaBlending) {
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
+            if (alphaBlending) {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
 
-			rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
-			rectangleOffset->SetValue(vec2(x, y));
-			rectangleScale->SetValue(vec2(width, height));
-			rectangleColor->SetValue(color);
-			rectangleBlendArea->SetValue(blendArea);
-			rectangleClipArea->SetValue(clipArea);
+            rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
+            rectangleOffset->SetValue(vec2(x, y));
+            rectangleScale->SetValue(vec2(width, height));
+            rectangleColor->SetValue(color);
+            rectangleBlendArea->SetValue(blendArea);
+            rectangleClipArea->SetValue(clipArea);
 
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-			if (alphaBlending) {
-				glDisable(GL_BLEND);
-			}
+            if (alphaBlending) {
+                glDisable(GL_BLEND);
+            }
 
-			if (framebuffer) {
-				framebuffer->Unbind();
-			}
+            if (framebuffer) {
+                framebuffer->Unbind();
+            }
 
-			glEnable(GL_CULL_FACE);
+            glEnable(GL_CULL_FACE);
             */
 
-		}
+        }
 
-		void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
+        void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
 
             /*
-			batch->TransferData();
+            batch->TransferData();
 
-			if (viewport)
-				glViewport(viewport->x, viewport->y,
-					viewport->width, viewport->height);
+            if (viewport)
+                glViewport(viewport->x, viewport->y,
+                    viewport->width, viewport->height);
 
-			lineShader.Bind();
+            lineShader.Bind();
 
-			lineViewMatrix->SetValue(camera->viewMatrix);
-			lineProjectionMatrix->SetValue(camera->projectionMatrix);
+            lineViewMatrix->SetValue(camera->viewMatrix);
+            lineProjectionMatrix->SetValue(camera->projectionMatrix);
 
-			if (batch->GetLineCount()) {
+            if (batch->GetLineCount()) {
 
-				glLineWidth(batch->GetLineWidth());
+                glLineWidth(batch->GetLineWidth());
 
-				batch->BindLineBuffer();
+                batch->BindLineBuffer();
 
-				glDrawArrays(GL_LINES, 0, (GLsizei)batch->GetLineCount() * 2);
+                glDrawArrays(GL_LINES, 0, (GLsizei)batch->GetLineCount() * 2);
 
-				glLineWidth(1.0f);
+                glLineWidth(1.0f);
 
-			}
+            }
 
-			if (batch->GetTriangleCount()) {
-				batch->BindTriangleBuffer();
+            if (batch->GetTriangleCount()) {
+                batch->BindTriangleBuffer();
 
-				glDrawArrays(GL_TRIANGLES, 0, GLsizei(batch->GetTriangleCount() * 3));
-			}
+                glDrawArrays(GL_TRIANGLES, 0, GLsizei(batch->GetTriangleCount() * 3));
+            }
             */
 
-		}
+        }
 
-		void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
+        void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
 
             /*
-		    if (probe->resolution != target->GetWidth() ||
-		        probe->resolution != target->GetHeight())
-		        return;
+            if (probe->resolution != target->GetWidth() ||
+                probe->resolution != target->GetHeight())
+                return;
 
-			std::vector<PackedMaterial> materials;
-			std::unordered_map<void*, uint16_t> materialMap;
-			Viewport viewport(0, 0, probe->resolution, probe->resolution);
+            std::vector<PackedMaterial> materials;
+            std::unordered_map<void*, uint16_t> materialMap;
+            Viewport viewport(0, 0, probe->resolution, probe->resolution);
 
-			PrepareMaterials(scene, materials, materialMap);
+            PrepareMaterials(scene, materials, materialMap);
 
-			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
-				materials.size(), materials.data());			
+            auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
+                materials.size(), materials.data());            
 
-			Lighting::EnvironmentProbe* skyProbe = nullptr;
+            Lighting::EnvironmentProbe* skyProbe = nullptr;
 
-			if (scene->sky.probe) {
-				skyProbe = scene->sky.probe;
-				scene->sky.probe = nullptr;
-			}
+            if (scene->sky.probe) {
+                skyProbe = scene->sky.probe;
+                scene->sky.probe = nullptr;
+            }
 
-			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+            vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                             vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+            vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                           vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                           vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-			Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
-			camera.UpdateProjection();
+            Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
+            camera.UpdateProjection();
 
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
 
-			for (uint8_t i = 0; i < 6; i++) {
+            for (uint8_t i = 0; i < 6; i++) {
 
-				vec3 dir = faces[i];
-				vec3 up = ups[i];
-				vec3 right = normalize(cross(up, dir));
-				up = normalize(cross(dir, right));
+                vec3 dir = faces[i];
+                vec3 up = ups[i];
+                vec3 right = normalize(cross(up, dir));
+                up = normalize(cross(dir, right));
 
-				camera.viewMatrix = glm::lookAt(probe->GetPosition(), probe->GetPosition() + dir, up);
-				camera.invViewMatrix = glm::inverse(camera.viewMatrix);
-				camera.location = probe->GetPosition();
-				camera.direction = dir;
-				camera.right = right;
-				camera.up = up;
+                camera.viewMatrix = glm::lookAt(probe->GetPosition(), probe->GetPosition() + dir, up);
+                camera.invViewMatrix = glm::inverse(camera.viewMatrix);
+                camera.location = probe->GetPosition();
+                camera.direction = dir;
+                camera.right = right;
+                camera.up = up;
 
-				camera.frustum = Volume::Frustum(camera.projectionMatrix * camera.viewMatrix);
+                camera.frustum = Volume::Frustum(camera.projectionMatrix * camera.viewMatrix);
 
-				scene->Update(&camera, 0.0f);
+                scene->Update(&camera, 0.0f);
 
-				// Clear the lights depth maps
-				depthFramebuffer.Bind();
+                // Clear the lights depth maps
+                depthFramebuffer.Bind();
 
-				auto lights = scene->GetLights();
+                auto lights = scene->GetLights();
 
-				if (scene->sky.sun) {
-					lights.push_back(scene->sky.sun);
-				}
+                if (scene->sky.sun) {
+                    lights.push_back(scene->sky.sun);
+                }
 
-				for (auto light : lights) {
+                for (auto light : lights) {
 
-					if (!light->GetShadow())
-						continue;
-					if (!light->GetShadow()->update)
-						continue;
+                    if (!light->GetShadow())
+                        continue;
+                    if (!light->GetShadow()->update)
+                        continue;
 
-					for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
-						if (light->GetShadow()->useCubemap) {
-							depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->cubemap, j);
-						}
-						else {
-							depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
-								&light->GetShadow()->maps, j);
-						}
+                    for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
+                        if (light->GetShadow()->useCubemap) {
+                            depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
+                                &light->GetShadow()->cubemap, j);
+                        }
+                        else {
+                            depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
+                                &light->GetShadow()->maps, j);
+                        }
 
-						glClear(GL_DEPTH_BUFFER_BIT);
-					}
-				}
+                        glClear(GL_DEPTH_BUFFER_BIT);
+                    }
+                }
 
-				shadowRenderer.Render(&viewport, target, &camera, scene);
+                shadowRenderer.Render(&viewport, target, &camera, scene);
 
-				glEnable(GL_CULL_FACE);
+                glEnable(GL_CULL_FACE);
 
-				glCullFace(GL_FRONT);
+                glCullFace(GL_FRONT);
 
-				terrainShadowRenderer.Render(&viewport, target, &camera, scene);
+                terrainShadowRenderer.Render(&viewport, target, &camera, scene);
 
-				glCullFace(GL_BACK);
+                glCullFace(GL_BACK);
 
-				// Shadows have been updated
-				for (auto light : lights) {
-					if (!light->GetShadow())
-						continue;
-					light->GetShadow()->update = false;
-				}
+                // Shadows have been updated
+                for (auto light : lights) {
+                    if (!light->GetShadow())
+                        continue;
+                    light->GetShadow()->update = false;
+                }
 
-				materialBuffer.BindBase(0);
+                materialBuffer.BindBase(0);
 
-				target->geometryFramebuffer.Bind(true);
-				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
-					GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
+                target->geometryFramebuffer.Bind(true);
+                target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+                    GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+                    GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
 
-				glEnable(GL_CULL_FACE);
+                glEnable(GL_CULL_FACE);
 
-				glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-				opaqueRenderer.Render(&viewport, target, &camera, scene, materialMap);
+                opaqueRenderer.Render(&viewport, target, &camera, scene, materialMap);
 
-				terrainRenderer.Render(&viewport, target, &camera, scene, materialMap);
+                terrainRenderer.Render(&viewport, target, &camera, scene, materialMap);
 
-				glEnable(GL_CULL_FACE);
-				glDepthMask(GL_FALSE);
-				glDisable(GL_DEPTH_TEST);
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glEnable(GL_CULL_FACE);
+                glDepthMask(GL_FALSE);
+                glDisable(GL_DEPTH_TEST);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
+                target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+                    GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 
-				decalRenderer.Render(&viewport, target, &camera, scene);
+                decalRenderer.Render(&viewport, target, &camera, scene);
 
-				glDisable(GL_BLEND);
+                glDisable(GL_BLEND);
 
-				vertexArray.Bind();
+                vertexArray.Bind();
 
-				target->lightingFramebuffer.Bind(true);
-				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
+                target->lightingFramebuffer.Bind(true);
+                target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
-				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-				glClear(GL_COLOR_BUFFER_BIT);
+                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT);
 
-				directionalLightRenderer.Render(&viewport, target, &camera, scene);
+                directionalLightRenderer.Render(&viewport, target, &camera, scene);
 
-				glEnable(GL_DEPTH_TEST);
+                glEnable(GL_DEPTH_TEST);
 
-				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-					GL_COLOR_ATTACHMENT1 });
+                target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+                    GL_COLOR_ATTACHMENT1 });
 
-				glDepthMask(GL_TRUE);
+                glDepthMask(GL_TRUE);
 
-				oceanRenderer.Render(&viewport, target, &camera, scene);
+                oceanRenderer.Render(&viewport, target, &camera, scene);
 
-				glDisable(GL_CULL_FACE);
-				glCullFace(GL_BACK);
-				glDepthMask(GL_FALSE);
-				glDisable(GL_DEPTH_TEST);
+                glDisable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glDepthMask(GL_FALSE);
+                glDisable(GL_DEPTH_TEST);
 
-				vertexArray.Bind();
+                vertexArray.Bind();
 
-				volumetricRenderer.Render(&viewport, target, &camera, scene);
+                volumetricRenderer.Render(&viewport, target, &camera, scene);
 
-				createProbeFaceShader.Bind();
+                createProbeFaceShader.Bind();
 
-				createProbeFaceShader.GetUniform("faceIndex")->SetValue((int32_t)i);
-				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
+                createProbeFaceShader.GetUniform("faceIndex")->SetValue((int32_t)i);
+                createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
 
-				int32_t groupCount = probe->resolution / 8;
-				groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
+                int32_t groupCount = probe->resolution / 8;
+                groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
 
-				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
-				probe->depth.Bind(GL_WRITE_ONLY, 1);
+                probe->cubemap.Bind(GL_WRITE_ONLY, 0);
+                probe->depth.Bind(GL_WRITE_ONLY, 1);
 
-				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
-				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
+                target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+                target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
 
-				glDispatchCompute(groupCount, groupCount, 1);
+                glDispatchCompute(groupCount, groupCount, 1);
 
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			}
+            }
 
-			if (skyProbe) {
-				scene->sky.probe = skyProbe;
-			}
+            if (skyProbe) {
+                scene->sky.probe = skyProbe;
+            }
             */
 
-		}
+        }
 
-		void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList) {
+        void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("Filter probe");
+            Graphics::Profiler::BeginQuery("Filter probe");
 
-			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+            mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+            vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                             vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+            vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                           vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                           vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
             auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh");
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -644,7 +644,7 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-			commandList->Dispatch(groupCount.x, groupCount.y, 6);
+            commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
             // It's only accessed in compute shaders
             commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
@@ -654,16 +654,16 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void MainRenderer::Update() {
+        void MainRenderer::Update() {
 
-			textRenderer.Update();
+            textRenderer.Update();
 
-			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
+            haltonIndex = (haltonIndex + 1) % haltonSequence.size();
             frameCount++;
 
-		}
+        }
 
         void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
 
@@ -717,113 +717,113 @@ namespace Atlas {
 
         }
 
-		void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
-			std::unordered_map<void*, uint16_t>& materialMap) {
+        void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
-			auto sceneMaterials = scene->GetMaterials();
+            auto sceneMaterials = scene->GetMaterials();
 
-			// For debugging purpose
-			if (scene->irradianceVolume && scene->irradianceVolume->debug) {
-				sceneMaterials.push_back(&ddgiRenderer.probeDebugMaterial);
-				sceneMaterials.push_back(&ddgiRenderer.probeDebugActiveMaterial);
-				sceneMaterials.push_back(&ddgiRenderer.probeDebugInactiveMaterial);
-				sceneMaterials.push_back(&ddgiRenderer.probeDebugOffsetMaterial);
-			}
+            // For debugging purpose
+            if (scene->irradianceVolume && scene->irradianceVolume->debug) {
+                sceneMaterials.push_back(&ddgiRenderer.probeDebugMaterial);
+                sceneMaterials.push_back(&ddgiRenderer.probeDebugActiveMaterial);
+                sceneMaterials.push_back(&ddgiRenderer.probeDebugInactiveMaterial);
+                sceneMaterials.push_back(&ddgiRenderer.probeDebugOffsetMaterial);
+            }
 
-			uint16_t idx = 0;
+            uint16_t idx = 0;
 
-			for (auto material : sceneMaterials) {
-				PackedMaterial packed;
+            for (auto material : sceneMaterials) {
+                PackedMaterial packed;
 
-				auto emissiveIntensity = glm::max(glm::max(material->emissiveColor.r,
-					material->emissiveColor.g), material->emissiveColor.b);
+                auto emissiveIntensity = glm::max(glm::max(material->emissiveColor.r,
+                    material->emissiveColor.g), material->emissiveColor.b);
 
-				packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->baseColor, 0.0f));
-				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
-				packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->baseColor, 0.0f));
+                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
 
-				packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, material->tiling));
+                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, material->tiling));
 
-				vec4 data0, data1, data2;
+                vec4 data0, data1, data2;
 
-				data0.x = material->opacity;
-				data0.y = material->roughness;
-				data0.z = material->metalness;
+                data0.x = material->opacity;
+                data0.y = material->roughness;
+                data0.z = material->metalness;
 
-				data1.x = material->ao;
-				data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
-				data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
+                data1.x = material->ao;
+                data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
+                data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
 
-				data2.x = material->reflectance;
-				// Note used
-				data2.y = 0.0f;
-				data2.z = 0.0f;
+                data2.x = material->reflectance;
+                // Note used
+                data2.y = 0.0f;
+                data2.z = 0.0f;
 
-				packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-				packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-				packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
+                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
+                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
 
-				packed.features = 0;
+                packed.features = 0;
 
-				packed.features |= material->HasBaseColorMap() ? FEATURE_BASE_COLOR_MAP : 0;
-				packed.features |= material->HasOpacityMap() ? FEATURE_OPACITY_MAP : 0;
-				packed.features |= material->HasNormalMap() ? FEATURE_NORMAL_MAP : 0;
-				packed.features |= material->HasRoughnessMap() ? FEATURE_ROUGHNESS_MAP : 0;
-				packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
-				packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
-				packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
+                packed.features |= material->HasBaseColorMap() ? FEATURE_BASE_COLOR_MAP : 0;
+                packed.features |= material->HasOpacityMap() ? FEATURE_OPACITY_MAP : 0;
+                packed.features |= material->HasNormalMap() ? FEATURE_NORMAL_MAP : 0;
+                packed.features |= material->HasRoughnessMap() ? FEATURE_ROUGHNESS_MAP : 0;
+                packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
+                packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
+                packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
 
-				materials.push_back(packed);
+                materials.push_back(packed);
 
-				materialMap[material] = idx++;
-			}
-			
-			auto meshes = scene->GetMeshes();
+                materialMap[material] = idx++;
+            }
+            
+            auto meshes = scene->GetMeshes();
 
-			for (auto mesh : meshes) {
-				auto impostor = mesh->impostor;
+            for (auto mesh : meshes) {
+                auto impostor = mesh->impostor;
 
-				if (!impostor)
-					continue;
+                if (!impostor)
+                    continue;
 
-				PackedMaterial packed;
+                PackedMaterial packed;
 
-				packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-				packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-				packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(impostor->transmissiveColor, 1.0f));
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
+                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(impostor->transmissiveColor, 1.0f));
 
-				vec4 data0, data1, data2;
+                vec4 data0, data1, data2;
 
-				data0.x = 1.0f;
-				data0.y = 1.0f;
-				data0.z = 1.0f;
+                data0.x = 1.0f;
+                data0.y = 1.0f;
+                data0.z = 1.0f;
 
-				data1.x = 1.0f;
-				data1.y = 0.0f;
-				data1.z = 0.0f;
+                data1.x = 1.0f;
+                data1.y = 0.0f;
+                data1.z = 0.0f;
 
-				data2.x = 0.5f;
-				// Note used
-				data2.y = 0.0f;
-				data2.z = 0.0f;
+                data2.x = 0.5f;
+                // Note used
+                data2.y = 0.0f;
+                data2.z = 0.0f;
 
-				packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-				packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-				packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
+                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
+                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
+                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
 
-				packed.features = 0;
+                packed.features = 0;
 
-				packed.features |= FEATURE_BASE_COLOR_MAP | 
-					FEATURE_ROUGHNESS_MAP | FEATURE_METALNESS_MAP | FEATURE_AO_MAP;
-				packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
+                packed.features |= FEATURE_BASE_COLOR_MAP | 
+                    FEATURE_ROUGHNESS_MAP | FEATURE_METALNESS_MAP | FEATURE_AO_MAP;
+                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
 
-				materials.push_back(packed);
+                materials.push_back(packed);
 
-				materialMap[impostor] =  idx++;
-			}
-			
+                materialMap[impostor] =  idx++;
+            }
+            
 
-		}
+        }
 
         void MainRenderer::FillRenderList(Scene::Scene *scene, Atlas::Camera *camera) {
 
@@ -864,7 +864,7 @@ namespace Atlas {
 
         }
 
-		void MainRenderer::PreintegrateBRDF() {
+        void MainRenderer::PreintegrateBRDF() {
 
             auto pipelineConfig = PipelineConfig("brdf/preintegrateDFG.csh");
             auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -895,8 +895,8 @@ namespace Atlas {
             commandList->EndCommands();
             device->FlushCommandList(commandList);
 
-		}
+        }
 
-	}
+    }
 
 }

@@ -5,7 +5,7 @@ uniform sampler2D diffuseMap;
 out vec3 color;
 
 void main() {
-	
-	color = texture(diffuseMap, fTexCoord).rgb;
-   	
+    
+    color = texture(diffuseMap, fTexCoord).rgb;
+       
 }

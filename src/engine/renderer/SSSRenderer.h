@@ -5,19 +5,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class SSSRenderer : public Renderer {
+        class SSSRenderer : public Renderer {
 
-		public:
-			SSSRenderer() = default;
+        public:
+            SSSRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) PushConstants {
                 vec4 lightDirection;
                 int sampleCount;
@@ -25,14 +25,14 @@ namespace Atlas {
                 float thickness;
             };
 
-			Filter blurFilter;
+            Filter blurFilter;
 
             PipelineConfig pipelineConfig;
 
-		};
+        };
 
 
-	}
+    }
 
 }
 

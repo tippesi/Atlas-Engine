@@ -11,17 +11,17 @@ namespace Atlas {
         }
 
         void DecalActor::Update(Camera, float deltaTime, 
-			mat4 parentTransform, bool parentUpdate) {
+            mat4 parentTransform, bool parentUpdate) {
 
             if (matrixChanged || parentUpdate) {
 
                 matrixChanged = false;
 
-				globalMatrix = parentTransform * GetMatrix();
+                globalMatrix = parentTransform * GetMatrix();
 
-				Volume::AABB base(vec3(-1.0f), vec3(1.0f));
+                Volume::AABB base(vec3(-1.0f), vec3(1.0f));
 
-				aabb = base.Transform(globalMatrix);
+                aabb = base.Transform(globalMatrix);
 
             }
 

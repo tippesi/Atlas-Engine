@@ -8,19 +8,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class OceanRenderer : public Renderer {
+        class OceanRenderer : public Renderer {
 
-		public:
-			OceanRenderer() = default;
+        public:
+            OceanRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) Uniforms {
                 vec4 translation;
 
@@ -107,9 +107,9 @@ namespace Atlas {
             Ref<Graphics::Sampler> nearestSampler;
             Ref<Graphics::Sampler> shadowSampler;
 
-		};
+        };
 
-	}
+    }
 
 }
 

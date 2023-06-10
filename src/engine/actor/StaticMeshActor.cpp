@@ -2,14 +2,14 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		StaticMeshActor::StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix) : MeshActor(mesh) {
+        StaticMeshActor::StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix) : MeshActor(mesh) {
 
-			Actor::SetMatrix(matrix);
+            Actor::SetMatrix(matrix);
 
-		}
+        }
 
-	}
+    }
 
 }

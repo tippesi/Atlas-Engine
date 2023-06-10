@@ -10,7 +10,7 @@ layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 3) uniform samplerCube skyCubemap;
 
 layout(push_constant) uniform constants {
-	vec4 cameraLocationLast;
+    vec4 cameraLocationLast;
 } pushConstants;
 
 vec2 resolution = vec2(imageSize(colorImage));
@@ -29,7 +29,7 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
 
     // Don't use the global inverse matrices here, since we also render the cubemap with this shader
-	vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
+    vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
 
     vec3 cubemapCoord = normalize(worldPos - globalData.cameraLocation.xyz);

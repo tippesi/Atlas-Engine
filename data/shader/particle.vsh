@@ -15,15 +15,15 @@ uniform float size;
 
 
 void main() {
-	
-	fTexCoord = (vPosition + 1.0) / 2.0;
-	
-	vec4 viewPosition = vMatrix * vec4(position.xyz + (quadVector1 * vPosition.y + quadVector2 * vPosition.x) * size, 1.0f);
-	
-	depth = viewPosition.z;
-	
-	blend = position.w;
-	
-	gl_Position =  pMatrix * viewPosition;
+    
+    fTexCoord = (vPosition + 1.0) / 2.0;
+    
+    vec4 viewPosition = vMatrix * vec4(position.xyz + (quadVector1 * vPosition.y + quadVector2 * vPosition.x) * size, 1.0f);
+    
+    depth = viewPosition.z;
+    
+    blend = position.w;
+    
+    gl_Position =  pMatrix * viewPosition;
    
 }

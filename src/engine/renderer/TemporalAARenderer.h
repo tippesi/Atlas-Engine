@@ -6,19 +6,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TemporalAARenderer : public Renderer {
+        class TemporalAARenderer : public Renderer {
 
-		public:
-			TemporalAARenderer() = default;
+        public:
+            TemporalAARenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct PushConstants {
                 vec2 resolution;
                 vec2 invResolution;
@@ -27,11 +27,11 @@ namespace Atlas {
 
             PipelineConfig pipelineConfig;
 
-			mat4 pvMatrixPrev = mat4(1.0f);
+            mat4 pvMatrixPrev = mat4(1.0f);
 
-		};
+        };
 
-	}
+    }
 
 }
 

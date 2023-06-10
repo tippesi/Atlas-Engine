@@ -6,19 +6,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class IndirectLightRenderer : public Renderer {
+        class IndirectLightRenderer : public Renderer {
 
-		public:
-			IndirectLightRenderer() = default;
+        public:
+            IndirectLightRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct Uniforms {
                 int aoEnabled;
                 int aoDownsampled2x;
@@ -26,13 +26,13 @@ namespace Atlas {
                 float aoStrength;
             };
 
-			PipelineConfig pipelineConfig;
+            PipelineConfig pipelineConfig;
 
             Buffer::UniformBuffer uniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

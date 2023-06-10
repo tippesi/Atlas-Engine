@@ -5,7 +5,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void AtmosphereRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -16,21 +16,21 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms), 2);
             probeMatricesBuffer = Buffer::UniformBuffer(sizeof(mat4) * 6);
 
-		}
+        }
 
-		void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void AtmosphereRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			auto sun = scene->sky.sun;
-			auto atmosphere = scene->sky.atmosphere;
-			if (!sun || !atmosphere) return;
+            auto sun = scene->sky.sun;
+            auto atmosphere = scene->sky.atmosphere;
+            if (!sun || !atmosphere) return;
 
             Graphics::Profiler::BeginQuery("Atmosphere");
 
             auto pipeline = PipelineManager::GetPipeline(defaultPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-			auto location = camera->GetLocation();
+            auto location = camera->GetLocation();
 
             auto rtData = target->GetData(FULL_RES);
             auto velocityTexture = rtData->velocityTexture;
@@ -76,23 +76,23 @@ namespace Atlas {
             commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
+        void AtmosphereRenderer::Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
             Graphics::CommandList* commandList) {
 
             auto sun = scene->sky.sun;
-			auto atmosphere = scene->sky.atmosphere;
-			if (!sun || !atmosphere) return;
+            auto atmosphere = scene->sky.atmosphere;
+            if (!sun || !atmosphere) return;
 
-			Graphics::Profiler::BeginQuery("Atmosphere environment probe");
+            Graphics::Profiler::BeginQuery("Atmosphere environment probe");
 
             auto pipeline = PipelineManager::GetPipeline(cubeMapPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-			commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             std::vector<mat4> matrices = probe->viewMatrices;
             for (auto& matrix : matrices) matrix = glm::inverse(matrix);
@@ -113,7 +113,7 @@ namespace Atlas {
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(1), 3, 3);
             commandList->BindBuffer(probeMatricesBuffer.Get(), 3, 4);
 
-			Graphics::Profiler::BeginQuery("Render probe faces");
+            Graphics::Profiler::BeginQuery("Render probe faces");
 
             auto resolution = ivec2(probe->resolution);
             auto groupCount = resolution / 8;
@@ -132,12 +132,12 @@ namespace Atlas {
             // The cube map generating automatically transforms the image layout to read-only optimal
             commandList->GenerateMipMap(probe->cubemap.image);
 
-			Graphics::Profiler::EndQuery();
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
 
-	}
+    }
 
 }

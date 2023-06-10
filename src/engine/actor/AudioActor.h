@@ -9,41 +9,41 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		class AudioActor : public Actor, public Audio::AudioStream {
+        class AudioActor : public Actor, public Audio::AudioStream {
 
-		public:
-			AudioActor() = default;
+        public:
+            AudioActor() = default;
 
-			AudioActor(const AudioActor& that);
+            AudioActor(const AudioActor& that);
 
-			explicit AudioActor(Audio::AudioData* data);
+            explicit AudioActor(Audio::AudioData* data);
 
-			AudioActor& operator=(const AudioActor& that);
+            AudioActor& operator=(const AudioActor& that);
 
-			std::vector<int16_t> GetChunk(int32_t length) override;
+            std::vector<int16_t> GetChunk(int32_t length) override;
 
-			void Update(Camera camera, float deltaTime, 
-				mat4 parentTransform, bool parentUpdate) override;
+            void Update(Camera camera, float deltaTime, 
+                mat4 parentTransform, bool parentUpdate) override;
 
-			float cutoff = 0.001f;
+            float cutoff = 0.001f;
 
-		private:
-			float leftChannelVolume = 1.0f;
-			float rightChannelVolume = 1.0f;
+        private:
+            float leftChannelVolume = 1.0f;
+            float rightChannelVolume = 1.0f;
 
-			float velocity = 0.0f;
-			float cameraDistance = 0.0f;
+            float velocity = 0.0f;
+            float cameraDistance = 0.0f;
 
-			bool audible = true;
-			bool init = false;
+            bool audible = true;
+            bool init = false;
 
-			std::mutex mutex;
+            std::mutex mutex;
 
-		};
+        };
 
-	}
+    }
 
 }
 

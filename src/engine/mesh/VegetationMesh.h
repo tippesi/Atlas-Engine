@@ -6,29 +6,29 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
-		class VegetationMesh : public Mesh {
+        class VegetationMesh : public Mesh {
 
-		public:
-			VegetationMesh() = default;
+        public:
+            VegetationMesh() = default;
 
-			VegetationMesh(const VegetationMesh& that);
+            VegetationMesh(const VegetationMesh& that);
 
-			/**
-			 *
-			 * @param filename
-			 * @param mobility
-			 */
-			explicit VegetationMesh(MeshData data, MeshMobility mobility = MeshMobility::Stationary);
+            /**
+             *
+             * @param filename
+             * @param mobility
+             */
+            explicit VegetationMesh(MeshData data, MeshMobility mobility = MeshMobility::Stationary);
 
-		private:
-
-
-		};
+        private:
 
 
-	}
+        };
+
+
+    }
 
 }
 

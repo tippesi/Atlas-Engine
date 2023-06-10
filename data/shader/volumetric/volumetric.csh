@@ -33,7 +33,7 @@ void main() {
         pixel.y > imageSize(volumetricImage).y)
         return;
 
-	vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricImage));
+    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricImage));
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
@@ -44,7 +44,7 @@ void main() {
 }
 
 const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
-		0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
+        0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
 
 vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
@@ -59,25 +59,25 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
     vec3 stepVector = rayDirection * stepLength;
  
     vec3 foginess = vec3(0.0);
-	
-	texCoords = (0.5 * texCoords + 0.5) * resolution;
-	
+    
+    texCoords = (0.5 * texCoords + 0.5) * resolution;
+    
     float rndSeed = uniforms.seed;
     float rnd0 = random(texCoords, rndSeed) * 0.0;
     float rnd1 = random(texCoords, rndSeed) * 0.0;
-	float ditherValue = ditherPattern[(int(texCoords.x + rnd0) % 4) * 4 + int(texCoords.y + rnd1) % 4];
+    float ditherValue = ditherPattern[(int(texCoords.x + rnd0) % 4) * 4 + int(texCoords.y + rnd1) % 4];
    
-	vec3 currentPosition = stepVector * ditherValue;
+    vec3 currentPosition = stepVector * ditherValue;
 
-	int cascadeIndex = 0;
-	int lastCascadeIndex = 0;
-	mat4 cascadeMatrix = uniforms.light.shadow.cascades[0].cascadeSpace;
+    int cascadeIndex = 0;
+    int lastCascadeIndex = 0;
+    mat4 cascadeMatrix = uniforms.light.shadow.cascades[0].cascadeSpace;
 
     for (int i = 0; i < uniforms.sampleCount; i++) {
         
-		float distance = -currentPosition.z;
-		
-		int cascadeIndex = 0;
+        float distance = -currentPosition.z;
+        
+        int cascadeIndex = 0;
         
         cascadeIndex = distance >= uniforms.light.shadow.cascades[0].distance ? 1 : cascadeIndex;
         cascadeIndex = distance >= uniforms.light.shadow.cascades[1].distance ? 2 : cascadeIndex;
@@ -96,8 +96,8 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
             cascadeMatrix = cascadeIndex > 4 ? uniforms.light.shadow.cascades[5].cascadeSpace : cascadeMatrix;
         }
 
-		lastCascadeIndex = cascadeIndex;
-		
+        lastCascadeIndex = cascadeIndex;
+        
         vec4 cascadeSpace = cascadeMatrix * vec4(currentPosition, 1.0);
         cascadeSpace.xyz /= cascadeSpace.w;
 

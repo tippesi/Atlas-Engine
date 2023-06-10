@@ -26,7 +26,7 @@ namespace Atlas {
 
             Octree(AABB aabb, int32_t depth, float relaxFactor = 2.0f);
 
-			Octree& operator=(const Octree& that);
+            Octree& operator=(const Octree& that);
 
             bool Insert(T data, AABB aabb);
 
@@ -34,17 +34,17 @@ namespace Atlas {
 
             void QueryAABB(std::vector<T>& data, AABB aabb);
 
-			void QueryRay(std::vector<T>& data, Ray ray);
+            void QueryRay(std::vector<T>& data, Ray ray);
 
-			void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum);
+            void QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum);
 
-			void GetData(std::vector<T>& data) const;
+            void GetData(std::vector<T>& data) const;
 
             bool IsSubdivided() const;
 
             std::vector<Octree<T>> GetChildren() const;
 
-			void Clear();
+            void Clear();
 
             std::vector<T> octreeData;
 
@@ -73,32 +73,32 @@ namespace Atlas {
 
         }
 
-		template <class T>
-		Octree<T>& Octree<T>::operator=(const Octree<T>& that) {
+        template <class T>
+        Octree<T>& Octree<T>::operator=(const Octree<T>& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				depth = that.depth;
-				relaxFactor = that.relaxFactor;
-				aabb = that.aabb;
+                depth = that.depth;
+                relaxFactor = that.relaxFactor;
+                aabb = that.aabb;
 
-				octreeData = that.octreeData;
+                octreeData = that.octreeData;
 
-				if (that.IsSubdivided()) {
+                if (that.IsSubdivided()) {
 
-					children.resize(8);
+                    children.resize(8);
 
-					for (uint8_t i = 0; i < 8; i++) {
-						children[i] = that.children[i];
-					}
+                    for (uint8_t i = 0; i < 8; i++) {
+                        children[i] = that.children[i];
+                    }
 
-				}
+                }
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
         template <class T>
         bool Octree<T>::Insert(T data, AABB aabb) {
@@ -121,73 +121,73 @@ namespace Atlas {
         template <class T>
         void Octree<T>::QueryAABB(std::vector<T>& data, AABB aabb) {
 
-			auto scaled = this->aabb.Scale(relaxFactor);
+            auto scaled = this->aabb.Scale(relaxFactor);
 
-			if (!scaled.Intersects(aabb))
-				return;
+            if (!scaled.Intersects(aabb))
+                return;
 
-			// Check if aabb encloses this octree node
-			// In that case we can add all data and children data
-			if (aabb.IsInside(scaled)) {
-				GetData(data);
-				return;
-			}
+            // Check if aabb encloses this octree node
+            // In that case we can add all data and children data
+            if (aabb.IsInside(scaled)) {
+                GetData(data);
+                return;
+            }
 
             std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
-			for (auto& child : children)
-				child.QueryAABB(data, aabb);
+            for (auto& child : children)
+                child.QueryAABB(data, aabb);
 
         }
 
-		template <class T>
-		void Octree<T>::QueryRay(std::vector<T>& data, Ray ray) {
+        template <class T>
+        void Octree<T>::QueryRay(std::vector<T>& data, Ray ray) {
 
-			constexpr float maxFloat = std::numeric_limits<float>::max();
+            constexpr float maxFloat = std::numeric_limits<float>::max();
 
-			auto scaled = this->aabb.Scale(relaxFactor);
+            auto scaled = this->aabb.Scale(relaxFactor);
 
-			if (!ray.Intersects(scaled, 0.0f, maxFloat))
-				return;
-
-            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
-
-			for (auto& child : children)
-				child.QueryRay(data, ray);
-
-		}
-
-		template <class T>
-		void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {
-
-			auto scaled = this->aabb.Scale(relaxFactor);
-
-			if (!frustum.Intersects(scaled))
-				return;
-
-			// Check if frustum encloses this octree node
-			// In that case we can add all data and children data
-			if (frustum.IsInside(scaled)) {
-				GetData(insideData);
-				return;
-			}
+            if (!ray.Intersects(scaled, 0.0f, maxFloat))
+                return;
 
             std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
-			for (auto& child : children)
-				child.QueryFrustum(data, insideData, frustum);
+            for (auto& child : children)
+                child.QueryRay(data, ray);
 
-		}
+        }
 
-		template <class T>
-		void Octree<T>::GetData(std::vector<T>& data) const {
+        template <class T>
+        void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {
+
+            auto scaled = this->aabb.Scale(relaxFactor);
+
+            if (!frustum.Intersects(scaled))
+                return;
+
+            // Check if frustum encloses this octree node
+            // In that case we can add all data and children data
+            if (frustum.IsInside(scaled)) {
+                GetData(insideData);
+                return;
+            }
 
             std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
 
-			for (auto& child : children)
-				child.GetData(data);
+            for (auto& child : children)
+                child.QueryFrustum(data, insideData, frustum);
 
-		}
+        }
+
+        template <class T>
+        void Octree<T>::GetData(std::vector<T>& data) const {
+
+            std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));
+
+            for (auto& child : children)
+                child.GetData(data);
+
+        }
 
         template <class T>
         bool Octree<T>::IsSubdivided() const {
@@ -203,13 +203,13 @@ namespace Atlas {
 
         }
 
-		template <class T>
-		void Octree<T>::Clear() {
+        template <class T>
+        void Octree<T>::Clear() {
 
-			children.clear();
-			octreeData.clear();
+            children.clear();
+            octreeData.clear();
 
-		}
+        }
 
         template <class T>
         void Octree<T>::Subdivide() {
@@ -255,15 +255,15 @@ namespace Atlas {
                     Subdivide();
 
                 for (auto &child : children) {
-					if (successful)
-						break;
+                    if (successful)
+                        break;
                     successful |= child.InsertInternal(data, aabb, center);
                 }
 
             }
 
-			if (!successful)
-				octreeData.push_back(data);
+            if (!successful)
+                octreeData.push_back(data);
 
             return true;
 
@@ -276,9 +276,9 @@ namespace Atlas {
                 return false;
             }
 
-			if (!this->aabb.Scale(relaxFactor).IsInside(aabb)) {
-				return false;
-			}
+            if (!this->aabb.Scale(relaxFactor).IsInside(aabb)) {
+                return false;
+            }
 
             auto item = std::find(octreeData.begin(), octreeData.end(), data);
 
@@ -291,18 +291,18 @@ namespace Atlas {
                 return false;
 
             bool removeChildren = true;
-			bool successful = false;
+            bool successful = false;
 
             for (auto& child : children) {
-				if (!successful)
-					successful |= child.RemoveInternal(data, aabb, center);
+                if (!successful)
+                    successful |= child.RemoveInternal(data, aabb, center);
                 removeChildren = removeChildren && child.octreeData.size() == 0 && !child.IsSubdivided();
             }
 
             if (removeChildren)
                 children.resize(0);
 
-			return successful;
+            return successful;
 
         }
 

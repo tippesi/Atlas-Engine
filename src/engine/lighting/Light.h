@@ -14,42 +14,42 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class Light {
+        class Light {
 
-		public:
-			virtual void RemoveShadow() = 0;
+        public:
+            virtual void RemoveShadow() = 0;
 
-			virtual void RemoveVolumetric() = 0;
+            virtual void RemoveVolumetric() = 0;
 
-			virtual void Update(Camera* camera) = 0;
+            virtual void Update(Camera* camera) = 0;
 
-			inline Shadow* GetShadow() {
-				return shadow;
-			}
+            inline Shadow* GetShadow() {
+                return shadow;
+            }
 
-			inline Volumetric* GetVolumetric() {
-				return volumetric;
-			}
+            inline Volumetric* GetVolumetric() {
+                return volumetric;
+            }
 
-			int32_t type;
-			int32_t mobility;
+            int32_t type;
+            int32_t mobility;
 
-			vec3 color = vec3(1.0f);
-			float intensity = 1.0f;
+            vec3 color = vec3(1.0f);
+            float intensity = 1.0f;
 
-			std::string name;
+            std::string name;
 
-		protected:
-			Light(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
+        protected:
+            Light(int32_t type, int32_t mobility) : type(type), mobility(mobility) {}
 
-			Shadow* shadow = nullptr;
-			Volumetric* volumetric = nullptr;
+            Shadow* shadow = nullptr;
+            Volumetric* volumetric = nullptr;
 
-		};
+        };
 
-	}
+    }
 
 }
 

@@ -10,79 +10,79 @@
 
 struct Material {
 
-	vec3 baseColor;
-	vec3 emissiveColor;
-	vec3 transmissiveColor;
+    vec3 baseColor;
+    vec3 emissiveColor;
+    vec3 transmissiveColor;
 
-	float opacity;
+    float opacity;
 
-	float roughness;
-	float metalness;
-	float ao;
-	float reflectance;
-	
-	float normalScale;
-	float displacementScale;
+    float roughness;
+    float metalness;
+    float ao;
+    float reflectance;
+    
+    float normalScale;
+    float displacementScale;
 
-	float tiling;
+    float tiling;
 
-	bool baseColorMap;
-	bool opacityMap;
-	bool normalMap;
-	bool roughnessMap;
-	bool metalnessMap;
-	bool aoMap;
-	bool transmissive;
-	
+    bool baseColorMap;
+    bool opacityMap;
+    bool normalMap;
+    bool roughnessMap;
+    bool metalnessMap;
+    bool aoMap;
+    bool transmissive;
+    
 };
 
 struct PackedMaterial {
-	vec4 data0;
-	vec4 data1;
+    vec4 data0;
+    vec4 data1;
 };
 
 layout (std430, set = 0, binding = 2) buffer PackedMaterials {
-	PackedMaterial packedMaterials[];
+    PackedMaterial packedMaterials[];
 };
 
 Material UnpackMaterial(uint idx) {
 
-	PackedMaterial compressed = packedMaterials[idx];
-	
-	Material material;
+    PackedMaterial compressed = packedMaterials[idx];
+    
+    Material material;
 
-	vec2 emissiveIntensityTiling = unpackHalf2x16(floatBitsToUint(compressed.data0.w));
+    vec2 emissiveIntensityTiling = unpackHalf2x16(floatBitsToUint(compressed.data0.w));
 
-	material.baseColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.x)));
-	material.emissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.y)))
-		 * emissiveIntensityTiling.x;
-	material.transmissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.z)));
+    material.baseColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.x)));
+    material.emissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.y)))
+         * emissiveIntensityTiling.x;
+    material.transmissiveColor = vec3(unpackColorVector(floatBitsToInt(compressed.data0.z)));
 
-	vec4 data0 = unpackColorVector(floatBitsToInt(compressed.data1.x));
-	vec4 data1 = unpackColorVector(floatBitsToInt(compressed.data1.y));
-	vec4 data2 = unpackColorVector(floatBitsToInt(compressed.data1.z));
+    vec4 data0 = unpackColorVector(floatBitsToInt(compressed.data1.x));
+    vec4 data1 = unpackColorVector(floatBitsToInt(compressed.data1.y));
+    vec4 data2 = unpackColorVector(floatBitsToInt(compressed.data1.z));
 
-	material.opacity = data0.x;
+    material.opacity = data0.x;
 
-	material.roughness = data0.y;
-	material.metalness = data0.z;
-	material.ao = data1.x;
-	material.reflectance = data2.x;
+    material.roughness = data0.y;
+    material.metalness = data0.z;
+    material.ao = data1.x;
+    material.reflectance = data2.x;
 
-	material.normalScale = data0.y;
-	material.displacementScale = data0.z;
+    material.normalScale = data0.y;
+    material.displacementScale = data0.z;
 
-	material.tiling = emissiveIntensityTiling.y;
+    material.tiling = emissiveIntensityTiling.y;
 
-	int features = floatBitsToInt(compressed.data1.w);
-	material.baseColorMap = (features & FEATURE_BASE_COLOR_MAP) > 0;
-	material.opacityMap = (features & FEATURE_OPACITY_MAP) > 0;
-	material.normalMap = (features & FEATURE_NORMAL_MAP) > 0;
-	material.roughnessMap = (features & FEATURE_ROUGHNESS_MAP) > 0;
-	material.metalnessMap = (features & FEATURE_METALNESS_MAP) > 0;
-	material.aoMap = (features & FEATURE_AO_MAP) > 0;
-	material.transmissive = (features & FEATURE_TRANSMISSION) > 0;
+    int features = floatBitsToInt(compressed.data1.w);
+    material.baseColorMap = (features & FEATURE_BASE_COLOR_MAP) > 0;
+    material.opacityMap = (features & FEATURE_OPACITY_MAP) > 0;
+    material.normalMap = (features & FEATURE_NORMAL_MAP) > 0;
+    material.roughnessMap = (features & FEATURE_ROUGHNESS_MAP) > 0;
+    material.metalnessMap = (features & FEATURE_METALNESS_MAP) > 0;
+    material.aoMap = (features & FEATURE_AO_MAP) > 0;
+    material.transmissive = (features & FEATURE_TRANSMISSION) > 0;
 
-	return material;
+    return material;
 
 }

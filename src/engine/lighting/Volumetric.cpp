@@ -2,13 +2,13 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		Volumetric::Volumetric(int32_t sampleCount, float intensity) :
-			sampleCount(sampleCount), intensity(intensity) {
+        Volumetric::Volumetric(int32_t sampleCount, float intensity) :
+            sampleCount(sampleCount), intensity(intensity) {
 
-		}
+        }
 
-	}
+    }
 
 }

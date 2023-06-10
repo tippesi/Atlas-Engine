@@ -2,75 +2,75 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		PointLight::PointLight(int32_t mobility, float radius) : Light(AE_POINT_LIGHT, mobility), radius(radius) {
-
-
-
-		}
-
-		PointLight::~PointLight() {
+        PointLight::PointLight(int32_t mobility, float radius) : Light(AE_POINT_LIGHT, mobility), radius(radius) {
 
 
 
-		}
+        }
 
-		void PointLight::AddShadow(float bias, int32_t resolution) {
+        PointLight::~PointLight() {
 
-			if (shadow)
-				delete shadow;
 
-			shadow = new Shadow(0.0f, bias, resolution, true);
 
-			Update(nullptr);
+        }
 
-		}
+        void PointLight::AddShadow(float bias, int32_t resolution) {
 
-		void PointLight::RemoveShadow() {
+            if (shadow)
+                delete shadow;
 
-			delete shadow;
-			shadow = nullptr;
+            shadow = new Shadow(0.0f, bias, resolution, true);
 
-		}
+            Update(nullptr);
 
-		void PointLight::AddVolumetric(RenderResolution resolution, int32_t sampleCount, float scattering, float scatteringFactor) {
+        }
 
-			volumetric = new Volumetric(resolution, sampleCount);
+        void PointLight::RemoveShadow() {
 
-		}
+            delete shadow;
+            shadow = nullptr;
 
-		void PointLight::RemoveVolumetric() {
+        }
 
-			delete volumetric;
-			volumetric = nullptr;
+        void PointLight::AddVolumetric(RenderResolution resolution, int32_t sampleCount, float scattering, float scatteringFactor) {
 
-		}
+            volumetric = new Volumetric(resolution, sampleCount);
 
-		void PointLight::Update(Camera* camera) {
+        }
 
-			if (mobility == AE_MOVABLE_LIGHT && shadow) {
-				shadow->Update();
+        void PointLight::RemoveVolumetric() {
 
-				mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
-				vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-								 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-								 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+            delete volumetric;
+            volumetric = nullptr;
 
-				vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-							   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+        }
 
-				for (uint8_t i = 0; i < 6; i++) {
-					auto viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
-					shadow->components[i].projectionMatrix = projectionMatrix;
-					shadow->components[i].viewMatrix = viewMatrix;
-					shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
-				}
-			}
+        void PointLight::Update(Camera* camera) {
 
-		}
+            if (mobility == AE_MOVABLE_LIGHT && shadow) {
+                shadow->Update();
 
-	}
+                mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, radius);
+                vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                                 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                                 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+
+                vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                               vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                               vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+
+                for (uint8_t i = 0; i < 6; i++) {
+                    auto viewMatrix = glm::lookAt(location, location + faces[i], ups[i]);
+                    shadow->components[i].projectionMatrix = projectionMatrix;
+                    shadow->components[i].viewMatrix = viewMatrix;
+                    shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
+                }
+            }
+
+        }
+
+    }
 
 }

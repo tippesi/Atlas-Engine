@@ -6,19 +6,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class PostProcessRenderer : public Renderer {
+        class PostProcessRenderer : public Renderer {
 
-		public:
-			PostProcessRenderer() = default;
+        public:
+            PostProcessRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) Uniforms {
                 float exposure;
                 float whitePoint;
@@ -33,7 +33,7 @@ namespace Atlas {
                 vec4 vignetteColor;
             };
 
-			void SetUniforms(Camera* camera, Scene::Scene* scene);
+            void SetUniforms(Camera* camera, Scene::Scene* scene);
 
             PipelineConfig GetMainPipelineConfig();
 
@@ -43,9 +43,9 @@ namespace Atlas {
 
             Ref<Graphics::MultiBuffer> uniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

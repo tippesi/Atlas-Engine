@@ -7,25 +7,25 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		class MeshActor : public Actor {
+        class MeshActor : public Actor {
 
-		public:
-			void Update(Camera camera, float deltaTime,
-				mat4 parentTransform, bool parentUpdate) override;
+        public:
+            void Update(Camera camera, float deltaTime,
+                mat4 parentTransform, bool parentUpdate) override;
 
-			Mesh::Mesh* mesh = nullptr;
+            Mesh::Mesh* mesh = nullptr;
 
-			mat4 lastGlobalMatrix = mat4(1.0);
+            mat4 lastGlobalMatrix = mat4(1.0);
 
-		protected:
-			explicit MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
+        protected:
+            explicit MeshActor(Mesh::Mesh* mesh) : mesh(mesh) {}
 
-		};
+        };
 
 
-	}
+    }
 
 }
 

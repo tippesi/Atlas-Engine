@@ -9,38 +9,38 @@
 
 namespace Atlas {
 
-	namespace Scene {
+    namespace Scene {
 
-		class Vegetation {
+        class Vegetation {
 
-		public:
-			struct Buffers {
-				Buffer::Buffer instanceData;
-				Buffer::Buffer culledInstanceData;
-				Buffer::Buffer binnedInstanceData;
-			};
+        public:
+            struct Buffers {
+                Buffer::Buffer instanceData;
+                Buffer::Buffer culledInstanceData;
+                Buffer::Buffer binnedInstanceData;
+            };
 
-			Vegetation() = default;
+            Vegetation() = default;
 
-			~Vegetation();
+            ~Vegetation();
 
-			void Add(Actor::VegetationActor* actor);
+            void Add(Actor::VegetationActor* actor);
 
-			void UpdateActorData();
+            void UpdateActorData();
 
-			void UpdateActorData(Mesh::VegetationMesh* mesh);
+            void UpdateActorData(Mesh::VegetationMesh* mesh);
 
-			std::vector<Mesh::VegetationMesh*> GetMeshes();
+            std::vector<Mesh::VegetationMesh*> GetMeshes();
 
-			Buffers GetBuffers(Mesh::VegetationMesh* mesh);
+            Buffers GetBuffers(Mesh::VegetationMesh* mesh);
 
-		private:
-			std::map<Mesh::VegetationMesh*, std::vector<Actor::VegetationActor*>> meshToActorMap;
-			std::map<Mesh::VegetationMesh*, Buffers> meshToBufferMap;
+        private:
+            std::map<Mesh::VegetationMesh*, std::vector<Actor::VegetationActor*>> meshToActorMap;
+            std::map<Mesh::VegetationMesh*, Buffers> meshToBufferMap;
 
-		};
+        };
 
-	}
+    }
 
 }
 

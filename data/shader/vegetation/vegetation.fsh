@@ -49,48 +49,48 @@ uniform vec2 jitterCurrent;
 uniform uint materialIdx;
 
 void main() {
-	
-	vec2 texCoords = texCoordVS;
+    
+    vec2 texCoords = texCoordVS;
 
 #ifdef OPACITY_MAP
-	float opacity = texture(opacityMap, texCoords).r;
-	if (opacity < 0.1)
-		discard;
+    float opacity = texture(opacityMap, texCoords).r;
+    if (opacity < 0.1)
+        discard;
 #endif
 
 #ifdef BASE_COLOR_MAP
-	vec3 textureColor = texture(baseColorMap, texCoords).rgb;
-	baseColorFS = vec4(textureColor.rgb, opacity);
+    vec3 textureColor = texture(baseColorMap, texCoords).rgb;
+    baseColorFS = vec4(textureColor.rgb, opacity);
 #endif
-	geometryNormalFS = normalize(normalVS);
-	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+    geometryNormalFS = normalize(normalVS);
+    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
 
-	float roughnessFactor = 1.0;
-	float metalnessFactor = 1.0;
-	float aoFactor = 1.0;
+    float roughnessFactor = 1.0;
+    float metalnessFactor = 1.0;
+    float aoFactor = 1.0;
 
 #ifdef ROUGHNESS_MAP
-	roughnessFactor *= texture(roughnessMap, texCoords).r;
-	roughnessMetalnessAoFS.r = roughnessFactor;
+    roughnessFactor *= texture(roughnessMap, texCoords).r;
+    roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-	metalnessFactor *= texture(metalnessMap, texCoords).r;
-	roughnessMetalnessAoFS.g = metalnessFactor;
+    metalnessFactor *= texture(metalnessMap, texCoords).r;
+    roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-	aoFactor *= texture(aoMap, texCoords).r;
-	roughnessMetalnessAoFS.b = aoFactor;
+    aoFactor *= texture(aoMap, texCoords).r;
+    roughnessMetalnessAoFS.b = aoFactor;
 #endif
 
-	// Calculate velocity
-	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
-	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
+    // Calculate velocity
+    vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
+    vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= jitterLast;
-	ndcC -= jitterCurrent;
+    ndcL -= jitterLast;
+    ndcC -= jitterCurrent;
 
-	velocityFS = (ndcL - ndcC) * 0.5;
+    velocityFS = (ndcL - ndcC) * 0.5;
 
-	materialIdxFS = materialIdx;
-	
+    materialIdxFS = materialIdx;
+    
 }

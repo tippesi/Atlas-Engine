@@ -51,27 +51,27 @@ void main() {
     ivec2 groupOffset = (tileBaseOffset + tileGroupOffset) * ivec2(gl_WorkGroupSize);
     ivec2 pixel = ivec2(gl_LocalInvocationID.xy) + groupOffset;
 
-	if (int(pixel.x) < resolution.x &&
-		int(pixel.y) < resolution.y) {
+    if (int(pixel.x) < resolution.x &&
+        int(pixel.y) < resolution.y) {
 
-		vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
+        vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
         float depth = texelFetch(shadowMap, pixel, 0).r;
-		
+        
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
         ivec2 offset = offsets[offsetIdx];
 
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
-	    vec3 worldPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
+        vec3 worldPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
 
         float ao = 0.0;
 
         int sampleIdx = int(uniforms.frameSeed);
-		vec2 blueNoiseVec = vec2(
-			SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-			SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
-			);
+        vec2 blueNoiseVec = vec2(
+            SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+            SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+            );
 
         const int sampleCount = 1;
         for (uint i = 0; i < sampleCount; i++) {
@@ -97,6 +97,6 @@ void main() {
         float result = 1.0 - (ao / float(sampleCount));
 
         imageStore(rtaoImage, pixel, vec4(result, 0.0, 0.0, 0.0));
-	}
+    }
 
 }

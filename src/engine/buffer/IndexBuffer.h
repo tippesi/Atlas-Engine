@@ -12,23 +12,23 @@ namespace Atlas {
         class IndexBuffer {
 
         public:
-			/**
-			 * Constructs an IndexBuffer object.
-			 */
+            /**
+             * Constructs an IndexBuffer object.
+             */
             IndexBuffer() = default;
 
             /**
              * Constructs an IndexBuffer object.
              * @param type The data type of the data
              * @param elementCount The number of elements in the vertex buffer will be filled with
-			 * @param data Optional parameter for directly filling the buffer with data
+             * @param data Optional parameter for directly filling the buffer with data
              */
             IndexBuffer(VkIndexType type, size_t elementCount, void* data = nullptr);
 
             /**
              * Sets the size of the buffer
              * @param elementCount The number of elements in the buffer
-			 * @param data Optional parameter for directly filling the buffer
+             * @param data Optional parameter for directly filling the buffer
              */
             void SetSize(size_t elementCount, void* data = nullptr);
 

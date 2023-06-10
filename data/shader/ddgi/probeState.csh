@@ -18,7 +18,7 @@
 layout (local_size_x = 32) in;
 
 layout(std430, set = 3, binding = 1) buffer RayHits {
-	PackedRayHit hits[];
+    PackedRayHit hits[];
 };
 
 shared uint probeState;
@@ -31,7 +31,7 @@ void main() {
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
 
-	if (gl_LocalInvocationID.x == 0u) {
+    if (gl_LocalInvocationID.x == 0u) {
         backFaceHits = 0u;
         inCellHits = 0u;
         probeState = GetProbeState(baseIdx);
@@ -47,7 +47,7 @@ void main() {
 
     uint workGroupOffset = gl_WorkGroupSize.x;
     for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
-		RayHit hit = UnpackRayHit(hits[rayBaseIdx + i]);
+        RayHit hit = UnpackRayHit(hits[rayBaseIdx + i]);
 
         bool backface = hit.hitDistance <= 0.0;
         if (backface) {

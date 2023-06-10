@@ -7,7 +7,7 @@ layout (local_size_x = 32) in;
 void main() {
 
     if (IsRayInvocationValid()) {
-		uint idx = (1u - rayBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
+        uint idx = (1u - rayBufferOffset) * rayBufferSize + gl_GlobalInvocationID.x;
         PackedRay packedRay = rays[idx];
         Ray ray = UnpackRay(packedRay);
 

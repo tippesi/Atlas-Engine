@@ -5,7 +5,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void AORenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -37,9 +37,9 @@ namespace Atlas {
             ssSamplesUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * 64);
             blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
 
-		}
+        }
 
-		void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             static int32_t frameCount = 0;
@@ -273,8 +273,8 @@ namespace Atlas {
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

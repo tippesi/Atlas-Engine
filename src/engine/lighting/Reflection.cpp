@@ -4,15 +4,15 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		using namespace Common;
+        using namespace Common;
 
-		Reflection::Reflection(int32_t sampleCount) : sampleCount(sampleCount) {
+        Reflection::Reflection(int32_t sampleCount) : sampleCount(sampleCount) {
 
 
-		}
+        }
 
-	}
+    }
 
 }

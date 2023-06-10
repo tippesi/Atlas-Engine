@@ -31,9 +31,9 @@ void UpdateSurface(inout Surface surface) {
     surface.H = normalize(surface.L + surface.V);
 
     surface.NdotL = saturate(dot(surface.N, surface.L));
-	surface.LdotH = saturate(dot(surface.L, surface.H));
-	surface.NdotH = saturate(dot(surface.N, surface.H));
-	surface.NdotV = saturate(dot(surface.N, surface.V));
+    surface.LdotH = saturate(dot(surface.L, surface.H));
+    surface.NdotH = saturate(dot(surface.N, surface.H));
+    surface.NdotV = saturate(dot(surface.N, surface.V));
 
     surface.F0 = mix(vec3(0.16 * sqr(surface.material.reflectance)),
         surface.material.baseColor, surface.material.metalness);

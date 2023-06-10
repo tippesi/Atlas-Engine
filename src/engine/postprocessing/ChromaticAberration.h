@@ -5,27 +5,27 @@
 
 namespace Atlas {
 
-	namespace PostProcessing {
+    namespace PostProcessing {
 
-		class ChromaticAberration {
+        class ChromaticAberration {
 
-		public:
-			ChromaticAberration() = default;
+        public:
+            ChromaticAberration() = default;
 
-			///
-			/// \param strength
-			/// \param colorsReversed
-			ChromaticAberration(float strength, bool colorsReversed = false) :
-					strength(strength), colorsReversed(colorsReversed), enable(true) {};
+            ///
+            /// \param strength
+            /// \param colorsReversed
+            ChromaticAberration(float strength, bool colorsReversed = false) :
+                    strength(strength), colorsReversed(colorsReversed), enable(true) {};
 
-			bool enable = false;
+            bool enable = false;
 
-			float strength = 1.0f;
-			bool colorsReversed = false;
+            float strength = 1.0f;
+            bool colorsReversed = false;
 
-		};
+        };
 
-	}
+    }
 
 }
 

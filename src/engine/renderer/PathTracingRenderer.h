@@ -11,72 +11,72 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class PathTracerRenderTarget {
+        class PathTracerRenderTarget {
 
-		public:
-			PathTracerRenderTarget() {}
+        public:
+            PathTracerRenderTarget() {}
 
-			PathTracerRenderTarget(int32_t width, int32_t height) : width(width), height(height) {
-				texture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
+            PathTracerRenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+                texture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-				accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
-				accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
-			}
+                accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
+                accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
+            }
 
-			void Resize(int32_t width, int32_t height) {
-				this->width = width;
-				this->height = height;
+            void Resize(int32_t width, int32_t height) {
+                this->width = width;
+                this->height = height;
 
-				texture.Resize(width, height);
+                texture.Resize(width, height);
 
-				accumTexture0.Resize(width, height);
-				accumTexture1.Resize(width, height);
-			}
+                accumTexture0.Resize(width, height);
+                accumTexture1.Resize(width, height);
+            }
 
-			int32_t GetWidth() const { return width; }
-			int32_t GetHeight() const { return height; }
+            int32_t GetWidth() const { return width; }
+            int32_t GetHeight() const { return height; }
 
-			Texture::Texture2D texture;
+            Texture::Texture2D texture;
 
-			Texture::Texture2D accumTexture0;
-			Texture::Texture2D accumTexture1;
+            Texture::Texture2D accumTexture0;
+            Texture::Texture2D accumTexture1;
 
-			int32_t sampleCount = 0;
+            int32_t sampleCount = 0;
 
-		private:
-			int32_t width = 0;
-			int32_t height = 0;
+        private:
+            int32_t width = 0;
+            int32_t height = 0;
 
-		};
+        };
 
-		class PathTracingRenderer : public Renderer {
+        class PathTracingRenderer : public Renderer {
 
-		public:
-			PathTracingRenderer() = default;
+        public:
+            PathTracingRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
-				ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
+                ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList);
 
-			bool UpdateData(Scene::Scene* scene);
+            bool UpdateData(Scene::Scene* scene);
 
-			void UpdateMaterials(Scene::Scene* scene);
+            void UpdateMaterials(Scene::Scene* scene);
 
-			void ResetSampleCount();
+            void ResetSampleCount();
 
-			int32_t GetSampleCount() const;
+            int32_t GetSampleCount() const;
 
-			int32_t bounces = 10;
-			int32_t bvhDepth = 0;
-			int32_t lightCount = 512;
+            int32_t bounces = 10;
+            int32_t bvhDepth = 0;
+            int32_t lightCount = 512;
 
-		private:
+        private:
             struct alignas(16) RayGenUniforms {
                 vec4 origin;
                 vec4 right;
@@ -96,13 +96,13 @@ namespace Atlas {
                 float exposure;
             };
 
-			Helper::RayTracingHelper helper;
+            Helper::RayTracingHelper helper;
 
-			vec3 cameraLocation;
-			vec2 cameraRotation;
+            vec3 cameraLocation;
+            vec2 cameraRotation;
 
-			int32_t sampleCount = 0;
-			ivec2 imageOffset = ivec2(0);
+            int32_t sampleCount = 0;
+            ivec2 imageOffset = ivec2(0);
 
             PipelineConfig rayGenPipelineConfig;
             PipelineConfig rayHitPipelineConfig;
@@ -110,9 +110,9 @@ namespace Atlas {
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

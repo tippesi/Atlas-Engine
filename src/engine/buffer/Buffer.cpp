@@ -12,9 +12,9 @@ namespace Atlas {
             multiBuffered = bufferUsage & MultiBufferedBit;
             hostAccessible = bufferUsage & HostAccessBit;
 
-			if (elementCount) {
-				SetSize(elementCount, data);
-			}
+            if (elementCount) {
+                SetSize(elementCount, data);
+            }
 
         }
 
@@ -60,12 +60,12 @@ namespace Atlas {
         void Buffer::SetSize(size_t elementCount, void* data) {
 
             // If the element count is the same we can reuse the old buffer
-			if (this->elementCount == elementCount) {
-				if (!data)
-					return;
-				SetData(data, 0, elementCount);
-				return;
-			}
+            if (this->elementCount == elementCount) {
+                if (!data)
+                    return;
+                SetData(data, 0, elementCount);
+                return;
+            }
 
             this->elementCount = elementCount;
             sizeInBytes = elementCount * elementSize;
@@ -116,10 +116,10 @@ namespace Atlas {
         }
 
         void Buffer::Copy(const Buffer *copyBuffer, size_t readOffset, 
-			size_t writeOffset, size_t length) {
+            size_t writeOffset, size_t length) {
 
-			if (!length)
-				return;
+            if (!length)
+                return;
 
 
 

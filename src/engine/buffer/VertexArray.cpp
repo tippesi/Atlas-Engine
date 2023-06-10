@@ -2,16 +2,16 @@
 
 namespace Atlas {
 
-	namespace Buffer {
+    namespace Buffer {
 
-		void VertexArray::AddIndexComponent(IndexBuffer buffer) {
+        void VertexArray::AddIndexComponent(IndexBuffer buffer) {
 
             hasIndexComponent = true;
-			indexComponent = buffer;
+            indexComponent = buffer;
 
-		}
+        }
 
-		void VertexArray::AddComponent(uint32_t attribArray, VertexBuffer buffer) {
+        void VertexArray::AddComponent(uint32_t attribArray, VertexBuffer buffer) {
 
             VertexComponent component;
             component.vertexBuffer = buffer;
@@ -20,9 +20,9 @@ namespace Atlas {
             component.bindingDescription = Graphics::Initializers::InitVertexInputBindingDescription(
                 attribArray, buffer.elementSize);
 
-			vertexComponents[attribArray] = component;
+            vertexComponents[attribArray] = component;
 
-		}
+        }
 
         void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer buffer) {
 
@@ -38,11 +38,11 @@ namespace Atlas {
 
         }
 
-		IndexBuffer VertexArray::GetIndexComponent() {
+        IndexBuffer VertexArray::GetIndexComponent() {
 
-			return indexComponent;
+            return indexComponent;
 
-		}
+        }
 
         bool VertexArray::HasIndexComponent() const {
 
@@ -50,11 +50,11 @@ namespace Atlas {
 
         }
 
-		VertexBuffer VertexArray::GetComponent(uint32_t attribArray) {
+        VertexBuffer VertexArray::GetComponent(uint32_t attribArray) {
 
-			return vertexComponents[attribArray].vertexBuffer;
+            return vertexComponents[attribArray].vertexBuffer;
 
-		}
+        }
 
         void VertexArray::Bind(Graphics::CommandList *commandList) const {
 
@@ -85,6 +85,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

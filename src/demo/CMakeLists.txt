@@ -9,8 +9,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 file(GLOB_RECURSE DEMO_SOURCE_FILES
         "*.cpp"
         "*.c"
-		"*.h"
-		"*.hpp"
+        "*.h"
+        "*.hpp"
         )
 
 # Required: Set both the source and dependency directories 

@@ -12,15 +12,15 @@
 class App : public Atlas::EngineInstance {
 
 public:
-	App() : EngineInstance("Atlas Engine", 1280, 720, WINDOW_FLAGS) {}
+    App() : EngineInstance("Atlas Engine", 1280, 720, WINDOW_FLAGS) {}
 
-	virtual void LoadContent() final;
+    virtual void LoadContent() final;
 
-	virtual void UnloadContent() final;
+    virtual void UnloadContent() final;
 
-	virtual void Update(float deltaTime) final;
+    virtual void Update(float deltaTime) final;
 
-	virtual void Render(float deltaTime) final;
+    virtual void Render(float deltaTime) final;
 
 private:
     Atlas::Viewport viewport;

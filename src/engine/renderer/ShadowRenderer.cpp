@@ -7,7 +7,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void ShadowRenderer::Init(Graphics::GraphicsDevice* device) {
 
@@ -15,7 +15,7 @@ namespace Atlas {
 
         }
 
-		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
             Graphics::Profiler::BeginQuery("Shadows");
@@ -167,7 +167,7 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
         Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
 
@@ -198,6 +198,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

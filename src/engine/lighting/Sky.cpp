@@ -2,24 +2,24 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		Sky::Sky() {
+        Sky::Sky() {
 
 
 
-		}
+        }
 
-		EnvironmentProbe* Sky::GetProbe() {
+        EnvironmentProbe* Sky::GetProbe() {
 
-			// Prioritize user loaded cubemaps
-			if (probe) return probe.get();
-			if (atmosphere) return &atmosphere->probe;
+            // Prioritize user loaded cubemaps
+            if (probe) return probe.get();
+            if (atmosphere) return &atmosphere->probe;
 
-			return nullptr;
+            return nullptr;
 
-		}
+        }
 
-	}
+    }
 
 }

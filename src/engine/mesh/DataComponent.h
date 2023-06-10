@@ -14,7 +14,7 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
         enum class ComponentFormat {
             UnsignedInt = 0,
@@ -24,22 +24,22 @@ namespace Atlas {
             PackedFloat = 4
         };
 
-		/**
-		 * Converts mesh data from basic types to
-		 * more compressed data internally.
-		 * @tparam T
-		 */
-		template <class T> class DataComponent {
+        /**
+         * Converts mesh data from basic types to
+         * more compressed data internally.
+         * @tparam T
+         */
+        template <class T> class DataComponent {
 
             static_assert(std::is_same_v<T, float> || std::is_same_v<T, vec2> ||
                           std::is_same_v<T, vec3> || std::is_same_v<T, vec4> ||
                           std::is_same_v<T, uint32_t>, "Unsupported data format.");
 
-		public:
-			/**
-			 * Constructs a DataComponent object.
-			 */
-			DataComponent() = default;
+        public:
+            /**
+             * Constructs a DataComponent object.
+             */
+            DataComponent() = default;
 
             /**
              * Constructs a DataComponent object.
@@ -67,18 +67,18 @@ namespace Atlas {
              */
             VkFormat GetFormat() const;
 
-			/**
+            /**
              * Sets the data for the component and converts it into data of component type.
              * @param values An vector of values of type S.
              * @note The length of the should be exactly the same as the size set by {@link SetSize}.
              */
-			void Set(std::vector<T>& values);
+            void Set(std::vector<T>& values);
 
-			/**
+            /**
              * Returns the data in type S which the components holds.
              * @return A pointer to the data.
              */
-			std::vector<T>& Get();
+            std::vector<T>& Get();
 
             /**
              * Gets the stride between converted elements to form
@@ -93,17 +93,17 @@ namespace Atlas {
              */
             size_t GetElementSize();
 
-			/**
-			 * Converts the data and returns a byte array.
-			 * @return Returns the converted data as a byte vector.
-			 */
-			std::vector<std::byte>& GetConverted();
+            /**
+             * Converts the data and returns a byte array.
+             * @return Returns the converted data as a byte vector.
+             */
+            std::vector<std::byte>& GetConverted();
 
-			/**
-			 * Converts the data and returns a void pointer pointing to the data.
-			 * @return A void pointer pointing to the converted data.
-			 */
-			void* GetConvertedVoid();
+            /**
+             * Converts the data and returns a void pointer pointing to the data.
+             * @return A void pointer pointing to the converted data.
+             */
+            void* GetConvertedVoid();
 
             /**
              * Clears the converted data which is created by to free space.
@@ -111,21 +111,21 @@ namespace Atlas {
              */
             void ClearConverted();
 
-			/**
+            /**
              *
              * @return
              */
-			bool ContainsData();
+            bool ContainsData();
 
-		private:
+        private:
             void ConvertData();
 
             ComponentFormat format;
 
-			std::vector<T> data;
+            std::vector<T> data;
             std::vector<std::byte> converted;
 
-		};
+        };
 
         template <class T>
         DataComponent<T>::DataComponent(ComponentFormat format) : format(format) {
@@ -187,15 +187,15 @@ namespace Atlas {
             }
         }
 
-		template <class T>
-		void DataComponent<T>::Set(std::vector<T>& data) {
+        template <class T>
+        void DataComponent<T>::Set(std::vector<T>& data) {
 
             this->data = data;
 
-		}
+        }
 
-		template <class T>
-		std::vector<T>& DataComponent<T>::Get() {
+        template <class T>
+        std::vector<T>& DataComponent<T>::Get() {
 
             return data;
 
@@ -209,21 +209,21 @@ namespace Atlas {
 
         }
 
-		template <class T>
-		size_t DataComponent<T>::GetElementSize() {
+        template <class T>
+        size_t DataComponent<T>::GetElementSize() {
 
             size_t size = 0;
-			switch (format) {
+            switch (format) {
                 case ComponentFormat::UnsignedInt: size = sizeof(uint32_t) * GetStride(); break;
-				case ComponentFormat::UnsignedShort: size = sizeof(uint16_t) * GetStride(); break;
-				case ComponentFormat::Float: size = sizeof(float) * GetStride(); break;
-				case ComponentFormat::HalfFloat: size = sizeof(float16) * GetStride(); break;
-				case ComponentFormat::PackedFloat: size = sizeof(uint32_t); break;
-			}
+                case ComponentFormat::UnsignedShort: size = sizeof(uint16_t) * GetStride(); break;
+                case ComponentFormat::Float: size = sizeof(float) * GetStride(); break;
+                case ComponentFormat::HalfFloat: size = sizeof(float16) * GetStride(); break;
+                case ComponentFormat::PackedFloat: size = sizeof(uint32_t); break;
+            }
 
-			return size;
+            return size;
 
-		}
+        }
 
         template<class T>
         std::vector<std::byte>& DataComponent<T>::GetConverted() {
@@ -233,13 +233,13 @@ namespace Atlas {
 
         }
 
-		template <class T>
-		void* DataComponent<T>::GetConvertedVoid() {
+        template <class T>
+        void* DataComponent<T>::GetConvertedVoid() {
 
             ConvertData();
             return static_cast<void*>(converted.data());
 
-		}
+        }
 
         template <class T>
         void DataComponent<T>::ClearConverted() {
@@ -248,12 +248,12 @@ namespace Atlas {
 
         }
 
-		template <class T>
-		bool DataComponent<T>::ContainsData() {
+        template <class T>
+        bool DataComponent<T>::ContainsData() {
 
-			return data.size() > 0;
+            return data.size() > 0;
 
-		}
+        }
 
         template<class T>
         void DataComponent<T>::ConvertData() {

@@ -12,20 +12,20 @@
 
 namespace Atlas {
 
-	namespace Loader {
+    namespace Loader {
 
-		/**
-		 * The asset loader is an abstraction for the operating system reads and writes to
-		 * files. It allows the access to a data folder on every operating system.
-		 * @note On Android the asset loader will copy data from the asset folder to the cache
-		 * of the application in order to allow read and writes.
-		 */
+        /**
+         * The asset loader is an abstraction for the operating system reads and writes to
+         * files. It allows the access to a data folder on every operating system.
+         * @note On Android the asset loader will copy data from the asset folder to the cache
+         * of the application in order to allow read and writes.
+         */
         class AssetLoader {
 
         public:
-        	/**
-        	 * Initializes the asset loader. Is called by the engine.
-        	 */
+            /**
+             * Initializes the asset loader. Is called by the engine.
+             */
             static void Init();
 
             /**
@@ -61,18 +61,18 @@ namespace Atlas {
              */
             static std::ofstream WriteFile(std::string filename, std::ios_base::openmode mode);
 
-			/**
-			 * Removes a file from the asset directory.
-			 * @param filename A path to the file relative to the asset directory.
-			 * @return True if successful, false otherwise.
-			 */
-			static bool RemoveFile(std::string filename);
+            /**
+             * Removes a file from the asset directory.
+             * @param filename A path to the file relative to the asset directory.
+             * @return True if successful, false otherwise.
+             */
+            static bool RemoveFile(std::string filename);
 
             /**
              * Returns a size for a readable opened file.
              * @param stream An ifstream object.
              * @return The size of the file in bytes.
-			 * @note Assumes the stream is opened in binary mode.
+             * @note Assumes the stream is opened in binary mode.
              */
             static size_t GetFileSize(std::ifstream& stream);
 
@@ -80,7 +80,7 @@ namespace Atlas {
              * Returns the content of the file as a byte vector.
              * @param stream An ifstream object.
              * @return The content of tha file.
-			 * @note Assumes the stream is opened in binary mode.
+             * @note Assumes the stream is opened in binary mode.
              */
             static std::vector<char> GetFileContent(std::ifstream& stream);
 
@@ -105,21 +105,21 @@ namespace Atlas {
              */
             static std::string GetFullPath(std::string path);
 
-			/**
-			 * Checks whether the file is in the asset directory.
-			 * @param path A path to a file.
-			 * @return True if file is in asset directory, false otherwise.
-			 */
-			static bool IsFileInAssetDirectory(std::string path);
+            /**
+             * Checks whether the file is in the asset directory.
+             * @param path A path to a file.
+             * @return True if file is in asset directory, false otherwise.
+             */
+            static bool IsFileInAssetDirectory(std::string path);
 
-			/**
-			 * Sets the loading behaviour of compressed assets.
-			 * @param alwaysReload Whether to reload assets every time the program runs
-			 * If set to true, the AssetLoader will always load the assets again. This is
-			 * interesting for debugging purposes, when one deploys the app with changes to
-			 * the assets. Normally all assets are cached and loaded from cache, when available.
-			 */
-			static void SetReloadBehaviour(bool alwaysReload = false);
+            /**
+             * Sets the loading behaviour of compressed assets.
+             * @param alwaysReload Whether to reload assets every time the program runs
+             * If set to true, the AssetLoader will always load the assets again. This is
+             * interesting for debugging purposes, when one deploys the app with changes to
+             * the assets. Normally all assets are cached and loaded from cache, when available.
+             */
+            static void SetReloadBehaviour(bool alwaysReload = false);
 
         private:
             static std::string GetAssetPath(std::string path);
@@ -139,7 +139,7 @@ namespace Atlas {
 
         };
 
-	}
+    }
 
 }
 

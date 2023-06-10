@@ -42,6 +42,6 @@ void App::Render(float deltaTime) {
 
 Atlas::EngineInstance* GetEngineInstance() {
 
-	return new App();
+    return new App();
 
 }

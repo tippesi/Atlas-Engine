@@ -10,11 +10,11 @@ struct ViewPlane {
 };
 
 layout (std430, binding = 1) buffer ViewPlanes {
-	ViewPlane viewPlanes[];
+    ViewPlane viewPlanes[];
 };
 
 layout(std430, binding = 2) buffer Matrices {
-	mat4 matrices[];
+    mat4 matrices[];
 };
 
 out vec2 texCoordVS;
@@ -34,21 +34,21 @@ void main() {
     mat4 mMatrix = matrices[gl_InstanceID];
 
     texCoordVS = 0.5 * vPosition + 0.5;
-	
-	vec3 pos = vec3(mMatrix * vec4(0.0, 0.0, 0.0, 1.0));
-	vec3 dir = cameraLocation - pos;
+    
+    vec3 pos = vec3(mMatrix * vec4(0.0, 0.0, 0.0, 1.0));
+    vec3 dir = cameraLocation - pos;
     float frames = float(views);
 
-	vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
-	vec2 coord = round(octahedron * (frames - 1.0));
-	
-	indexVS = Flatten2D(ivec2(coord), ivec2(frames));
-	
+    vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
+    vec2 coord = round(octahedron * (frames - 1.0));
+    
+    indexVS = Flatten2D(ivec2(coord), ivec2(frames));
+    
     vec2 position = vPosition.xy * radius;
 
     ViewPlane viewPlane = viewPlanes[indexVS];
     vec4 modelPosition = vec4((viewPlane.up.xyz * position.y
-        + viewPlane.right.xyz * position.x) + center, 1.0);	
+        + viewPlane.right.xyz * position.x) + center, 1.0);    
 
     gl_Position =  pMatrix * vMatrix * mMatrix * modelPosition;
 

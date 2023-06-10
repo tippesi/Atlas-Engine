@@ -34,7 +34,7 @@ namespace Atlas {
         private:
             static void Callback(void* userData, uint8_t* stream, int32_t length);
 
-			static void Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src);
+            static void Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src);
 
             static SDL_AudioSpec audioSpec;
             static SDL_AudioDeviceID audioDevice;
@@ -42,7 +42,7 @@ namespace Atlas {
             static std::vector<AudioStream*> musicQueue;
             static std::vector<AudioStream*> effectQueue;
 
-			static std::mutex mutex;
+            static std::mutex mutex;
 
         };
 

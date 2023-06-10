@@ -2,9 +2,9 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		void DirectLightRenderer::Init(Graphics::GraphicsDevice* device) {
+        void DirectLightRenderer::Init(Graphics::GraphicsDevice* device) {
 
             this->device = device;
 
@@ -24,10 +24,10 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
-		}
+        }
 
-		void DirectLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-			Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void DirectLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             if (!scene->sky.sun) return;
 
@@ -101,8 +101,8 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-		}
+        }
 
-	}
+    }
 
 }

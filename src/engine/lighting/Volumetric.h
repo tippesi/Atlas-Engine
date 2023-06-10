@@ -7,19 +7,19 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class Volumetric {
+        class Volumetric {
 
-		public:
-			Volumetric(int32_t sampleCount = 10, float intensity = 1.0f);
+        public:
+            Volumetric(int32_t sampleCount = 10, float intensity = 1.0f);
 
-			int32_t sampleCount = 10;
-			float intensity = 1.0f;
+            int32_t sampleCount = 10;
+            float intensity = 1.0f;
 
-		};
+        };
 
-	}
+    }
 
 }
 

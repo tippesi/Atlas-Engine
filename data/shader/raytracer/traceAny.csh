@@ -5,18 +5,18 @@
 layout (local_size_x = 32) in;
 
 layout (std430, binding = 4) buffer WriteMissRays {
-	PackedRay writeMissRays[];
+    PackedRay writeMissRays[];
 };
 
 void main() {
-	
-	uint index = gl_GlobalInvocationID.x;
-	
-	Ray ray;
-	
-	/*
-	if (index < readAtomic[0]) {
-		ray = UnpackRay(readRays[index]);
+    
+    uint index = gl_GlobalInvocationID.x;
+    
+    Ray ray;
+    
+    /*
+    if (index < readAtomic[0]) {
+        ray = UnpackRay(readRays[index]);
 
         ray.hitID = -1;
         // Find any triangle in the BVH
@@ -24,9 +24,9 @@ void main() {
 
         if (ray.hitID >= 0) {
             uint counter = atomicAdd(writeAtomic[0], uint(1));
-			writeRays[counter] = PackRay(ray);
+            writeRays[counter] = PackRay(ray);
         }
-	}
-	*/
+    }
+    */
 
 }

@@ -4,7 +4,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void PostProcessRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -21,7 +21,7 @@ namespace Atlas {
 
         }
 
-		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
@@ -116,9 +116,9 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
+        void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
 
             const auto& postProcessing = scene->postProcessing;
 
@@ -149,7 +149,7 @@ namespace Atlas {
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
-		}
+        }
 
         PipelineConfig PostProcessRenderer::GetMainPipelineConfig() {
 
@@ -186,6 +186,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

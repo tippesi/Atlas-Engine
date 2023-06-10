@@ -5,147 +5,147 @@
 
 namespace Atlas {
 
-	namespace Input {
+    namespace Input {
 
-		MouseHandler::MouseHandler() {
+        MouseHandler::MouseHandler() {
 
-			RegisterEvents();
+            RegisterEvents();
 
-		}
+        }
 
-		MouseHandler::MouseHandler(const MouseHandler& that) {
+        MouseHandler::MouseHandler(const MouseHandler& that) {
 
-			RegisterEvents();
+            RegisterEvents();
 
-			DeepCopy(that);
+            DeepCopy(that);
 
-		}
+        }
 
-		MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse) :
-				sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
+        MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse) :
+                sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
-			RegisterEvents();
+            RegisterEvents();
 
-			rotation = camera->rotation;
+            rotation = camera->rotation;
 
-		}
+        }
 
-		MouseHandler::~MouseHandler() {
+        MouseHandler::~MouseHandler() {
 
-			Atlas::Events::EventManager::MouseMotionEventDelegate.Unsubscribe(
-				mouseMotionEventHandle
-			);
-			Atlas::Events::EventManager::MouseButtonEventDelegate.Unsubscribe(
-				mouseButtonEventHandle
-			);
+            Atlas::Events::EventManager::MouseMotionEventDelegate.Unsubscribe(
+                mouseMotionEventHandle
+            );
+            Atlas::Events::EventManager::MouseButtonEventDelegate.Unsubscribe(
+                mouseButtonEventHandle
+            );
 
-		}
+        }
 
-		MouseHandler& MouseHandler::operator=(const MouseHandler& that) {
+        MouseHandler& MouseHandler::operator=(const MouseHandler& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				DeepCopy(that);
+                DeepCopy(that);
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		void MouseHandler::Update(Camera* camera, float deltaTime) {
+        void MouseHandler::Update(Camera* camera, float deltaTime) {
 
-			float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-			camera->rotation = glm::mix(camera->rotation, rotation, progress);
+            camera->rotation = glm::mix(camera->rotation, rotation, progress);
 
-		}
+        }
 
-		void MouseHandler::Reset(Camera* camera) {
+        void MouseHandler::Reset(Camera* camera) {
 
-			rotation = camera->rotation;
+            rotation = camera->rotation;
 
-		}
+        }
 
-		void MouseHandler::SetActivationButton(uint8_t mouseButton) {
+        void MouseHandler::SetActivationButton(uint8_t mouseButton) {
 
-			activationButton = mouseButton;
+            activationButton = mouseButton;
 
-		}
+        }
 
-		void MouseHandler::HideMouse() {
+        void MouseHandler::HideMouse() {
 
-			hideMouse = true;
-			SDL_ShowCursor(0);
+            hideMouse = true;
+            SDL_ShowCursor(0);
 
-		}
+        }
 
-		void MouseHandler::ShowMouse() {
+        void MouseHandler::ShowMouse() {
 
-			hideMouse = false;
-			SDL_ShowCursor(1);
+            hideMouse = false;
+            SDL_ShowCursor(1);
 
-		}
+        }
 
-		void MouseHandler::RegisterEvents() {
+        void MouseHandler::RegisterEvents() {
 
-			auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
-			mouseMotionEventHandle = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+            auto mouseMotionEventHandler = std::bind(&MouseHandler::MouseMotionEventHandler, this, std::placeholders::_1);
+            mouseMotionEventHandle = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
-			auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
-			mouseButtonEventHandle = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+            auto mouseButtonEventHandler = std::bind(&MouseHandler::MouseButtonEventHandler, this, std::placeholders::_1);
+            mouseButtonEventHandle = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
-		}
+        }
 
-		void MouseHandler::MouseMotionEventHandler(Events::MouseMotionEvent event) {
+        void MouseHandler::MouseMotionEventHandler(Events::MouseMotionEvent event) {
 
-			if (event.windowID == 0 || lock)
-				return;
+            if (event.windowID == 0 || lock)
+                return;
 
-			if (hideMouse) {
+            if (hideMouse) {
 
 
 
-			}
-			else {
+            }
+            else {
 
-				if (!activationButtonDown)
-					return;
+                if (!activationButtonDown)
+                    return;
 
-				rotation += glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
+                rotation += glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
 
-			}
+            }
 
-		}
+        }
 
-		void MouseHandler::MouseButtonEventHandler(Events::MouseButtonEvent event) {
+        void MouseHandler::MouseButtonEventHandler(Events::MouseButtonEvent event) {
 
-			if (event.windowID == 0)
-				return;
+            if (event.windowID == 0)
+                return;
 
-			if (event.button == activationButton && event.state == AE_BUTTON_PRESSED)
-				activationButtonDown = true;
+            if (event.button == activationButton && event.state == AE_BUTTON_PRESSED)
+                activationButtonDown = true;
 
-			if (event.button == activationButton && event.state == AE_BUTTON_RELEASED)
-				activationButtonDown = false;
+            if (event.button == activationButton && event.state == AE_BUTTON_RELEASED)
+                activationButtonDown = false;
 
-		}
+        }
 
-		void MouseHandler::DeepCopy(const MouseHandler& that) {
+        void MouseHandler::DeepCopy(const MouseHandler& that) {
 
-			sensibility = that.sensibility;
-			reactivity = that.reactivity;
+            sensibility = that.sensibility;
+            reactivity = that.reactivity;
 
-			lock = that.lock;
-			hideMouse = that.hideMouse;
+            lock = that.lock;
+            hideMouse = that.hideMouse;
 
-			activationButtonDown = that.activationButtonDown;
-			activationButton = that.activationButton;
+            activationButtonDown = that.activationButtonDown;
+            activationButton = that.activationButton;
 
-			rotation = that.rotation;
+            rotation = that.rotation;
 
-		}
+        }
 
-	}
+    }
 
 }

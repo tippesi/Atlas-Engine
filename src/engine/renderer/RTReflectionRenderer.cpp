@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void RTReflectionRenderer::Init(Graphics::GraphicsDevice* device) {
             
@@ -34,9 +34,9 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
-		}
+        }
 
-		void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+        void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             static uint32_t frameCount = 0;
@@ -276,8 +276,8 @@ namespace Atlas {
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

@@ -6,39 +6,39 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class PointLightRenderer : public Renderer {
+        class PointLightRenderer : public Renderer {
 
-		public:
-			PointLightRenderer();
+        public:
+            PointLightRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-		private:
-			void GetUniforms();
+        private:
+            void GetUniforms();
 
-			Buffer::VertexArray vertexArray;
+            Buffer::VertexArray vertexArray;
 
             /*
-			OldShader::OldShader shader;
+            OldShader::OldShader shader;
 
-			OldShader::Uniform* viewMatrix = nullptr;
-			OldShader::Uniform* projectionMatrix = nullptr;
-			OldShader::Uniform* inverseProjectionMatrix = nullptr;
-			OldShader::Uniform* lightViewMatrix = nullptr;
-			OldShader::Uniform* lightProjectionMatrix = nullptr;
-			OldShader::Uniform* viewSpaceLightLocation = nullptr;
-			OldShader::Uniform* lightLocation = nullptr;
-			OldShader::Uniform* lightColor = nullptr;
-			OldShader::Uniform* lightAmbient = nullptr;
-			OldShader::Uniform* lightRadius = nullptr;
-			OldShader::Uniform* shadowEnabled = nullptr;
+            OldShader::Uniform* viewMatrix = nullptr;
+            OldShader::Uniform* projectionMatrix = nullptr;
+            OldShader::Uniform* inverseProjectionMatrix = nullptr;
+            OldShader::Uniform* lightViewMatrix = nullptr;
+            OldShader::Uniform* lightProjectionMatrix = nullptr;
+            OldShader::Uniform* viewSpaceLightLocation = nullptr;
+            OldShader::Uniform* lightLocation = nullptr;
+            OldShader::Uniform* lightColor = nullptr;
+            OldShader::Uniform* lightAmbient = nullptr;
+            OldShader::Uniform* lightRadius = nullptr;
+            OldShader::Uniform* shadowEnabled = nullptr;
             */
 
-		};
+        };
 
-	}
+    }
 
 }
 

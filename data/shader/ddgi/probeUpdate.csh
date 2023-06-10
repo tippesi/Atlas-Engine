@@ -28,7 +28,7 @@ layout (local_size_x = 14, local_size_y = 14) in;
 #endif
 
 layout(std430, set = 3, binding = 1) buffer RayHits {
-	PackedRayHit hits[];
+    PackedRayHit hits[];
 };
 
 const uint sharedSize = 32;
@@ -111,7 +111,7 @@ void main() {
 
             if (weight >= 0.00001) {
                 vec3 radiance = vec3(rayData[j].radiance, rayData[j].direction.a);
-                result += vec4(radiance, 1.0) * weight;	
+                result += vec4(radiance, 1.0) * weight;    
             }
 #else
             float dist = rayData[j].dist;

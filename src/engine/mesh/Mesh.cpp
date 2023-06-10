@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
         Mesh::Mesh(MeshData &meshData, MeshMobility mobility) : data(meshData), mobility(mobility) {
 
@@ -52,6 +52,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

@@ -9,37 +9,37 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TextureRenderer : public Renderer {
+        class TextureRenderer : public Renderer {
 
-		public:
-			TextureRenderer() = default;
+        public:
+            TextureRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
+            void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
-			void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
+            void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 bool alphaBlending = false, bool invert = false);
 
-			void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
+            void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
                 int32_t depth, float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
-			void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
+            void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
                 int32_t depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 bool alphaBlending = false, bool invert = false);
 
-			void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
+            void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
                 float depth, float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
-			void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
+            void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
                 float depth, float x, float y, float width, float height,
-				vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
+                vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
-		private:
+        private:
             struct alignas(16) PushConstants {
                 mat4 pMatrix;
                 vec4 blendArea;
@@ -57,17 +57,17 @@ namespace Atlas {
             PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 const std::vector<std::string>& macros);
 
-			Buffer::VertexArray vertexArray;
+            Buffer::VertexArray vertexArray;
 
             /*
-			OldShader::OldShader texture2DShader;
-			OldShader::OldShader texture2DArrayShader;
-			OldShader::OldShader texture3DShader;
+            OldShader::OldShader texture2DShader;
+            OldShader::OldShader texture2DArrayShader;
+            OldShader::OldShader texture3DShader;
             */
 
-		};
+        };
 
-	}
+    }
 
 }
 

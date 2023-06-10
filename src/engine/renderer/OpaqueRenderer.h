@@ -11,26 +11,26 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class OpaqueRenderer : public Renderer {
+        class OpaqueRenderer : public Renderer {
 
-		public:
-			OpaqueRenderer() = default;
+        public:
+            OpaqueRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-				Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
-			void RenderImpostor(Viewport* viewport, const std::vector<mat4>& viewMatrices,
-				mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
+            void RenderImpostor(Viewport* viewport, const std::vector<mat4>& viewMatrices,
+                mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
-		private:
-			ImpostorRenderer impostorRenderer;
+        private:
+            ImpostorRenderer impostorRenderer;
 
-			struct PushConstants {
+            struct PushConstants {
                 uint32_t vegetation;
                 uint32_t invertUVs;
                 uint32_t twoSided;
@@ -41,10 +41,10 @@ namespace Atlas {
             };
 
 
-		};
+        };
 
 
-	}
+    }
 
 }
 

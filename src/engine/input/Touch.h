@@ -12,43 +12,43 @@ namespace Atlas {
         class TouchHandler {
 
         public:
-			TouchHandler();
+            TouchHandler();
 
-			TouchHandler(const TouchHandler& that);
+            TouchHandler(const TouchHandler& that);
 
-			TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
+            TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
 
-			~TouchHandler();
+            ~TouchHandler();
 
-			TouchHandler& operator=(const TouchHandler& that);
+            TouchHandler& operator=(const TouchHandler& that);
 
-			void Update(Camera* camera, float deltaTime);
+            void Update(Camera* camera, float deltaTime);
 
-			void Reset(Camera* camera);
+            void Reset(Camera* camera);
 
-			float sensibility = 1.5f;
-			float speed = 7.0f;
-			float reactivity = 6.0f;
+            float sensibility = 1.5f;
+            float speed = 7.0f;
+            float reactivity = 6.0f;
 
         private:
-			void RegisterEvent();
+            void RegisterEvent();
 
             void TouchEventHandler(Events::TouchEvent event);
 
-			void DeepCopy(const TouchHandler& that);
+            void DeepCopy(const TouchHandler& that);
 
-			struct Finger {
-				vec2 position;
-				int64_t ID;
-			};
+            struct Finger {
+                vec2 position;
+                int64_t ID;
+            };
 
-			struct Finger leftFinger = { vec2(0.0f), -1 };
-			struct Finger rightFinger = { vec2(0.0f), -1 };
+            struct Finger leftFinger = { vec2(0.0f), -1 };
+            struct Finger rightFinger = { vec2(0.0f), -1 };
 
-			vec3 location = vec3(0.0f);
-			vec2 rotation = vec2(0.0f);
+            vec3 location = vec3(0.0f);
+            vec2 rotation = vec2(0.0f);
 
-			int32_t eventHandle = -1;
+            int32_t eventHandle = -1;
 
         };
 

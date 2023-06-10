@@ -8,31 +8,31 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class DDGIRenderer : public Renderer {
+        class DDGIRenderer : public Renderer {
 
-		public:
-			DDGIRenderer() = default;
+        public:
+            DDGIRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-			void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
+            void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
 
-			void DebugProbes(Viewport* viewport, RenderTarget* target,
-				Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList,
-				std::unordered_map<void*, uint16_t>& materialMap);
+            void DebugProbes(Viewport* viewport, RenderTarget* target,
+                Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList,
+                std::unordered_map<void*, uint16_t>& materialMap);
 
-			// Used for debugging
-			Material probeDebugMaterial;
-			Material probeDebugActiveMaterial;
-			Material probeDebugInactiveMaterial;
-			Material probeDebugOffsetMaterial;
+            // Used for debugging
+            Material probeDebugMaterial;
+            Material probeDebugActiveMaterial;
+            Material probeDebugInactiveMaterial;
+            Material probeDebugOffsetMaterial;
 
-		private:
+        private:
             struct alignas(16) RayGenUniforms {
                 mat4 rotationMatrix;
             };
@@ -69,15 +69,15 @@ namespace Atlas {
                 uint32_t probeOffsetMaterialIdx;
             };
 
-			Buffer::Buffer rayHitBuffer;
+            Buffer::Buffer rayHitBuffer;
 
-			Buffer::UniformBuffer rayGenUniformBuffer;
-			Buffer::UniformBuffer rayHitUniformBuffer;
+            Buffer::UniformBuffer rayGenUniformBuffer;
+            Buffer::UniformBuffer rayHitUniformBuffer;
 
-			Buffer::VertexArray vertexArray;
-			Buffer::VertexArray sphereArray;
+            Buffer::VertexArray vertexArray;
+            Buffer::VertexArray sphereArray;
 
-			Helper::RayTracingHelper helper;
+            Helper::RayTracingHelper helper;
 
             PipelineConfig probeDebugPipelineConfig;
 
@@ -94,9 +94,9 @@ namespace Atlas {
             Ref<Graphics::Sampler> shadowSampler;
 
 
-		};
+        };
 
-	}
+    }
 
 }
 

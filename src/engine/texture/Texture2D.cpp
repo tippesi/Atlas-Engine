@@ -16,25 +16,25 @@ namespace Atlas {
         Texture2D::Texture2D(std::string filename, bool colorSpaceConversion,
             Filtering filtering, int32_t forceChannels) {
 
-			auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename,
-					colorSpaceConversion, forceChannels);
-			InitializeInternal(image, Wrapping::Repeat, filtering);
+            auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename,
+                    colorSpaceConversion, forceChannels);
+            InitializeInternal(image, Wrapping::Repeat, filtering);
 
         }
 
-		Texture2D::Texture2D(Common::Image<uint8_t>& image, Filtering filtering) {
+        Texture2D::Texture2D(Common::Image<uint8_t>& image, Filtering filtering) {
 
             InitializeInternal(image, Wrapping::Repeat, filtering);
 
-		}
+        }
 
         void Texture2D::Resize(int32_t width, int32_t height) {
 
-			if (width != this->width || height != this->height) {
+            if (width != this->width || height != this->height) {
 
                 Reallocate(Graphics::ImageType::Image2D, width, height, 1, filtering, wrapping);
 
-			}
+            }
 
         }
 
@@ -55,9 +55,9 @@ namespace Atlas {
             Reallocate(Graphics::ImageType::Image2D, image.width, image.height, 1, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
-			SetData(image.GetData());
+            SetData(image.GetData());
 
-		}
+        }
 
     }
 

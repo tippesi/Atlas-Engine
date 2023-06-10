@@ -6,42 +6,42 @@
 
 namespace Atlas {
 
-	namespace Events {
+    namespace Events {
 
-		/**
+        /**
          * A class to distribute mouse wheel events.
          */
-		class MouseWheelEvent {
+        class MouseWheelEvent {
 
-		public:
-			explicit MouseWheelEvent(SDL_MouseWheelEvent event) {
+        public:
+            explicit MouseWheelEvent(SDL_MouseWheelEvent event) {
 
-				windowID = event.windowID;
-				x = event.x;
-				y = event.y;
+                windowID = event.windowID;
+                x = event.x;
+                y = event.y;
 
-			}
+            }
 
-			/**
+            /**
              * The ID of the window the event occurred in
              */
-			uint32_t windowID;
+            uint32_t windowID;
 
-			/**
+            /**
              * Horizontal scrolling, is positive when scrolling to
              * the right and negative otherwise
              */
-			int32_t x;
+            int32_t x;
 
-			/**
+            /**
              * Vertical scrolling, is positive when scrolling to
              * the up and negative otherwise
              */
-			int32_t y;
+            int32_t y;
 
-		};
+        };
 
-	}
+    }
 
 }
 

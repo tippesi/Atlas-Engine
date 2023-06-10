@@ -2,10 +2,10 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
 
 
-	}
+    }
 
 }

@@ -13,98 +13,98 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
-		struct MeshSubData {
+        struct MeshSubData {
 
-			std::string name;
+            std::string name;
 
-			uint32_t indicesOffset;
-			uint32_t indicesCount;
-			
-			Material* material;
+            uint32_t indicesOffset;
+            uint32_t indicesCount;
+            
+            Material* material;
 
-			Volume::AABB aabb;
-		
-		};
+            Volume::AABB aabb;
+        
+        };
 
-		class MeshData {
+        class MeshData {
 
-		public:
-			/**
-			 *
-			 */
-			MeshData();
+        public:
+            /**
+             *
+             */
+            MeshData();
 
-			/**
-			 *
-			 * @param data
-			 */
-			 MeshData(const MeshData& data);
+            /**
+             *
+             * @param data
+             */
+             MeshData(const MeshData& data);
 
-			/**
-			 *
-			 * @param that
-			 * @return
-			 */
-			MeshData& operator=(const MeshData& that);
+            /**
+             *
+             * @param that
+             * @return
+             */
+            MeshData& operator=(const MeshData& that);
 
-			/**
-			 *
-			 * @param count
-			 */
-			void SetIndexCount(int32_t count);
+            /**
+             *
+             * @param count
+             */
+            void SetIndexCount(int32_t count);
 
-			/**
-			 *
-			 */
-			int32_t GetIndexCount() const;
+            /**
+             *
+             */
+            int32_t GetIndexCount() const;
 
-			/**
-			 *
-			 * @param count
-			 */
-			void SetVertexCount(int32_t count);
+            /**
+             *
+             * @param count
+             */
+            void SetVertexCount(int32_t count);
 
-			/**
-			 *
-			 * @return
-			 */
-			int32_t GetVertexCount() const;
+            /**
+             *
+             * @return
+             */
+            int32_t GetVertexCount() const;
 
-			/**
-			 * Applies a transformation matrix to the data.
-			 * @param transform
-			 */
-			void SetTransform(mat4 transform);
+            /**
+             * Applies a transformation matrix to the data.
+             * @param transform
+             */
+            void SetTransform(mat4 transform);
 
             std::string filename;
 
-			DataComponent<uint32_t> indices;
+            DataComponent<uint32_t> indices;
 
-			DataComponent<vec3> vertices;
-			DataComponent<vec2> texCoords;
-			DataComponent<vec4> normals;
-			DataComponent<vec4> tangents;
+            DataComponent<vec3> vertices;
+            DataComponent<vec2> texCoords;
+            DataComponent<vec4> normals;
+            DataComponent<vec4> tangents;
 
-			std::vector<Material> materials;
-			std::vector<MeshSubData> subData;
+            std::vector<Material> materials;
+            std::vector<MeshSubData> subData;
 
-			int32_t primitiveType = 0;
+            int32_t primitiveType = 0;
 
-			Volume::AABB aabb;
+            Volume::AABB aabb;
 
-			mat4 transform;
+            mat4 transform;
 
-		private:
-			void DeepCopy(const MeshData& that);
+        private:
+            void DeepCopy(const MeshData& that);
 
-			int32_t indexCount = 0;
-			int32_t vertexCount = 0;
+            int32_t indexCount = 0;
+            int32_t vertexCount = 0;
 
-		};
+        };
 
-	}
+    }
 
 }
 

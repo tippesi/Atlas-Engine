@@ -4,15 +4,15 @@
 struct Light {
 
     vec4 location;
-	vec4 direction;
-	
+    vec4 direction;
+    
     vec4 color;
-	float intensity;
-	
-	float scatteringFactor;
-		
-	float radius;
+    float intensity;
+    
+    float scatteringFactor;
+        
+    float radius;
 
-	Shadow shadow;
+    Shadow shadow;
 
 };

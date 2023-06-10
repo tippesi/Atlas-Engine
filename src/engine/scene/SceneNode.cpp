@@ -7,456 +7,456 @@
 
 namespace Atlas {
 
-	namespace Scene {
+    namespace Scene {
 
-		SceneNode::SceneNode(const SceneNode& that) {
+        SceneNode::SceneNode(const SceneNode& that) {
 
-			DeepCopy(that);
+            DeepCopy(that);
 
-		}
+        }
 
-		SceneNode& SceneNode::operator=(const SceneNode& that) {
+        SceneNode& SceneNode::operator=(const SceneNode& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				DeepCopy(that);
+                DeepCopy(that);
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		void SceneNode::Add(SceneNode *node) {
+        void SceneNode::Add(SceneNode *node) {
 
-			if (sceneSet) {
-				node->AddToScene(spacePartitioning, meshMap);
-			}
+            if (sceneSet) {
+                node->AddToScene(spacePartitioning, meshMap);
+            }
 
-			childNodes.push_back(node);
+            childNodes.push_back(node);
 
-		}
+        }
 
-		void SceneNode::Remove(SceneNode *node) {
+        void SceneNode::Remove(SceneNode *node) {
 
-			if (sceneSet) {
-				node->RemoveFromScene();
-			}
+            if (sceneSet) {
+                node->RemoveFromScene();
+            }
 
-			auto it = std::find(childNodes.begin(), childNodes.end(), node);
+            auto it = std::find(childNodes.begin(), childNodes.end(), node);
 
-			if (it != childNodes.end()) {
-				childNodes.erase(it);
-			}
+            if (it != childNodes.end()) {
+                childNodes.erase(it);
+            }
 
-		}
+        }
 
-		void SceneNode::Add(Actor::MovableMeshActor *actor) {
+        void SceneNode::Add(Actor::MovableMeshActor *actor) {
 
-			movableMeshActors.push_back(actor);
+            movableMeshActors.push_back(actor);
 
-			AddInternal(actor);
+            AddInternal(actor);
 
-		}
+        }
 
-		void SceneNode::Remove(Actor::MovableMeshActor *actor) {
+        void SceneNode::Remove(Actor::MovableMeshActor *actor) {
 
-			if (sceneSet) {
-				spacePartitioning->Remove(actor);
-			}
+            if (sceneSet) {
+                spacePartitioning->Remove(actor);
+            }
 
-			auto it = std::find(movableMeshActors.begin(), movableMeshActors.end(), actor);
+            auto it = std::find(movableMeshActors.begin(), movableMeshActors.end(), actor);
 
-			if (it != movableMeshActors.end()) {
-				movableMeshActors.erase(it);
-			}
+            if (it != movableMeshActors.end()) {
+                movableMeshActors.erase(it);
+            }
 
-			RemoveInternal(actor);
+            RemoveInternal(actor);
 
-		}
+        }
 
-		void SceneNode::Add(Actor::StaticMeshActor *actor) {
+        void SceneNode::Add(Actor::StaticMeshActor *actor) {
 
-			addableStaticMeshActors.push_back(actor);
+            addableStaticMeshActors.push_back(actor);
 
-			AddInternal(actor);
+            AddInternal(actor);
 
-		}
+        }
 
-		void SceneNode::Remove(Actor::StaticMeshActor *actor) {
+        void SceneNode::Remove(Actor::StaticMeshActor *actor) {
 
-			if (sceneSet) {
-				spacePartitioning->Remove(actor);
-			}
+            if (sceneSet) {
+                spacePartitioning->Remove(actor);
+            }
 
-			auto it = std::find(staticMeshActors.begin(), staticMeshActors.end(), actor);
+            auto it = std::find(staticMeshActors.begin(), staticMeshActors.end(), actor);
 
-			if (it != staticMeshActors.end()) {
-				staticMeshActors.erase(it);
-			}
+            if (it != staticMeshActors.end()) {
+                staticMeshActors.erase(it);
+            }
 
-			RemoveInternal(actor);
+            RemoveInternal(actor);
 
-		}
+        }
 
-		void SceneNode::Add(Actor::DecalActor *actor) {
+        void SceneNode::Add(Actor::DecalActor *actor) {
 
-			decalActors.push_back(actor);
+            decalActors.push_back(actor);
 
-		}
+        }
 
-		void SceneNode::Remove(Actor::DecalActor *actor) {
+        void SceneNode::Remove(Actor::DecalActor *actor) {
 
-			if (sceneSet) {
-				spacePartitioning->Remove(actor);
-			}
+            if (sceneSet) {
+                spacePartitioning->Remove(actor);
+            }
 
-			auto it = std::find(decalActors.begin(), decalActors.end(), actor);
+            auto it = std::find(decalActors.begin(), decalActors.end(), actor);
 
-			if (it != decalActors.end()) {
-				decalActors.erase(it);
-			}
+            if (it != decalActors.end()) {
+                decalActors.erase(it);
+            }
 
-		}
+        }
 
-		void SceneNode::Add(Actor::AudioActor* actor) {
+        void SceneNode::Add(Actor::AudioActor* actor) {
 
-			audioActors.push_back(actor);
+            audioActors.push_back(actor);
 
-			Atlas::Audio::AudioManager::AddMusic(actor);
+            Atlas::Audio::AudioManager::AddMusic(actor);
 
-		}
+        }
 
-		void SceneNode::Remove(Actor::AudioActor* actor) {
+        void SceneNode::Remove(Actor::AudioActor* actor) {
 
-			if (sceneSet) {
-				spacePartitioning->Remove(actor);
-			}
+            if (sceneSet) {
+                spacePartitioning->Remove(actor);
+            }
 
-			auto it = std::find(audioActors.begin(), audioActors.end(), actor);
+            auto it = std::find(audioActors.begin(), audioActors.end(), actor);
 
-			if (it != audioActors.end()) {
-				audioActors.erase(it);
-			}
+            if (it != audioActors.end()) {
+                audioActors.erase(it);
+            }
 
-			Atlas::Audio::AudioManager::RemoveMusic(actor);
+            Atlas::Audio::AudioManager::RemoveMusic(actor);
 
-		}
+        }
 
-		void SceneNode::Add(Lighting::Light *light)  {
+        void SceneNode::Add(Lighting::Light *light)  {
 
-			if (sceneSet) {
-				spacePartitioning->Add(light);
-			}
+            if (sceneSet) {
+                spacePartitioning->Add(light);
+            }
 
-			lights.push_back(light);
+            lights.push_back(light);
 
-		}
+        }
 
-		void SceneNode::Remove(Lighting::Light *light) {
+        void SceneNode::Remove(Lighting::Light *light) {
 
-			if (sceneSet) {
-				spacePartitioning->Remove(light);
-			}
+            if (sceneSet) {
+                spacePartitioning->Remove(light);
+            }
 
-			auto it = std::find(lights.begin(), lights.end(), light);
+            auto it = std::find(lights.begin(), lights.end(), light);
 
-			if (it != lights.end()) {
-				lights.erase(it);
-			}
+            if (it != lights.end()) {
+                lights.erase(it);
+            }
 
-		}
+        }
 
-		void SceneNode::SetMatrix(mat4 matrix) {
+        void SceneNode::SetMatrix(mat4 matrix) {
 
-			this->matrix = matrix;
+            this->matrix = matrix;
 
-			matrixChanged = true;
+            matrixChanged = true;
 
-		}
+        }
 
-		mat4 SceneNode::GetMatrix() const {
+        mat4 SceneNode::GetMatrix() const {
 
-			return matrix;
+            return matrix;
 
-		}
+        }
 
-		mat4 SceneNode::GetGlobalMatrix() const {
+        mat4 SceneNode::GetGlobalMatrix() const {
 
-			return globalMatrix;
+            return globalMatrix;
 
-		}
+        }
 
-		void SceneNode::Clear() {
+        void SceneNode::Clear() {
 
-			childNodes.clear();
+            childNodes.clear();
 
-			movableMeshActors.clear();
-			staticMeshActors.clear();
-			decalActors.clear();
-			audioActors.clear();
-			lights.clear();
+            movableMeshActors.clear();
+            staticMeshActors.clear();
+            decalActors.clear();
+            audioActors.clear();
+            lights.clear();
 
-		}
+        }
 
-		std::vector<Actor::MovableMeshActor*> SceneNode::GetNodeMovableMeshActors() {
+        std::vector<Actor::MovableMeshActor*> SceneNode::GetNodeMovableMeshActors() {
 
-			return movableMeshActors;
+            return movableMeshActors;
 
-		}
+        }
 
-		std::vector<Actor::StaticMeshActor*> SceneNode::GetNodeStaticMeshActors() {
+        std::vector<Actor::StaticMeshActor*> SceneNode::GetNodeStaticMeshActors() {
 
-			return staticMeshActors;
+            return staticMeshActors;
 
-		}
+        }
 
-		std::vector<Actor::DecalActor*> SceneNode::GetNodeDecalActors() {
+        std::vector<Actor::DecalActor*> SceneNode::GetNodeDecalActors() {
 
-			return decalActors;
+            return decalActors;
 
-		}
+        }
 
-		std::vector<Actor::AudioActor*> SceneNode::GetNodeAudioActors() {
+        std::vector<Actor::AudioActor*> SceneNode::GetNodeAudioActors() {
 
-			return audioActors;
+            return audioActors;
 
-		}
+        }
 
-		std::vector<Lighting::Light*> SceneNode::GetNodeLights() {
+        std::vector<Lighting::Light*> SceneNode::GetNodeLights() {
 
-			return lights;
+            return lights;
 
-		}
+        }
 
-		std::vector<SceneNode*> SceneNode::GetNodeChildren() {
+        std::vector<SceneNode*> SceneNode::GetNodeChildren() {
 
-			return childNodes;
+            return childNodes;
 
-		}
+        }
 
 
-		bool SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
-			bool parentTransformChanged) {
+        bool SceneNode::Update(Camera* camera, float deltaTime, mat4 parentTransformation,
+            bool parentTransformChanged) {
 
-			bool changed = false;
+            bool changed = false;
 
-			parentTransformChanged |= matrixChanged;
+            parentTransformChanged |= matrixChanged;
 
-			changed |= parentTransformChanged;
+            changed |= parentTransformChanged;
 
-			bool removed = false;
+            bool removed = false;
 
-			if (matrixChanged) {
-				globalMatrix = parentTransformation * matrix;
-				matrixChanged = false;
-			}
+            if (matrixChanged) {
+                globalMatrix = parentTransformation * matrix;
+                matrixChanged = false;
+            }
 
-			for (auto &node : childNodes) {
-				changed |= node->Update(camera, deltaTime, globalMatrix, parentTransformChanged);
-			}
+            for (auto &node : childNodes) {
+                changed |= node->Update(camera, deltaTime, globalMatrix, parentTransformChanged);
+            }
 
-			// Only update the static mesh actors if the node moves (the static actors can't
-			// be moved after being initialized by their constructor)
-			if (parentTransformChanged) {
+            // Only update the static mesh actors if the node moves (the static actors can't
+            // be moved after being initialized by their constructor)
+            if (parentTransformChanged) {
 
-			    for (auto &meshActor : staticMeshActors) {
+                for (auto &meshActor : staticMeshActors) {
 
-					spacePartitioning->Remove(meshActor);
-			        meshActor->Update(*camera, deltaTime,
-						parentTransformation, true);
-					spacePartitioning->Add(meshActor);
+                    spacePartitioning->Remove(meshActor);
+                    meshActor->Update(*camera, deltaTime,
+                        parentTransformation, true);
+                    spacePartitioning->Add(meshActor);
 
-			    }
+                }
 
-			}
+            }
 
-			for (auto& meshActor : addableStaticMeshActors) {
+            for (auto& meshActor : addableStaticMeshActors) {
 
-				staticMeshActors.push_back(meshActor);
-				meshActor->Update(*camera, deltaTime,
-					parentTransformation, true);
-				// Because they won't be updated we need to do this right here
-				meshActor->lastGlobalMatrix = meshActor->globalMatrix;
-				spacePartitioning->Add(meshActor);
+                staticMeshActors.push_back(meshActor);
+                meshActor->Update(*camera, deltaTime,
+                    parentTransformation, true);
+                // Because they won't be updated we need to do this right here
+                meshActor->lastGlobalMatrix = meshActor->globalMatrix;
+                spacePartitioning->Add(meshActor);
 
-				changed = true;
+                changed = true;
 
-			}
+            }
 
-			addableStaticMeshActors.clear();
+            addableStaticMeshActors.clear();
 
-			for (auto &meshActor : movableMeshActors) {
+            for (auto &meshActor : movableMeshActors) {
 
-				if (meshActor->HasMatrixChanged() || parentTransformChanged) {
-					spacePartitioning->Remove(meshActor);
-					removed = true;
-					changed = true;
-				}
+                if (meshActor->HasMatrixChanged() || parentTransformChanged) {
+                    spacePartitioning->Remove(meshActor);
+                    removed = true;
+                    changed = true;
+                }
 
-				meshActor->Update(*camera, deltaTime, 
-					globalMatrix, parentTransformChanged);
+                meshActor->Update(*camera, deltaTime, 
+                    globalMatrix, parentTransformChanged);
 
-				if (removed) {
-					spacePartitioning->Add(meshActor);
-					removed = false;
-				}
+                if (removed) {
+                    spacePartitioning->Add(meshActor);
+                    removed = false;
+                }
 
-			}
+            }
 
-			for (auto &decalActor : decalActors) {
-				if (decalActor->HasMatrixChanged() || parentTransformChanged) {
-					spacePartitioning->Remove(decalActor);
-					removed = true;
-				}
+            for (auto &decalActor : decalActors) {
+                if (decalActor->HasMatrixChanged() || parentTransformChanged) {
+                    spacePartitioning->Remove(decalActor);
+                    removed = true;
+                }
 
-				decalActor->Update(*camera, deltaTime, 
-					globalMatrix, parentTransformChanged);
+                decalActor->Update(*camera, deltaTime, 
+                    globalMatrix, parentTransformChanged);
 
-				if (removed) {
-					spacePartitioning->Add(decalActor);
-					removed = false;
-				}
-			}
+                if (removed) {
+                    spacePartitioning->Add(decalActor);
+                    removed = false;
+                }
+            }
 
-			for (auto& audioActor : audioActors) {
-				if (audioActor->HasMatrixChanged() || parentTransformChanged) {
-					spacePartitioning->Remove(audioActor);
-					removed = true;
-				}
+            for (auto& audioActor : audioActors) {
+                if (audioActor->HasMatrixChanged() || parentTransformChanged) {
+                    spacePartitioning->Remove(audioActor);
+                    removed = true;
+                }
 
-				audioActor->Update(*camera, deltaTime,
-					globalMatrix, parentTransformChanged);
+                audioActor->Update(*camera, deltaTime,
+                    globalMatrix, parentTransformChanged);
 
-				if (removed) {
-					spacePartitioning->Add(audioActor);
-					removed = false;
-				}
-			}
+                if (removed) {
+                    spacePartitioning->Add(audioActor);
+                    removed = false;
+                }
+            }
 
-			for (auto &light : lights) {
-				light->Update(camera);
-			}
+            for (auto &light : lights) {
+                light->Update(camera);
+            }
 
-			return changed;
+            return changed;
 
-		}
+        }
 
-		void SceneNode::AddToScene(SpacePartitioning* spacePartitioning,
-			std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) {
+        void SceneNode::AddToScene(SpacePartitioning* spacePartitioning,
+            std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) {
 
-			if (sceneSet)
-				return;
+            if (sceneSet)
+                return;
 
-			for (auto &node : childNodes) {
-				node->AddToScene(spacePartitioning, meshMap);
-			}
+            for (auto &node : childNodes) {
+                node->AddToScene(spacePartitioning, meshMap);
+            }
 
-			for (auto& meshActor : movableMeshActors) {
-				AddInternal(meshActor);
-			}
+            for (auto& meshActor : movableMeshActors) {
+                AddInternal(meshActor);
+            }
 
-			for (auto& meshActor : staticMeshActors) {
-				AddInternal(meshActor);
-			}
+            for (auto& meshActor : staticMeshActors) {
+                AddInternal(meshActor);
+            }
 
-			for (auto& light : lights) {
-				spacePartitioning->Add(light);
-			}
+            for (auto& light : lights) {
+                spacePartitioning->Add(light);
+            }
 
-			this->spacePartitioning = spacePartitioning;
-			this->meshMap = meshMap;
+            this->spacePartitioning = spacePartitioning;
+            this->meshMap = meshMap;
 
-			sceneSet = true;
-			matrixChanged = true;
+            sceneSet = true;
+            matrixChanged = true;
 
-		}
+        }
 
-		void SceneNode::RemoveFromScene() {
+        void SceneNode::RemoveFromScene() {
 
-			if (!sceneSet)
-				return;
+            if (!sceneSet)
+                return;
 
-			for (auto &node : childNodes) {
-				node->RemoveFromScene();
-			}
+            for (auto &node : childNodes) {
+                node->RemoveFromScene();
+            }
 
-			for (auto &meshActor : movableMeshActors) {
-				spacePartitioning->Remove(meshActor);
-				RemoveInternal(meshActor);
-			}
+            for (auto &meshActor : movableMeshActors) {
+                spacePartitioning->Remove(meshActor);
+                RemoveInternal(meshActor);
+            }
 
-			for (auto &meshActor : staticMeshActors) {
-				spacePartitioning->Remove(meshActor);
-				RemoveInternal(meshActor);
-			}
+            for (auto &meshActor : staticMeshActors) {
+                spacePartitioning->Remove(meshActor);
+                RemoveInternal(meshActor);
+            }
 
-			for (auto &decalActor : decalActors) {
-				spacePartitioning->Remove(decalActor);
-			}
+            for (auto &decalActor : decalActors) {
+                spacePartitioning->Remove(decalActor);
+            }
 
-			sceneSet = false;
+            sceneSet = false;
 
-		}
+        }
 
-		void SceneNode::DeepCopy(const SceneNode& that) {
+        void SceneNode::DeepCopy(const SceneNode& that) {
 
-			RemoveFromScene();
+            RemoveFromScene();
 
-			matrixChanged = true;
+            matrixChanged = true;
 
-			matrix = that.matrix;
-			globalMatrix = that.globalMatrix;
+            matrix = that.matrix;
+            globalMatrix = that.globalMatrix;
 
-			movableMeshActors = that.movableMeshActors;
-			staticMeshActors = that.staticMeshActors;
-			decalActors = that.decalActors;
-			lights = that.lights;
+            movableMeshActors = that.movableMeshActors;
+            staticMeshActors = that.staticMeshActors;
+            decalActors = that.decalActors;
+            lights = that.lights;
 
-			childNodes.resize(that.childNodes.size());
+            childNodes.resize(that.childNodes.size());
 
-			for (size_t i = 0; i < that.childNodes.size(); i++)
-				childNodes[i] = new SceneNode(*that.childNodes[i]);
+            for (size_t i = 0; i < that.childNodes.size(); i++)
+                childNodes[i] = new SceneNode(*that.childNodes[i]);
 
-			if (spacePartitioning)
-				AddToScene(spacePartitioning, meshMap);
+            if (spacePartitioning)
+                AddToScene(spacePartitioning, meshMap);
 
-		}
+        }
 
-		void SceneNode::AddInternal(Actor::MeshActor* actor) {
+        void SceneNode::AddInternal(Actor::MeshActor* actor) {
 
-			if (!sceneSet)
-				return;
+            if (!sceneSet)
+                return;
 
-			auto it = meshMap->find(actor->mesh);
+            auto it = meshMap->find(actor->mesh);
 
-			if (it == meshMap->end()) {
-				(*meshMap)[actor->mesh] = 1;
-			}
-			else {
-				it->second++;
-			}
+            if (it == meshMap->end()) {
+                (*meshMap)[actor->mesh] = 1;
+            }
+            else {
+                it->second++;
+            }
 
-		}
+        }
 
-		void SceneNode::RemoveInternal(Actor::MeshActor* actor) {
+        void SceneNode::RemoveInternal(Actor::MeshActor* actor) {
 
-			if (!sceneSet)
-				return;
+            if (!sceneSet)
+                return;
 
-			auto it = meshMap->find(actor->mesh);
+            auto it = meshMap->find(actor->mesh);
 
-			if (it == meshMap->end())
-				return;
+            if (it == meshMap->end())
+                return;
 
-			it->second--;
+            it->second--;
 
-			if (!it->second) {
-				meshMap->erase(it->first);
-			}
+            if (!it->second) {
+                meshMap->erase(it->first);
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

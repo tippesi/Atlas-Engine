@@ -170,7 +170,7 @@ void App::Render(float deltaTime) {
             else if (debugSSS) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
-		    }
+            }
 
             commandList->EndRenderPass();
             commandList->EndCommands();
@@ -303,7 +303,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Use shadow map##DDGI", &volume->useShadowMap);
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
                     ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
-						This is only possible when cascaded shadow maps are not used.");
+                        This is only possible when cascaded shadow maps are not used.");
                 }
 
                 const char* gridResItems [] = { "5x5x5", "10x10x10", "20x20x20", "30x30x30" };
@@ -396,7 +396,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
                     ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
-						This is only possible when cascaded shadow maps are not used.");
+                        This is only possible when cascaded shadow maps are not used.");
                 }
                 ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
                 // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);

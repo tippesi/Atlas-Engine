@@ -2,7 +2,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void IndirectLightRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -15,10 +15,10 @@ namespace Atlas {
 
         }
 
-		void IndirectLightRenderer::Render(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void IndirectLightRenderer::Render(Viewport* viewport, RenderTarget* target,
+            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-			Graphics::Profiler::BeginQuery("Indirect lighting");
+            Graphics::Profiler::BeginQuery("Indirect lighting");
 
             auto volume = scene->irradianceVolume;
             auto ao = scene->ao;
@@ -31,7 +31,7 @@ namespace Atlas {
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-			commandList->BindPipeline(pipeline);
+            commandList->BindPipeline(pipeline);
 
             if (ao && ao->enable) {
                 commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
@@ -52,18 +52,18 @@ namespace Atlas {
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
             commandList->BindBuffer(uniformBuffer.Get(), 3, 4);
 
-			auto resolution = ivec2(target->GetWidth(), target->GetHeight());
-			auto groupCount = resolution / 8;
+            auto resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto groupCount = resolution / 8;
 
-			groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-			groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-			commandList->Dispatch(groupCount.x, groupCount.y, 1);
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-			Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

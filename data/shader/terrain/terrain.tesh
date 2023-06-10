@@ -51,33 +51,33 @@ layout(location=3) out vec3 ndcLast;
 
 float SampleDisplacement(vec2 off, uvec4 indices) {
 
-	if (indices.x == indices.y && 
-		indices.x == indices.z &&
-		indices.x == indices.w)
-		return texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
-	
-	float q00 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
-	float q10 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
-	float q01 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
-	float q11 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
-	
-	// Interpolate samples horizontally
-	float h0 = mix(q00, q10, off.x);
-	float h1 = mix(q01, q11, off.x);
-	
-	// Interpolate samples vertically
-	return mix(h0, h1, off.y);	
-	
+    if (indices.x == indices.y && 
+        indices.x == indices.z &&
+        indices.x == indices.w)
+        return texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+    
+    float q00 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+    float q10 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
+    float q01 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
+    float q11 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
+    
+    // Interpolate samples horizontally
+    float h0 = mix(q00, q10, off.x);
+    float h1 = mix(q01, q11, off.x);
+    
+    // Interpolate samples vertically
+    return mix(h0, h1, off.y);    
+    
 }
 
 float Interpolate(float q00, float q10, float q01, float q11, vec2 off) {
 
-	// Interpolate samples horizontally
-	float h0 = mix(q00, q10, off.x);
-	float h1 = mix(q01, q11, off.x);
-	
-	// Interpolate samples vertically
-	return mix(h0, h1, off.y);	
+    // Interpolate samples horizontally
+    float h0 = mix(q00, q10, off.x);
+    float h1 = mix(q01, q11, off.x);
+    
+    // Interpolate samples vertically
+    return mix(h0, h1, off.y);    
 
 }
 
@@ -85,61 +85,61 @@ void main(){
 
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
-	
-	// world position
-	vec4 position =
-	((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
-	u * (1.0 - v) * gl_in[0].gl_Position +
-	u * v * gl_in[1].gl_Position +
-	(1.0 - u) * v * gl_in[2].gl_Position);
-	
-	texCoords = vec2(position.x, position.z) - PushConstants.nodeLocation;
+    
+    // world position
+    vec4 position =
+    ((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
+    u * (1.0 - v) * gl_in[0].gl_Position +
+    u * v * gl_in[1].gl_Position +
+    (1.0 - u) * v * gl_in[2].gl_Position);
+    
+    texCoords = vec2(position.x, position.z) - PushConstants.nodeLocation;
 
-	materialTexCoords = texCoords;
-	
-	texCoords /= PushConstants.nodeSideLength;
-	
-	//materialIndicesTE = materialIndicesTC[0];
-	
+    materialTexCoords = texCoords;
+    
+    texCoords /= PushConstants.nodeSideLength;
+    
+    //materialIndicesTE = materialIndicesTC[0];
+    
 #ifndef DISTANCE
-	float vertexDistance = distance(position.xyz, globalData.cameraLocation.xyz);
-	float weight = clamp((Uniforms.displacementDistance - vertexDistance), 0.0, 1.0);
+    float vertexDistance = distance(position.xyz, globalData.cameraLocation.xyz);
+    float weight = clamp((Uniforms.displacementDistance - vertexDistance), 0.0, 1.0);
 
-	vec2 tex = vec2(PushConstants.normalTexelSize) + texCoords *
+    vec2 tex = vec2(PushConstants.normalTexelSize) + texCoords *
         (1.0 - 3.0 * PushConstants.normalTexelSize)
-		+ 0.5 * PushConstants.normalTexelSize;
-	vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
-	
-	uvec4 indices;
-	float texel = 1.0 / (8.0 * PushConstants.patchSize);
-	tex = floor(texCoords / texel) * texel;
-	indices.x = texture(splatMap, tex).r;
-	indices.y = texture(splatMap, tex + vec2(texel, 0.0)).r;
-	indices.z = texture(splatMap, tex + vec2(0.0, texel)).r;
-	indices.w = texture(splatMap, tex + vec2(texel, texel)).r;
+        + 0.5 * PushConstants.normalTexelSize;
+    vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
+    
+    uvec4 indices;
+    float texel = 1.0 / (8.0 * PushConstants.patchSize);
+    tex = floor(texCoords / texel) * texel;
+    indices.x = texture(splatMap, tex).r;
+    indices.y = texture(splatMap, tex + vec2(texel, 0.0)).r;
+    indices.z = texture(splatMap, tex + vec2(0.0, texel)).r;
+    indices.w = texture(splatMap, tex + vec2(texel, texel)).r;
 
-	if (weight > 0.0) {
-		tex = materialTexCoords / PushConstants.tileScale;
-		vec2 off = tex - floor(tex);
-		float displacementScale = Interpolate(
-			Materials.materials[indices.x].displacementScale,
+    if (weight > 0.0) {
+        tex = materialTexCoords / PushConstants.tileScale;
+        vec2 off = tex - floor(tex);
+        float displacementScale = Interpolate(
+            Materials.materials[indices.x].displacementScale,
             Materials.materials[indices.y].displacementScale,
             Materials.materials[indices.z].displacementScale,
             Materials.materials[indices.w].displacementScale,
-			off
-		);
-		float displacement = SampleDisplacement(off, indices)
-			* displacementScale * weight;
-		
-		position.xyz += norm * displacement;
-	}
+            off
+        );
+        float displacement = SampleDisplacement(off, indices)
+            * displacementScale * weight;
+        
+        position.xyz += norm * displacement;
+    }
 #endif
-	
-	gl_Position = globalData.pMatrix * globalData.vMatrix * position;
-	
-	ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
-	
-	vec4 last = globalData.pvMatrixLast * position;
-	ndcLast = vec3(last.xy, last.w);
-	
+    
+    gl_Position = globalData.pMatrix * globalData.vMatrix * position;
+    
+    ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
+    
+    vec4 last = globalData.pvMatrixLast * position;
+    ndcLast = vec3(last.xy, last.w);
+    
 }

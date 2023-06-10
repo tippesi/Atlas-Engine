@@ -2,51 +2,51 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		namespace Helper {
+        namespace Helper {
 
-			std::vector<float> HaltonSequence::Generate(int32_t base, int32_t count) {
+            std::vector<float> HaltonSequence::Generate(int32_t base, int32_t count) {
 
-				std::vector<float> sequence;
+                std::vector<float> sequence;
 
-				for (int32_t i = 0; i < count; i++) {
-					sequence.push_back(Halton(base, i));
-				}
+                for (int32_t i = 0; i < count; i++) {
+                    sequence.push_back(Halton(base, i));
+                }
 
-				return sequence;
+                return sequence;
 
-			}
+            }
 
-			std::vector<vec2> HaltonSequence::Generate(int32_t baseX, int32_t baseY, int32_t count) {
+            std::vector<vec2> HaltonSequence::Generate(int32_t baseX, int32_t baseY, int32_t count) {
 
-				std::vector<vec2> sequence;
+                std::vector<vec2> sequence;
 
-				for (int32_t i = 0; i < count; i++) {
-					sequence.push_back(vec2(Halton(baseX, i), Halton(baseY, i)));
-				}
+                for (int32_t i = 0; i < count; i++) {
+                    sequence.push_back(vec2(Halton(baseX, i), Halton(baseY, i)));
+                }
 
-				return sequence;
-			
-			}
+                return sequence;
+            
+            }
 
-			float HaltonSequence::Halton(int32_t base, int32_t index) {
+            float HaltonSequence::Halton(int32_t base, int32_t index) {
 
-				auto f = 1.0f;
-				auto r = 0.0f;
+                auto f = 1.0f;
+                auto r = 0.0f;
 
-				while (index > 0) {
-					f = f / (float)base;
-					r = r + f * (index % base);
-					index /= base;
-				}
+                while (index > 0) {
+                    f = f / (float)base;
+                    r = r + f * (index % base);
+                    index /= base;
+                }
 
-				return r;
+                return r;
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

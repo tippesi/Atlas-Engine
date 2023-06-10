@@ -9,48 +9,48 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		namespace Helper {
+        namespace Helper {
 
-			class RayTracingHelper {
+            class RayTracingHelper {
 
-				friend Scene::RTData;
+                friend Scene::RTData;
 
-			public:
-				RayTracingHelper();
+            public:
+                RayTracingHelper();
 
-				void SetScene(Scene::Scene* scene, int32_t textureDownscale = 1, 
-					bool useEmissivesAsLights = false);
+                void SetScene(Scene::Scene* scene, int32_t textureDownscale = 1, 
+                    bool useEmissivesAsLights = false);
 
-				void SetRayBufferSize(size_t rayCount);
+                void SetRayBufferSize(size_t rayCount);
 
-				void DispatchAndHit(Graphics::CommandList* commandList,
+                void DispatchAndHit(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                     glm::ivec3 dimensions, std::function<void(void)> prepare);
 
-				void DispatchRayGen(Graphics::CommandList* commandList,
+                void DispatchRayGen(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                     bool binning, std::function<void(void)> prepare);
 
-				void DispatchHitClosest(Graphics::CommandList* commandList,
+                void DispatchHitClosest(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                     std::function<void(void)> prepare);
 
-				void DispatchHitAny(Graphics::CommandList* commandList,
+                void DispatchHitAny(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, std::function<void(void)> prepare);
 
-				void DispatchGather(Graphics::CommandList* commandList,
+                void DispatchGather(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& gatherPipeline, std::function<void(void)> prepare);
 
-				void InvalidateRayBuffer(Graphics::CommandList* commandList);
+                void InvalidateRayBuffer(Graphics::CommandList* commandList);
 
-				Buffer::Buffer* GetRayBuffer();
+                Buffer::Buffer* GetRayBuffer();
 
-				void UpdateLights();
+                void UpdateLights();
 
 
-			private:
+            private:
                 struct alignas(16) PushConstants {
                     int32_t lightCount;
                     uint32_t rayBufferOffset;
@@ -59,10 +59,10 @@ namespace Atlas {
                     int32_t useRayBinning;
                 };
 
-				Scene::Scene* scene;
-				
-				std::vector<Scene::RTData::GPULight> lights;
-				std::vector<Scene::RTData::GPULight> selectedLights;
+                Scene::Scene* scene;
+                
+                std::vector<Scene::RTData::GPULight> lights;
+                std::vector<Scene::RTData::GPULight> selectedLights;
 
                 PipelineConfig traceDispatchPipelineConfig;
                 PipelineConfig traceClosestPipelineConfig;
@@ -71,32 +71,32 @@ namespace Atlas {
                 PipelineConfig binningOffsetPipelineConfig;
                 PipelineConfig binningPipelineConfig;
 
-				Buffer::Buffer indirectDispatchBuffer;
+                Buffer::Buffer indirectDispatchBuffer;
 
-				Buffer::Buffer counterBuffer0;
-				Buffer::Buffer counterBuffer1;
+                Buffer::Buffer counterBuffer0;
+                Buffer::Buffer counterBuffer1;
 
-				Buffer::Buffer rayBuffer;
-				Buffer::Buffer rayPayloadBuffer;
+                Buffer::Buffer rayBuffer;
+                Buffer::Buffer rayPayloadBuffer;
 
-				Buffer::Buffer rayBinCounterBuffer;
-				Buffer::Buffer rayBinOffsetBuffer;
-				
-				Buffer::Buffer lightBuffer;
+                Buffer::Buffer rayBinCounterBuffer;
+                Buffer::Buffer rayBinOffsetBuffer;
+                
+                Buffer::Buffer lightBuffer;
                 Texture::Texture2DArray dummyTexture;
 
-				int32_t dispatchCounter = 0;
-				int32_t rayOffsetCounter = 0;
-				int32_t payloadOffsetCounter = 0;
+                int32_t dispatchCounter = 0;
+                int32_t rayOffsetCounter = 0;
+                int32_t payloadOffsetCounter = 0;
 
-				int32_t textureDownscale;
-				bool useEmissivesAsLights = false;
+                int32_t textureDownscale;
+                bool useEmissivesAsLights = false;
 
-			};
+            };
 
-		}
+        }
 
-	}
+    }
 
 }
 

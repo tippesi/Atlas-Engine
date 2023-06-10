@@ -2,127 +2,127 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		AudioActor::AudioActor(const AudioActor& that) {
+        AudioActor::AudioActor(const AudioActor& that) {
 
-			operator=(that);
+            operator=(that);
 
-		}
+        }
 
-		AudioActor::AudioActor(Audio::AudioData* data) : Actor(), Audio::AudioStream(data) {
+        AudioActor::AudioActor(Audio::AudioData* data) : Actor(), Audio::AudioStream(data) {
 
 
 
-		}
+        }
 
-		AudioActor& AudioActor::operator=(const AudioActor& that) {
+        AudioActor& AudioActor::operator=(const AudioActor& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				AudioStream::operator=(that);
+                AudioStream::operator=(that);
 
-				aabb = that.aabb;
-				globalMatrix = that.globalMatrix;
-				SetMatrix(that.GetMatrix());
+                aabb = that.aabb;
+                globalMatrix = that.globalMatrix;
+                SetMatrix(that.GetMatrix());
 
-				cutoff = that.cutoff;
+                cutoff = that.cutoff;
 
-				leftChannelVolume = that.leftChannelVolume;
-				rightChannelVolume = that.rightChannelVolume;
+                leftChannelVolume = that.leftChannelVolume;
+                rightChannelVolume = that.rightChannelVolume;
 
-				velocity = that.velocity;
-				cameraDistance = that.cameraDistance;
+                velocity = that.velocity;
+                cameraDistance = that.cameraDistance;
 
-				audible = that.audible;
-				init = that.init;
+                audible = that.audible;
+                init = that.init;
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		std::vector<int16_t> AudioActor::GetChunk(int32_t length) {
+        std::vector<int16_t> AudioActor::GetChunk(int32_t length) {
 
-			std::unique_lock<std::mutex> lock(mutex);
-			auto audible = this->audible;
-			auto velocity = this->velocity;
-			lock.unlock();
+            std::unique_lock<std::mutex> lock(mutex);
+            auto audible = this->audible;
+            auto velocity = this->velocity;
+            lock.unlock();
 
-			if (!audible)
-				return std::vector<int16_t>(length, 0);
+            if (!audible)
+                return std::vector<int16_t>(length, 0);
 
-			// Maybe we should allow other wavespeeds (e.g. for underwater)
-			auto pitch = 1.0 + velocity / 333.3;
-			pitch = pitch >= 0.0 ? pitch : 0.0;
-			AudioStream::SetPitch(pitch);
+            // Maybe we should allow other wavespeeds (e.g. for underwater)
+            auto pitch = 1.0 + velocity / 333.3;
+            pitch = pitch >= 0.0 ? pitch : 0.0;
+            AudioStream::SetPitch(pitch);
 
-			auto data = AudioStream::GetChunk(length);
+            auto data = AudioStream::GetChunk(length);
 
-			for (int32_t i = 0; i < length; i++) {
-				if (i % 2) {
-					data[i] = (int16_t)((float)data[i] * leftChannelVolume);
-				}
-				else {
-					data[i] = (int16_t)((float)data[i] * rightChannelVolume);
-				}
-			}
+            for (int32_t i = 0; i < length; i++) {
+                if (i % 2) {
+                    data[i] = (int16_t)((float)data[i] * leftChannelVolume);
+                }
+                else {
+                    data[i] = (int16_t)((float)data[i] * rightChannelVolume);
+                }
+            }
 
-			return data;
+            return data;
 
-		}
+        }
 
-		void AudioActor::Update(Camera camera, float deltaTime, 
-			mat4 parentTransform, bool parentUpdate) {
+        void AudioActor::Update(Camera camera, float deltaTime, 
+            mat4 parentTransform, bool parentUpdate) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			vec3 lastLocation;
+            vec3 lastLocation;
 
-			if (matrixChanged || parentUpdate) {				
+            if (matrixChanged || parentUpdate) {                
 
-				lastLocation = vec3(globalMatrix[3]);
-				globalMatrix = parentTransform * GetMatrix();
+                lastLocation = vec3(globalMatrix[3]);
+                globalMatrix = parentTransform * GetMatrix();
 
-			}
+            }
 
-			// We don't want to devide by zero
-			auto distance = glm::max(0.00001f, 
-				glm::distance(vec3(globalMatrix[3]), camera.GetLocation()));
+            // We don't want to devide by zero
+            auto distance = glm::max(0.00001f, 
+                glm::distance(vec3(globalMatrix[3]), camera.GetLocation()));
 
-			if (!init) {
-				cameraDistance = distance;
-				init = true;
-			}
+            if (!init) {
+                cameraDistance = distance;
+                init = true;
+            }
 
-			float distanceVolume = glm::min(1.0f, 1.0f / (distance / 10.0f));
+            float distanceVolume = glm::min(1.0f, 1.0f / (distance / 10.0f));
 
-			audible = distanceVolume > cutoff;
+            audible = distanceVolume > cutoff;
 
-			velocity = (cameraDistance - distance) / deltaTime;
+            velocity = (cameraDistance - distance) / deltaTime;
 
-			if (audible) {
-				auto mix = 0.0f;
+            if (audible) {
+                auto mix = 0.0f;
 
-				if (distance == 0.00001f) {
-					mix = 0.5f;
-				}
-				else {
-					auto direction = glm::normalize(glm::vec3(globalMatrix[3]) - camera.GetLocation());
-					mix = 0.5f * glm::dot(direction, camera.right) + 0.5f;
-				}
+                if (distance == 0.00001f) {
+                    mix = 0.5f;
+                }
+                else {
+                    auto direction = glm::normalize(glm::vec3(globalMatrix[3]) - camera.GetLocation());
+                    mix = 0.5f * glm::dot(direction, camera.right) + 0.5f;
+                }
 
-				leftChannelVolume = mix * distanceVolume;
-				rightChannelVolume = (1.0f - mix) * distanceVolume;
-			}
+                leftChannelVolume = mix * distanceVolume;
+                rightChannelVolume = (1.0f - mix) * distanceVolume;
+            }
 
-			cameraDistance = distance;
+            cameraDistance = distance;
 
-			matrixChanged = false;
+            matrixChanged = false;
 
-		}
+        }
 
-	}
+    }
 
 }

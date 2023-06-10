@@ -8,40 +8,40 @@
 
 namespace Atlas {
 
-	namespace Events {
+    namespace Events {
 
-		/**
+        /**
          * A class to distribute text input events.
          */
-		class TextInputEvent {
+        class TextInputEvent {
 
-		public:
-			explicit TextInputEvent(SDL_TextInputEvent event) {
+        public:
+            explicit TextInputEvent(SDL_TextInputEvent event) {
 
-				windowID = event.windowID;
+                windowID = event.windowID;
 
-				char *text = event.text;
+                char *text = event.text;
 
-				while (*text != '\0') {
-					character.push_back(*text);
-					text++;
-				}
+                while (*text != '\0') {
+                    character.push_back(*text);
+                    text++;
+                }
 
-			}
+            }
 
-			/**
+            /**
              * The ID of the window the event occurred in.
              */
-			uint32_t windowID;
+            uint32_t windowID;
 
-			/**
+            /**
              * The character that was typed in UTF-8.
              */
-			std::string character;
+            std::string character;
 
-		};
+        };
 
-	}
+    }
 
 }
 

@@ -14,49 +14,49 @@ namespace Atlas {
         class AudioStream {
 
         public:
-			AudioStream() : data(nullptr) {}
+            AudioStream() : data(nullptr) {}
 
-			explicit AudioStream(AudioData* data) : data(data) {}
+            explicit AudioStream(AudioData* data) : data(data) {}
 
-			AudioStream& operator=(const AudioStream& that);
+            AudioStream& operator=(const AudioStream& that);
 
-			double GetDuration();
+            double GetDuration();
 
-			void SetTime(double time);
+            void SetTime(double time);
 
-			double GetTime();
+            double GetTime();
 
-			void SetVolume(float volume);
+            void SetVolume(float volume);
 
-			float GetVolume();
+            float GetVolume();
 
-			void SetPitch(double pitch);
+            void SetPitch(double pitch);
 
-			double GetPitch();
+            double GetPitch();
 
-			void Pause();
+            void Pause();
 
-			void Resume();
+            void Resume();
 
-			bool IsPaused();
+            bool IsPaused();
 
-			void ApplyFormat(const SDL_AudioSpec& spec);
+            void ApplyFormat(const SDL_AudioSpec& spec);
 
-			virtual std::vector<int16_t> GetChunk(int32_t length);
+            virtual std::vector<int16_t> GetChunk(int32_t length);
 
-			bool loop = false;
+            bool loop = false;
 
         private:
             double progress = 0.0;
 
-			float volume = 1.0f;
-			double pitch = 1.0f;
+            float volume = 1.0f;
+            double pitch = 1.0f;
 
-			bool pause = false;
+            bool pause = false;
 
-			AudioData* data;
+            AudioData* data;
 
-			mutable std::mutex mutex;
+            mutable std::mutex mutex;
 
         };
 

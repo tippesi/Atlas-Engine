@@ -12,18 +12,18 @@
 
 namespace Atlas {
 
-	namespace Terrain {
+    namespace Terrain {
 
-		/**
-		 * Represents a terrain. This class uses different LoDs (quad tree) and tessellation to render the terrain
-		 * efficiently with high detail without sacrificing too much on performance.
-		 */
-		class Terrain {
+        /**
+         * Represents a terrain. This class uses different LoDs (quad tree) and tessellation to render the terrain
+         * efficiently with high detail without sacrificing too much on performance.
+         */
+        class Terrain {
 
-		public:
-			Terrain() {}
+        public:
+            Terrain() {}
 
-			/**
+            /**
              * Constructs a Terrain object.
              * @param rootNodeSideCount The number of root nodes per side. Root nodes are the lowest level of detail.
              * @param LoDCount The number of level of detail levels. Results in LoDCount - 1 subdivisions of the root nodes.
@@ -41,9 +41,9 @@ namespace Atlas {
              * the resolution to 0.5 we get a total of 12288 units per terrain side. The size of the map is therefore roughly
              * 150 kilounits^2.
              */
-			Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
+            Terrain(int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSizeFactor, float resolution, float height);
 
-			/**
+            /**
              * Updates the terrain and the storage queues.
              * @param camera
              * @note After calling this method the storage->requestedCells list contains all the
@@ -51,26 +51,26 @@ namespace Atlas {
              * can't increase the level of detail of the specific nodes. The storage->unusedCells list contains
              * all the cells which aren't needed any more at the moment. (Caching might be needed)
              */
-			void Update(Camera* camera);
+            void Update(Camera* camera);
 
-			/**
-			 * Updates the list of nodes to render.
-			 * @param frustum The frustum which will be used to cull nodes.
-			 * @param The location in which direction the nodes will be sorted.
-			 */
-			void UpdateRenderlist(Volume::Frustum* frustum, vec3 location);
+            /**
+             * Updates the list of nodes to render.
+             * @param frustum The frustum which will be used to cull nodes.
+             * @param The location in which direction the nodes will be sorted.
+             */
+            void UpdateRenderlist(Volume::Frustum* frustum, vec3 location);
 
-			/**
+            /**
              * Sets the distance of a specific level of detail.
              * @param LoD The level of detail to be set in range of (0,LoDCount-1)
              * @param distance The distance where the level of details should begin
              * @note Only the highest level of detail will render splatmaps and tessellation.
              */
-			void SetLoDDistance(int32_t LoD, float distance);
+            void SetLoDDistance(int32_t LoD, float distance);
 
-			float GetLoDDistance(int32_t LoD);
+            float GetLoDDistance(int32_t LoD);
 
-			/**
+            /**
              * Sets the tessellation function t(distance) = factor / pow(distance, slope) + shift
              * @param factor
              * @param slope
@@ -82,18 +82,18 @@ namespace Atlas {
              * tessLevel = mix(1.0f, maxLevel, clamp(t(distance), 0.0f, 1.0f));
              * }
              */
-			void SetTessellationFunction(float factor, float slope, float shift, float maxLevel = 64.0f);
+            void SetTessellationFunction(float factor, float slope, float shift, float maxLevel = 64.0f);
 
-			/**
+            /**
              * Sets the distance where the displacement should start
              * @param distance The distance
              * @note Displacement mapping is only available if tessellation is enabled in the specified distance.
              * The maximum distance recommended is where t(distance) = 1, where t is the tessellation function.
              * Otherwise there would be too much flickering present on screen.
              */
-			void SetDisplacementDistance(float distance);
+            void SetDisplacementDistance(float distance);
 
-			/**
+            /**
             * Gets the height at a specific point on the terrain.
             * @param x The x component of the point relative to the terrain origin
             * @param z The z component of the point relative to the terrain origin
@@ -101,31 +101,31 @@ namespace Atlas {
             * @note This function is computationally expensive.
             * @warning The cell containing the height value has to be loaded.
             */
-			float GetHeight(float x, float z);
+            float GetHeight(float x, float z);
 
-			/**
-			* Gets the height at a specific point on the terrain.
-			* @param x The x component of the point relative to the terrain origin
-			* @param z The z component of the point relative to the terrain origin
-			* @param normal The normal at the specific point. (in positive y direction)
-			* @param forward The forward vector in positive x direction
-			* @return The height of the terrain.
-			* @note This function is computationally expensive.
-			* @warning The cell containing the height value has to be loaded.
-			*/
-			float GetHeight(float x, float y, vec3& normal, vec3& forward);
+            /**
+            * Gets the height at a specific point on the terrain.
+            * @param x The x component of the point relative to the terrain origin
+            * @param z The z component of the point relative to the terrain origin
+            * @param normal The normal at the specific point. (in positive y direction)
+            * @param forward The forward vector in positive x direction
+            * @return The height of the terrain.
+            * @note This function is computationally expensive.
+            * @warning The cell containing the height value has to be loaded.
+            */
+            float GetHeight(float x, float y, vec3& normal, vec3& forward);
 
-			/**
-			* Gets the gradient at a specific point on the terrain.
-			* @param x The x component of the point relative to the terrain origin
-			* @param z The z component of the point relative to the terrain origin
-			* @return The gradient of the terrain.
-			* @note This function is computationally expensive.
-			* @warning The cell containing the height value has to be loaded.
-			*/
-			vec2 GetGradient(float x, float z);
+            /**
+            * Gets the gradient at a specific point on the terrain.
+            * @param x The x component of the point relative to the terrain origin
+            * @param z The z component of the point relative to the terrain origin
+            * @return The gradient of the terrain.
+            * @note This function is computationally expensive.
+            * @warning The cell containing the height value has to be loaded.
+            */
+            vec2 GetGradient(float x, float z);
 
-			/**
+            /**
             * Gets the storage cell for a point on the terrain.
             * @param x The x component of the point relative to the terrain origin
             * @param z The z component of the point relative to the terrain origin
@@ -133,67 +133,67 @@ namespace Atlas {
             * @return A pointer to a TerrainStorageCell object. Equals nullptr if input wasn't valid.
             * @note For every point there exist as many storage cells as there are lod levels.
             */
-			TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
+            TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
 
-			TerrainStorage storage;
+            TerrainStorage storage;
 
-			Texture::Texture2D shoreLine;
+            Texture::Texture2D shoreLine;
 
-			int32_t bakeResolution = 512;
+            int32_t bakeResolution = 512;
 
-			int32_t rootNodeSideCount;
-			int32_t LoDCount;
-			int32_t patchSizeFactor;
+            int32_t rootNodeSideCount;
+            int32_t LoDCount;
+            int32_t patchSizeFactor;
 
-			vec3 translation;
-			float resolution;
-			float sideLength;
+            vec3 translation;
+            float resolution;
+            float sideLength;
 
-			int32_t patchVertexCount;
+            int32_t patchVertexCount;
 
-			float tessellationFactor;
-			float tessellationSlope;
-			float tessellationShift;
-			float maxTessellationLevel;
+            float tessellationFactor;
+            float tessellationSlope;
+            float tessellationShift;
+            float maxTessellationLevel;
 
-			float heightScale;
-			float displacementDistance;
+            float heightScale;
+            float displacementDistance;
 
-			// Controls the LOD level, when a node is being labeled as detailed
-			// Every LOD >= LodCount - detailNodeIdx is rendered with the detail shader.
-			int32_t detailNodeIdx = 2;
+            // Controls the LOD level, when a node is being labeled as detailed
+            // Every LOD >= LodCount - detailNodeIdx is rendered with the detail shader.
+            int32_t detailNodeIdx = 2;
 
-			Buffer::VertexArray vertexArray;
-			Buffer::VertexArray distanceVertexArray;
-			std::vector<TerrainNode*> renderList;
+            Buffer::VertexArray vertexArray;
+            Buffer::VertexArray distanceVertexArray;
+            std::vector<TerrainNode*> renderList;
 
-			Common::Image<uint8_t> LoDImage;
+            Common::Image<uint8_t> LoDImage;
 
-			std::string filename;
+            std::string filename;
 
-			bool wireframe = false;
+            bool wireframe = false;
 
-		private:
-			void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
+        private:
+            void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
 
-			void GeneratePatchVertexBuffer();
+            void GeneratePatchVertexBuffer();
 
-			void GeneratePatchOffsets();
+            void GeneratePatchOffsets();
 
-			float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
+            float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
-			int32_t rootNodeCount;
+            int32_t rootNodeCount;
 
-			std::vector<vec2> vertices;
-			std::vector<vec2> patchOffsets;
+            std::vector<vec2> vertices;
+            std::vector<vec2> patchOffsets;
 
-			std::vector<float> LoDDistances;
-			std::vector<TerrainNode> rootNodes;
-			std::vector<TerrainNode*> leafList;
+            std::vector<float> LoDDistances;
+            std::vector<TerrainNode> rootNodes;
+            std::vector<TerrainNode*> leafList;
 
-		};
+        };
 
-	}
+    }
 
 }
 

@@ -55,21 +55,21 @@ uniform float ao;
 #endif
 
 layout(push_constant) uniform constants {
-	uint vegetation;
-	uint invertUVs;
-	uint twoSided;
-	uint staticMesh;
-	uint materialIdx;
-	float normalScale;
-	float displacementScale;
+    uint vegetation;
+    uint invertUVs;
+    uint twoSided;
+    uint staticMesh;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
 #ifdef HEIGHT_MAP
     // number of depth layers (changes are a bit distracting right now)
     const float minLayers = 32.0;
-	const float maxLayers = 32.0;
-	float numLayers = 16.0;  
+    const float maxLayers = 32.0;
+    float numLayers = 16.0;  
     // calculate the size of each layer
     float layerDepth = 1.0 / numLayers;
     // depth of current layer
@@ -77,35 +77,35 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     // the amount to shift the texture coordinates per layer (from vector P)
     vec2 P = viewDir.xy / viewDir.z * PushConstants.displacementScale;
     vec2 deltaTexCoords = P / numLayers;
-	vec2  currentTexCoords = texCoords;
-	
-	vec2 ddx = dFdx(texCoords);
-	vec2 ddy = dFdy(texCoords);
-	
-	float currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;
-	
-	while(currentLayerDepth < currentDepthMapValue) {
-		// shift texture coordinates along direction of P
-		currentTexCoords -= deltaTexCoords;
-		// get depthmap value at current texture coordinates
-		currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;  
-		// get depth of next layer
-		currentLayerDepth += layerDepth;  
-	}
-	
-	vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    vec2  currentTexCoords = texCoords;
+    
+    vec2 ddx = dFdx(texCoords);
+    vec2 ddy = dFdy(texCoords);
+    
+    float currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;
+    
+    while(currentLayerDepth < currentDepthMapValue) {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
 
-	// get depth after and before collision for linear interpolation
-	float afterDepth  = currentDepthMapValue - currentLayerDepth;
-	float beforeDepth = 1.0 - textureGrad(heightMap, prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
-	 
-	// interpolation of texture coordinates
-	float weight = afterDepth / (afterDepth - beforeDepth);
-	vec2 finalTexCoords = mix(currentTexCoords, prevTexCoords, weight);
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = 1.0 - textureGrad(heightMap, prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
+     
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = mix(currentTexCoords, prevTexCoords, weight);
 
-	return finalTexCoords;
+    return finalTexCoords;
 #else
-	return vec2(1.0);
+    return vec2(1.0);
 #endif
 
 }
@@ -113,89 +113,89 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 void main() {
 
 #ifdef TEX_COORDS
-	vec2 texCoords = texCoordVS;
+    vec2 texCoords = texCoordVS;
 #endif
-	
-	// Check if usage is valid (otherwise texCoords won't be used)
+    
+    // Check if usage is valid (otherwise texCoords won't be used)
 #if defined(HEIGHT_MAP) && (defined(BASE_COLOR_MAP) || defined(NORMAL_MAP) || defined(ROUGHNESS_MAP) || defined(METALNESS_MAP) || defined(AO_MAP)) 
-	vec3 viewDir = normalize(transpose(TBN) * -positionVS);
-	texCoords = ParallaxMapping(texCoords, viewDir);
+    vec3 viewDir = normalize(transpose(TBN) * -positionVS);
+    texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
 
 #ifdef GENERATE_IMPOSTOR
-	baseColorFS = vec4(1.0);
+    baseColorFS = vec4(1.0);
 #endif
 
 #ifdef OPACITY_MAP
-	float opacity = texture(opacityMap, texCoords).r;
-	if (opacity < 0.2)
-		discard;
+    float opacity = texture(opacityMap, texCoords).r;
+    if (opacity < 0.2)
+        discard;
 #endif
 
 #ifdef BASE_COLOR_MAP
-	vec3 textureColor = texture(baseColorMap, texCoords).rgb;
+    vec3 textureColor = texture(baseColorMap, texCoords).rgb;
 #ifdef GENERATE_IMPOSTOR
-	baseColorFS *= vec4(textureColor.rgb, 1.0);
+    baseColorFS *= vec4(textureColor.rgb, 1.0);
 #else
-	baseColorFS = textureColor.rgb;
+    baseColorFS = textureColor.rgb;
 #endif
 #endif
 
 #ifdef GENERATE_IMPOSTOR
-	baseColorFS *= vec4(baseColor, 1.0);
+    baseColorFS *= vec4(baseColor, 1.0);
 #endif
 
-	geometryNormalFS = normalize(normalVS);
+    geometryNormalFS = normalize(normalVS);
 
 #ifdef NORMAL_MAP
-	vec3 normalColor = texture(normalMap, texCoords).rgb;
-	normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
-	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
-	normalFS = 0.5 * normalFS + 0.5;
+    vec3 normalColor = texture(normalMap, texCoords).rgb;
+    normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
+    // We want the normal always to face the camera for two sided materials
+    geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    normalFS = 0.5 * normalFS + 0.5;
 #else
-	// We want the normal always to face the camera for two sided materials
-	geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    // We want the normal always to face the camera for two sided materials
+    geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 #endif
-	
-	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+    
+    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
 
 #ifdef GENERATE_IMPOSTOR
-	float roughnessFactor = roughness;
-	float metalnessFactor = metalness;
-	float aoFactor = ao;
+    float roughnessFactor = roughness;
+    float metalnessFactor = metalness;
+    float aoFactor = ao;
 #else
-	float roughnessFactor = 1.0;
-	float metalnessFactor = 1.0;
-	float aoFactor = 1.0;
+    float roughnessFactor = 1.0;
+    float metalnessFactor = 1.0;
+    float aoFactor = 1.0;
 #endif
 
 #ifdef ROUGHNESS_MAP
-	roughnessFactor *= texture(roughnessMap, texCoords).r;
-	roughnessMetalnessAoFS.r = roughnessFactor;
+    roughnessFactor *= texture(roughnessMap, texCoords).r;
+    roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-	metalnessFactor *= texture(metalnessMap, texCoords).r;
-	roughnessMetalnessAoFS.g = metalnessFactor;
+    metalnessFactor *= texture(metalnessMap, texCoords).r;
+    roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-	aoFactor *= texture(aoMap, texCoords).r;
-	roughnessMetalnessAoFS.b = aoFactor;
+    aoFactor *= texture(aoMap, texCoords).r;
+    roughnessMetalnessAoFS.b = aoFactor;
 #endif
 
 #ifdef GENERATE_IMPOSTOR
-	roughnessMetalnessAoFS = vec3(roughnessFactor,
-		metalnessFactor, aoFactor);
+    roughnessMetalnessAoFS = vec3(roughnessFactor,
+        metalnessFactor, aoFactor);
 #endif
-	// Calculate velocity
-	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
-	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
+    // Calculate velocity
+    vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
+    vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= globalData.jitterLast;
-	ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData.jitterLast;
+    ndcC -= globalData.jitterCurrent;
 
-	velocityFS = (ndcL - ndcC) * 0.5;
+    velocityFS = (ndcL - ndcC) * 0.5;
 
-	materialIdxFS = PushConstants.materialIdx;
-	
+    materialIdxFS = PushConstants.materialIdx;
+    
 }

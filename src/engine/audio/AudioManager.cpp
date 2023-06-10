@@ -13,11 +13,11 @@ namespace Atlas {
         std::vector<AudioStream*> AudioManager::musicQueue;
         std::vector<AudioStream*> AudioManager::effectQueue;
 
-		std::mutex AudioManager::mutex;
-		
+        std::mutex AudioManager::mutex;
+        
         bool AudioManager::Configure(uint32_t frequency, uint8_t channels, uint32_t samples) {
 
-			std::lock_guard<std::mutex> guard(mutex);
+            std::lock_guard<std::mutex> guard(mutex);
 
             SDL_AudioSpec desiredSpec;
 
@@ -32,8 +32,8 @@ namespace Atlas {
 
             if ((audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &audioSpec, 0)) != 0) {
 
-				if (audioSpec.format != AUDIO_S16LSB)
-					return false;
+                if (audioSpec.format != AUDIO_S16LSB)
+                    return false;
 
                 Resume();
 
@@ -71,79 +71,79 @@ namespace Atlas {
 
         void AudioManager::AddMusic(AudioStream *stream) {
 
-			stream->ApplyFormat(audioSpec);
+            stream->ApplyFormat(audioSpec);
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			musicQueue.push_back(stream);
+            musicQueue.push_back(stream);
 
         }
 
         void AudioManager::RemoveMusic(AudioStream *stream) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			auto item = std::find(musicQueue.begin(), musicQueue.end(), stream);
+            auto item = std::find(musicQueue.begin(), musicQueue.end(), stream);
 
-			if (item != musicQueue.end()) {
-				musicQueue.erase(item);
-			}
+            if (item != musicQueue.end()) {
+                musicQueue.erase(item);
+            }
 
         }
 
         void AudioManager::Callback(void* userData, uint8_t* stream, int32_t length) {
 
-			// We only use 16 bit audio internally
-			length /= 2;
+            // We only use 16 bit audio internally
+            length /= 2;
 
-			std::vector<int16_t> dest(length, 0);
+            std::vector<int16_t> dest(length, 0);
 
-			// Compute music first
-			std::unique_lock<std::mutex> lock(mutex);
+            // Compute music first
+            std::unique_lock<std::mutex> lock(mutex);
 
-			auto queue = musicQueue;
+            auto queue = musicQueue;
 
-			lock.unlock();
+            lock.unlock();
 
-			for (auto stream : queue) {
+            for (auto stream : queue) {
 
-				if (stream->IsPaused())
-					continue;
+                if (stream->IsPaused())
+                    continue;
 
-				auto src = stream->GetChunk(length);
+                auto src = stream->GetChunk(length);
 
-				Mix(dest, src);
+                Mix(dest, src);
 
-			}
+            }
 
-			// Compute audio effects
-			lock.lock();
+            // Compute audio effects
+            lock.lock();
 
 
 
-			lock.unlock();
+            lock.unlock();
 
-			std::memcpy(stream, dest.data(), length * 2);
+            std::memcpy(stream, dest.data(), length * 2);
 
         }
 
-		void AudioManager::Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src) {
+        void AudioManager::Mix(std::vector<int16_t>& dest, const std::vector<int16_t>& src) {
 
-			const int16_t maxAudioValue = ((1 << (16 - 1)) - 1);
-			const int16_t minAudioValue = -(1 << (16 - 1));
+            const int16_t maxAudioValue = ((1 << (16 - 1)) - 1);
+            const int16_t minAudioValue = -(1 << (16 - 1));
 
-			for (uint64_t i = 0; i < dest.size(); i++) {
+            for (uint64_t i = 0; i < dest.size(); i++) {
 
-				auto sample = dest[i] + src[i];
-			
-				sample = sample > maxAudioValue ? maxAudioValue : sample;
-				sample = sample < minAudioValue ? minAudioValue : sample;
+                auto sample = dest[i] + src[i];
+            
+                sample = sample > maxAudioValue ? maxAudioValue : sample;
+                sample = sample < minAudioValue ? minAudioValue : sample;
 
-				dest[i] = sample;
-			
-			}
+                dest[i] = sample;
+            
+            }
 
-		}
+        }
 
     }
 

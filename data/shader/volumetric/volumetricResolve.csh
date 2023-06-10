@@ -17,7 +17,7 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 
 layout(set = 3, binding = 5) uniform  UniformBuffer {
     Fog fog;
-	int downsampled2x;
+    int downsampled2x;
     int cloudsEnabled;
     int fogEnabled;
 } uniforms;
@@ -31,16 +31,16 @@ const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
 
 void LoadGroupSharedData() {
 
-	ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
+    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
 
-	// We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
-	if (gl_LocalInvocationIndex < depthDataSize) {
-		ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
-		offset += workGroupOffset;
-		offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
-		depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
-		volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0).rgb;
-	}
+    // We assume data size is smaller than gl_WorkGroupSize.x + gl_WorkGroupSize.y
+    if (gl_LocalInvocationIndex < depthDataSize) {
+        ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
+        offset += workGroupOffset;
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
+        volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0).rgb;
+    }
 
     barrier();
 
@@ -62,14 +62,14 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 
     int idx = 0;
     float nearest = distance(referenceDepth, depthVec[0]);
-	for (int i = 1; i < 9; i++) {
+    for (int i = 1; i < 9; i++) {
         float dist = distance(referenceDepth, depthVec[i]);
         if (dist < nearest) {
             nearest = dist;
             idx = i;
         }
     }
-	return idx;
+    return idx;
 
 }
 
@@ -77,15 +77,15 @@ vec4 Upsample2x(float referenceDepth) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
-	float invocationDepths[9];
+    float invocationDepths[9];
 
-	for (uint i = 0; i < 9; i++) {
-		int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
-		invocationDepths[i] = depths[sharedMemoryOffset];
-	}
+    for (uint i = 0; i < 9; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+        invocationDepths[i] = depths[sharedMemoryOffset];
+    }
 
     int idx = NearestDepth(referenceDepth, invocationDepths);
-	int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
+    int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
     return vec4(volumetrics[offset], 1.0);
 
@@ -111,17 +111,17 @@ void main() {
     else {
         volumetric = vec4(textureLod(lowResVolumetricTexture, texCoord, 0).rgb, 0.0);
     }
-	vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
+    vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
     // Handle as infinity
     if (depth == 1.0) {
         viewPosition *= 1000.0;
     }
 
-	vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
+    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 
     vec4 resolve = imageLoad(resolveImage, pixel);
 
-	float fogAmount = uniforms.fogEnabled > 0 ? saturate(ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
+    float fogAmount = uniforms.fogEnabled > 0 ? saturate(ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
     resolve = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, resolve, fogAmount) + volumetric : resolve + volumetric;
 
 #ifdef CLOUDS
