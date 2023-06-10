@@ -1,9 +1,7 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba16f) writeonly uniform image2D displacementMap;
-layout (binding = 1, rgba32f) readonly uniform image2D pingpongMap;
-
-uniform int N;
+layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D displacementMap;
+layout (set = 3, binding = 1, rgba32f) readonly uniform image2D pingpongMap;
 
 void main() {
 
@@ -21,6 +19,5 @@ void main() {
 	
 	imageStore(displacementMap, coord, 
 			vec4(displacement, 1.0));
-
 
 }

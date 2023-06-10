@@ -3,16 +3,18 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (binding = 0, rg32f) readonly uniform image2D twiddleIndicesTexture;
+layout (set = 3, binding = 0, rg32f) readonly uniform image2D twiddleIndicesTexture;
 
-layout (binding = 1, rgba32f) readonly uniform image2D pingpong0;
-layout (binding = 2, rgba32f) writeonly uniform image2D pingpong1;
+layout (set = 3, binding = 1, rgba32f) readonly uniform image2D pingpong0;
+layout (set = 3, binding = 2, rgba32f) writeonly uniform image2D pingpong1;
 
-uniform int stage;
-uniform int pingpong;
-uniform int direction;
-uniform int N;
-uniform float preTwiddle;
+layout(push_constant) uniform constants {
+	int stage;
+	int pingpong;
+	int direction;
+	int N;
+	float preTwiddle;
+} PushConstants;
 
 void horizontal();
 void vertical();
@@ -32,8 +34,8 @@ void horizontal() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	float k = mod(float(coord.x) * preTwiddle, float(N));
-	float twiddleArgument = 2.0 * PI * k / float(N);
+	float k = mod(float(coord.x) * PushConstants.preTwiddle, float(PushConstants.N));
+	float twiddleArgument = 2.0 * PI * k / float(PushConstants.N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 	
 	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rg;
@@ -54,8 +56,8 @@ void vertical() {
 
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	
-	float k = mod(float(coord.y) * preTwiddle, float(N));
-	float twiddleArgument = 2.0 * PI * k / float(N);
+	float k = mod(float(coord.y) * PushConstants.preTwiddle, float(PushConstants.N));
+	float twiddleArgument = 2.0 * PI * k / float(PushConstants.N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 	
 	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rg;

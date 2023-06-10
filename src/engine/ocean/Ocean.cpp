@@ -9,8 +9,6 @@ namespace Atlas {
 		Ocean::Ocean(int32_t LoDCount, float size, vec3 translation, int32_t N,
 			int32_t L) : size(size), translation(translation), simulation(N, L) {
 
-			simulation.ComputeSpectrum();
-
 			int32_t imageSize = (int32_t)powf(2, (float)LoDCount - 1.0f);
 			LoDImage = Common::Image<uint8_t>(imageSize, imageSize, 1);
 
@@ -40,7 +38,7 @@ namespace Atlas {
 			simulation.displacementScale = displacementScale;
 			simulation.tiling = tiling;
 
-			simulation.Compute(deltaTime);
+			simulation.Update(deltaTime);
 
 			std::vector<OceanNode*> leafs;
 

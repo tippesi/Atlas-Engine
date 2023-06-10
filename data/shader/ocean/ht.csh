@@ -3,20 +3,22 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba32f) writeonly uniform image2D hTD;
-layout (binding = 1, rg32f) readonly uniform image2D h0K;
+layout (set = 3, binding = 0, rgba32f) writeonly uniform image2D hTD;
+layout (set = 3, binding = 1, rg32f) readonly uniform image2D h0K;
 
-uniform int N;
-uniform int L;
-uniform float time;
+layout(push_constant) uniform constants {
+	int N;
+	int L;
+	float time;
+} PushConstants;
 
 const float g = 9.81;
 
 void main() {
 
-	vec2 coord = vec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
+	vec2 coord = vec2(gl_GlobalInvocationID.xy) - float(PushConstants.N) / 2.0;
 	
-	vec2 waveVector = 2.0 * PI / float(L) * coord;
+	vec2 waveVector = 2.0 * PI / float(PushConstants.L) * coord;
 	
 	float k = length(waveVector);	
 	float w = sqrt(g * k);
@@ -25,8 +27,8 @@ void main() {
 	vec2 h0_k = imageLoad(h0K, ivec2(gl_GlobalInvocationID)).rg;
 	vec2 h0_mk = imageLoad(h0K, ivec2(inverseCoords)).rg;
 		
-	float cos_wt = cos(w * time);
-	float sin_wt = sin(w * time);
+	float cos_wt = cos(w * PushConstants.time);
+	float sin_wt = sin(w * PushConstants.time);
 
 	// Calculate h(t)
 	vec2 ht;

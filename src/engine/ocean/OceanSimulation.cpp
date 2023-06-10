@@ -1,7 +1,8 @@
 #include "OceanSimulation.h"
 #include "../Clock.h"
-#include "../buffer/Buffer.h"
+#include "../buffer/UniformBuffer.h"
 #include "../graphics/Profiler.h"
+#include "../pipeline/PipelineManager.h"
 
 #include <vector>
 
@@ -33,96 +34,91 @@ namespace Atlas {
 			noise2.SetData(image2.GetData());
 			noise3.SetData(image3.GetData());
 
-
 			displacementMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 			normalMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+			displacementMapPrev = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 
-            /*
-			displacementMapPrev = Texture::Texture2D(N, N, AE_RGBA16F, GL_REPEAT, GL_LINEAR, true, true);
+			h0K = Texture::Texture2D(N, N, VK_FORMAT_R32G32_SFLOAT);
 
-			h0K = Texture::Texture2D(N, N, AE_RG32F);
+			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, VK_FORMAT_R32G32_SFLOAT);
+			hTD = Texture::Texture2D(N, N, VK_FORMAT_R32G32B32A32_SFLOAT);
+			hTDPingpong = Texture::Texture2D(N, N, VK_FORMAT_R32G32B32A32_SFLOAT);
 
-			twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, AE_RG32F);
-			hTD = Texture::Texture2D(N, N, AE_RGBA32F);
-			hTDPingpong = Texture::Texture2D(N, N, AE_RGBA32F);
+            h0Config = PipelineConfig("ocean/h0.csh");
+            htConfig = PipelineConfig("ocean/ht.csh");
+            twiddleConfig = PipelineConfig("ocean/twiddleIndices.csh");
+            horizontalButterflyConfig = PipelineConfig("ocean/butterfly.csh");
+            verticalButterflyConfig = PipelineConfig("ocean/butterfly.csh");
+            inversionConfig = PipelineConfig("ocean/inversion.csh");
+            normalConfig = PipelineConfig("ocean/normal.csh");
 
-			h0.AddStage(AE_COMPUTE_STAGE, "ocean/h0.csh");
-			ht.AddStage(AE_COMPUTE_STAGE, "ocean/ht.csh");
-			twiddle.AddStage(AE_COMPUTE_STAGE, "ocean/twiddleIndices.csh");
-			horizontalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
-			verticalButterfly.AddStage(AE_COMPUTE_STAGE, "ocean/butterfly.csh");
-			inversion.AddStage(AE_COMPUTE_STAGE, "ocean/inversion.csh");
-			normal.AddStage(AE_COMPUTE_STAGE, "ocean/normal.csh");
-
-
-			horizontalButterfly.AddMacro("HORIZONTAL");
-			verticalButterfly.AddMacro("VERTICAL");
-
-			htNUniform = ht.GetUniform("N");
-			htLUniform = ht.GetUniform("L");
-			htTimeUniform = ht.GetUniform("time");
-
-			butterflyStageUniform = horizontalButterfly.GetUniform("stage");
-			butterflyPingpongUniform = horizontalButterfly.GetUniform("pingpong");
-			butterflyNUniform = horizontalButterfly.GetUniform("N");
-			butterflyPreTwiddleUniform = horizontalButterfly.GetUniform("preTwiddle");
-
-			inversionNUniform = inversion.GetUniform("N");
-			inversionPingpongUniform = inversion.GetUniform("pingpong");
-
-			normalNUniform = normal.GetUniform("N");
-			normalLUniform = normal.GetUniform("L");
-			normalChoppyScaleUniform = normal.GetUniform("choppyScale");
-			normalDisplacementScaleUniform = normal.GetUniform("displacementScale");
-			normalTilingUniform = normal.GetUniform("tiling");
-			normalFoamTemporalWeightUniform = normal.GetUniform("temporalWeight");
-			normalFoamTemporalThresholdUniform = normal.GetUniform("temporalThreshold");
-			normalFoamOffsetUniform = normal.GetUniform("foamOffset");
-            */
-			ComputeTwiddleIndices();
-			ComputeSpectrum();
+			horizontalButterflyConfig.AddMacro("HORIZONTAL");
+			verticalButterflyConfig.AddMacro("VERTICAL");
 
 		}
 
-		void OceanSimulation::ComputeSpectrum() {
+        void OceanSimulation::Update(float deltaTime) {
 
-			/*
+            time += deltaTime;
+
+        }
+
+        void OceanSimulation::UpdateSpectrum() {
+
+            updateSpectrum = true;
+
+        }
+
+		void OceanSimulation::ComputeSpectrum(Graphics::CommandList* commandList) {
+
+            struct alignas(16) PushConstants {
+                int N;
+                int L;
+                float A;
+                float windSpeed;
+                float windDependency;
+                float waveSurpression;
+                vec2 w;
+            };
+
 			Graphics::Profiler::BeginQuery("Compute ocean spectrum");
 
-			h0.Bind();
+            auto pipeline = PipelineManager::GetPipeline(h0Config);
+            commandList->BindPipeline(pipeline);
 
-			h0.GetUniform("N")->SetValue(N);
-			h0.GetUniform("L")->SetValue(L);
-			h0.GetUniform("A")->SetValue(waveAmplitude);
-			h0.GetUniform("w")->SetValue(windDirection);
-			h0.GetUniform("windspeed")->SetValue(windSpeed);
-			h0.GetUniform("windDependency")->SetValue(windDependency);
-			h0.GetUniform("waveSurpression")->SetValue(waveSurpression);
+            PushConstants constants {
+                .N = N,
+                .L = L,
+                .A = waveAmplitude,
+                .windSpeed = windSpeed,
+                .windDependency = windDependency,
+                .waveSurpression = waveSurpression,
+                .w = windDirection
+            };
+            commandList->PushConstants("constants", &constants);
 
+			noise0.Bind(commandList, 3, 2);
+			noise1.Bind(commandList, 3, 3);
+			noise2.Bind(commandList, 3, 4);
+			noise3.Bind(commandList, 3, 5);
 
-			noise0.Bind(2);
-			noise1.Bind(3);
-			noise2.Bind(4);
-			noise3.Bind(5);
+            // Need to write here, so don't bind as combined image sampler
+            commandList->BindImage(h0K.image, 3, 0);
 
-			h0K.Bind(GL_WRITE_ONLY, 0);
+			commandList->ImageMemoryBarrier(h0K.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            commandList->Dispatch(N / 16, N / 16, 1);
 
-			glDispatchCompute(N / 16, N / 16, 1);
+            commandList->ImageMemoryBarrier(h0K.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
 			Graphics::Profiler::EndQuery();
-			*/
 
 		}
 
-		void OceanSimulation::ComputeTwiddleIndices() {
-
-            /*
-			auto nUniform = twiddle.GetUniform("N");
+		void OceanSimulation::ComputeTwiddleIndices(Graphics::CommandList* commandList) {
 
 			auto bitCount = (int32_t)log2f((float)N);
 			std::vector<int32_t> indices(N);
@@ -131,24 +127,31 @@ namespace Atlas {
 				indices[i] = ReverseBits(i, bitCount);
 			}
 
-			Buffer::Buffer buffer(AE_SHADER_STORAGE_BUFFER, sizeof(int32_t), AE_BUFFER_DYNAMIC_STORAGE);
-			buffer.SetSize(indices.size());
+			Buffer::UniformBuffer buffer(sizeof(int32_t), indices.size());
 			buffer.SetData(indices.data(), 0, indices.size());
 
-			nUniform->SetValue(N);
+            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-			twiddleIndices.Bind(GL_WRITE_ONLY, 0);
-			buffer.BindBase(1);
+            commandList->BindImage(twiddleIndices.image, 3, 0);
+            buffer.Bind(commandList, 3, 1);
 
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			commandList->Dispatch(bitCount, N / 16, 1);
 
-			glDispatchCompute(bitCount, N / 16, 1);
-             */
+            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
 		}
 
-		void OceanSimulation::Compute(float deltaTime) {
+		void OceanSimulation::Compute(Graphics::CommandList* commandList) {
+
+            if (updateSpectrum) {
+                ComputeSpectrum(commandList);
+                updateSpectrum = false;
+            }
+
+            if (updateTwiddleIndices) {
+                ComputeTwiddleIndices(commandList);
+                updateTwiddleIndices = false;
+            }
 
 			/*
             Graphics::Profiler::BeginQuery("Compute ocean simulation");

@@ -4,6 +4,8 @@
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
+#include "../pipeline/PipelineConfig.h"
+#include "../graphics/CommandList.h"
 
 #include <vector>
 
@@ -18,9 +20,11 @@ namespace Atlas {
 
 			OceanSimulation(int32_t N, int32_t L);
 
-			void Compute(float deltaTime);
+            void Update(float deltaTime);
 
-			void ComputeSpectrum();
+            void UpdateSpectrum();
+
+			void Compute(Graphics::CommandList* commandList);
 
 			Texture::Texture2D displacementMap;
 			Texture::Texture2D normalMap;
@@ -54,7 +58,9 @@ namespace Atlas {
 			bool update = true;
 
 		private:
-			void ComputeTwiddleIndices();
+			void ComputeTwiddleIndices(Graphics::CommandList* commandList);
+
+            void ComputeSpectrum(Graphics::CommandList* commandList);
 
 			int32_t ReverseBits(int32_t data, int32_t bitCount);
 
@@ -62,15 +68,16 @@ namespace Atlas {
 
 			float time = 0.0f;
 
-            /*
-			OldShader::OldShader h0;
-			OldShader::OldShader ht;
-			OldShader::OldShader twiddle;
-			OldShader::OldShader horizontalButterfly;
-			OldShader::OldShader verticalButterfly;
-			OldShader::OldShader inversion;
-			OldShader::OldShader normal;
-            */
+            bool updateSpectrum = true;
+            bool updateTwiddleIndices = true;
+
+            PipelineConfig h0Config;
+            PipelineConfig htConfig;
+            PipelineConfig twiddleConfig;
+            PipelineConfig horizontalButterflyConfig;
+            PipelineConfig verticalButterflyConfig;
+            PipelineConfig inversionConfig;
+            PipelineConfig normalConfig;
 
 			// Precomputed noise textures
 			Texture::Texture2D noise0;

@@ -43,6 +43,8 @@ namespace Atlas {
 
 			auto ocean = scene->ocean;
 
+            ocean->simulation.Compute(commandList);
+
 			auto sun = scene->sky.sun.get();
 			if (!sun) {
 				auto lights = scene->GetLights();

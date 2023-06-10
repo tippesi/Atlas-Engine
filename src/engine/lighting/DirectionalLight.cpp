@@ -207,11 +207,11 @@ namespace Atlas {
 
             const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, -1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.5f, 0.5f,
-                0.0f, 0.0f, 0.0f, 1.0f);
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
 
 			glm::mat4 shadowProj = cascade->projectionMatrix;
-			shadowProj[3] += clip * roundOffset;
+			shadowProj[3] += roundOffset;
 			cascade->projectionMatrix = clip * shadowProj;
             cascade->frustumMatrix = clip * cascade->frustumMatrix;
             cascade->terrainFrustumMatrix = clip * cascade->terrainFrustumMatrix;
