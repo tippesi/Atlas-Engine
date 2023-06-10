@@ -4,17 +4,6 @@ layout (set = 3, binding = 0, rgba16f) readonly uniform image2D displacementMap;
 layout (set = 3, binding = 1, rgba16f) writeonly uniform image2D normalMap;
 layout (set = 3, binding = 2, rgba16f) readonly uniform image2D historyMap;
 
-uniform int N;
-uniform int L;
-uniform float choppyScale;
-uniform float displacementScale;
-uniform float tiling;
-
-uniform float temporalWeight;
-uniform float temporalThreshold;
-
-uniform float foamOffset;
-
 layout(push_constant) uniform constants {
 	int N;
 	int L;
@@ -67,8 +56,10 @@ void main() {
 
 	float fold = -clamp(J, -1.0, 1.0) + PushConstants.foamOffset;
 
+	/*
 	float blend = fold > PushConstants.temporalThreshold ? 0.0 : 0.0;
 	fold = mix(fold, history, blend);
+	*/
 
 	vec3 normal;
 

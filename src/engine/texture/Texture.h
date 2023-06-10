@@ -12,6 +12,8 @@
 #include "../graphics/CommandList.h"
 #include "../graphics/GraphicsDevice.h"
 
+#include <unordered_map>
+
 namespace Atlas {
 
     namespace Texture {

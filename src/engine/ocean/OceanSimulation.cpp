@@ -137,7 +137,7 @@ namespace Atlas {
 
 			commandList->Dispatch(bitCount, N / 16, 1);
 
-            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            commandList->ImageMemoryBarrier(twiddleIndices.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT);
 
 		}
 
@@ -153,135 +153,213 @@ namespace Atlas {
                 updateTwiddleIndices = false;
             }
 
-			/*
             Graphics::Profiler::BeginQuery("Compute ocean simulation");
-
-			time += deltaTime;
 
 			if (!update) return;
 
 			// displacementMapPrev.Copy(displacementMap);
 
-            Graphics::Profiler::BeginQuery("Compute h(t)");
+            {
+                struct alignas(16) PushConstants {
+                    int N;
+                    int L;
+                    float time;
+                };
 
-			ht.Bind();
+                Graphics::Profiler::BeginQuery("Compute h(t)");
 
-			htNUniform->SetValue(N);
-			htLUniform->SetValue(L);
-			htTimeUniform->SetValue(simulationSpeed * time);
+                auto pipeline = PipelineManager::GetPipeline(htConfig);
+                commandList->BindPipeline(pipeline);
 
-			hTD.Bind(GL_WRITE_ONLY, 0);
-			h0K.Bind(GL_READ_ONLY, 1);
+                PushConstants constants = {
+                    .N = N,
+                    .L = L,
+                    .time = simulationSpeed * time
+                };
+                commandList->PushConstants("constants", &constants);
 
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
-				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-			glDispatchCompute(N / 16, N / 16, 1);
+                imageBarriers = {
+                    {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    {h0K.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT}
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
+                commandList->BindImage(hTD.image, 3, 0);
+                commandList->BindImage(h0K.image, 3, 1);
 
-			Profiler::EndQuery();
+                commandList->Dispatch(N / 16, N / 16, 1);
+
+                Graphics::Profiler::EndQuery();
+            }
 
 			int32_t pingpong = 0;
 			int32_t log2n = (int32_t)log2f((float)N);
 
-			Profiler::BeginQuery("Perform iFFT");
+            Graphics::Profiler::BeginQuery("Perform iFFT");
 
-            // twiddleIndices.Bind(GL_READ_ONLY, 0);
+            commandList->BindImage(twiddleIndices.image, 3, 0);
 
 			for (uint8_t j = 0; j < 2; j++) {
 
+                struct alignas(16) PushConstants {
+                    int stage;
+                    int pingpong;
+                    int N;
+                    float preTwiddle;
+                };
+
 				// The first two passes calculate the height,
 				// while the second two passes calculate choppyness.
+                Ref<Graphics::Pipeline> pipeline;
 				switch (j) {
-				case 0: horizontalButterfly.Bind();  break;
-				case 1: verticalButterfly.Bind(); break;
+                    case 0: pipeline = PipelineManager::GetPipeline(horizontalButterflyConfig); break;
+                    case 1: pipeline = PipelineManager::GetPipeline(verticalButterflyConfig); break;
 				default: break;
 				}
 
-				butterflyNUniform->SetValue(N);
+                commandList->BindPipeline(pipeline);
+
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
 				for (int32_t i = 0; i < log2n; i++) {
 
 					if (!pingpong) {
-						hTD.Bind(GL_READ_ONLY, 1);
-						hTDPingpong.Bind(GL_WRITE_ONLY, 2);
+                        imageBarriers = {
+                            {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
+                            {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                        };
+                        commandList->BindImage(hTD.image, 3, 1);
+                        commandList->BindImage(hTDPingpong.image, 3, 2);
 					}
 					else {
-						hTDPingpong.Bind(GL_READ_ONLY, 1);
-						hTD.Bind(GL_WRITE_ONLY, 2);
+                        imageBarriers = {
+                            {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                            {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT}
+                        };
+                        commandList->BindImage(hTDPingpong.image, 3, 1);
+                        commandList->BindImage(hTD.image, 3, 2);
 					}
+
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
 					auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
-					butterflyPreTwiddleUniform->SetValue(preTwiddle);
+                    PushConstants constants = {
+                        .stage = i,
+                        .pingpong = pingpong,
+                        .N = N,
+                        .preTwiddle = preTwiddle
+                    };
+                    commandList->PushConstants("constants", &constants);
 
-					butterflyStageUniform->SetValue(i);
-					butterflyPingpongUniform->SetValue(pingpong);
-
-					glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-					glDispatchCompute(N / 8, N / 8, 1);
+					commandList->Dispatch(N / 8, N / 8, 1);
 
 					pingpong = (pingpong + 1) % 2;
 				}
 			}
 
-			Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
 
-			Profiler::BeginQuery("Compute heightfield/displacement");
+            {
+                Graphics::Profiler::BeginQuery("Compute heightfield/displacement");
 
-			// Inverse and correct the texture
-			inversion.Bind();
+                auto pipeline = PipelineManager::GetPipeline(inversionConfig);
+                commandList->BindPipeline(pipeline);
 
-			inversionNUniform->SetValue(N);
-			inversionPingpongUniform->SetValue(pingpong);
+                Ref<Graphics::Image> image;
+                if (pingpong == 0) {
+                    image = hTD.image;
+                }
+                else {
+                    image = hTDPingpong.image;
+                }
 
-			displacementMap.Bind(GL_WRITE_ONLY, 0);
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-            if (pingpong == 0) {
-                hTD.Bind(GL_READ_ONLY, 1);
+                imageBarriers = {
+                    {displacementMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                    {image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                commandList->BindImage(displacementMap.image, 3, 0);
+                commandList->BindImage(image, 3, 1);
+
+                commandList->Dispatch(N / 16, N / 16, 1);
+
+                Graphics::Profiler::EndQuery();
             }
-            else {
-                hTDPingpong.Bind(GL_READ_ONLY, 1);
+
+            {
+                struct alignas(16) PushConstants {
+                    int N;
+                    int L;
+                    float choppyScale;
+                    float displacementScale;
+                    float tiling;
+
+                    float temporalWeight;
+                    float temporalThreshold;
+
+                    float foamOffset;
+                };
+
+                Graphics::Profiler::BeginQuery("Compute normal map");
+
+                auto pipeline = PipelineManager::GetPipeline(normalConfig);
+                commandList->BindPipeline(pipeline);
+
+                PushConstants constants = {
+                    .N = N,
+                    .L = L,
+                    .choppyScale = choppinessScale,
+                    .displacementScale = displacementScale,
+                    .tiling = tiling,
+
+                    .temporalWeight = foamTemporalWeight,
+                    .temporalThreshold = foamTemporalThreshold,
+
+                    .foamOffset = foamOffset
+                };
+                commandList->PushConstants("constants", &constants);
+
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+                imageBarriers = {
+                    {displacementMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
+                    {normalMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                commandList->BindImage(displacementMap.image, 3, 0);
+                commandList->BindImage(normalMap.image, 3, 1);
+
+                commandList->Dispatch(N / 16, N / 16, 1);
+
+                Graphics::Profiler::EndQuery();
             }
 
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			glDispatchCompute(N / 16, N / 16, 1);
+            Graphics::Profiler::BeginQuery("Build normal map mips");
 
-			Profiler::EndQuery();
+            commandList->ImageMemoryBarrier(normalMap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-			Profiler::BeginQuery("Compute normal map");
+            // The cube map generating automatically transforms the image layout to read-only optimal
+            commandList->GenerateMipMap(normalMap.image);
 
-			// Calculate normals
-			normal.Bind();
+            commandList->ImageMemoryBarrier(displacementMap.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
-			normalNUniform->SetValue(N);
-			normalLUniform->SetValue(L);
-			normalChoppyScaleUniform->SetValue(choppinessScale);
-			normalDisplacementScaleUniform->SetValue(displacementScale);
-			normalTilingUniform->SetValue(tiling);
-			normalFoamTemporalWeightUniform->SetValue(foamTemporalWeight);
-			normalFoamTemporalThresholdUniform->SetValue(foamTemporalThreshold);
-			normalFoamOffsetUniform->SetValue(foamOffset);
-
-			auto normalMapCopy(normalMap);
-
-			displacementMap.Bind(GL_READ_ONLY, 0);
-			normalMap.Bind(GL_WRITE_ONLY, 1);
-			normalMapCopy.Bind(GL_READ_ONLY, 2);
-
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			glDispatchCompute(N / 16, N / 16, 1);
-
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-			Profiler::BeginQuery("Build normal map mips");
-			normalMap.Bind();
-			normalMap.GenerateMipmap();
-			Profiler::EndQuery();
-			Profiler::EndQuery();
-			Profiler::EndQuery();
-             */
+            Graphics::Profiler::EndQuery();
+			Graphics::Profiler::EndQuery();
 
 		}
 

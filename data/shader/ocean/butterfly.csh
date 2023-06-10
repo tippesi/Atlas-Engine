@@ -11,7 +11,6 @@ layout (set = 3, binding = 2, rgba32f) writeonly uniform image2D pingpong1;
 layout(push_constant) uniform constants {
 	int stage;
 	int pingpong;
-	int direction;
 	int N;
 	float preTwiddle;
 } PushConstants;
@@ -38,7 +37,7 @@ void horizontal() {
 	float twiddleArgument = 2.0 * PI * k / float(PushConstants.N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 	
-	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.x)).rg;
+	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(PushConstants.stage, coord.x)).rg;
 		
 	vec4 s1 = imageLoad(pingpong0, ivec2(twiddle.x, coord.y));
 	vec4 t1 = imageLoad(pingpong0, ivec2(twiddle.y, coord.y));
@@ -60,7 +59,7 @@ void vertical() {
 	float twiddleArgument = 2.0 * PI * k / float(PushConstants.N);
 	vec2 twiddleFactor = vec2(cos(twiddleArgument), sin(twiddleArgument));
 	
-	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(stage, coord.y)).rg;
+	vec2 twiddle = imageLoad(twiddleIndicesTexture, ivec2(PushConstants.stage, coord.y)).rg;
 		
 	vec4 s1 = imageLoad(pingpong0, ivec2(coord.x, twiddle.x));
 	vec4 t1 = imageLoad(pingpong0, ivec2(coord.x, twiddle.y));

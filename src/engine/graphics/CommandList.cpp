@@ -614,7 +614,7 @@ namespace Atlas {
                 nullptr, uint32_t(nativeBufferBarriers.size()), nativeBufferBarriers.data(),
                 uint32_t(nativeImageBarriers.size()), nativeImageBarriers.data());
 
-            // Only update image layouts afterwards for clarity
+            // Only update image layouts afterward for clarity
             for (auto& barrier : imageBarriers) {
                 barrier.image->layout = barrier.newLayout;
                 barrier.image->accessMask = barrier.newAccessMask;

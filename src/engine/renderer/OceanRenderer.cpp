@@ -172,12 +172,6 @@ namespace Atlas {
 			{
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
-                // TODO: Remove when simulation works
-                commandList->ImageMemoryBarrier(ocean->simulation.displacementMap.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                commandList->ImageMemoryBarrier(ocean->simulation.normalMap.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
                 commandList->BeginRenderPass(target->lightingFrameBuffer->renderPass, target->lightingFrameBuffer);
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);

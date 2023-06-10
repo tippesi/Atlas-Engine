@@ -132,8 +132,6 @@ namespace Atlas {
             // The cube map generating automatically transforms the image layout to read-only optimal
             commandList->GenerateMipMap(probe->cubemap.image);
 
-			probe->cubemap.GenerateMipmap();
-
 			Graphics::Profiler::EndQuery();
 			Graphics::Profiler::EndQuery();
 
