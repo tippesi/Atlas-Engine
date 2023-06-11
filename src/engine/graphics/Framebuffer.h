@@ -45,6 +45,8 @@ namespace Atlas {
 
             void ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t slot);
 
+            void ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t layer, const uint32_t slot);
+
             void ChangeDepthAttachmentImage(const Ref<Image>& image);
 
             Ref<Image>& GetColorImage(uint32_t slot);

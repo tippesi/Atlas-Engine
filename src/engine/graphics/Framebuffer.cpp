@@ -11,7 +11,6 @@ namespace Atlas {
             extent(desc.extent), layers(desc.layers), device(device) {
 
             for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-
                 auto& attachmentDesc = desc.colorAttachments[i];
 
                 FrameBufferAttachment attachment {
@@ -22,7 +21,6 @@ namespace Atlas {
                 };
 
                 colorAttachments[i] = attachment;
-
             }
 
             if (desc.depthAttachment.image) {
@@ -115,6 +113,16 @@ namespace Atlas {
             assert(colorAttachments[slot].isValid && "Color attachment is not valid");
 
             colorAttachments[slot].image = image;
+
+        }
+
+        void FrameBuffer::ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t layer, const uint32_t slot) {
+
+            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            assert(colorAttachments[slot].isValid && "Color attachment is not valid");
+
+            colorAttachments[slot].image = image;
+            colorAttachments[slot].layer = layer;
 
         }
 

@@ -7,17 +7,15 @@ namespace Atlas {
         Impostor::Impostor(int32_t views, int32_t resolution) : 
             views(views), resolution(resolution) {
 
-            /*
             baseColorTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, AE_RGBA8, GL_CLAMP_TO_EDGE,
-                GL_LINEAR, true, true);
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             roughnessMetalnessAoTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, AE_RGB8, GL_CLAMP_TO_EDGE,
-                GL_LINEAR, true, true);
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             normalTexture = Atlas::Texture::Texture2DArray(resolution,
-                resolution, views * views, AE_RGB8, GL_CLAMP_TO_EDGE,
-                GL_LINEAR, true, true);
-             */
+                resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         }
 
