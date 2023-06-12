@@ -97,12 +97,37 @@ namespace Atlas {
         void ImpostorRenderer::Generate(Atlas::Viewport *viewport, const std::vector<mat4> &viewMatrices,
             glm::mat4 projectionMatrix, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
+            struct alignas(16) PushConstants {
+                mat4 vMatrix = mat4(1.0f);
+                vec4 baseColor = vec4(1.0f);
+                float roughness = 1.0f;
+                float metalness = 1.0f;
+                float ao = 1.0f;
+                uint32_t invertUVs = 0;
+                uint32_t twoSided = 0;
+                float normalScale = 1.0f;
+                float displacementScale = 1.0f;
+            };
+
+            struct Uniforms {
+                mat4 pMatrix = mat4(1.0f);
+            };
+
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
             auto commandList = graphicsDevice->GetCommandList(Graphics::GraphicsQueue, true);
 
             commandList->BeginCommands();
 
             auto frameBuffer = GenerateFrameBuffer(impostor);
+
+            Buffer::UniformBuffer uniformBuffer(sizeof(Uniforms));
+            Uniforms uniforms = {
+                .pMatrix = projectionMatrix
+            };
+            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.Bind(commandList, 3, 7);
+
+            mesh->vertexArray.Bind(commandList);
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
@@ -116,12 +141,39 @@ namespace Atlas {
                 for (size_t j = 0; j < mesh->data.subData.size(); j++) {
 
                     auto subData = &mesh->data.subData[j];
+                    auto material = subData->material;
                     auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);
 
+                    if (material->HasBaseColorMap())
+                        commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
+                    if (material->HasOpacityMap())
+                        commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
+                    if (material->HasNormalMap())
+                        commandList->BindImage(material->normalMap->image, material->normalMap->sampler, 3, 2);
+                    if (material->HasRoughnessMap())
+                        commandList->BindImage(material->roughnessMap->image, material->roughnessMap->sampler, 3, 3);
+                    if (material->HasMetalnessMap())
+                        commandList->BindImage(material->metalnessMap->image, material->metalnessMap->sampler, 3, 4);
+                    if (material->HasAoMap())
+                        commandList->BindImage(material->aoMap->image, material->aoMap->sampler, 3, 5);
+                    if (material->HasDisplacementMap())
+                        commandList->BindImage(material->displacementMap->image, material->displacementMap->sampler, 3, 6);
 
+                    auto pushConstants = PushConstants {
+                        .vMatrix = viewMatrices[i],
+                        .baseColor = vec4(material->baseColor, 1.0f),
+                        .roughness = material->roughness,
+                        .metalness = material->metalness,
+                        .ao = material->ao,
+                        .invertUVs = mesh->invertUVs ? 1u : 0u,
+                        .twoSided = material->twoSided ? 1u : 0u,
+                        .normalScale = material->normalScale,
+                        .displacementScale = material->displacementScale,
+                    };
+                    commandList->PushConstants("constants", &pushConstants);
 
                     commandList->DrawIndexed(subData->indicesCount, 1, subData->indicesOffset, 0, 0);
 
@@ -133,7 +185,7 @@ namespace Atlas {
 
             commandList->EndCommands();
 
-            graphicsDevice->SubmitCommandList(commandList);
+            graphicsDevice->FlushCommandList(commandList);
 
         }
 
@@ -183,7 +235,7 @@ namespace Atlas {
 
             for (auto &attachment : attachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
@@ -206,6 +258,8 @@ namespace Atlas {
             return graphicsDevice->CreateFrameBuffer(frameBufferDesc);
 
         }
+
+        PipelineConfig ImpostorRenderer:
 
         PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
             Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {

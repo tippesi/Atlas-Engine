@@ -37,7 +37,7 @@ namespace Atlas {
             displacementMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
             normalMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
             displacementMapPrev = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 

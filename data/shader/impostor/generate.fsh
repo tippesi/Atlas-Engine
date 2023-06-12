@@ -1,10 +1,8 @@
 #include <../common/random.hsh>
-#include <../globals.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
-layout (location = 3) out vec3 roughnessMetalnessAoFS;
+layout (location = 2) out vec3 roughnessMetalnessAoFS;
 
 #ifdef BASE_COLOR_MAP
 layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
@@ -34,26 +32,18 @@ layout(location=1) in vec3 normalVS;
 layout(location=2) in vec2 texCoordVS;
 #endif
 
-layout(location=3) in vec3 ndcCurrentVS;
-layout(location=4) in vec3 ndcLastVS;
-
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=5) in mat3 TBN;
 #endif
 
-#ifdef GENERATE_IMPOSTOR
-uniform vec3 baseColor;
-uniform float roughness;
-uniform float metalness;
-uniform float ao;
-#endif
-
 layout(push_constant) uniform constants {
-	uint vegetation;
+	mat4 matrix;
+	vec4 baseColor;
+	float roughness;
+	float metalness;
+	float ao;
 	uint invertUVs;
 	uint twoSided;
-	uint staticMesh;
-	uint materialIdx;
 	float normalScale;
 	float displacementScale;
 } PushConstants;
@@ -129,9 +119,9 @@ void main() {
 	baseColorFS *= vec4(textureColor.rgb, 1.0);
 #endif
 
-	baseColorFS *= vec4(baseColor, 1.0);
+	baseColorFS *= PushConstants.baseColor;
 
-	geometryNormalFS = normalize(normalVS);
+	vec3 geometryNormalFS = normalize(normalVS);
 
 #ifdef NORMAL_MAP
 	vec3 normalColor = texture(normalMap, texCoords).rgb;
@@ -145,10 +135,11 @@ void main() {
 #endif
 	
 	geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+	normalFS = geometryNormalFS;
 
-	float roughnessFactor = roughness;
-	float metalnessFactor = metalness;
-	float aoFactor = ao;
+	float roughnessFactor = PushConstants.roughness;
+	float metalnessFactor = PushConstants.metalness;
+	float aoFactor = PushConstants.ao;
 
 #ifdef ROUGHNESS_MAP
 	roughnessFactor *= texture(roughnessMap, texCoords).r;

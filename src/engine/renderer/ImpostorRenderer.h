@@ -26,6 +26,8 @@ namespace Atlas {
 
             Ref<Graphics::FrameBuffer> GenerateFrameBuffer(Mesh::Impostor* impostor);
 
+            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer);
+
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
