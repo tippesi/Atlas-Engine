@@ -38,8 +38,6 @@ namespace Atlas {
 
         void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
             Scene::Scene* scene, Graphics::CommandList* commandList) {
-
-            static uint32_t frameCount = 0;
             
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable) return;
@@ -94,6 +92,8 @@ namespace Atlas {
 
             // Cast rays and calculate radiance
             {
+                static uint32_t frameCount = 0;
+
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);

@@ -75,13 +75,13 @@ namespace Atlas {
         void OceanSimulation::ComputeSpectrum(Graphics::CommandList* commandList) {
 
             struct alignas(16) PushConstants {
-                int N;
-                int L;
-                float A;
-                float windSpeed;
-                float windDependency;
-                float waveSurpression;
-                vec2 w;
+                int N = 1;
+                int L = 1;
+                float A = 1.0f;
+                float windSpeed = 1.0f;
+                float windDependency = 1.0f;
+                float waveSurpression = 1.0f;
+                vec2 w = vec2(1.0f);
             };
 
             Graphics::Profiler::BeginQuery("Compute ocean spectrum");
@@ -208,10 +208,10 @@ namespace Atlas {
             for (uint8_t j = 0; j < 2; j++) {
 
                 struct alignas(16) PushConstants {
-                    int stage;
-                    int pingpong;
-                    int N;
-                    float preTwiddle;
+                    int stage = 1;
+                    int pingpong = 1;
+                    int N = 1;
+                    float preTwiddle = 1.0f;
                 };
 
                 // The first two passes calculate the height,
@@ -220,7 +220,7 @@ namespace Atlas {
                 switch (j) {
                     case 0: pipeline = PipelineManager::GetPipeline(horizontalButterflyConfig); break;
                     case 1: pipeline = PipelineManager::GetPipeline(verticalButterflyConfig); break;
-                default: break;
+                    default: break;
                 }
 
                 commandList->BindPipeline(pipeline);
@@ -300,16 +300,16 @@ namespace Atlas {
 
             {
                 struct alignas(16) PushConstants {
-                    int N;
-                    int L;
-                    float choppyScale;
-                    float displacementScale;
-                    float tiling;
+                    int N = 1;
+                    int L = 1;
+                    float choppyScale = 1.0f;
+                    float displacementScale = 1.0f;
+                    float tiling = 1.0f;
 
-                    float temporalWeight;
-                    float temporalThreshold;
+                    float temporalWeight = 1.0f;
+                    float temporalThreshold = 1.0f;
 
-                    float foamOffset;
+                    float foamOffset = 1.0f;
                 };
 
                 Graphics::Profiler::BeginQuery("Compute normal map");

@@ -33,8 +33,6 @@ namespace Atlas {
         void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            static uint32_t frameCount = 0;
-
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;
             if (!clouds || !clouds->enable) return;
@@ -60,6 +58,8 @@ namespace Atlas {
             std::vector<Graphics::ImageBarrier> imageBarriers;
             
             {
+                static uint32_t frameCount = 0;
+
                 Graphics::Profiler::BeginQuery("Integrate");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
