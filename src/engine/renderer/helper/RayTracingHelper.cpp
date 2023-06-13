@@ -152,11 +152,11 @@ namespace Atlas {
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    commandList->BindBuffer(rtData.materialBuffer.Get(), 2, 7);
-                    commandList->BindBuffer(rtData.triangleBuffer.Get(), 2, 8);
-                    commandList->BindBuffer(rtData.bvhTriangleBuffer.Get(), 2, 9);
-                    commandList->BindBuffer(rtData.nodeBuffer.Get(), 2, 10);
-                    commandList->BindBuffer(lightBuffer.GetMultiBuffer(), 2, 11);
+                    rtData.materialBuffer.Bind(commandList, 2, 7);
+                    rtData.triangleBuffer.Bind(commandList, 2, 8);
+                    rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
+                    rtData.nodeBuffer.Bind(commandList, 2, 10);
+                    lightBuffer.Bind(commandList, 2, 11);
                 }
 
                 // Execute shader
@@ -293,11 +293,11 @@ namespace Atlas {
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    commandList->BindBuffer(rtData.materialBuffer.Get(), 2, 7);
-                    commandList->BindBuffer(rtData.triangleBuffer.Get(), 2, 8);
-                    commandList->BindBuffer(rtData.bvhTriangleBuffer.Get(), 2, 9);
-                    commandList->BindBuffer(rtData.nodeBuffer.Get(), 2, 10);
-                    commandList->BindBuffer(lightBuffer.GetMultiBuffer(), 2, 11);
+                    rtData.materialBuffer.Bind(commandList, 2, 7);
+                    rtData.triangleBuffer.Bind(commandList, 2, 8);
+                    rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
+                    rtData.nodeBuffer.Bind(commandList, 2, 10);
+                    lightBuffer.Bind(commandList, 2, 11);
                 }
 
                 Graphics::Profiler::BeginQuery("Setup command buffer");

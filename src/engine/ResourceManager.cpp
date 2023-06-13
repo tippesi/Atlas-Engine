@@ -50,12 +50,12 @@ namespace Atlas {
 
     Material* ResourceManager::GetMaterial(std::string path) {
 
+        /*
         path = Loader::AssetLoader::GetFullPath(path);
         path = Common::Path::GetAbsolute(path);
 
         std::lock_guard<std::mutex> guard(materialMutex);
 
-        /*
         for (auto mat : materials) {
             if (mat->name == path)
                 return mat;

@@ -92,15 +92,15 @@ namespace Atlas {
                         // Here we assume that all cells are present
                         auto heightData = cell->heightField.GetData<uint16_t>();
 
-                        fileStream.write((char*)heightData.data(), heightData.size() * 2);
+                        fileStream.write(reinterpret_cast<char*>(heightData.data()), heightData.size() * 2);
 
                         auto data = cell->normalMap.GetData<uint8_t>();
 
-                        fileStream.write((char*)data.data(), data.size());
+                        fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
                         data = cell->splatMap.GetData<uint8_t>();
 
-                        fileStream.write((char*)data.data(), data.size());
+                        fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
                     }
                 }
@@ -227,8 +227,6 @@ namespace Atlas {
             // Height map + splat map
             auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;
 
-            int64_t cellSideCount = (int64_t)sqrtf((float)terrain->storage.GetCellCount(cell->LoD));
-
             auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
             auto tileSideCount = (int64_t)sqrtf((float)terrain->storage.GetCellCount(0));
             auto normalDataResolution = int64_t(0);
@@ -257,20 +255,20 @@ namespace Atlas {
             fileStream.seekg(currPos, std::ios_base::cur);
 
             std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
-            fileStream.read((char*)heightFieldData.data(), heightFieldData.size() * 2);
+            fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
             cell->heightField = Texture::Texture2D(tileResolution, tileResolution,
                 VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             cell->heightField.SetData(heightFieldData);
 
             Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 3);
-            fileStream.read((char*)image.GetData().data(), image.GetData().size());
+            fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
             image.ExpandToChannelCount(4, 255);
             cell->normalMap = Texture::Texture2D(normalDataResolution, normalDataResolution,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
             cell->normalMap.SetData(image.GetData());
 
             std::vector<uint8_t> splatMapData(heightFieldData.size());
-            fileStream.read((char*)splatMapData.data(), splatMapData.size());
+            fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
             cell->splatMap = Texture::Texture2D(tileResolution, tileResolution,
                 VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             cell->splatMap.SetData(splatMapData);

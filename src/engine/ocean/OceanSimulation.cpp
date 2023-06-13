@@ -164,9 +164,9 @@ namespace Atlas {
 
             {
                 struct alignas(16) PushConstants {
-                    int N;
-                    int L;
-                    float time;
+                    int N = 1;
+                    int L = 1;
+                    float time = 1.0f;
                 };
 
                 Graphics::Profiler::BeginQuery("Compute h(t)");
