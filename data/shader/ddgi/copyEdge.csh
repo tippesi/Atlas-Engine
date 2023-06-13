@@ -7,7 +7,7 @@ layout (set = 3, binding = 0, rg16f) uniform image2DArray image;
 #endif
 
 layout(push_constant) uniform constants {
-	int probeRes;
+    int probeRes;
 } PushConstants;
 
 ivec2 OctMapStitch(ivec2 pix, bool leftBorder, bool rightBorder,
@@ -42,15 +42,15 @@ ivec2 OctMapStitch(ivec2 pix, bool leftBorder, bool rightBorder,
 
 void main() {
 
-	ivec2 pixel = ivec2(gl_GlobalInvocationID);
-	if (pixel.x > imageSize(image).x ||
-		pixel.y > imageSize(image).y)
-		return;
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    if (pixel.x > imageSize(image).x ||
+        pixel.y > imageSize(image).y)
+        return;
 
     int probeResWithBorder = PushConstants.probeRes + 2;
     ivec2 pix = pixel % ivec2(probeResWithBorder);
 
-	bool leftBorder = pix.x == 0;
+    bool leftBorder = pix.x == 0;
     bool rightBorder = pix.x == probeResWithBorder - 1;
 
     bool upBorder = pix.y == 0;

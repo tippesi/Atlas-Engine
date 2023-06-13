@@ -1,37 +1,41 @@
+#include <../globals.hsh>
+
 layout (location = 0) out vec4 baseColorFS;
-layout (location = 2) out vec3 normalFS;
+layout (location = 1) out vec3 normalFS;
+layout (location = 2) out vec3 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
 
-layout(binding = 0) uniform sampler2DArray baseColorMap;
-layout(binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
-layout(binding = 2) uniform sampler2DArray normalMap;
-
-in vec3 positionVS;
-in vec2 texCoordVS;
-in vec3 ndcCurrentVS;
-in vec3 ndcLastVS;
+layout(location=0) in vec3 positionVS;
+layout(location=1) in vec2 texCoordVS;
+layout(location=2) in vec3 ndcCurrentVS;
+layout(location=3) in vec3 ndcLastVS;
 
 #ifdef INTERPOLATION
-flat in int index0VS;
-flat in int index1VS;
-flat in int index2VS;
+layout(location=4) flat in int index0VS;
+layout(location=5) flat in int index1VS;
+layout(location=6) flat in int index2VS;
 
-flat in float weight0VS;
-flat in float weight1VS;
-flat in float weight2VS;
+layout(location=7) flat in float weight0VS;
+layout(location=8) flat in float weight1VS;
+layout(location=9) flat in float weight2VS;
 #else
-flat in int indexVS;
+layout(location=4) flat in int indexVS;
 #endif
 
-uniform mat4 vMatrix;
+layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
+layout(set = 3, binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
+layout(set = 3, binding = 2) uniform sampler2DArray normalMap;
 
-uniform float cutoff;
-uniform uint materialIdx;
+layout(push_constant) uniform constants {
+    vec4 center;
 
-uniform vec2 jitterLast;
-uniform vec2 jitterCurrent;
+    float radius;
+    int views;
+    float cutoff;
+    uint materialIdx;
+} PushConstants;
 
 void main() {
 
@@ -49,7 +53,7 @@ void main() {
     baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS))).rgba;
 #endif
 
-    if (baseColor.a < cutoff)
+    if (baseColor.a < PushConstants.cutoff)
         discard;
 
     baseColorFS = vec4(baseColor.rgb, 1.0);
@@ -59,17 +63,19 @@ void main() {
     vec3 normal1 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index1VS))).rgb - 1.0;
     vec3 normal2 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index2VS))).rgb - 1.0;
 
-    normalFS = weight0VS * normal0 + 
+    geometryNormalFS = weight0VS * normal0 +
 		weight1VS * normal1 + 
 		weight2VS * normal2;
 #else
-	normalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
+	geometryNormalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
 #endif
 
-    normalFS = normalize(vec3(vMatrix * vec4(normalFS, 0.0)));
+    geometryNormalFS = normalize(vec3(globalData.vMatrix * vec4(geometryNormalFS, 0.0)));
     // We want the normal always two face the camera for two sided materials
-	normalFS *= -dot(normalFS, positionVS);
-    normalFS = 0.5 * normalFS + 0.5;
+    geometryNormalFS *= -dot(geometryNormalFS, positionVS);
+    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+
+    normalFS = vec3(0.0);
 
 #ifdef INTERPOLATION
     vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS))).rgb;
@@ -89,11 +95,11 @@ void main() {
 	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
 	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= jitterLast;
-	ndcC -= jitterCurrent;
+	ndcL -= globalData.jitterLast;
+	ndcC -= globalData.jitterCurrent;
 
 	velocityFS = (ndcL - ndcC) * 0.5;
 
-    materialIdxFS = materialIdx;
+    materialIdxFS = PushConstants.materialIdx;
 
 }

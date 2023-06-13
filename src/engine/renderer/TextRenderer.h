@@ -9,36 +9,36 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TextRenderer : public Renderer {
+        class TextRenderer : public Renderer {
 
-		public:
-			TextRenderer() = default;
+        public:
+            TextRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+            void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
                 float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f,
                 const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+            void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
                 float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale = 1.0f,
                 const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+            void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
                 float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+            void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
                 vec4 clipArea, vec4 blendArea, float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-			void Update();
+            void Update();
 
-		private:
+        private:
             struct alignas(16) Uniforms {
                 mat4 pMatrix;
                 vec4 clipArea;
@@ -52,11 +52,11 @@ namespace Atlas {
                 float smoothness;
             };
 
-			std::vector<vec4> CalculateCharacterInstances(Font* font, const std::string& text, int32_t* characterCount);
+            std::vector<vec4> CalculateCharacterInstances(Font* font, const std::string& text, int32_t* characterCount);
 
             PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer);
 
-			Buffer::VertexArray vertexArray;
+            Buffer::VertexArray vertexArray;
 
             Buffer::Buffer instanceBuffer;
             Buffer::UniformBuffer uniformBuffer;
@@ -65,10 +65,10 @@ namespace Atlas {
 
             uint32_t frameCharacterCount = 0;
 
-		};
+        };
 
 
-	}
+    }
 
 }
 

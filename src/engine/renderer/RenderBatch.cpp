@@ -2,136 +2,136 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		RenderBatch::RenderBatch() {
-
-            /*
-			lineVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-				3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-			lineColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-				3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-
-			lineVertexArray.Bind();
-
-			lineVertexArray.AddComponent(0, &lineVertices);
-			lineVertexArray.AddComponent(1, &lineColors);
-
-			lineVertexArray.Unbind();
-
-			triangleVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-				3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-			triangleColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-				3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-
-			triangleVertexArray.Bind();
-
-			triangleVertexArray.AddComponent(0, &triangleVertices);
-			triangleVertexArray.AddComponent(1, &triangleColors);
-
-			triangleVertexArray.Unbind();
-             */
-
-		}
-
-		void RenderBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
+        RenderBatch::RenderBatch() {
 
             /*
-			lineVertexData.push_back(from);
-			lineVertexData.push_back(to);
+            lineVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
+                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
+            lineColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
+                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
 
-			lineColorData.push_back(fromColor);
-			lineColorData.push_back(toColor);
+            lineVertexArray.Bind();
 
-			lineDataValid = false;
+            lineVertexArray.AddComponent(0, &lineVertices);
+            lineVertexArray.AddComponent(1, &lineColors);
+
+            lineVertexArray.Unbind();
+
+            triangleVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
+                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
+            triangleColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
+                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
+
+            triangleVertexArray.Bind();
+
+            triangleVertexArray.AddComponent(0, &triangleVertices);
+            triangleVertexArray.AddComponent(1, &triangleColors);
+
+            triangleVertexArray.Unbind();
              */
 
-		}
+        }
 
-		size_t RenderBatch::GetLineCount() const {
+        void RenderBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
 
-			return lineVertexData.size() / 2;
+            /*
+            lineVertexData.push_back(from);
+            lineVertexData.push_back(to);
 
-		}
+            lineColorData.push_back(fromColor);
+            lineColorData.push_back(toColor);
 
-		void RenderBatch::SetLineWidth(float width) {
+            lineDataValid = false;
+             */
 
-			lineWidth = width;
+        }
 
-		}
+        size_t RenderBatch::GetLineCount() const {
 
-		float RenderBatch::GetLineWidth() const {
+            return lineVertexData.size() / 2;
 
-			return lineWidth;
+        }
 
-		}
+        void RenderBatch::SetLineWidth(float width) {
 
-		void RenderBatch::AddTriangle(vec3 v0, vec3 v1, vec3 v2, vec3 v0Color,
-			vec3 v1Color, vec3 v2Color) {
+            lineWidth = width;
 
-			triangleVertexData.push_back(v0);
-			triangleVertexData.push_back(v1);
-			triangleVertexData.push_back(v2);
+        }
 
-			triangleColorData.push_back(v0Color);
-			triangleColorData.push_back(v1Color);
-			triangleColorData.push_back(v2Color);
+        float RenderBatch::GetLineWidth() const {
 
-			triangleDataValid = false;
+            return lineWidth;
 
-		}
+        }
 
-		size_t RenderBatch::GetTriangleCount() const {
+        void RenderBatch::AddTriangle(vec3 v0, vec3 v1, vec3 v2, vec3 v0Color,
+            vec3 v1Color, vec3 v2Color) {
 
-			return triangleVertexData.size() / 3;
+            triangleVertexData.push_back(v0);
+            triangleVertexData.push_back(v1);
+            triangleVertexData.push_back(v2);
 
-		}
+            triangleColorData.push_back(v0Color);
+            triangleColorData.push_back(v1Color);
+            triangleColorData.push_back(v2Color);
 
-		void RenderBatch::TransferData() {
+            triangleDataValid = false;
 
-			if (!lineDataValid) {
+        }
 
-				lineVertices.SetSize(GetLineCount() * 2,
-					lineVertexData.data());
-				lineColors.SetSize(GetLineCount() * 2,
-					lineColorData.data());
+        size_t RenderBatch::GetTriangleCount() const {
 
-				lineDataValid = true;
+            return triangleVertexData.size() / 3;
 
-			}
+        }
 
-			if (!triangleDataValid) {
+        void RenderBatch::TransferData() {
 
-				triangleVertices.SetSize(GetTriangleCount() * 3,
-					triangleVertexData.data());
-				triangleColors.SetSize(GetTriangleCount() * 3,
-					triangleColorData.data());
+            if (!lineDataValid) {
 
-				triangleDataValid = true;
+                lineVertices.SetSize(GetLineCount() * 2,
+                    lineVertexData.data());
+                lineColors.SetSize(GetLineCount() * 2,
+                    lineColorData.data());
 
-			}
+                lineDataValid = true;
 
-		}
+            }
 
-		void RenderBatch::BindLineBuffer() {
+            if (!triangleDataValid) {
 
-			// lineVertexArray.Bind();
+                triangleVertices.SetSize(GetTriangleCount() * 3,
+                    triangleVertexData.data());
+                triangleColors.SetSize(GetTriangleCount() * 3,
+                    triangleColorData.data());
 
-		}
+                triangleDataValid = true;
 
-		void RenderBatch::BindTriangleBuffer() {
+            }
 
-			// triangleVertexArray.Bind();
+        }
 
-		}
+        void RenderBatch::BindLineBuffer() {
 
-		void RenderBatch::Clear() {
+            // lineVertexArray.Bind();
 
-			lineVertexData.clear();
-			lineColorData.clear();
+        }
 
-		}
+        void RenderBatch::BindTriangleBuffer() {
 
-	}
+            // triangleVertexArray.Bind();
+
+        }
+
+        void RenderBatch::Clear() {
+
+            lineVertexData.clear();
+            lineColorData.clear();
+
+        }
+
+    }
 
 }

@@ -8,19 +8,19 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class RTReflectionRenderer {
+        class RTReflectionRenderer {
 
-		public:
-			RTReflectionRenderer() = default;
+        public:
+            RTReflectionRenderer() = default;
 
-			void Init(Graphics::GraphicsDevice* device);
+            void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-				Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) Cascade {
                 float distance;
                 float texelSize;
@@ -54,21 +54,21 @@ namespace Atlas {
                 float strength;
             };
 
-			Helper::RayTracingHelper helper;
+            Helper::RayTracingHelper helper;
 
-			Texture::Texture2D scramblingRankingTexture;
-			Texture::Texture2D sobolSequenceTexture;
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
 
-			PipelineConfig rtrPipelineConfig;
-			PipelineConfig temporalPipelineConfig;
+            PipelineConfig rtrPipelineConfig;
+            PipelineConfig temporalPipelineConfig;
 
-			PipelineConfig atrousPipelineConfig[3];
+            PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtrUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
-		};
+        };
 
-	}
+    }
 
 }
 

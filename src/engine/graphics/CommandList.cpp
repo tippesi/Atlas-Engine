@@ -489,7 +489,7 @@ namespace Atlas {
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
-            if (descriptorBindingData.sampledImages[set][binding].first == image.get() ||
+            if (descriptorBindingData.sampledImages[set][binding].first == image.get() &&
                 descriptorBindingData.sampledImages[set][binding].second == sampler.get())
                 return;
 
@@ -614,7 +614,7 @@ namespace Atlas {
                 nullptr, uint32_t(nativeBufferBarriers.size()), nativeBufferBarriers.data(),
                 uint32_t(nativeImageBarriers.size()), nativeImageBarriers.data());
 
-            // Only update image layouts afterwards for clarity
+            // Only update image layouts afterward for clarity
             for (auto& barrier : imageBarriers) {
                 barrier.image->layout = barrier.newLayout;
                 barrier.image->accessMask = barrier.newAccessMask;

@@ -15,37 +15,37 @@ layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
 
 Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;
-	Material material = UnpackMaterial(materialIdx);
+    Material material = UnpackMaterial(materialIdx);
 
-	if (material.baseColorMap) {
-		material.baseColor *= textureLod(baseColorTexture, texCoord, 0).rgb;
-	}
-	if (material.roughnessMap) {
-		material.roughness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).r;
-	}
-	if (material.metalnessMap) {
-		material.metalness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).g;
-	}
-	if (material.aoMap) {
-		material.ao *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).b;
-	}
+    if (material.baseColorMap) {
+        material.baseColor *= textureLod(baseColorTexture, texCoord, 0).rgb;
+    }
+    if (material.roughnessMap) {
+        material.roughness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).r;
+    }
+    if (material.metalnessMap) {
+        material.metalness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).g;
+    }
+    if (material.aoMap) {
+        material.ao *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).b;
+    }
     return material;
 }
 
 Surface GetSurface(vec2 texCoord, float depth, vec3 L, out vec3 geometryNormal) {
     vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
 
-	vec3 normal = normalize(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0);
-	geometryNormal = normalize(2.0 * textureLod(geometryNormalTexture, texCoord, 0).rgb - 1.0);
+    vec3 normal = normalize(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0);
+    geometryNormal = normalize(2.0 * textureLod(geometryNormalTexture, texCoord, 0).rgb - 1.0);
 
     Material material = GetMaterial(texCoord);
-	normal = material.normalMap ? normal : geometryNormal;
-	
-	L = normalize(L);
-	vec3 V = normalize(-fragPos);
-	vec3 N = normal;
+    normal = material.normalMap ? normal : geometryNormal;
+    
+    L = normalize(L);
+    vec3 V = normalize(-fragPos);
+    vec3 N = normal;
 
-	Surface surface = CreateSurface(V, N, L, material);
+    Surface surface = CreateSurface(V, N, L, material);
 
     surface.P = fragPos;
     return surface;

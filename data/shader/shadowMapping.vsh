@@ -11,32 +11,32 @@ layout(location=0) out vec2 texCoordVS;
 #endif
 
 layout(std430, set = 1, binding = 0) buffer Matrices {
-	mat4 matrices[];
+    mat4 matrices[];
 };
 
 layout(push_constant) uniform constants {
-	mat4 lightSpaceMatrix;
-	uint vegetation;
-	uint invertUVs;
+    mat4 lightSpaceMatrix;
+    uint vegetation;
+    uint invertUVs;
 } PushConstants;
 
 void main() {
 
-	mat4 mMatrix = matrices[gl_InstanceIndex];
-	
+    mat4 mMatrix = matrices[gl_InstanceIndex];
+    
 #ifdef OPACITY_MAP
-	texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 #endif
 
-	mat4 matrix = mMatrix;
-	vec3 position = vPosition;
+    mat4 matrix = mMatrix;
+    vec3 position = vPosition;
 
-	if (PushConstants.vegetation > 0) {
+    if (PushConstants.vegetation > 0) {
 
-		position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
+        position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
 
-	}
-	
-	gl_Position = PushConstants.lightSpaceMatrix * matrix * vec4(position, 1.0f);
-	
+    }
+    
+    gl_Position = PushConstants.lightSpaceMatrix * matrix * vec4(position, 1.0f);
+    
 }

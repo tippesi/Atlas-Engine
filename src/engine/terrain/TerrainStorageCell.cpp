@@ -3,26 +3,26 @@
 
 namespace Atlas {
 
-	namespace Terrain {
+    namespace Terrain {
 
-		TerrainStorageCell::TerrainStorageCell(TerrainStorage* storage) : storage(storage) {
+        TerrainStorageCell::TerrainStorageCell(TerrainStorage* storage) : storage(storage) {
 
-			
+            
 
-		}
+        }
 
-		bool TerrainStorageCell::IsLoaded() {
+        bool TerrainStorageCell::IsLoaded() {
 
-			if (heightField == nullptr)
-				return false;
+            if (!heightField.IsValid())
+                return false;
 
-			if (normalMap == nullptr)
-				return false;
+            if (!normalMap.IsValid())
+                return false;
 
-			return true;
+            return true;
 
-		}
+        }
 
-	}
+    }
 
 }

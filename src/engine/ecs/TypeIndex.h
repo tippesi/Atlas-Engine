@@ -5,38 +5,38 @@
 
 namespace Atlas {
 
-	namespace ECS {
+    namespace ECS {
 
-		class TypeIndex {
+        class TypeIndex {
 
-		public:
-			template<typename Type>
-			static const uint64_t Get() noexcept {
+        public:
+            template<typename Type>
+            static const uint64_t Get() noexcept {
 
-				static const uint64_t value = Identifier();
-				return value;
+                static const uint64_t value = Identifier();
+                return value;
 
-			}
+            }
 
-			template<typename S, typename T>
-			static const bool Equal() noexcept {
+            template<typename S, typename T>
+            static const bool Equal() noexcept {
 
-				static const bool equal = (TypeIndex::Get<S>() == TypeIndex::Get<T>());
-				return equal;
+                static const bool equal = (TypeIndex::Get<S>() == TypeIndex::Get<T>());
+                return equal;
 
-			}
+            }
 
-		private:
-			static uint64_t Identifier() noexcept {
+        private:
+            static uint64_t Identifier() noexcept {
 
-				static uint64_t value = 0;
-				return value++;
+                static uint64_t value = 0;
+                return value++;
 
-			}
+            }
 
-		};
+        };
 
-	}
+    }
 
 }
 

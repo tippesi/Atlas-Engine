@@ -3,46 +3,46 @@
 
 vec3 reconstructNormal(const in sampler2D depthTexture, vec2 texCoord) {
 
-	vec2 texSize = vec2(textureSize(depthTexture, 0));
-	vec2 invTexSize = 1.0 / texSize;
-	ivec2 pixel = ivec2(texCoord * texSize);
+    vec2 texSize = vec2(textureSize(depthTexture, 0));
+    vec2 invTexSize = 1.0 / texSize;
+    ivec2 pixel = ivec2(texCoord * texSize);
 
-	float depthCenter = texelFetch(depthTexture, pixel, 0).r;
-	float depthLeft = sampleTex(depthTexture, pixel + ivec2(-1, 0), SAMPLE_CLAMP).r;
-	float depthRight = sampleTex(depthTexture, pixel + ivec2(1, 0), SAMPLE_CLAMP).r;
-	float depthTop = sampleTex(depthTexture, pixel + ivec2(0, -1), SAMPLE_CLAMP).r;
-	float depthBottom = sampleTex(depthTexture, pixel + ivec2(0, 1), SAMPLE_CLAMP).r;
+    float depthCenter = texelFetch(depthTexture, pixel, 0).r;
+    float depthLeft = sampleTex(depthTexture, pixel + ivec2(-1, 0), SAMPLE_CLAMP).r;
+    float depthRight = sampleTex(depthTexture, pixel + ivec2(1, 0), SAMPLE_CLAMP).r;
+    float depthTop = sampleTex(depthTexture, pixel + ivec2(0, -1), SAMPLE_CLAMP).r;
+    float depthBottom = sampleTex(depthTexture, pixel + ivec2(0, 1), SAMPLE_CLAMP).r;
 
-	vec3 posCenter = ConvertDepthToViewSpace(depthCenter, texCoord);
-	vec3 posLeft = ConvertDepthToViewSpace(depthLeft, texCoord + vec2(-1.0, 0.0) * invTexSize);
-	vec3 posRight = ConvertDepthToViewSpace(depthRight, texCoord + vec2(1.0, 0.0) * invTexSize);
-	vec3 posTop = ConvertDepthToViewSpace(depthTop, texCoord + vec2(0.0, -1.0) * invTexSize);
-	vec3 posBottom = ConvertDepthToViewSpace(depthBottom, texCoord + vec2(0.0, 1.0) * invTexSize);
+    vec3 posCenter = ConvertDepthToViewSpace(depthCenter, texCoord);
+    vec3 posLeft = ConvertDepthToViewSpace(depthLeft, texCoord + vec2(-1.0, 0.0) * invTexSize);
+    vec3 posRight = ConvertDepthToViewSpace(depthRight, texCoord + vec2(1.0, 0.0) * invTexSize);
+    vec3 posTop = ConvertDepthToViewSpace(depthTop, texCoord + vec2(0.0, -1.0) * invTexSize);
+    vec3 posBottom = ConvertDepthToViewSpace(depthBottom, texCoord + vec2(0.0, 1.0) * invTexSize);
 
-	int bestHorizontal = abs(posRight.z - posCenter.z) < abs(posLeft.z - posCenter.z) ? 1 : 2;
-	int bestVertical = abs(posBottom.z - posCenter.z) < abs(posTop.z - posCenter.z) ? 3 : 4;
+    int bestHorizontal = abs(posRight.z - posCenter.z) < abs(posLeft.z - posCenter.z) ? 1 : 2;
+    int bestVertical = abs(posBottom.z - posCenter.z) < abs(posTop.z - posCenter.z) ? 3 : 4;
 
-	vec3 p1, p2;
+    vec3 p1, p2;
 
-	if (bestHorizontal == 1 && bestVertical == 4) {
-		p1 = posRight;
-		p2 = posTop;
-	}
-	else if (bestHorizontal == 1 && bestVertical == 3) {
-		p1 = posBottom;
-		p2 = posRight;
-	}
-	else if (bestHorizontal == 2 && bestVertical == 4) {
-		p1 = posTop;
-		p2 = posLeft;
-	}
-	else if (bestHorizontal == 2 && bestVertical == 3) {
-		p1 = posLeft;
-		p2 = posBottom;
-	}
+    if (bestHorizontal == 1 && bestVertical == 4) {
+        p1 = posRight;
+        p2 = posTop;
+    }
+    else if (bestHorizontal == 1 && bestVertical == 3) {
+        p1 = posBottom;
+        p2 = posRight;
+    }
+    else if (bestHorizontal == 2 && bestVertical == 4) {
+        p1 = posTop;
+        p2 = posLeft;
+    }
+    else if (bestHorizontal == 2 && bestVertical == 3) {
+        p1 = posLeft;
+        p2 = posBottom;
+    }
 
-	vec3 p0 = posCenter;
+    vec3 p0 = posCenter;
 
-	return normalize(cross(p2 - p0, p1 - p0));
+    return normalize(cross(p2 - p0, p1 - p0));
 
 }

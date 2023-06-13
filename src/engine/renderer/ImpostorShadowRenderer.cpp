@@ -4,85 +4,85 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		ImpostorShadowRenderer::ImpostorShadowRenderer() {
+        void ImpostorShadowRenderer::Init(Graphics::GraphicsDevice *device) {
 
-            /*
-			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+            this->device = device;
 
-			shader.AddStage(AE_VERTEX_STAGE, "impostor/impostorShadow.vsh");
-			shader.AddStage(AE_FRAGMENT_STAGE, "impostor/impostorShadow.fsh");
+            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
 
-			shader.Compile();
+        }
 
-			GetUniforms();
-             */
+        void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
+            Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+            mat4 lightSpaceMatrix, vec3 lightLocation) {
 
-		}
+            struct alignas(16) PushConstants {
+                mat4 lightSpaceMatrix = mat4(1.0f);
 
-		void ImpostorShadowRenderer::Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
-			mat4 viewMatrix, mat4 projectionMatrix, vec3 location) {
+                vec4 lightLocation = vec4(0.0f);
+                vec4 center = vec4(0.0f);
 
-            /*
-			shader.Bind();
+                float radius = 1.0f;
+                int32_t views = 1;
+                float cutoff = 1.0f;
+            };
 
-			vertexArray.Bind();
+            vertexArray.Bind(commandList);
 
-			vMatrix->SetValue(viewMatrix);
-			pMatrix->SetValue(projectionMatrix);
-			cameraLocation->SetValue(location);
+            auto config = GetPipelineConfig(frameBuffer);
+            auto pipeline = PipelineManager::GetPipeline(config);
 
-			glDisable(GL_CULL_FACE);
+            commandList->BindPipeline(pipeline);
 
-			for (auto& key : renderList->impostorBuffers) {
+            for (auto& item : renderPass->meshToInstancesMap) {
+                auto mesh = item.first;
+                auto instance = item.second;
 
-				auto mesh = key.first;
-				auto buffer = key.second;
+                // If there aren't any impostors there won't be a buffer
+                if (!instance.impostorCount)
+                    continue;
 
-				// If there aren't any impostors there won't be a buffer
-				if (!buffer)
-					continue;
+                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
+                // Base 0 is used by the materials
+                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 1);
 
-				auto actorCount = buffer->GetElementCount();				
+                PushConstants constants = {
+                    .lightSpaceMatrix = lightSpaceMatrix,
 
-				mesh->impostor->baseColorTexture.Bind(0);
+                    .lightLocation = vec4(lightLocation, 1.0f),
+                    .center = vec4(mesh->impostor->center, 0.0f),
 
-				// Base 0 is used by the materials
-				mesh->impostor->viewPlaneBuffer.BindBase(1);
-				buffer->BindBase(2);
+                    .radius = mesh->impostor->radius,
+                    .views = mesh->impostor->views,
+                    .cutoff = mesh->impostor->cutoff,
+                };
+                commandList->PushConstants("constants", &constants);
 
-				center->SetValue(mesh->impostor->center);
-				radius->SetValue(mesh->impostor->radius);
+                commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
+            }
 
-				views->SetValue(mesh->impostor->views);
-				cutoff->SetValue(mesh->impostor->cutoff);
+        }
 
-				glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei)actorCount);
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer) {
 
-			}
+            auto shaderConfig = ShaderConfig {
+                {"impostor/impostorShadow.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"impostor/impostorShadow.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                .frameBuffer = frameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+            };
 
-			glEnable(GL_CULL_FACE);
-             */
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
-		}
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
-		void ImpostorShadowRenderer::GetUniforms() {
+        }
 
-            /*
-			pMatrix = shader.GetUniform("pMatrix");
-			vMatrix = shader.GetUniform("vMatrix");
-			cameraLocation = shader.GetUniform("cameraLocation");
-
-			center = shader.GetUniform("center");
-			radius = shader.GetUniform("radius");
-
-			views = shader.GetUniform("views");
-			cutoff = shader.GetUniform("cutoff");
-             */
-
-		}
-
-	}
+    }
 
 }

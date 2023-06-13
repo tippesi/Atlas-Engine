@@ -7,56 +7,56 @@
 
 namespace Atlas {
 
-	namespace Input {
+    namespace Input {
 
-		class MouseHandler {
+        class MouseHandler {
 
-		public:
-			MouseHandler();
+        public:
+            MouseHandler();
 
-			MouseHandler(const MouseHandler& that);
+            MouseHandler(const MouseHandler& that);
 
-			MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
+            MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
 
-			~MouseHandler();
+            ~MouseHandler();
 
-			MouseHandler& operator=(const MouseHandler& that);
+            MouseHandler& operator=(const MouseHandler& that);
 
-			void Update(Camera* camera, float deltaTime);
+            void Update(Camera* camera, float deltaTime);
 
-			void Reset(Camera* camera);
+            void Reset(Camera* camera);
 
-			void SetActivationButton(uint8_t mouseButton);
+            void SetActivationButton(uint8_t mouseButton);
 
-			void HideMouse();
+            void HideMouse();
 
-			void ShowMouse();
+            void ShowMouse();
 
-			float sensibility = 1.5f;
-			float reactivity = 6.0f;
+            float sensibility = 1.5f;
+            float reactivity = 6.0f;
 
-			bool lock = false;
-			bool hideMouse = false;
+            bool lock = false;
+            bool hideMouse = false;
 
-		private:
-			void RegisterEvents();
+        private:
+            void RegisterEvents();
 
-			void MouseMotionEventHandler(Events::MouseMotionEvent event);
-			void MouseButtonEventHandler(Events::MouseButtonEvent event);
+            void MouseMotionEventHandler(Events::MouseMotionEvent event);
+            void MouseButtonEventHandler(Events::MouseButtonEvent event);
 
-			void DeepCopy(const MouseHandler& that);
+            void DeepCopy(const MouseHandler& that);
 
-			bool activationButtonDown = false;
-			uint8_t activationButton = AE_MOUSEBUTTON_LEFT;
+            bool activationButtonDown = false;
+            uint8_t activationButton = AE_MOUSEBUTTON_LEFT;
 
-			vec2 rotation = vec2(0.0f);
+            vec2 rotation = vec2(0.0f);
 
-			int32_t mouseMotionEventHandle = -1;
-			int32_t mouseButtonEventHandle = -1;
+            int32_t mouseMotionEventHandle = -1;
+            int32_t mouseButtonEventHandle = -1;
 
-		};
+        };
 
-	}
+    }
 
 }
 

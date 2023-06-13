@@ -10,27 +10,27 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class Sky {
+        class Sky {
 
-		public:
-			Sky();
+        public:
+            Sky();
 
-			EnvironmentProbe* GetProbe();
+            EnvironmentProbe* GetProbe();
 
-			vec3 planetCenter = vec3(0.0f, -650000.0f, 0.0f);
-			float planetRadius = 650000.0f;
+            vec3 planetCenter = vec3(0.0f, -650000.0f, 0.0f);
+            float planetRadius = 650000.0f;
 
-			Ref<DirectionalLight> sun = nullptr;
-			Ref<Atmosphere> atmosphere = nullptr;
-			Ref<VolumetricClouds> clouds = nullptr;
+            Ref<DirectionalLight> sun = nullptr;
+            Ref<Atmosphere> atmosphere = nullptr;
+            Ref<VolumetricClouds> clouds = nullptr;
 
-			Ref<EnvironmentProbe> probe = nullptr;
+            Ref<EnvironmentProbe> probe = nullptr;
 
-		};
+        };
 
-	}
+    }
 
 }
 

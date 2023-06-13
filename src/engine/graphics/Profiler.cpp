@@ -160,7 +160,7 @@ namespace Atlas {
             auto& context = GetThreadContext();
 
             assert(context.stack.size() && "Stack was empty. Maybe called EndQuery too many \
-			    times or code misses a BeginQuery.");
+                times or code misses a BeginQuery.");
 
             auto query = context.stack.back();
             context.commandList->Timestamp(context.queryPool, query.timer.endId);
@@ -268,7 +268,7 @@ namespace Atlas {
         }
 
         std::vector<Profiler::Query> Profiler::AddQueriesToAverage(std::vector<Query> average,
-            std::vector<Query> queries,	uint64_t frameIdx, uint64_t frameCount) {
+            std::vector<Query> queries,    uint64_t frameIdx, uint64_t frameCount) {
 
             if (!frameIdx) {
                 average = queries;

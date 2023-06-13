@@ -7,57 +7,57 @@
 
 namespace Atlas {
 
-	namespace ECS {
+    namespace ECS {
 
-		template<typename Comp>
-		class Pool : public Storage {
+        template<typename Comp>
+        class Pool : public Storage {
 
-		public:
-			Pool() = default;
+        public:
+            Pool() = default;
 
-			template<typename... Args>
-			Comp& Emplace(const Entity entity, Args&&... args);
+            template<typename... Args>
+            Comp& Emplace(const Entity entity, Args&&... args);
 
-			void Erase(const Entity entity);
+            void Erase(const Entity entity);
 
-			Comp& Get(const Entity entity);
+            Comp& Get(const Entity entity);
 
-		private:
-			std::vector<Comp> components;
+        private:
+            std::vector<Comp> components;
 
-		};
+        };
 
-		template<typename Comp>
-		template<typename ...Args>
-		Comp& Pool<Comp>::Emplace(const Entity entity, Args&&... args) {
+        template<typename Comp>
+        template<typename ...Args>
+        Comp& Pool<Comp>::Emplace(const Entity entity, Args&&... args) {
 
-			auto& comp = components.emplace_back(std::forward<Args>(args)...);
-			Storage::Emplace(entity);
+            auto& comp = components.emplace_back(std::forward<Args>(args)...);
+            Storage::Emplace(entity);
 
-			return comp;
+            return comp;
 
-		}
+        }
 
-		template<typename Comp>
-		void Pool<Comp>::Erase(const Entity entity) {
+        template<typename Comp>
+        void Pool<Comp>::Erase(const Entity entity) {
 
-			auto idx = Storage::GetIndex(entity);
+            auto idx = Storage::GetIndex(entity);
 
-			components[idx] = std::move(components.back());
-			components.pop_back();
+            components[idx] = std::move(components.back());
+            components.pop_back();
 
-			Storage::Erase(entity);
+            Storage::Erase(entity);
 
-		}
+        }
 
-		template<typename Comp>
-		Comp& Pool<Comp>::Get(const Entity entity) {
+        template<typename Comp>
+        Comp& Pool<Comp>::Get(const Entity entity) {
 
-			return components[Storage::GetIndex(entity)];
+            return components[Storage::GetIndex(entity)];
 
-		}
+        }
 
-	}
+    }
 
 }
 

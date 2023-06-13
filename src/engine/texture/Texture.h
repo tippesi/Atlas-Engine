@@ -12,6 +12,8 @@
 #include "../graphics/CommandList.h"
 #include "../graphics/GraphicsDevice.h"
 
+#include <unordered_map>
+
 namespace Atlas {
 
     namespace Texture {
@@ -64,9 +66,9 @@ namespace Atlas {
             bool IsValid() const;
 
             /**
-			 * Sets the data of the texture
-			 * @param data A vector holding the new data.
-			 */
+             * Sets the data of the texture
+             * @param data A vector holding the new data.
+             */
             void SetData(std::vector<uint8_t>& data);
 
             /**
@@ -99,6 +101,11 @@ namespace Atlas {
 
             void GenerateMipmap();
 
+            /**
+             * Release all shared texture resources
+             */
+            static void Shutdown();
+
             Ref<Graphics::Image> image = nullptr;
             Ref<Graphics::Sampler> sampler = nullptr;
 
@@ -120,6 +127,10 @@ namespace Atlas {
                 int32_t depth, Filtering filtering, Wrapping wrapping);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
+
+            static Ref<Graphics::Sampler> GetOrCreateSampler(Graphics::SamplerDesc desc);
+
+            static std::unordered_map<size_t, Ref<Graphics::Sampler>> samplerMap;
 
         };
 

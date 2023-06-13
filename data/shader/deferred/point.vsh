@@ -10,12 +10,12 @@ uniform mat4 pMatrix;
 uniform Light light;
 
 void main() {
-	
+    
     vec4 position = vMatrix * vec4(vPosition * light.radius + light.location, 1.0);
 
-	viewSpacePosition = position.xyz;
-	gl_Position = pMatrix * position;
-	
-	fTexCoordProj = gl_Position.xyw;
-	
+    viewSpacePosition = position.xyz;
+    gl_Position = pMatrix * position;
+    
+    fTexCoordProj = gl_Position.xyw;
+    
 }

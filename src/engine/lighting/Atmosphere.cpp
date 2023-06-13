@@ -2,15 +2,15 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		Atmosphere::Atmosphere(float height, int32_t probeResolution) : height(height),
-			probe(probeResolution) {
+        Atmosphere::Atmosphere(float height, int32_t probeResolution) : height(height),
+            probe(probeResolution) {
 
 
 
-		}
+        }
 
-	}
+    }
 
 }

@@ -10,54 +10,54 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		struct ShadowComponent {
+        struct ShadowComponent {
 
-			float nearDistance;
-			float farDistance;
+            float nearDistance;
+            float farDistance;
 
-			mat4 viewMatrix;
-			mat4 projectionMatrix;
+            mat4 viewMatrix;
+            mat4 projectionMatrix;
 
-			mat4 frustumMatrix;
-			mat4 terrainFrustumMatrix;
+            mat4 frustumMatrix;
+            mat4 terrainFrustumMatrix;
 
-		};
+        };
 
-		class Shadow {
+        class Shadow {
 
-		public:
-			Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
+        public:
+            Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
-			Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
+            Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
-			void Update();
+            void Update();
 
-			float distance = 300.0f;
-			float longRangeDistance = 1024.0f;
-			float bias = 0.001f;
-			float splitCorrection = 0.95f;
+            float distance = 300.0f;
+            float longRangeDistance = 1024.0f;
+            float bias = 0.001f;
+            float splitCorrection = 0.95f;
 
-			float cascadeBlendDistance = 2.5f;
+            float cascadeBlendDistance = 2.5f;
 
-			int32_t resolution;
+            int32_t resolution;
 
-			std::vector<ShadowComponent> components;
-			int32_t componentCount;
+            std::vector<ShadowComponent> components;
+            int32_t componentCount;
 
-			Texture::Texture2DArray maps;
-			Texture::Cubemap cubemap;
+            Texture::Texture2DArray maps;
+            Texture::Cubemap cubemap;
 
-			bool useCubemap = false;
-			bool allowDynamicActors = false;
-			bool allowTerrain = false;
-			bool longRange = false;
-			bool update = true;
+            bool useCubemap = false;
+            bool allowDynamicActors = false;
+            bool allowTerrain = false;
+            bool longRange = false;
+            bool update = true;
 
-		};
+        };
 
-	}
+    }
 
 }
 

@@ -7,19 +7,19 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class Atmosphere {
-		public:
-			Atmosphere(float height = 100000.0f, int32_t probeResolution = 128);
+        class Atmosphere {
+        public:
+            Atmosphere(float height = 100000.0f, int32_t probeResolution = 128);
 
-			float height = 100000.0f;
+            float height = 100000.0f;
 
-			EnvironmentProbe probe;
+            EnvironmentProbe probe;
 
-		};
+        };
 
-	}
+    }
 
 }
 

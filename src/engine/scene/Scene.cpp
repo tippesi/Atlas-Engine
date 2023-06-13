@@ -2,132 +2,132 @@
 
 namespace Atlas {
 
-	namespace Scene {
+    namespace Scene {
 
-		Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-			SpacePartitioning(min, max, depth), rayTracingData(this) {
+        Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
+            SpacePartitioning(min, max, depth), rayTracingData(this) {
 
-			AddToScene(this, &rootMeshMap);
+            AddToScene(this, &rootMeshMap);
 
-		}
+        }
 
-		Scene::~Scene() {
+        Scene::~Scene() {
 
 
 
-		}
+        }
 
-		Scene& Scene::operator=(const Scene& that) {
+        Scene& Scene::operator=(const Scene& that) {
 
-			if (this != &that) {
+            if (this != &that) {
 
-				SceneNode::operator=(that);
-				SpacePartitioning::operator=(that);
+                SceneNode::operator=(that);
+                SpacePartitioning::operator=(that);
 
-				terrain = that.terrain;
-				ocean = that.ocean;
-				sky = that.sky;
-				postProcessing = that.postProcessing;
+                terrain = that.terrain;
+                ocean = that.ocean;
+                sky = that.sky;
+                postProcessing = that.postProcessing;
 
-				hasChanged = true;
+                hasChanged = true;
 
-			}
+            }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		void Scene::Update(Camera *camera, float deltaTime) {
+        void Scene::Update(Camera *camera, float deltaTime) {
 
-			if (terrain) {
-				terrain->Update(camera);
-			}
+            if (terrain) {
+                terrain->Update(camera);
+            }
 
-			if (ocean)
-				ocean->Update(camera, deltaTime);
+            if (ocean)
+                ocean->Update(camera, deltaTime);
 
-			if (sky.sun) {
-				sky.sun->Update(camera);
-			}
+            if (sky.sun) {
+                sky.sun->Update(camera);
+            }
 
             hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
-			rayTracingData.UpdateMaterials();
+            rayTracingData.UpdateMaterials();
 
-		}
+        }
 
-		bool Scene::HasChanged() {
+        bool Scene::HasChanged() {
 
-			return hasChanged;
+            return hasChanged;
 
-		}
+        }
 
-		void Scene::Clear() {
+        void Scene::Clear() {
 
-			sky = Lighting::Sky();
-			postProcessing = PostProcessing::PostProcessing();
+            sky = Lighting::Sky();
+            postProcessing = PostProcessing::PostProcessing();
 
-			SceneNode::Clear();
-			SpacePartitioning::Clear();
+            SceneNode::Clear();
+            SpacePartitioning::Clear();
 
-		}
+        }
 
-		std::vector<Mesh::Mesh*> Scene::GetMeshes() {
+        std::vector<Mesh::Mesh*> Scene::GetMeshes() {
 
-			std::vector<Mesh::Mesh*> meshes;
+            std::vector<Mesh::Mesh*> meshes;
 
-			// Not really efficient, but does the job
-			for (auto& [mesh, count] : rootMeshMap) {
-				meshes.push_back(mesh);
-			}
+            // Not really efficient, but does the job
+            for (auto& [mesh, count] : rootMeshMap) {
+                meshes.push_back(mesh);
+            }
 
-			return meshes;
+            return meshes;
 
-		}
+        }
 
-		std::vector<Material*> Scene::GetMaterials() {
+        std::vector<Material*> Scene::GetMaterials() {
 
-			std::vector<Material*> materials;
+            std::vector<Material*> materials;
 
-			if (terrain) {
-				auto terrainMaterials = terrain->storage->GetMaterials();
+            if (terrain) {
+                auto terrainMaterials = terrain->storage.GetMaterials();
 
-				for (auto material : terrainMaterials) {
-					if (!material)
-						continue;
+                for (auto material : terrainMaterials) {
+                    if (!material)
+                        continue;
 
-					materials.push_back(material);
-				}
-				
-			}
+                    materials.push_back(material.get());
+                }
+                
+            }
 
-			auto meshes = GetMeshes();
-			if (vegetation) {
-				auto vegMeshes = vegetation->GetMeshes();
-				meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
-			}
+            auto meshes = GetMeshes();
+            if (vegetation) {
+                auto vegMeshes = vegetation->GetMeshes();
+                meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
+            }
 
-			for (auto mesh : meshes) {
-				for (auto& material : mesh->data.materials) {
-					materials.push_back(&material);
-				}
-			}
+            for (auto mesh : meshes) {
+                for (auto& material : mesh->data.materials) {
+                    materials.push_back(&material);
+                }
+            }
 
-			return materials;
+            return materials;
 
-		}
+        }
 
-		void Scene::BuildRTStructures() {
+        void Scene::BuildRTStructures() {
 
-			rayTracingData.Update();
+            rayTracingData.Update();
 
-		}
+        }
 
         void Scene::ClearRTStructures() {
 
             rayTracingData.Clear();
 
         }
-	}
+    }
 
 }

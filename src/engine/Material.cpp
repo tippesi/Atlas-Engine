@@ -2,52 +2,52 @@
 
 namespace Atlas {
 
-	Material::Material() {
+    Material::Material() {
 
 
 
-	}
+    }
 
-	bool Material::HasBaseColorMap() const {
+    bool Material::HasBaseColorMap() const {
 
-		return baseColorMap ? true : false;
+        return baseColorMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasOpacityMap() const {
+    bool Material::HasOpacityMap() const {
 
-		return opacityMap ? true : false;
+        return opacityMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasNormalMap() const {
+    bool Material::HasNormalMap() const {
 
-		return normalMap ? true : false;
+        return normalMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasRoughnessMap() const {
+    bool Material::HasRoughnessMap() const {
 
-		return roughnessMap ? true : false;
+        return roughnessMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasMetalnessMap() const {
+    bool Material::HasMetalnessMap() const {
 
-		return metalnessMap ? true : false;
+        return metalnessMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasAoMap() const {
+    bool Material::HasAoMap() const {
 
-		return aoMap ? true : false;
+        return aoMap ? true : false;
 
-	}
+    }
 
-	bool Material::HasDisplacementMap() const {
+    bool Material::HasDisplacementMap() const {
 
-		return displacementMap ? true : false;
+        return displacementMap ? true : false;
 
-	}
+    }
 
 }

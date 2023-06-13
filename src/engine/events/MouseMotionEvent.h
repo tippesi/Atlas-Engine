@@ -6,52 +6,52 @@
 
 namespace Atlas {
 
-	namespace Events {
+    namespace Events {
 
-		/**
+        /**
           * A class to distribute mouse motion events.
          */
-		class MouseMotionEvent {
+        class MouseMotionEvent {
 
-		public:
-			explicit MouseMotionEvent(SDL_MouseMotionEvent event) {
+        public:
+            explicit MouseMotionEvent(SDL_MouseMotionEvent event) {
 
-				windowID = event.windowID;
-				x = event.x;
-				y = event.y;
-				dx = event.xrel;
-				dy = event.yrel;
+                windowID = event.windowID;
+                x = event.x;
+                y = event.y;
+                dx = event.xrel;
+                dy = event.yrel;
 
-			}
+            }
 
-			/**
+            /**
             * The ID of the window the event occurred in
             */
-			uint32_t windowID;
+            uint32_t windowID;
 
-			/**
+            /**
              * The x coordinate relative to the window where the button event occurred
              */
-			int32_t x;
+            int32_t x;
 
-			/**
+            /**
              * The y coordinate relative to the window where the button event occurred
              */
-			int32_t y;
+            int32_t y;
 
-			/**
+            /**
              * The relative motion in x direction
              */
-			int32_t dx;
+            int32_t dx;
 
-			/**
+            /**
              * The relative motion in y direction
              */
-			int32_t dy;
+            int32_t dy;
 
-		};
+        };
 
-	}
+    }
 
 }
 

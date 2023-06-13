@@ -5,67 +5,67 @@
 
 namespace Atlas {
 
-	Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
+    Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
             int32_t flags, bool createSurface) : title(title), x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x),
             y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y), width(width), height(height) {
 
-		sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
-		if (!sdlWindow) {
+        sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
+        if (!sdlWindow) {
             auto error = SDL_GetError();
-			Log::Error("Error initializing window: " + std::string(error));
-			return;
-		}
+            Log::Error("Error initializing window: " + std::string(error));
+            return;
+        }
 
         if (createSurface) CreateSurface();
 
-		ID = SDL_GetWindowID(sdlWindow);
+        ID = SDL_GetWindowID(sdlWindow);
 
-		auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
-		windowEventSubcriberID = Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
+        auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
+        windowEventSubcriberID = Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
 
-		auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
-		keyboardEventSubscriberID = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+        auto keyboardEventHandler = std::bind(&Window::KeyboardEventHandler, this, std::placeholders::_1);
+        keyboardEventSubscriberID = Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
-		auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
-		mouseButtonEventSubscriberID = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+        auto mouseButtonEventHandler = std::bind(&Window::MouseButtonEventHandler, this, std::placeholders::_1);
+        mouseButtonEventSubscriberID = Events::EventManager::MouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
-		auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
-		mouseMotionEventSubscriberID = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+        auto mouseMotionEventHandler = std::bind(&Window::MouseMotionEventHandler, this, std::placeholders::_1);
+        mouseMotionEventSubscriberID = Events::EventManager::MouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
-		auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
-		mouseWheelEventSubscriberID = Events::EventManager::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
+        auto mouseWheelEventHandler = std::bind(&Window::MouseWheelEventHandler, this, std::placeholders::_1);
+        mouseWheelEventSubscriberID = Events::EventManager::MouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
-		auto controllerAxisEventHandler = std::bind(&Window::ControllerAxisEventHandler, this, std::placeholders::_1);
-		controllerAxisEventSubscriberID = Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
+        auto controllerAxisEventHandler = std::bind(&Window::ControllerAxisEventHandler, this, std::placeholders::_1);
+        controllerAxisEventSubscriberID = Events::EventManager::ControllerAxisEventDelegate.Subscribe(controllerAxisEventHandler);
 
-		auto controllerButtonEventHandler = std::bind(&Window::ControllerButtonEventHandler, this, std::placeholders::_1);
-		controllerButtonEventSubscriberID = Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
+        auto controllerButtonEventHandler = std::bind(&Window::ControllerButtonEventHandler, this, std::placeholders::_1);
+        controllerButtonEventSubscriberID = Events::EventManager::ControllerButtonEventDelegate.Subscribe(controllerButtonEventHandler);
 
-		auto dropEventHandler = std::bind(&Window::DropEventHandler, this, std::placeholders::_1);
-		dropEventSubscriberID = Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
+        auto dropEventHandler = std::bind(&Window::DropEventHandler, this, std::placeholders::_1);
+        dropEventSubscriberID = Events::EventManager::DropEventDelegate.Subscribe(dropEventHandler);
 
-	}
+    }
 
-	Window::~Window() {
+    Window::~Window() {
 
-		SDL_DestroyWindow(sdlWindow);
+        SDL_DestroyWindow(sdlWindow);
 
-		Events::EventManager::WindowEventDelegate.Unsubscribe(windowEventSubcriberID);
-		Events::EventManager::KeyboardEventDelegate.Unsubscribe(keyboardEventSubscriberID);
-		Events::EventManager::MouseButtonEventDelegate.Unsubscribe(mouseButtonEventSubscriberID);
-		Events::EventManager::MouseMotionEventDelegate.Unsubscribe(mouseMotionEventSubscriberID);
-		Events::EventManager::MouseWheelEventDelegate.Unsubscribe(mouseWheelEventSubscriberID);
-		Events::EventManager::ControllerAxisEventDelegate.Unsubscribe(controllerAxisEventSubscriberID);
-		Events::EventManager::ControllerButtonEventDelegate.Unsubscribe(controllerButtonEventSubscriberID);
-		Events::EventManager::DropEventDelegate.Unsubscribe(dropEventSubscriberID);
+        Events::EventManager::WindowEventDelegate.Unsubscribe(windowEventSubcriberID);
+        Events::EventManager::KeyboardEventDelegate.Unsubscribe(keyboardEventSubscriberID);
+        Events::EventManager::MouseButtonEventDelegate.Unsubscribe(mouseButtonEventSubscriberID);
+        Events::EventManager::MouseMotionEventDelegate.Unsubscribe(mouseMotionEventSubscriberID);
+        Events::EventManager::MouseWheelEventDelegate.Unsubscribe(mouseWheelEventSubscriberID);
+        Events::EventManager::ControllerAxisEventDelegate.Unsubscribe(controllerAxisEventSubscriberID);
+        Events::EventManager::ControllerButtonEventDelegate.Unsubscribe(controllerButtonEventSubscriberID);
+        Events::EventManager::DropEventDelegate.Unsubscribe(dropEventSubscriberID);
 
-	}
+    }
 
-	uint32_t Window::GetID() {
+    uint32_t Window::GetID() {
 
-		return ID;
+        return ID;
 
-	}
+    }
 
     uint32_t Window::GetFlags() const {
 
@@ -73,109 +73,109 @@ namespace Atlas {
 
     }
 
-	void Window::SetTitle(std::string title) {
+    void Window::SetTitle(std::string title) {
 
-		SDL_SetWindowTitle(sdlWindow, title.c_str());
+        SDL_SetWindowTitle(sdlWindow, title.c_str());
 
-	}
+    }
 
-	void Window::SetIcon(Texture::Texture2D *icon) {
+    void Window::SetIcon(Texture::Texture2D *icon) {
 
-		auto data = icon->GetData<uint8_t>();
+        auto data = icon->GetData<uint8_t>();
 
-		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8,
-														icon->channels * icon->width,
-														0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+        SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(data.data(), icon->width, icon->height, icon->channels * 8,
+                                                        icon->channels * icon->width,
+                                                        0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
-		SDL_SetWindowIcon(sdlWindow, surface);
+        SDL_SetWindowIcon(sdlWindow, surface);
 
-		SDL_FreeSurface(surface);
+        SDL_FreeSurface(surface);
 
-	}
+    }
 
-	void Window::SetPosition(int32_t x, int32_t y) {
+    void Window::SetPosition(int32_t x, int32_t y) {
 
-		SDL_SetWindowPosition(sdlWindow, x, y);
+        SDL_SetWindowPosition(sdlWindow, x, y);
 
-		this->x = x;
-		this->y = y;
+        this->x = x;
+        this->y = y;
 
-	}
+    }
 
-	ivec2 Window::GetPosition() {
+    ivec2 Window::GetPosition() {
 
-		return ivec2(x, y);
+        return ivec2(x, y);
 
-	}
+    }
 
-	void Window::SetSize(int32_t width, int32_t height) {
+    void Window::SetSize(int32_t width, int32_t height) {
 
-		SDL_SetWindowSize(sdlWindow, width, height);
+        SDL_SetWindowSize(sdlWindow, width, height);
 
-		this->width = width;
-		this->height = height;
+        this->width = width;
+        this->height = height;
 
-	}
+    }
 
-	int32_t Window::GetWidth() {
+    int32_t Window::GetWidth() {
 
-		return width;
+        return width;
 
-	}
+    }
 
-	int32_t Window::GetHeight() {
+    int32_t Window::GetHeight() {
 
-		return height;
+        return height;
 
-	}
+    }
 
-	ivec2 Window::GetDrawableSize() {
+    ivec2 Window::GetDrawableSize() {
 
-		ivec2 size;
+        ivec2 size;
 
-		SDL_GL_GetDrawableSize(sdlWindow, &size.x, &size.y);
+        SDL_GL_GetDrawableSize(sdlWindow, &size.x, &size.y);
 
-		return size;
+        return size;
 
-	}
+    }
 
-	void Window::Show() {
+    void Window::Show() {
 
-		SDL_ShowWindow(sdlWindow);
+        SDL_ShowWindow(sdlWindow);
 
-	}
+    }
 
-	void Window::Hide() {
+    void Window::Hide() {
 
-		SDL_HideWindow(sdlWindow);
+        SDL_HideWindow(sdlWindow);
 
-	}
+    }
 
-	void Window::Maximize() {
+    void Window::Maximize() {
 
-		SDL_MaximizeWindow(sdlWindow);
-		SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+        SDL_MaximizeWindow(sdlWindow);
+        SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
 
-	}
+    }
 
-	void Window::Minimize() {
+    void Window::Minimize() {
 
-		SDL_MinimizeWindow(sdlWindow);
-		SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
+        SDL_MinimizeWindow(sdlWindow);
+        SDL_GL_GetDrawableSize(sdlWindow, &width, &height);
 
-	}
+    }
 
-	void Window::SetFullscreen(bool fullscreen) {
+    void Window::SetFullscreen(bool fullscreen) {
 
-		SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? AE_WINDOW_FULLSCREEN : 0));
+        SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? AE_WINDOW_FULLSCREEN : 0));
 
-	}
+    }
 
-	void Window::SetBordered(bool border) {
+    void Window::SetBordered(bool border) {
 
-	    SDL_SetWindowBordered(sdlWindow, border ? SDL_TRUE : SDL_FALSE);
+        SDL_SetWindowBordered(sdlWindow, border ? SDL_TRUE : SDL_FALSE);
 
-	}
+    }
 
     void Window::SetDisplayMode(const DisplayMode& mode) {
 
@@ -205,95 +205,95 @@ namespace Atlas {
 
     }
 
-	SDL_Window* Window::GetSDLWindow() {
+    SDL_Window* Window::GetSDLWindow() {
 
-		return sdlWindow;
+        return sdlWindow;
 
-	}
+    }
 
-	void Window::WindowEventHandler(Events::WindowEvent event) {
+    void Window::WindowEventHandler(Events::WindowEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		if (event.type == AE_WINDOWEVENT_FOCUS_GAINED) {
-			hasFocus = true;
-		}
+        if (event.type == AE_WINDOWEVENT_FOCUS_GAINED) {
+            hasFocus = true;
+        }
 
-		if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
-			hasFocus = false;
-		}
+        if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
+            hasFocus = false;
+        }
 
-		if (event.type == AE_WINDOWEVENT_RESIZED) {
-			width = event.data.x;
-			height = event.data.y;
-		}
+        if (event.type == AE_WINDOWEVENT_RESIZED) {
+            width = event.data.x;
+            height = event.data.y;
+        }
 
-		windowEventDelegate.Fire(event);
+        windowEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::KeyboardEventHandler(Events::KeyboardEvent event) {
+    void Window::KeyboardEventHandler(Events::KeyboardEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		keyboardEventDelegate.Fire(event);
+        keyboardEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::MouseButtonEventHandler(Events::MouseButtonEvent event) {
+    void Window::MouseButtonEventHandler(Events::MouseButtonEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		mouseButtonEventDelegate.Fire(event);
+        mouseButtonEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::MouseMotionEventHandler(Events::MouseMotionEvent event) {
+    void Window::MouseMotionEventHandler(Events::MouseMotionEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		mouseMotionEventDelegate.Fire(event);
+        mouseMotionEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::MouseWheelEventHandler(Events::MouseWheelEvent event) {
+    void Window::MouseWheelEventHandler(Events::MouseWheelEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		mouseWheelEventDelegate.Fire(event);
+        mouseWheelEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::ControllerAxisEventHandler(Events::ControllerAxisEvent event) {
+    void Window::ControllerAxisEventHandler(Events::ControllerAxisEvent event) {
 
-		if (!hasFocus)
-			return;
+        if (!hasFocus)
+            return;
 
-		controllerAxisEventDelegate.Fire(event);
+        controllerAxisEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::ControllerButtonEventHandler(Events::ControllerButtonEvent event) {
+    void Window::ControllerButtonEventHandler(Events::ControllerButtonEvent event) {
 
-		if (!hasFocus)
-			return;
+        if (!hasFocus)
+            return;
 
-		controllerButtonEventDelegate.Fire(event);
+        controllerButtonEventDelegate.Fire(event);
 
-	}
+    }
 
-	void Window::DropEventHandler(Atlas::Events::DropEvent event) {
+    void Window::DropEventHandler(Atlas::Events::DropEvent event) {
 
-		if (event.windowID != ID)
-			return;
+        if (event.windowID != ID)
+            return;
 
-		dropEventDelegate.Fire(event);
+        dropEventDelegate.Fire(event);
 
-	}
+    }
 
 }

@@ -10,11 +10,11 @@ namespace Atlas {
 
     namespace Audio {
 
-		AudioData::AudioData() {
+        AudioData::AudioData() {
 
-			std::memset(&spec, 0, sizeof(SDL_AudioSpec));
+            std::memset(&spec, 0, sizeof(SDL_AudioSpec));
 
-		}
+        }
 
         AudioData::AudioData(std::string filename) : filename(filename) {
 
@@ -25,7 +25,7 @@ namespace Atlas {
 
             if (!stream.is_open()) {
                 Log::Error("Error loading audio file " + filename);
-				return;
+                return;
             }
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
@@ -33,13 +33,13 @@ namespace Atlas {
             auto rw = SDL_RWFromMem(filedata.data(), (int32_t)filedata.size());
 
             if (!rw) {
-				Log::Error("Error getting RWOPS interface " + filename);
-				return;
+                Log::Error("Error getting RWOPS interface " + filename);
+                return;
             }
 
             if (!SDL_LoadWAV_RW(rw, 1, &spec, &data, &length)) {
-				Log::Error("Error loading audio data " + filename);
-				return;
+                Log::Error("Error loading audio data " + filename);
+                return;
             }
 
             this->data.resize(length / 2);
@@ -50,16 +50,16 @@ namespace Atlas {
 
         }
 
-		void AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
+        void AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
 
-			if (formatSpec.channels == spec.channels &&  formatSpec.format == spec.format &&
-				formatSpec.freq == spec.freq) {
-				return;
-			}
+            if (formatSpec.channels == spec.channels &&  formatSpec.format == spec.format &&
+                formatSpec.freq == spec.freq) {
+                return;
+            }
 
-			Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
+            Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
 
-		}
+        }
 
         bool AudioData::Convert(uint32_t frequency, uint8_t channels, uint32_t format) {
 
@@ -71,7 +71,7 @@ namespace Atlas {
                 std::vector<uint8_t> temporary(data.size() * 2 * cvt.len_mult);
 
                 cvt.buf = temporary.data();
-				cvt.len = (int32_t)data.size() * 2;
+                cvt.len = (int32_t)data.size() * 2;
 
                 std::memcpy(cvt.buf, data.data(), cvt.len);
 
@@ -92,23 +92,23 @@ namespace Atlas {
 
         }
 
-		uint8_t AudioData::GetChannelCount() {
+        uint8_t AudioData::GetChannelCount() {
 
-			return spec.channels;
+            return spec.channels;
 
-		}
+        }
 
-		int32_t AudioData::GetSampleSize() {
+        int32_t AudioData::GetSampleSize() {
 
-			return SDL_AUDIO_BITSIZE(spec.format) / 8 * spec.channels;
+            return SDL_AUDIO_BITSIZE(spec.format) / 8 * spec.channels;
 
-		}
+        }
 
-		int32_t AudioData::GetFrequency() {
+        int32_t AudioData::GetFrequency() {
 
-			return spec.freq;
+            return spec.freq;
 
-		}
+        }
 
     }
 

@@ -34,7 +34,7 @@ namespace Atlas {
 
             shader.Bind();
 
-			target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
+            target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
             target->geometryFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(0);
 
@@ -45,16 +45,16 @@ namespace Atlas {
 
             timeInMilliseconds->SetValue(1000.0f * Clock::Get());
 
-			Volume::AABB base(vec3(-1.0f), vec3(1.0f));
-			auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
+            Volume::AABB base(vec3(-1.0f), vec3(1.0f));
+            auto aabb = base.Transform(glm::inverse(camera->projectionMatrix * camera->viewMatrix));
 
-			base = Volume::AABB(vec3(-2048.0f), vec3(2048.0f));
+            base = Volume::AABB(vec3(-2048.0f), vec3(2048.0f));
 
-			auto decalActors = scene->GetDecalActors(base);
+            auto decalActors = scene->GetDecalActors(base);
 
             for (auto& decalActor : decalActors) {
 
-				auto decal = decalActor->decal;
+                auto decal = decalActor->decal;
 
                 rowCount->SetValue(decal->rowCount);
                 columnCount->SetValue(decal->columnCount);
@@ -71,7 +71,7 @@ namespace Atlas {
             }
 
             target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-				GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
+                GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
              */
 
         }

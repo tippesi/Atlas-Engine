@@ -11,19 +11,24 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class ShadowRenderer : public Renderer {
+        class ShadowRenderer : public Renderer {
 
-		public:
-			ShadowRenderer() = default;
+        public:
+            ShadowRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
 
-		private:
+        private:
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+
             using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
             struct PushConstants {
@@ -32,15 +37,13 @@ namespace Atlas {
                 uint32_t invertUVs;
             };
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
-
             LightMap lightMap;
 
-			ImpostorShadowRenderer impostorRenderer;
+            ImpostorShadowRenderer impostorRenderer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

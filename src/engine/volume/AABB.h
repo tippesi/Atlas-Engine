@@ -9,16 +9,16 @@ namespace Atlas {
 
     namespace Volume {
 
-    	/**
-    	 * Axis aligned bounding box for collision detection and space partitioning.
-    	 * This axis aligned bounding box class describes the bound by min and max vectors.
-    	 */
+        /**
+         * Axis aligned bounding box for collision detection and space partitioning.
+         * This axis aligned bounding box class describes the bound by min and max vectors.
+         */
         class AABB {
 
         public:
-        	/**
-        	 * Constructs an AABB object.
-        	 */
+            /**
+             * Constructs an AABB object.
+             */
             AABB() = default;
 
             /**
@@ -55,23 +55,23 @@ namespace Atlas {
              * @return The transformed AABB.
              * @note The AABB where this method was called on won't be transformed.
              */
-			AABB Transform(mat4 matrix);
+            AABB Transform(mat4 matrix);
 
-			/**
-			 * Translates the AABB.
-			 * @param translation A translation vector.
-			 * @return The translated AABB.
-			 * @note The AABB where this method was called on won't be translated.
-			 */
-			AABB Translate(vec3 translation);
+            /**
+             * Translates the AABB.
+             * @param translation A translation vector.
+             * @return The translated AABB.
+             * @note The AABB where this method was called on won't be translated.
+             */
+            AABB Translate(vec3 translation);
 
-			/**
-			 * Uniformly scales the AABB on all axis.
-			 * @param scale A scale factor.
-			 * @return The scaled AABB.
-			 * @note The AABB where this method was called on won't be scaled.
-			 */
-			AABB Scale(float scale);
+            /**
+             * Uniformly scales the AABB on all axis.
+             * @param scale A scale factor.
+             * @return The scaled AABB.
+             * @note The AABB where this method was called on won't be scaled.
+             */
+            AABB Scale(float scale);
 
             void Grow(AABB aabb);
 
@@ -81,16 +81,16 @@ namespace Atlas {
 
             float GetSurfaceArea() const;
 
-			/**
-			 * Returns the eight corners of the AABB.
-			 * @return The eight corners of the AABB.
-			 * @note The corners have the following order:
-			 * vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
-			 * vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
-			 * vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
-			 * vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z)
-			 */
-			std::vector<vec3> GetCorners();
+            /**
+             * Returns the eight corners of the AABB.
+             * @return The eight corners of the AABB.
+             * @note The corners have the following order:
+             * vec3(min.x, min.y, max.z), vec3(max.x, min.y, max.z),
+             * vec3(max.x, max.y, max.z), vec3(min.x, max.y, max.z),
+             * vec3(min.x, min.y, min.z), vec3(max.x, min.y, min.z),
+             * vec3(max.x, max.y, min.z), vec3(min.x, max.y, min.z)
+             */
+            std::vector<vec3> GetCorners();
 
             vec3 min = vec3(0.0f);
             vec3 max = vec3(0.0f);

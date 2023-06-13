@@ -5,7 +5,7 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void VolumetricCloudRenderer::Init(Graphics::GraphicsDevice *device) {
 
@@ -24,188 +24,188 @@ namespace Atlas {
             integratePipelineConfig = PipelineConfig("clouds/integrate.csh");
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
 
-			auto bufferUsage = Buffer::BufferUsageBits::UniformBufferBit | Buffer::BufferUsageBits::HostAccessBit
+            auto bufferUsage = Buffer::BufferUsageBits::UniformBufferBit | Buffer::BufferUsageBits::HostAccessBit
                                | Buffer::BufferUsageBits::MultiBufferedBit;
-			volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricCloudUniforms), 1);
+            volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricCloudUniforms), 1);
 
-		}
+        }
 
-		void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
-			Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
+            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            static uint32_t frameCount = 0;
+            auto clouds = scene->sky.clouds;
+            auto sun = scene->sky.sun;
+            if (!clouds || !clouds->enable) return;
 
-			auto clouds = scene->sky.clouds;
-			auto sun = scene->sky.sun;
-			if (!clouds || !clouds->enable) return;
+            Graphics::Profiler::BeginQuery("Volumetric clouds");
 
-			Graphics::Profiler::BeginQuery("Volumetric clouds");
+            if (clouds->needsNoiseUpdate) {
+                GenerateTextures(scene, commandList);
+                clouds->needsNoiseUpdate = false;
+            }
 
-			if (clouds->needsNoiseUpdate) {
-				GenerateTextures(scene, commandList);
-				clouds->needsNoiseUpdate = false;
-			}
+            auto downsampledRT = target->GetData(target->GetVolumetricResolution());
+            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
 
-			auto downsampledRT = target->GetData(target->GetVolumetricResolution());
-			auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
+            ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
-			ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
+            auto depthTexture = downsampledRT->depthTexture;
+            auto velocityTexture = downsampledRT->velocityTexture;
 
-			auto depthTexture = downsampledRT->depthTexture;
-			auto velocityTexture = downsampledRT->velocityTexture;
+            auto historyDepthTexture = downsampledHistoryRT->depthTexture;
 
-			auto historyDepthTexture = downsampledHistoryRT->depthTexture;
-
-			std::vector<Graphics::BufferBarrier> bufferBarriers;
-			std::vector<Graphics::ImageBarrier> imageBarriers;
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers;
             
-			{
-				Graphics::Profiler::BeginQuery("Integrate");
+            {
+                static uint32_t frameCount = 0;
 
-				ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
-				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-				groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+                Graphics::Profiler::BeginQuery("Integrate");
 
-				auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
-				commandList->BindPipeline(pipeline);
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-				commandList->ImageMemoryBarrier(target->swapVolumetricCloudsTexture.image,
-					VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+                auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-				VolumetricCloudUniforms uniforms{
-					.planetRadius = scene->sky.planetRadius,
-					.innerRadius = scene->sky.planetRadius + clouds->minHeight,
-					.outerRadius = scene->sky.planetRadius + clouds->maxHeight,
-					.distanceLimit = clouds->distanceLimit,
+                commandList->ImageMemoryBarrier(target->swapVolumetricCloudsTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-					.heightStretch = clouds->heightStretch,
+                VolumetricCloudUniforms uniforms{
+                    .planetRadius = scene->sky.planetRadius,
+                    .innerRadius = scene->sky.planetRadius + clouds->minHeight,
+                    .outerRadius = scene->sky.planetRadius + clouds->maxHeight,
+                    .distanceLimit = clouds->distanceLimit,
 
-					.shapeScale = clouds->shapeScale,
-					.detailScale = clouds->detailScale,
-					.shapeSpeed = clouds->shapeSpeed,
-					.detailSpeed = clouds->detailSpeed,
-					.detailStrength = clouds->detailStrength,
+                    .heightStretch = clouds->heightStretch,
 
-					.extinctionFactor = clouds->scattering.extinctionFactor,
-					.scatteringFactor = clouds->scattering.scatteringFactor,
-					.extinctionCoefficients = clouds->scattering.extinctionCoefficients,
+                    .shapeScale = clouds->shapeScale,
+                    .detailScale = clouds->detailScale,
+                    .shapeSpeed = clouds->shapeSpeed,
+                    .detailSpeed = clouds->detailSpeed,
+                    .detailStrength = clouds->detailStrength,
 
-					.eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
-					.eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
-					.phaseAlpha = clouds->scattering.phaseAlpha,
+                    .extinctionFactor = clouds->scattering.extinctionFactor,
+                    .scatteringFactor = clouds->scattering.scatteringFactor,
+                    .extinctionCoefficients = clouds->scattering.extinctionCoefficients,
 
-					.densityMultiplier = clouds->densityMultiplier,
+                    .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
+                    .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
+                    .phaseAlpha = clouds->scattering.phaseAlpha,
 
-					.time = Clock::Get(),
-					.frameSeed = frameCount++,
+                    .densityMultiplier = clouds->densityMultiplier,
 
-					.sampleCount = clouds->sampleCount,
-					.shadowSampleCount = clouds->shadowSampleCount,
+                    .time = Clock::Get(),
+                    .frameSeed = frameCount++,
 
-					.darkEdgeDirect = clouds->darkEdgeFocus,
-					.darkEdgeDetail = clouds->darkEdgeAmbient,
-				};
+                    .sampleCount = clouds->sampleCount,
+                    .shadowSampleCount = clouds->shadowSampleCount,
 
-				if (sun) {
-					uniforms.light.direction = vec4(sun->direction, 0.0f);
-					uniforms.light.color = vec4(sun->color, 1.0f);
-					uniforms.light.intensity = sun->intensity;
-				}
-				else {
-					uniforms.light.intensity = 0.0f;
-				}
+                    .darkEdgeDirect = clouds->darkEdgeFocus,
+                    .darkEdgeDetail = clouds->darkEdgeAmbient,
+                };
 
-				volumetricUniformBuffer.SetData(&uniforms, 0, 1);
+                if (sun) {
+                    uniforms.light.direction = vec4(sun->direction, 0.0f);
+                    uniforms.light.color = vec4(sun->color, 1.0f);
+                    uniforms.light.intensity = sun->intensity;
+                }
+                else {
+                    uniforms.light.intensity = 0.0f;
+                }
 
-				commandList->BindImage(target->swapVolumetricCloudsTexture.image, 3, 0);
-				commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
-				commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
-				commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
-				commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
-				commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
-				commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 6);
+                volumetricUniformBuffer.SetData(&uniforms, 0, 1);
 
-				commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                commandList->BindImage(target->swapVolumetricCloudsTexture.image, 3, 0);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
+                commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
+                commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
+                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
+                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
+                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 6);
 
-				Graphics::Profiler::EndQuery();
-			}
-
-			{
-                Graphics::Profiler::BeginQuery("Temporal accumulation");
-
-				ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
-				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-				groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
-
-				auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
-				commandList->BindPipeline(pipeline);
-
-				imageBarriers = {
-					{target->swapVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-					{target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
-				};
-
-				commandList->PipelineBarrier(imageBarriers, bufferBarriers);
-
-				commandList->BindImage(target->volumetricCloudsTexture.image, 3, 0);
-				commandList->BindImage(target->swapVolumetricCloudsTexture.image, target->swapVolumetricCloudsTexture.sampler, 3, 1);
-				commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 2);
-				commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
-				commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
-				commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
-
-				commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 Graphics::Profiler::EndQuery();
-			}
+            }
 
-			{
-				Graphics::Profiler::BeginQuery("Copy to history");
+            {
+                Graphics::Profiler::BeginQuery("Temporal accumulation");
 
-				// Need barriers for both images
-				imageBarriers = {
-					{target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-					{target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-				};
-				commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-					VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-				commandList->CopyImage(target->volumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.image);
+                auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
+                commandList->BindPipeline(pipeline);
 
-				imageBarriers = {
-					{target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-					{target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-				};
-				commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-					VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                imageBarriers = {
+                    {target->swapVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                };
 
-				Graphics::Profiler::EndQuery();
-			}
-			
-			Graphics::Profiler::EndQuery();
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-		}
+                commandList->BindImage(target->volumetricCloudsTexture.image, 3, 0);
+                commandList->BindImage(target->swapVolumetricCloudsTexture.image, target->swapVolumetricCloudsTexture.sampler, 3, 1);
+                commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 2);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
+                commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
+                commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
 
-		void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList) {
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-			auto clouds = scene->sky.clouds;
-			if (!clouds) return;
+                Graphics::Profiler::EndQuery();
+            }
 
-			GenerateShapeTexture(commandList, &clouds->shapeTexture, clouds->shapeScale);
-			GenerateDetailTexture(commandList, &clouds->detailTexture, clouds->detailScale);
+            {
+                Graphics::Profiler::BeginQuery("Copy to history");
 
-			clouds->shapeTexture.GenerateMipmap();
-			clouds->detailTexture.GenerateMipmap();
+                // Need barriers for both images
+                imageBarriers = {
+                    {target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-		}
+                commandList->CopyImage(target->volumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.image);
 
-		void VolumetricCloudRenderer::GenerateShapeTexture(Graphics::CommandList* commandList,
+                imageBarriers = {
+                    {target->volumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->historyVolumetricCloudsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+                Graphics::Profiler::EndQuery();
+            }
+            
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList) {
+
+            auto clouds = scene->sky.clouds;
+            if (!clouds) return;
+
+            GenerateShapeTexture(commandList, &clouds->shapeTexture, clouds->shapeScale);
+            GenerateDetailTexture(commandList, &clouds->detailTexture, clouds->detailScale);
+
+            clouds->shapeTexture.GenerateMipmap();
+            clouds->detailTexture.GenerateMipmap();
+
+        }
+
+        void VolumetricCloudRenderer::GenerateShapeTexture(Graphics::CommandList* commandList,
             Texture::Texture3D* texture, float baseScale) {
 
-			Graphics::Profiler::BeginQuery("Generate shape cloud texture");
+            Graphics::Profiler::BeginQuery("Generate shape cloud texture");
 
-			// Expect the resolution to be a power of 2 and larger equal 4
-			ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
+            // Expect the resolution to be a power of 2 and larger equal 4
+            ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
 
             auto pipeline = PipelineManager::GetPipeline(shapeNoisePipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -217,23 +217,23 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             commandList->BindImage(texture->image, 3, 0);
-			
-			commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
+            
+            commandList->Dispatch(groupCount.x, groupCount.y, groupCount.z);
 
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void VolumetricCloudRenderer::GenerateDetailTexture(Graphics::CommandList* commandList,
+        void VolumetricCloudRenderer::GenerateDetailTexture(Graphics::CommandList* commandList,
             Texture::Texture3D* texture, float baseScale) {
 
             Graphics::Profiler::BeginQuery("Generate detail cloud texture");
 
-			// Expect the resolution to be a power of 2 and larger equal 4
-			ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
+            // Expect the resolution to be a power of 2 and larger equal 4
+            ivec3 groupCount = ivec3(texture->width, texture->height, texture->depth) / 4;
 
             auto pipeline = PipelineManager::GetPipeline(detailNoisePipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -253,8 +253,8 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-	}
+    }
 
 }

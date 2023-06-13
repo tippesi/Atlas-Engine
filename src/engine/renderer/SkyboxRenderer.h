@@ -9,24 +9,24 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class SkyboxRenderer : public Renderer {
+        class SkyboxRenderer : public Renderer {
 
-		public:
-			SkyboxRenderer() = default;
+        public:
+            SkyboxRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
                 Graphics::CommandList* commandList);
 
-		private:
+        private:
             PipelineConfig pipelineConfig;
 
-		};
+        };
 
-	}
+    }
 
 }
 

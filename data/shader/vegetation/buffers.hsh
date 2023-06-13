@@ -2,33 +2,33 @@
 #include <structures.hsh>
 
 layout(std430, binding = 0) buffer MeshInformations {
-	MeshInformation meshInformations[];
+    MeshInformation meshInformations[];
 };
 
 layout(std430, binding = 1) buffer MeshSubdataInformations {
-	MeshSubdataInformation meshSubdataInformations[];
+    MeshSubdataInformation meshSubdataInformations[];
 };
 
 layout (std430, binding = 2) buffer BinCounters {
-	uint binCounters[];
+    uint binCounters[];
 };
 
 layout (std430, binding = 3) buffer BinOffsets {
-	uint binOffsets[];
+    uint binOffsets[];
 };
 
 layout(std430, binding = 4) buffer InstanceCounters {
-	uint instanceCounters[];
+    uint instanceCounters[];
 };
 
 layout(std430, binding = 5) buffer InstanceData {
-	Instance instanceData[];
+    Instance instanceData[];
 };
 
 layout (std430, binding = 6) buffer InstanceDataSwap {
-	Instance instanceDataSwap[];
+    Instance instanceDataSwap[];
 };
 
 layout (std430, binding = 7) buffer IndirectCommands {
-	DrawElementsIndirectCommand indirectCommands[];
+    DrawElementsIndirectCommand indirectCommands[];
 };

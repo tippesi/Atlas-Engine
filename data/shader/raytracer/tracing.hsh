@@ -16,16 +16,16 @@
 // are just written by the shader of the user
 
 uint DetermineRayBin(Ray ray) {
-	ivec2 coord = ivec2(UnitVectorToOctahedron(ray.direction) * 8.0);
-	return Flatten2D(coord, ivec2(8));
+    ivec2 coord = ivec2(UnitVectorToOctahedron(ray.direction) * 8.0);
+    return Flatten2D(coord, ivec2(8));
 }
 
 Ray AddRayToBin(Ray ray) {
-	if (PushConstants.useRayBinning == 0) return ray;
-	uint bin = DetermineRayBin(ray);
-	atomicAdd(rayBinCounters[bin], 1u);
-	ray.hitID = int(bin);
-	return ray;
+    if (PushConstants.useRayBinning == 0) return ray;
+    uint bin = DetermineRayBin(ray);
+    atomicAdd(rayBinCounters[bin], 1u);
+    ray.hitID = int(bin);
+    return ray;
 }
 
 bool IsRayInvocationValid() {
@@ -37,53 +37,53 @@ bool IsRayIndexValid(uint idx) {
 }
 
 Ray ReadRay() {
-	uint idx = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
+    uint idx = (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
     return UnpackRay(rays[idx]);
 }
 
 RayPayload ReadRayPayload() {
-	uint idx = (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
-	return UnpackRayPayload(rayPayloads[idx]);
+    uint idx = (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize + gl_GlobalInvocationID.x;
+    return UnpackRayPayload(rayPayloads[idx]);
 }
 
 Ray ReadRay(uint idx) {
-	idx += (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize;
+    idx += (1u - PushConstants.rayBufferOffset) * PushConstants.rayBufferSize;
     return UnpackRay(rays[idx]);
 }
 
 RayPayload ReadRayPayload(uint idx) {
-	idx += (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize;
-	return UnpackRayPayload(rayPayloads[idx]);
+    idx += (1u - PushConstants.rayPayloadBufferOffset) * PushConstants.rayBufferSize;
+    return UnpackRayPayload(rayPayloads[idx]);
 }
 
 void WriteRay(Ray ray) {
-	ray = AddRayToBin(ray);
-	uint offset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+    ray = AddRayToBin(ray);
+    uint offset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1)) + offset;
-	rays[idx] = PackRay(ray);
+    rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload) {
-	ray = AddRayToBin(ray);
-	uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
-	uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
+    ray = AddRayToBin(ray);
+    uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+    uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
     uint idx = atomicAdd(writeAtomic[0], uint(1));
-	rays[idx + rayOffset] = PackRay(ray);
-	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
+    rays[idx + rayOffset] = PackRay(ray);
+    rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
 }
 
 void WriteRay(Ray ray, uint idx) {
-	ray = AddRayToBin(ray);
-	idx += PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
-	atomicAdd(writeAtomic[0], uint(1));
-	rays[idx] = PackRay(ray);
+    ray = AddRayToBin(ray);
+    idx += PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+    atomicAdd(writeAtomic[0], uint(1));
+    rays[idx] = PackRay(ray);
 }
 
 void WriteRay(Ray ray, RayPayload payload, uint idx) {
-	ray = AddRayToBin(ray);
-	uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
-	uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
+    ray = AddRayToBin(ray);
+    uint rayOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
+    uint payloadOffset = PushConstants.rayPayloadBufferOffset * PushConstants.rayBufferSize;
     atomicAdd(writeAtomic[0], uint(1));
-	rays[idx + rayOffset] = PackRay(ray);
-	rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
+    rays[idx + rayOffset] = PackRay(ray);
+    rayPayloads[idx + payloadOffset] = PackRayPayload(payload);
 }

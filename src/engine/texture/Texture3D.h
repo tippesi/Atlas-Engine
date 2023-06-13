@@ -11,8 +11,8 @@ namespace Atlas {
 
         public:
             /**
-			 * Constructs a Texture2DArray object.
-			 */
+             * Constructs a Texture2DArray object.
+             */
             Texture3D() = default;
 
             /**

@@ -6,21 +6,21 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class Skybox {
+        class Skybox {
 
-		public:
-			Skybox() = default;
+        public:
+            Skybox() = default;
 
-			explicit Skybox(Texture::Cubemap* cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
+            explicit Skybox(Texture::Cubemap* cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
 
-			Texture::Cubemap * cubemap;
-			mat4 matrix;
+            Texture::Cubemap * cubemap;
+            mat4 matrix;
 
-		};
+        };
 
-	}
+    }
 
 }
 

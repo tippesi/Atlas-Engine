@@ -2,21 +2,21 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
-		VegetationMesh::VegetationMesh(const VegetationMesh& that) {
-
-
-
-		}
-
-		VegetationMesh::VegetationMesh(MeshData data, MeshMobility mobility) : Mesh(data, mobility) {
+        VegetationMesh::VegetationMesh(const VegetationMesh& that) {
 
 
 
-		}
+        }
 
-	}
+        VegetationMesh::VegetationMesh(MeshData data, MeshMobility mobility) : Mesh(data, mobility) {
+
+
+
+        }
+
+    }
 
 }
 

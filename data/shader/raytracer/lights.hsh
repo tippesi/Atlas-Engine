@@ -5,26 +5,26 @@
 #include <../brdf/surface.hsh>
 
 layout (std430, set = 2, binding = 11) buffer Lights {
-	PackedLight lights[];
+    PackedLight lights[];
 };
 
 LightSample SampleTriangleLight(Light light, Triangle triangle,
-	Surface surface, float r0, float r1) {
+    Surface surface, float r0, float r1) {
 
     LightSample lightSample;
 
     float u = 1.0 - sqrt(r0);
-	float v = r1 * sqrt(r0);
-	float w = 1.0 - u - v;
+    float v = r1 * sqrt(r0);
+    float w = 1.0 - u - v;
 
-	lightSample.P = u * triangle.v0 + v * triangle.v1 +
-		w * triangle.v2;
+    lightSample.P = u * triangle.v0 + v * triangle.v1 +
+        w * triangle.v2;
 
-	lightSample.N = u * triangle.n0 + v * triangle.n1 +
-		w * triangle.n2;
+    lightSample.N = u * triangle.n0 + v * triangle.n1 +
+        w * triangle.n2;
 
-	lightSample.pdf = 1.0 / light.area;
-		
-	return lightSample;
+    lightSample.pdf = 1.0 / light.area;
+        
+    return lightSample;
 
 }

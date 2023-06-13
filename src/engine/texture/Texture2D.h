@@ -14,19 +14,19 @@ namespace Atlas {
         class Texture2D : public Texture {
 
         public:
-			/**
-			 * Constructs a Texture2D object.
-			 */
+            /**
+             * Constructs a Texture2D object.
+             */
             Texture2D() = default;
 
             /**
-			 * Construct a Texture2D object.
-			 * @param width The width of the texture.
-			 * @param height The height of the texture.
-			 * @param format The texture format.
-			 * @param wrapping The wrapping of the texture. Controls texture border behaviour.
-			 * @param filtering The filtering of the texture.
-			 */
+             * Construct a Texture2D object.
+             * @param width The width of the texture.
+             * @param height The height of the texture.
+             * @param format The texture format.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+             * @param filtering The filtering of the texture.
+             */
             Texture2D(int32_t width, int32_t height, VkFormat format, Wrapping wrapping = Wrapping::Repeat,
                 Filtering filtering = Filtering::Nearest);
 
@@ -35,17 +35,17 @@ namespace Atlas {
              * @param filename The filename of the image
              * @param colorSpaceConversion Whether or not a sRGB to RGB conversion should be done
              * @param filtering The filtering of the texture.
-			 * @param forceChannels Can be used to force a number of channels which should be loaded from the file.
+             * @param forceChannels Can be used to force a number of channels which should be loaded from the file.
              */
             explicit Texture2D(std::string filename, bool colorSpaceConversion = true,
                 Filtering filtering = Filtering::Anisotropic, int32_t forceChannels = 0);
 
-			/**
-			 * Constructs a Texture2D object from an image object.
-			 * @param image The image object.
-			 * @param filtering The filtering of the texture.
-			 */
-			explicit Texture2D(Common::Image<uint8_t>& image, Filtering filtering = Filtering::Anisotropic);
+            /**
+             * Constructs a Texture2D object from an image object.
+             * @param image The image object.
+             * @param filtering The filtering of the texture.
+             */
+            explicit Texture2D(Common::Image<uint8_t>& image, Filtering filtering = Filtering::Anisotropic);
 
             /**
              * Resizes the texture

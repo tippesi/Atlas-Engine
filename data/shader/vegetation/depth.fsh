@@ -8,9 +8,9 @@ in vec2 texCoordVS;
 void main() {
 
 #ifdef OPACITY_MAP
-	float opacity = texture(opacityMap, texCoordVS).r;
-	if (opacity < 0.2)
-		discard;
+    float opacity = texture(opacityMap, texCoordVS).r;
+    if (opacity < 0.2)
+        discard;
 #endif
-	
+    
 }

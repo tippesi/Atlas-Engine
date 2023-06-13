@@ -24,7 +24,7 @@ layout(set = 3, binding = 2) uniform sampler2D sssTexture;
 #endif
 
 layout(std140, set = 3, binding = 3) uniform LightBuffer {
-	Light light;
+    Light light;
 } lightData;
 
 void main() {
@@ -65,7 +65,7 @@ void main() {
 #endif
 
         vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;
-	    direct = direct * radiance * surface.NdotL * shadowFactor;
+        direct = direct * radiance * surface.NdotL * shadowFactor;
 
         if (surface.material.transmissive) {
             Surface backSurface = CreateSurface(surface.V, -surface.N, surface.L, surface.material);
@@ -78,7 +78,7 @@ void main() {
             direct += directDiffuse * radiance * backSurface.NdotL * shadowFactor;
         }
 
-        if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {	
+        if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {    
             direct += surface.material.emissiveColor;
         }
 

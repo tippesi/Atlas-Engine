@@ -14,25 +14,25 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class Renderer {
+        class Renderer {
 
-		public:
-			Renderer() {}
+        public:
+            Renderer() {}
 
-			Renderer(const Renderer&) = delete;
+            Renderer(const Renderer&) = delete;
 
-			virtual ~Renderer() {}
+            virtual ~Renderer() {}
 
-			Renderer& operator=(const Renderer&) = delete;
+            Renderer& operator=(const Renderer&) = delete;
 
         protected:
             Graphics::GraphicsDevice* device = nullptr;
 
-		};
+        };
 
-	}
+    }
 
 }
 

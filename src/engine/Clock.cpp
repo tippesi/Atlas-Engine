@@ -6,88 +6,88 @@
 
 namespace Atlas {
 
-	std::mutex Clock::mutex;
+    std::mutex Clock::mutex;
 
-	double Clock::timeStamp = 0.0;
-	float Clock::deltaTime = 0.0f;
+    double Clock::timeStamp = 0.0;
+    float Clock::deltaTime = 0.0f;
 
-	std::vector<float> Clock::deltas;
-	size_t Clock::frameCount = 0;
-	size_t Clock::totalFrames = 0;
+    std::vector<float> Clock::deltas;
+    size_t Clock::frameCount = 0;
+    size_t Clock::totalFrames = 0;
 
-	float Clock::Get() {
+    float Clock::Get() {
 
-		return (float)SDL_GetTicks() / 1000.0f;
+        return (float)SDL_GetTicks() / 1000.0f;
 
-	}
+    }
 
-	float Clock::GetDelta() {
+    float Clock::GetDelta() {
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		return deltaTime;
+        return deltaTime;
 
-	}
+    }
 
-	void Clock::SetAverageWindow(int32_t frames) {
+    void Clock::SetAverageWindow(int32_t frames) {
 
-		if (frames <= 0)
-			return;
+        if (frames <= 0)
+            return;
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		deltas.resize(frames);
+        deltas.resize(frames);
         std::fill(deltas.begin(), deltas.end(), 0.0f);
 
-	}
+    }
 
-	std::vector<float> Clock::GetAverageWindow() {
+    std::vector<float> Clock::GetAverageWindow() {
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		return deltas;
+        return deltas;
 
-	}
+    }
 
-	float Clock::GetAverage() {
+    float Clock::GetAverage() {
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		auto size = std::min(deltas.size(), totalFrames);
-		auto average = std::accumulate(deltas.begin(), deltas.end() - 
-			(deltas.size() - size), 0.0f);
+        auto size = std::min(deltas.size(), totalFrames);
+        auto average = std::accumulate(deltas.begin(), deltas.end() - 
+            (deltas.size() - size), 0.0f);
 
-		return average / size;
+        return average / size;
 
-	}
+    }
 
-	void Clock::ResetAverage() {
+    void Clock::ResetAverage() {
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		std::fill(deltas.begin(), deltas.end(), 0.0f);
-		totalFrames = 0;
+        std::fill(deltas.begin(), deltas.end(), 0.0f);
+        totalFrames = 0;
 
-	}
+    }
 
-	void Clock::Update() {
+    void Clock::Update() {
 
-		std::scoped_lock<std::mutex> lock(mutex);
+        std::scoped_lock<std::mutex> lock(mutex);
 
-		if (!deltas.size())
-			deltas.resize(300);
+        if (!deltas.size())
+            deltas.resize(300);
 
-		auto time = (double)SDL_GetPerformanceCounter();
-		deltaTime = (float)((time - timeStamp) / (double)
-			SDL_GetPerformanceFrequency());
+        auto time = (double)SDL_GetPerformanceCounter();
+        deltaTime = (float)((time - timeStamp) / (double)
+            SDL_GetPerformanceFrequency());
 
-		deltas[frameCount] = deltaTime;
+        deltas[frameCount] = deltaTime;
 
-		timeStamp = time;
+        timeStamp = time;
 
-		frameCount = (frameCount + 1) % deltas.size();
-		totalFrames++;
+        frameCount = (frameCount + 1) % deltas.size();
+        totalFrames++;
 
-	}
+    }
 
 }

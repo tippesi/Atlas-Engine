@@ -9,8 +9,8 @@ namespace Atlas {
 
         /**
           * A class to distribute frame update events.
-		  * @note The clock event gets fired before any other
-		  * event in a frame.
+          * @note The clock event gets fired before any other
+          * event in a frame.
          */
         class ClockEvent {
 

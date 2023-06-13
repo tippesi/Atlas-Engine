@@ -5,7 +5,7 @@ layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(set = 3, binding = 0, r16f) uniform image3D noiseImage;
 
 layout(push_constant) uniform constants {
-	float seed;
+    float seed;
 } pushConstants;
 
 void main() {

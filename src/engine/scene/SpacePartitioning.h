@@ -14,70 +14,70 @@
 
 namespace Atlas {
 
-	namespace Scene {
+    namespace Scene {
 
-		class SpacePartitioning {
+        class SpacePartitioning {
 
-		public:
-			SpacePartitioning(vec3 min, vec3 max, int32_t depth);
+        public:
+            SpacePartitioning(vec3 min, vec3 max, int32_t depth);
 
-			SpacePartitioning& operator=(const SpacePartitioning& that);
+            SpacePartitioning& operator=(const SpacePartitioning& that);
 
-			void Add(Actor::MovableMeshActor* actor);
+            void Add(Actor::MovableMeshActor* actor);
 
-			void Remove(Actor::MovableMeshActor* actor);
+            void Remove(Actor::MovableMeshActor* actor);
 
-			void Add(Actor::StaticMeshActor* actor);
+            void Add(Actor::StaticMeshActor* actor);
 
-			void Remove(Actor::StaticMeshActor* actor);
+            void Remove(Actor::StaticMeshActor* actor);
 
-			void Add(Actor::DecalActor* actor);
+            void Add(Actor::DecalActor* actor);
 
-			void Remove(Actor::DecalActor* actor);
+            void Remove(Actor::DecalActor* actor);
 
-			void Add(Actor::AudioActor* actor);			
+            void Add(Actor::AudioActor* actor);            
 
-			void Remove(Actor::AudioActor* actor);
+            void Remove(Actor::AudioActor* actor);
 
-			void Add(Lighting::Light* light);
+            void Add(Lighting::Light* light);
 
-			void Remove(Lighting::Light* light);
+            void Remove(Lighting::Light* light);
 
-			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
+            void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
-			std::vector<Actor::Actor*> GetActors();
+            std::vector<Actor::Actor*> GetActors();
 
-			std::vector<Actor::MeshActor*> GetMeshActors();
+            std::vector<Actor::MeshActor*> GetMeshActors();
 
-			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::AABB aabb);
+            std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::AABB aabb);
 
-			std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::Ray ray);
+            std::vector<Actor::StaticMeshActor*> GetStaticMeshActors(Volume::Ray ray);
 
-			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::AABB aabb);
+            std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::AABB aabb);
 
-			std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::Ray ray);
+            std::vector<Actor::MovableMeshActor*> GetMovableMeshActors(Volume::Ray ray);
 
-			std::vector<Actor::DecalActor*> GetDecalActors(Volume::AABB aabb);
+            std::vector<Actor::DecalActor*> GetDecalActors(Volume::AABB aabb);
 
-			std::vector<Actor::AudioActor*> GetAudioActors(Volume::AABB aabb);
+            std::vector<Actor::AudioActor*> GetAudioActors(Volume::AABB aabb);
 
-			std::vector<Lighting::Light*> GetLights();
+            std::vector<Lighting::Light*> GetLights();
 
-			void Clear();
+            void Clear();
 
-		private:
-			Volume::AABB aabb;
-			
-			Volume::Octree<Actor::MovableMeshActor*> movableMeshOctree;
-			Volume::Octree<Actor::StaticMeshActor*> staticMeshOctree;
-			Volume::Octree<Actor::DecalActor*> decalOctree;
-			Volume::Octree<Actor::AudioActor*> audioOctree;
+        private:
+            Volume::AABB aabb;
+            
+            Volume::Octree<Actor::MovableMeshActor*> movableMeshOctree;
+            Volume::Octree<Actor::StaticMeshActor*> staticMeshOctree;
+            Volume::Octree<Actor::DecalActor*> decalOctree;
+            Volume::Octree<Actor::AudioActor*> audioOctree;
 
-			std::vector<Lighting::Light*> lights;
+            std::vector<Lighting::Light*> lights;
 
-		};
+        };
 
-	}
+    }
 
 }
 

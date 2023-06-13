@@ -13,16 +13,16 @@ uniform float brightness;
 uniform float fadeFactor;
 
 void main() {
-	
-	vec2 coord = gl_FragCoord.xy / framebufferResolution;
-	
-	float sampleDepth = ConvertDepthToViewSpaceDepth(texture(textures[1], coord).r);
-	
-	float fade = clamp((depth - sampleDepth) * fadeFactor, 0.0, 1.0);
-	
-	fragColor = texture(diffuseMap, fTexCoord);
-	
-	fragColor.a *= (blend * fade);
-	fragColor.xyz *= brightness;
-	
+    
+    vec2 coord = gl_FragCoord.xy / framebufferResolution;
+    
+    float sampleDepth = ConvertDepthToViewSpaceDepth(texture(textures[1], coord).r);
+    
+    float fade = clamp((depth - sampleDepth) * fadeFactor, 0.0, 1.0);
+    
+    fragColor = texture(diffuseMap, fTexCoord);
+    
+    fragColor.a *= (blend * fade);
+    fragColor.xyz *= brightness;
+    
 }

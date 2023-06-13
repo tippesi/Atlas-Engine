@@ -8,40 +8,40 @@
 
 namespace Atlas {
 
-	namespace Lighting {
+    namespace Lighting {
 
-		class EnvironmentProbe {
+        class EnvironmentProbe {
 
-		public:
-			EnvironmentProbe() = default;
+        public:
+            EnvironmentProbe() = default;
 
-			explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
+            explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
 
-			explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f, 10.0f, 0.0f));
+            explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f, 10.0f, 0.0f));
 
-			void SetPosition(vec3 position);
+            void SetPosition(vec3 position);
 
-			vec3 GetPosition();
+            vec3 GetPosition();
 
-			int32_t resolution;
+            int32_t resolution;
 
-			std::vector<mat4> viewMatrices;
+            std::vector<mat4> viewMatrices;
             mat4 projectionMatrix;
 
-			Texture::Cubemap cubemap;
-			Texture::Cubemap depth;
+            Texture::Cubemap cubemap;
+            Texture::Cubemap depth;
 
-			Texture::Cubemap filteredDiffuse;
-			Texture::Cubemap filteredSpecular;
+            Texture::Cubemap filteredDiffuse;
+            Texture::Cubemap filteredSpecular;
 
-			bool update = true;
+            bool update = true;
 
-		private:
-			vec3 position = vec3(0.0f, 10.0f, 0.0f);
+        private:
+            vec3 position = vec3(0.0f, 10.0f, 0.0f);
 
-		};
+        };
 
-	}
+    }
 
 }
 

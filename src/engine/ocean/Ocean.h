@@ -12,65 +12,65 @@
 
 namespace Atlas {
 
-	namespace Ocean {
+    namespace Ocean {
 
-		class Ocean : public OceanNode {
+        class Ocean : public OceanNode {
 
-		public:
-			Ocean() = default;
+        public:
+            Ocean() = default;
 
-			Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
-				int32_t N = 512, int32_t L = 4000);
+            Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
+                int32_t N = 512, int32_t L = 4000);
 
-			void Update(Camera* camera, float deltaTime);
+            void Update(Camera* camera, float deltaTime);
 
-			/**
-			 * Sets the distance of a specific level of detail.
-			 * @param LoD The level of detail to be set in range of (0,LoDCount-1)
-			 * @param distance The distance where the level of details should begin
-			 */
-			void SetLoDDistance(int32_t LoD, float distance);
+            /**
+             * Sets the distance of a specific level of detail.
+             * @param LoD The level of detail to be set in range of (0,LoDCount-1)
+             * @param distance The distance where the level of details should begin
+             */
+            void SetLoDDistance(int32_t LoD, float distance);
 
-			std::vector<OceanNode*> GetRenderList();
+            std::vector<OceanNode*> GetRenderList();
 
-			OceanSimulation simulation;
+            OceanSimulation simulation;
 
-			Texture::Texture2D rippleTexture;
-			Texture::Texture2D foamTexture;
+            Texture::Texture2D rippleTexture;
+            Texture::Texture2D foamTexture;
 
-			bool enable = true;
+            bool enable = true;
 
-			vec3 translation = vec3(0.0f);
+            vec3 translation = vec3(0.0f);
 
-			float displacementScale = 4.0f;
-			float choppynessScale = 3.0f;
+            float displacementScale = 4.0f;
+            float choppynessScale = 3.0f;
 
-			float tiling = 64.0f;
+            float tiling = 64.0f;
 
-			float shoreWaveDistanceOffset = 100.0f;
-			float shoreWaveDistanceScale = 30.0f;
-			float shoreWaveAmplitude = 1.0f;
-			float shoreWaveSteepness = 1.5f;
-			float shoreWavePower = 4.0f;
-			float shoreWaveSpeed = 5.0f;
-			float shoreWaveLength = 5.0f;
+            float shoreWaveDistanceOffset = 100.0f;
+            float shoreWaveDistanceScale = 30.0f;
+            float shoreWaveAmplitude = 1.0f;
+            float shoreWaveSteepness = 1.5f;
+            float shoreWavePower = 4.0f;
+            float shoreWaveSpeed = 5.0f;
+            float shoreWaveLength = 5.0f;
 
-			bool wireframe = false;
+            bool wireframe = false;
 
-		private:
-			void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);
+        private:
+            void SortNodes(std::vector<OceanNode*>& nodes, vec3 cameraLocation);
 
-			std::vector<OceanNode*> renderList;
+            std::vector<OceanNode*> renderList;
 
-			Common::Image<uint8_t> LoDImage;
+            Common::Image<uint8_t> LoDImage;
 
-			std::vector<float> LoDDistances;
+            std::vector<float> LoDDistances;
 
-			float size;
+            float size;
 
-		};
+        };
 
-	}
+    }
 
 }
 

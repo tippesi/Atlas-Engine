@@ -5,22 +5,22 @@
 
 namespace Atlas {
 
-	namespace PostProcessing {
+    namespace PostProcessing {
 
-		class TAA {
+        class TAA {
 
-		public:
-			TAA() = default;
+        public:
+            TAA() = default;
 
-			TAA(float jitterRange) : enable(true), jitterRange(jitterRange) {}
+            TAA(float jitterRange) : enable(true), jitterRange(jitterRange) {}
 
-			bool enable = false;
+            bool enable = false;
 
-			float jitterRange = 0.99f;
+            float jitterRange = 0.99f;
 
-		};
+        };
 
-	}
+    }
 
 }
 

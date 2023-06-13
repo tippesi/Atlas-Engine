@@ -1,29 +1,29 @@
 #include <structures.hsh>
 
 layout(std430, set = 2, binding = 13) buffer ReadAtomic {
-	uint readAtomic[];
+    uint readAtomic[];
 };
 
 layout(std430, set = 2, binding = 14) buffer WriteAtomic {
-	uint writeAtomic[];
+    uint writeAtomic[];
 };
 
 layout (std430, set = 2, binding = 15) buffer Rays {
-	PackedRay rays[];
+    PackedRay rays[];
 };
 
 layout (std430, set = 2, binding = 16) buffer RayPayloads {
-	PackedRayPayload rayPayloads[];
+    PackedRayPayload rayPayloads[];
 };
 
 layout (std430, set = 2, binding = 7) buffer Materials {
-	RaytraceMaterial materials[];
+    RaytraceMaterial materials[];
 };
 
 layout(std430, set = 2, binding = 17) buffer RayBinCounters {
-	uint rayBinCounters[];
+    uint rayBinCounters[];
 };
 
 layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
-	uint rayBinOffsets[];
+    uint rayBinOffsets[];
 };

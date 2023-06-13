@@ -18,11 +18,11 @@
 layout (local_size_x = 32) in;
 
 layout(std430, set = 3, binding = 0) buffer RayDirs {
-	vec4 rayDirs[];
+    vec4 rayDirs[];
 };
 
 layout(std430, set = 3, binding = 1) buffer RayDirsInactiveProbes {
-	vec4 rayDirsInactiveProbes[];
+    vec4 rayDirsInactiveProbes[];
 };
 
 layout(std140, set = 3, binding = 2) uniform UniformBuffer {
@@ -36,7 +36,7 @@ void main() {
 
     uint baseIdx = GetProbeIdx(ivec3(gl_WorkGroupID));
 
-	if (gl_LocalInvocationID.x == 0u) {
+    if (gl_LocalInvocationID.x == 0u) {
         probeState = floatBitsToUint(probeStates[baseIdx].x);
         probeOffset = probeOffsets[baseIdx].xyz;
     }
@@ -48,13 +48,13 @@ void main() {
 
     uint workGroupOffset = gl_WorkGroupSize.x;
     for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
-		Ray ray;
+        Ray ray;
 
         ray.ID = int(rayBaseIdx + i);
-		ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
-		ray.direction = normalize(mat3(Uniforms.randomRotation) *
+        ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
+        ray.direction = normalize(mat3(Uniforms.randomRotation) *
             (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
 
-		WriteRay(ray);
+        WriteRay(ray);
     }
 }

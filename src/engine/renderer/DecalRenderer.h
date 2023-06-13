@@ -6,43 +6,43 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class DecalRenderer : public Renderer {
+        class DecalRenderer : public Renderer {
 
-		public:
-			DecalRenderer();
+        public:
+            DecalRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
+            static std::string vertexPath;
+            static std::string fragmentPath;
 
-		private:
-			void GetUniforms();
+        private:
+            void GetUniforms();
 
-			Buffer::VertexArray vertexArray;
+            Buffer::VertexArray vertexArray;
 
             /*
-			OldShader::OldShader shader;
+            OldShader::OldShader shader;
 
-			OldShader::Uniform* modelMatrix = nullptr;
-			OldShader::Uniform* viewMatrix = nullptr;
-			OldShader::Uniform* projectionMatrix = nullptr;
-			OldShader::Uniform* inverseViewMatrix = nullptr;
-			OldShader::Uniform* inverseProjectionMatrix = nullptr;
+            OldShader::Uniform* modelMatrix = nullptr;
+            OldShader::Uniform* viewMatrix = nullptr;
+            OldShader::Uniform* projectionMatrix = nullptr;
+            OldShader::Uniform* inverseViewMatrix = nullptr;
+            OldShader::Uniform* inverseProjectionMatrix = nullptr;
 
-			OldShader::Uniform* color = nullptr;
+            OldShader::Uniform* color = nullptr;
 
-			OldShader::Uniform* timeInMilliseconds = nullptr;
-			OldShader::Uniform* animationLength = nullptr;
-			OldShader::Uniform* rowCount = nullptr;
-			OldShader::Uniform* columnCount = nullptr;
+            OldShader::Uniform* timeInMilliseconds = nullptr;
+            OldShader::Uniform* animationLength = nullptr;
+            OldShader::Uniform* rowCount = nullptr;
+            OldShader::Uniform* columnCount = nullptr;
              */
 
-		};
+        };
 
-	}
+    }
 
 }
 

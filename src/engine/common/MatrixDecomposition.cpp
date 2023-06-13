@@ -5,37 +5,37 @@
 
 namespace Atlas {
 
-	namespace Common {
+    namespace Common {
 
-		MatrixDecomposition::MatrixDecomposition(mat4 matrix) {
+        MatrixDecomposition::MatrixDecomposition(mat4 matrix) {
 
-			Decompose(matrix);
+            Decompose(matrix);
 
-		}
+        }
 
-		void MatrixDecomposition::Decompose(mat4 matrix) {
+        void MatrixDecomposition::Decompose(mat4 matrix) {
 
-			glm::quat rot;
-			glm::vec3 skew;
-			glm::vec4 perspective;
+            glm::quat rot;
+            glm::vec3 skew;
+            glm::vec4 perspective;
 
-			glm::decompose(matrix, scale, rot, translation, skew, perspective);
+            glm::decompose(matrix, scale, rot, translation, skew, perspective);
 
-			rot = glm::conjugate(rot);
-			rotation = glm::eulerAngles(rot);
+            rot = glm::conjugate(rot);
+            rotation = glm::eulerAngles(rot);
 
-		}
+        }
 
-		mat4 MatrixDecomposition::Compose() {
+        mat4 MatrixDecomposition::Compose() {
 
-			auto matrix = glm::translate(mat4(1.0f), translation);
-			matrix = glm::scale(matrix, scale);
-			matrix = matrix * glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+            auto matrix = glm::translate(mat4(1.0f), translation);
+            matrix = glm::scale(matrix, scale);
+            matrix = matrix * glm::eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
 
-			return matrix;
+            return matrix;
 
-		}
+        }
 
-	}
+    }
 
 }

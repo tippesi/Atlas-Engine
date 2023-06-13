@@ -9,26 +9,26 @@
 
 namespace Atlas {
 
-	namespace Scene {
+    namespace Scene {
 
-		class FrustumCulling {
+        class FrustumCulling {
 
-		public:
-			static void CullActorsFromScene(Scene *scene, Camera *camera);
+        public:
+            static void CullActorsFromScene(Scene *scene, Camera *camera);
 
-			static void CullLightsFromScene(Scene *scene, Camera *camera);
+            static void CullLightsFromScene(Scene *scene, Camera *camera);
 
-			static void CullActorsFromShadow(Lighting::Light *light, Scene *scene, Camera *camera);
+            static void CullActorsFromShadow(Lighting::Light *light, Scene *scene, Camera *camera);
 
-		private:
-			static void CullActorsFromPointShadow(Lighting::PointLight *light, Scene *scene, Camera *camera);
+        private:
+            static void CullActorsFromPointShadow(Lighting::PointLight *light, Scene *scene, Camera *camera);
 
-			static void
-			CullActorsFromDirectionalShadow(Lighting::DirectionalLight *light, Scene *scene, Camera *camera);
+            static void
+            CullActorsFromDirectionalShadow(Lighting::DirectionalLight *light, Scene *scene, Camera *camera);
 
-		};
+        };
 
-	}
+    }
 
 }
 

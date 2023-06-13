@@ -5,43 +5,43 @@
 
 struct Complex {
 
-	float real;
-	float imag;
+    float real;
+    float imag;
 
 };
 
 Complex mul(Complex c0, Complex c1) {
 
-	Complex c;
-	c.real = c0.real * c1.real - c0.imag * c1.imag;
-	c.imag = c0.real * c1.imag + c0.imag * c1.real;
-	return c;
+    Complex c;
+    c.real = c0.real * c1.real - c0.imag * c1.imag;
+    c.imag = c0.real * c1.imag + c0.imag * c1.real;
+    return c;
 
 }
 
 vec2 mul(vec2 c0, vec2 c1) {
-	return vec2(c0.x * c1.x - c0.y * c1.y,
-		c0.x * c1.y + c0.y * c1.x);
+    return vec2(c0.x * c1.x - c0.y * c1.y,
+        c0.x * c1.y + c0.y * c1.x);
 }
 
 vec4 mul(vec4 c0, vec4 c1) {
-	return vec4(
-		c0.x * c1.x - c0.y * c1.y,
-		c0.x * c1.y + c0.y * c1.x,
-		c0.z * c1.z - c0.w * c1.w,
-		c0.z * c1.w + c0.w * c1.z
-		);
+    return vec4(
+        c0.x * c1.x - c0.y * c1.y,
+        c0.x * c1.y + c0.y * c1.x,
+        c0.z * c1.z - c0.w * c1.w,
+        c0.z * c1.w + c0.w * c1.z
+        );
 }
 
 Complex add(Complex c0, Complex c1) {
 
-	return Complex(c0.real + c1.real,
-		c0.imag + c1.imag);
+    return Complex(c0.real + c1.real,
+        c0.imag + c1.imag);
 
 }
 
 Complex conj(Complex c) {
 
-	return Complex(c.real, -c.imag);
+    return Complex(c.real, -c.imag);
 
 }

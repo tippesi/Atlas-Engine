@@ -7,21 +7,21 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class VolumetricCloudRenderer : public Renderer {
+        class VolumetricCloudRenderer : public Renderer {
 
-		public:
-			VolumetricCloudRenderer() = default;
+        public:
+            VolumetricCloudRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-			void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
+            void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
 
-		private:
+        private:
             struct alignas(16) Cascade {
                 float distance;
                 float texelSize;
@@ -56,7 +56,7 @@ namespace Atlas {
                 Shadow shadow;
             };
 
-			struct alignas(16) VolumetricCloudUniforms {
+            struct alignas(16) VolumetricCloudUniforms {
                 Light light;
 
                 float planetRadius;
@@ -90,12 +90,12 @@ namespace Atlas {
 
                 float darkEdgeDirect;
                 float darkEdgeDetail;
-			};
+            };
 
-			void GenerateShapeTexture(Graphics::CommandList* commandList,
+            void GenerateShapeTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
-			
-			void GenerateDetailTexture(Graphics::CommandList* commandList,
+            
+            void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
 
             PipelineConfig shapeNoisePipelineConfig;
@@ -108,9 +108,9 @@ namespace Atlas {
             Texture::Texture2D sobolSequenceTexture;
             Buffer::Buffer volumetricUniformBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

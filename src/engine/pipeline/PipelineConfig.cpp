@@ -1,6 +1,7 @@
 #include "PipelineConfig.h"
 
 #include "../common/Hash.h"
+#include "../graphics/SwapChain.h"
 
 #include <algorithm>
 
@@ -113,6 +114,12 @@ namespace Atlas {
         }
 
         if (!isCompute) {
+            auto renderPass = graphicsPipelineDesc.frameBuffer ?
+                              graphicsPipelineDesc.frameBuffer->renderPass->renderPass
+                              : graphicsPipelineDesc.swapChain->renderPass;
+            HashCombine(variantHash, renderPass);
+            HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
+            HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);
         }
 

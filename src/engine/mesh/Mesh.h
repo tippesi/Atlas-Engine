@@ -12,7 +12,7 @@
 
 namespace Atlas {
 
-	namespace Mesh {
+    namespace Mesh {
 
         enum class MeshMobility {
             Stationary = 0,
@@ -54,7 +54,7 @@ namespace Atlas {
         };
 
 
-	}
+    }
 
 }
 

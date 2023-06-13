@@ -9,22 +9,22 @@ Article 68, 1–2. https://doi.org/10.1145/3306307.3328191
 float SampleBlueNoise(ivec2 pixel, int sampleIndex, int sampleDimension, 
     sampler2D scramblingRanking, sampler2D sobolSequence) {
 
-	// wrap arguments
-	pixel = pixel % 128;
-	sampleIndex = sampleIndex % 256;
-	sampleDimension = sampleDimension % 4;
+    // wrap arguments
+    pixel = pixel % 128;
+    sampleIndex = sampleIndex % 256;
+    sampleDimension = sampleDimension % 4;
 
-	// xor index based on optimized ranking
-	int rankedSampleIndex = sampleIndex ^ int(clamp(texelFetch(scramblingRanking, pixel, 0).b * 256.0, 0.0, 255.0));
+    // xor index based on optimized ranking
+    int rankedSampleIndex = sampleIndex ^ int(clamp(texelFetch(scramblingRanking, pixel, 0).b * 256.0, 0.0, 255.0));
 
-	// fetch value in sequence
-	int value = int(clamp(texelFetch(sobolSequence, ivec2(rankedSampleIndex, 0), 0)[sampleDimension] * 256.0, 0.0, 255.0));
+    // fetch value in sequence
+    int value = int(clamp(texelFetch(sobolSequence, ivec2(rankedSampleIndex, 0), 0)[sampleDimension] * 256.0, 0.0, 255.0));
 
-	// If the dimension is optimized, xor sequence value based on optimized scrambling
-	value = value ^ int(clamp(texelFetch(scramblingRanking, pixel, 0)[sampleDimension % 2] * 256.0, 0.0, 255.0));
+    // If the dimension is optimized, xor sequence value based on optimized scrambling
+    value = value ^ int(clamp(texelFetch(scramblingRanking, pixel, 0)[sampleDimension % 2] * 256.0, 0.0, 255.0));
 
-	// convert to float and return
-	float v = (0.5 + value) / 256.0;
-	return v;
-	
+    // convert to float and return
+    float v = (0.5 + value) / 256.0;
+    return v;
+    
 }

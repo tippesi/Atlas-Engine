@@ -70,7 +70,7 @@ namespace Atlas {
             VkImageAspectFlags aspectFlags;
             VkAccessFlags accessMask = VK_ACCESS_NONE;
 
-            std::vector<VkImageView> layerViews;
+            std::vector<VkImageView> attachmentViews;
 
             uint32_t width = 1;
             uint32_t height = 1;

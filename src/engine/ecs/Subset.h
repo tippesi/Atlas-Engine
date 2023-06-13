@@ -11,143 +11,143 @@
 
 namespace Atlas {
 
-	namespace ECS {
+    namespace ECS {
 
-		/**
-		 * A subsets is a iterable class to calculate a subset of entities
-		 * from the whole entity manager depending on their components
-		 * @tparam Comp The component types
-		 */
-		template<typename... Comp>
-		class Subset {
+        /**
+         * A subsets is a iterable class to calculate a subset of entities
+         * from the whole entity manager depending on their components
+         * @tparam Comp The component types
+         */
+        template<typename... Comp>
+        class Subset {
 
-			using OtherStorage = std::array<const Storage*, (sizeof...(Comp) - 1)>;
+            using OtherStorage = std::array<const Storage*, (sizeof...(Comp) - 1)>;
 
-		public:
-			class Iterator {
+        public:
+            class Iterator {
 
-			public:
-				Iterator() = delete;
+            public:
+                Iterator() = delete;
 
-				Iterator(const Storage* mainStorage, OtherStorage otherStorages, size_t idx) :
-					mainStorage(mainStorage), otherStorages(otherStorages), idx(idx) {
+                Iterator(const Storage* mainStorage, OtherStorage otherStorages, size_t idx) :
+                    mainStorage(mainStorage), otherStorages(otherStorages), idx(idx) {
 
-					if (idx <= mainStorage->Size() - 1 && !HasAllComponents()) {
-						operator++();
-					}
+                    if (idx <= mainStorage->Size() - 1 && !HasAllComponents()) {
+                        operator++();
+                    }
 
-				}
+                }
 
-				Iterator& operator++() {
+                Iterator& operator++() {
 
-					while (++idx < mainStorage->Size() - 1 && !HasAllComponents());
-					return *this;
+                    while (++idx < mainStorage->Size() - 1 && !HasAllComponents());
+                    return *this;
 
-				}
+                }
 
-				Iterator& operator--() {
+                Iterator& operator--() {
 
-					while (--idx > 0 && !HasAllComponents());
-					return *this;
+                    while (--idx > 0 && !HasAllComponents());
+                    return *this;
 
-				}
+                }
 
-				inline bool operator!=(const Iterator& iterator) const {
+                inline bool operator!=(const Iterator& iterator) const {
 
-					return idx != iterator.idx;
+                    return idx != iterator.idx;
 
-				}
+                }
 
-				inline const Entity& operator*() const {
+                inline const Entity& operator*() const {
 
-					return entity;
+                    return entity;
 
-				}
+                }
 
-			private:
-				inline bool HasAllComponents() {
+            private:
+                inline bool HasAllComponents() {
 
-					entity = (*mainStorage)[idx];
-					bool valid = true;
+                    entity = (*mainStorage)[idx];
+                    bool valid = true;
 
-					for (auto& storage : otherStorages) {
-						valid &= storage->Contains(entity);
-					}
+                    for (auto& storage : otherStorages) {
+                        valid &= storage->Contains(entity);
+                    }
 
-					return valid;
+                    return valid;
 
-				}
+                }
 
-				size_t idx = 0;
+                size_t idx = 0;
 
-				Entity entity;
-				const Storage* mainStorage = nullptr;
-				OtherStorage otherStorages;
+                Entity entity;
+                const Storage* mainStorage = nullptr;
+                OtherStorage otherStorages;
 
-			};
+            };
 
-			Subset() = default;
+            Subset() = default;
 
-			Subset(std::tuple<Pool<Comp>*...> pools) : pools(pools) {
+            Subset(std::tuple<Pool<Comp>*...> pools) : pools(pools) {
 
-				// Find the shortest pool
-				auto max = std::numeric_limits<size_t>::max();
+                // Find the shortest pool
+                auto max = std::numeric_limits<size_t>::max();
 
-				const auto findMin = [&](Storage* storage) {
-					if (storage->Size() < max) {
-						mainStorage = static_cast<const Storage*>(storage);
-						max = storage->Size();
-					}
-				};
+                const auto findMin = [&](Storage* storage) {
+                    if (storage->Size() < max) {
+                        mainStorage = static_cast<const Storage*>(storage);
+                        max = storage->Size();
+                    }
+                };
 
-				std::apply([&](auto ...args) {(..., findMin(args)); }, pools);
+                std::apply([&](auto ...args) {(..., findMin(args)); }, pools);
 
-				// Find all the other pools
-				size_t count = 0;
+                // Find all the other pools
+                size_t count = 0;
 
-				const auto findOther = [&](Storage* storage) {
-					if (storage != mainStorage)
-						otherStorages[count++] = static_cast<const Storage*>(storage);
-				};
+                const auto findOther = [&](Storage* storage) {
+                    if (storage != mainStorage)
+                        otherStorages[count++] = static_cast<const Storage*>(storage);
+                };
 
-				std::apply([&](auto ...args) {(..., findOther(args)); }, pools);
+                std::apply([&](auto ...args) {(..., findOther(args)); }, pools);
 
-			}
+            }
 
-			template<typename... Component>
-			decltype(auto) Get(const Entity entity) const {
+            template<typename... Component>
+            decltype(auto) Get(const Entity entity) const {
 
-				return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
-				/*
-				if constexpr (sizeof...(Component) == 1) {
-					return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
-				}
-				 */
+                return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                /*
+                if constexpr (sizeof...(Component) == 1) {
+                    return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                }
+                 */
 
-			}
+            }
 
-			Iterator begin() const {
+            Iterator begin() const {
 
-				return { mainStorage, otherStorages, 0 };
+                return { mainStorage, otherStorages, 0 };
 
-			}
+            }
 
-			Iterator end() const {
+            Iterator end() const {
 
-				return { mainStorage, otherStorages, mainStorage->Size() };
+                return { mainStorage, otherStorages, mainStorage->Size() };
 
-			}
+            }
 
-		public:
-			std::tuple<Pool<Comp>*...> pools;
+        public:
+            std::tuple<Pool<Comp>*...> pools;
 
-			const Storage* mainStorage = nullptr;
-			OtherStorage otherStorages;
+            const Storage* mainStorage = nullptr;
+            OtherStorage otherStorages;
 
-		};
+        };
 
 
-	}
+    }
 
 }
 

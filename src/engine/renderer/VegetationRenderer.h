@@ -7,30 +7,30 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class VegetationRenderer : public Renderer {
+        class VegetationRenderer : public Renderer {
 
-		public:
-			VegetationRenderer();
+        public:
+            VegetationRenderer();
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-				Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
+                Scene::Scene* scene, std::unordered_map<void*, uint16_t> materialMap);
 
-			Helper::VegetationHelper helper;
+            Helper::VegetationHelper helper;
 
-		private:
-			void DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, 
-				Camera* camera, float time, float deltaTime);
+        private:
+            void DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::VegetationMesh*>& meshes, 
+                Camera* camera, float time, float deltaTime);
 
             /*
-			OldShader::OldShader shader;
-			OldShader::OldShader depthShader;
+            OldShader::OldShader shader;
+            OldShader::OldShader depthShader;
             */
 
-		};
+        };
 
-	}
+    }
 
 }
 

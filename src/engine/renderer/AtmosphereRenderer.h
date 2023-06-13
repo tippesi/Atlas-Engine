@@ -8,26 +8,26 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
 
-		class AtmosphereRenderer : public Renderer {
+        class AtmosphereRenderer : public Renderer {
 
-		public:
-			AtmosphereRenderer() = default;
+        public:
+            AtmosphereRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
-			void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
+            void Render(Lighting::EnvironmentProbe* probe, Scene::Scene* scene,
                 Graphics::CommandList* commandList);
 
-			static std::string vertexPath;
-			static std::string fragmentPath;
+            static std::string vertexPath;
+            static std::string fragmentPath;
 
-		private:
+        private:
             struct alignas(16) Uniforms {
                 mat4 ivMatrix;
                 mat4 ipMatrix;
@@ -45,9 +45,9 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer probeMatricesBuffer;
 
-		};
+        };
 
-	}
+    }
 
 }
 

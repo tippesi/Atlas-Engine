@@ -7,91 +7,91 @@ cmake_minimum_required(VERSION 3.7)
 
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
-	set (ATLAS_EXPORT_MAIN OFF)
+    set (ATLAS_EXPORT_MAIN OFF)
 endif()
 
 # Message options #################################################################################
 if (ATLAS_OPENGL_ES)
-	message(STATUS "Using OpenGL ES")
+    message(STATUS "Using OpenGL ES")
 else()
-	message(STATUS "Using OpenGL")
+    message(STATUS "Using OpenGL")
 endif()
 
 if (ATLAS_EXPORT_MAIN)
-	message(STATUS "Exporting main function")
+    message(STATUS "Exporting main function")
 endif()
 
 if (ATLAS_NO_APP)
-	message(STATUS "Building without app class")
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_NO_APP)
+    message(STATUS "Building without app class")
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_NO_APP)
 else()
-	message(STATUS "Building with app class")
+    message(STATUS "Building with app class")
 endif()
 
 # Set built type macros ###########################################################################
 if (DEFINED CMAKE_BUILD_TYPE)
-	if(CMAKE_BUILD_TYPE STREQUAL "Release")
-		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
-	elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
-	else()
-		set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
-	endif()
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+    elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
+    else()
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
+    endif()
 else()
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
 endif()
 
 # Configure platform specific stuff ###############################################################
 if(WIN32)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
-			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
+            volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
 if (MINGW)
-	set(ATLAS_ENGINE_LIBS mingw32 ${ATLAS_ENGINE_LIBS})
+    set(ATLAS_ENGINE_LIBS mingw32 ${ATLAS_ENGINE_LIBS})
 endif()
 
 if(APPLE)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-			volk::volk volk::volk_headers SPIRV-Tools-opt
-			unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+            volk::volk volk::volk_headers SPIRV-Tools-opt
+            unofficial::vulkan-memory-allocator::vulkan-memory-allocator
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
 if(ANDROID)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
-	set(ATLAS_ENGINE_SYSTEM_LIBS android m)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
+    set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
-	set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
-	
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
+    
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
     set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
     set(CMAKE_SKIP_BUILD_RPATH FALSE)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-	
-	set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-			volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
-			unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
+    
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+            volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
+            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 endif()
 
 # Add source files ################################################################################
 file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
         "*.cpp"
         "*.c"
-		"*.h"
-		"*.hpp"
+        "*.h"
+        "*.hpp"
         )
 
 # Grouping source files into tree structure #######################################################
@@ -105,7 +105,7 @@ foreach(SOURCE_FILE IN ITEMS ${ATLAS_ENGINE_SOURCE_FILES})
     string(REPLACE "/" "\\" SOURCE_PATH_CONVERTED "${SOURCE_PATH}")
     source_group("${SOURCE_PATH_CONVERTED}" FILES "${SOURCE_FILE}")
 endforeach()   
-	
+    
 if (ATLAS_OPENGL_ES)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_API_GLES CACHE INTERNAL "")
 else()
@@ -122,17 +122,17 @@ list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp
 endif()
 
 # Configure linking ###############################################################################
-if(ANDROID)	
+if(ANDROID)    
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
     list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)[Aa]pp\.(c(pp)?|h(pp)?)$")
 if (ATLAS_NO_APP)
-	list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.(c(pp)?|h(pp)?)$")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.(c(pp)?|h(pp)?)$")
 endif()
 if (ATLAS_BUILD_SHARED)
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})
 else()
-	add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
+    add_library(${PROJECT_NAME} STATIC ${ATLAS_ENGINE_SOURCE_FILES})
 endif()
 endif()
 
@@ -142,11 +142,11 @@ find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 
-	PUBLIC
-	${STB_INCLUDE_DIRS}
-	${GLM_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
-	
+    PUBLIC
+    ${STB_INCLUDE_DIRS}
+    ${GLM_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
+    
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

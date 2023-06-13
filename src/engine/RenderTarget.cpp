@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-	RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+    RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -73,16 +73,16 @@ namespace Atlas {
 
         CreateFrameBuffers();
 
-		SetAOResolution(HALF_RES);
-		SetVolumetricResolution(HALF_RES);
-		SetReflectionResolution(HALF_RES);
+        SetAOResolution(HALF_RES);
+        SetVolumetricResolution(HALF_RES);
+        SetReflectionResolution(HALF_RES);
 
         sssTexture = Texture::Texture2D(width, height, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-	}
+    }
 
-	void RenderTarget::Resize(int32_t width, int32_t height) {
+    void RenderTarget::Resize(int32_t width, int32_t height) {
 
         this->width = width;
         this->height = height;
@@ -90,40 +90,40 @@ namespace Atlas {
         targetData.Resize(ivec2(width, height));
 
         // We have to also resize the other part of the history
-		historyTexture.Resize(width, height);
-		swapHistoryTexture.Resize(width, height);
+        historyTexture.Resize(width, height);
+        swapHistoryTexture.Resize(width, height);
         lightingTexture.Resize(width, height);
         hdrTexture.Resize(width, height);
-		postProcessTexture.Resize(width, height);
-		sssTexture.Resize(width, height);
+        postProcessTexture.Resize(width, height);
+        sssTexture.Resize(width, height);
 
-		SetAOResolution(aoResolution);
-		SetVolumetricResolution(volumetricResolution);
-		SetReflectionResolution(reflectionResolution);
+        SetAOResolution(aoResolution);
+        SetVolumetricResolution(volumetricResolution);
+        SetReflectionResolution(reflectionResolution);
 
-		ivec2 halfRes = GetRelativeResolution(HALF_RES);
-		targetDataDownsampled2x.Resize(halfRes);
-		targetDataSwapDownsampled2x.Resize(halfRes);
+        ivec2 halfRes = GetRelativeResolution(HALF_RES);
+        targetDataDownsampled2x.Resize(halfRes);
+        targetDataSwapDownsampled2x.Resize(halfRes);
 
         CreateFrameBuffers();
 
         hasHistory = false;
 
-	}
+    }
 
-	int32_t RenderTarget::GetWidth() {
+    int32_t RenderTarget::GetWidth() {
 
-		return width;
+        return width;
 
-	}
+    }
 
-	int32_t RenderTarget::GetHeight() {
+    int32_t RenderTarget::GetHeight() {
 
-		return height;
+        return height;
 
-	}
+    }
 
-	void RenderTarget::Swap() {
+    void RenderTarget::Swap() {
 
         targetData.velocityTexture.swap(targetData.swapVelocityTexture);
 
@@ -134,147 +134,147 @@ namespace Atlas {
         lightingFrameBuffer->Refresh();
 
         hasHistory = true;
-		swap = !swap;
+        swap = !swap;
 
-	}
+    }
 
-	ivec2 RenderTarget::GetRelativeResolution(RenderResolution resolution) {
+    ivec2 RenderTarget::GetRelativeResolution(RenderResolution resolution) {
 
-		int32_t factor = 1;
+        int32_t factor = 1;
 
-		switch (resolution) {
-		case HALF_RES: factor = 2; break;
-		default: break;
-		}
+        switch (resolution) {
+        case HALF_RES: factor = 2; break;
+        default: break;
+        }
 
-		return ivec2(width / factor, height / factor);
+        return ivec2(width / factor, height / factor);
 
-	}
+    }
 
-	void RenderTarget::SetAOResolution(RenderResolution resolution) {
+    void RenderTarget::SetAOResolution(RenderResolution resolution) {
 
-		auto res = GetRelativeResolution(resolution);
-		aoResolution = resolution;
+        auto res = GetRelativeResolution(resolution);
+        aoResolution = resolution;
 
-		aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+        aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+        swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-		aoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        aoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-
-	}
-
-	RenderResolution RenderTarget::GetAOResolution() {
-
-		return aoResolution;
-
-	}
-
-	void RenderTarget::SetVolumetricResolution(RenderResolution resolution) {
-
-		auto res = GetRelativeResolution(resolution);
-		volumetricResolution = resolution;
-
-		volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
-		swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
-
-		volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-	}
+    }
 
-	RenderResolution RenderTarget::GetVolumetricResolution() {
+    RenderResolution RenderTarget::GetAOResolution() {
 
-		return volumetricResolution;
+        return aoResolution;
 
-	}
+    }
 
-	void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
+    void RenderTarget::SetVolumetricResolution(RenderResolution resolution) {
 
-		auto res = GetRelativeResolution(resolution);
-		reflectionResolution = resolution;
+        auto res = GetRelativeResolution(resolution);
+        volumetricResolution = resolution;
 
-		reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+        swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+
+        volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+    }
+
+    RenderResolution RenderTarget::GetVolumetricResolution() {
+
+        return volumetricResolution;
+
+    }
+
+    void RenderTarget::SetReflectionResolution(RenderResolution resolution) {
+
+        auto res = GetRelativeResolution(resolution);
+        reflectionResolution = resolution;
+
+        reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-		reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-		historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-	
-	}
+    
+    }
 
-	RenderResolution RenderTarget::GetReflectionResolution() {
+    RenderResolution RenderTarget::GetReflectionResolution() {
 
-		return reflectionResolution;
+        return reflectionResolution;
 
-	}
+    }
 
-	RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
+    RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
-		switch (resolution) {
-		case FULL_RES: return &targetData;
-		default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
-		}
+        switch (resolution) {
+        case FULL_RES: return &targetData;
+        default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
+        }
 
-	}
+    }
 
-	RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
+    RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
-		switch (resolution) {
-		case FULL_RES: return &targetData; // This is not correct
-		default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
-		}
+        switch (resolution) {
+        case FULL_RES: return &targetData; // This is not correct
+        default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
+        }
 
-	}
+    }
 
-	Texture::Texture2D* RenderTarget::GetHistory() {
+    Texture::Texture2D* RenderTarget::GetHistory() {
 
-		if (swap) {
-			return &historyTexture;
-		}
-		else {
-			return &swapHistoryTexture;
-		}
+        if (swap) {
+            return &historyTexture;
+        }
+        else {
+            return &swapHistoryTexture;
+        }
 
-	}
+    }
 
-	Texture::Texture2D* RenderTarget::GetLastHistory() {
+    Texture::Texture2D* RenderTarget::GetLastHistory() {
 
-		if (swap) {
-			return &swapHistoryTexture;
-		}
-		else {
-			return &historyTexture;
-		}
+        if (swap) {
+            return &swapHistoryTexture;
+        }
+        else {
+            return &historyTexture;
+        }
 
-	}
+    }
 
-	Texture::Texture2D* RenderTarget::GetVelocity() {
+    Texture::Texture2D* RenderTarget::GetVelocity() {
 
-		return targetData.velocityTexture.get();
+        return targetData.velocityTexture.get();
 
-	}
+    }
 
-	Texture::Texture2D* RenderTarget::GetLastVelocity() {
+    Texture::Texture2D* RenderTarget::GetLastVelocity() {
 
-		return targetData.swapVelocityTexture.get();
+        return targetData.swapVelocityTexture.get();
 
-	}
+    }
 
     bool RenderTarget::HasHistory() const {
 

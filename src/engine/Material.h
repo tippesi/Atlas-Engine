@@ -13,20 +13,20 @@
 
 namespace Atlas {
 
-	class Material {
+    class Material {
 
-	public:
-		Material();
+    public:
+        Material();
 
-		bool HasBaseColorMap() const;
-		bool HasOpacityMap() const;
-		bool HasNormalMap() const;
-		bool HasRoughnessMap() const;
-		bool HasMetalnessMap() const;
-		bool HasAoMap() const;
-		bool HasDisplacementMap() const;
+        bool HasBaseColorMap() const;
+        bool HasOpacityMap() const;
+        bool HasNormalMap() const;
+        bool HasRoughnessMap() const;
+        bool HasMetalnessMap() const;
+        bool HasAoMap() const;
+        bool HasDisplacementMap() const;
 
-		std::string name;
+        std::string name;
 
         Ref<Texture::Texture2D> baseColorMap = nullptr;
         Ref<Texture::Texture2D> opacityMap = nullptr;
@@ -36,37 +36,37 @@ namespace Atlas {
         Ref<Texture::Texture2D> aoMap = nullptr;
         Ref<Texture::Texture2D> displacementMap = nullptr;
 
-		vec3 baseColor = vec3(1.0f);
-		vec3 emissiveColor = vec3(0.0f);
-		vec3 transmissiveColor = vec3(0.0f);
+        vec3 baseColor = vec3(1.0f);
+        vec3 emissiveColor = vec3(0.0f);
+        vec3 transmissiveColor = vec3(0.0f);
 
-		float opacity = 1.0f;
+        float opacity = 1.0f;
 
-		float roughness = 1.0f;
-		float metalness = 0.0f;
-		float ao = 1.0f;
+        float roughness = 1.0f;
+        float metalness = 0.0f;
+        float ao = 1.0f;
 
-		float reflectance = 0.5f;
+        float reflectance = 0.5f;
 
-		float normalScale = 0.5f;
-		float displacementScale = 0.01f;
+        float normalScale = 0.5f;
+        float displacementScale = 0.01f;
 
-		float tiling = 1.0f;
+        float tiling = 1.0f;
 
-		std::string baseColorMapPath;
-		std::string opacityMapPath;
-		std::string normalMapPath;
-		std::string roughnessMapPath;
-		std::string metalnessMapPath;
-		std::string aoMapPath;
-		std::string displacementMapPath;
+        std::string baseColorMapPath;
+        std::string opacityMapPath;
+        std::string normalMapPath;
+        std::string roughnessMapPath;
+        std::string metalnessMapPath;
+        std::string aoMapPath;
+        std::string displacementMapPath;
 
-		bool twoSided = false;
+        bool twoSided = false;
 
         PipelineConfig mainConfig;
         PipelineConfig shadowConfig;
 
-	};
+    };
 
 
 }

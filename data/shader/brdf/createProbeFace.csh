@@ -14,9 +14,9 @@ void main() {
 
     ivec2 size = textureSize(lightIn, 0);
     ivec2 coord = ivec2(gl_GlobalInvocationID);
-	
-	if (coord.x < size.x &&
-		coord.y < size.y) {
+    
+    if (coord.x < size.x &&
+        coord.y < size.y) {
 
         // Needed for irradiance integration and sky visibility
         vec3 light = texelFetch(lightIn, coord, 0).rgb;

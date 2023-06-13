@@ -4,111 +4,118 @@
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
+#include "../pipeline/PipelineConfig.h"
+#include "../graphics/CommandList.h"
 
 #include <vector>
 
 namespace Atlas {
 
-	namespace Ocean {
+    namespace Ocean {
 
-		class OceanSimulation {
+        class OceanSimulation {
 
-		public:
-			OceanSimulation() = default;
+        public:
+            OceanSimulation() = default;
 
-			OceanSimulation(int32_t N, int32_t L);
+            OceanSimulation(int32_t N, int32_t L);
 
-			void Compute(float deltaTime);
+            void Update(float deltaTime);
 
-			void ComputeSpectrum();
+            void UpdateSpectrum();
 
-			Texture::Texture2D displacementMap;
-			Texture::Texture2D normalMap;
+            void Compute(Graphics::CommandList* commandList);
 
-			Texture::Texture2D twiddleIndices;
+            Texture::Texture2D displacementMap;
+            Texture::Texture2D normalMap;
 
-			Texture::Texture2D displacementMapPrev;
+            Texture::Texture2D twiddleIndices;
 
-			int32_t L;
+            Texture::Texture2D displacementMapPrev;
 
-			float choppinessScale = 3.0f;
-			float displacementScale = 4.0f;
-			float tiling = 64.0f;
+            int32_t L;
 
-			float waveAmplitude = 1.0f;
-			float waveSurpression = 0.001f;
+            float choppinessScale = 3.0f;
+            float displacementScale = 4.0f;
+            float tiling = 64.0f;
 
-			vec2 windDirection = vec2(0.8f, 0.6f);
-			float windSpeed = 60.0f;
-			float windDependency = 0.9f;
+            float waveAmplitude = 1.0f;
+            float waveSurpression = 0.001f;
 
-			float foamTemporalWeight = 0.985f;
-			float foamTemporalThreshold = 0.6f;
+            vec2 windDirection = vec2(0.8f, 0.6f);
+            float windSpeed = 60.0f;
+            float windDependency = 0.9f;
 
-			float foamOffset = 0.85f;
-			float foamScale = 1.5f;
-			float foamSize = 4.0f;
+            float foamTemporalWeight = 0.985f;
+            float foamTemporalThreshold = 0.6f;
 
-			float simulationSpeed = 1.0f;
+            float foamOffset = 0.85f;
+            float foamScale = 1.5f;
+            float foamSize = 4.0f;
 
-			bool update = true;
+            float simulationSpeed = 1.0f;
 
-		private:
-			void ComputeTwiddleIndices();
+            bool update = true;
 
-			int32_t ReverseBits(int32_t data, int32_t bitCount);
+        private:
+            void ComputeTwiddleIndices(Graphics::CommandList* commandList);
 
-			int32_t N;
+            void ComputeSpectrum(Graphics::CommandList* commandList);
 
-			float time = 0.0f;
+            int32_t ReverseBits(int32_t data, int32_t bitCount);
+
+            int32_t N;
+
+            float time = 0.0f;
+
+            bool updateSpectrum = true;
+            bool updateTwiddleIndices = true;
+
+            PipelineConfig h0Config;
+            PipelineConfig htConfig;
+            PipelineConfig twiddleConfig;
+            PipelineConfig horizontalButterflyConfig;
+            PipelineConfig verticalButterflyConfig;
+            PipelineConfig inversionConfig;
+            PipelineConfig normalConfig;
+
+            // Precomputed noise textures
+            Texture::Texture2D noise0;
+            Texture::Texture2D noise1;
+            Texture::Texture2D noise2;
+            Texture::Texture2D noise3;
+
+            Texture::Texture2D h0K;
+
+            Texture::Texture2D hTD;
+            Texture::Texture2D hTDPingpong;
 
             /*
-			OldShader::OldShader h0;
-			OldShader::OldShader ht;
-			OldShader::OldShader twiddle;
-			OldShader::OldShader horizontalButterfly;
-			OldShader::OldShader verticalButterfly;
-			OldShader::OldShader inversion;
-			OldShader::OldShader normal;
+            OldShader::Uniform* htNUniform;
+            OldShader::Uniform* htLUniform;
+            OldShader::Uniform* htTimeUniform;
+
+            OldShader::Uniform* butterflyStageUniform;
+            OldShader::Uniform* butterflyPingpongUniform;
+            OldShader::Uniform* butterflyNUniform;
+            OldShader::Uniform* butterflyPreTwiddleUniform;
+
+            OldShader::Uniform* inversionNUniform;
+            OldShader::Uniform* inversionPingpongUniform;
+
+            OldShader::Uniform* normalNUniform;
+            OldShader::Uniform* normalLUniform;
+            OldShader::Uniform* normalChoppyScaleUniform;
+            OldShader::Uniform* normalDisplacementScaleUniform;
+            OldShader::Uniform* normalTilingUniform;
+            OldShader::Uniform* normalFoamTemporalWeightUniform;
+            OldShader::Uniform* normalFoamTemporalThresholdUniform;
+            OldShader::Uniform* normalFoamOffsetUniform;
             */
 
-			// Precomputed noise textures
-			Texture::Texture2D noise0;
-			Texture::Texture2D noise1;
-			Texture::Texture2D noise2;
-			Texture::Texture2D noise3;
+        };
 
-			Texture::Texture2D h0K;
-
-			Texture::Texture2D hTD;
-			Texture::Texture2D hTDPingpong;
-
-            /*
-			OldShader::Uniform* htNUniform;
-			OldShader::Uniform* htLUniform;
-			OldShader::Uniform* htTimeUniform;
-
-			OldShader::Uniform* butterflyStageUniform;
-			OldShader::Uniform* butterflyPingpongUniform;
-			OldShader::Uniform* butterflyNUniform;
-			OldShader::Uniform* butterflyPreTwiddleUniform;
-
-			OldShader::Uniform* inversionNUniform;
-			OldShader::Uniform* inversionPingpongUniform;
-
-			OldShader::Uniform* normalNUniform;
-			OldShader::Uniform* normalLUniform;
-			OldShader::Uniform* normalChoppyScaleUniform;
-			OldShader::Uniform* normalDisplacementScaleUniform;
-			OldShader::Uniform* normalTilingUniform;
-			OldShader::Uniform* normalFoamTemporalWeightUniform;
-			OldShader::Uniform* normalFoamTemporalThresholdUniform;
-			OldShader::Uniform* normalFoamOffsetUniform;
-            */
-
-		};
-
-	}
+    }
 
 }
 

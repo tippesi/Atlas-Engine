@@ -14,7 +14,7 @@ layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler2D normalTexture;
 
 layout(push_constant) uniform constants {
-	vec4 lightDirection;
+    vec4 lightDirection;
     int sampleCount;
     float maxLength;
     float thickness;

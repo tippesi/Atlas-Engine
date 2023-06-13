@@ -2,25 +2,25 @@
 
 namespace Atlas {
 
-	namespace Actor {
+    namespace Actor {
 
-		void MeshActor::Update(Camera camera, float deltaTime,
-			mat4 parentTransform, bool parentUpdate) {
+        void MeshActor::Update(Camera camera, float deltaTime,
+            mat4 parentTransform, bool parentUpdate) {
 
-			if (matrixChanged || parentUpdate) {
+            if (matrixChanged || parentUpdate) {
 
-				lastGlobalMatrix = globalMatrix;
+                lastGlobalMatrix = globalMatrix;
 
-				matrixChanged = false;
+                matrixChanged = false;
 
-				globalMatrix = parentTransform * GetMatrix();
+                globalMatrix = parentTransform * GetMatrix();
 
-				aabb = mesh->data.aabb.Transform(globalMatrix);
+                aabb = mesh->data.aabb.Transform(globalMatrix);
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
 }

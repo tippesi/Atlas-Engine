@@ -6,53 +6,35 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class ImpostorRenderer : public Renderer {
+        class ImpostorRenderer : public Renderer {
 
-		public:
-			ImpostorRenderer();
+        public:
+            ImpostorRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-				RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
+            void Init(Graphics::GraphicsDevice* device);
 
-		private:
-			void GetUniforms();
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Graphics::CommandList* commandList, RenderList* renderList,
+                std::unordered_map<void*, uint16_t> materialMap);
 
-			void GetInterpolationUniforms();
+            void Generate(Viewport* viewport, const std::vector<mat4>& viewMatrices,
+                mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
-            /*
-			OldShader::ShaderBatch shaderBatch;
+        private:
+            Ref<Graphics::FrameBuffer> GenerateFrameBuffer(Mesh::Impostor* impostor);
 
-			OldShader::ShaderConfig normalConfig;
-			OldShader::ShaderConfig interpolationConfig;
-             */
+            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer, bool interpolation);
 
-			Buffer::VertexArray vertexArray;
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
-            /*
-			OldShader::Uniform* vMatrix = nullptr;
-			OldShader::Uniform* pMatrix = nullptr;
-			OldShader::Uniform* cameraLocation = nullptr;
+            Buffer::VertexArray vertexArray;
 
-			OldShader::Uniform* center = nullptr;
-			OldShader::Uniform* radius = nullptr;
+        };
 
-			OldShader::Uniform* cameraRight = nullptr;
-			OldShader::Uniform* cameraUp = nullptr;
-
-			OldShader::Uniform* views = nullptr;
-			OldShader::Uniform* cutoff = nullptr;
-			OldShader::Uniform* materialIdx = nullptr;
-
-			OldShader::Uniform* pvMatrixLast = nullptr;
-			OldShader::Uniform* jitterCurrent = nullptr;
-			OldShader::Uniform* jitterLast = nullptr;
-             */
-
-		};
-
-	}
+    }
 
 }
 

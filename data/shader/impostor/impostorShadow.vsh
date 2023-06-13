@@ -4,52 +4,54 @@
 
 layout(location=0) in vec2 vPosition;
 
+layout(location=0) out vec2 texCoordVS;
+layout(location=1) flat out int indexVS;
+
 struct ViewPlane {
     vec4 right;
     vec4 up;
 };
 
-layout (std430, binding = 1) buffer ViewPlanes {
+layout(std430, set = 1, binding = 2) buffer Matrices {
+    mat4 matrices[];
+};
+
+layout (std430, set = 3, binding = 1) buffer ViewPlanes {
 	ViewPlane viewPlanes[];
 };
 
-layout(std430, binding = 2) buffer Matrices {
-	mat4 matrices[];
-};
+layout(push_constant) uniform constants {
+    mat4 lightSpaceMatrix;
 
-out vec2 texCoordVS;
-flat out int indexVS;
+    vec4 lightLocation;
+    vec4 center;
 
-uniform mat4 vMatrix;
-uniform mat4 pMatrix;
-uniform vec3 cameraLocation;
-
-uniform vec3 center;
-uniform float radius;
-
-uniform int views;
+    float radius;
+    int views;
+    float cutoff;
+} PushConstants;
 
 void main() {
 
-    mat4 mMatrix = matrices[gl_InstanceID];
+    mat4 mMatrix = matrices[gl_InstanceIndex];
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	
 	vec3 pos = vec3(mMatrix * vec4(0.0, 0.0, 0.0, 1.0));
-	vec3 dir = cameraLocation - pos;
-    float frames = float(views);
+	vec3 dir = PushConstants.lightLocation.xyz - pos;
+    float frames = float(PushConstants.views);
 
 	vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
 	vec2 coord = round(octahedron * (frames - 1.0));
 	
 	indexVS = Flatten2D(ivec2(coord), ivec2(frames));
 	
-    vec2 position = vPosition.xy * radius;
+    vec2 position = vPosition.xy * PushConstants.radius;
 
     ViewPlane viewPlane = viewPlanes[indexVS];
     vec4 modelPosition = vec4((viewPlane.up.xyz * position.y
-        + viewPlane.right.xyz * position.x) + center, 1.0);	
+        + viewPlane.right.xyz * position.x) + PushConstants.center.xyz, 1.0);
 
-    gl_Position =  pMatrix * vMatrix * mMatrix * modelPosition;
+    gl_Position =  PushConstants.lightSpaceMatrix * mMatrix * modelPosition;
 
 }

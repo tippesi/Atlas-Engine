@@ -22,11 +22,11 @@ layout(location=3) in vec4 vTangent;
 #endif
 
 layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
-	mat4 currentMatrices[];
+    mat4 currentMatrices[];
 };
 
 layout(std430, set = 1, binding = 1) buffer LastMatrices {
-	mat4 lastMatrices[];
+    mat4 lastMatrices[];
 };
 
 // Vertex out parameters
@@ -44,71 +44,71 @@ layout(location=5) out mat3 TBN;
 #endif
 
 layout(push_constant) uniform constants {
-	uint vegetation;
-	uint invertUVs;
-	uint twoSided;
-	uint staticMesh;
-	uint materialIdx;
-	float normalScale;
-	float displacementScale;
+    uint vegetation;
+    uint invertUVs;
+    uint twoSided;
+    uint staticMesh;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
 } PushConstants;
 
 // Functions
 void main() {
 
-	mat4 mMatrix = currentMatrices[gl_InstanceIndex];
-	mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : lastMatrices[gl_InstanceIndex];
+    mat4 mMatrix = currentMatrices[gl_InstanceIndex];
+    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : lastMatrices[gl_InstanceIndex];
 
 #ifdef TEX_COORDS
-	texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 #endif
-	
-	mat4 mvMatrix = globalData.vMatrix * mMatrix;
+    
+    mat4 mvMatrix = globalData.vMatrix * mMatrix;
 
-	vec3 position = vPosition;
-	vec3 lastPosition = vPosition;
+    vec3 position = vPosition;
+    vec3 lastPosition = vPosition;
 
-	if (PushConstants.vegetation > 0) {
+    if (PushConstants.vegetation > 0) {
 
-		position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
-		lastPosition = WindAnimation(vPosition, globalData.time - globalData.deltaTime, mMatrix[3].xyz);
+        position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
+        lastPosition = WindAnimation(vPosition, globalData.time - globalData.deltaTime, mMatrix[3].xyz);
 
-	}
+    }
 
-	vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
-	positionVS = positionToCamera.xyz;
+    vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
+    positionVS = positionToCamera.xyz;
 
-	mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f,-1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.5f, 0.0f,
-		0.0f, 0.0f, 0.5f, 1.0f);
-	
-	gl_Position = globalData.pMatrix * positionToCamera;
+    mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f,-1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.5f, 0.0f,
+        0.0f, 0.0f, 0.5f, 1.0f);
+    
+    gl_Position = globalData.pMatrix * positionToCamera;
 
-	// Needed for velocity buffer calculation 
-	ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
-	// For moving objects we need the last frames matrix
-	vec4 last = globalData.pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
-	ndcLastVS = vec3(last.xy, last.w);
+    // Needed for velocity buffer calculation 
+    ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
+    // For moving objects we need the last frames matrix
+    vec4 last = globalData.pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
+    ndcLastVS = vec3(last.xy, last.w);
 
-	// Only after ndc calculation apply the clip correction
-	gl_Position = gl_Position;
-	
+    // Only after ndc calculation apply the clip correction
+    gl_Position = gl_Position;
+    
 #ifdef GENERATE_IMPOSTOR
-	mvMatrix = globalData.mMatrix;
+    mvMatrix = globalData.mMatrix;
 #endif
-	
-	normalVS = mat3(mvMatrix) * vNormal;	
+    
+    normalVS = mat3(mvMatrix) * vNormal;    
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-	float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
+    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
     vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
-	
-	vec3 bitangent = normalize(correctionFactor * 
-		cross(tangent, normal));
+    
+    vec3 bitangent = normalize(correctionFactor * 
+        cross(tangent, normal));
 
-	TBN = mat3(tangent, bitangent, normal);
+    TBN = mat3(tangent, bitangent, normal);
 #endif
-	
+    
 }

@@ -11,9 +11,9 @@ namespace Atlas {
         class Texture2DArray : public Texture {
 
         public:
-			/**
-			 * Constructs a Texture2DArray object.
-			 */
+            /**
+             * Constructs a Texture2DArray object.
+             */
             Texture2DArray() = default;
 
             /**
@@ -47,8 +47,8 @@ namespace Atlas {
              * @param height The height of the texture region to be set.
              * @param layers The depth of the texture region to be set.
              */
-			void SetData(std::vector<uint8_t>& data, int32_t x, int32_t y, int32_t z,
-				int32_t width, int32_t height, int32_t layers);
+            void SetData(std::vector<uint8_t>& data, int32_t x, int32_t y, int32_t z,
+                int32_t width, int32_t height, int32_t layers);
 
             /**
             * Sets the data of the texture object.
@@ -69,8 +69,8 @@ namespace Atlas {
              * @param height The height of the texture region to be set.
              * @param layers The depth of the texture region to be set.
              */
-			void SetData(std::vector<uint16_t>& data, int32_t x, int32_t y, int32_t z,
-				int32_t width, int32_t height, int32_t layers);
+            void SetData(std::vector<uint16_t>& data, int32_t x, int32_t y, int32_t z,
+                int32_t width, int32_t height, int32_t layers);
 
             /**
             * Sets the data of the texture object.

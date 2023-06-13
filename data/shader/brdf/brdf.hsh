@@ -1,53 +1,53 @@
 #include <../common/PI.hsh>
 
 struct BRDFSample {
-	vec3 reflectance;
-	vec3 L;
-	float pdf;
+    vec3 reflectance;
+    vec3 L;
+    float pdf;
 };
 
 vec3 FresnelSchlick(vec3 F0, float F90, float CosTheta) {
 
-	return F0 + (vec3(F90) - F0) * pow(1.0 - CosTheta, 5.0);
+    return F0 + (vec3(F90) - F0) * pow(1.0 - CosTheta, 5.0);
 
 }
 
 float RenormalizedDisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness) {
 
-	float energyBias = mix(0.0, 0.5, linearRoughness);
-	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
-	float FD90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
-	float lightScatter = FresnelSchlick(vec3(1.0), FD90, NdotL).r;
-	float viewScatter = FresnelSchlick(vec3(1.0), FD90, NdotV).r;
+    float energyBias = mix(0.0, 0.5, linearRoughness);
+    float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
+    float FD90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+    float lightScatter = FresnelSchlick(vec3(1.0), FD90, NdotL).r;
+    float viewScatter = FresnelSchlick(vec3(1.0), FD90, NdotV).r;
 
-	return lightScatter * viewScatter * energyFactor;
+    return lightScatter * viewScatter * energyFactor;
 
 }
 
 float VisibilitySmithGGXSeparable(float CosTheta, float alpha) {
 
-	float alpha2 = alpha * alpha;
-	return 2.0 / (1.0 + sqrt(alpha2 + (1 - alpha2) * CosTheta * CosTheta));
+    float alpha2 = alpha * alpha;
+    return 2.0 / (1.0 + sqrt(alpha2 + (1 - alpha2) * CosTheta * CosTheta));
 
 }
 
 float VisibilitySmithGGXCorrelated(float NdotL, float NdotV, float alpha) {
 
-	float alpha2 = alpha * alpha;
-	float GGXL = NdotV * sqrt((-NdotL * alpha2 + NdotL) * NdotL + alpha2);
-	float GGXV = NdotL * sqrt((-NdotV * alpha2 + NdotV) * NdotV + alpha2);
+    float alpha2 = alpha * alpha;
+    float GGXL = NdotV * sqrt((-NdotL * alpha2 + NdotL) * NdotL + alpha2);
+    float GGXV = NdotL * sqrt((-NdotV * alpha2 + NdotV) * NdotV + alpha2);
 
-	// Avoid NaN
-	return 0.5 / (GGXL + GGXV + 0.0000001);
+    // Avoid NaN
+    return 0.5 / (GGXL + GGXV + 0.0000001);
 
 }
 
 float DistributionGGX(float NdotH, float alpha) {
 
-	float alpha2 = alpha * alpha;
-	float f = (NdotH * alpha2 - NdotH) * NdotH + 1.0;
+    float alpha2 = alpha * alpha;
+    float f = (NdotH * alpha2 - NdotH) * NdotH + 1.0;
 
-	// Avoid NaN
-	return alpha2 / (f * f + 0.0000001) * INV_PI;
+    // Avoid NaN
+    return alpha2 / (f * f + 0.0000001) * INV_PI;
 
 }

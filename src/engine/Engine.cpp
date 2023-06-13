@@ -5,6 +5,7 @@
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "texture/Texture.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -16,14 +17,14 @@ namespace Atlas {
 
     Window* Engine::DefaultWindow = nullptr;
 
-	void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
+    void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
 #endif
-		if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
-			SDL_Init(SDL_INIT_EVERYTHING);
-		}
+        if (SDL_WasInit(SDL_INIT_EVERYTHING) != SDL_INIT_EVERYTHING) {
+            SDL_Init(SDL_INIT_EVERYTHING);
+        }
 
         Loader::AssetLoader::SetAssetDirectory(assetDirectory);
         Loader::ShaderLoader::SetSourceDirectory(shaderDirectory);
@@ -50,13 +51,13 @@ namespace Atlas {
         Graphics::Extensions::Process();
 
         // Do the setup for all the classes that need static setup
-		Loader::AssetLoader::Init();
-		Common::Random::Init();
+        Loader::AssetLoader::Init();
+        Common::Random::Init();
         PipelineManager::Init();
 
-		Audio::AudioManager::Configure(48000, 2, 1024);
+        Audio::AudioManager::Configure(48000, 2, 1024);
 
-		Clock::Update();
+        Clock::Update();
 
         // Only then create engine instance. This makes sure that the engine instance already
         // has access to all graphics functionality and all other functionality on construction
@@ -71,6 +72,7 @@ namespace Atlas {
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
+        Texture::Texture::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -80,7 +82,7 @@ namespace Atlas {
     void Engine::Update() {
 
         Clock::Update();
-		Graphics::Profiler::BeginFrame();
+        Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
         PipelineManager::Update();
 

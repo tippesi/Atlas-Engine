@@ -8,26 +8,26 @@
 
 namespace Atlas {
 
-	namespace Tools {
+    namespace Tools {
 
-		class ImpostorTool {
+        class ImpostorTool {
 
-		public:
-			static Mesh::Impostor* GenerateImpostor(Mesh::Mesh* mesh,
-				int32_t views, int32_t resolution, bool octahedron = false);
+        public:
+            static Mesh::Impostor* GenerateImpostor(Mesh::Mesh* mesh,
+                int32_t views, int32_t resolution, bool octahedron = false);
 
-		private:
-			static vec3 HemiOctahedronToUnitVector(vec2 coord);
+        private:
+            static vec3 HemiOctahedronToUnitVector(vec2 coord);
 
-			static vec2 UnitVectorToHemiOctahedron(vec3 dir);
+            static vec2 UnitVectorToHemiOctahedron(vec3 dir);
 
-			static vec3 OctahedronToUnitVector(vec2 coord);
+            static vec3 OctahedronToUnitVector(vec2 coord);
 
-			static vec2 UnitVectorToOctahedron(vec3 dir);
+            static vec2 UnitVectorToOctahedron(vec3 dir);
 
-		};
+        };
 
-	}
+    }
 
 }
 

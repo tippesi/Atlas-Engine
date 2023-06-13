@@ -4,9 +4,9 @@ namespace Atlas {
     
     namespace Audio {
 
-		AudioStream& AudioStream::operator=(const AudioStream& that) {
+        AudioStream& AudioStream::operator=(const AudioStream& that) {
 
-		    if (this != &that) {
+            if (this != &that) {
 
                 std::lock(mutex, that.mutex);
                 std::lock_guard<std::mutex> lock_this(mutex, std::adopt_lock);
@@ -23,140 +23,140 @@ namespace Atlas {
 
             }
 
-			return *this;
+            return *this;
 
-		}
+        }
 
-		double AudioStream::GetDuration() {
+        double AudioStream::GetDuration() {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			return (double)data->data.size() * 2.0 / (double)(data->GetFrequency() * data->GetSampleSize());
+            return (double)data->data.size() * 2.0 / (double)(data->GetFrequency() * data->GetSampleSize());
 
-		}
+        }
 
-		void AudioStream::SetTime(double time) {
+        void AudioStream::SetTime(double time) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
-			progress = progress >= 0.0 ? progress : 0.0;
+            progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
+            progress = progress >= 0.0 ? progress : 0.0;
 
-		}
+        }
 
-		double AudioStream::GetTime() {
+        double AudioStream::GetTime() {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			return 2.0 * progress * (double)data->GetChannelCount() / 
-				(double)(data->GetFrequency() * data->GetSampleSize());
+            return 2.0 * progress * (double)data->GetChannelCount() / 
+                (double)(data->GetFrequency() * data->GetSampleSize());
 
-		}
+        }
 
-		void AudioStream::SetVolume(float volume) {
+        void AudioStream::SetVolume(float volume) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			this->volume = volume;
+            this->volume = volume;
 
-		}
+        }
         
-		float AudioStream::GetVolume() {
+        float AudioStream::GetVolume() {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			return volume;
+            return volume;
 
-		}
+        }
 
-		void AudioStream::SetPitch(double pitch) {
+        void AudioStream::SetPitch(double pitch) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			this->pitch = pitch;
+            this->pitch = pitch;
 
-		}
+        }
 
-		double AudioStream::GetPitch() {
+        double AudioStream::GetPitch() {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			return pitch;
+            return pitch;
 
-		}
+        }
 
-		void AudioStream::Pause() {
+        void AudioStream::Pause() {
 
-			pause = true;
+            pause = true;
 
-		}
+        }
 
-		void AudioStream::Resume() {
+        void AudioStream::Resume() {
 
-			pause = false;
+            pause = false;
 
-		}
+        }
 
-		bool AudioStream::IsPaused() {
+        bool AudioStream::IsPaused() {
 
-			return pause;
+            return pause;
 
-		}
+        }
 
-		std::vector<int16_t> AudioStream::GetChunk(int32_t length) {
+        std::vector<int16_t> AudioStream::GetChunk(int32_t length) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			std::vector<int16_t> chunk(length);
+            std::vector<int16_t> chunk(length);
 
-			std::memset(chunk.data(), 0, chunk.size() * 2);
+            std::memset(chunk.data(), 0, chunk.size() * 2);
 
-			auto channels = (int32_t)data->GetChannelCount();
+            auto channels = (int32_t)data->GetChannelCount();
 
-			length /= channels;
+            length /= channels;
 
-			auto sampleCount = (double)data->data.size() / (double)channels - 1.0;
+            auto sampleCount = (double)data->data.size() / (double)channels - 1.0;
 
-			for (int32_t i = 0; i < length; i++) {
+            for (int32_t i = 0; i < length; i++) {
 
-				if (progress >= sampleCount) {
-					if (loop)
-						progress = fmod(progress, sampleCount);
-					else
-						break;
-				}
+                if (progress >= sampleCount) {
+                    if (loop)
+                        progress = fmod(progress, sampleCount);
+                    else
+                        break;
+                }
 
-				auto upperIndex = (int32_t)ceil(progress) * channels;
-				auto lowerIndex = (int32_t)floor(progress) * channels;
+                auto upperIndex = (int32_t)ceil(progress) * channels;
+                auto lowerIndex = (int32_t)floor(progress) * channels;
 
-				auto remainder = progress - floor(progress);
-				
-				for (int32_t j = 0; j < channels; j++) {
+                auto remainder = progress - floor(progress);
+                
+                for (int32_t j = 0; j < channels; j++) {
 
-					auto sample = (double)data->data[lowerIndex + j] + remainder *
-						((double)data->data[upperIndex + j] - (double)data->data[lowerIndex + j]);
+                    auto sample = (double)data->data[lowerIndex + j] + remainder *
+                        ((double)data->data[upperIndex + j] - (double)data->data[lowerIndex + j]);
 
-					sample *= volume;
+                    sample *= volume;
 
-					chunk[i * channels + j] = (int16_t)sample;
+                    chunk[i * channels + j] = (int16_t)sample;
 
-				}
+                }
 
-				progress += pitch;
+                progress += pitch;
 
-			}
+            }
 
-			return chunk;
+            return chunk;
 
-		}
+        }
 
-		void AudioStream::ApplyFormat(const SDL_AudioSpec& spec) {
+        void AudioStream::ApplyFormat(const SDL_AudioSpec& spec) {
 
-			std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
 
-			data->ApplyFormat(spec);
+            data->ApplyFormat(spec);
 
-		}
+        }
 
     }
     

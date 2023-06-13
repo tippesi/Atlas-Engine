@@ -25,48 +25,48 @@
 
 namespace Atlas {
 
-	namespace Events {
+    namespace Events {
 
-		class EventManager {
+        class EventManager {
 
-		public:
-			/**
-			 * Updates the event manager. Is called by the engine.
-			 */
-			static void Update();
+        public:
+            /**
+             * Updates the event manager. Is called by the engine.
+             */
+            static void Update();
 
-			static void EnableTextInput();
+            static void EnableTextInput();
 
-			static void DisableTextInput();
+            static void DisableTextInput();
 
-			static EventDelegate<WindowEvent> WindowEventDelegate;
-			static EventDelegate<KeyboardEvent> KeyboardEventDelegate;
-			static EventDelegate<MouseButtonEvent> MouseButtonEventDelegate;
-			static EventDelegate<MouseMotionEvent> MouseMotionEventDelegate;
-			static EventDelegate<MouseWheelEvent> MouseWheelEventDelegate;
-			static EventDelegate<ControllerAxisEvent> ControllerAxisEventDelegate;
-			static EventDelegate<ControllerButtonEvent> ControllerButtonEventDelegate;
-			static EventDelegate<ControllerDeviceEvent> ControllerDeviceEventDelegate;
-			static EventDelegate<TouchEvent> TouchEventDelegate;
-			static EventDelegate<TextInputEvent> TextInputEventDelegate;
-			static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
-			static EventDelegate<DropEvent> DropEventDelegate;
-			static EventDelegate<ClockEvent> ClockEventDelegate;
-			static EventDelegate<> QuitEventDelegate;
+            static EventDelegate<WindowEvent> WindowEventDelegate;
+            static EventDelegate<KeyboardEvent> KeyboardEventDelegate;
+            static EventDelegate<MouseButtonEvent> MouseButtonEventDelegate;
+            static EventDelegate<MouseMotionEvent> MouseMotionEventDelegate;
+            static EventDelegate<MouseWheelEvent> MouseWheelEventDelegate;
+            static EventDelegate<ControllerAxisEvent> ControllerAxisEventDelegate;
+            static EventDelegate<ControllerButtonEvent> ControllerButtonEventDelegate;
+            static EventDelegate<ControllerDeviceEvent> ControllerDeviceEventDelegate;
+            static EventDelegate<TouchEvent> TouchEventDelegate;
+            static EventDelegate<TextInputEvent> TextInputEventDelegate;
+            static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
+            static EventDelegate<DropEvent> DropEventDelegate;
+            static EventDelegate<ClockEvent> ClockEventDelegate;
+            static EventDelegate<> QuitEventDelegate;
 
-		private:
-			struct ControllerDevice {
-				SDL_Joystick *joystick;
-				SDL_GameController *controller;
-				SDL_Haptic *haptic;
-			};
+        private:
+            struct ControllerDevice {
+                SDL_Joystick *joystick;
+                SDL_GameController *controller;
+                SDL_Haptic *haptic;
+            };
 
-			static std::mutex handlerMutex;
-			static std::unordered_map<int32_t, ControllerDevice> controllers;
+            static std::mutex handlerMutex;
+            static std::unordered_map<int32_t, ControllerDevice> controllers;
 
-		};
+        };
 
-	}
+    }
 
 }
 

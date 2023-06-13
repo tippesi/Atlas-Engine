@@ -10,34 +10,34 @@
 
 namespace Atlas {
 
-	namespace Events {
+    namespace Events {
 
-		/**
+        /**
          * A class to distribute controller device events.
          */
-		class ControllerDeviceEvent {
+        class ControllerDeviceEvent {
 
-		public:
-			explicit ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
+        public:
+            explicit ControllerDeviceEvent(SDL_ControllerDeviceEvent event) {
 
-				type = event.type;
-				device = event.which;
+                type = event.type;
+                device = event.which;
 
-			}
+            }
 
-			/**
+            /**
              * The type of the event. See {@link ControllerDeviceEvent.h} for more.
              */
-			uint32_t type;
+            uint32_t type;
 
-			/**
+            /**
              * The device ID of the game controller.
              */
-			int32_t device;
+            int32_t device;
 
-		};
+        };
 
-	}
+    }
 
 }
 

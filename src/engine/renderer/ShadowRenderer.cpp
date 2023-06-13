@@ -7,15 +7,17 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void ShadowRenderer::Init(Graphics::GraphicsDevice* device) {
 
             this->device = device;
 
+            impostorRenderer.Init(device);
+
         }
 
-		void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
             Graphics::Profiler::BeginQuery("Shadows");
@@ -47,9 +49,7 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = light->GetShadow()->longRange ?
-                    light->GetShadow()->componentCount - 1 :
-                    light->GetShadow()->componentCount;
+                auto componentCount = light->GetShadow()->componentCount;
 
                 bool isDirectionalLight = false;
                 vec3 lightLocation;
@@ -77,6 +77,15 @@ namespace Atlas {
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
+                    // For long range we just begin a render pass to clear the texture
+                    // and transition into the correct layout. Kinda dirty
+                    if (light->GetShadow()->longRange && i == light->GetShadow()->componentCount - 1) {
+                        commandList->EndRenderPass();
+                        continue;
+                    }
+
+                    auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
+
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
                     for (auto& [mesh, _] : shadowPass->meshToInstancesMap) {
@@ -90,25 +99,7 @@ namespace Atlas {
                         auto material = subData->material;
                         if (material->shadowConfig.IsValid()) continue;
 
-                        auto shaderConfig = ShaderConfig {
-                            {"shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                            {"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
-                        };
-                        auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                            .frameBuffer = frameBuffer,
-                            .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
-                        };
-
-                        if (!material->twoSided && mesh->cullBackFaces) {
-                            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
-                        }
-
-                        std::vector<std::string> macros;
-                        if (material->HasOpacityMap()) {
-                            macros.push_back("OPACITY_MAP");
-                        }
-
-                        material->shadowConfig = PipelineConfig(shaderConfig, pipelineDesc, macros);
+                        material->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                     }
 
                     // Sort materials by hash
@@ -140,16 +131,20 @@ namespace Atlas {
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
 
                         auto pushConstants = PushConstants {
-                            .lightSpaceMatrix = component->projectionMatrix * component->viewMatrix,
+                            .lightSpaceMatrix = lightSpaceMatrix,
                             .vegetation = mesh->vegetation ? 1u : 0u,
                             .invertUVs = mesh->invertUVs ? 1u : 0u
                         };
                         commandList->PushConstants("constants", &pushConstants);
 
+                        if(!instance.count) continue;
                         commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                             0, instance.offset);
 
                     }
+
+                    impostorRenderer.Render(frameBuffer, renderList, commandList,
+                        shadowPass, lightSpaceMatrix, lightLocation);
 
                     commandList->EndRenderPass();
 
@@ -161,7 +156,7 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
         Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
 
@@ -192,6 +187,32 @@ namespace Atlas {
 
         }
 
-	}
+        PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
+            Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+
+            auto material = subData->material;
+
+            auto shaderConfig = ShaderConfig {
+                {"shadowMapping.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"shadowMapping.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = frameBuffer,
+                .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+            };
+
+            if (!material->twoSided && mesh->cullBackFaces) {
+                pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+            }
+
+            std::vector<std::string> macros;
+            if (material->HasOpacityMap()) {
+                macros.push_back("OPACITY_MAP");
+            }
+
+            return PipelineConfig(shaderConfig, pipelineDesc, macros);
+
+        }
+    }
 
 }

@@ -9,52 +9,52 @@
 
 namespace Atlas {
 
-	namespace Terrain {
+    namespace Terrain {
 
-		class TerrainNode {
+        class TerrainNode {
 
-		public:
-			TerrainNode(vec2 location, float height, float sideLength, int32_t LoD, int32_t LoDCount,
-				int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex,
-				TerrainStorage* storage, TerrainStorageCell* cell);
+        public:
+            TerrainNode(vec2 location, float height, float sideLength, int32_t LoD, int32_t LoDCount,
+                int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex,
+                TerrainStorage* storage, TerrainStorageCell* cell);
 
-			~TerrainNode();
+            ~TerrainNode();
 
-			void Update(Camera* camera, std::vector<float>& LoDDistances, 
-				std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
+            void Update(Camera* camera, std::vector<float>& LoDDistances, 
+                std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
-			void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);
+            void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);
 
-			vec2 location;
-			float sideLength;
-			ivec2 globalIndex;
+            vec2 location;
+            float sideLength;
+            ivec2 globalIndex;
 
-			float leftLoDStitch = 1.0f;
-			float topLoDStitch = 1.0f;
-			float rightLoDStitch = 1.0f;
-			float bottomLoDStitch = 1.0f;
+            float leftLoDStitch = 1.0f;
+            float topLoDStitch = 1.0f;
+            float rightLoDStitch = 1.0f;
+            float bottomLoDStitch = 1.0f;
 
-			TerrainStorageCell* cell;
+            TerrainStorageCell* cell;
 
-		private:
-			void CreateChildren();
+        private:
+            void CreateChildren();
 
-			ivec2 index;
+            ivec2 index;
 
-			int32_t LoD;
-			int32_t LoDCount;
-			int32_t LoDMultiplier;
-			int32_t LoDImageOffset;
+            int32_t LoD;
+            int32_t LoDCount;
+            int32_t LoDMultiplier;
+            int32_t LoDImageOffset;
 
-			float height;
+            float height;
 
-			std::vector<TerrainNode> children;
+            std::vector<TerrainNode> children;
 
-			TerrainStorage* storage;
+            TerrainStorage* storage;
 
-		};
+        };
 
-	}
+    }
 
 }
 

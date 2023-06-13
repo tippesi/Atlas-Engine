@@ -1,13 +1,13 @@
 void groupMemoryBarrierWithSync() {
 
-	barrier();
-	groupMemoryBarrier();
+    barrier();
+    groupMemoryBarrier();
 
 }
 
 void groupSharedMemoryBarrierWithSync() {
 
-	barrier();
-	memoryBarrierShared();
+    barrier();
+    memoryBarrierShared();
 
 }

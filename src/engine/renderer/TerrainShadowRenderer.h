@@ -6,40 +6,51 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class TerrainShadowRenderer : public Renderer {
+        class TerrainShadowRenderer : public Renderer {
 
-		public:
-			TerrainShadowRenderer();
+        public:
+            TerrainShadowRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Init(Graphics::GraphicsDevice* device);
 
-		private:
-			void GetUniforms();
+            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
 
-            /*
-			OldShader::OldShader shader;
+        private:
+            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
-			OldShader::Uniform* heightScale = nullptr;
-			OldShader::Uniform* tileScale = nullptr;
-			OldShader::Uniform* patchSize = nullptr;
+            struct alignas(16) PushConstants {
 
-			OldShader::Uniform* nodeLocation = nullptr;
-			OldShader::Uniform* nodeSideLength = nullptr;
+                mat4 lightSpaceMatrix;
 
-			OldShader::Uniform* leftLoD = nullptr;
-			OldShader::Uniform* topLoD = nullptr;
-			OldShader::Uniform* rightLoD = nullptr;
-			OldShader::Uniform* bottomLoD = nullptr;
+                float nodeSideLength;
+                float tileScale;
+                float patchSize;
+                float heightScale;
 
-			OldShader::Uniform* lightSpaceMatrix = nullptr;
-            */
+                float leftLoD;
+                float topLoD;
+                float rightLoD;
+                float bottomLoD;
 
+                vec2 nodeLocation;
 
-		};
+            };
 
-	}
+            PipelineConfig GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
+                Ref<Terrain::Terrain>& terrain);
+
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
+            LightMap lightMap;
+
+            Buffer::UniformBuffer uniformBuffer;
+
+        };
+
+    }
 
 }
 

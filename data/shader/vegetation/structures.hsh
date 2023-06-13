@@ -4,9 +4,9 @@ struct MeshInformation {
 };
 
 struct MeshSubdataInformation {
-	uint meshIdx;
-	uint indicesOffset;
-	uint indicesCount;
+    uint meshIdx;
+    uint indicesOffset;
+    uint indicesCount;
 };
 
 struct Instance {

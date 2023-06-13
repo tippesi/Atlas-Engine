@@ -8,8 +8,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/)
 file(GLOB_RECURSE IMGUI_SOURCE_FILES
         "*.cpp"
         "*.c"
-		"*.h"
-		"*.hpp"
+        "*.h"
+        "*.hpp"
         )
 
 foreach(SOURCE_FILE IN ITEMS ${IMGUI_SOURCE_FILES})

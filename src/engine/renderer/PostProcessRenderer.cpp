@@ -4,19 +4,11 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
         void PostProcessRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
-
-            auto mainShaderConfig = ShaderConfig {
-                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
-                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
-            };
-            auto mainPipelineDesc = Graphics::GraphicsPipelineDesc();
-            mainPipelineSwapChainConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
-            mainPipelineFrameBufferConfig = PipelineConfig(mainShaderConfig, mainPipelineDesc);
 
             sharpenPipelineConfig = PipelineConfig("sharpen.csh");
 
@@ -29,7 +21,7 @@ namespace Atlas {
 
         }
 
-		void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
@@ -63,26 +55,11 @@ namespace Atlas {
                 commandList->BindImage(image, 3, 0);
 
                 if (taa.enable) {
-                    commandList->ImageMemoryBarrier(target->GetHistory()->image,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                    commandList->BindImage(target->GetHistory()->image,
-                        target->GetHistory()->sampler, 3, 1);
+                    target->GetHistory()->Bind(commandList, 3, 1);
                 }
                 else {
-                    commandList->BindImage(target->lightingTexture.image,
-                        target->lightingTexture.sampler, 3, 1);
+                    target->lightingTexture.Bind(commandList, 3, 1);
                 }
-
-
-                /*
-                 * if (taa.enable) {
-                    target->GetHistory()->Bind(0);
-                }
-                else {
-                    target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
-                }
-                 *
-                 */
 
                 commandList->PushConstants("constants", &sharpen.factor);
 
@@ -111,7 +88,17 @@ namespace Atlas {
 
                     SetUniforms(camera, scene);
 
-                    commandList->BindImage(target->hdrTexture.image, target->hdrTexture.sampler, 3, 0);
+                    if (sharpen.enable) {
+                        target->hdrTexture.Bind(commandList, 3, 0);
+                    }
+                    else {
+                        if (taa.enable) {
+                            target->GetHistory()->Bind(commandList, 3, 0);
+                        }
+                        else {
+                            target->lightingTexture.Bind(commandList, 3, 0);
+                        }
+                    }
                     commandList->BindBuffer(uniformBuffer, 3, 4);
 
                     commandList->Draw(6, 1, 0, 0);
@@ -124,9 +111,9 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-		}
+        }
 
-		void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
+        void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
 
             const auto& postProcessing = scene->postProcessing;
 
@@ -157,7 +144,7 @@ namespace Atlas {
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 
-		}
+        }
 
         PipelineConfig PostProcessRenderer::GetMainPipelineConfig() {
 
@@ -194,6 +181,6 @@ namespace Atlas {
 
         }
 
-	}
+    }
 
 }

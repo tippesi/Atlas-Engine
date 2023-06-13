@@ -9,48 +9,48 @@
 
 void ImguiWrapper::Load(Atlas::Window* window) {
 
-	 // Setup back-end capabilities flags
+     // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;        // We can honor io.WantSetMousePos requests (optional, rarely used)
     io.BackendPlatformName = "imgui_impl_atlas";
 
-	/*
+    /*
     io.SetClipboardTextFn = ImGui_ImplSDL2_SetClipboardText;
     io.GetClipboardTextFn = ImGui_ImplSDL2_GetClipboardText;
     io.ClipboardUserData = NULL;
-	*/
+    */
 
-	mouseCursors[ImGuiMouseCursor_Arrow] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	mouseCursors[ImGuiMouseCursor_TextInput] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-	mouseCursors[ImGuiMouseCursor_ResizeAll] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-	mouseCursors[ImGuiMouseCursor_ResizeNS] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-	mouseCursors[ImGuiMouseCursor_ResizeEW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-	mouseCursors[ImGuiMouseCursor_ResizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-	mouseCursors[ImGuiMouseCursor_ResizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-	mouseCursors[ImGuiMouseCursor_Hand] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+    mouseCursors[ImGuiMouseCursor_Arrow] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+    mouseCursors[ImGuiMouseCursor_TextInput] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
+    mouseCursors[ImGuiMouseCursor_ResizeAll] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+    mouseCursors[ImGuiMouseCursor_ResizeNS] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+    mouseCursors[ImGuiMouseCursor_ResizeEW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+    mouseCursors[ImGuiMouseCursor_ResizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+    mouseCursors[ImGuiMouseCursor_ResizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+    mouseCursors[ImGuiMouseCursor_Hand] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
 
-	// Subscribe to events
-	auto windowEventHandler = std::bind(&ImguiWrapper::WindowHandler, this, std::placeholders::_1);
-	windowID = window->windowEventDelegate.Subscribe(windowEventHandler);
+    // Subscribe to events
+    auto windowEventHandler = std::bind(&ImguiWrapper::WindowHandler, this, std::placeholders::_1);
+    windowID = window->windowEventDelegate.Subscribe(windowEventHandler);
 
-	auto mouseButtonEventHandler = std::bind(&ImguiWrapper::MouseButtonHandler, this, std::placeholders::_1);
-	mouseButtonID = window->mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
+    auto mouseButtonEventHandler = std::bind(&ImguiWrapper::MouseButtonHandler, this, std::placeholders::_1);
+    mouseButtonID = window->mouseButtonEventDelegate.Subscribe(mouseButtonEventHandler);
 
-	auto mouseMotionEventHandler = std::bind(&ImguiWrapper::MouseMotionHandler, this, std::placeholders::_1);
-	mouseMotionID = window->mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
+    auto mouseMotionEventHandler = std::bind(&ImguiWrapper::MouseMotionHandler, this, std::placeholders::_1);
+    mouseMotionID = window->mouseMotionEventDelegate.Subscribe(mouseMotionEventHandler);
 
-	auto mouseWheelEventHandler = std::bind(&ImguiWrapper::MouseWheelHandler, this, std::placeholders::_1);
-	mouseWheelID = window->mouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
+    auto mouseWheelEventHandler = std::bind(&ImguiWrapper::MouseWheelHandler, this, std::placeholders::_1);
+    mouseWheelID = window->mouseWheelEventDelegate.Subscribe(mouseWheelEventHandler);
 
-	auto keyboardEventHandler = std::bind(&ImguiWrapper::KeyboardHandler, this, std::placeholders::_1);
-	keyboardID = Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
+    auto keyboardEventHandler = std::bind(&ImguiWrapper::KeyboardHandler, this, std::placeholders::_1);
+    keyboardID = Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(keyboardEventHandler);
 
-	auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
-	textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
+    auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
+    textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
-	auto device = instance->GetGraphicsDevice();
+    auto device = instance->GetGraphicsDevice();
     pool = device->CreateDescriptorPool();
 
     //this initializes imgui for Vulkan
@@ -91,30 +91,30 @@ void ImguiWrapper::Unload() {
 
 void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-	io.DeltaTime = deltaTime;
+    io.DeltaTime = deltaTime;
 
-	auto w = (float)window->GetWidth();
-	auto h = (float)window->GetHeight();
-	auto size = glm::vec2(window->GetDrawableSize());
-	io.DisplaySize = ImVec2(w, h);
-	if (w > 0.0f && h > 0.0f)
-		io.DisplayFramebufferScale = ImVec2(size.x / w, size.y / h);
+    auto w = (float)window->GetWidth();
+    auto h = (float)window->GetHeight();
+    auto size = glm::vec2(window->GetDrawableSize());
+    io.DisplaySize = ImVec2(w, h);
+    if (w > 0.0f && h > 0.0f)
+        io.DisplayFramebufferScale = ImVec2(size.x / w, size.y / h);
 
-	if (io.WantTextInput)
-		Atlas::Events::EventManager::EnableTextInput();
-	else
-		Atlas::Events::EventManager::DisableTextInput();
+    if (io.WantTextInput)
+        Atlas::Events::EventManager::EnableTextInput();
+    else
+        Atlas::Events::EventManager::DisableTextInput();
 
-	UpdateMouseCursor();
+    UpdateMouseCursor();
     ImGui_ImplVulkan_NewFrame();
 
 }
 
 void ImguiWrapper::Render() {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
@@ -144,17 +144,17 @@ void ImguiWrapper::Render() {
 
 void ImguiWrapper::WindowHandler(Atlas::Events::WindowEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-	if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
-		io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-	}
+    if (event.type == AE_WINDOWEVENT_FOCUS_LOST) {
+        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    }
 
 }
 
 void ImguiWrapper::MouseButtonHandler(Atlas::Events::MouseButtonEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     int mouseButton = -1;
     if (event.button == AE_MOUSEBUTTON_LEFT) { mouseButton = 0; }
@@ -169,26 +169,26 @@ void ImguiWrapper::MouseButtonHandler(Atlas::Events::MouseButtonEvent event) {
 
 void ImguiWrapper::MouseMotionHandler(Atlas::Events::MouseMotionEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-	io.MousePos = ImVec2((float)event.x, (float)event.y);
+    io.MousePos = ImVec2((float)event.x, (float)event.y);
 
 }
 
 void ImguiWrapper::MouseWheelHandler(Atlas::Events::MouseWheelEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-	if (event.x > 0) io.MouseWheelH += 1;
-	if (event.x < 0) io.MouseWheelH -= 1;
-	if (event.y > 0) io.MouseWheel += 1;
-	if (event.y < 0) io.MouseWheel -= 1;
+    if (event.x > 0) io.MouseWheelH += 1;
+    if (event.x < 0) io.MouseWheelH -= 1;
+    if (event.y > 0) io.MouseWheel += 1;
+    if (event.y < 0) io.MouseWheel -= 1;
 
 }
 
 void ImguiWrapper::KeyboardHandler(Atlas::Events::KeyboardEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     UpdateKeyModifiers(event.keyModifiers);
     ImGuiKey key = KeycodeToImGuiKey(event.keyCode);
@@ -198,29 +198,29 @@ void ImguiWrapper::KeyboardHandler(Atlas::Events::KeyboardEvent event) {
 
 void ImguiWrapper::TextInputHandler(Atlas::Events::TextInputEvent event) {
 
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-	io.AddInputCharactersUTF8(event.character.c_str());
+    io.AddInputCharactersUTF8(event.character.c_str());
 
 }
 
 void ImguiWrapper::UpdateMouseCursor() {
 
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
-		return;
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
+        return;
 
-	ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
-	if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None) {
-		// Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-		SDL_ShowCursor(SDL_FALSE);
-	}
-	else
-	{
-		// Show OS mouse cursor
-		SDL_SetCursor(mouseCursors[imgui_cursor] ? mouseCursors[imgui_cursor] : mouseCursors[ImGuiMouseCursor_Arrow]);
-		SDL_ShowCursor(SDL_TRUE);
-	}
+    ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+    if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None) {
+        // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
+        SDL_ShowCursor(SDL_FALSE);
+    }
+    else
+    {
+        // Show OS mouse cursor
+        SDL_SetCursor(mouseCursors[imgui_cursor] ? mouseCursors[imgui_cursor] : mouseCursors[ImGuiMouseCursor_Arrow]);
+        SDL_ShowCursor(SDL_TRUE);
+    }
 
 }
 

@@ -13,45 +13,45 @@
 
 namespace Atlas {
 
-	class ResourceManager {
+    class ResourceManager {
 
-	public:
-		static Mesh::Mesh* GetMesh(std::string path, bool forceTangents = false);
-		static Material* GetMaterial(std::string path);
-		static Audio::AudioData* GetAudio(std::string path);
-		static Terrain::Terrain* GetTerrain(std::string path);
+    public:
+        static Mesh::Mesh* GetMesh(std::string& path, bool forceTangents = false);
+        static Material* GetMaterial(const std::string& path);
+        static Audio::AudioData* GetAudio(std::string& path);
+        static Terrain::Terrain* GetTerrain(std::string& path);
 
-		static void AddMesh(Mesh::Mesh* mesh);
-		static void AddMaterial(Material* material);
-		static void AddAudio(Audio::AudioData* audio);
-		static void AddTerrain(Terrain::Terrain* terrain);
-		static void AddScene(Scene::Scene* scene);
+        static void AddMesh(Mesh::Mesh* mesh);
+        static void AddMaterial(Material* material);
+        static void AddAudio(Audio::AudioData* audio);
+        static void AddTerrain(Terrain::Terrain* terrain);
+        static void AddScene(Scene::Scene* scene);
 
-		static void RemoveMesh(Mesh::Mesh* mesh);
-		static void RemoveMaterial(Material* material);
-		static void RemoveAudio(Audio::AudioData* audio);
-		static void RemoveTerrain(Terrain::Terrain* terrain);
+        static void RemoveMesh(Mesh::Mesh* mesh);
+        static void RemoveMaterial(Material* material);
+        static void RemoveAudio(Audio::AudioData* audio);
+        static void RemoveTerrain(Terrain::Terrain* terrain);
 
-		static std::vector<Mesh::Mesh*> GetMeshes();
-		static std::vector<Material*> GetMaterials();
-		static std::vector<Audio::AudioData*> GetAudios();
-		static std::vector<Terrain::Terrain*> GetTerrains();
-		static std::vector<Scene::Scene*> GetScenes();
+        static std::vector<Mesh::Mesh*> GetMeshes();
+        static std::vector<Material*> GetMaterials();
+        static std::vector<Audio::AudioData*> GetAudios();
+        static std::vector<Terrain::Terrain*> GetTerrains();
+        static std::vector<Scene::Scene*> GetScenes();
 
-	private:
-		static std::vector<Mesh::Mesh*> meshes;
-		static std::vector<Material*> materials;
-		static std::vector<Audio::AudioData*> audios;
-		static std::vector<Terrain::Terrain*> terrains;
-		static std::vector<Scene::Scene*> scenes;
+    private:
+        static std::vector<Mesh::Mesh*> meshes;
+        static std::vector<Material*> materials;
+        static std::vector<Audio::AudioData*> audios;
+        static std::vector<Terrain::Terrain*> terrains;
+        static std::vector<Scene::Scene*> scenes;
 
-		static std::mutex meshMutex;
-		static std::mutex materialMutex;
-		static std::mutex audioMutex;
-		static std::mutex terrainMutex;
-		static std::mutex sceneMutex;
+        static std::mutex meshMutex;
+        static std::mutex materialMutex;
+        static std::mutex audioMutex;
+        static std::mutex terrainMutex;
+        static std::mutex sceneMutex;
 
-	};
+    };
 
 }
 

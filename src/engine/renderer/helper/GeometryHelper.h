@@ -8,34 +8,34 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		namespace Helper {
+        namespace Helper {
 
-			class GeometryHelper {
+            class GeometryHelper {
 
-			public:
-				static void GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray);
+            public:
+                static void GenerateRectangleVertexArray(Buffer::VertexArray& vertexArray);
 
-				static void GenerateCubeVertexArray(Buffer::VertexArray& vertexArray);
+                static void GenerateCubeVertexArray(Buffer::VertexArray& vertexArray);
 
-				static void GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip = true);
+                static void GenerateGridVertexArray(Buffer::VertexArray& vertexArray, int32_t subdivisions, float scale, bool strip = true);
 
-				static void GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments);
+                static void GenerateSphereVertexArray(Buffer::VertexArray& vertexArray, uint32_t rings, uint32_t segments);
 
-			private:
-				static void GenerateSphere(uint32_t rings, uint32_t segments, std::vector<uint32_t>& indices,
-					std::vector<vec3>& vertices, uint32_t* indexCount, uint32_t* vertexCount);
+            private:
+                static void GenerateSphere(uint32_t rings, uint32_t segments, std::vector<uint32_t>& indices,
+                    std::vector<vec3>& vertices, uint32_t* indexCount, uint32_t* vertexCount);
 
-				static float rectangleVertices[];
+                static float rectangleVertices[];
 
-				static float cubeVertices[];
+                static float cubeVertices[];
 
-			};
+            };
 
-		}
+        }
 
-	}
+    }
 
 }
 

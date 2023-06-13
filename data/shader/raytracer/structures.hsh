@@ -7,152 +7,152 @@
 #define INVALID_RAY_ID -1
 
 struct PackedRay {
-	vec4 origin;
-	vec4 hit;
+    vec4 origin;
+    vec4 hit;
 };
 
 struct PackedRayPayload {
-	vec4 data;
+    vec4 data;
 };
 
 struct Ray {
-	int ID;
-	
-	vec3 origin;
-	vec3 direction;
-	vec3 inverseDirection;
+    int ID;
+    
+    vec3 origin;
+    vec3 direction;
+    vec3 inverseDirection;
 
-	int hitID;
-	float hitDistance;	
+    int hitID;
+    float hitDistance;    
 };
 
 struct RayPayload {
-	vec3 radiance;
-	vec3 throughput;
+    vec3 radiance;
+    vec3 throughput;
 };
 
 struct AABB {
-	
-	vec3 min;
-	vec3 max;
-	
+    
+    vec3 min;
+    vec3 max;
+    
 };
 
 struct PackedTriangle {
-	
-	vec4 v0;
-	vec4 v1;
-	vec4 v2;
-	vec4 d0;
-	vec4 d1;
-	
+    
+    vec4 v0;
+    vec4 v1;
+    vec4 v2;
+    vec4 d0;
+    vec4 d1;
+    
 };
 
 struct Triangle {
-	
-	vec3 v0;
-	vec3 v1;
-	vec3 v2;
-	
-	vec3 n0;
-	vec3 n1;
-	vec3 n2;
-	
-	vec3 t;
-	vec3 bt;
-	
-	vec2 uv0;
-	vec2 uv1;
-	vec2 uv2;
-	
-	int materialIndex;
-	bool endOfNode;
-	
+    
+    vec3 v0;
+    vec3 v1;
+    vec3 v2;
+    
+    vec3 n0;
+    vec3 n1;
+    vec3 n2;
+    
+    vec3 t;
+    vec3 bt;
+    
+    vec2 uv0;
+    vec2 uv1;
+    vec2 uv2;
+    
+    int materialIndex;
+    bool endOfNode;
+    
 };
 
 struct TextureLevel  {
-	int layer;
-	
-	int x;
-	int y;
-	
-	int width;
-	int height;
+    int layer;
+    
+    int x;
+    int y;
+    
+    int width;
+    int height;
 
-	int valid;
+    int valid;
 };
 
 struct Texture {
-	TextureLevel level0;
-	TextureLevel level1;
-	TextureLevel level2;
-	TextureLevel level3;
-	TextureLevel level4;
-	
-	int valid;
+    TextureLevel level0;
+    TextureLevel level1;
+    TextureLevel level2;
+    TextureLevel level3;
+    TextureLevel level4;
+    
+    int valid;
 };
 
 struct RaytraceMaterial {
-	
-	float baseR;
-	float baseG;
-	float baseB;
-	
-	float emissR;
-	float emissG;
-	float emissB;
-	
-	float opacity;
-	
-	float roughness;
-	float metalness;
-	float ao;
+    
+    float baseR;
+    float baseG;
+    float baseB;
+    
+    float emissR;
+    float emissG;
+    float emissB;
+    
+    float opacity;
+    
+    float roughness;
+    float metalness;
+    float ao;
 
-	float reflectance;
-	
-	float normalScale;
-	
-	int invertUVs;
-	int twoSided;
-	
-	Texture baseColorTexture;
-	Texture opacityTexture;
-	Texture normalTexture;
-	Texture roughnessTexture;
-	Texture metalnessTexture;
-	Texture aoTexture;
+    float reflectance;
+    
+    float normalScale;
+    
+    int invertUVs;
+    int twoSided;
+    
+    Texture baseColorTexture;
+    Texture opacityTexture;
+    Texture normalTexture;
+    Texture roughnessTexture;
+    Texture metalnessTexture;
+    Texture aoTexture;
 
 };
 
 struct PackedLight {
-	vec4 data0;
-	vec4 data1;
-	vec4 N;
+    vec4 data0;
+    vec4 data1;
+    vec4 N;
 };
 
 struct Light {
-	vec3 P;
-	vec3 N;
+    vec3 P;
+    vec3 N;
 
-	vec3 radiance;
+    vec3 radiance;
 
     uint type;
-	uint idx;
+    uint idx;
 
-	float pdf;
-	float area;
-	float brightness;
+    float pdf;
+    float area;
+    float brightness;
 };
 
 struct LightSample {
-	vec3 P;
-	vec3 N;
+    vec3 P;
+    vec3 N;
 
-	float pdf;
+    float pdf;
 };
 
 layout(push_constant) uniform constants {
-	int lightCount;
+    int lightCount;
     uint rayBufferOffset;
     uint rayPayloadBufferOffset;
     uint rayBufferSize;

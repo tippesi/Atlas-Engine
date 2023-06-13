@@ -22,7 +22,7 @@ namespace Atlas {
              * Constructs a UniformBuffer object.
              * @param format The format of the data
              * @param elementCount The number of elements in the vertex buffer will be filled with
-			 * @param hostAccess An optional parameter to specify if the buffer is accessed by the host
+             * @param hostAccess An optional parameter to specify if the buffer is accessed by the host
              */
             explicit UniformBuffer(size_t elementSize, size_t elementCount = 1, bool hostAccess = true);
 
@@ -37,7 +37,7 @@ namespace Atlas {
             /**
              * Sets the size of the buffer
              * @param elementCount The number of elements in the buffer
-			 * @param data Optional parameter for directly filling the buffer
+             * @param data Optional parameter for directly filling the buffer
              */
             void SetSize(size_t elementCount, void* data = nullptr);
 

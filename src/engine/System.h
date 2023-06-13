@@ -37,6 +37,8 @@
 #endif
 
 // GLM
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/common.hpp>
@@ -46,18 +48,18 @@
 
 namespace Atlas {
 
-	// Important definitions
-	using glm::vec4;
-	using glm::vec3;
-	using glm::vec2;
-	using glm::ivec2;
-	using glm::ivec3;
-	using glm::ivec4;
+    // Important definitions
+    using glm::vec4;
+    using glm::vec3;
+    using glm::vec2;
+    using glm::ivec2;
+    using glm::ivec3;
+    using glm::ivec4;
 
-	using glm::mat4;
-	using glm::mat3;
+    using glm::mat4;
+    using glm::mat3;
 
-	typedef short float16;
+    typedef short float16;
 
 }
 

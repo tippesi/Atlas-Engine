@@ -6,38 +6,27 @@
 
 namespace Atlas {
 
-	namespace Renderer {
+    namespace Renderer {
 
-		class ImpostorShadowRenderer : public Renderer {
+        class ImpostorShadowRenderer : public Renderer {
 
-		public:
-			ImpostorShadowRenderer();
+        public:
+            ImpostorShadowRenderer() = default;
 
-			void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
-				mat4 viewMatrix, mat4 projectionMatrix, vec3 location);
+            void Init(Graphics::GraphicsDevice* device);
 
-		private:
-			void GetUniforms();
+            void Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
+                Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+                mat4 lightSpaceMatrix, vec3 lightLocation);
 
-			Buffer::VertexArray vertexArray;
+        private:
+            Buffer::VertexArray vertexArray;
 
-            /*
-            OldShader::OldShader shader;
+            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer);
 
-			OldShader::Uniform* vMatrix = nullptr;
-			OldShader::Uniform* pMatrix = nullptr;
-			OldShader::Uniform* cameraLocation = nullptr;
+        };
 
-			OldShader::Uniform* center = nullptr;
-			OldShader::Uniform* radius = nullptr;
-
-			OldShader::Uniform* views = nullptr;
-			OldShader::Uniform* cutoff = nullptr;
-             */
-
-		};
-
-	}
+    }
 
 }
 
