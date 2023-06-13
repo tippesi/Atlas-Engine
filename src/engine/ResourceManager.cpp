@@ -22,7 +22,7 @@ namespace Atlas {
     std::mutex ResourceManager::terrainMutex;
     std::mutex ResourceManager::sceneMutex;
 
-    Mesh::Mesh* ResourceManager::GetMesh(std::string path, bool forceTangents) {
+    Mesh::Mesh* ResourceManager::GetMesh(std::string& path, bool forceTangents) {
 
         path = Loader::AssetLoader::GetFullPath(path);
         path = Common::Path::GetAbsolute(path);
@@ -48,7 +48,7 @@ namespace Atlas {
 
     }
 
-    Material* ResourceManager::GetMaterial(std::string path) {
+    Material* ResourceManager::GetMaterial(const std::string& path) {
 
         /*
         path = Loader::AssetLoader::GetFullPath(path);
@@ -72,7 +72,7 @@ namespace Atlas {
 
     }
 
-    Audio::AudioData* ResourceManager::GetAudio(std::string path) {
+    Audio::AudioData* ResourceManager::GetAudio(std::string& path) {
 
         path = Loader::AssetLoader::GetFullPath(path);
         path = Common::Path::GetAbsolute(path);
@@ -91,7 +91,7 @@ namespace Atlas {
 
     }
 
-    Terrain::Terrain* ResourceManager::GetTerrain(std::string path) {
+    Terrain::Terrain* ResourceManager::GetTerrain(std::string& path) {
 
         path = Loader::AssetLoader::GetFullPath(path);
         path = Common::Path::GetAbsolute(path);

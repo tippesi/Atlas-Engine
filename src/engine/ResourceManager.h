@@ -16,10 +16,10 @@ namespace Atlas {
     class ResourceManager {
 
     public:
-        static Mesh::Mesh* GetMesh(std::string path, bool forceTangents = false);
-        static Material* GetMaterial(std::string path);
-        static Audio::AudioData* GetAudio(std::string path);
-        static Terrain::Terrain* GetTerrain(std::string path);
+        static Mesh::Mesh* GetMesh(std::string& path, bool forceTangents = false);
+        static Material* GetMaterial(const std::string& path);
+        static Audio::AudioData* GetAudio(std::string& path);
+        static Terrain::Terrain* GetTerrain(std::string& path);
 
         static void AddMesh(Mesh::Mesh* mesh);
         static void AddMaterial(Material* material);

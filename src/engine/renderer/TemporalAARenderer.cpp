@@ -65,6 +65,8 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
+            commandList->ImageMemoryBarrier(lastHistory->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
             Graphics::Profiler::EndQuery();
 
         }
