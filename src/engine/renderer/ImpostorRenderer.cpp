@@ -5,92 +5,76 @@ namespace Atlas {
 
     namespace Renderer {
 
-        ImpostorRenderer::ImpostorRenderer() {
+        void ImpostorRenderer::Init(Graphics::GraphicsDevice* device) {
 
-            /*
+            this->device = device;
+
             Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-
-            shaderBatch.AddStage(AE_VERTEX_STAGE, "impostor/impostor.vsh");
-            shaderBatch.AddStage(AE_FRAGMENT_STAGE, "impostor/impostor.fsh");
-
-            interpolationConfig.AddMacro("INTERPOLATION");
-
-            shaderBatch.AddConfig(&normalConfig);
-            shaderBatch.AddConfig(&interpolationConfig);
-
-            GetUniforms();
-             */
 
         }
 
-        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-            RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
+        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Graphics::CommandList* commandList, RenderList* renderList,
+            std::unordered_map<void*, uint16_t> materialMap) {
 
-            /*
-            Profiler::BeginQuery("Impostors");
+            struct alignas(16) PushConstants {
+                vec4 center = vec4(0.0f);
 
-            glDisable(GL_CULL_FACE);
+                float radius = 1.0f;
+                int views = 1;
+                float cutoff = 1.0f;
+                uint32_t materialIdx = 0;
+            };
 
-            vertexArray.Bind();
+            Graphics::Profiler::BeginQuery("Impostors");
+
+            auto mainPass = renderList->GetMainPass();
+
+            vertexArray.Bind(commandList);
 
             for (uint8_t i = 0; i < 2; i++) {
 
-                switch (i) {
-                case 0: shaderBatch.Bind(&normalConfig); break;
-                case 1: shaderBatch.Bind(&interpolationConfig); break;
-                default: break;
-                }
+                auto config = GetPipelineConfig(target->gBufferFrameBuffer, i > 0);
+                auto pipeline = PipelineManager::GetPipeline(config);
 
-                cameraRight->SetValue(camera->right);
-                cameraUp->SetValue(camera->up);
+                commandList->BindPipeline(pipeline);
 
-                vMatrix->SetValue(camera->viewMatrix);
-                pMatrix->SetValue(camera->projectionMatrix);
-                cameraLocation->SetValue(camera->GetLocation());
+                for (auto& item : mainPass->meshToInstancesMap) {
 
-                pvMatrixLast->SetValue(camera->GetLastJitteredMatrix());
-                jitterLast->SetValue(camera->GetLastJitter());
-                jitterCurrent->SetValue(camera->GetJitter());
-
-                for (auto& key : renderList->impostorBuffers) {
-
-                    auto mesh = key.first;
-                    auto buffer = key.second;
+                    auto mesh = item.first;
+                    auto instance = item.second;
 
                     // If there aren't any impostors there won't be a buffer
-                    if (!buffer)
+                    if (!instance.impostorCount)
                         continue;
 
-                    if (!mesh->impostor->interpolation)
+                    if (!mesh->impostor->interpolation && i > 0 ||
+                        mesh->impostor->interpolation && i == 0)
                         continue;
 
-                    auto actorCount = buffer->GetElementCount();
-
-                    mesh->impostor->baseColorTexture.Bind(0);
-                    mesh->impostor->roughnessMetalnessAoTexture.Bind(1);
-                    mesh->impostor->normalTexture.Bind(2);
+                    mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
+                    mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
+                    mesh->impostor->normalTexture.Bind(commandList, 3, 2);
 
                     // Base 0 is used by the materials
-                    mesh->impostor->viewPlaneBuffer.BindBase(1);
-                    buffer->BindBase(2);
+                    mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 3);
 
-                    center->SetValue(mesh->impostor->center);
-                    radius->SetValue(mesh->impostor->radius);
+                    PushConstants constants = {
+                        .center = vec4(mesh->impostor->center, 0.0f),
 
-                    views->SetValue(mesh->impostor->views);
-                    cutoff->SetValue(mesh->impostor->cutoff);
-                    materialIdx->SetValue((uint32_t)materialMap[mesh->impostor]);
+                        .radius = mesh->impostor->radius,
+                        .views = mesh->impostor->views,
+                        .cutoff = mesh->impostor->cutoff,
+                        .materialIdx = uint32_t(materialMap[mesh->impostor]),
+                    };
+                    commandList->PushConstants("constants", &constants);
 
-                    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei)actorCount);
-
+                    commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
                 }
 
             }
 
-            glEnable(GL_CULL_FACE);
-
-            Profiler::EndQuery();
-             */
+            Graphics::Profiler::EndQuery();
 
         }
 
@@ -129,11 +113,28 @@ namespace Atlas {
 
             mesh->vertexArray.Bind(commandList);
 
+            {
+                // Transfer all framebuffer images including all mips into same layout/access as end of render pass
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+                imageBarriers = {
+                    {impostor->baseColorTexture.image,            layout, access},
+                    {impostor->normalTexture.image,               layout, access},
+                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                    {frameBuffer->GetDepthImage(), layout, access},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
+
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
                 frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture.image, i, 0);
-                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 1);
-                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 2);
+                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 1);
+                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 2);
                 frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -183,33 +184,36 @@ namespace Atlas {
 
             }
 
+            {
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+                imageBarriers = {
+                    {impostor->baseColorTexture.image, layout, access},
+                    {impostor->normalTexture.image, layout, access},
+                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+                commandList->GenerateMipMap(impostor->baseColorTexture.image);
+                commandList->GenerateMipMap(impostor->normalTexture.image);
+                commandList->GenerateMipMap(impostor->roughnessMetalnessAoTexture.image);
+
+                imageBarriers = {
+                    {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
+
             commandList->EndCommands();
 
             graphicsDevice->FlushCommandList(commandList);
-
-        }
-
-        void ImpostorRenderer::GetUniforms() {
-
-            /*
-            pMatrix = shaderBatch.GetUniform("pMatrix");
-            vMatrix = shaderBatch.GetUniform("vMatrix");
-            cameraLocation = shaderBatch.GetUniform("cameraLocation");
-
-            center = shaderBatch.GetUniform("center");
-            radius = shaderBatch.GetUniform("radius");
-
-            cameraRight = shaderBatch.GetUniform("cameraRight");
-            cameraUp = shaderBatch.GetUniform("cameraUp");
-
-            views = shaderBatch.GetUniform("views");
-            cutoff = shaderBatch.GetUniform("cutoff");
-            materialIdx = shaderBatch.GetUniform("materialIdx");
-
-            pvMatrixLast = shaderBatch.GetUniform("pvMatrixLast");
-            jitterLast = shaderBatch.GetUniform("jitterLast");
-            jitterCurrent = shaderBatch.GetUniform("jitterCurrent");
-             */
 
         }
 
@@ -235,13 +239,14 @@ namespace Atlas {
 
             for (auto &attachment : attachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
             auto renderPassDesc = Graphics::RenderPassDesc{
                 .colorAttachments = {attachments[0], attachments[1], attachments[2]},
-                .depthAttachment = {attachments[3]}
+                .depthAttachment = {attachments[3]},
+                .colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 0.0f } } },
             };
             auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
 
@@ -249,8 +254,8 @@ namespace Atlas {
                 .renderPass = renderPass,
                 .colorAttachments = {
                     {impostor->baseColorTexture.image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture.image, 0, true},
-                    {impostor->normalTexture.image, 0, true}
+                    {impostor->normalTexture.image, 0, true},
+                    {impostor->roughnessMetalnessAoTexture.image, 0, true}
                 },
                 .depthAttachment = {depthImage, 0, true},
                 .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
@@ -259,7 +264,24 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer:
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer, bool interpolation) {
+
+            auto shaderConfig = ShaderConfig {
+                {"impostor/impostor.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {"impostor/impostor.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                .frameBuffer = frameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+            };
+
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+
+            return interpolation ? PipelineConfig(shaderConfig, pipelineDesc, {"INTERPOLATION"}) :
+                   PipelineConfig(shaderConfig, pipelineDesc);
+
+        }
 
         PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
             Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {

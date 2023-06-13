@@ -40,10 +40,12 @@ namespace Atlas {
             uniformBufferDesc.size = sizeof(DDGIUniforms);
             ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
-            shadowRenderer.Init(device);
-            terrainShadowRenderer.Init(device);
             opaqueRenderer.Init(device);
+            impostorRenderer.Init(device);
             terrainRenderer.Init(device);
+            shadowRenderer.Init(device);
+            impostorShadowRenderer.Init(device);
+            terrainShadowRenderer.Init(device);
             downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
             aoRenderer.Init(device);
@@ -128,6 +130,7 @@ namespace Atlas {
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
             commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
+            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 2);
 
             if (scene->irradianceVolume) {
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
@@ -151,6 +154,8 @@ namespace Atlas {
                 ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
 
                 terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
+
+                impostorRenderer.Render(viewport, target, camera, commandList, &renderList, materialMap);
 
                 commandList->EndRenderPass();
 

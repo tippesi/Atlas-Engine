@@ -11,7 +11,9 @@ namespace Atlas {
         class ImpostorShadowRenderer : public Renderer {
 
         public:
-            ImpostorShadowRenderer();
+            ImpostorShadowRenderer() = default;
+
+            void Init(Graphics::GraphicsDevice* device);
 
             void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
                 mat4 viewMatrix, mat4 projectionMatrix, vec3 location);

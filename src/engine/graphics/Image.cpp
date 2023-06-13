@@ -55,17 +55,19 @@ namespace Atlas {
 
             // This will just duplicate the view for single-layered images, don't care for now
             if (desc.type != ImageType::ImageCube) {
-                layerViews.resize(layers);
+                attachmentViews.resize(layers);
                 for (uint32_t i = 0; i < layers; i++) {
                     imageViewInfo.subresourceRange.baseArrayLayer = i;
                     imageViewInfo.subresourceRange.layerCount = 1;
-                    VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[i]))
+                    // For attachments, we only want one mip level
+                    imageViewInfo.subresourceRange.levelCount = 1;
+                    VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[i]))
                 }
             }
             else {
                 // A cubemap can only have one valid view
-                layerViews.resize(1);
-                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &layerViews[0]))
+                attachmentViews.resize(1);
+                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[0]))
             }
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers);
@@ -75,7 +77,7 @@ namespace Atlas {
         Image::~Image() {
 
             vkDestroyImageView(device->device, view, nullptr);
-            for (auto layerView : layerViews) {
+            for (auto layerView : attachmentViews) {
                 vkDestroyImageView(device->device, layerView, nullptr);
             }
             vmaDestroyImage(memoryManager->allocator, image, allocation);

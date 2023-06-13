@@ -98,20 +98,12 @@ namespace Atlas {
                 format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 
             VkImageUsageFlags additionalUsageFlags = {};
-            if (generateMipMaps) {
-                additionalUsageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            }
             // We assume this texture was generated not for exclusive, but e.g. as framebuffer/storage texture
-            if (!generateMipMaps) {
-                if (depthFormat) {
-                    additionalUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-                }
-                else {
-                    additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                    additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
-                }
+            if (depthFormat) {
+                additionalUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             }
             else {
+                additionalUsageFlags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 additionalUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
             }
 

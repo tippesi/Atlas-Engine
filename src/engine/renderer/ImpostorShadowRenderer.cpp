@@ -6,7 +6,7 @@ namespace Atlas {
 
     namespace Renderer {
 
-        ImpostorShadowRenderer::ImpostorShadowRenderer() {
+        void ImpostorShadowRenderer::Init(Graphics::GraphicsDevice *device) {
 
             /*
             Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);

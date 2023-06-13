@@ -72,7 +72,7 @@ namespace Atlas {
                 if (colorAttachment.isValid) {
                     assert(colorAttachment.layer < colorAttachment.image->layers &&
                         "Image doesn't contain this layer");
-                    imageViews.push_back(colorAttachment.image->layerViews[colorAttachment.layer]);
+                    imageViews.push_back(colorAttachment.image->attachmentViews[colorAttachment.layer]);
                 }
             }
 
@@ -81,7 +81,7 @@ namespace Atlas {
             if (depthAttachment.isValid) {
                 assert(depthAttachment.layer < depthAttachment.image->layers &&
                        "Image doesn't contain this layer");
-                imageViews.push_back(depthAttachment.image->layerViews[depthAttachment.layer]);
+                imageViews.push_back(depthAttachment.image->attachmentViews[depthAttachment.layer]);
             }
 
             if (isComplete) {

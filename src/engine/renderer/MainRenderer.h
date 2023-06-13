@@ -7,9 +7,11 @@
 #include "RenderBatch.h"
 
 #include "OpaqueRenderer.h"
+#include "ImpostorRenderer.h"
 #include "TerrainRenderer.h"
 #include "OceanRenderer.h"
 #include "ShadowRenderer.h"
+#include "ImpostorShadowRenderer.h"
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
 #include "DirectLightRenderer.h"
@@ -208,8 +210,10 @@ namespace Atlas {
             Buffer::VertexArray cubeVertexArray;
 
             OpaqueRenderer opaqueRenderer;
+            ImpostorRenderer impostorRenderer;
             TerrainRenderer terrainRenderer;
             ShadowRenderer shadowRenderer;
+            ImpostorShadowRenderer impostorShadowRenderer;
             VegetationRenderer vegetationRenderer;
             TerrainShadowRenderer terrainShadowRenderer;
             DecalRenderer decalRenderer;

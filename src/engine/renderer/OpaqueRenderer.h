@@ -5,7 +5,6 @@
 #include "../RenderList.h"
 
 #include "Renderer.h"
-#include "ImpostorRenderer.h"
 
 #include <mutex>
 
@@ -24,11 +23,9 @@ namespace Atlas {
                 Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
-            void RenderImpostor(Viewport* viewport, const std::vector<mat4>& viewMatrices,
-                mat4 projectionMatrix, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
-
         private:
-            ImpostorRenderer impostorRenderer;
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, RenderTarget* target);
 
             struct PushConstants {
                 uint32_t vegetation;

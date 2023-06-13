@@ -9,13 +9,13 @@ namespace Atlas {
 
             baseColorTexture = Atlas::Texture::Texture2DArray(resolution,
                 resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
             roughnessMetalnessAoTexture = Atlas::Texture::Texture2DArray(resolution,
                 resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
             normalTexture = Atlas::Texture::Texture2DArray(resolution,
                 resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 
         }
 
@@ -34,8 +34,8 @@ namespace Atlas {
 
             }
 
-            //viewPlaneBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(ViewPlane),
-            //    0, viewPlanes.size(), viewPlanes.data());
+            viewPlaneBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                sizeof(ViewPlane), viewPlanes.size(), viewPlanes.data());
 
         }
 
