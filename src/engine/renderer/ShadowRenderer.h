@@ -24,6 +24,11 @@ namespace Atlas {
                 Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+
+            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+
             using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 
             struct PushConstants {
@@ -31,8 +36,6 @@ namespace Atlas {
                 uint32_t vegetation;
                 uint32_t invertUVs;
             };
-
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
 
             LightMap lightMap;
 

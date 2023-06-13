@@ -246,7 +246,7 @@ namespace Atlas {
             auto renderPassDesc = Graphics::RenderPassDesc{
                 .colorAttachments = {attachments[0], attachments[1], attachments[2]},
                 .depthAttachment = {attachments[3]},
-                .colorClearValue = { .color = { { 1.0f, 1.0f, 1.0f, 0.0f } } },
+                .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
             };
             auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
 

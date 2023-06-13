@@ -15,27 +15,14 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, RenderList* renderList,
-                mat4 viewMatrix, mat4 projectionMatrix, vec3 location);
+            void Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
+                Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+                mat4 lightSpaceMatrix, vec3 lightLocation);
 
         private:
-            void GetUniforms();
-
             Buffer::VertexArray vertexArray;
 
-            /*
-            OldShader::OldShader shader;
-
-            OldShader::Uniform* vMatrix = nullptr;
-            OldShader::Uniform* pMatrix = nullptr;
-            OldShader::Uniform* cameraLocation = nullptr;
-
-            OldShader::Uniform* center = nullptr;
-            OldShader::Uniform* radius = nullptr;
-
-            OldShader::Uniform* views = nullptr;
-            OldShader::Uniform* cutoff = nullptr;
-             */
+            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer);
 
         };
 
