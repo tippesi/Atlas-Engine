@@ -12,19 +12,19 @@ namespace Atlas {
           * @note The clock event gets fired before any other
           * event in a frame.
          */
-        class ClockEvent {
+        class FrameEvent {
 
         public:
-            explicit ClockEvent(float dtime) {
+            explicit FrameEvent(float deltaTime) {
 
-                this->dtime = dtime;
+                this->deltaTime = deltaTime;
 
             }
 
             /**
              * The time delta between the last event and this.
              */
-            float dtime;
+            float deltaTime;
 
         };
 
