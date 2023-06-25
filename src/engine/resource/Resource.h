@@ -13,15 +13,35 @@ namespace Atlas {
     class ResourceHandle;
 
     template<typename T>
+    class ResourceManager;
+
+    template<class T>
+    struct ResourceLoader {
+        std::function<Ref<T>(const std::string, void*)> function;
+        void* userData = nullptr;
+    };
+
+    template<typename T>
     class Resource {
         friend class ResourceHandle<T>;
+        friend class ResourceManager<T>;
 
     public:
         Resource() = default;
 
+        Resource(const std::string& path) : path(path) {}
+
+        Resource(const std::string& path, Ref<T> data) :
+            path(path), data(data), isLoaded(data != nullptr) {}
+
         template<typename ...Args>
-        void Load(const std::string& path, Args&&... args) {
+        void Load(Args&&... args) {
             data = std::make_shared<T>(path, std::forward<Args>(args)...);
+            isLoaded = true;
+        }
+
+        void LoadWithExternalLoader(ResourceLoader<T>& loader) {
+            data = loader.loaderFunction(path, loader.userData);
             isLoaded = true;
         }
 
@@ -32,6 +52,8 @@ namespace Atlas {
 
     private:
         Ref<T> data;
+
+        std::string path;
 
         std::atomic_bool isLoaded = false;
     };
