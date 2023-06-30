@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <mutex>
 #include <unordered_map>
+#include <future>
 
 namespace Atlas {
 
@@ -39,11 +40,11 @@ namespace Atlas {
 
         }
 
-        template<class S, typename ...Args>
+        template<typename ...Args>
         static ResourceHandle<T> GetResourceWithLoader(
             std::function<Ref<T>(const std::string, void*)> loaderFunction,
-            const std::string& path, void* userData) {
-            
+            const std::string& path, Args&&... args) {
+
             CheckInitialization();
 
             {
@@ -56,11 +57,52 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            ResourceLoader<T> loader {
-                .function = loaderFunction,
-                .userData = userData
-            };
-            resources[path]->LoadWithExternalLoader(loader);
+            resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+            return ResourceHandle<T>(resources[path]);
+
+        }
+
+        template<typename ...Args>
+        static ResourceHandle<T> GetResourceAsync(const std::string& path, Args&&... args) {
+
+            static_assert(std::is_constructible<T, const std::string&, Args...>(),
+                "Resource class needs to implement constructor with provided argument type");
+
+            CheckInitialization();
+
+            {
+                std::lock_guard lock(mutex);
+                if (resources.contains(path)) {
+                    return ResourceHandle<T>(resources[path]);
+                }
+
+                resources[path] = std::make_shared<Resource<T>>(path);
+            }
+
+            // Load only after mutex is unlocked
+            std::async(Resource<T>::Load, resources[path].get(), std::forward<Args>(args)...);
+            return ResourceHandle<T>(resources[path]);
+
+        }
+
+        template<typename ...Args>
+        static ResourceHandle<T> GetResourceWithLoaderAsync(
+            std::function<Ref<T>(const std::string, void*)> loaderFunction,
+            const std::string& path, Args&&... args) {
+
+            CheckInitialization();
+
+            {
+                std::lock_guard lock(mutex);
+                if (resources.contains(path)) {
+                    return ResourceHandle<T>(resources[path]);
+                }
+
+                resources[path] = std::make_shared<Resource<T>>(path);
+            }
+
+            // Load only after mutex is unlocked
+            std::async(Resource<T>::LoadWithExternalLoader, resources[path].get(), std::forward<Args>(args)...);
             return ResourceHandle<T>(resources[path]);
 
         }

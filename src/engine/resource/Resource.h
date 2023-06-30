@@ -40,8 +40,10 @@ namespace Atlas {
             isLoaded = true;
         }
 
-        void LoadWithExternalLoader(ResourceLoader<T>& loader) {
-            data = loader.loaderFunction(path, loader.userData);
+        template<typename ...Args>
+        void LoadWithExternalLoader(std::function<Ref<T>(const std::string, void*)> loaderFunction,
+            Args&&... args) {
+            data = loaderFunction(path, std::forward<Args>(args)...);
             isLoaded = true;
         }
 
@@ -62,18 +64,24 @@ namespace Atlas {
     class ResourceHandle {
 
     public:
+        ResourceHandle() = default;
+
         ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
 
         inline bool IsLoaded() {
             return resource->isLoaded;
         }
 
-        Ref<T>& operator*() {
-            return resource->data;
+        T& operator*() {
+            return resource->data.operator*();
+        }
+
+        T* operator->() {
+            return resource->data.operator->();
         }
 
     private:
-        Ref<Resource<T>> resource;
+        Ref<Resource<T>> resource = nullptr;
 
     };
 
