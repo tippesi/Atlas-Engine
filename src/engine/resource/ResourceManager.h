@@ -41,10 +41,9 @@ namespace Atlas {
 
         }
 
-        template<typename ...Args>
         static ResourceHandle<T> GetResourceWithLoader(
-            std::function<T(const std::string, Args...)> loaderFunction,
-            const std::string& path, Args&&... args) {
+            std::function<Ref<T>(const std::string)> loaderFunction,
+            const std::string& path) {
 
             CheckInitialization();
 
@@ -58,7 +57,7 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            //resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+            resources[path]->LoadWithExternalLoader(loaderFunction);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -82,16 +81,15 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path].future = std::async(Resource<T>::Load, 
+            resources[path]->future = std::async(&Resource<T>::Load,
                 resources[path].get(), std::forward<Args>(args)...);
             return ResourceHandle<T>(resources[path]);
 
         }
 
-        template<typename ...Args>
         static ResourceHandle<T> GetResourceWithLoaderAsync(
-            std::function<Ref<T>(const std::string, Args&&... args)> loaderFunction,
-            const std::string& path, Args&&... args) {
+            std::function<Ref<T>(const std::string)> loaderFunction,
+            const std::string& path) {
 
             CheckInitialization();
 
@@ -105,8 +103,8 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path].future = std::async(Resource<T>::LoadWithExternalLoader,
-                resources[path].get(), loaderFunction, std::forward<Args>(args)...);
+            resources[path]->future = std::async(&Resource<T>::LoadWithExternalLoader,
+                resources[path].get(), loaderFunction);
             return ResourceHandle<T>(resources[path]);
 
         }

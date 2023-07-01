@@ -33,8 +33,8 @@ namespace Atlas {
                 if (!actor->visible)
                     continue;
 
-                indexCount += actor->mesh->data.GetIndexCount();
-                vertexCount += actor->mesh->data.GetVertexCount();
+                indexCount += actor->mesh->data->GetIndexCount();
+                vertexCount += actor->mesh->data->GetVertexCount();
             }
 
             int32_t triangleCount = indexCount / 3;
@@ -50,12 +50,12 @@ namespace Atlas {
                 if (!actor->visible)
                     continue;
 
-                auto& actorIndices = actor->mesh->data.indices.Get();
-                auto& actorVertices = actor->mesh->data.vertices.Get();
-                auto& actorNormals = actor->mesh->data.normals.Get();
-                auto& actorTexCoords = actor->mesh->data.texCoords.Get();
+                auto& actorIndices = actor->mesh->data->indices.Get();
+                auto& actorVertices = actor->mesh->data->vertices.Get();
+                auto& actorNormals = actor->mesh->data->normals.Get();
+                auto& actorTexCoords = actor->mesh->data->texCoords.Get();
 
-                for (auto& subData : actor->mesh->data.subData) {
+                for (auto& subData : actor->mesh->data->subData) {
 
                     auto offset = subData.indicesOffset;
                     auto count = subData.indicesCount;
@@ -65,7 +65,7 @@ namespace Atlas {
                         auto j = actorIndices[i + offset];
                         vertices[vertexCount] = actorVertices[j];
                         normals[vertexCount] = vec3(actorNormals[j]);
-                        if (actor->mesh->data.texCoords.ContainsData())
+                        if (actor->mesh->data->texCoords.ContainsData())
                             texCoords[vertexCount] = vec2(actorTexCoords[j]);
                         if ((vertexCount % 3) == 0) {
                             materialIndices[vertexCount / 3] = materialIndex;
@@ -104,7 +104,7 @@ namespace Atlas {
                 if (!actor->visible)
                     continue;
 
-                auto actorTriangleCount = (int32_t)actor->mesh->data.GetIndexCount() / 3;
+                auto actorTriangleCount = (int32_t)actor->mesh->data->GetIndexCount() / 3;
 
                 auto matrix = actor->globalMatrix;
 
@@ -341,7 +341,7 @@ namespace Atlas {
             // This is some awful stuff, there should be a way to just get the materials
             for (auto& actor : actors) {
                 if (meshes.find(actor->mesh) == meshes.end()) {
-                    auto& actorMaterials = actor->mesh->data.materials;
+                    auto& actorMaterials = actor->mesh->data->materials;
                     for (auto& material : actorMaterials) {
                         materialAccess[&material] = materialCount;
 
@@ -427,7 +427,7 @@ namespace Atlas {
 
             for (auto& actor : actors) {
                 if (meshes.find(actor->mesh) == meshes.end()) {
-                    auto& actorMaterials = actor->mesh->data.materials;
+                    auto& actorMaterials = actor->mesh->data->materials;
                     for (auto& material : actorMaterials) {
                         if (material.HasBaseColorMap())
                             baseColorTextures.push_back(material.baseColorMap);

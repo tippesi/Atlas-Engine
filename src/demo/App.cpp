@@ -209,10 +209,10 @@ void App::Render(float deltaTime) {
         };
 
         uint32_t triangleCount = 0;
-        auto sceneAABB = meshes.front()->data.aabb;
+        auto sceneAABB = meshes.front().data->aabb;
         for (auto& mesh : meshes) {
-            sceneAABB.Grow(mesh->data.aabb);
-            triangleCount += mesh->data.GetIndexCount() / 3;
+            sceneAABB.Grow(mesh.data->aabb);
+            triangleCount += mesh.data->GetIndexCount() / 3;
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
@@ -679,21 +679,22 @@ bool App::LoadScene() {
     Atlas::Texture::Cubemap sky;
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
 
+    auto loaderLambda = [](const std::string& path) {
+        return Atlas::CreateRef(Atlas::Loader::ModelLoader::LoadMesh(path));
+    };
+
     if (sceneSelection == CORNELL) {
         meshes.reserve(1);
 
-        const std::string path = "cornell/CornellBox-Original.obj";
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
-            Atlas::Loader::ModelLoader::LoadMesh,path, false, glm::mat4(1.0f), 4000
+            loaderLambda, "cornell/CornellBox-Original.obj"
         );
-
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("cornell/CornellBox-Original.obj");
         meshes.push_back(Atlas::Mesh::Mesh { meshData });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
         mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(1.10f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(1.10f),
             glm::ivec3(20));
         scene.irradianceVolume->sampleEmissives = true;
 
@@ -711,13 +712,16 @@ bool App::LoadScene() {
     else if (sceneSelection == SPONZA) {
         meshes.reserve(1);
 
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sponza/sponza.obj");
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            loaderLambda, "sponza/sponza.obj"
+        );
+        meshData.WaitForLoad();
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
         mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(0.90f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(0.90f),
             glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -739,13 +743,15 @@ bool App::LoadScene() {
     else if (sceneSelection == BISTRO) {
         meshes.reserve(1);
 
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("bistro/mesh/exterior.obj", false, glm::mat4(1.0f), 2048);
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            loaderLambda, "bistro/mesh/exterior.obj"
+        );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
         mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(.015f)));
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(0.90f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(0.90f),
             glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -766,13 +772,15 @@ bool App::LoadScene() {
     else if (sceneSelection == SANMIGUEL) {
         meshes.reserve(1);
 
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("sanmiguel/san-miguel-low-poly.obj", false, glm::mat4(1.0f), 2048);
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            loaderLambda, "sanmiguel/san-miguel-low-poly.obj"
+        );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
         mesh.SetTransform(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(1.0f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(1.0f),
             glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -793,7 +801,9 @@ bool App::LoadScene() {
     else if (sceneSelection == MEDIEVAL) {
         meshes.reserve(1);
 
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("medieval/scene.fbx", false, glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            loaderLambda, "medieval/scene.fbx"
+        );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
@@ -802,7 +812,7 @@ bool App::LoadScene() {
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(1.0f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(1.0f),
             glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -821,16 +831,17 @@ bool App::LoadScene() {
     else if (sceneSelection == PICAPICA) {
         meshes.reserve(1);
 
-        auto meshData = Atlas::Loader::ModelLoader::LoadMesh("pica pica/mesh/scene.gltf", false,
-            glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
-        for (auto& material : meshData.materials) material.twoSided = false;
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            loaderLambda, "pica pica/mesh/scene.gltf"
+        );
+        for (auto& material : meshData->materials) material.twoSided = false;
 
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
 
-        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data.aabb.Scale(1.0f),
+        scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(mesh.data->aabb.Scale(1.0f),
             glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -849,6 +860,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
+        /*
         auto meshData = Atlas::Loader::ModelLoader::LoadMesh("newsponza/Main/NewSponza_Main_Blender_glTF.gltf",
             false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
@@ -866,9 +878,9 @@ bool App::LoadScene() {
             false, glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)), 2048);
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
         meshes.back().invertUVs = true;
-
+        */
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data.aabb.Scale(1.05f), glm::ivec3(20));
+            meshes.front().data->aabb.Scale(1.05f), glm::ivec3(20));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 

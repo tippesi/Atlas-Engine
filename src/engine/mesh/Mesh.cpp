@@ -8,7 +8,8 @@ namespace Atlas {
 
     namespace Mesh {
 
-        Mesh::Mesh(MeshData &meshData, MeshMobility mobility) : data(meshData), mobility(mobility) {
+        Mesh::Mesh(ResourceHandle<MeshData> meshData,
+            MeshMobility mobility) : data(meshData), mobility(mobility) {
 
             UpdateData();
 
@@ -16,7 +17,7 @@ namespace Atlas {
 
         void Mesh::SetTransform(mat4 matrix) {
 
-            data.SetTransform(matrix);
+            data->SetTransform(matrix);
 
             UpdateData();
 
@@ -24,29 +25,29 @@ namespace Atlas {
 
         void Mesh::UpdateData() {
 
-            if (data.indices.ContainsData()) {
-                auto type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-                Buffer::IndexBuffer buffer(type, data.GetIndexCount(), data.indices.GetConvertedVoid());
+            if (data->indices.ContainsData()) {
+                auto type = data->indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+                Buffer::IndexBuffer buffer(type, data->GetIndexCount(), data->indices.GetConvertedVoid());
                 vertexArray.AddIndexComponent(buffer);
             }
-            if (data.vertices.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.vertices.GetFormat(), data.GetVertexCount(),
-                    data.vertices.GetConvertedVoid());
+            if (data->vertices.ContainsData()) {
+                Buffer::VertexBuffer buffer(data->vertices.GetFormat(), data->GetVertexCount(),
+                    data->vertices.GetConvertedVoid());
                 vertexArray.AddComponent(0, buffer);
             }
-            if (data.normals.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.normals.GetFormat(), data.GetVertexCount(),
-                    data.normals.GetConvertedVoid());
+            if (data->normals.ContainsData()) {
+                Buffer::VertexBuffer buffer(data->normals.GetFormat(), data->GetVertexCount(),
+                    data->normals.GetConvertedVoid());
                 vertexArray.AddComponent(1, buffer);
             }
-            if (data.texCoords.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.texCoords.GetFormat(), data.GetVertexCount(),
-                    data.texCoords.GetConvertedVoid());
+            if (data->texCoords.ContainsData()) {
+                Buffer::VertexBuffer buffer(data->texCoords.GetFormat(), data->GetVertexCount(),
+                    data->texCoords.GetConvertedVoid());
                 vertexArray.AddComponent(2, buffer);
             }
-            if (data.tangents.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.tangents.GetFormat(), data.GetVertexCount(),
-                    data.tangents.GetConvertedVoid());
+            if (data->tangents.ContainsData()) {
+                Buffer::VertexBuffer buffer(data->tangents.GetFormat(), data->GetVertexCount(),
+                    data->tangents.GetConvertedVoid());
                 vertexArray.AddComponent(3, buffer);
             }
 

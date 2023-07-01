@@ -49,10 +49,8 @@ namespace Atlas {
             isLoaded = true;
         }
 
-        template<typename ...Args>
-        void LoadWithExternalLoader(std::function<Ref<T>(const std::string, void*)> loaderFunction,
-            Args&&... args) {
-            //data = loaderFunction(path, std::forward<Args>(args)...);
+        void LoadWithExternalLoader(std::function<Ref<T>(const std::string)> loaderFunction) {
+            data = loaderFunction(path);
             isLoaded = true;
         }
 
@@ -67,7 +65,7 @@ namespace Atlas {
         std::string path;
 
         std::atomic_bool isLoaded = false;
-        std::future<Ref<T>> future;
+        std::future<void> future;
     };
 
     template<typename T>
@@ -84,6 +82,8 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (resource != nullptr) {
+                if (!resource->future.valid())
+                    return;
                 resource->future.wait();
             }
         }

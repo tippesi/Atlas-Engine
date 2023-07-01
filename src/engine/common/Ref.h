@@ -14,6 +14,11 @@ namespace Atlas {
     template<typename T>
     using Weak = std::weak_ptr<T>;
 
+    template<typename T>
+    Ref<T> CreateRef(const T& t) {
+        return std::make_shared<T>(t);
+    }
+
 }
 
 #endif

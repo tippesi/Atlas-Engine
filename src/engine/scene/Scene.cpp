@@ -108,7 +108,7 @@ namespace Atlas {
             }
 
             for (auto mesh : meshes) {
-                for (auto& material : mesh->data.materials) {
+                for (auto& material : mesh->data->materials) {
                     materials.push_back(&material);
                 }
             }
