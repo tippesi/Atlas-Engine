@@ -209,10 +209,10 @@ void App::Render(float deltaTime) {
         };
 
         uint32_t triangleCount = 0;
-        auto sceneAABB = meshes.front().data.aabb;
+        auto sceneAABB = meshes.front()->data.aabb;
         for (auto& mesh : meshes) {
-            sceneAABB.Grow(mesh.data.aabb);
-            triangleCount += mesh.data.GetIndexCount() / 3;
+            sceneAABB.Grow(mesh->data.aabb);
+            triangleCount += mesh->data.GetIndexCount() / 3;
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
@@ -681,6 +681,11 @@ bool App::LoadScene() {
 
     if (sceneSelection == CORNELL) {
         meshes.reserve(1);
+
+        const std::string path = "cornell/CornellBox-Original.obj";
+        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+            Atlas::Loader::ModelLoader::LoadMesh,path, false, glm::mat4(1.0f), 4000
+        );
 
         auto meshData = Atlas::Loader::ModelLoader::LoadMesh("cornell/CornellBox-Original.obj");
         meshes.push_back(Atlas::Mesh::Mesh { meshData });

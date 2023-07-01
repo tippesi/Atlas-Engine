@@ -6,6 +6,8 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <functional>
+#include <future>
 
 namespace Atlas {
 
@@ -36,14 +38,21 @@ namespace Atlas {
 
         template<typename ...Args>
         void Load(Args&&... args) {
-            data = std::make_shared<T>(path, std::forward<Args>(args)...);
+
+            if constexpr (std::is_constructible<T, const std::string&, Args...>()) {
+                data = std::make_shared<T>(path, std::forward<Args>(args)...);
+            }
+            else {
+                data = std::make_shared<T>(std::forward<Args>(args)...);
+            }
+            
             isLoaded = true;
         }
 
         template<typename ...Args>
         void LoadWithExternalLoader(std::function<Ref<T>(const std::string, void*)> loaderFunction,
             Args&&... args) {
-            data = loaderFunction(path, std::forward<Args>(args)...);
+            //data = loaderFunction(path, std::forward<Args>(args)...);
             isLoaded = true;
         }
 
@@ -58,6 +67,7 @@ namespace Atlas {
         std::string path;
 
         std::atomic_bool isLoaded = false;
+        std::future<Ref<T>> future;
     };
 
     template<typename T>
@@ -69,7 +79,13 @@ namespace Atlas {
         ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
 
         inline bool IsLoaded() {
-            return resource->isLoaded;
+            return resource != nullptr && resource->isLoaded;
+        }
+
+        inline void WaitForLoad() {
+            if (resource != nullptr) {
+                resource->future.wait();
+            }
         }
 
         T& operator*() {

@@ -17,7 +17,7 @@ namespace Atlas {
         class ModelLoader {
 
         public:
-            static Mesh::MeshData LoadMesh(std::string filename,
+            static Mesh::MeshData LoadMesh(const std::string filename,
                 bool forceTangents = false, mat4 transform = mat4(1.0f),
                 int32_t maxTextureResolution = 4096);
 
