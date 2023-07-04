@@ -17,12 +17,6 @@ namespace Atlas {
     template<typename T>
     class ResourceManager;
 
-    template<class T>
-    struct ResourceLoader {
-        std::function<Ref<T>(const std::string, void*)> function;
-        void* userData = nullptr;
-    };
-
     template<typename T>
     class Resource {
         friend class ResourceHandle<T>;
