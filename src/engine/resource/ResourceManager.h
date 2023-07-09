@@ -159,12 +159,14 @@ namespace Atlas {
 
             std::lock_guard lock(mutex);
 
-            for (auto& [_, resource] : resources) {
-                if (resource.use_count() == 1) {
-                    resource.reset();
+            for (auto it = resources.begin(); it != resources.end();) {
+                if (it->second.use_count() == 1) {
+                    it = resources.erase(it);
+                }
+                else {
+                    ++it;
                 }
             }
-
         }
 
         static void ShutdownHandler() {

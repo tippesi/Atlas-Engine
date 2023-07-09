@@ -79,6 +79,7 @@ namespace Atlas {
                 if (!resource->future.valid())
                     return;
                 resource->future.wait();
+                // resource->future.get();
             }
         }
 
