@@ -11,12 +11,6 @@ if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
 endif()
 
 # Message options #################################################################################
-if (ATLAS_OPENGL_ES)
-    message(STATUS "Using OpenGL ES")
-else()
-    message(STATUS "Using OpenGL")
-endif()
-
 if (ATLAS_EXPORT_MAIN)
     message(STATUS "Exporting main function")
 endif()

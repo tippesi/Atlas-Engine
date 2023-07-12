@@ -105,6 +105,17 @@ namespace Atlas {
             void ClearRTStructures();
 
             /**
+             * Waits for all resources to be loaded that are in the scene
+             */
+            void WaitForResourceLoad();
+
+            /**
+             * Checks if all resources are loaded
+             * @return
+             */
+            bool IsFullyLoaded();
+
+            /**
              * To overload the Add and Remove methods we need to specify this
              * here. It would just rename the method instead.
              */

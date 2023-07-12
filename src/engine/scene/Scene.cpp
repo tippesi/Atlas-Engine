@@ -39,6 +39,12 @@ namespace Atlas {
 
         void Scene::Update(Camera *camera, float deltaTime) {
 
+            auto meshes = GetMeshes();
+
+            for (auto mesh : meshes) {
+                mesh->CheckForLoad();
+            }
+
             if (terrain) {
                 terrain->Update(camera);
             }
@@ -52,7 +58,9 @@ namespace Atlas {
 
             hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
-            rayTracingData.UpdateMaterials();
+            if (rayTracingData.IsValid()) {
+                rayTracingData.UpdateMaterials();
+            }
 
         }
 
@@ -108,6 +116,8 @@ namespace Atlas {
             }
 
             for (auto mesh : meshes) {
+                if (!mesh->data.IsLoaded())
+                    continue;
                 for (auto& material : mesh->data->materials) {
                     materials.push_back(&material);
                 }
@@ -126,6 +136,30 @@ namespace Atlas {
         void Scene::ClearRTStructures() {
 
             rayTracingData.Clear();
+
+        }
+
+        void Scene::WaitForResourceLoad() {
+
+            auto meshes = GetMeshes();
+
+            for(auto mesh : meshes) {
+                mesh->data.WaitForLoad();
+            }
+
+        }
+
+        bool Scene::IsFullyLoaded() {
+
+            bool loaded = true;
+
+            auto meshes = GetMeshes();
+
+            for(auto mesh : meshes) {
+                loaded &= mesh->data.IsLoaded();
+            }
+
+            return loaded;
 
         }
     }

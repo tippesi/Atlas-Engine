@@ -76,6 +76,10 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
+                auto& rtData = scene->rayTracingData;
+
+                if (!rtData.IsValid()) return;
+
                 // Select lights once per initial ray dispatch
                 {
                     auto lightCount = lightBuffer.GetElementCount();
@@ -111,8 +115,6 @@ namespace Atlas {
 
                     lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
                 }
-
-                auto& rtData = scene->rayTracingData;
 
                 // Bind textures and buffers
                 {
@@ -177,6 +179,8 @@ namespace Atlas {
             void RayTracingHelper::DispatchRayGen(Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
+
+                if (!scene->rayTracingData.IsValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -254,6 +258,7 @@ namespace Atlas {
                 std::function<void(void)> prepare) {
 
                 auto& rtData = scene->rayTracingData;
+                if (!rtData.IsValid()) return;
 
                 // Bind textures and buffers
                 {

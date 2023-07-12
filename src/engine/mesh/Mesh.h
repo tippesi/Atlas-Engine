@@ -32,6 +32,8 @@ namespace Atlas {
 
             void UpdateData();
 
+            bool CheckForLoad();
+
             std::string name = "";
 
             ResourceHandle<MeshData> data;
@@ -52,6 +54,9 @@ namespace Atlas {
             float impostorShadowDistance = 100.0f;
 
             bool invertUVs = false;
+
+        private:
+            bool isLoaded = false;
 
         };
 

@@ -43,8 +43,9 @@ namespace Atlas {
             isLoaded = true;
         }
 
-        void LoadWithExternalLoader(std::function<Ref<T>(const std::string)> loaderFunction) {
-            data = loaderFunction(path);
+        template<class ...Args>
+        void LoadWithExternalLoader(std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
+            data = loaderFunction(path, std::forward<Args>(args)...);
             isLoaded = true;
         }
 
@@ -79,15 +80,15 @@ namespace Atlas {
                 if (!resource->future.valid())
                     return;
                 resource->future.wait();
-                // resource->future.get();
+                resource->future.get();
             }
         }
 
-        T& operator*() {
+        inline T& operator*() {
             return resource->data.operator*();
         }
 
-        T* operator->() {
+        inline T* operator->() {
             return resource->data.operator->();
         }
 

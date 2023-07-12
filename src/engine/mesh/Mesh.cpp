@@ -11,11 +11,15 @@ namespace Atlas {
         Mesh::Mesh(ResourceHandle<MeshData> meshData,
             MeshMobility mobility) : data(meshData), mobility(mobility) {
 
-            UpdateData();
+            CheckForLoad();
 
         }
 
         void Mesh::SetTransform(mat4 matrix) {
+
+            if (!data.IsLoaded()) {
+                data.WaitForLoad();
+            }
 
             data->SetTransform(matrix);
 
@@ -50,6 +54,18 @@ namespace Atlas {
                     data->tangents.GetConvertedVoid());
                 vertexArray.AddComponent(3, buffer);
             }
+
+        }
+
+        bool Mesh::CheckForLoad() {
+
+            if (data.IsLoaded() && !isLoaded) {
+                isLoaded = true;
+
+                UpdateData();
+            }
+
+            return isLoaded;
 
         }
 

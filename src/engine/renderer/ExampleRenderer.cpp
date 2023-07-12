@@ -116,12 +116,8 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                // Loading a mesh and setup pipeline
-                auto loaderLambda = [](const std::string& path) {
-                    return Atlas::CreateRef(Atlas::Loader::ModelLoader::LoadMesh(path));
-                };
                 auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
-                    loaderLambda, "sponza/sponza.obj"
+                    Atlas::Loader::ModelLoader::LoadMesh, "sponza/sponza.obj", false, glm::mat4(1.0f), 2048
                 );
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 

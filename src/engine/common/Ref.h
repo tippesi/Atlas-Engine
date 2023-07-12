@@ -19,6 +19,11 @@ namespace Atlas {
         return std::make_shared<T>(t);
     }
 
+    template<typename T, typename ...Args>
+    Ref<T> CreateRef(Args&&... args) {
+        return std::make_shared<T>(std::forward<Args>(args)...);
+    }
+
 }
 
 #endif

@@ -37,7 +37,9 @@ private:
         NEWSPONZA,
         BISTRO,
         MEDIEVAL,
-        PICAPICA
+        PICAPICA,
+        SUBWAY,
+        MATERIALS
     };
 
     void DisplayLoadingScreen();
@@ -45,10 +47,11 @@ private:
     bool IsSceneAvailable(SceneSelection selection);
     bool LoadScene();
     void UnloadScene();
+    void CheckLoadScene();
 
     void SetResolution(int32_t width, int32_t height);
 
-    SceneSelection sceneSelection = SPONZA;
+    SceneSelection sceneSelection = NEWSPONZA;
 
     Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
     Atlas::RenderTarget renderTarget;
@@ -83,6 +86,8 @@ private:
     int32_t windowHeight = 1080;
 
     float cameraSpeed = 7.0f;
+
+    bool loadingComplete = false;
 
     ImguiWrapper imguiWrapper;
 

@@ -19,6 +19,8 @@ namespace Atlas {
 
         void RTData::Update() {
 
+            isValid = false;
+
             auto actors = scene->GetMeshActors();
 
             if (!actors.size()) return;
@@ -30,7 +32,7 @@ namespace Atlas {
             auto materialAccess = UpdateMaterials(materials, true);
 
             for (auto& actor : actors) {
-                if (!actor->visible)
+                if (!actor->visible || !actor->mesh->data.IsLoaded())
                     continue;
 
                 indexCount += actor->mesh->data->GetIndexCount();
@@ -47,7 +49,7 @@ namespace Atlas {
             vertexCount = 0;
 
             for (auto& actor : actors) {
-                if (!actor->visible)
+                if (!actor->visible || !actor->mesh->data.IsLoaded())
                     continue;
 
                 auto& actorIndices = actor->mesh->data->indices.Get();
@@ -317,6 +319,8 @@ namespace Atlas {
                 }
             }
 
+            isValid = false;
+
         }
 
         void RTData::UpdateMaterials(bool updateTextures) {
@@ -329,6 +333,8 @@ namespace Atlas {
         std::unordered_map<Material*, int32_t> RTData::UpdateMaterials(std::vector<GPUMaterial>& materials,
             bool updateTextures) {
 
+            std::lock_guard lock(mutex);
+
             auto actors = scene->GetMeshActors();
 
             int32_t materialCount = 0;
@@ -340,7 +346,7 @@ namespace Atlas {
 
             // This is some awful stuff, there should be a way to just get the materials
             for (auto& actor : actors) {
-                if (meshes.find(actor->mesh) == meshes.end()) {
+                if (meshes.find(actor->mesh) == meshes.end() && actor->mesh->data.IsLoaded()) {
                     auto& actorMaterials = actor->mesh->data->materials;
                     for (auto& material : actorMaterials) {
                         materialAccess[&material] = materialCount;
@@ -426,7 +432,7 @@ namespace Atlas {
             std::vector<Ref<Texture::Texture2D>> aoTextures;
 
             for (auto& actor : actors) {
-                if (meshes.find(actor->mesh) == meshes.end()) {
+                if (meshes.find(actor->mesh) == meshes.end() && actor->mesh->data.IsLoaded()) {
                     auto& actorMaterials = actor->mesh->data->materials;
                     for (auto& material : actorMaterials) {
                         if (material.HasBaseColorMap())
@@ -458,12 +464,20 @@ namespace Atlas {
 
         void RTData::Clear() {
 
+            isValid = false;
+
             baseColorTextureAtlas.Clear();
             opacityTextureAtlas.Clear();
             normalTextureAtlas.Clear();
             roughnessTextureAtlas.Clear();
             metalnessTextureAtlas.Clear();
             aoTextureAtlas.Clear();
+
+        }
+
+        bool RTData::IsValid() {
+
+            return isValid;
 
         }
 
