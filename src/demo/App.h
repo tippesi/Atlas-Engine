@@ -88,6 +88,7 @@ private:
     float cameraSpeed = 7.0f;
 
     bool loadingComplete = false;
+    bool sceneReload = false;
 
     ImguiWrapper imguiWrapper;
 

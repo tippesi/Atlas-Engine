@@ -506,18 +506,12 @@ namespace Atlas {
                 if (!queue) {
                     queue = FindAndLockQueue(queueType);
                 }
-
-                if (!queue->IsTypeSupported(queueType)) {
-                    queue = FindAndLockQueue(queueType);
-                }
-
                 if (nextSubmission != nullptr && !queue->IsTypeSupported(nextSubmission->cmd->queueType)) {
                     nextQueue = FindAndLockQueue(nextSubmission->cmd->queueType);
                 }
                 else {
                     nextQueue = queue;
                 }
-
                 if (nextSubmission == nullptr) {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }

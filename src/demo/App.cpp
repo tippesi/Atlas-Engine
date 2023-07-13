@@ -90,6 +90,12 @@ void App::UnloadContent() {
 
 void App::Update(float deltaTime) {
 
+    if (sceneReload) {
+        UnloadScene();
+        LoadScene();
+        sceneReload = false;
+    }
+
     const ImGuiIO& io = ImGui::GetIO();
 
     imguiWrapper.Update(&window, deltaTime);
@@ -238,8 +244,7 @@ void App::Render(float deltaTime) {
                     auto newSceneSelection = static_cast<SceneSelection>(currentItem);
                     if (IsSceneAvailable(newSceneSelection)) {
                         sceneSelection = newSceneSelection;
-                        UnloadScene();
-                        LoadScene();
+                        sceneReload = true;
                     }
                     else {
                         openSceneNotFoundPopup = true;
