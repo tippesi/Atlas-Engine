@@ -390,6 +390,17 @@ namespace Atlas {
             bool recreateSwapChain = false;
 
             auto frame = GetFrameData();
+
+            // Do dummy commandList submit in case nothing was submitted
+            if (!frame->submittedCommandLists.size()) {
+                auto commandList = GetCommandList(GraphicsQueue);
+                commandList->BeginCommands();
+                commandList->BeginRenderPass(swapChain, true);
+                commandList->EndRenderPass();
+                commandList->EndCommands();
+                SubmitCommandList(commandList);
+            }
+
             // Lock mutex such that submissions can't happen anymore
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
 
@@ -403,7 +414,7 @@ namespace Atlas {
 
             auto presenterQueue = SubmitAllCommandLists();
 
-            if (swapChain->isComplete) {
+            if (swapChain->isComplete && frame->submittedCommandLists.size()) {
 
                 std::vector<VkSemaphore> semaphores;
                 // For now, we will only use sequential execution of queue submits,
@@ -529,6 +540,11 @@ namespace Atlas {
                 }
 
                 queue = nextQueue;
+            }
+
+            // Make sure to return the presentation queue
+            if (!frame->submissions.size()) {
+                queue = FindAndLockQueue(QueueType::PresentationQueue);
             }
 
             return queue;
