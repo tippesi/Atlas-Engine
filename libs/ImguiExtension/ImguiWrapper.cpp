@@ -68,8 +68,8 @@ void ImguiWrapper::Load(Atlas::Window* window) {
 
     //execute a gpu command to upload imgui font textures
     device->memoryManager->transferManager->ImmediateSubmit(
-        [&](VkCommandBuffer cmd) {
-        ImGui_ImplVulkan_CreateFontsTexture(cmd);
+        [&](Atlas::Graphics::CommandList* commandList) {
+        ImGui_ImplVulkan_CreateFontsTexture(commandList->commandBuffer);
     });
 
     //clear font textures from cpu data
@@ -138,7 +138,7 @@ void ImguiWrapper::Render() {
 
     commandList->EndCommands();
 
-    device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    device->SubmitCommandList(commandList);
 
 }
 

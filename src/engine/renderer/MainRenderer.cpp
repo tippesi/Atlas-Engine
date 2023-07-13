@@ -111,7 +111,7 @@ namespace Atlas {
                 .domain = Graphics::BufferDomain::Host,
                 .hostAccess = Graphics::BufferHostAccess::Sequential,
                 .data = materials.data(),
-                .size = sizeof(PackedMaterial) * materials.size(),
+                .size = sizeof(PackedMaterial) * std::max(materials.size(), 1ul),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);

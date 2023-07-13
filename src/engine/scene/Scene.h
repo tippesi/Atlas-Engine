@@ -35,8 +35,8 @@ namespace Atlas {
             /**
              * Constructs a scene object.
              */
-            Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5), 
-                rayTracingData(this) {}
+            Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5),
+                      rtData(this) {}
 
             /**
              * Constructs a scene object.
@@ -115,6 +115,8 @@ namespace Atlas {
              */
             bool IsFullyLoaded();
 
+            bool IsRtDataValid();
+
             /**
              * To overload the Add and Remove methods we need to specify this
              * here. It would just rename the method instead.
@@ -135,11 +137,12 @@ namespace Atlas {
             PostProcessing::PostProcessing postProcessing;
 
         private:
-            RTData rayTracingData;
-
             std::unordered_map<Mesh::Mesh*, int32_t> rootMeshMap;
 
+            RTData rtData;
+
             bool hasChanged = true;
+            bool rtDataValid = false;
 
         };
 

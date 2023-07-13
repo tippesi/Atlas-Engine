@@ -153,7 +153,7 @@ void App::Render(float deltaTime) {
         auto debug = debugAo || debugReflection || debugClouds || debugSSS;
 
         if (debug) {
-            auto commandList = graphicsDevice->GetCommandList();
+            auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
             commandList->BeginCommands();
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
@@ -983,7 +983,7 @@ void App::CheckLoadScene() {
     static std::future<void> future;
 
     if (!future.valid()) {
-        future = std::async(&Atlas::Scene::Scene::BuildRTStructures, &scene);
+        future = std::async(std::launch::async, &Atlas::Scene::Scene::BuildRTStructures, &scene);
         return;
     }
     else {
@@ -1047,6 +1047,8 @@ void App::CheckLoadScene() {
     scene.irradianceVolume->useShadowMap = true;
 
     Atlas::Clock::ResetAverage();
+
+    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
 
     loadingComplete = true;
 

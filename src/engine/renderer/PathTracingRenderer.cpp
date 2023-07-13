@@ -36,6 +36,8 @@ namespace Atlas {
         void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
             ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
+            if (!scene->IsRtDataValid()) return;
+
             Graphics::Profiler::BeginQuery("Path tracing");
 
             auto width = renderTarget->GetWidth();

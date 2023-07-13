@@ -55,7 +55,7 @@ namespace Atlas {
             }
 
 
-            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale, 
+            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale,
                 bool useEmissivesAsLights) {
 
                 this->scene = scene;
@@ -76,7 +76,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rayTracingData;
+                auto& rtData = scene->rtData;
 
                 if (!rtData.IsValid()) return;
 
@@ -180,7 +180,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
 
-                if (!scene->rayTracingData.IsValid()) return;
+                if (!scene->rtData.IsValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -257,7 +257,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                 std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rayTracingData;
+                auto& rtData = scene->rtData;
                 if (!rtData.IsValid()) return;
 
                 // Bind textures and buffers
@@ -463,6 +463,12 @@ namespace Atlas {
                 commandList->FillBuffer(counterBuffer0.Get(), &zero);
                 commandList->FillBuffer(counterBuffer1.Get(), &zero);
 
+                bufferBarriers.clear();
+                bufferBarriers.push_back({counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                bufferBarriers.push_back({counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
             }
 
             Buffer::Buffer* RayTracingHelper::GetRayBuffer() {
@@ -475,7 +481,7 @@ namespace Atlas {
             void RayTracingHelper::UpdateLights() {
 
                 lights.clear();
-                auto& rtData = scene->rayTracingData;
+                auto& rtData = scene->rtData;
 
                 auto lightSources = scene->GetLights();
 

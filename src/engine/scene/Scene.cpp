@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Scene {
 
         Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-            SpacePartitioning(min, max, depth), rayTracingData(this) {
+                                                          SpacePartitioning(min, max, depth), rtData(this) {
 
             AddToScene(this, &rootMeshMap);
 
@@ -58,8 +58,10 @@ namespace Atlas {
 
             hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
-            if (rayTracingData.IsValid()) {
-                rayTracingData.UpdateMaterials();
+            // Make sure this is changed just once at the start of a frame
+            rtDataValid = rtData.IsValid();
+            if (rtDataValid) {
+                rtData.UpdateMaterials();
             }
 
         }
@@ -129,13 +131,13 @@ namespace Atlas {
 
         void Scene::BuildRTStructures() {
 
-            rayTracingData.Update();
+            rtData.Update();
 
         }
 
         void Scene::ClearRTStructures() {
 
-            rayTracingData.Clear();
+            rtData.Clear();
 
         }
 
@@ -162,6 +164,13 @@ namespace Atlas {
             return loaded;
 
         }
+
+        bool Scene::IsRtDataValid() {
+
+            return rtDataValid;
+
+        }
+
     }
 
 }

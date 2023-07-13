@@ -472,7 +472,10 @@ namespace Atlas {
             }
 
             auto nextFrame = GetFrameData();
+
+            // Wait, reset and start with new semaphores
             nextFrame->WaitAndReset(device);
+            nextFrame->RecreateSemaphore(device);
 
             if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
@@ -641,12 +644,55 @@ namespace Atlas {
                     queueFamilyIndices.queueFamilies[QueueType::PresentationQueue] = counter;
                 }
 
-                if (queueFamilyIndices.IsComplete()) return true;
+                if (queueFamilyIndices.IsComplete())
+                    break;
 
                 counter++;
             }
 
-            return false;
+            if (!queueFamilyIndices.IsComplete()) return false;
+
+            counter = 0;
+            for (auto& queueFamily : queueFamilies) {
+                // Try to find different queue for transfers
+                if (counter == queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue]) {
+                    counter++;
+                    continue;
+                }
+
+                if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+                    queueFamilyIndices.queueFamilies[QueueType::TransferQueue] = counter;
+                    break;
+                }
+
+                counter++;
+            }
+
+            /*
+            // This seems to be problematic, since when new commandlists are created this leads
+            // to the same semaphore to be waited on on two queues (expectation is for semaphores
+            // to be signaled already :(
+            counter = 0;
+            for (auto& queueFamily : queueFamilies) {
+                // Try to find different queue for presentation
+                if (counter == queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue] ||
+                    counter == queueFamilyIndices.queueFamilies[QueueType::TransferQueue]) {
+                    counter++;
+                    continue;
+                }
+
+                VkBool32 presentSupport = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, counter, surface, &presentSupport);
+                if (presentSupport) {
+                    queueFamilyIndices.queueFamilies[QueueType::PresentationQueue] = counter;
+                    break;
+                }
+
+                counter++;
+            }
+            */
+
+            return true;
 
         }
 
@@ -655,7 +701,8 @@ namespace Atlas {
             std::vector<VkDeviceQueueCreateInfo> queueInfos;
             std::set<uint32_t> queueFamilies = {
                     queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue].value(),
-                    queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value()
+                    queueFamilyIndices.queueFamilies[QueueType::PresentationQueue].value(),
+                    queueFamilyIndices.queueFamilies[QueueType::TransferQueue].value(),
             };
 
             for (auto queueFamily : queueFamilies) {
@@ -862,7 +909,9 @@ namespace Atlas {
 
             auto it = std::find_if(cmdLists.begin(), cmdLists.end(),
                 [&](CommandList *commandList) {
-                    if (commandList->queueType == queueType) {
+                    // Second condition condition should be given by default
+                    if (commandList->queueType == queueType &&
+                        commandList->frameIndependent == frameIndependent) {
                         bool expected = false;
                         // Check if isLocked is set to false and if so, set it to true
                         // In that case we can use this command list, otherwise continue

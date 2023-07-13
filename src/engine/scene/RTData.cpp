@@ -319,7 +319,7 @@ namespace Atlas {
                 }
             }
 
-            isValid = false;
+            isValid = true;
 
         }
 

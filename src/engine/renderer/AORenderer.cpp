@@ -47,6 +47,7 @@ namespace Atlas {
             auto ao = scene->ao;
             if (!ao || !ao->enable) return;
 
+            if (!scene->IsRtDataValid() && ao->rt) return;
             helper.SetScene(scene, 8);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);

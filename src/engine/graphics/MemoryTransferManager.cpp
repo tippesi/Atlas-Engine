@@ -14,9 +14,9 @@ namespace Atlas {
     namespace Graphics {
 
         MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager,
-            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device), memoryManager(memManager),
-            transferQueueFamilyIndex(transferQueueFamilyIndex), transferQueue(transferQueue) {
+            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device), memoryManager(memManager) {
 
+            /*
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(transferQueueFamilyIndex);
             VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
 
@@ -25,18 +25,23 @@ namespace Atlas {
 
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
             VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
+            */
 
         }
 
         MemoryTransferManager::~MemoryTransferManager() {
 
+            /*
             vkDestroyFence(device->device, fence, nullptr);
             vkDestroyCommandPool(device->device, commandPool, nullptr);
+            */
 
         }
 
         void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc) {
+
+            auto commandList = device->GetCommandList(TransferQueue, true);
 
             VmaAllocator allocator = memoryManager->allocator;
 
@@ -47,22 +52,14 @@ namespace Atlas {
             std::memcpy(destination, data, bufferCopyDesc.size);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
 
-            VkCommandBufferBeginInfo cmdBeginInfo =
-                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+            commandList->BeginCommands();
 
-            vkCmdCopyBuffer(commandBuffer, stagingAllocation.buffer, destinationBuffer->buffer, 1, &bufferCopyDesc);
+            vkCmdCopyBuffer(commandList->commandBuffer, stagingAllocation.buffer,
+                destinationBuffer->buffer, 1, &bufferCopyDesc);
 
-            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+            commandList->EndCommands();
 
-            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
-            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
-
-            // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device->device, 1, &fence))
-
-            vkResetCommandPool(device->device, commandPool, 0);
+            device->FlushCommandList(commandList);
             DestroyStagingBuffer(stagingAllocation);
 
         }
@@ -70,11 +67,10 @@ namespace Atlas {
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
             uint32_t layerOffset, uint32_t layerCount) {
 
+            auto commandList = device->GetCommandList(TransferQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            VkCommandBufferBeginInfo cmdBeginInfo =
-                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+            commandList->BeginCommands();
 
             auto formatSize = GetFormatSize(image->format);
             auto pixelCount = image->width * image->height * image->depth;
@@ -105,7 +101,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = 0;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -122,7 +118,7 @@ namespace Atlas {
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyBufferToImage(commandBuffer, stagingAllocation.buffer, image->image,
+                vkCmdCopyBufferToImage(commandList->commandBuffer, stagingAllocation.buffer, image->image,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
             }
 
@@ -140,24 +136,17 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 imageBarrier.dstAccessMask = dstAccessMask;
 
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
                 image->layout = newLayout;
                 image->accessMask = dstAccessMask;
             }
 
-            if (mipLevels > 1) GenerateMipMaps(image, commandBuffer);
+            if (mipLevels > 1) GenerateMipMaps(image, commandList->commandBuffer);
 
-            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+            commandList->EndCommands();
 
-            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
-            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
-
-            // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device->device, 1, &fence))
-
-            vkResetCommandPool(device->device, commandPool, 0);
+            device->FlushCommandList(commandList);
             DestroyStagingBuffer(stagingAllocation);
 
         }
@@ -167,11 +156,10 @@ namespace Atlas {
 
             if (block) device->WaitForIdle();
 
+            auto commandList = device->GetCommandList(TransferQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            VkCommandBufferBeginInfo cmdBeginInfo =
-                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+            commandList->BeginCommands();
 
             auto formatSize = GetFormatSize(image->format);
             auto pixelCount = image->width * image->height * image->depth;
@@ -197,7 +185,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = 0;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -214,7 +202,7 @@ namespace Atlas {
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyImageToBuffer(commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                vkCmdCopyImageToBuffer(commandList->commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     stagingAllocation.buffer, 1, &copyRegion);
             }
 
@@ -229,7 +217,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 imageBarrier.dstAccessMask = dstAccessMask;
 
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
                 image->layout = newLayout;
                 image->accessMask = dstAccessMask;
@@ -240,7 +228,7 @@ namespace Atlas {
                 VkBufferMemoryBarrier bufferBarrier = Initializers::InitBufferMemoryBarrier(stagingAllocation.buffer,
                     VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT);
 
-                vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
             }
 
@@ -249,16 +237,9 @@ namespace Atlas {
             std::memcpy(data, src, pixelCount * formatSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
 
-            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+            commandList->EndCommands();
 
-            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
-            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
-
-            // We wait here until the operation is finished
-            VK_CHECK(vkWaitForFences(device->device, 1, &fence, true, 9999999999))
-            VK_CHECK(vkResetFences(device->device, 1, &fence))
-
-            vkResetCommandPool(device->device, commandPool, 0);
+            device->FlushCommandList(commandList);
             DestroyStagingBuffer(stagingAllocation);
 
         }
@@ -337,25 +318,18 @@ namespace Atlas {
 
         }
 
-        void MemoryTransferManager::ImmediateSubmit(std::function<void(VkCommandBuffer)> &&function) {
+        void MemoryTransferManager::ImmediateSubmit(std::function<void(CommandList*)> &&function) {
 
-            VkCommandBufferBeginInfo cmdBeginInfo =
-                Initializers::InitCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            auto commandList = device->GetCommandList(TransferQueue, true);
+            VmaAllocator allocator = memoryManager->allocator;
 
-            VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+            commandList->BeginCommands();
 
-            function(commandBuffer);
+            function(commandList);
 
-            VK_CHECK(vkEndCommandBuffer(commandBuffer));
+            commandList->EndCommands();
 
-            VkSubmitInfo submit = Initializers::InitSubmitInfo(&commandBuffer);
-            VK_CHECK(vkQueueSubmit(transferQueue, 1, &submit, fence));
-
-            // We wait here until the operation is finished
-            vkWaitForFences(device->device, 1, &fence, true, 9999999999);
-            vkResetFences(device->device, 1, &fence);
-
-            vkResetCommandPool(device->device, commandPool, 0);
+            device->FlushCommandList(commandList);
 
         }
 

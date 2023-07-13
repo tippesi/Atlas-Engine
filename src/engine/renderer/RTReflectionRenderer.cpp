@@ -40,7 +40,7 @@ namespace Atlas {
             Scene::Scene* scene, Graphics::CommandList* commandList) {
             
             auto reflection = scene->reflection;
-            if (!reflection || !reflection->enable) return;
+            if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
 
             helper.SetScene(scene, 8, false);
             helper.UpdateLights();
@@ -97,9 +97,10 @@ namespace Atlas {
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
-                
+
+                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
-                rtrPipelineConfig.ManageMacro("GI", reflection->gi);
+                rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
 

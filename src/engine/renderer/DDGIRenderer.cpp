@@ -39,7 +39,7 @@ namespace Atlas {
         void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             auto volume = scene->irradianceVolume;
-            if (!volume || !volume->enable || !volume->update)
+            if (!volume || !volume->enable || !volume->update || !scene->IsRtDataValid())
                 return;
 
             Graphics::Profiler::BeginQuery("DDGI");

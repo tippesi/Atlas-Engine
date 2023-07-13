@@ -15,6 +15,7 @@ namespace Atlas {
         class MemoryManager;
         class Buffer;
         class Image;
+        class CommandList;
 
         class MemoryTransferManager {
 
@@ -36,7 +37,7 @@ namespace Atlas {
 
             void GenerateMipMaps(Image* image, VkCommandBuffer cmd);
 
-            void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
+            void ImmediateSubmit(std::function<void(CommandList*)>&& function);
 
         private:
             struct StagingBufferAllocation {
@@ -47,13 +48,6 @@ namespace Atlas {
             StagingBufferAllocation CreateStagingBuffer(size_t size);
 
             void DestroyStagingBuffer(StagingBufferAllocation& allocation);
-
-            VkFence fence;
-            VkCommandPool commandPool;
-            VkCommandBuffer commandBuffer;
-
-            uint32_t transferQueueFamilyIndex;
-            VkQueue transferQueue;
 
             GraphicsDevice* device;
             MemoryManager* memoryManager;

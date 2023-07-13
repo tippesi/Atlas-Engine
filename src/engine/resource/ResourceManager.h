@@ -104,7 +104,7 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path]->future = std::async(&Resource<T>::Load,
+            resources[path]->future = std::async(std::launch::async, &Resource<T>::Load,
                 resources[path].get(), std::forward<Args>(args)...);
             return ResourceHandle<T>(resources[path]);
 
@@ -127,7 +127,8 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path]->future = std::async(&Resource<T>::template LoadWithExternalLoader<Args...>,
+            resources[path]->future = std::async(std::launch::async,
+                &Resource<T>::template LoadWithExternalLoader<Args...>,
                 resources[path].get(), loaderFunction, std::forward<Args>(args)...);
             return ResourceHandle<T>(resources[path]);
 
@@ -150,7 +151,8 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path]->future = std::async(&Resource<T>::template LoadWithExternalLoader<Args...>,
+            resources[path]->future = std::async(std::launch::async,
+                &Resource<T>::template LoadWithExternalLoader<Args...>,
                 resources[path].get(), std::function(loaderFunction), std::forward<Args>(args)...);
             return ResourceHandle<T>(resources[path]);
 
