@@ -123,7 +123,7 @@ namespace Atlas {
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
-            Ref<Queue> GetAndLockQueue(QueueType queueType);
+            QueueRef GetAndLockQueue(QueueType queueType);
 
             void WaitForIdle() const;
 
@@ -169,10 +169,10 @@ namespace Atlas {
                 }
             };
 
-            Ref<Queue> SubmitAllCommandLists();
+            QueueRef SubmitAllCommandLists();
 
             void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-                const Ref<Queue>& queue, const Ref<Queue>& nextQueue);
+                const QueueRef& queue, const QueueRef& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions);
@@ -202,7 +202,9 @@ namespace Atlas {
             CommandList* GetOrCreateCommandList(QueueType queueType, std::mutex& mutex,
                 std::vector<CommandList*>& commandLists, bool frameIndependent);
 
-            Ref<Queue> FindAndLockQueue(QueueType queueType);
+            QueueRef FindAndLockQueue(QueueType queueType);
+
+            QueueRef FindAndLockQueue(uint32_t familyIndex);
 
             QueueFamilyIndices queueFamilyIndices;
 

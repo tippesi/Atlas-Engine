@@ -372,9 +372,9 @@ namespace Atlas {
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &cmd->commandBuffer;
 
-            auto queue = FindAndLockQueue(cmd->queueType);
-            VK_CHECK(vkQueueSubmit(queue->queue, 1, &submit, cmd->fence))
-            queue->mutex.unlock();
+            auto queue = FindAndLockQueue(cmd->queueFamilyIndex);
+            VK_CHECK(vkQueueSubmit(queue.queue, 1, &submit, cmd->fence))
+            queue.Unlock();
 
             VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 9999999999));
             VK_CHECK(vkResetFences(device, 1, &cmd->fence));
@@ -410,7 +410,7 @@ namespace Atlas {
                 // which means only the latest submit can signal its semaphore here
                 //for (auto cmd : frameData->submittedCommandLists)
                 //    semaphores.push_back(cmd->semaphore);
-                semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue->queue));
+                semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
 
                 VkPresentInfoKHR presentInfo = {};
                 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -421,8 +421,8 @@ namespace Atlas {
                 presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
                 presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
-                auto result = vkQueuePresentKHR(presenterQueue->queue, &presentInfo);
-                presenterQueue->mutex.unlock();
+                auto result = vkQueuePresentKHR(presenterQueue.queue, &presentInfo);
+                presenterQueue.Unlock();
 
                 if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
                     recreateSwapChain = true;
@@ -468,7 +468,7 @@ namespace Atlas {
 
         }
 
-        Ref<Queue> GraphicsDevice::GetAndLockQueue(Atlas::Graphics::QueueType queueType) {
+        QueueRef GraphicsDevice::GetAndLockQueue(Atlas::Graphics::QueueType queueType) {
 
             return FindAndLockQueue(queueType);
 
@@ -489,25 +489,25 @@ namespace Atlas {
 
         }
 
-        Ref<Queue> GraphicsDevice::SubmitAllCommandLists() {
+        QueueRef GraphicsDevice::SubmitAllCommandLists() {
 
             auto frame = GetFrameData();
 
             // Assume all submission are in order
-            Ref<Queue> nextQueue = nullptr;
-            Ref<Queue> queue = nullptr;
+            QueueRef nextQueue;
+            QueueRef queue;
             VkSemaphore previousSemaphore = frame->semaphore;
             for (size_t i = 0; i < frame->submissions.size(); i++) {
                 auto submission = &frame->submissions[i];
                 auto nextSubmission = i + 1 < frame->submissions.size() ? &frame->submissions[i + 1] : nullptr;
 
-                auto queueType = submission->cmd->queueType;
+                auto familyIndex = submission->cmd->queueFamilyIndex;
 
-                if (!queue) {
-                    queue = FindAndLockQueue(queueType);
+                if (!queue.valid) {
+                    queue = FindAndLockQueue(familyIndex);
                 }
-                if (nextSubmission != nullptr && !queue->IsTypeSupported(nextSubmission->cmd->queueType)) {
-                    nextQueue = FindAndLockQueue(nextSubmission->cmd->queueType);
+                if (nextSubmission != nullptr && queue.familyIndex != nextSubmission->cmd->queueFamilyIndex) {
+                    nextQueue = FindAndLockQueue(nextSubmission->cmd->queueFamilyIndex);
                 }
                 else {
                     nextQueue = queue;
@@ -517,10 +517,10 @@ namespace Atlas {
                 }
 
                 SubmitCommandList(submission, previousSemaphore, queue, nextQueue);
-                previousSemaphore = submission->cmd->GetSemaphore(nextQueue->queue);
+                previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
 
                 if (nextQueue != queue) {
-                    queue->mutex.unlock();
+                    queue.Unlock();
                 }
 
                 queue = nextQueue;
@@ -530,7 +530,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            const Ref<Queue>& queue, const Ref<Queue>& nextQueue) {
+            const QueueRef& queue, const QueueRef& nextQueue) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -541,7 +541,7 @@ namespace Atlas {
             std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
 
             std::vector<VkSemaphore> waitSemaphores;
-            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue->queue) };
+            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue.queue) };
 
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
@@ -559,7 +559,7 @@ namespace Atlas {
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &cmd->commandBuffer;
 
-            VK_CHECK(vkQueueSubmit(queue->queue, 1, &submit, cmd->fence))
+            VK_CHECK(vkQueueSubmit(queue.queue, 1, &submit, cmd->fence))
         }
 
         bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
@@ -1007,22 +1007,17 @@ namespace Atlas {
 
         }
 
-        Ref<Queue> GraphicsDevice::FindAndLockQueue(QueueType queueType) {
+        QueueRef GraphicsDevice::FindAndLockQueue(QueueType queueType) {
 
-            VkQueueFlags neededFlags = 0;
-            if (queueType == GraphicsQueue) {
-                neededFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-            }
-            if (queueType == TransferQueue) {
-                neededFlags = VK_QUEUE_TRANSFER_BIT;
-            }
+            auto threadId = std::this_thread::get_id();
 
             auto suggestedFamilyIndex = queueFamilyIndices.queueFamilies[queueType].value();
             // Try to find a queue in suggested family index first, should reduce overlapping locks
             auto& suggestedFamily = queueFamilyIndices.families[suggestedFamilyIndex];
             for (auto& queue : suggestedFamily.queues) {
-                if (queue->mutex.try_lock()) {
-                    return queue;
+                auto ref = QueueRef(queue, threadId, false);
+                if (ref.valid) {
+                    return ref;
                 }
             }
 
@@ -1035,17 +1030,31 @@ namespace Atlas {
                     continue;
 
                 for (auto& queue : queueFamily.queues) {
-                    if (queue->mutex.try_lock()) {
-                        return queue;
+                    auto ref = QueueRef(queue, threadId, false);
+                    if (ref.valid) {
+                        return ref;
                     }
                     lastSupportedQueue = queue;
                 }
             }
 
             // No queue could be locked, force hard lock on last supported queue
-            lastSupportedQueue->mutex.lock();
-            return lastSupportedQueue;
+            return QueueRef(lastSupportedQueue, threadId, true);
+        }
 
+        QueueRef GraphicsDevice::FindAndLockQueue(uint32_t familyIndex) {
+            auto threadId = std::this_thread::get_id();
+
+            // Try to find a queue in suggested family index first, should reduce overlapping locks
+            auto& suggestedFamily = queueFamilyIndices.families[familyIndex];
+            for (auto& queue : suggestedFamily.queues) {
+                auto ref = QueueRef(queue, threadId, false);
+                if (ref.valid) {
+                    return ref;
+                }
+            }
+
+            return QueueRef(suggestedFamily.queues.back(), threadId, true);
         }
 
     }

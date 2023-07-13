@@ -60,7 +60,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     init_info.Instance = instance->GetNativeInstance();
     init_info.PhysicalDevice = device->physicalDevice;
     init_info.Device = device->device;
-    init_info.Queue = queue->queue;
+    init_info.Queue = queue.queue;
     init_info.DescriptorPool = pool->GetNativePool();
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
@@ -77,7 +77,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     //clear font textures from cpu data
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
-    queue->mutex.unlock();
+    queue.Unlock();
 
 }
 
@@ -142,7 +142,7 @@ void ImguiWrapper::Render() {
 
     commandList->EndCommands();
 
-    device->SubmitCommandList(commandList);
+    device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
 }
 
