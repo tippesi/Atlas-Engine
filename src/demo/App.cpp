@@ -260,7 +260,7 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;
                 static bool vsyncMode = false;
-                static bool hdrMode = false;
+                bool hdrMode = graphicsDevice->swapChain->IsHDR();
 
                 bool fullscreen = fullscreenMode;
                 bool vsync = vsyncMode;

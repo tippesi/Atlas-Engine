@@ -222,6 +222,7 @@ namespace Atlas {
                 case VK_COLOR_SPACE_HDR10_HLG_EXT:
                 case VK_COLOR_SPACE_DOLBYVISION_EXT:
                 case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+                case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
                     return true;
                 default:
                     return false;
@@ -260,6 +261,13 @@ namespace Atlas {
                     // Prefer HDR10 HLG
                     if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
                         availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT) {
+                        selectedFormat = availableFormat;
+                        isSelectedFormatHDR = true;
+                    }
+
+                    if (availableFormat.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32 &&
+                        availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT &&
+                        selectedFormat.colorSpace != VK_COLOR_SPACE_HDR10_HLG_EXT) {
                         selectedFormat = availableFormat;
                         isSelectedFormatHDR = true;
                     }
