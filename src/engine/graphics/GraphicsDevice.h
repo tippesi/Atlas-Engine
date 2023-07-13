@@ -87,7 +87,8 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
-            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR);
+            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
+                bool preferHDRSurface = false);
 
             Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
 

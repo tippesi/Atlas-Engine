@@ -139,6 +139,7 @@ void App::Render(float deltaTime) {
     static bool debugClouds = false;
     static bool debugSSS = false;
     static bool slowMode = false;
+    static bool recreateSwapchain = false;
 
     static float cloudDepthDebug = 0.0f;
 
@@ -259,18 +260,25 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;
                 static bool vsyncMode = false;
+                static bool hdrMode = false;
 
                 bool fullscreen = fullscreenMode;
                 bool vsync = vsyncMode;
+                bool hdr = hdrMode;
 
-                ImGui::Checkbox("VSync", &vsync);
-                ImGui::Checkbox("Fullscreen", &fullscreen);
+                ImGui::Checkbox("VSync##General", &vsync);
+                ImGui::Checkbox("Fullscreen##General", &fullscreen);
+                ImGui::Checkbox("HDR##General", &hdr);
 
-                if (vsync != vsyncMode) {
+                if (vsync != vsyncMode || hdr != hdrMode) {
                     graphicsDevice->CompleteFrame();
-                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR);
-                    else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR);
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, hdr);
+                    else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, hdr);
                     vsyncMode = vsync;
+                    hdrMode = hdr;
+                    imguiWrapper.RecreateImGuiResources();
+                    graphicsDevice->WaitForIdle();
+                    recreateSwapchain = true;
                 }
                 if (fullscreen != fullscreenMode) {
                     if (fullscreen) {
@@ -619,7 +627,12 @@ void App::Render(float deltaTime) {
         }
 
         ImGui::Render();
-        imguiWrapper.Render();
+
+        if (!recreateSwapchain) {
+            imguiWrapper.Render();
+        }
+
+        //recreateSwapchain = false;
     }
 
     if (slowMode) { using namespace std::chrono_literals; std::this_thread::sleep_for(60ms); }

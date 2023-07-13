@@ -156,7 +156,7 @@ namespace Atlas {
 
         }
 
-        SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode) {
+        SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, bool preferHDRSurface) {
 
             auto nativeSurface = surface->GetNativeSurface();
             auto nativeWindow = surface->GetNativeWindow();
@@ -180,7 +180,7 @@ namespace Atlas {
             // Had some issue with passing the old swap chain and then deleting it after x frames.
             delete swapChain;
             swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                windowWidth, windowHeight, presentMode, VK_NULL_HANDLE);
+                windowWidth, windowHeight, preferHDRSurface, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
             auto frame = GetFrameData();
@@ -403,14 +403,19 @@ namespace Atlas {
 
             auto presenterQueue = SubmitAllCommandLists();
 
-            if (frame->submittedCommandLists.size() && swapChain->isComplete) {
+            if (swapChain->isComplete) {
 
                 std::vector<VkSemaphore> semaphores;
                 // For now, we will only use sequential execution of queue submits,
                 // which means only the latest submit can signal its semaphore here
                 //for (auto cmd : frameData->submittedCommandLists)
                 //    semaphores.push_back(cmd->semaphore);
-                semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                if (frame->submittedCommandLists.size()) {
+                    semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                }
+                else {
+                    semaphores.push_back(frame->semaphore);
+                }
 
                 VkPresentInfoKHR presentInfo = {};
                 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -452,7 +457,7 @@ namespace Atlas {
 
             if (recreateSwapChain || CheckForWindowResize()) {
                 // A new image index is automatically acquired
-                CreateSwapChain();
+                CreateSwapChain(swapChain->presentMode, swapChain->IsHDR());
             }
 
             // Wait, reset and start with new semaphores

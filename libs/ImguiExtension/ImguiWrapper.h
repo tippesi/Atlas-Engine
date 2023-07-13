@@ -21,6 +21,8 @@ public:
 
     void Render();
 
+    void RecreateImGuiResources();
+
 private:
     void MouseMotionHandler(Atlas::Events::MouseMotionEvent event);
     void MouseButtonHandler(Atlas::Events::MouseButtonEvent event);

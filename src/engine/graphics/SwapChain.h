@@ -35,8 +35,8 @@ namespace Atlas {
 
         public:
             SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-                GraphicsDevice* Device, int desiredWidth, int32_t desiredHeight,
-                VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
+                GraphicsDevice* Device, int32_t desiredWidth, int32_t desiredHeight,
+                bool preferHDR = false, VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
                 SwapChain* oldSwapchain = nullptr);
 
             ~SwapChain();
@@ -70,7 +70,8 @@ namespace Atlas {
             bool isComplete = false;
 
         private:
-            VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
+            VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
+                bool preferHDR);
             VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& presentModes,
                                                VkPresentModeKHR desiredMode);
             VkExtent2D ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,

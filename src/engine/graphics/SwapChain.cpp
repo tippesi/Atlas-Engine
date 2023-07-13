@@ -37,10 +37,10 @@ namespace Atlas {
         }
 
         SwapChain::SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-            GraphicsDevice* device, int desiredWidth, int32_t desiredHeight, VkPresentModeKHR desiredMode,
-            SwapChain* oldSwapchain) : device(device) {
+            GraphicsDevice* device, int desiredWidth, int32_t desiredHeight, bool preferHDR,
+            VkPresentModeKHR desiredMode, SwapChain* oldSwapchain) : device(device) {
 
-            surfaceFormat = ChooseSurfaceFormat(supportDetails.formats);
+            surfaceFormat = ChooseSurfaceFormat(supportDetails.formats, preferHDR);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
             extent = ChooseExtent(supportDetails.capabilities, desiredWidth, desiredHeight);
 
@@ -241,24 +241,46 @@ namespace Atlas {
 
         }
 
-        VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats) {
+        VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats,
+            bool preferHDRSurface) {
+
+            VkSurfaceFormatKHR selectedFormat = formats.front();
+
+            bool isSelectedFormatHDR = false;
 
             for (const auto& availableFormat : formats) {
 
                 if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                    availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                    return availableFormat;
+                    availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR &&
+                    !isSelectedFormatHDR) {
+                    selectedFormat = availableFormat;
                 }
 
-                /*
-                if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
-                    availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT) {
-                    return availableFormat;
+                if (preferHDRSurface) {
+                    // Prefer HDR10 HLG
+                    if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+                        availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT) {
+                        selectedFormat = availableFormat;
+                        isSelectedFormatHDR = true;
+                    }
+
+                    if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+                        availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT &&
+                        selectedFormat.colorSpace != VK_COLOR_SPACE_HDR10_HLG_EXT) {
+                        selectedFormat = availableFormat;
+                        isSelectedFormatHDR = true;
+                    }
+
+                    if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+                        availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT &&
+                        selectedFormat.colorSpace != VK_COLOR_SPACE_HDR10_HLG_EXT) {
+                        selectedFormat = availableFormat;
+                        isSelectedFormatHDR = true;
+                    }
                 }
-                 */
             }
 
-            return formats.front();
+            return selectedFormat;
 
         }
 
