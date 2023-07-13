@@ -44,9 +44,21 @@ namespace Atlas {
                     std::vector<VkFence> fences;
                     for (auto commandList : submittedCommandLists) {
                         fences.push_back(commandList->fence);
+
+                        VK_CHECK(vkWaitForFences(device, 1, &commandList->fence, true, 9999999999));
+                        VK_CHECK(vkResetFences(device, 1, &commandList->fence));
                     }
+                    /*
                     VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 1000000000))
                     VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
+                    */
+
+                    for (auto commandList : submittedCommandLists) {
+                        vkDestroySemaphore(device, commandList->semaphore, nullptr);
+
+                        VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+                        VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &commandList->semaphore))
+                    }
                 }
 
                 for (auto commandList : submittedCommandLists) {

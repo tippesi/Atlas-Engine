@@ -472,11 +472,6 @@ namespace Atlas {
             }
 
             auto nextFrame = GetFrameData();
-
-            // Wait, reset and start with new semaphores
-            nextFrame->WaitAndReset(device);
-            nextFrame->RecreateSemaphore(device);
-
             if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
             }
@@ -485,6 +480,9 @@ namespace Atlas {
                 // A new image index is automatically acquired
                 CreateSwapChain();
             }
+
+            // Wait, reset and start with new semaphores
+            nextFrame->WaitAndReset(device);
 
         }
 
@@ -668,10 +666,6 @@ namespace Atlas {
                 counter++;
             }
 
-            /*
-            // This seems to be problematic, since when new commandlists are created this leads
-            // to the same semaphore to be waited on on two queues (expectation is for semaphores
-            // to be signaled already :(
             counter = 0;
             for (auto& queueFamily : queueFamilies) {
                 // Try to find different queue for presentation
@@ -690,7 +684,6 @@ namespace Atlas {
 
                 counter++;
             }
-            */
 
             return true;
 

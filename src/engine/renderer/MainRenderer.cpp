@@ -5,6 +5,8 @@
 #include "../common/Packing.h"
 #include "../Clock.h"
 
+#include <algorithm>
+
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
 #define FEATURE_OPACITY_MAP (1 << 2)
 #define FEATURE_NORMAL_MAP (1 << 3)

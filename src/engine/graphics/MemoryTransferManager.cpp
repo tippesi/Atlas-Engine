@@ -16,25 +16,13 @@ namespace Atlas {
         MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager,
             uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device), memoryManager(memManager) {
 
-            /*
-            VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(transferQueueFamilyIndex);
-            VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
 
-            VkCommandBufferAllocateInfo bufferAllocateInfo = Initializers::InitCommandBufferAllocateInfo(commandPool, 1);
-            VK_CHECK(vkAllocateCommandBuffers(device->device, &bufferAllocateInfo, &commandBuffer))
-
-            VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
-            VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
-            */
 
         }
 
         MemoryTransferManager::~MemoryTransferManager() {
 
-            /*
-            vkDestroyFence(device->device, fence, nullptr);
-            vkDestroyCommandPool(device->device, commandPool, nullptr);
-            */
+            
 
         }
 
