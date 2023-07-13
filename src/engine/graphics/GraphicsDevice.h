@@ -3,6 +3,7 @@
 
 #include "Common.h"
 #include "Surface.h"
+#include "Queue.h"
 #include "SwapChain.h"
 #include "CommandList.h"
 #include "Shader.h"
@@ -44,14 +45,9 @@ namespace Atlas {
                     std::vector<VkFence> fences;
                     for (auto commandList : submittedCommandLists) {
                         fences.push_back(commandList->fence);
-
-                        VK_CHECK(vkWaitForFences(device, 1, &commandList->fence, true, 9999999999));
-                        VK_CHECK(vkResetFences(device, 1, &commandList->fence));
                     }
-                    /*
                     VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 1000000000))
                     VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
-                    */
 
                     for (auto commandList : submittedCommandLists) {
                         vkDestroySemaphore(device, commandList->semaphore, nullptr);
@@ -125,7 +121,7 @@ namespace Atlas {
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
-            VkQueue GetQueue(QueueType queueType) const;
+            Ref<Queue> GetAndLockQueue(QueueType queueType);
 
             void WaitForIdle() const;
 
@@ -149,9 +145,19 @@ namespace Atlas {
             static GraphicsDevice* DefaultDevice;
 
         private:
+            struct QueueFamily {
+                uint32_t index;
+
+                std::vector<Ref<Queue>> queues;
+                std::vector<float> queuePriorities;
+
+                VkQueueFlags flags;
+                bool supportsPresentation;
+            };
+
             struct QueueFamilyIndices {
                 std::optional<uint32_t> queueFamilies[3];
-                VkQueue queues[3];
+                std::vector<QueueFamily> families;
 
                 bool IsComplete() {
                     return queueFamilies[QueueType::GraphicsQueue].has_value() &&
@@ -168,7 +174,7 @@ namespace Atlas {
 
             bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos(float* priority);
+            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
 
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
@@ -187,6 +193,8 @@ namespace Atlas {
 
             CommandList* GetOrCreateCommandList(QueueType queueType, std::mutex& mutex,
                 std::vector<CommandList*>& commandLists, bool frameIndependent);
+
+            Ref<Queue> FindAndLockQueue(QueueType queueType);
 
             QueueFamilyIndices queueFamilyIndices;
 

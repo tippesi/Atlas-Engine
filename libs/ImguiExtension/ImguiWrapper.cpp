@@ -53,12 +53,14 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     auto device = instance->GetGraphicsDevice();
     pool = device->CreateDescriptorPool();
 
+    auto queue = device->GetAndLockQueue(Atlas::Graphics::GraphicsQueue);
+
     //this initializes imgui for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = instance->GetNativeInstance();
     init_info.PhysicalDevice = device->physicalDevice;
     init_info.Device = device->device;
-    init_info.Queue = device->GetQueue(Atlas::Graphics::GraphicsQueue);
+    init_info.Queue = queue->queue;
     init_info.DescriptorPool = pool->GetNativePool();
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
@@ -67,13 +69,15 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     ImGui_ImplVulkan_Init(&init_info, device->swapChain->renderPass);
 
     //execute a gpu command to upload imgui font textures
-    device->memoryManager->transferManager->ImmediateSubmit(
+    device->memoryManager->transferManager->ImmediateSubmit(Atlas::Graphics::GraphicsQueue,
         [&](Atlas::Graphics::CommandList* commandList) {
         ImGui_ImplVulkan_CreateFontsTexture(commandList->commandBuffer);
     });
 
     //clear font textures from cpu data
     ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    queue->mutex.unlock();
 
 }
 

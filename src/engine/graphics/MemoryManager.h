@@ -46,7 +46,7 @@ namespace Atlas {
             friend GraphicsDevice;
 
         public:
-            MemoryManager(GraphicsDevice* device, uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
+            MemoryManager(GraphicsDevice* device);
 
             MemoryManager(const MemoryManager& that) = delete;
 

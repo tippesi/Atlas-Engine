@@ -5,8 +5,6 @@
 #include "../common/Packing.h"
 #include "../Clock.h"
 
-#include <algorithm>
-
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
 #define FEATURE_OPACITY_MAP (1 << 2)
 #define FEATURE_NORMAL_MAP (1 << 3)
@@ -113,7 +111,7 @@ namespace Atlas {
                 .domain = Graphics::BufferDomain::Host,
                 .hostAccess = Graphics::BufferHostAccess::Sequential,
                 .data = materials.data(),
-                .size = sizeof(PackedMaterial) * std::max(materials.size(), 1ul),
+                .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);

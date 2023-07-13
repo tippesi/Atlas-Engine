@@ -2,6 +2,7 @@
 #define AE_GRAPHICSCOMMANDLIST_H
 
 #include "Common.h"
+#include "Queue.h"
 #include "Barrier.h"
 #include "MemoryManager.h"
 #include "SwapChain.h"
@@ -24,12 +25,6 @@ namespace Atlas {
         enum class ExecutionOrder {
             Sequential = 0,
             Parallel = 1
-        };
-
-        enum QueueType {
-            GraphicsQueue = 0,
-            PresentationQueue,
-            TransferQueue
         };
 
         class GraphicsDevice;

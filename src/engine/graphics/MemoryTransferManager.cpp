@@ -13,8 +13,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager,
-            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device), memoryManager(memManager) {
+        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager)
+            : device(device), memoryManager(memManager) {
 
 
 
@@ -55,7 +55,8 @@ namespace Atlas {
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
             uint32_t layerOffset, uint32_t layerCount) {
 
-            auto commandList = device->GetCommandList(TransferQueue, true);
+            // Need graphics queue for mip generation
+            auto commandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
             commandList->BeginCommands();
@@ -117,7 +118,7 @@ namespace Atlas {
                 auto dstAccessMask = mipLevels > 1 ? VK_ACCESS_TRANSFER_READ_BIT :
                     VK_ACCESS_SHADER_READ_BIT;
                 auto dstStageMask = mipLevels > 1 ? VK_PIPELINE_STAGE_TRANSFER_BIT :
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
                 imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 imageBarrier.newLayout = newLayout;
@@ -144,7 +145,7 @@ namespace Atlas {
 
             if (block) device->WaitForIdle();
 
-            auto commandList = device->GetCommandList(TransferQueue, true);
+            auto commandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
             commandList->BeginCommands();
@@ -306,9 +307,9 @@ namespace Atlas {
 
         }
 
-        void MemoryTransferManager::ImmediateSubmit(std::function<void(CommandList*)> &&function) {
+        void MemoryTransferManager::ImmediateSubmit(QueueType queueType, std::function<void(CommandList*)> &&function) {
 
-            auto commandList = device->GetCommandList(TransferQueue, true);
+            auto commandList = device->GetCommandList(queueType, true);
             VmaAllocator allocator = memoryManager->allocator;
 
             commandList->BeginCommands();
