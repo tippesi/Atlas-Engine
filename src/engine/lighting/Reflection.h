@@ -17,6 +17,7 @@ namespace Atlas {
             void SetSampleCount(int32_t sampleCount);
 
             int32_t sampleCount = 1;
+            int32_t textureLevel = 4;
             float radianceLimit = 2.0f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;

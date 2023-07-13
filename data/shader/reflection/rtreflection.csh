@@ -44,7 +44,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
-    float padding;
+    int textureLevel;
     Shadow shadow;
 } uniforms;
 
@@ -161,7 +161,7 @@ vec3 EvaluateHit(inout Ray ray) {
     // Unpack the compressed triangle and extract surface parameters
     Triangle tri = UnpackTriangle(triangles[ray.hitID]);
     bool backfaceHit;    
-    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, 4);
+    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, uniforms.textureLevel);
     
     radiance += surface.material.emissiveColor;
 

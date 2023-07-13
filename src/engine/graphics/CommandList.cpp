@@ -970,6 +970,8 @@ namespace Atlas {
 
             assert(0 && "Queue not found in available semaphores");
 
+            return semaphores.front().semaphore;
+
         }
 
         const std::vector<VkSemaphore> CommandList::GetSemaphores() const {

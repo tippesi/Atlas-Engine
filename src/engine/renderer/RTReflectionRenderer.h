@@ -45,7 +45,7 @@ namespace Atlas {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float bias;
-                float padding;
+                int32_t textureLevel;
                 Shadow shadow;
             };
 

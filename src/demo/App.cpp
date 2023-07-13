@@ -413,6 +413,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
                 ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
                 ImGui::SliderFloat("Spatial filter strength##Reflection", &reflection->spatialFilterStrength, 0.0f, 10.0f);
+                ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);
             }
             if (ImGui::CollapsingHeader("Camera")) {
                 ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);

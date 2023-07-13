@@ -519,7 +519,7 @@ namespace Atlas {
                 SubmitCommandList(submission, previousSemaphore, queue, nextQueue);
                 previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
 
-                if (nextQueue != queue) {
+                if (nextQueue.ref != queue.ref) {
                     queue.Unlock();
                 }
 

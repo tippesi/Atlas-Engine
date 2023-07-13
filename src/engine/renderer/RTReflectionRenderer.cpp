@@ -115,6 +115,7 @@ namespace Atlas {
                         uniforms.radianceLimit = reflection->radianceLimit;
                         uniforms.bias = reflection->bias;
                         uniforms.frameSeed = frameCount++;
+                        uniforms.textureLevel = reflection->textureLevel;
 
                         if (shadow && reflection->useShadowMap) {
                             auto& shadowUniform = uniforms.shadow;

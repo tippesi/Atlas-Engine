@@ -56,34 +56,8 @@ namespace Atlas {
         public:
             QueueRef() = default;
 
-            QueueRef(const QueueRef& that) {
-                if (this != &that) {
-                    this->ref = that.ref;
-                    this->counter = ref->counter;
-                    this->queue = ref->queue;
-                    this->familyIndex = ref->familyIndex;
-                    this->valid = true;
-                }
-            }
-
-            QueueRef& operator=(const QueueRef& that) {
-                if (this != &that) {
-                    this->ref = that.ref;
-                    this->counter = ref->counter;
-                    this->queue = ref->queue;
-                    this->familyIndex = ref->familyIndex;
-                    this->valid = true;
-                }
-
-                return *this;
-            }
-
             ~QueueRef() {
                 Unlock();
-            }
-
-            bool operator==(const QueueRef& that) {
-                return this->ref == that.ref;
             }
 
             void Unlock() {
