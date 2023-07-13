@@ -338,47 +338,19 @@ namespace Atlas {
             assert(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
 
-            // After the submission of a command list, we don't unlock it anymore
-            // for further use in this frame. Instead, we will unlock it again
-            // when we get back to this frames data and start a new frame with it.
             auto frame = GetFrameData();
 
             cmd->executionOrder = order;
 
-            std::vector<VkPipelineStageFlags> waitStages = { waitStage };
-
-            std::vector<VkSemaphore> waitSemaphores;
-            std::vector<VkSemaphore> submitSemaphores;
-            // Leave out any dependencies if the swap chain isn't complete
-            if (swapChain->isComplete) {
-                waitSemaphores = { frame->semaphore };
-                submitSemaphores = { cmd->semaphore };
-                if (frame->submittedCommandLists.size() > 0 && order == ExecutionOrder::Sequential) {
-                    waitSemaphores[0] = frame->submittedCommandLists.back()->semaphore;
-                }
-                else if (order == ExecutionOrder::Parallel) {
-
-                }
-            }
-
-            VkSubmitInfo submit = {};
-            submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit.pNext = nullptr;
-            submit.pWaitDstStageMask = waitStages.data();
-            submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
-            submit.pWaitSemaphores = waitSemaphores.data();
-            submit.signalSemaphoreCount = uint32_t(submitSemaphores.size());
-            submit.pSignalSemaphores = submitSemaphores.data();
-            submit.commandBufferCount = 1;
-            submit.pCommandBuffers = &cmd->commandBuffer;
-
-            auto queue = FindAndLockQueue(cmd->queueType);
-            VK_CHECK(vkQueueSubmit(queue->queue, 1, &submit, cmd->fence))
-            queue->mutex.unlock();
-
             // Make sure only one command list at a time can be added
             std::lock_guard<std::mutex> lock(frame->submissionMutex);
 
+            CommandListSubmission submission = {
+                .cmd = cmd,
+                .waitStage = waitStage
+            };
+
+            frame->submissions.push_back(submission);
             frame->submittedCommandLists.push_back(cmd);
             cmd->isSubmitted = true;
 
@@ -429,13 +401,16 @@ namespace Atlas {
             assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
+            auto presenterQueue = SubmitAllCommandLists();
+
             if (frame->submittedCommandLists.size() && swapChain->isComplete) {
+
                 std::vector<VkSemaphore> semaphores;
                 // For now, we will only use sequential execution of queue submits,
                 // which means only the latest submit can signal its semaphore here
                 //for (auto cmd : frameData->submittedCommandLists)
                 //    semaphores.push_back(cmd->semaphore);
-                semaphores.push_back(frame->submittedCommandLists.back()->semaphore);
+                semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue->queue));
 
                 VkPresentInfoKHR presentInfo = {};
                 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -446,7 +421,6 @@ namespace Atlas {
                 presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
                 presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
 
-                auto presenterQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 auto result = vkQueuePresentKHR(presenterQueue->queue, &presentInfo);
                 presenterQueue->mutex.unlock();
 
@@ -513,6 +487,85 @@ namespace Atlas {
 
             memoryManager->DestroyAllImmediate();
 
+        }
+
+        Ref<Queue> GraphicsDevice::SubmitAllCommandLists() {
+
+            auto frame = GetFrameData();
+
+            // Assume all submission are in order
+            Ref<Queue> nextQueue = nullptr;
+            Ref<Queue> queue = nullptr;
+            VkSemaphore previousSemaphore = frame->semaphore;
+            for (size_t i = 0; i < frame->submissions.size(); i++) {
+                auto submission = &frame->submissions[i];
+                auto nextSubmission = i + 1 < frame->submissions.size() ? &frame->submissions[i + 1] : nullptr;
+
+                auto queueType = submission->cmd->queueType;
+
+                if (!queue) {
+                    queue = FindAndLockQueue(queueType);
+                }
+
+                if (!queue->IsTypeSupported(queueType)) {
+                    queue = FindAndLockQueue(queueType);
+                }
+
+                if (nextSubmission != nullptr && !queue->IsTypeSupported(nextSubmission->cmd->queueType)) {
+                    nextQueue = FindAndLockQueue(nextSubmission->cmd->queueType);
+                }
+                else {
+                    nextQueue = queue;
+                }
+
+                if (nextSubmission == nullptr) {
+                    nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
+                }
+
+                SubmitCommandList(submission, previousSemaphore, queue, nextQueue);
+                previousSemaphore = submission->cmd->GetSemaphore(nextQueue->queue);
+
+                if (nextQueue != queue) {
+                    queue->mutex.unlock();
+                }
+
+                queue = nextQueue;
+            }
+
+            return queue;
+        }
+
+        void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
+            const Ref<Queue>& queue, const Ref<Queue>& nextQueue) {
+
+            // After the submission of a command list, we don't unlock it anymore
+            // for further use in this frame. Instead, we will unlock it again
+            // when we get back to this frames data and start a new frame with it.
+            auto frame = GetFrameData();
+
+            auto cmd = submission->cmd;
+            std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
+
+            std::vector<VkSemaphore> waitSemaphores;
+            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue->queue) };
+
+            // Leave out any dependencies if the swap chain isn't complete
+            if (swapChain->isComplete) {
+                waitSemaphores = { previousSemaphore };
+            }
+
+            VkSubmitInfo submit = {};
+            submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit.pNext = nullptr;
+            submit.pWaitDstStageMask = waitStages.data();
+            submit.waitSemaphoreCount = uint32_t(waitSemaphores.size());
+            submit.pWaitSemaphores = waitSemaphores.data();
+            submit.signalSemaphoreCount = uint32_t(submitSemaphores.size());
+            submit.pSignalSemaphores = submitSemaphores.data();
+            submit.commandBufferCount = 1;
+            submit.pCommandBuffers = &cmd->commandBuffer;
+
+            VK_CHECK(vkQueueSubmit(queue->queue, 1, &submit, cmd->fence))
         }
 
         bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
@@ -623,11 +676,23 @@ namespace Atlas {
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, counter, surface, &presentSupport);
 
+                bool supportsGraphics = true;
+                bool supportsTransfer = true;
+                if (!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+                    supportsGraphics = false;
+
+                if (!(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
+                    supportsGraphics = false;
+
+                if (!(queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
+                    supportsTransfer = false;
+
                 queueFamilyIndices.families[counter].queues.resize(size_t(queueFamily.queueCount));
                 queueFamilyIndices.families[counter].queuePriorities.resize(size_t(queueFamily.queueCount));
 
                 queueFamilyIndices.families[counter].index = counter;
-                queueFamilyIndices.families[counter].flags = queueFamily.queueFlags;
+                queueFamilyIndices.families[counter].supportsGraphics = supportsGraphics;
+                queueFamilyIndices.families[counter].supportsTransfer = supportsTransfer;
                 queueFamilyIndices.families[counter].supportsPresentation = presentSupport;
                 
                 for (uint32_t i = 0; i < queueFamily.queueCount; i++) {
@@ -635,6 +700,10 @@ namespace Atlas {
 
                     queue->familyIndex = counter;
                     queue->index = i;
+
+                    queue->supportsGraphics = supportsGraphics;
+                    queue->supportsTransfer = supportsTransfer;
+                    queue->supportsPresentation = presentSupport;
 
                     queueFamilyIndices.families[counter].queues[i] = queue;
                     queueFamilyIndices.families[counter].queuePriorities[i] = 1.0f;
@@ -645,22 +714,12 @@ namespace Atlas {
 
             counter = 0;
             for (auto& queueFamily : queueFamilyIndices.families) {
-                bool isGraphicsFamilyValid = true;
-                bool isTransferFamilyValid = true;
+                
 
-                if (!(queueFamily.flags & VK_QUEUE_GRAPHICS_BIT))
-                    isGraphicsFamilyValid = false;
-
-                if (!(queueFamily.flags & VK_QUEUE_COMPUTE_BIT))
-                    isGraphicsFamilyValid = false;
-
-                if (!(queueFamily.flags & VK_QUEUE_TRANSFER_BIT))
-                    isTransferFamilyValid = false;
-
-                if (isGraphicsFamilyValid) {
+                if (queueFamily.supportsGraphics) {
                     queueFamilyIndices.queueFamilies[QueueType::GraphicsQueue] = counter;
                 }
-                if (isTransferFamilyValid) {
+                if (queueFamily.supportsTransfer) {
                     queueFamilyIndices.queueFamilies[QueueType::TransferQueue] = counter;
                 }
                 if (queueFamily.supportsPresentation) {
@@ -683,7 +742,7 @@ namespace Atlas {
                     continue;
                 }
 
-                if (queueFamily.flags & VK_QUEUE_TRANSFER_BIT) {
+                if (queueFamily.supportsTransfer) {
                     queueFamilyIndices.queueFamilies[QueueType::TransferQueue] = counter;
                     break;
                 }
@@ -936,8 +995,16 @@ namespace Atlas {
 
             if (it == cmdLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
+
+                std::vector<VkQueue> queues;
+                for (auto& queueFamily : queueFamilyIndices.families) {
+                    for (auto& queue : queueFamily.queues) {
+                        queues.push_back(queue->queue);
+                    }
+                }
+
                 CommandList *cmd = new CommandList(this, queueType,
-                    queueFamilyIndex.value(), frameIndependent);
+                    queueFamilyIndex.value(), queues, frameIndependent);
                 cmdLists.push_back(cmd);
                 return cmd;
             }
@@ -968,7 +1035,8 @@ namespace Atlas {
             // Backup plan, search for all queues
             Ref<Queue> lastSupportedQueue = nullptr;
             for (auto& queueFamily : queueFamilyIndices.families) {
-                if (queueType != PresentationQueue && (!(queueFamily.flags & neededFlags)) ||
+                if ((queueType == GraphicsQueue && !queueFamily.supportsGraphics) ||
+                    (queueType == TransferQueue && !queueFamily.supportsTransfer) ||
                     (queueType == PresentationQueue && !queueFamily.supportsPresentation))
                     continue;
 

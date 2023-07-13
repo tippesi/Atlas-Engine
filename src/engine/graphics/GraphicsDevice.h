@@ -29,6 +29,12 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
+        struct CommandListSubmission {
+            CommandList* cmd;
+
+            VkPipelineStageFlags waitStage;
+        };
+
         class FrameData {
         public:
             VkSemaphore semaphore = VK_NULL_HANDLE;
@@ -40,6 +46,8 @@ namespace Atlas {
             std::mutex submissionMutex;
             std::vector<CommandList*> submittedCommandLists;
 
+            std::vector<CommandListSubmission> submissions;
+
             void WaitAndReset(VkDevice device) {
                 if (submittedCommandLists.size() > 0) {
                     std::vector<VkFence> fences;
@@ -48,13 +56,6 @@ namespace Atlas {
                     }
                     VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 1000000000))
                     VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
-
-                    for (auto commandList : submittedCommandLists) {
-                        vkDestroySemaphore(device, commandList->semaphore, nullptr);
-
-                        VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-                        VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &commandList->semaphore))
-                    }
                 }
 
                 for (auto commandList : submittedCommandLists) {
@@ -62,6 +63,7 @@ namespace Atlas {
                     commandList->isLocked = false;
                 }
                 submittedCommandLists.clear();
+                submissions.clear();
             }
 
             void RecreateSemaphore(VkDevice device) {
@@ -113,7 +115,7 @@ namespace Atlas {
                 bool frameIndependentList = false);
 
             void SubmitCommandList(CommandList* cmd, VkPipelineStageFlags waitStage =
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
 
             void FlushCommandList(CommandList* cmd);
 
@@ -151,7 +153,8 @@ namespace Atlas {
                 std::vector<Ref<Queue>> queues;
                 std::vector<float> queuePriorities;
 
-                VkQueueFlags flags;
+                bool supportsGraphics;
+                bool supportsTransfer;
                 bool supportsPresentation;
             };
 
@@ -165,6 +168,11 @@ namespace Atlas {
                         queueFamilies[QueueType::TransferQueue].has_value();
                 }
             };
+
+            Ref<Queue> SubmitAllCommandLists();
+
+            void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
+                const Ref<Queue>& queue, const Ref<Queue>& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions);
