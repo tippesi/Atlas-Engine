@@ -65,8 +65,8 @@ void main() {
         
         // get sample depth
         vec3 samplePos = ConvertDepthToViewSpace(textureLod(shadowMap, offset.xy, 0).r, offset.xy);
-     
-        float rangeCheck = abs(fragPos.z - samplePos.z) < uniforms.radius ? 1.0 : 0.0;
+
+        float rangeCheck = distance(fragPos, samplePos) < uniforms.radius ? 1.0 : 0.0;
         float delta = samplePos.z - ssaoSample.z;
         occlusion += (delta > 0.0 ? 1.0 : 0.0) * rangeCheck;
         

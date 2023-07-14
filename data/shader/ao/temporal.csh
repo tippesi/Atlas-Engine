@@ -226,6 +226,61 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
 
 }
 
+float SampleHistory(ivec2 pixel, vec2 history_coord_floor, out bool valid) {
+
+    float historyValue = 0.0;
+
+    float totalWeight = 0.0;
+    float x    = fract(history_coord_floor.x);
+    float y    = fract(history_coord_floor.y);
+
+    // bilinear weights
+    float weights[4] = { (1 - x) * (1 - y),
+        x * (1 - y),
+        (1 - x) * y,
+        x * y };
+
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
+    // Calculate confidence over 2x2 bilinear neighborhood
+    // Note that 3x3 neighborhoud could help on edges
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = ivec2(history_coord_floor) + pixelOffsets[i];
+        float confidence = 1.0;
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
+
+        if (confidence > 0.1) {
+            totalWeight += weights[i];
+            historyValue += texelFetch(historyTexture, offsetPixel, 0).r * weights[i];
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        valid = true;
+        historyValue /= totalWeight;
+    }
+    else {
+        valid = false;
+        historyValue = 0.0;
+    }
+
+    return historyValue;
+
+}
+
 void main() {
 
     LoadGroupSharedData();
@@ -243,8 +298,10 @@ void main() {
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
 
+    bool valid = true;
     // Maybe we might want to filter the current input pixel
-    float history = SampleHistory(uv);
+    //float history = SampleHistory(uv);
+    float history = SampleHistory(pixel, vec2(pixel) + velocity * resolution, valid);
     vec4 historyMoments = SampleHistoryMoments(uv);
 
     float historyValue = history;
@@ -272,8 +329,8 @@ void main() {
     float maxConfidence = 0.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
-    for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = historyPixel + offsets[i];
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = historyPixel + pixelOffsets[i];
         float confidence = 1.0;
 
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
@@ -292,14 +349,17 @@ void main() {
     factor *= maxConfidence;
 
     float historyLength = historyMoments.b;
-    if (factor == 0.0) {
+    if (factor == 0.0 || !valid) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
     }
 
     factor = min(factor, historyLength / (historyLength + 1.0));
-    factor = max(0.5, factor);
+
+    //factor = max(0.5, factor);
+
+    //factor = 0.0;
 
     float resolve = mix(currentValue, historyValue, factor);
     vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);

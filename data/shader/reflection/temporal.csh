@@ -308,8 +308,8 @@ void main() {
     float maxConfidence = 0.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
-    for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = historyPixel + offsets[i];
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = historyPixel + pixelOffsets[i];
         float confidence = 1.0;
 
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
@@ -336,7 +336,7 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
-    if (abs(velocity.x) + abs(velocity.y) >= 0.001) {
+    if (abs(velocity.x) + abs(velocity.y) >= 0.01) {
         factor = min(factor, 0.9);
     }
 
