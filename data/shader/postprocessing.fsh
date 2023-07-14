@@ -126,6 +126,9 @@ void main() {
 #ifdef HDR
     color = ToneMap(color);
 
+    // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
+    // Haven't testet with Dolby Vision
+#ifdef HYBRID_LOG_GAMMA_EOTF
     // HLG curve: Rec. 2100 (for HLG)
     float a = 0.17883277;
     float b = 0.28466892;
@@ -134,26 +137,23 @@ void main() {
     color.r = color.r <= threshold ? sqrt(3.0 * color.r) : a * log(12.0 * color.r - b) + c;
     color.g = color.g <= threshold ? sqrt(3.0 * color.g) : a * log(12.0 * color.g - b) + c;
     color.b = color.b <= threshold ? sqrt(3.0 * color.b) : a * log(12.0 * color.b - b) + c;
+#endif
 
-    
-    
-    /*
-    // PQ curve
-    //color *= 10000.0;
-    
-    float m1 = 1305.0 / 8192.0;
-    float m2 = 2523.0 / 32.0;
-    float c1 = 107.0 / 128.0;
-    float c2 = 2413.0 / 128.0;
-    float c3 = 2392.0 / 128.0;
+#ifdef PERCEPTUAL_QUANTIZER_EOTF
+    // ST2084 Perceptual Quantizer (PQ) EOTF
+    float m1 = 2610.0 / 4096.0 * (1.0 / 4.0);
+    float m2 = 2523.0 / 4096.0 * 128.0;
+    float c1 = 3424.0 / 4096.0;
+    float c2 = 2413.0 / 4096.0 * 32.0;
+    float c3 = 2392.0 / 4096.0 * 32.0;
 
     // Should be color / 10000
-    vec3 Y = color / 10000.0;
+    vec3 Y = color / 1000.0;
     vec3 Ym1 = pow(Y, vec3(m1));
 
     color = pow((c1 + c2 * Ym1) / (1 + c3 * Ym1), vec3(m2));
-    color = 1.0 + log(color) / log(10.0) / 2.0;
-    */
+    color = 1.0 + log(color) / log(8.0) / 2.0;
+#endif
     
 #else
 #ifdef FILMIC_TONEMAPPING

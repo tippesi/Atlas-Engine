@@ -12,6 +12,14 @@ namespace Atlas {
 
     namespace Graphics {
 
+        enum ColorSpace {
+            SRGB_NONLINEAR = 0,
+            HDR10_HLG,
+            HDR10_ST2084,
+            DOLBY_VISION,
+            OTHER
+        };
+
         class SwapChainSupportDetails {
 
         public:
@@ -36,7 +44,8 @@ namespace Atlas {
         public:
             SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
                 GraphicsDevice* Device, int32_t desiredWidth, int32_t desiredHeight,
-                bool preferHDR = false, VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
+                ColorSpace preferredColorSpace = SRGB_NONLINEAR,
+                VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
                 SwapChain* oldSwapchain = nullptr);
 
             ~SwapChain();
@@ -51,6 +60,8 @@ namespace Atlas {
             VkSurfaceFormatKHR surfaceFormat;
             VkPresentModeKHR presentMode;
             VkExtent2D extent;
+
+            ColorSpace colorSpace;
 
             uint32_t aquiredImageIndex = 0;
             std::vector<VkImage> images;
@@ -71,7 +82,7 @@ namespace Atlas {
 
         private:
             VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats,
-                bool preferHDR);
+                ColorSpace preferredColorSpace);
             VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& presentModes,
                                                VkPresentModeKHR desiredMode);
             VkExtent2D ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,

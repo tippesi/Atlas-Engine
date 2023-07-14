@@ -156,7 +156,7 @@ namespace Atlas {
 
         }
 
-        SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, bool preferHDRSurface) {
+        SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, ColorSpace preferredColorSpace) {
 
             auto nativeSurface = surface->GetNativeSurface();
             auto nativeWindow = surface->GetNativeWindow();
@@ -180,7 +180,7 @@ namespace Atlas {
             // Had some issue with passing the old swap chain and then deleting it after x frames.
             delete swapChain;
             swapChain = new SwapChain(supportDetails, nativeSurface, this,
-                windowWidth, windowHeight, preferHDRSurface, presentMode, VK_NULL_HANDLE);
+                windowWidth, windowHeight, preferredColorSpace, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
             auto frame = GetFrameData();
@@ -468,7 +468,7 @@ namespace Atlas {
 
             if (recreateSwapChain || CheckForWindowResize()) {
                 // A new image index is automatically acquired
-                CreateSwapChain(swapChain->presentMode, swapChain->IsHDR());
+                CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
 
             // Wait, reset and start with new semaphores

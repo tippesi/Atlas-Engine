@@ -271,9 +271,13 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("HDR##General", &hdr);
 
                 if (vsync != vsyncMode || hdr != hdrMode) {
+                    Atlas::Graphics::ColorSpace colorSpace = Atlas::Graphics::SRGB_NONLINEAR;
+                    if (hdr) {
+                        colorSpace = Atlas::Graphics::HDR10_HLG;
+                    }
                     graphicsDevice->CompleteFrame();
-                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, hdr);
-                    else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, hdr);
+                    if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, colorSpace);
+                    else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, colorSpace);
                     vsyncMode = vsync;
                     hdrMode = hdr;
                     imguiWrapper.RecreateImGuiResources();
@@ -868,8 +872,6 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             ModelLoader::LoadMesh, "subway/scene.gltf", false, glm::mat4(1.0f), 2048
         );
-        for (auto& material : meshData->materials) material.twoSided = false;
-
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
         auto& mesh = meshes.back();
