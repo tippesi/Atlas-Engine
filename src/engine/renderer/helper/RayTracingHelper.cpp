@@ -481,7 +481,6 @@ namespace Atlas {
             void RayTracingHelper::UpdateLights() {
 
                 lights.clear();
-                auto& rtData = scene->rtData;
 
                 auto lightSources = scene->GetLights();
 
@@ -523,9 +522,11 @@ namespace Atlas {
                     lights.push_back(gpuLight);
                 }
 
-                if (useEmissivesAsLights)
+                if (useEmissivesAsLights) {
+                    auto& rtData = scene->rtData;
                     lights.insert(lights.end(), rtData.triangleLights.begin(), rtData.triangleLights.end());
-
+                }
+                    
                 // Find the maximum weight
                 auto maxWeight = 0.0f;
                 for (auto& light : lights) {

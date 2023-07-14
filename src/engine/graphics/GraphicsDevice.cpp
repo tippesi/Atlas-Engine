@@ -556,8 +556,6 @@ namespace Atlas {
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
             // when we get back to this frames data and start a new frame with it.
-            auto frame = GetFrameData();
-
             auto cmd = submission->cmd;
             std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
 

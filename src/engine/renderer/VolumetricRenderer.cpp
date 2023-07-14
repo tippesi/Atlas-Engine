@@ -118,7 +118,7 @@ namespace Atlas {
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
-                volumetricUniformBuffer.SetData(&uniforms, 0, 1);
+                volumetricUniformBuffer.SetData(&uniforms, 0);
                 commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 3);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
@@ -148,7 +148,7 @@ namespace Atlas {
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
 
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
+                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
@@ -241,7 +241,7 @@ namespace Atlas {
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 
-                resolveUniformBuffer.SetData(&uniforms, 0, 1);
+                resolveUniformBuffer.SetData(&uniforms, 0);
                 commandList->BindBuffer(resolveUniformBuffer.Get(), 3, 5);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);

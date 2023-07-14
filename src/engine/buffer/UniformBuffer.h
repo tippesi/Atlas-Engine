@@ -37,17 +37,15 @@ namespace Atlas {
             /**
              * Sets the size of the buffer
              * @param elementCount The number of elements in the buffer
-             * @param data Optional parameter for directly filling the buffer
              */
-            void SetSize(size_t elementCount, void* data = nullptr);
+            void SetSize(size_t elementCount);
 
             /**
              * Sets the data of a buffer if it isn't mapped.
              * @param data A pointer to the data.
              * @param offset The offset in the buffer in elements (not bytes).
-             * @param length The number of elements in data.
              */
-            void SetData(void* data, size_t offset, size_t length);
+            void SetData(void* data, size_t offset);
 
             /**
              * Returns an owning pointer to a graphics multi buffer
@@ -83,7 +81,7 @@ namespace Atlas {
             bool hostAccess = true;
 
         private:
-            void Reallocate(void* data);
+            void Reallocate();
 
             Ref<Graphics::MultiBuffer> buffer;
 

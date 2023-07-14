@@ -146,7 +146,7 @@ namespace Atlas {
                                 }
                             }
                         }
-                        rtrUniformBuffer.SetData(&uniforms, 0, 1);
+                        rtrUniformBuffer.SetData(&uniforms, 0);
                         commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 9);
 
                     });

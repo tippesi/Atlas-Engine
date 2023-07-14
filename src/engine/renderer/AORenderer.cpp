@@ -83,7 +83,7 @@ namespace Atlas {
                     .radius = ao->radius,
                     .frameSeed = frameCount++,
                 };
-                rtUniformBuffer.SetData(&uniforms, 0, 1);
+                rtUniformBuffer.SetData(&uniforms, 0);
 
                 commandList->ImageMemoryBarrier(target->swapAoTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -121,8 +121,8 @@ namespace Atlas {
                     .sampleCount = ao->sampleCount,
                     .frameCount = 0
                 };
-                ssUniformBuffer.SetData(&uniforms, 0, 1);
-                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, 1);
+                ssUniformBuffer.SetData(&uniforms, 0);
+                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
 
@@ -223,7 +223,7 @@ namespace Atlas {
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
 
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
+                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);

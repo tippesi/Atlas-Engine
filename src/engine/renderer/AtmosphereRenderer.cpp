@@ -46,7 +46,7 @@ namespace Atlas {
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers = {
@@ -106,8 +106,8 @@ namespace Atlas {
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };
-            uniformBuffer.SetData(&uniforms, 1, 1);
-            probeMatricesBuffer.SetData(matrices.data(), 0, 1);
+            uniformBuffer.SetData(&uniforms, 1);
+            probeMatricesBuffer.SetData(matrices.data(), 0);
 
             commandList->BindImage(probe->cubemap.image, 3, 0);
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(1), 3, 3);

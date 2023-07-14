@@ -139,7 +139,6 @@ void App::Render(float deltaTime) {
     static bool debugClouds = false;
     static bool debugSSS = false;
     static bool slowMode = false;
-    static bool recreateSwapchain = false;
 
     static float cloudDepthDebug = 0.0f;
 
@@ -191,6 +190,8 @@ void App::Render(float deltaTime) {
 
     // ImGui rendering
     if (renderUI) {
+        static bool recreateSwapchain = false;
+
         ImGui::NewFrame();
 
         const auto& light = directionalLight;

@@ -51,7 +51,7 @@ namespace Atlas {
                 .reflectionEnabled = reflectionEnabled ? 1 : 0,
                 .aoStrength = aoEnabled ? ao->strength : 1.0f
             };
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);

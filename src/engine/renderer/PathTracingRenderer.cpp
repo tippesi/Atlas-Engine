@@ -80,7 +80,7 @@ namespace Atlas {
 
                 uniforms.exposure = camera->exposure;
 
-                rayHitUniformBuffer.SetData(&uniforms, i, 1);
+                rayHitUniformBuffer.SetData(&uniforms, i);
             }
 
             // Bind texture only for writing
@@ -129,7 +129,7 @@ namespace Atlas {
                     uniforms.tileSize = tileSize;
                     uniforms.resolution = resolution;
 
-                    rayGenUniformBuffer.SetData(&uniforms, 0, 1);
+                    rayGenUniformBuffer.SetData(&uniforms, 0);
                     commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 4);
                 }
                 );

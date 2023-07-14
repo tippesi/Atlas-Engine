@@ -116,7 +116,7 @@ namespace Atlas {
                     auto uniforms = RayGenUniforms {
                         .rotationMatrix = mat4(rot)
                     };
-                    rayGenUniformBuffer.SetData(&uniforms, 0, 1);
+                    rayGenUniformBuffer.SetData(&uniforms, 0);
 
                     commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
                     commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
@@ -163,7 +163,7 @@ namespace Atlas {
                             }
                         }
                     }
-                    rayHitUniformBuffer.SetData(&uniforms, 0, 1);
+                    rayHitUniformBuffer.SetData(&uniforms, 0);
 
                     // Use this buffer instead of the default writeRays buffer of the helper
                     commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);

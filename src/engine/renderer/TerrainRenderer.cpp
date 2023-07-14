@@ -7,8 +7,9 @@ namespace Atlas {
         void TerrainRenderer::Init(Graphics::GraphicsDevice* device) {
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
-            terrainMaterialBuffer = Buffer::UniformBuffer(sizeof(TerrainMaterial), 256);
-
+            auto usage = Buffer::BufferUsageBits::HostAccessBit || Buffer::BufferUsageBits::MultiBufferedBit ||
+                Buffer::BufferUsageBits::UniformBufferBit;
+            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial), 256);
         }
 
         void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -75,7 +76,7 @@ namespace Atlas {
             for (int32_t i = 0; i < 6; i++)
                 uniforms.frustumPlanes[i] = frustumPlanes[i];
 
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
 
             terrainMaterialBuffer.Bind(commandList, 3, 8);
             uniformBuffer.Bind(commandList, 3, 9);

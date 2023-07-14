@@ -108,7 +108,7 @@ namespace Atlas {
             Uniforms uniforms = {
                 .pMatrix = projectionMatrix
             };
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
             uniformBuffer.Bind(commandList, 3, 7);
 
             mesh->vertexArray.Bind(commandList);
