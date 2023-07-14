@@ -222,7 +222,6 @@ namespace Atlas {
                 case VK_COLOR_SPACE_HDR10_HLG_EXT:
                 case VK_COLOR_SPACE_DOLBYVISION_EXT:
                 case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-                case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
                     return true;
                 default:
                     return false;

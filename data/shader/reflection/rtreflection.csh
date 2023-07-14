@@ -104,9 +104,9 @@ void main() {
 
                 blueNoiseVec.y *= (1.0 - uniforms.bias);
 
+                float pdf = 1.0;
                 BRDFSample brdfSample;
                 if (material.roughness > 0.02) {
-                    float pdf;
                     ImportanceSampleGGX(blueNoiseVec, N, V, alpha,
                         ray.direction, pdf);
                 }

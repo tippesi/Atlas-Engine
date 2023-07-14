@@ -158,12 +158,12 @@ namespace Atlas {
 
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
-                commandList->BindImage(target->aoMomentsTexture.image, 3, 1);
+                commandList->BindImage(target->aoLengthTexture.image, 3, 1);
 
                 commandList->BindImage(target->swapAoTexture.image, target->swapAoTexture.sampler, 3, 2);
                 commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
@@ -173,7 +173,7 @@ namespace Atlas {
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
 
                 commandList->BindImage(target->historyAoTexture.image, target->historyAoTexture.sampler, 3, 8);
-                commandList->BindImage(target->historyAoMomentsTexture.image, target->historyAoMomentsTexture.sampler, 3, 9);
+                commandList->BindImage(target->historyAoLengthTexture.image, target->historyAoLengthTexture.sampler, 3, 9);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
                 commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
@@ -183,22 +183,22 @@ namespace Atlas {
                 // Need barriers for all four images
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {target->historyAoMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(target->aoTexture.image, target->historyAoTexture.image);
-                commandList->CopyImage(target->aoMomentsTexture.image, target->historyAoMomentsTexture.image);
+                commandList->CopyImage(target->aoLengthTexture.image, target->historyAoLengthTexture.image);
 
                 // Need barriers for all four images
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyAoMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);

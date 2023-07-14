@@ -163,9 +163,9 @@ namespace Atlas {
         historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        aoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        aoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        historyAoMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+        historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
     }

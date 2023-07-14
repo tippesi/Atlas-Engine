@@ -194,7 +194,7 @@ namespace Atlas {
                     {rtData->velocityTexture->image, layout, access},
                     {rtData->swapVelocityTexture->image, layout, access},
                     {target->historyAoTexture.image, layout, access},
-                    {target->historyAoMomentsTexture.image, layout, access},
+                    {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
                     {target->historyVolumetricCloudsTexture.image, layout, access},

@@ -205,6 +205,7 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
