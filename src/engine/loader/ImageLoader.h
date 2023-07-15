@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "../common/Image.h"
+#include "../common/Path.h"
 #include "AssetLoader.h"
 #include "../Log.h"
 
@@ -32,6 +33,8 @@ namespace Atlas {
             template<typename T>
             static Common::Image<T> LoadImage(std::string filename, bool colorSpaceConversion = false, int32_t forceChannels = 0,
                 int32_t maxImageResolution = 8192) {
+
+                filename = Common::Path::Normalize(filename);
 
                 Common::Image<T> image;
                 auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
@@ -121,6 +124,8 @@ namespace Atlas {
              */
             template<typename T>
             static void SaveImage(Common::Image<T>& image, std::string filename) {
+
+                filename = Common::Path::Normalize(filename);
 
                 std::ofstream imageStream;
 
