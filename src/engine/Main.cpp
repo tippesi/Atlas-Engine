@@ -24,8 +24,7 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
-    Atlas::Engine::Init(Atlas::EngineInstance::assetDirectory,
-                        Atlas::EngineInstance::shaderDirectory);
+    Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 

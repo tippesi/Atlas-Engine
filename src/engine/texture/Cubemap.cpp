@@ -61,7 +61,7 @@ namespace Atlas {
                           vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
            Common::Image<float> faceImage(resolution, resolution, 4);
-           faceImage.fileFormat = AE_IMAGE_HDR;
+           faceImage.fileFormat = Common::ImageFormat::HDR;
 
            for (uint8_t i = 0; i < 6; i++) {
                Volume::Frustum frustum(projectionMatrix *

@@ -230,6 +230,7 @@ namespace Atlas {
 
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;
+            std::atomic_bool wasSwapChainAccessed = false;
 
             std::vector<Semaphore> semaphores;
 

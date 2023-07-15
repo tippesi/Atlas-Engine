@@ -90,19 +90,19 @@ namespace Atlas {
                 std::transform(fileFormat.begin(), fileFormat.end(), fileFormat.begin(), ::tolower);
 
                 if (fileFormat == "png") {
-                    image.fileFormat = AE_IMAGE_PNG;
+                    image.fileFormat = Common::ImageFormat::PNG;
                 }
                 else if (fileFormat == "jpg" || fileFormat == "jpeg") {
-                    image.fileFormat = AE_IMAGE_JPG;
+                    image.fileFormat =Common::ImageFormat::JPG;
                 }
                 else if (fileFormat == "bmp") {
-                    image.fileFormat = AE_IMAGE_BMP;
+                    image.fileFormat = Common::ImageFormat::BMP;
                 }
                 else if (fileFormat == "pgm") {
-                    image.fileFormat = AE_IMAGE_PGM;
+                    image.fileFormat = Common::ImageFormat::PGM;
                 }
                 else if (fileFormat == "hdr") {
-                    image.fileFormat = AE_IMAGE_HDR;
+                    image.fileFormat = Common::ImageFormat::HDR;
                 }
 
                 image.fileName = filename;
@@ -124,7 +124,7 @@ namespace Atlas {
 
                 std::ofstream imageStream;
 
-                if (image.fileFormat == AE_IMAGE_PGM) {
+                if (image.fileFormat == Common::ImageFormat::PGM) {
                     imageStream = AssetLoader::WriteFile(filename, std::ios::out);
                 }
                 else {
@@ -142,30 +142,30 @@ namespace Atlas {
                     imageStream->write((char*)data, size);
                 };
 
-                if (image.fileFormat == AE_IMAGE_JPG) {
+                if (image.fileFormat == Common::ImageFormat::JPG) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
                         stbi_write_jpg_to_func(lambda, &imageStream, image.width,
                             image.height, image.channels, image.GetData().data(), 100);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_BMP) {
+                else if (image.fileFormat == Common::ImageFormat::BMP) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
                         stbi_write_bmp_to_func(lambda, &imageStream, image.width,
                             image.height, image.channels, image.GetData().data());
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_PNG) {
+                else if (image.fileFormat == Common::ImageFormat::PNG) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
                         stbi_write_png_to_func(lambda, &imageStream, image.width, image.height,
                             image.channels, image.GetData().data(), image.channels * image.width);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_PGM) {
+                else if (image.fileFormat == Common::ImageFormat::PGM) {
                     if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>) {
                         SavePGM(image, imageStream);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_HDR) {
+                else if (image.fileFormat == Common::ImageFormat::HDR) {
                     if constexpr (std::is_same_v<T, float>) {
                         stbi_write_hdr_to_func(lambda, &imageStream, image.width,
                             image.height, image.channels, image.GetData().data());

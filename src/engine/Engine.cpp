@@ -17,7 +17,7 @@ namespace Atlas {
 
     Window* Engine::DefaultWindow = nullptr;
 
-    void Engine::Init(std::string assetDirectory, std::string shaderDirectory) {
+    void Engine::Init(EngineConfig config) {
 
 #ifdef AE_NO_APP
         SDL_SetMainReady();
@@ -26,8 +26,8 @@ namespace Atlas {
             SDL_Init(SDL_INIT_EVERYTHING);
         }
 
-        Loader::AssetLoader::SetAssetDirectory(assetDirectory);
-        Loader::ShaderLoader::SetSourceDirectory(shaderDirectory);
+        Loader::AssetLoader::SetAssetDirectory(config.assetDirectory);
+        Loader::ShaderLoader::SetSourceDirectory(config.shaderDirectory);
 
         Graphics::ShaderCompiler::Init();
 

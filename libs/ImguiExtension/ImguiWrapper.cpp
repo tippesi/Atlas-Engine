@@ -84,13 +84,14 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
         Atlas::Events::EventManager::DisableTextInput();
 
     UpdateMouseCursor();
-    ImGui_ImplVulkan_NewFrame();
 
 }
 
 void ImguiWrapper::Render(bool clearSwapChain) {
 
     ImGuiIO& io = ImGui::GetIO();
+
+    ImGui_ImplVulkan_NewFrame();
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
@@ -153,6 +154,8 @@ void ImguiWrapper::RecreateImGuiResources() {
 
     //clear font textures from cpu data
     ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    imageViewToDescriptorSetMap.clear();
 
     initialized = true;
 

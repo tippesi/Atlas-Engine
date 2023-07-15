@@ -234,6 +234,9 @@ namespace Atlas {
             switch(surfaceFormat.colorSpace) {
                 case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
                 case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+                case VK_COLOR_SPACE_HDR10_HLG_EXT:
+                case VK_COLOR_SPACE_DOLBYVISION_EXT:
+                case VK_COLOR_SPACE_HDR10_ST2084_EXT:
                     return false;
                 default:
                     return true;

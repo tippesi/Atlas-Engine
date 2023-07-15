@@ -64,13 +64,7 @@ namespace Atlas {
         /**
          * Needs to be implemented by the user.
          */
-        const static std::string assetDirectory;
-
-        /**
-         * Needs to be implemented by the user.
-         * @note This path must be relative to the asset directory
-         */
-        const static std::string shaderDirectory;
+        const static EngineConfig engineConfig;
 
         /**
          * The main window to which the context is attached to

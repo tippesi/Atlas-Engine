@@ -391,8 +391,13 @@ namespace Atlas {
 
             auto frame = GetFrameData();
 
-            // Do dummy commandList submit in case nothing was submitted
-            if (!frame->submittedCommandLists.size()) {
+            bool wasSwapChainAccessed = false;
+            for (auto commandList : frame->submittedCommandLists) {
+                wasSwapChainAccessed |= commandList->wasSwapChainAccessed;
+            }
+
+            // Do dummy commandList submit in case swap chain was not accessed in current frame
+            if (!wasSwapChainAccessed) {
                 auto commandList = GetCommandList(GraphicsQueue);
                 commandList->BeginCommands();
                 commandList->BeginRenderPass(swapChain, true);

@@ -9,31 +9,34 @@
 #include <vector>
 #include <type_traits>
 
-/**
- * Image file formats.
- * Not all formats support all image types.
- * For saving images the following types are supported:
- * AE_IMAGE_PNG: uint8_t
- * AE_IMAGE_JPG: uint8_t
- * AE_IMAGE_BMP: uint8_t
- * AE_IMAGE_PGM: uint8_t, uint16_t
- * AE_IMAGE_HDR: float
- * For reading images the following types are supported:
- * AE_IMAGE_PNG: uint8_t, uint16_t
- * AE_IMAGE_JPG: uint8_t
- * AE_IMAGE_BMP: uint8_t
- * AE_IMAGE_PGM: uint8_t, uint16_t
- * AE_IMAGE_HDR: float
- */
-#define AE_IMAGE_PNG 0
-#define AE_IMAGE_JPG 1
-#define AE_IMAGE_BMP 2
-#define AE_IMAGE_PGM 3
-#define AE_IMAGE_HDR 4
 
 namespace Atlas {
 
     namespace Common {
+
+        /**
+         * Image file formats.
+         * Not all formats support all image types.
+         * For saving images the following types are supported:
+         * PNG: uint8_t
+         * JPG: uint8_t
+         * BMP: uint8_t
+         * PGM: uint8_t, uint16_t
+         * HDR: float
+         * For reading images the following types are supported:
+         * PNG: uint8_t, uint16_t
+         * JPG: uint8_t
+         * BMP: uint8_t
+         * PGM: uint8_t, uint16_t
+         * HDR: float
+         */
+        enum class ImageFormat {
+            PNG = 0,
+            JPG,
+            BMP,
+            PGM,
+            HDR
+        };
 
         /**
          * An image template class.
@@ -381,7 +384,7 @@ namespace Atlas {
             int32_t height = 0;
             int32_t channels = 0;
 
-            int32_t fileFormat = 0;
+            ImageFormat fileFormat = ImageFormat::PNG;
             std::string fileName = "";
 
         private:

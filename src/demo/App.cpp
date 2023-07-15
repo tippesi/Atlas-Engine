@@ -6,6 +6,11 @@
 const std::string Atlas::EngineInstance::assetDirectory = "../../data";
 const std::string Atlas::EngineInstance::shaderDirectory = "shader";
 
+const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
+    .assetDirectory = "../../data",
+    .shaderDirectory = "shader"
+};
+
 void App::LoadContent() {
 
     renderTarget = Atlas::RenderTarget(1920, 1080);

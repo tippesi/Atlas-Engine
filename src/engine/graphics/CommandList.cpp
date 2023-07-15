@@ -113,6 +113,8 @@ namespace Atlas {
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             swapChainInUse = swapChain;
 
+            wasSwapChainAccessed = true;
+
             if (clear) ClearAttachments();
 
         }

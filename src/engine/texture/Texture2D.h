@@ -76,15 +76,15 @@ namespace Atlas {
             Common::Image<T> image(width, height, channels);
 
             if constexpr (std::is_same_v<T, uint8_t>) {
-                image.fileFormat = AE_IMAGE_PNG;
+                image.fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
-                image.fileFormat = AE_IMAGE_PGM;
+                image.fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
             }
             else if constexpr (std::is_same_v<T, float>) {
-                image.fileFormat = AE_IMAGE_HDR;
+                image.fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
             }
 
