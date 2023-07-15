@@ -898,7 +898,6 @@ namespace Atlas {
                         if (!descriptorBindingData.images[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
                         const auto descriptorType = binding.layoutBinding.descriptorType;

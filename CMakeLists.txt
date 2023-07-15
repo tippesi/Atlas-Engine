@@ -20,7 +20,6 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 # Options and compiler settings ###################################################################
-# Options and compiler settings ###################################################################
 option(ATLAS_BUILD_SHARED "Force build as shared library" OFF)
 option(ATLAS_OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
 option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_ENGINE_MAIN_FILE} to your executable" OFF)
@@ -40,18 +39,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 if (CYGWIN OR MINGW)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -std=gnu++11" )
-endif()
-
-# Find OpenGL #####################################################################################
-if (ANDROID)
-    set(ATLAS_OPENGL_ES ON)
-    find_library(OpenGL REQUIRED)
-    # Workaround for issue 6
-    find_library(ANDROID_DL_LIBRARY NAMES libdl.so dl)
-endif()
-if (NOT ATLAS_OPENGL_ES)
-    find_package(OpenGL REQUIRED)
-    set(OpenGL_GL_PREFERENCE GLVND)
 endif()
 
 if (ANDROID)

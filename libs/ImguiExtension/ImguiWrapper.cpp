@@ -88,7 +88,7 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 
 }
 
-void ImguiWrapper::Render() {
+void ImguiWrapper::Render(bool clearSwapChain) {
 
     ImGuiIO& io = ImGui::GetIO();
 
@@ -105,7 +105,7 @@ void ImguiWrapper::Render() {
     Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
     Atlas::Graphics::Profiler::BeginQuery("ImGui");
 
-    commandList->BeginRenderPass(swapChain, false);
+    commandList->BeginRenderPass(swapChain, clearSwapChain);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
     commandList->EndRenderPass();
 
@@ -155,6 +155,18 @@ void ImguiWrapper::RecreateImGuiResources() {
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
     initialized = true;
+
+}
+
+VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture2D& texture,
+    VkImageLayout layout) {
+
+    if (!imageViewToDescriptorSetMap.contains(texture.image->view)) {
+        imageViewToDescriptorSetMap[texture.image->view] =
+            ImGui_ImplVulkan_AddTexture(texture.sampler->sampler, texture.image->view, layout);
+    }
+
+    return imageViewToDescriptorSetMap[texture.image->view];
 
 }
 

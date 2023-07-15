@@ -86,12 +86,30 @@ namespace Atlas {
              * Sets the data of the image at mipmap level 0 at the given position.
              * @param x The x coordinate of the pixel to be set
              * @param y The y coordinate of the pixel to be set
-             * @param channel The channel which shoould be set
+             * @param channel The channel which should be set
              * @param data The data to be set at position (x,y) and channel index channel.
              * @note Updating the data won't result in an update of
              * the mipmap chain. Always call GenerateMipmap() for that.
              */
             void SetData(int32_t x, int32_t y, int32_t channel, T data);
+
+            /**
+             *
+             * @tparam S The type of the dat
+             * @param x The x coordinate of the pixel to be set
+             * @param y The y coordinate of the pixel to be set
+             * @param data The data to be set at position (x,y) and channel index channel.
+             * @note Updating the data won't result in an update of
+             * the mipmap chain. Always call GenerateMipmap() for that.
+             */
+            template<class S>
+            void SetData(int32_t x, int32_t y, S data);
+
+            /**
+             * Returns the image data at mipmap level 0.
+             * @return The image data at mipmap level 0.
+             */
+            std::vector<T> GetData() const;
 
             /**
              * Returns the image data at mipmap level 0.
@@ -104,6 +122,12 @@ namespace Atlas {
              * @return Whether or not the image constains data.
              */
             bool HasData() const;
+
+            /**
+             * Fills the whole image with a single value
+             * @param value
+             */
+            void Fill(T value);
 
             /**
              * Returns the mipmap level structure at a given level.
@@ -143,39 +167,6 @@ namespace Atlas {
              * @return The number of mipmap levels the image has.
              */
             int32_t GetMipmapLevelCount() const;
-
-            /**
-             * Sanples the image at a given position.
-             * @param x The x coordinate in pixels.
-             * @param y The y coordinate in pixels.
-             * @param mipLevel The mipmap level to be sampled.
-             * @return The method returns the sampled data. The return type
-             * will depend on the type T of the image. In case of an integer image
-             * it will be an ivec4, for a floating point image it will be a vec4.
-             */
-            decltype(auto) Sample(int32_t x, int32_t y, int32_t mipLevel = 0) const;
-
-            /**
-             * Sanples the image at a given position.
-             * @param x The x coordinate in range of [0,1].
-             * @param y The y coordinate in range of [0,1].
-             * @param mipLevel The mipmap level to be sampled.
-             * @return The method returns the sampled data. The return type
-             * will depend on the type T of the image. In case of an integer image
-             * it will be an ivec4, for a floating point image it will be a vec4.
-             */
-            decltype(auto) Sample(float x, float y, int32_t mipLevel = 0) const;
-
-            /**
-             * Bilinear sanples the image at a given position.
-             * @param x The x coordinate in range of [0,1].
-             * @param y The y coordinate in range of [0,1].
-             * @param mipLevel The mipmap level to be sampled.
-             * @return The method returns the sampled data. The return type
-             * will depend on the type T of the image. In case of an integer image
-             * it will be an ivec4, for a floating point image it will be a vec4.
-             */
-            decltype(auto) SampleBilinear(float x, float y, int32_t mipLevel = 0) const;
 
             /**
              * Generates the mipmap chain.
@@ -224,6 +215,168 @@ namespace Atlas {
              */
             inline float MaxPixelValue() const;
 
+            /**
+             * Samples the image at a given position.
+             * @param x The x coordinate in pixels.
+             * @param y The y coordinate in pixels.
+             * @param mipLevel The mipmap level to be sampled.
+             * @return The method returns the sampled data. The return type
+             * will depend on the type T of the image. In case of an integer image
+             * it will be an ivec4, for a floating point image it will be a vec4.
+             */
+            inline decltype(auto) Sample(int32_t x, int32_t y, int32_t mipLevel = 0) const {
+                auto& level = mipLevels[mipLevel];
+
+                auto width = level.width;
+                auto height = level.height;
+
+                x = x < 0 ? 0 : x;
+                x = x >= width ? width - 1 : x;
+
+                y = y < 0 ? 0 : y;
+                y = y >= height ? height - 1 : y;
+
+                auto index = (y * width + x) * channels;
+
+                if constexpr (std::is_integral_v<T>) {
+                    glm::ivec4 result(0);
+
+                    for (int32_t i = 0; i < channels; i++)
+                        result[i] = int32_t(level.data[index + i]);
+
+                    return result;
+                }
+                else {
+                    glm::vec4 result(0);
+
+                    for (int32_t i = 0; i < channels; i++)
+                        result[i] = float(level.data[index + i]);
+
+                    return result;
+                }
+            }
+
+            /**
+             * Samples the image at a given position.
+             * @param x The x coordinate in range of [0,1].
+             * @param y The y coordinate in range of [0,1].
+             * @param mipLevel The mipmap level to be sampled.
+             * @return The method returns the sampled data. The return type
+             * will depend on the type T of the image. In case of an integer image
+             * it will be an ivec4, for a floating point image it will be a vec4.
+             */
+            inline decltype(auto) Sample(float x, float y, int32_t mipLevel = 0) const {
+                auto& level = mipLevels[mipLevel];
+
+                auto fWidth = float(level.width);
+                auto fHeight = float(level.height);
+
+                x *= fWidth;
+                y *= fHeight;
+
+                auto ix = int32_t(glm::clamp(x, 0.0f, fWidth - 1.0f));
+                auto iy = int32_t(glm::clamp(y, 0.0f, fHeight - 1.0f));
+
+                auto index = (iy * width + ix) * channels;
+
+                if constexpr (std::is_integral_v<T>) {
+                    glm::ivec4 result(0);
+
+                    for (int32_t i = 0; i < channels; i++)
+                        result[i] = int32_t(level.data[index + i]);
+
+                    return result;
+                }
+                else {
+                    glm::vec4 result(0);
+
+                    for (int32_t i = 0; i < channels; i++)
+                        result[i] = float(level.data[index + i]);
+
+                    return result;
+                }
+            }
+
+            /**
+             * Bilinearly samples the image at a given position.
+             * @param x The x coordinate in range of [0,1].
+             * @param y The y coordinate in range of [0,1].
+             * @param mipLevel The mipmap level to be sampled.
+             * @return The method returns the sampled data. The return type
+             * will depend on the type T of the image. In case of an integer image
+             * it will be an ivec4, for a floating point image it will be a vec4.
+             */
+            inline decltype(auto) SampleBilinear(float x, float y, int32_t mipLevel = 0) const {
+                auto& level = mipLevels[mipLevel];
+
+                auto fWidth = float(level.width);
+                auto fHeight = float(level.height);
+
+                x *= fWidth;
+                y *= fHeight;
+
+                auto ox = int32_t(x);
+                auto oy = int32_t(y);
+
+                x = x - floorf(x);
+                y = y - floorf(y);
+
+                if (channels == 1) {
+                    // Fetch the four texture samples
+                    auto q00 = float(Sample(ox, oy, mipLevel).r);
+                    auto q10 = float(Sample(ox + 1, oy, mipLevel).r);
+                    auto q01 = float(Sample(ox, oy + 1, mipLevel).r);
+                    auto q11 = float(Sample(ox + 1, oy + 1, mipLevel).r);
+
+                    // Interpolate samples horizontally
+                    auto h0 = (1.0f - x) * q00 + x * q10;
+                    auto h1 = (1.0f - x) * q01 + x * q11;
+
+                    if constexpr (std::is_integral_v<T>) {
+                        return glm::ivec4(int32_t((1.0f - y) * h0 + y * h1));
+                    }
+                    else {
+                        return glm::vec4((1.0f - y) * h0 + y * h1);
+                    }
+                }
+                else if (channels == 3) {
+                    // Fetch the four texture samples
+                    auto q00 = glm::vec3(Sample(ox, oy, mipLevel));
+                    auto q10 = glm::vec3(Sample(ox + 1, oy, mipLevel));
+                    auto q01 = glm::vec3(Sample(ox, oy + 1, mipLevel));
+                    auto q11 = glm::vec3(Sample(ox + 1, oy + 1, mipLevel));
+
+                    // Interpolate samples horizontally
+                    auto h0 = (1.0f - x) * q00 + x * q10;
+                    auto h1 = (1.0f - x) * q01 + x * q11;
+
+                    if constexpr (std::is_integral_v<T>) {
+                        return glm::ivec4((1.0f - y) * h0 + y * h1, 1.0f);
+                    }
+                    else {
+                        return glm::vec4((1.0f - y) * h0 + y * h1, 1.0f);
+                    }
+                }
+                else {
+                    // Fetch the four texture samples
+                    auto q00 = glm::vec4(Sample(ox, oy, mipLevel));
+                    auto q10 = glm::vec4(Sample(ox + 1, oy, mipLevel));
+                    auto q01 = glm::vec4(Sample(ox, oy + 1, mipLevel));
+                    auto q11 = glm::vec4(Sample(ox + 1, oy + 1, mipLevel));
+
+                    // Interpolate samples horizontally
+                    auto h0 = (1.0f - x) * q00 + x * q10;
+                    auto h1 = (1.0f - x) * q01 + x * q11;
+
+                    if constexpr (std::is_integral_v<T>) {
+                        return glm::ivec4((1.0f - y) * h0 + y * h1);
+                    }
+                    else {
+                        return (1.0f - y) * h0 + y * h1;
+                    }
+                }
+            }
+
             int32_t width = 0;
             int32_t height = 0;
             int32_t channels = 0;
@@ -261,6 +414,43 @@ namespace Atlas {
         }
 
         template<typename T>
+        template<typename S>
+        void Image<T>::SetData(int32_t x, int32_t y, S data) {
+
+            assert(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
+
+            if constexpr (std::is_integral_v<T> && (std::is_same_v<S, glm::ivec2>
+                                                    || std::is_same_v<S, glm::ivec3> || std::is_same_v<S, glm::ivec4>)) {
+                auto min = std::min(int32_t(sizeof(S)) / 4, channels);
+                auto index = (y * width + x) * channels;
+
+                for (int32_t i = 0; i < min; i++) {
+                    mipLevels[0].data[index + i] = T(data[i]);
+                }
+            }
+            else if constexpr ((!std::is_integral_v<T> && (std::is_same_v<S, glm::vec2>
+                                                           || std::is_same_v<S, glm::vec3> || std::is_same_v<S, glm::vec4>))) {
+                auto min = std::min(int32_t(sizeof(S)) / 4, channels);
+                auto index = (y * width + x) * channels;
+
+                for (int32_t i = 0; i < min; i++) {
+                    mipLevels[0].data[index + i]= T(data[i]);
+                }
+            }
+            else {
+                static_assert(!sizeof(S), "Unsupported data type");
+            }
+
+        }
+
+        template<typename T>
+        std::vector<T> Image<T>::GetData() const {
+
+            return mipLevels[0].data;
+
+        }
+
+        template<typename T>
         std::vector<T>& Image<T>::GetData() {
 
             return mipLevels[0].data;
@@ -272,6 +462,13 @@ namespace Atlas {
 
             return mipLevels.size() > 0 &&
                 mipLevels[0].data.size() > 0;
+
+        }
+
+        template<typename T>
+        void Image<T>::Fill(T value) {
+
+            std::fill(GetData().begin(), GetData().end(), value);
 
         }
 
@@ -320,112 +517,6 @@ namespace Atlas {
         int32_t Image<T>::GetMipmapLevelCount() const {
 
             return int32_t(mipLevels.size());
-
-        }
-
-        template<typename T>
-        decltype(auto) Image<T>::Sample(int32_t x, int32_t y, int32_t mipLevel) const {
-
-            auto& level = mipLevels[mipLevel];
-
-            auto width = level.width;
-            auto height = level.height;
-
-            x = x < 0 ? 0 : x;
-            x = x >= width ? width - 1 : x;
-
-            y = y < 0 ? 0 : y;
-            y = y >= height ? height - 1 : y;
-
-            auto index = (y * width + x) * channels;
-
-            if constexpr (std::is_integral_v<T>) {
-                glm::ivec4 result(0);
-
-                for (int32_t i = 0; i < channels; i++)
-                    result[i] = int32_t(level.data[index + i]);
-
-                return result;
-            }
-            else {
-                glm::vec4 result(0);
-
-                for (int32_t i = 0; i < channels; i++)
-                    result[i] = float(level.data[index + i]);
-
-                return result;
-            }
-
-        }
-
-        template<typename T>
-        decltype(auto) Image<T>::Sample(float x, float y, int32_t mipLevel) const {
-
-            auto& level = mipLevels[mipLevel];
-
-            auto fWidth = float(level.width);
-            auto fHeight = float(level.height);
-
-            x *= fWidth;
-            y *= fHeight;
-
-            x = glm::clamp(x, 0.0f, fWidth - 1.0f);
-            y = glm::clamp(y, 0.0f, fHeight - 1.0f);
-
-            auto index = int32_t(y * fWidth + x) * channels;
-
-            if constexpr (std::is_integral_v<T>) {
-                glm::ivec4 result(0);
-
-                for (int32_t i = 0; i < channels; i++)
-                    result[i] = int32_t(level.data[index + i]);
-
-                return result;
-            }
-            else {
-                glm::vec4 result(0);
-
-                for (int32_t i = 0; i < channels; i++)
-                    result[i] = float(level.data[index + i]);
-
-                return result;
-            }
-
-        }
-
-        template<typename T>
-        decltype(auto) Image<T>::SampleBilinear(float x, float y, int32_t mipLevel) const {
-
-            auto& level = mipLevels[mipLevel];
-
-            auto fWidth = float(level.width);
-            auto fHeight = float(level.height);
-
-            x *= fWidth;
-            y *= fHeight;
-
-            auto ox = int32_t(x);
-            auto oy = int32_t(y);
-
-            x = x - floorf(x);
-            y = y - floorf(y);
-
-            // Fetch the four texture samples
-            auto q00 = glm::vec4(Sample(ox, oy, mipLevel));
-            auto q10 = glm::vec4(Sample(ox + 1, oy, mipLevel));
-            auto q01 = glm::vec4(Sample(ox, oy + 1, mipLevel));
-            auto q11 = glm::vec4(Sample(ox + 1, oy + 1, mipLevel));
-
-            // Interpolate samples horizontally
-            auto h0 = (1.0f - x) * q00 + x * q10;
-            auto h1 = (1.0f - x) * q01 + x * q11;
-
-            if constexpr (std::is_integral_v<T>) {
-                return glm::ivec4((1.0f - y) * h0 + y * h1);
-            }
-            else {
-                return (1.0f - y) * h0 + y * h1;
-            }
 
         }
 
