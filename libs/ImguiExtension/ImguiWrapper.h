@@ -3,6 +3,7 @@
 
 // ImguiExtension includes
 #include <imgui.h>
+#include <imgui_internal.h>
 
 // Atlas engine includes
 #include <Window.h>
