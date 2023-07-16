@@ -23,11 +23,11 @@ or while doing the build configuration with CMake. To use vcpkg together with CM
 Run CMake with the option ATLAS_DEMO=ON to include the demo application in the project. For easier use, the vsbuild.bat does exactly
 that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.
 >**Note:**
->In order to start the application properly you might need to change the asset directory in the [demo source file](https://github.com/tippesi/Atlas-Engine/blob/master/demo/App.cpp).
+>In order to start the application properly you might need to change the asset directory in the [demo source file](https://github.com/tippesi/Atlas-Engine/blob/master/src/demo/App.cpp).
 ### Including the library into your own project
 It is possible to compile the engine either as a shared or static library. Set the ATLAS_BUILD_SHARED option accordingly. To make
 the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory. As an entry
-point to create an application from scratch take a look at the [Hello World tutorial](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World). For reference, the source folder contains an empty [app header](https://github.com/tippesi/Atlas-Engine/blob/master/src/App.h) and an empty [app source](https://github.com/tippesi/Atlas-Engine/blob/master/src/App.cpp).
+point to create an application from scratch take a look at the [Hello World tutorial](https://github.com/tippesi/Atlas-Engine/wiki/Hello-World). For reference, the source folder contains an empty [app header](https://github.com/tippesi/Atlas-Engine/blob/master/src/engine/App.h) and an empty [app source](https://github.com/tippesi/Atlas-Engine/blob/master/src/demo/App.cpp).
 <!---
 ### Android
 You can compile the engine using Gradle either with or without AndroidStudio.
@@ -62,7 +62,7 @@ in the LICENSE.md file in the dependency directory.
 >**Note:**
 >The files in the data folder (except the shaders) use a different license. 
 ## Code Example
-For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/demo).
+For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/src/demo).
 ## Screenshots
 ![Example scene](wiki/images/sponza_rasterized.png) <br/>
 *Rasterized image using real time global illumination* <br/>
