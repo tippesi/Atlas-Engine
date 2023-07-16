@@ -15,12 +15,14 @@ namespace Atlas {
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
-            scramblingRankingTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            scramblingRankingTexture.SetData(noiseImage.GetData());
+            scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            scramblingRankingTexture.SetData(noiseImage->GetData());
 
             noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("sobol.png");
-            sobolSequenceTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            sobolSequenceTexture.SetData(noiseImage.GetData());
+            sobolSequenceTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            sobolSequenceTexture.SetData(noiseImage->GetData());
 
             ssaoPipelineConfig = PipelineConfig("ao/ssao.csh");
             rtaoPipelineConfig = PipelineConfig("ao/rtao.csh");

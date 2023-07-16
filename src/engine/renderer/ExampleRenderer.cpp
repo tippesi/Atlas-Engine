@@ -117,7 +117,7 @@ namespace Atlas {
             }
             {
                 auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
-                    Atlas::Loader::ModelLoader::LoadMesh, "sponza/sponza.obj", false, glm::mat4(1.0f), 2048
+                    "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
                 );
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 

@@ -22,7 +22,7 @@ namespace Atlas {
 
         }
 
-        Texture2D::Texture2D(Common::Image<uint8_t>& image, Filtering filtering) {
+        Texture2D::Texture2D(Ref<Common::Image<uint8_t>>& image, Filtering filtering) {
 
             InitializeInternal(image, Wrapping::Repeat, filtering);
 
@@ -38,24 +38,24 @@ namespace Atlas {
 
         }
 
-        void Texture2D::InitializeInternal(Atlas::Common::Image<uint8_t> &image, Wrapping wrapping,
+        void Texture2D::InitializeInternal(Ref<Common::Image<uint8_t>> &image, Wrapping wrapping,
             Filtering filtering) {
 
             // RGB images are mostly not supported
-            if (image.channels == 3) {
-                image.ExpandToChannelCount(4, 0);
+            if (image->channels == 3) {
+                image->ExpandToChannelCount(4, 0);
             }
 
-            switch(image.channels) {
+            switch(image->channels) {
                 case 1: format = VK_FORMAT_R8_UNORM; break;
                 case 2: format = VK_FORMAT_R8G8_UNORM; break;
                 default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
             }
 
-            Reallocate(Graphics::ImageType::Image2D, image.width, image.height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping);
             RecreateSampler(filtering, wrapping);
 
-            SetData(image.GetData());
+            SetData(image->GetData());
 
         }
 

@@ -61,6 +61,8 @@ namespace Atlas {
 
             // This feature struct is the last one in the pNext chain for now
             createInfo.pNext = &portabilityFeatures;
+
+            setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
 #else
             createInfo.pNext = &features;
 #endif

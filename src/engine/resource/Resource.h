@@ -9,6 +9,8 @@
 #include <functional>
 #include <future>
 
+#define RESOURCE_RETENTION_FRAME_COUNT 30
+
 namespace Atlas {
 
     template<typename T>
@@ -16,6 +18,11 @@ namespace Atlas {
 
     template<typename T>
     class ResourceManager;
+
+    enum ResourceOrigin {
+        System = 0,
+        User = 1
+    };
 
     template<typename T>
     class Resource {
@@ -25,9 +32,7 @@ namespace Atlas {
     public:
         Resource() = default;
 
-        Resource(const std::string& path) : path(path) {}
-
-        Resource(const std::string& path, Ref<T> data) :
+        Resource(const std::string& path, Ref<T> data = nullptr) :
             path(path), data(data), isLoaded(data != nullptr) {}
 
         template<typename ...Args>
@@ -54,6 +59,10 @@ namespace Atlas {
             data = nullptr;
         }
 
+        ResourceOrigin origin = System;
+
+        bool permanent = false;
+
     private:
         Ref<T> data;
 
@@ -61,6 +70,8 @@ namespace Atlas {
 
         std::atomic_bool isLoaded = false;
         std::future<void> future;
+
+        int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
 
     template<typename T>
@@ -82,6 +93,10 @@ namespace Atlas {
                 resource->future.wait();
                 resource->future.get();
             }
+        }
+
+        inline Ref<T> Get() const {
+            return resource->data;
         }
 
         inline T& operator*() {

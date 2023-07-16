@@ -11,12 +11,12 @@ namespace Atlas {
                         std::string bottom, std::string front, std::string back) {
 
            std::string filenames[] = { right, left, top, bottom, front, back };
-           Common::Image<uint8_t> images[6];
+           Ref<Common::Image<uint8_t>> images[6];
 
            for (int32_t i = 0; i < 6; i++) {
                images[i] = Loader::ImageLoader::LoadImage<uint8_t>(filenames[i], true, 4);
 
-               if (images[i].GetData().size() == 0) {
+               if (images[i]->GetData().size() == 0) {
                    Log::Error("    Failed to load cubemap face " + std::to_string(i) + " " + filenames[i]);
                    return;
                }
@@ -27,11 +27,11 @@ namespace Atlas {
            filtering = Filtering::MipMapLinear;
            wrapping = Wrapping::ClampToEdge;
 
-           Reallocate(Graphics::ImageType::ImageCube, images[0].width, images[0].height, 6, filtering, wrapping);
+           Reallocate(Graphics::ImageType::ImageCube, images[0]->width, images[0]->height, 6, filtering, wrapping);
            RecreateSampler(filtering, wrapping);
 
            for (int32_t i = 0; i < 6; i++)
-               SetData(images[i].GetData(), i);
+               SetData(images[i]->GetData(), i);
 
        }
 
@@ -39,7 +39,7 @@ namespace Atlas {
 
            auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 4);
 
-           if (image.GetData().size() == 0) {
+           if (image->GetData().size() == 0) {
                Log::Error("Failed to load cubemap image " + filename);
                return;
            }
@@ -86,7 +86,7 @@ namespace Atlas {
                        uv *= invAtan;
                        uv += 0.5f;
 
-                       vec3 sample = glm::clamp(vec3(image.SampleBilinear(uv.x, uv.y)), 
+                       vec3 sample = glm::clamp(vec3(image->SampleBilinear(uv.x, uv.y)),
                            vec3(0.0f), vec3(65500.0f));
 
                        faceImage.SetData(x, y, 0, sample.x);

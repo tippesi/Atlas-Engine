@@ -162,7 +162,7 @@ namespace Atlas {
              * the channels in range [channelOffset, channelOffset + channelCount].
              * At each pixel, this data range will be copied in the to be returned data.
              */
-            Image<T> GetChannelImage(int32_t channelOffset,
+            Ref<Image<T>> GetChannelImage(int32_t channelOffset,
                 int32_t channelCount, int32_t mipLevel = 0) const;
 
             /**
@@ -504,7 +504,7 @@ namespace Atlas {
         }
 
         template<typename T>
-        Image<T> Image<T>::GetChannelImage(int32_t channelOffset,
+        Ref<Image<T>> Image<T>::GetChannelImage(int32_t channelOffset,
             int32_t channelCount, int32_t mipLevel) const {
 
             auto& level = mipLevels[mipLevel];
@@ -512,7 +512,7 @@ namespace Atlas {
 
             image.SetData(GetChannelData(channelOffset, channelCount, mipLevel));
 
-            return image;
+            return CreateRef(image);
 
         }
 

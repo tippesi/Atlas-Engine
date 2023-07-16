@@ -20,8 +20,15 @@ namespace Atlas {
         template<typename ...Args>
         static ResourceHandle<T> GetResource(const std::string& path, Args&&... args) {
 
+            return GetResource(path, System, std::forward<Args>(args)...);
+
+        }
+
+        template<typename ...Args>
+        static ResourceHandle<T> GetResource(const std::string& path, ResourceOrigin origin, Args&&... args) {
+
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
-                std::is_constructible<T, Args...>(),
+                          std::is_constructible<T, Args...>(),
                 "Resource class needs to implement constructor with provided argument type");
 
             CheckInitialization();
@@ -29,7 +36,9 @@ namespace Atlas {
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -42,16 +51,17 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(
-            Ref<T> (*loaderFunction)(const std::string&, Args...),
-            const std::string& path, Args... args) {
+        static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
+            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
             CheckInitialization();
 
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -64,16 +74,17 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(
-            std::function<Ref<T>(const std::string&, Args...)> loaderFunction,
-            const std::string& path, Args&&... args) {
+        static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
+            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args&&... args) {
 
             CheckInitialization();
 
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -97,7 +108,9 @@ namespace Atlas {
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -111,16 +124,17 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(
-            std::function<Ref<T>(const std::string&, Args...)> loaderFunction,
-            const std::string& path, Args... args) {
+        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
+            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
             CheckInitialization();
 
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -135,16 +149,17 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(
-            Ref<T> (*loaderFunction)(const std::string&, Args...),
-            const std::string& path, Args... args) {
+        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
+            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
             CheckInitialization();
 
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
-                    return ResourceHandle<T>(resources[path]);
+                    auto& resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
                 }
 
                 resources[path] = std::make_shared<Resource<T>>(path);
@@ -158,15 +173,23 @@ namespace Atlas {
 
         }
 
-        ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
+        static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
 
             std::lock_guard lock(mutex);
             if (resources.contains(path)) {
-                return ResourceHandle<T>(resources[path]);
+                auto& resource = resources[path];
+                resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                return ResourceHandle<T>(resource);
             }
 
             resources[path] = resource;
             return ResourceHandle<T>(resource);
+
+        }
+
+        static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data) {
+
+            return AddResource(path, CreateRef<Resource<T>>(path, data));
 
         }
 
@@ -209,7 +232,18 @@ namespace Atlas {
             std::lock_guard lock(mutex);
 
             for (auto it = resources.begin(); it != resources.end();) {
-                if (it->second.use_count() == 1) {
+                auto& resource = it->second;
+                // Just one reference (the resource manager), so start countdown for future deletion
+                // If resource is accessed in certain time frame we reset the counter
+                if (resource->data.use_count() == 1) {
+                    resource->framesToDeletion--;
+                }
+                else {
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                }
+
+                // Delete if all conditions are met
+                if (resource->data.use_count() == 1 && resource->framesToDeletion == 0) {
                     it = resources.erase(it);
                 }
                 else {

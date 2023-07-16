@@ -724,7 +724,7 @@ bool App::LoadScene() {
 
         glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "cornell/CornellBox-Original.obj", false, transform, 2048
+            "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh { meshData });
 
@@ -746,7 +746,7 @@ bool App::LoadScene() {
 
         glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "sponza/sponza.obj", false, transform, 2048
+            "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -772,7 +772,7 @@ bool App::LoadScene() {
 
         auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(.015f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "bistro/mesh/exterior.obj", false, transform, 2048
+            "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -797,7 +797,7 @@ bool App::LoadScene() {
 
         auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "sanmiguel/san-miguel-low-poly.obj", false, transform, 2048
+            "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -822,7 +822,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "medieval/scene.fbx", false, glm::mat4(1.0f), 2048
+            "medieval/scene.fbx", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -849,7 +849,7 @@ bool App::LoadScene() {
 
         auto transform = glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "pica pica/mesh/scene.gltf", false, transform, 2048
+            "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -873,7 +873,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "subway/scene.gltf", false, glm::mat4(1.0f), 2048
+            "subway/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -898,7 +898,7 @@ bool App::LoadScene() {
 
         auto transform = glm::scale(glm::vec3(8.0f));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "material demo/materials.obj", false, transform, 2048
+            "material demo/materials.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
 
@@ -927,22 +927,22 @@ bool App::LoadScene() {
 
         auto transform = glm::mat4(glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)));
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "newsponza/main/NewSponza_Main_Blender_glTF.gltf", false, transform, 2048
+            "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", false, transform, 2048
+            "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "newsponza/curtains/NewSponza_Curtains_glTF.gltf", false, transform, 2048
+            "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            ModelLoader::LoadMesh, "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", false, transform, 2048
+            "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData });
         meshes.back().invertUVs = true;
