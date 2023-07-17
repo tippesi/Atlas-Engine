@@ -46,6 +46,7 @@ namespace Atlas {
 
             // Load only after mutex is unlocked
             resources[path]->Load(std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -69,6 +70,7 @@ namespace Atlas {
 
             // Load only after mutex is unlocked
             resources[path]->LoadWithExternalLoader(std::function(loaderFunction), std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -92,6 +94,7 @@ namespace Atlas {
 
             // Load only after mutex is unlocked
             resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -119,6 +122,7 @@ namespace Atlas {
             // Load only after mutex is unlocked
             resources[path]->future = std::async(std::launch::async, &Resource<T>::Load,
                 resources[path].get(), std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -144,6 +148,7 @@ namespace Atlas {
             resources[path]->future = std::async(std::launch::async,
                 &Resource<T>::template LoadWithExternalLoader<Args...>,
                 resources[path].get(), loaderFunction, std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
@@ -169,20 +174,25 @@ namespace Atlas {
             resources[path]->future = std::async(std::launch::async,
                 &Resource<T>::template LoadWithExternalLoader<Args...>,
                 resources[path].get(), std::function(loaderFunction), std::forward<Args>(args)...);
+            NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
 
         }
 
         static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
 
-            std::lock_guard lock(mutex);
-            if (resources.contains(path)) {
-                auto& resource = resources[path];
-                resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                return ResourceHandle<T>(resource);
+            {
+                std::lock_guard lock(mutex);
+                if (resources.contains(path)) {
+                    auto &resource = resources[path];
+                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    return ResourceHandle<T>(resource);
+                }
+
+                resources[path] = resource;
             }
 
-            resources[path] = resource;
+            NotifyAllSubscribers(resource);
             return ResourceHandle<T>(resource);
 
         }
@@ -193,7 +203,7 @@ namespace Atlas {
 
         }
 
-        std::vector<ResourceHandle<T>> GetResources() {
+        static std::vector<ResourceHandle<T>> GetResources() {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
@@ -205,13 +215,25 @@ namespace Atlas {
 
         }
 
+        static void Subscribe(std::function<void(Ref<Resource<T>>&)> function) {
+
+            std::lock_guard lock(subscriberMutex);
+
+            subscribers.push_back(function);
+
+        }
+
     private:
         static std::mutex mutex;
+        static std::mutex subscriberMutex;
+
         static std::unordered_map<std::string, Ref<Resource<T>>> resources;
 
         static std::atomic_bool isInitialized;
 
         static ResourceMemoryManager<T> memoryManager;
+
+        static std::vector<std::function<void(Ref<Resource<T>>&)>> subscribers;
 
         static inline void CheckInitialization() {
 
@@ -235,7 +257,7 @@ namespace Atlas {
                 auto& resource = it->second;
                 // Just one reference (the resource manager), so start countdown for future deletion
                 // If resource is accessed in certain time frame we reset the counter
-                if (resource->data.use_count() == 1) {
+                if (resource.use_count() == 1 && !resource->permanent) {
                     resource->framesToDeletion--;
                 }
                 else {
@@ -243,7 +265,8 @@ namespace Atlas {
                 }
 
                 // Delete if all conditions are met
-                if (resource->data.use_count() == 1 && resource->framesToDeletion == 0) {
+                if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
+                    resource->Unload();
                     it = resources.erase(it);
                 }
                 else {
@@ -258,10 +281,23 @@ namespace Atlas {
 
         }
 
+        static void NotifyAllSubscribers(Ref<Resource<T>>& resource) {
+
+            std::lock_guard lock(subscriberMutex);
+
+            for (auto& subscriber : subscribers) {
+                subscriber(resource);
+            }
+
+        }
+
     };
 
     template<typename T>
     std::mutex ResourceManager<T>::mutex;
+
+    template<typename T>
+    std::mutex ResourceManager<T>::subscriberMutex;
 
     template<typename T>
     std::unordered_map<std::string, Ref<Resource<T>>> ResourceManager<T>::resources;
@@ -271,6 +307,9 @@ namespace Atlas {
 
     template<typename T>
     ResourceMemoryManager<T> ResourceManager<T>::memoryManager;
+
+    template<typename T>
+    std::vector<std::function<void(Ref<Resource<T>>&)>> ResourceManager<T>::subscribers;
 
 }
 

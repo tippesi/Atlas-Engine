@@ -61,12 +61,11 @@ namespace Atlas {
 
         ResourceOrigin origin = System;
 
+        const std::string path;
         bool permanent = false;
 
     private:
         Ref<T> data;
-
-        std::string path;
 
         std::atomic_bool isLoaded = false;
         std::future<void> future;
@@ -95,8 +94,12 @@ namespace Atlas {
             }
         }
 
-        inline Ref<T> Get() const {
+        inline Ref<T>& Get() const {
             return resource->data;
+        }
+
+        inline Ref<Resource<T>>& GetResource() const {
+            return resource;
         }
 
         inline T& operator*() {
