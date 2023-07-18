@@ -126,15 +126,15 @@ void main() {
     // Apply the tone mapping because we want the colors to be back in
     // normal range
 #ifdef HDR
-    color = ToneMap(color);
-
     // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
     // Haven't testet with Dolby Vision
 #ifdef HYBRID_LOG_GAMMA_EOTF
-    color = InverseHybridLogGammeEotf(color);
+    color = Rec709ToRec2020(color);
+    color.rgb = InverseHybridLogGammeEotf(color);
 #endif
 
 #ifdef PERCEPTUAL_QUANTIZER_EOTF
+    color = Rec709ToRec2020(color);
     color = InversePerceptualQuantizerEotf(color);
 #endif
     

@@ -423,7 +423,7 @@ namespace Atlas {
             assert(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
 
             if constexpr (std::is_integral_v<T> && (std::is_same_v<S, glm::ivec2>
-                                                    || std::is_same_v<S, glm::ivec3> || std::is_same_v<S, glm::ivec4>)) {
+                || std::is_same_v<S, glm::ivec3> || std::is_same_v<S, glm::ivec4>)) {
                 auto min = std::min(int32_t(sizeof(S)) / 4, channels);
                 auto index = (y * width + x) * channels;
 
@@ -432,12 +432,20 @@ namespace Atlas {
                 }
             }
             else if constexpr ((!std::is_integral_v<T> && (std::is_same_v<S, glm::vec2>
-                                                           || std::is_same_v<S, glm::vec3> || std::is_same_v<S, glm::vec4>))) {
+                || std::is_same_v<S, glm::vec3> || std::is_same_v<S, glm::vec4>))) {
                 auto min = std::min(int32_t(sizeof(S)) / 4, channels);
                 auto index = (y * width + x) * channels;
 
                 for (int32_t i = 0; i < min; i++) {
                     mipLevels[0].data[index + i]= T(data[i]);
+                }
+            }
+            else if constexpr (!std::is_integral_v<T> && std::is_same_v<S, float>) {
+                auto min = std::min(int32_t(sizeof(S)) / 4, channels);
+                auto index = (y * width + x) * channels;
+
+                for (int32_t i = 0; i < min; i++) {
+                    mipLevels[0].data[index + i]= T(data);
                 }
             }
             else {
