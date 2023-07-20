@@ -120,7 +120,8 @@ namespace Atlas {
             }
 
             // Load only after mutex is unlocked
-            resources[path]->future = std::async(std::launch::async, &Resource<T>::Load,
+            resources[path]->future = std::async(std::launch::async,
+                &Resource<T>::template Load<Args...>,
                 resources[path].get(), std::forward<Args>(args)...);
             NotifyAllSubscribers(resources[path]);
             return ResourceHandle<T>(resources[path]);
@@ -209,7 +210,7 @@ namespace Atlas {
         static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data) {
 
             bool alreadyExisted;
-            AddResource(path, data, alreadyExisted);
+            return AddResource(path, data, alreadyExisted);
 
         }
 

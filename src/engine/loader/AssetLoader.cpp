@@ -58,7 +58,7 @@ namespace Atlas {
             assetDirectory = directory;
 
 #ifndef AE_OS_ANDROID
-            dataDirectory = Common::Path::GetAbsolute(directory);
+            dataDirectory = Common::Path::Normalize(Common::Path::GetAbsolute(directory));
 #endif
 
         }
@@ -241,10 +241,15 @@ namespace Atlas {
 
         std::string AssetLoader::GetRelativePath(const std::string& path) {
 
-            auto proximate = std::filesystem::proximate(std::filesystem::path(path),
-                std::filesystem::path(dataDirectory));
+            auto pos = path.find(dataDirectory);
+            if (pos != std::string::npos) {
 
-            return proximate.string();
+                auto relativePath = path.substr(pos + dataDirectory.length() + 1);
+                return relativePath;
+
+            }
+
+            return path;
 
         }
 

@@ -192,8 +192,8 @@ namespace Atlas {
 
                 // Create image header
                 header.append("P2 ");
-                header.append(std::to_string(image.width) + " ");
-                header.append(std::to_string(image.height) + " ");
+                header.append(std::to_string(image->width) + " ");
+                header.append(std::to_string(image->height) + " ");
 
                 if constexpr (std::is_same_v<T, uint8_t>) {
                     header.append("255\n");
@@ -204,7 +204,7 @@ namespace Atlas {
 
                 imageStream << header;
 
-                auto imageData = image.GetData();
+                auto imageData = image->GetData();
 
                 for (auto data : imageData) {
                     imageStream << data;

@@ -108,12 +108,16 @@ namespace Atlas {
 
         ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
 
+        inline bool IsValid() {
+            return resource != nullptr;
+        }
+
         inline bool IsLoaded() {
-            return resource != nullptr && resource->isLoaded;
+            return IsValid() && resource->isLoaded;
         }
 
         inline void WaitForLoad() {
-            if (resource != nullptr) {
+            if (IsValid()) {
                 if (!resource->future.valid())
                     return;
                 resource->future.wait();
