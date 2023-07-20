@@ -181,14 +181,23 @@ namespace Atlas {
 
         static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
 
+            bool alreadyExisted;
+            AddResource(path, resource, alreadyExisted);
+
+        }
+
+        static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource, bool& alreadyExisted) {
+
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {
                     auto &resource = resources[path];
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                    alreadyExisted = true;
                     return ResourceHandle<T>(resource);
                 }
 
+                alreadyExisted = false;
                 resources[path] = resource;
             }
 
@@ -199,7 +208,16 @@ namespace Atlas {
 
         static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data) {
 
-            return AddResource(path, CreateRef<Resource<T>>(path, data));
+            bool alreadyExisted;
+            AddResource(path, data, alreadyExisted);
+
+        }
+
+        static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data, bool& alreadyExisted) {
+
+            auto resource = CreateRef<Resource<T>>(path, data);
+            resource->isLoaded = true;
+            return AddResource(path, resource, alreadyExisted);
 
         }
 

@@ -127,8 +127,10 @@ void main() {
     // normal range
 #ifdef HDR
     // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
-    // Haven't testet with Dolby Vision
+    // Haven't tested with Dolby Vision
 #ifdef HYBRID_LOG_GAMMA_EOTF
+    // Dark regions are getting crushed too much, correct for that
+    color = pow(color, vec3(0.9));
     color = Rec709ToRec2020(color);
     color.rgb = InverseHybridLogGammeEotf(color);
 #endif

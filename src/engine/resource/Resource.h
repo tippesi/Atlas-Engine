@@ -38,24 +38,48 @@ namespace Atlas {
         template<typename ...Args>
         void Load(Args&&... args) {
 
-            if constexpr (std::is_constructible<T, const std::string&, Args...>()) {
-                data = std::make_shared<T>(path, std::forward<Args>(args)...);
+            try {
+                if constexpr (std::is_constructible<T, const std::string&, Args...>()) {
+                    data = std::make_shared<T>(path, std::forward<Args>(args)...);
+                }
+                else {
+                    data = std::make_shared<T>(std::forward<Args>(args)...);
+                }
+
+                isLoaded = true;
             }
-            else {
-                data = std::make_shared<T>(std::forward<Args>(args)...);
+            catch (const std::exception& exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = exception;
             }
-            
-            isLoaded = true;
+            catch(...) {
+                errorOnLoad = true;
+                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+            }
+
         }
 
         template<class ...Args>
         void LoadWithExternalLoader(std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
-            data = loaderFunction(path, std::forward<Args>(args)...);
-            isLoaded = true;
+
+            try {
+                data = loaderFunction(path, std::forward<Args>(args)...);
+                isLoaded = true;
+            }
+            catch (const std::exception& exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = exception;
+            }
+            catch(...) {
+                errorOnLoad = true;
+                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+            }
+
         }
 
         void Unload() {
             isLoaded = false;
+            errorOnLoad = false;
             data = nullptr;
         }
 
@@ -63,6 +87,9 @@ namespace Atlas {
 
         const std::string path;
         bool permanent = false;
+
+        bool errorOnLoad = false;
+        std::exception exceptionOnLoad;
 
     private:
         Ref<T> data;
@@ -94,11 +121,19 @@ namespace Atlas {
             }
         }
 
-        inline Ref<T>& Get() const {
+        inline Ref<T>& Get() {
             return resource->data;
         }
 
-        inline Ref<Resource<T>>& GetResource() const {
+        inline const Ref<T>& Get() const {
+            return resource->data;
+        }
+
+        inline const Ref<Resource<T>>& GetResource() const {
+            return resource;
+        }
+
+        inline Ref<Resource<T>>& GetResource() {
             return resource;
         }
 

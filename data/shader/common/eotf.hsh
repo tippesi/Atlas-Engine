@@ -19,6 +19,11 @@ vec3 InverseHybridLogGammeEotf(vec3 color) {
 
 vec3 InversePerceptualQuantizerEotf(vec3 color) {
 
+    // Multiply by whitepoint of 100 (color needs to be in luminance/m^2)
+    // Tradtionally SDR RGB displays have a whitepoint of rgb = vec3(1.0) -> 100 nits
+    // Allowed are colors up to 10000 nits, so 100 times the whitepoint
+    color *= 100.0;
+
     // ST2084 Perceptual Quantizer (PQ) EOTF
     float m1 = 2610.0 / 4096.0 * (1.0 / 4.0);
     float m2 = 2523.0 / 4096.0 * 128.0;
@@ -26,12 +31,10 @@ vec3 InversePerceptualQuantizerEotf(vec3 color) {
     float c2 = 2413.0 / 4096.0 * 32.0;
     float c3 = 2392.0 / 4096.0 * 32.0;
 
-    // Should be color / 10000
     vec3 Y = color / 10000.0;
     vec3 Ym1 = pow(Y, vec3(m1));
 
     color = pow((c1 + c2 * Ym1) / (1 + c3 * Ym1), vec3(m2));
-    color = 1.0 + log(color) / log(8.0) / 2.0;
 
     return color;
 

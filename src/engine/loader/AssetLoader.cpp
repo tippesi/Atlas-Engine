@@ -230,12 +230,21 @@ namespace Atlas {
 
         }
 
-        std::string AssetLoader::GetFullPath(std::string path) {
+        std::string AssetLoader::GetFullPath(const std::string& path) {
 
             if (Common::Path::IsAbsolute(path))
                 return path;
 
             return dataDirectory + "/" + path;
+
+        }
+
+        std::string AssetLoader::GetRelativePath(const std::string& path) {
+
+            auto proximate = std::filesystem::proximate(std::filesystem::path(path),
+                std::filesystem::path(dataDirectory));
+
+            return proximate.string();
 
         }
 

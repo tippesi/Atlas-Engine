@@ -103,7 +103,14 @@ namespace Atlas {
              * @param path A path relative to the asset directory.
              * @return The full path as a string.
              */
-            static std::string GetFullPath(std::string path);
+            static std::string GetFullPath(const std::string& path);
+
+            /**
+             * Returns the path in relative form to the asset directory
+             * @param path A full path or even a relative path
+             * @return If a full path will return a relative path, if not a full path will return path
+             */
+            static std::string GetRelativePath(const std::string& path);
 
             /**
              * Checks whether the file is in the asset directory.
