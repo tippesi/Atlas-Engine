@@ -61,8 +61,8 @@ namespace Atlas {
 
                 Scene::Scene* scene;
                 
-                std::vector<Scene::RTData::GPULight> lights;
-                std::vector<Scene::RTData::GPULight> selectedLights;
+                std::vector<GPULight> lights;
+                std::vector<GPULight> selectedLights;
 
                 PipelineConfig traceDispatchPipelineConfig;
                 PipelineConfig traceClosestPipelineConfig;

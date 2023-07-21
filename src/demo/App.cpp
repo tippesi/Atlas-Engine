@@ -965,8 +965,13 @@ bool App::LoadScene() {
 
     actors.reserve(meshes.size());
     for (auto& mesh : meshes) {
-        actors.push_back({ &mesh, glm::mat4(1.0f) });
-        scene.Add(&actors.back());
+        for (int32_t i = 0; i < 10; i++) {
+            actors.push_back({ &mesh, glm::translate(glm::mat4(1.0f), glm::vec3(float(i) * 100.0f, 0.0f, 0.0f)) });
+        }
+
+        for (auto& actor : actors) {
+            scene.Add(&actor);
+        }
     }
 
     camera.Update();
@@ -1006,8 +1011,15 @@ void App::CheckLoadScene() {
 
     static std::future<void> future;
 
+    auto buildRTStructure = [&]() {
+        for (auto& mesh : meshes) {
+            mesh.data->BuildBVH();
+        }
+        scene.BuildRTStructures();
+    };
+
     if (!future.valid()) {
-        future = std::async(std::launch::async, &Atlas::Scene::Scene::BuildRTStructures, &scene);
+        future = std::async(std::launch::async, buildRTStructure);
         return;
     }
     else {

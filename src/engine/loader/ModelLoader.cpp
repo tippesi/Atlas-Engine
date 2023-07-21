@@ -171,6 +171,7 @@ namespace Atlas {
                 LoadMaterial(scene->mMaterials[i], images, material);
 
                 subData.material = &material;
+                subData.materialIdx = i;
                 subData.indicesOffset = usedFaces * 3;
 
                 for (auto assimpMesh : meshSorted[i]) {

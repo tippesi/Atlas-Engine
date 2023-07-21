@@ -48,6 +48,8 @@ namespace Atlas {
 
             void Build(const std::vector<BVHTriangle>& data);
 
+            void Build();
+
             void Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs);
 
             BVHBuilder* leftChild = nullptr;
@@ -116,6 +118,8 @@ namespace Atlas {
             BVH() = default;
 
             BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data);
+
+            BVH(std::vector<AABB>& aabbs);
 
             bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
                 glm::vec3& intersection);

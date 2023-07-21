@@ -151,6 +151,15 @@ struct LightSample {
     float pdf;
 };
 
+struct BVHInstance {
+    mat4 inverseMatrix;
+    int blasOffset;
+
+    int padding0;
+    int padding1;
+    int padding2;
+};
+
 layout(push_constant) uniform constants {
     int lightCount;
     uint rayBufferOffset;

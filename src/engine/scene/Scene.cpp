@@ -61,7 +61,7 @@ namespace Atlas {
             // Make sure this is changed just once at the start of a frame
             rtDataValid = rtData.IsValid();
             if (rtDataValid) {
-                rtData.UpdateMaterials();
+                rtData.Update();
             }
 
         }
@@ -131,7 +131,7 @@ namespace Atlas {
 
         void Scene::BuildRTStructures() {
 
-            rtData.Update();
+            rtData.Build();
 
         }
 

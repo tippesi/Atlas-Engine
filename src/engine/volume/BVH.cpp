@@ -73,6 +73,66 @@ namespace Atlas {
 
         }
 
+        BVH::BVH(std::vector<AABB>& aabbs) {
+
+            Log::Message("Started BVH build");
+
+            Tools::PerformanceCounter perfCounter;
+
+            std::vector<BVHBuilder::Ref> refs(aabbs.size());
+            for (size_t i = 0; i < refs.size(); i++) {
+                refs[i].idx = uint32_t(i);
+                refs[i].aabb = aabbs[i];
+            }
+
+            // Calculate initial aabb of root
+            AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
+                glm::vec3(-std::numeric_limits<float>::max()));
+            for (auto& ref : refs)
+                aabb.Grow(aabbs[ref.idx]);
+
+            auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
+            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 256);
+            refs.clear();
+            refs.reserve(data.size());
+
+            builder->Build();
+
+            Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
+
+            if (!nodes.size() && aabbs.size() == 1) {
+                BVHNode node;
+                node.leftPtr = ~0;
+                node.rightPtr = ~0;
+                node.leftAABB = aabb;
+                node.rightAABB = AABB(vec3(0.0f), vec3(0.0f));
+
+                nodes.push_back(node);
+            }
+
+            builder->Flatten(nodes, refs);
+
+            this->aabbs.resize(refs.size());
+
+            for (size_t i = 0; i < refs.size(); i++) {
+                auto ref = refs[i];
+                this->aabbs[i] = aabbs[ref.idx];
+            }
+
+            delete builder;
+
+            Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
+            Log::Message("Triangle count: " + std::to_string(refs.size()));
+            Log::Message("Node count: " + std::to_string(nodes.size()));
+            Log::Message("Max depth: " + std::to_string(BVHBuilder::maxDepth));
+            Log::Message("Min triangles: " + std::to_string(BVHBuilder::minTriangles));
+            Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
+            Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
+            Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
+            Log::Message("Finished BVH build");
+
+        }
+
         bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
 
             constexpr auto max = std::numeric_limits<float>::max();
@@ -303,6 +363,73 @@ namespace Atlas {
                 if (rightRefs.size()) {
                     rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
                     rightChild->Build(data);
+                }
+            }
+
+        }
+
+        void BVHBuilder::Build() {
+
+            // Create leaf node
+            if (refs.size() == 1) {
+                CreateLeaf();
+                return;
+            }
+
+            Split objectSplit;
+            objectSplit = FindObjectSplit();
+
+            std::vector<Ref> leftRefs;
+            std::vector<Ref> rightRefs;
+
+            leftRefs.reserve(refs.size() / 2);
+            rightRefs.reserve(refs.size() / 2);
+
+            Split split;
+            // If we haven't found a cost improvement but need to continue since only one item per leaf is allowed
+            if (objectSplit.axis < 0 || objectSplit.cost >= nodeCost) {
+                split = PerformMedianSplit(leftRefs, rightRefs);
+            }
+            else {
+                leftRefs.clear();
+                rightRefs.clear();
+                PerformObjectSplit(rightRefs, leftRefs, objectSplit);
+                split = objectSplit;
+            }
+
+            refs.clear();
+            refs.shrink_to_fit();
+
+            if (depth <= 5) {
+                std::thread leftBuilderThread, rightBuilderThread;
+
+                auto leftLambda = [&]() {
+                    if (!leftRefs.size()) return;
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
+                    leftChild->Build();
+                };
+
+                auto rightLambda = [&]() {
+                    if (!rightRefs.size()) return;
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
+                    rightChild->Build();
+                };
+
+                leftBuilderThread = std::thread{ leftLambda };
+                rightBuilderThread = std::thread{ rightLambda };
+
+                leftBuilderThread.join();
+                rightBuilderThread.join();
+            }
+            else {
+                if (leftRefs.size()) {
+                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
+                    leftChild->Build();
+                }
+
+                if (rightRefs.size()) {
+                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
+                    rightChild->Build();
                 }
             }
 

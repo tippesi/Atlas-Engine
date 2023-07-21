@@ -32,7 +32,7 @@ namespace Atlas {
                 // Create dynamic resizable shader storage buffers
                 lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
                     Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit,
-                    sizeof(Scene::RTData::GPULight), lightCount);
+                    sizeof(GPULight), lightCount);
                 rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
                 rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
                 rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
@@ -157,8 +157,10 @@ namespace Atlas {
                     rtData.materialBuffer.Bind(commandList, 2, 7);
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                    rtData.nodeBuffer.Bind(commandList, 2, 10);
-                    lightBuffer.Bind(commandList, 2, 11);
+                    rtData.blasNodeBuffer.Bind(commandList, 2, 10);
+                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 11);
+                    rtData.tlasNodeBuffer.Bind(commandList, 2, 12);
+                    lightBuffer.Bind(commandList, 2, 13);
                 }
 
                 // Execute shader
@@ -301,8 +303,10 @@ namespace Atlas {
                     rtData.materialBuffer.Bind(commandList, 2, 7);
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                    rtData.nodeBuffer.Bind(commandList, 2, 10);
-                    lightBuffer.Bind(commandList, 2, 11);
+                    rtData.blasNodeBuffer.Bind(commandList, 2, 10);
+                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 11);
+                    rtData.tlasNodeBuffer.Bind(commandList, 2, 12);
+                    lightBuffer.Bind(commandList, 2, 13);
                 }
 
                 Graphics::Profiler::BeginQuery("Setup command buffer");
@@ -514,7 +518,7 @@ namespace Atlas {
                     data |= uint32_t(lights.size());
                     auto cd = reinterpret_cast<float&>(data);
 
-                    Scene::RTData::GPULight gpuLight;
+                    GPULight gpuLight;
                     gpuLight.data0 = vec4(P, radiance.r);
                     gpuLight.data1 = vec4(cd, weight, area, radiance.g);
                     gpuLight.N = vec4(N, radiance.b);

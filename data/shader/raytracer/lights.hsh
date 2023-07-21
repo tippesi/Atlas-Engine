@@ -4,7 +4,7 @@
 
 #include <../brdf/surface.hsh>
 
-layout (std430, set = 2, binding = 11) buffer Lights {
+layout (std430, set = 2, binding = 13) buffer Lights {
     PackedLight lights[];
 };
 

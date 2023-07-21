@@ -3,15 +3,17 @@
 
 #include "../System.h"
 #include "../volume/AABB.h"
+#include "../scene/RTStructures.h"
 #include "DataComponent.h"
 #include "Material.h"
 
 #include <vector>
 
-#define AE_PRIMITIVE_TRIANGLES GL_TRIANGLES
-#define AE_PRIMITIVE_TRIANGLE_STRIP GL_TRIANGLE_STRIP
-
 namespace Atlas {
+
+    namespace Scene {
+        class RTData;
+    }
 
     namespace Mesh {
 
@@ -23,12 +25,15 @@ namespace Atlas {
             uint32_t indicesCount;
             
             Material* material;
+            int32_t materialIdx;
 
             Volume::AABB aabb;
         
         };
 
         class MeshData {
+
+            friend class Scene::RTData;
 
         public:
             /**
@@ -78,6 +83,11 @@ namespace Atlas {
              */
             void SetTransform(mat4 transform);
 
+            /**
+             * Builds a blas from the data
+             */
+            void BuildBVH();
+
             std::string filename;
 
             DataComponent<uint32_t> indices;
@@ -101,6 +111,10 @@ namespace Atlas {
 
             int32_t indexCount = 0;
             int32_t vertexCount = 0;
+
+            std::vector<GPUTriangle> gpuTriangles;
+            std::vector<BVHTriangle> gpuBvhTriangles;
+            std::vector<GPUBVHNode> gpuBvhNodes;
 
         };
 
