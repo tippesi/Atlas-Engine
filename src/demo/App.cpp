@@ -125,9 +125,17 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
-    auto matrix = glm::rotate(glm::mat4(1.0f), Atlas::Clock::Get(), glm::vec3(0.0f, 1.0f, 0.0f));
+    if (sceneSelection == SPONZA) {
+        auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
+        matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    actors.front().SetMatrix(matrix);
+        actors[1].SetMatrix(matrix);
+
+        float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
+        matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
+
+        actors[2].SetMatrix(matrix);
+    }
 
     scene.Update(&camera, deltaTime);
 
@@ -730,12 +738,6 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
-    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
-    auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-        "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
-    );
-    meshes.push_back(Atlas::Mesh::Mesh { meshData, Atlas::Mesh::MeshMobility::Movable });
-
     if (sceneSelection == CORNELL) {
         meshes.reserve(1);
 
@@ -769,6 +771,18 @@ bool App::LoadScene() {
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
+
+        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+        meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
+            "metallicwall.gltf", ModelLoader::LoadMesh, false, transform, 2048
+        );
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
+
+        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+        meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
+            "emissivesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
+        );
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
@@ -984,20 +998,8 @@ bool App::LoadScene() {
 
     auto meshCount = 0;
     for (auto& mesh : meshes) {
-        if (meshCount == 0) {
-            for (int32_t i = 0; i < 1; i++) {
-                auto x = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
-                auto y = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
-                auto z = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
-                actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f),
-                    glm::vec3(x, y, z) * 100.0f) });
-            }
-        }
-        else {
-            actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f),
-                glm::vec3(0.0f)) });
-        }
-
+        actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f),
+            glm::vec3(0.0f)) });
 
         meshCount++;
     }
