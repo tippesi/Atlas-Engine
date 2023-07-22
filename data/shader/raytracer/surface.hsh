@@ -27,11 +27,31 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
     return mat;
 }
 
+void TransformTriangle(inout Triangle tri, BVHInstance instance) {
+
+    mat4 matrix = inverse(instance.inverseMatrix);
+
+    tri.v0 = vec3(matrix * vec4(tri.v0, 1.0));
+    tri.v1 = vec3(matrix * vec4(tri.v1, 1.0));
+    tri.v2 = vec3(matrix * vec4(tri.v2, 1.0));
+
+    tri.n0 = normalize(vec3(matrix * vec4(tri.n0, 0.0)));
+    tri.n1 = normalize(vec3(matrix * vec4(tri.n1, 0.0)));
+    tri.n2 = normalize(vec3(matrix * vec4(tri.n2, 0.0)));
+
+    tri.t = normalize(vec3(matrix * vec4(tri.t, 0.0)));
+    tri.bt = normalize(vec3(matrix * vec4(tri.bt, 0.0)));
+
+}
+
 Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool backfaceHit, int textureLevel) {
 
     Surface surface;
     RaytraceMaterial rayMat;
     Material mat = GetTriangleMaterial(tri, rayMat);
+
+    BVHInstance instance = bvhInstances[ray.hitInstanceID];
+    TransformTriangle(tri, instance);
 
     // The ray doesn't provide us with the barrycentric coordinates
     // so we intersect again.

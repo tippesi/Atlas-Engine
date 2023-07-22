@@ -33,7 +33,7 @@ namespace Atlas {
                 lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
                     Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit,
                     sizeof(GPULight), lightCount);
-                rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 2 * sizeof(vec4));
+                rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 3 * sizeof(vec4));
                 rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
                 rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
                 rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
@@ -158,9 +158,9 @@ namespace Atlas {
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
                     rtData.blasNodeBuffer.Bind(commandList, 2, 10);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 11);
-                    rtData.tlasNodeBuffer.Bind(commandList, 2, 12);
-                    lightBuffer.Bind(commandList, 2, 13);
+                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                    lightBuffer.Bind(commandList, 2, 11);
                 }
 
                 // Execute shader
@@ -304,9 +304,9 @@ namespace Atlas {
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
                     rtData.blasNodeBuffer.Bind(commandList, 2, 10);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 11);
-                    rtData.tlasNodeBuffer.Bind(commandList, 2, 12);
-                    lightBuffer.Bind(commandList, 2, 13);
+                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                    lightBuffer.Bind(commandList, 2, 11);
                 }
 
                 Graphics::Profiler::BeginQuery("Setup command buffer");

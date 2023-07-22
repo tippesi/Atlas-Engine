@@ -40,11 +40,12 @@ Ray UnpackRay(PackedRay compressed) {
     
     ray.ID = floatBitsToInt(compressed.origin.w);
     ray.origin = compressed.origin.xyz;
+    ray.direction = compressed.direction.xyz;
 
     ray.hitID = floatBitsToInt(compressed.hit.y);
     ray.hitDistance = compressed.hit.x;
+    ray.hitInstanceID = floatBitsToInt(compressed.hit.z);
     
-    ray.direction = Cartesian(compressed.hit.zw);
     ray.inverseDirection = 1.0 / ray.direction;
 
     return ray;
@@ -55,12 +56,12 @@ PackedRay PackRay(Ray ray) {
     
     compressed.origin.w = intBitsToFloat(ray.ID);
     compressed.origin.xyz = ray.origin;
+    compressed.direction.xyz = ray.direction.xyz;
 
     compressed.hit.x = ray.hitDistance;
     compressed.hit.y = intBitsToFloat(ray.hitID);
+    compressed.hit.z = intBitsToFloat(ray.hitInstanceID);
 
-    vec2 dir = Spherical(ray.direction);
-    compressed.hit.zw = dir;
     
     return compressed;
 }

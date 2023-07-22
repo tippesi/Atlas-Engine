@@ -27,3 +27,7 @@ layout(std430, set = 2, binding = 17) buffer RayBinCounters {
 layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
     uint rayBinOffsets[];
 };
+
+layout(std430, set = 2, binding = 21) buffer BvhInstances {
+    BVHInstance bvhInstances[];
+};

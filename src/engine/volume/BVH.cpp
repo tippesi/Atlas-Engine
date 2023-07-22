@@ -79,7 +79,7 @@ namespace Atlas {
 
             Tools::PerformanceCounter perfCounter;
 
-            std::vector<BVHBuilder::Ref> refs(aabbs.size());
+            refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {
                 refs[i].idx = uint32_t(i);
                 refs[i].aabb = aabbs[i];
@@ -92,7 +92,7 @@ namespace Atlas {
                 aabb.Grow(aabbs[ref.idx]);
 
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
-            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 256);
+            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 128);
             refs.clear();
             refs.reserve(data.size());
 
@@ -122,14 +122,6 @@ namespace Atlas {
             delete builder;
 
             Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
-            Log::Message("Triangle count: " + std::to_string(refs.size()));
-            Log::Message("Node count: " + std::to_string(nodes.size()));
-            Log::Message("Max depth: " + std::to_string(BVHBuilder::maxDepth));
-            Log::Message("Min triangles: " + std::to_string(BVHBuilder::minTriangles));
-            Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
-            Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
-            Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
-            Log::Message("Finished BVH build");
 
         }
 
@@ -400,7 +392,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 5) {
+            if (depth <= 0) {
                 std::thread leftBuilderThread, rightBuilderThread;
 
                 auto leftLambda = [&]() {

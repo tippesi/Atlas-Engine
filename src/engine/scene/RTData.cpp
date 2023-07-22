@@ -176,8 +176,8 @@ namespace Atlas {
                 auto mesh = meshInfo[actor->mesh];
 
                 GPUBVHInstance gpuBvhInstance = {
-                    .inverseMatrix = glm::inverse(actor->globalMatrix),
-                    .blasOffset = mesh.nodeOffset
+                    .blasOffset = mesh.nodeOffset,
+                    .inverseMatrix = glm::inverse(actor->globalMatrix)                    
                 };
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
@@ -202,11 +202,17 @@ namespace Atlas {
                 gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
             }
 
+            // Order after the BVH build to fit the node indices
+            std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
+            for (size_t i = 0; i < bvh.refs.size(); i++) {
+                orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
+            }
+
             tlasNodeBuffer.SetSize(gpuBvhNodes.size());
             tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
-            bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
-            bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
+            bvhInstanceBuffer.SetSize(orderedGpuBvhInstances.size());
+            bvhInstanceBuffer.SetData(orderedGpuBvhInstances.data(), 0, orderedGpuBvhInstances.size());
 
         }
 

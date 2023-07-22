@@ -125,6 +125,10 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
+   // auto matrix = glm::rotate(glm::mat4(1.0f), Atlas::Clock::Get(), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    //actors.front().SetMatrix(matrix);
+
     scene.Update(&camera, deltaTime);
 
     CheckLoadScene();
@@ -966,7 +970,7 @@ bool App::LoadScene() {
     actors.reserve(meshes.size());
     for (auto& mesh : meshes) {
         for (int32_t i = 0; i < 10; i++) {
-            actors.push_back({ &mesh, glm::translate(glm::mat4(1.0f), glm::vec3(float(i) * 100.0f, 0.0f, 0.0f)) });
+            actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -float(i) * 100.0f)) });
         }
 
         for (auto& actor : actors) {

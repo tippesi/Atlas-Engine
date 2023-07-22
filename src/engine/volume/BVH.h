@@ -135,6 +135,7 @@ namespace Atlas {
 
             std::vector<AABB> aabbs;
             std::vector<BVHTriangle> data;
+            std::vector<BVHBuilder::Ref> refs;
 
             std::vector<BVHNode> nodes;
 

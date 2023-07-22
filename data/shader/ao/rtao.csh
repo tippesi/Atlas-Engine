@@ -91,11 +91,11 @@ void main() {
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
 
-                float hit = 1.0 - HitAnyShadow(ray, 0.0, uniforms.radius);
-                ao += hit;
+                //float hit = 1.0 - HitAnyShadow(ray, 0.0, uniforms.radius);
+                //ao += hit;
 
-                //bool hit = HitAny(ray, 0.0, uniforms.radius);
-                //ao += hit ? 1.0 : 0.0;
+                bool hit = HitAny(ray, 0.0, uniforms.radius);
+                ao += hit ? 1.0 : 0.0;
 
             }
 

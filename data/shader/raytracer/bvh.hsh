@@ -1,9 +1,11 @@
 #extension GL_ARB_shader_ballot : require
+#extension GL_EXT_debug_printf : enable
 
 #include <common.hsh>
 #include <intersections.hsh>
 #include <structures.hsh>
 #include <surface.hsh>
+#include <buffers.hsh>
 
 #define STACK_SIZE 32
 #define TLAS_INVALID 1000000
@@ -40,11 +42,7 @@ layout(std430, set = 2, binding = 10) buffer BlasNodes {
     PackedBVHNode blasNodes[];
 };
 
-layout(std430, set = 2, binding = 11) buffer BvhInstances {
-    BVHInstance bvhInstances[];
-};
-
-layout(std430, set = 2, binding = 12) buffer TlasNodes {
+layout(std430, set = 2, binding = 22) buffer TlasNodes {
     PackedBVHNode tlasNodes[];
 };
 
@@ -90,6 +88,7 @@ void CheckLeafClosest(inout Ray ray, int nodePtr, float tmin, float tmax) {
             if (sol.x < ray.hitDistance) {
                 ray.hitDistance = sol.x;
                 ray.hitID = triPtr;
+                ray.hitInstanceID = ray.currentInstanceID;
             }
         }
         triPtr++;
@@ -120,6 +119,7 @@ bool CheckLeaf(inout Ray ray, int nodePtr, float tmin, float tmax) {
             hit = true;
             ray.hitDistance = sol.x;
             ray.hitID = triPtr;
+            ray.hitInstanceID = ray.currentInstanceID;
         }
         triPtr++;
     }
@@ -150,6 +150,7 @@ float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, 
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
             ray.hitDistance = sol.x;
             ray.hitID = triPtr;
+            ray.hitInstanceID = ray.currentInstanceID;
             transparency *= (1.0 - GetOpacity(tri, sol.yz, 0));
         }
         triPtr++;
@@ -168,6 +169,7 @@ void CheckInstance(inout Ray ray, inout int nodePtr) {
     ray.origin = vec3(instance.inverseMatrix * vec4(ray.origin, 1.0));
     ray.direction = normalize(vec3(instance.inverseMatrix * vec4(ray.direction, 0.0)));
     ray.inverseDirection = 1.0 / ray.direction;
+    ray.currentInstanceID = instancePtr;
 
     nodePtr = instance.blasOffset;
 
@@ -180,8 +182,8 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     uint threadID = gl_LocalInvocationIndex;
     stack[0][threadID] = nodePtr;
 
-    vec3 previosRayOrigin;
-    vec3 previosRayDirection;
+    vec3 originalRayOrigin = ray.origin;
+    vec3 originalRayDirection = ray.direction;
 
     ray.hitDistance = tMax;
 
@@ -193,16 +195,13 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     while (stackPtr != 0u) {
         if (tlasIndex == TLAS_INVALID || stackPtr < tlasIndex) {
             if (tlasIndex != TLAS_INVALID) {
-                ray.origin = previosRayOrigin;
-                ray.direction = previosRayDirection;
+                ray.origin = originalRayOrigin;
+                ray.direction = originalRayDirection;
                 ray.inverseDirection = 1.0 / ray.direction;
             }
             tlasIndex = TLAS_INVALID;
             if (nodePtr < 0) {
                 tlasIndex = stackPtr;
-
-                previosRayOrigin = ray.origin;
-                previosRayDirection = ray.direction;
 
                 CheckInstance(ray, nodePtr);
             }
@@ -250,6 +249,10 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
             }
         }
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
+    ray.inverseDirection = 1.0 / ray.direction;
         
 }
 
@@ -265,24 +268,21 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
     uint threadID = gl_LocalInvocationIndex;
     stack[0][threadID] = nodePtr;
 
-    vec3 previosRayOrigin;
-    vec3 previosRayDirection;
+    vec3 originalRayOrigin = ray.origin;
+    vec3 originalRayDirection = ray.direction;
 
     uint tlasIndex = TLAS_INVALID;
 
     while (stackPtr != 0u && !hit) {
         if (tlasIndex == TLAS_INVALID || stackPtr < tlasIndex) {
             if (tlasIndex != TLAS_INVALID) {
-                ray.origin = previosRayOrigin;
-                ray.direction = previosRayDirection;
+                ray.origin = originalRayOrigin;
+                ray.direction = originalRayDirection;
                 ray.inverseDirection = 1.0 / ray.direction;
             }
             tlasIndex = TLAS_INVALID;
             if (nodePtr < 0) {
                 tlasIndex = stackPtr;
-
-                previosRayOrigin = ray.origin;
-                previosRayDirection = ray.direction;
 
                 CheckInstance(ray, nodePtr);
             }
@@ -291,9 +291,9 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 
                 float hitL = 0.0, hitR = 0.0;
                 bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
+                node.leftAABB, tMin, tMax, hitL);
                 bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+                node.rightAABB, tMin, tMax, hitR);
 
                 bool noIntersection = !intersectL && !intersectR;
                 nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
@@ -330,6 +330,10 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
         }
     }
 
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
+    ray.inverseDirection = 1.0 / ray.direction;
+
     return hit;
         
 }
@@ -346,24 +350,21 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
     uint threadID = gl_LocalInvocationIndex;
     stack[0][threadID] = nodePtr;
 
-    vec3 previosRayOrigin;
-    vec3 previosRayDirection;
+    vec3 originalRayOrigin = ray.origin;
+    vec3 originalRayDirection = ray.direction;
 
     uint tlasIndex = TLAS_INVALID;
 
     while (stackPtr != 0u && transparency > 0.0) {
         if (tlasIndex == TLAS_INVALID || stackPtr < tlasIndex) {
             if (tlasIndex != TLAS_INVALID) {
-                ray.origin = previosRayOrigin;
-                ray.direction = previosRayDirection;
+                ray.origin = originalRayOrigin;
+                ray.direction = originalRayDirection;
                 ray.inverseDirection = 1.0 / ray.direction;
             }
             tlasIndex = TLAS_INVALID;
             if (nodePtr < 0) {
                 tlasIndex = stackPtr;
-
-                previosRayOrigin = ray.origin;
-                previosRayDirection = ray.direction;
 
                 CheckInstance(ray, nodePtr);
             }
@@ -372,9 +373,9 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
 
                 float hitL = 0.0, hitR = 0.0;
                 bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
+                node.leftAABB, tMin, tMax, hitL);
                 bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+                node.rightAABB, tMin, tMax, hitR);
 
                 bool noIntersection = !intersectL && !intersectR;
                 nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
@@ -411,6 +412,10 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
             }
         }
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
+    ray.inverseDirection = 1.0 / ray.direction;
 
     return transparency;
 

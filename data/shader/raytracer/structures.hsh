@@ -8,6 +8,7 @@
 
 struct PackedRay {
     vec4 origin;
+    vec4 direction;
     vec4 hit;
 };
 
@@ -23,7 +24,11 @@ struct Ray {
     vec3 inverseDirection;
 
     int hitID;
-    float hitDistance;    
+    float hitDistance;
+    int hitInstanceID;
+
+    int currentInstanceID;
+
 };
 
 struct RayPayload {
@@ -152,12 +157,13 @@ struct LightSample {
 };
 
 struct BVHInstance {
-    mat4 inverseMatrix;
     int blasOffset;
 
     int padding0;
     int padding1;
     int padding2;
+
+    mat4 inverseMatrix;
 };
 
 layout(push_constant) uniform constants {

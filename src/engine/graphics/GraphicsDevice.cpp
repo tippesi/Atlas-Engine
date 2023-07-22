@@ -822,7 +822,6 @@ namespace Atlas {
             for (const auto& extension : availableExtensions) {
                 requiredExtensions.erase(extension.extensionName);
             }
-            assert(requiredExtensions.empty() && "Not all required extensions were found");
 
             return requiredExtensions.empty();
 
