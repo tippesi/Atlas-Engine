@@ -177,10 +177,10 @@ namespace Atlas {
                 const QueueRef& queue, const QueueRef& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
-                const std::vector<const char*>& requiredExtensions);
+                const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
 
             int32_t RateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR surface,
-                const std::vector<const char*>& requiredExtensions);
+                const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
 
             bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
@@ -188,6 +188,9 @@ namespace Atlas {
 
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
+
+            std::vector<const char*> CheckDeviceOptionalExtensionSupport(VkPhysicalDevice physicalDevice,
+                std::vector<const char*>& extensionNames);
 
             void BuildPhysicalDeviceFeatures(VkPhysicalDevice device);
 

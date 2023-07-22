@@ -154,7 +154,7 @@ namespace Atlas {
             else {
                 for (auto actor : actors) {
                     currentActorMatrices.push_back(actor->globalMatrix);
-                    if (mesh->mobility != Mesh::MeshMobility::Stationary) {
+                    if (needsHistory) {
                         lastActorMatrices.push_back(actor->lastGlobalMatrix);
                     }
                     else {

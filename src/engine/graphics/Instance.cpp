@@ -50,11 +50,25 @@ namespace Atlas {
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
             auto debugCreateInfo = GetDebugMessengerCreateInfo();
+
+            // Only enable these with validation layers enabled as well as debug mode enabled
+            // They do take away a large chunk of performance
+            VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+            VkValidationFeaturesEXT validationFeatures = {};
+
             if (enableValidationLayers) {
                 createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
                 createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+
+#ifdef AE_BUILDTYPE_DEBUG
+                validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+                validationFeatures.enabledValidationFeatureCount = 1;
+                validationFeatures.pEnabledValidationFeatures = enables;
+
+                debugCreateInfo.pNext = &validationFeatures;
+#endif
             }
             else {
                 createInfo.enabledLayerCount = 0;

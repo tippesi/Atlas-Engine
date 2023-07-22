@@ -168,9 +168,11 @@ namespace Atlas {
                     triangles[k].n1 = normalize(normals.Get()[idx1]);
                     triangles[k].n2 = normalize(normals.Get()[idx2]);
 
-                    triangles[k].uv0 = texCoords.Get()[idx0];
-                    triangles[k].uv1 = texCoords.Get()[idx1];
-                    triangles[k].uv2 = texCoords.Get()[idx2];
+                    if (texCoords.ContainsData()) {
+                        triangles[k].uv0 = texCoords.Get()[idx0];
+                        triangles[k].uv1 = texCoords.Get()[idx1];
+                        triangles[k].uv2 = texCoords.Get()[idx2];
+                    }
 
                     triangles[k].materialIdx = sub.materialIdx;
 

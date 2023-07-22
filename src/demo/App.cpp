@@ -125,9 +125,9 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
-   // auto matrix = glm::rotate(glm::mat4(1.0f), Atlas::Clock::Get(), glm::vec3(0.0f, 1.0f, 0.0f));
+    auto matrix = glm::rotate(glm::mat4(1.0f), Atlas::Clock::Get(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //actors.front().SetMatrix(matrix);
+    actors.front().SetMatrix(matrix);
 
     scene.Update(&camera, deltaTime);
 
@@ -144,6 +144,7 @@ void App::Render(float deltaTime) {
     static bool debugReflection = false;
     static bool debugClouds = false;
     static bool debugSSS = false;
+    static bool debugMotion = false;
     static bool slowMode = false;
 
     static float cloudDepthDebug = 0.0f;
@@ -162,7 +163,7 @@ void App::Render(float deltaTime) {
     else {
         mainRenderer->RenderScene(&viewport, &renderTarget, &camera, &scene);
 
-        auto debug = debugAo || debugReflection || debugClouds || debugSSS;
+        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugMotion;
 
         if (debug) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
@@ -183,6 +184,11 @@ void App::Render(float deltaTime) {
             }
             else if (debugSSS) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+            }
+            else if (debugMotion) {
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
+                    renderTarget.GetData(Atlas::FULL_RES)->velocityTexture.get(),
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
             }
 
@@ -441,6 +447,7 @@ void App::Render(float deltaTime) {
                 keyboardHandler.speed = cameraSpeed;
                 ImGui::Separator();
                 ImGui::Text("Camera debugging");
+                ImGui::Checkbox("Show motion vectors##MotionVecs", &debugMotion);
                 ImGui::Checkbox("Move camera", &moveCamera);
                 ImGui::Checkbox("Rotate camera", &rotateCamera);
             }
@@ -723,6 +730,12 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
+    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
+    auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
+        "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
+    );
+    meshes.push_back(Atlas::Mesh::Mesh { meshData, Atlas::Mesh::MeshMobility::Movable });
+
     if (sceneSelection == CORNELL) {
         meshes.reserve(1);
 
@@ -730,7 +743,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh { meshData });
+        meshes.push_back(Atlas::Mesh::Mesh { meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -752,7 +765,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -778,7 +791,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -803,7 +816,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -828,7 +841,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "medieval/scene.fbx", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -855,7 +868,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -879,7 +892,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "subway/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -904,7 +917,7 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "material demo/materials.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
@@ -933,22 +946,22 @@ bool App::LoadScene() {
         auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
         meshes.back().invertUVs = true;
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
             "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData });
+        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
         meshes.back().invertUVs = true;
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
@@ -969,7 +982,7 @@ bool App::LoadScene() {
 
     actors.reserve(meshes.size());
     for (auto& mesh : meshes) {
-        for (int32_t i = 0; i < 10; i++) {
+        for (int32_t i = 0; i < 1; i++) {
             actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -float(i) * 100.0f)) });
         }
 
@@ -1033,54 +1046,61 @@ void App::CheckLoadScene() {
         future.get();
     }
 
+    auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
+        glm::vec3(-std::numeric_limits<float>::max()));
+
+    for (auto& actor : actors) {
+        sceneAABB.Grow(actor.aabb);
+    }
+
     if (sceneSelection == CORNELL) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.10f), glm::ivec3(20));
+            sceneAABB.Scale(1.10f), glm::ivec3(20));
         scene.irradianceVolume->sampleEmissives = true;
         scene.irradianceVolume->SetRayCount(512, 32);
     }
     else if (sceneSelection == SPONZA) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(0.9f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
         scene.irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == BISTRO) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(0.9f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(32, 32);
         scene.irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == SANMIGUEL) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MEDIEVAL) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
         for (auto& material : meshes.front().data->materials) material.twoSided = false;
 
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == SUBWAY) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MATERIALS) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == NEWSPONZA) {
         scene.irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            meshes.front().data->aabb.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(20));
         scene.irradianceVolume->SetRayCount(128, 32);
     }
 
