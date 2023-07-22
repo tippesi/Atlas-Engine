@@ -176,9 +176,10 @@ namespace Atlas {
                 auto mesh = meshInfo[actor->mesh];
 
                 GPUBVHInstance gpuBvhInstance = {
-                    .blasOffset = mesh.nodeOffset,
-                    .inverseMatrix = glm::inverse(actor->globalMatrix)                    
+                    .inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix))),
+                    .blasOffset = mesh.nodeOffset
                 };
+
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
             }

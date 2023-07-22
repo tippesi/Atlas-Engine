@@ -77,13 +77,13 @@ namespace Atlas {
     };
 
     struct GPUBVHInstance {
+        mat3x4 inverseMatrix;
+
         int32_t blasOffset;
 
         int32_t padding0;
         int32_t padding1;
         int32_t padding2;
-
-        mat4x3 inverseMatrix;
     };
 
     struct GPUBVHNode {

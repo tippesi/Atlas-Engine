@@ -134,7 +134,7 @@ namespace Atlas {
                 bool endOfNode;
             };
 
-            int32_t triangleCount = 0;
+            uint32_t triangleCount = 0;
 
             for (auto& sub : subData) {
                 triangleCount += sub.indicesCount / 3;
@@ -151,7 +151,7 @@ namespace Atlas {
 
                 auto subDataTriangleCount = sub.indicesCount / 3;
 
-                for (int32_t i = 0; i < subDataTriangleCount; i++) {
+                for (uint32_t i = 0; i < subDataTriangleCount; i++) {
 
                     auto k = i + triangleCount;
 

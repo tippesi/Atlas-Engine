@@ -157,13 +157,13 @@ struct LightSample {
 };
 
 struct BVHInstance {
+    mat3x4 inverseMatrix;
+
     int blasOffset;
 
     int padding0;
     int padding1;
     int padding2;
-
-    mat4x3 inverseMatrix;
 };
 
 layout(push_constant) uniform constants {

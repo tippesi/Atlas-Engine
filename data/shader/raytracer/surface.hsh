@@ -29,7 +29,7 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
 
 void TransformTriangle(inout Triangle tri, BVHInstance instance) {
 
-    mat4 matrix = inverse(instance.inverseMatrix);
+    mat4 matrix = inverse(mat4(transpose(instance.inverseMatrix)));
 
     tri.v0 = vec3(matrix * vec4(tri.v0, 1.0));
     tri.v1 = vec3(matrix * vec4(tri.v1, 1.0));

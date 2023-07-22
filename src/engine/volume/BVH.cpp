@@ -1,7 +1,7 @@
 // Based on: Spatial Splits in Bounding Volume Hierarchies, Stich et. al.
 // https://www.nvidia.in/docs/IO/77714/sbvh.pdf
 #include <numeric>
-#include <thread>
+#include <future>
 
 #include "BVH.h"
 #include "Log.h"
@@ -318,8 +318,6 @@ namespace Atlas {
             refs.shrink_to_fit();
 
             if (depth <= 5) {
-                std::thread leftBuilderThread, rightBuilderThread;
-
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
                     leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
@@ -332,11 +330,17 @@ namespace Atlas {
                     rightChild->Build(data);
                 };
 
-                leftBuilderThread = std::thread{ leftLambda };
-                rightBuilderThread = std::thread{ rightLambda };
+                auto leftBuilderFuture = std::async(leftLambda);
+                auto rightBuilderFuture = std::async(rightLambda);
 
-                leftBuilderThread.join();
-                rightBuilderThread.join();
+                if (!leftBuilderFuture.valid())
+                    Log::Message("Future error");
+
+                if (!rightBuilderFuture.valid())
+                    Log::Message("Future error");
+
+                leftBuilderFuture.get();
+                rightBuilderFuture.get();
             }
             else {
                 if (leftRefs.size()) {
@@ -384,9 +388,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 1) {
-                std::thread leftBuilderThread, rightBuilderThread;
-
+            if (depth <= 5) {
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
                     leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
@@ -399,11 +401,12 @@ namespace Atlas {
                     rightChild->Build();
                 };
 
-                leftBuilderThread = std::thread{ leftLambda };
-                rightBuilderThread = std::thread{ rightLambda };
+                auto leftBuilderFuture = std::async(leftLambda);
+                auto rightBuilderFuture = std::async(rightLambda);
 
-                leftBuilderThread.join();
-                rightBuilderThread.join();
+                leftBuilderFuture.get();
+                rightBuilderFuture.get();
+
             }
             else {
                 if (leftRefs.size()) {

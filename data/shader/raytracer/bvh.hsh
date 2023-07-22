@@ -166,8 +166,8 @@ void CheckInstance(inout Ray ray, inout int nodePtr) {
 
     BVHInstance instance = bvhInstances[instancePtr];
 
-    ray.origin = vec3(instance.inverseMatrix * vec4(ray.origin, 1.0));
-    ray.direction = normalize(vec3(instance.inverseMatrix * vec4(ray.direction, 0.0)));
+    ray.origin = vec4(ray.origin, 1.0) * instance.inverseMatrix;
+    ray.direction = normalize(vec4(ray.direction, 0.0) * instance.inverseMatrix);
     ray.inverseDirection = 1.0 / ray.direction;
     ray.currentInstanceID = instancePtr;
 

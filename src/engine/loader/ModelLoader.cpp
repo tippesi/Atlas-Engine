@@ -150,11 +150,11 @@ namespace Atlas {
 
             auto threadCount = std::thread::hardware_concurrency();
             std::vector<std::thread> threads;
-            for (int32_t i = 0; i < threadCount; i++) {
+            for (uint32_t i = 0; i < threadCount; i++) {
                 threads.emplace_back(std::thread{ loadImagesLambda });
             }
 
-            for (int32_t i = 0; i < threadCount; i++) {
+            for (uint32_t i = 0; i < threadCount; i++) {
                 threads[i].join();
             }
 

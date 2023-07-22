@@ -730,7 +730,7 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
-    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
+    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
     auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
         "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
     );
@@ -985,7 +985,7 @@ bool App::LoadScene() {
     auto meshCount = 0;
     for (auto& mesh : meshes) {
         if (meshCount == 0) {
-            for (int32_t i = 0; i < 10000; i++) {
+            for (int32_t i = 0; i < 1; i++) {
                 auto x = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
                 auto y = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
                 auto z = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
