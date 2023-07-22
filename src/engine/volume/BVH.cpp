@@ -75,10 +75,6 @@ namespace Atlas {
 
         BVH::BVH(std::vector<AABB>& aabbs) {
 
-            Log::Message("Started BVH build");
-
-            Tools::PerformanceCounter perfCounter;
-
             refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {
                 refs[i].idx = uint32_t(i);
@@ -97,8 +93,6 @@ namespace Atlas {
             refs.reserve(data.size());
 
             builder->Build();
-
-            Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
 
             if (!nodes.size() && aabbs.size() == 1) {
                 BVHNode node;
@@ -120,8 +114,6 @@ namespace Atlas {
             }
 
             delete builder;
-
-            Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
 
         }
 
@@ -392,7 +384,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 0) {
+            if (depth <= 1) {
                 std::thread leftBuilderThread, rightBuilderThread;
 
                 auto leftLambda = [&]() {

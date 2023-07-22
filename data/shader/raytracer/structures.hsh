@@ -163,7 +163,7 @@ struct BVHInstance {
     int padding1;
     int padding2;
 
-    mat4 inverseMatrix;
+    mat4x3 inverseMatrix;
 };
 
 layout(push_constant) uniform constants {

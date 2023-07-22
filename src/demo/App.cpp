@@ -730,7 +730,7 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
-    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
+    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
     auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
         "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
     );
@@ -981,14 +981,29 @@ bool App::LoadScene() {
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
     actors.reserve(meshes.size());
+
+    auto meshCount = 0;
     for (auto& mesh : meshes) {
-        for (int32_t i = 0; i < 1; i++) {
-            actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -float(i) * 100.0f)) });
+        if (meshCount == 0) {
+            for (int32_t i = 0; i < 10000; i++) {
+                auto x = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
+                auto y = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
+                auto z = 2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f;
+                actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f),
+                    glm::vec3(x, y, z) * 100.0f) });
+            }
+        }
+        else {
+            actors.push_back(Atlas::Actor::MovableMeshActor{ &mesh, glm::translate(glm::mat4(1.0f),
+                glm::vec3(0.0f)) });
         }
 
-        for (auto& actor : actors) {
-            scene.Add(&actor);
-        }
+
+        meshCount++;
+    }
+
+    for (auto& actor : actors) {
+        scene.Add(&actor);
     }
 
     camera.Update();

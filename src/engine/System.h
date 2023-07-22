@@ -58,6 +58,7 @@ namespace Atlas {
 
     using glm::mat4;
     using glm::mat3;
+    using glm::mat4x3;
 
     typedef short float16;
 
