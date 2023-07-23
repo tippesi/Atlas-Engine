@@ -32,7 +32,7 @@ namespace Atlas {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path);
+            auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->Load(std::forward<Args>(args)...);
                 NotifyAllSubscribers(resources[path]);
@@ -47,16 +47,15 @@ namespace Atlas {
         static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
             Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            CheckInitialization();
+            return GetResourceWithLoader(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
-            auto handle = GetHandleOrCreateResource(path);
-            if (!handle.IsValid()) {
-                resources[path]->LoadWithExternalLoader(std::function(loaderFunction), std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
-            }
+        }
 
-            return handle;
+        template<class ...Args>
+        static ResourceHandle<T> GetResourceWithLoader(const std::string& path, ResourceOrigin origin,
+            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+
+            return GetResourceWithLoader(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
@@ -64,9 +63,17 @@ namespace Atlas {
         static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args&&... args) {
 
+            return GetResourceWithLoader(path, System, loaderFunction, std::forward<Args>(args)...);
+
+        }
+
+        template<class ...Args>
+        static ResourceHandle<T> GetResourceWithLoader(const std::string& path, ResourceOrigin origin,
+            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args&&... args) {
+
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path);
+            auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
                 NotifyAllSubscribers(resources[path]);
@@ -80,13 +87,20 @@ namespace Atlas {
         template<typename ...Args>
         static ResourceHandle<T> GetResourceAsync(const std::string& path, Args&&... args) {
 
+            return GetResourceAsync(path, System, std::forward<Args>(args)...);
+
+        }
+
+        template<typename ...Args>
+        static ResourceHandle<T> GetResourceAsync(const std::string& path, ResourceOrigin origin, Args&&... args) {
+
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
                 std::is_constructible<T, Args...>(),
                 "Resource class needs to implement constructor with provided argument type");
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path);
+            auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->future = std::async(std::launch::async,
                     &Resource<T>::template Load<Args...>,
@@ -101,34 +115,39 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
-            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
+            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            CheckInitialization();
+            return GetResourceWithLoaderAsync(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
-            auto handle = GetHandleOrCreateResource(path);
-            if (!handle.IsValid()) {
-                resources[path]->future = std::async(std::launch::async,
-                    &Resource<T>::template LoadWithExternalLoader<Args...>,
-                    resources[path].get(), loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
-            }
+        }
 
-            return handle;
+        template<class ...Args>
+        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
+            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+
+            return GetResourceWithLoaderAsync(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
         static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
+
+            return GetResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
+
+        }
+
+        template<class ...Args>
+        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
+            std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path);
+            auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->future = std::async(std::launch::async,
                     &Resource<T>::template LoadWithExternalLoader<Args...>,
-                    resources[path].get(), std::function(loaderFunction), std::forward<Args>(args)...);
+                    resources[path].get(), loaderFunction, std::forward<Args>(args)...);
                 NotifyAllSubscribers(resources[path]);
                 handle = ResourceHandle<T>(resources[path]);
             }
@@ -167,13 +186,27 @@ namespace Atlas {
         static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data) {
 
             bool alreadyExisted;
-            return AddResource(path, data, alreadyExisted);
+            return AddResource(path, System, data, alreadyExisted);
+
+        }
+
+        static ResourceHandle<T> AddResource(const std::string& path, ResourceOrigin origin, Ref<T> data) {
+
+            bool alreadyExisted;
+            return AddResource(path, origin, data, alreadyExisted);
 
         }
 
         static ResourceHandle<T> AddResource(const std::string& path, Ref<T> data, bool& alreadyExisted) {
 
-            auto resource = CreateRef<Resource<T>>(path, data);
+            return AddResource(path, System, data, alreadyExisted);
+
+        }
+
+        static ResourceHandle<T> AddResource(const std::string& path, ResourceOrigin origin,
+            Ref<T> data, bool& alreadyExisted) {
+
+            auto resource = CreateRef<Resource<T>>(path, origin, data);
             resource->isLoaded = true;
             return AddResource(path, resource, alreadyExisted);
 
@@ -184,6 +217,20 @@ namespace Atlas {
             std::vector<ResourceHandle<T>> resourceHandles;
 
             for (auto& [_, resource] : resources) {
+                resourceHandles.emplace_back(resource);
+            }
+
+            return resourceHandles;
+
+        }
+
+        static std::vector<ResourceHandle<T>> GetResourcesByOrigin(ResourceOrigin origin) {
+
+            std::vector<ResourceHandle<T>> resourceHandles;
+
+            for (auto& [_, resource] : resources) {
+                if (!resource->origin == origin)
+                    continue;
                 resourceHandles.emplace_back(resource);
             }
 
@@ -245,7 +292,7 @@ namespace Atlas {
 
         }
 
-        static inline ResourceHandle<T> GetHandleOrCreateResource(const std::string& path) {
+        static inline ResourceHandle<T> GetHandleOrCreateResource(const std::string& path, ResourceOrigin origin) {
             std::lock_guard lock(mutex);
             if (resources.contains(path)) {
                 auto& resource = resources[path];
@@ -253,7 +300,7 @@ namespace Atlas {
                 return ResourceHandle<T>(resource);
             }
 
-            resources[path] = std::make_shared<Resource<T>>(path);
+            resources[path] = std::make_shared<Resource<T>>(path, origin);
             return ResourceHandle<T>();
         }
 

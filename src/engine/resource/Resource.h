@@ -21,7 +21,9 @@ namespace Atlas {
 
     enum ResourceOrigin {
         System = 0,
-        User = 1
+        User = 1,
+        Custom = 2,
+        Other
     };
 
     template<typename T>
@@ -32,8 +34,8 @@ namespace Atlas {
     public:
         Resource() = default;
 
-        Resource(const std::string& path, Ref<T> data = nullptr) :
-            path(path), data(data), isLoaded(data != nullptr) {}
+        Resource(const std::string& path, ResourceOrigin origin, Ref<T> data = nullptr) :
+            path(path), origin(origin), data(data), isLoaded(data != nullptr) {}
 
         template<typename ...Args>
         void Load(Args&&... args) {
