@@ -242,7 +242,7 @@ namespace Atlas {
 
             std::lock_guard lock(subscriberMutex);
 
-            subscribers.emplace_back({
+            subscribers.emplace_back(ResourceSubscriber<T>{
                 .ID = subscriberCount,
                 .function = function
             });
