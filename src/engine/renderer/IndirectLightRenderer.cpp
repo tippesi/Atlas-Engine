@@ -24,29 +24,34 @@ namespace Atlas {
             auto ao = scene->ao;
             auto reflection = scene->reflection;
 
-            pipelineConfig.ManageMacro("DDGI", volume && volume->enable);
-            pipelineConfig.ManageMacro("REFLECTION", reflection && reflection->enable);
-            pipelineConfig.ManageMacro("AO", ao && ao->enable);
+            auto rtDataValid = scene->IsRtDataValid();
+            auto ddgiEnabled = volume && volume->enable && rtDataValid;
+            auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
+            auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
+
+            pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
+            pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
+            pipelineConfig.ManageMacro("AO", aoEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            if (ao && ao->enable) {
+            if (aoEnabled) {
                 commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
             }
-            if (reflection && reflection->enable) {
+            if (reflectionEnabled) {
                 commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
             }
 
             auto uniforms = Uniforms {
-                .aoEnabled = ao && ao->enable ? 1 : 0,
+                .aoEnabled = aoEnabled ? 1 : 0,
                 .aoDownsampled2x = target->GetAOResolution() == RenderResolution::HALF_RES,
-                .reflectionEnabled = reflection && reflection->enable ? 1 : 0,
-                .aoStrength = ao && ao->enable ? ao->strength : 1.0f
+                .reflectionEnabled = reflectionEnabled ? 1 : 0,
+                .aoStrength = aoEnabled ? ao->strength : 1.0f
             };
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);

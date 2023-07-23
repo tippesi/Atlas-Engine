@@ -93,7 +93,7 @@ namespace Atlas {
                 .smoothness = font->smoothness
             };
 
-            uniformBuffer.SetData(&uniforms, 0, 1);
+            uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(font->glyphTexture.image, font->glyphTexture.sampler, 3, 0);
 

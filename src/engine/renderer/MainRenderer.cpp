@@ -111,7 +111,7 @@ namespace Atlas {
                 .domain = Graphics::BufferDomain::Host,
                 .hostAccess = Graphics::BufferHostAccess::Sequential,
                 .data = materials.data(),
-                .size = sizeof(PackedMaterial) * materials.size(),
+                .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);
@@ -194,7 +194,7 @@ namespace Atlas {
                     {rtData->velocityTexture->image, layout, access},
                     {rtData->swapVelocityTexture->image, layout, access},
                     {target->historyAoTexture.image, layout, access},
-                    {target->historyAoMomentsTexture.image, layout, access},
+                    {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
                     {target->historyVolumetricCloudsTexture.image, layout, access},

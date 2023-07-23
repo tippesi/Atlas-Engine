@@ -74,24 +74,31 @@ void main() {
             );
 
         const int sampleCount = 1;
-        for (uint i = 0; i < sampleCount; i++) {
-            Ray ray;
-            Surface surface;
+        if (depth < 1.0) {
 
-            surface.N = worldNorm;
-            surface.P = worldPos;
-            BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec);
-           
-            ray.direction = brdfSample.L;
-            ray.inverseDirection = 1.0 / ray.direction;
-            ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
+            for (uint i = 0; i < sampleCount; i++) {
+                Ray ray;
+                Surface surface;
 
-            ray.hitID = -1;
-            ray.hitDistance = 0.0;
+                surface.N = worldNorm;
+                surface.P = worldPos;
+                BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec);
 
-            bool hit = HitAny(ray, 0.0, uniforms.radius);
+                ray.direction = brdfSample.L;
+                ray.inverseDirection = 1.0 / ray.direction;
+                ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
-            ao += hit ? 1.0 : 0.0;
+                ray.hitID = -1;
+                ray.hitDistance = 0.0;
+
+                float hit = 1.0 - HitAnyShadow(ray, 0.0, uniforms.radius);
+                ao += hit;
+
+                //bool hit = HitAny(ray, 0.0, uniforms.radius);
+                //ao += hit ? 1.0 : 0.0;
+
+            }
+
         }
 
         float result = 1.0 - (ao / float(sampleCount));

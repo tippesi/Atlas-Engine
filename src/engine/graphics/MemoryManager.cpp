@@ -11,8 +11,7 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryManager::MemoryManager(GraphicsDevice* device,
-            uint32_t transferQueueFamilyIndex, VkQueue transferQueue) : device(device) {
+        MemoryManager::MemoryManager(GraphicsDevice* device) : device(device) {
 
             VmaVulkanFunctions vulkanFunctions = {};
             vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -28,7 +27,7 @@ namespace Atlas {
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
 
-            transferManager = new MemoryTransferManager(device, this, transferQueueFamilyIndex, transferQueue);
+            transferManager = new MemoryTransferManager(device, this);
 
         }
 

@@ -113,6 +113,12 @@ namespace Atlas {
         ivec2 GetDrawableSize();
 
         /**
+         * Returns whether the window is currently in focus
+         * @return True if focused, false otherwise
+         */
+        bool IsFocused() const;
+
+        /**
          * Shows the window if the window was hidden
          */
         void Show();

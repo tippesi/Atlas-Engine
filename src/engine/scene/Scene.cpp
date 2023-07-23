@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Scene {
 
         Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-            SpacePartitioning(min, max, depth), rayTracingData(this) {
+                                                          SpacePartitioning(min, max, depth), rtData(this) {
 
             AddToScene(this, &rootMeshMap);
 
@@ -39,6 +39,12 @@ namespace Atlas {
 
         void Scene::Update(Camera *camera, float deltaTime) {
 
+            auto meshes = GetMeshes();
+
+            for (auto mesh : meshes) {
+                mesh->CheckForLoad();
+            }
+
             if (terrain) {
                 terrain->Update(camera);
             }
@@ -52,7 +58,11 @@ namespace Atlas {
 
             hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
-            rayTracingData.UpdateMaterials();
+            // Make sure this is changed just once at the start of a frame
+            rtDataValid = rtData.IsValid();
+            if (rtDataValid) {
+                rtData.UpdateMaterials();
+            }
 
         }
 
@@ -108,7 +118,9 @@ namespace Atlas {
             }
 
             for (auto mesh : meshes) {
-                for (auto& material : mesh->data.materials) {
+                if (!mesh->data.IsLoaded())
+                    continue;
+                for (auto& material : mesh->data->materials) {
                     materials.push_back(&material);
                 }
             }
@@ -119,15 +131,46 @@ namespace Atlas {
 
         void Scene::BuildRTStructures() {
 
-            rayTracingData.Update();
+            rtData.Update();
 
         }
 
         void Scene::ClearRTStructures() {
 
-            rayTracingData.Clear();
+            rtData.Clear();
 
         }
+
+        void Scene::WaitForResourceLoad() {
+
+            auto meshes = GetMeshes();
+
+            for(auto mesh : meshes) {
+                mesh->data.WaitForLoad();
+            }
+
+        }
+
+        bool Scene::IsFullyLoaded() {
+
+            bool loaded = true;
+
+            auto meshes = GetMeshes();
+
+            for(auto mesh : meshes) {
+                loaded &= mesh->data.IsLoaded();
+            }
+
+            return loaded;
+
+        }
+
+        bool Scene::IsRtDataValid() {
+
+            return rtDataValid;
+
+        }
+
     }
 
 }

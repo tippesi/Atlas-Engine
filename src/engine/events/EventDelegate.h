@@ -65,7 +65,7 @@ namespace Atlas {
         }
 
         template<class... Args>
-        uint32_t EventDelegate<Args...>::Subscribe(std::function<void(Args ...)> handle) {
+        uint32_t EventDelegate<Args...>::Subscribe(std::function<void(Args...)> handle) {
 
             std::lock_guard<std::mutex> guard(mutex);
 

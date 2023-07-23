@@ -1,0 +1,49 @@
+// Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
+// Haven't testet with Dolby Vision
+
+vec3 InverseHybridLogGammeEotf(vec3 color) {
+
+    // HLG curve: Rec. 2100 (for HLG)
+    float a = 0.17883277;
+    float b = 0.28466892;
+    float c = 0.55991073;
+    float threshold = 1.0;
+    float r = 0.5;
+    color.r = color.r <= threshold ? r * sqrt(color.r) : a * log(color.r - b) + c;
+    color.g = color.g <= threshold ? r * sqrt(color.g) : a * log(color.g - b) + c;
+    color.b = color.b <= threshold ? r * sqrt(color.b) : a * log(color.b - b) + c;
+
+    return color;
+
+}
+
+vec3 InversePerceptualQuantizerEotf(vec3 color) {
+
+    // Multiply by whitepoint of 100 (color needs to be in luminance/m^2)
+    // Tradtionally SDR RGB displays have a whitepoint of rgb = vec3(1.0) -> 100 nits
+    // Allowed are colors up to 10000 nits, so 100 times the whitepoint
+    color *= 100.0;
+
+    // ST2084 Perceptual Quantizer (PQ) EOTF
+    float m1 = 2610.0 / 4096.0 * (1.0 / 4.0);
+    float m2 = 2523.0 / 4096.0 * 128.0;
+    float c1 = 3424.0 / 4096.0;
+    float c2 = 2413.0 / 4096.0 * 32.0;
+    float c3 = 2392.0 / 4096.0 * 32.0;
+
+    vec3 Y = color / 10000.0;
+    vec3 Ym1 = pow(Y, vec3(m1));
+
+    color = pow((c1 + c2 * Ym1) / (1 + c3 * Ym1), vec3(m2));
+
+    return color;
+
+}
+
+vec3 Rec709ToRec2020(vec3 color) {
+
+    return color * mat3(0.6274, 0.3293, 0.0433,
+        0.0691, 0.9195, 0.0114,
+        0.0164, 0.0880, 0.8956);
+
+}

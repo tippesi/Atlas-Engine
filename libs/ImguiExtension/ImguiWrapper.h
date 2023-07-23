@@ -3,6 +3,7 @@
 
 // ImguiExtension includes
 #include <imgui.h>
+#include <imgui_internal.h>
 
 // Atlas engine includes
 #include <Window.h>
@@ -19,7 +20,12 @@ public:
 
     void Update(Atlas::Window* window, float deltaTime);
 
-    void Render();
+    void Render(bool clearSwapChain = false);
+
+    void RecreateImGuiResources();
+
+    VkDescriptorSet GetTextureDescriptorSet(const Atlas::Texture::Texture2D& texture,
+        VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 private:
     void MouseMotionHandler(Atlas::Events::MouseMotionEvent event);
@@ -45,6 +51,8 @@ private:
 
     Atlas::Window* window = nullptr;
     Atlas::Ref<Atlas::Graphics::DescriptorPool> pool = nullptr;
+
+    std::unordered_map<VkImageView, VkDescriptorSet> imageViewToDescriptorSetMap;
 
 };
 

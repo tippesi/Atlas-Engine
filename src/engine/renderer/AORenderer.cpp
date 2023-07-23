@@ -15,12 +15,14 @@ namespace Atlas {
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
-            scramblingRankingTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            scramblingRankingTexture.SetData(noiseImage.GetData());
+            scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            scramblingRankingTexture.SetData(noiseImage->GetData());
 
             noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("sobol.png");
-            sobolSequenceTexture = Texture::Texture2D(noiseImage.width, noiseImage.height, VK_FORMAT_R8G8B8A8_UNORM);
-            sobolSequenceTexture.SetData(noiseImage.GetData());
+            sobolSequenceTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            sobolSequenceTexture.SetData(noiseImage->GetData());
 
             ssaoPipelineConfig = PipelineConfig("ao/ssao.csh");
             rtaoPipelineConfig = PipelineConfig("ao/rtao.csh");
@@ -47,6 +49,7 @@ namespace Atlas {
             auto ao = scene->ao;
             if (!ao || !ao->enable) return;
 
+            if (!scene->IsRtDataValid() && ao->rt) return;
             helper.SetScene(scene, 8);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
@@ -82,7 +85,7 @@ namespace Atlas {
                     .radius = ao->radius,
                     .frameSeed = frameCount++,
                 };
-                rtUniformBuffer.SetData(&uniforms, 0, 1);
+                rtUniformBuffer.SetData(&uniforms, 0);
 
                 commandList->ImageMemoryBarrier(target->swapAoTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -120,8 +123,8 @@ namespace Atlas {
                     .sampleCount = ao->sampleCount,
                     .frameCount = 0
                 };
-                ssUniformBuffer.SetData(&uniforms, 0, 1);
-                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, 1);
+                ssUniformBuffer.SetData(&uniforms, 0);
+                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
 
@@ -157,12 +160,12 @@ namespace Atlas {
 
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
-                commandList->BindImage(target->aoMomentsTexture.image, 3, 1);
+                commandList->BindImage(target->aoLengthTexture.image, 3, 1);
 
                 commandList->BindImage(target->swapAoTexture.image, target->swapAoTexture.sampler, 3, 2);
                 commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
@@ -172,7 +175,7 @@ namespace Atlas {
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
 
                 commandList->BindImage(target->historyAoTexture.image, target->historyAoTexture.sampler, 3, 8);
-                commandList->BindImage(target->historyAoMomentsTexture.image, target->historyAoMomentsTexture.sampler, 3, 9);
+                commandList->BindImage(target->historyAoLengthTexture.image, target->historyAoLengthTexture.sampler, 3, 9);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
                 commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
@@ -182,22 +185,22 @@ namespace Atlas {
                 // Need barriers for all four images
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                    {target->historyAoMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(target->aoTexture.image, target->historyAoTexture.image);
-                commandList->CopyImage(target->aoMomentsTexture.image, target->historyAoMomentsTexture.image);
+                commandList->CopyImage(target->aoLengthTexture.image, target->historyAoLengthTexture.image);
 
                 // Need barriers for all four images
                 imageBarriers = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->aoMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->historyAoMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -222,7 +225,7 @@ namespace Atlas {
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
 
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0, 1);
+                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);

@@ -25,7 +25,7 @@ namespace Atlas {
             // Retrieve all possible materials
             std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
             for (auto& [mesh, _] : mainPass->meshToInstancesMap) {
-                for (auto& subData : mesh->data.subData) {
+                for (auto& subData : mesh->data->subData) {
                     subDatas.push_back({ &subData, mesh });
                 }
             }

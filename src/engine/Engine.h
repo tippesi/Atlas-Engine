@@ -6,7 +6,7 @@
 #include "Camera.h"
 #include "Clock.h"
 #include "Log.h"
-#include "ResourceManager.h"
+#include "resource/ResourceManager.h"
 #include "scene/Scene.h"
 #include "RenderTarget.h"
 #include "renderer/MainRenderer.h"
@@ -19,16 +19,28 @@
 
 namespace Atlas {
 
+    struct EngineConfig {
+        /**
+         * Asset directory which will be used to load data relative to that path
+         */
+        std::string assetDirectory = "data";
+
+        /**
+         * Shader directory, all shaders are loaded relative to that path
+         * @note This path must be relative to the asset directory
+         */
+        std::string shaderDirectory = "shader";
+    };
+
     class Engine {
 
     public:
         /**
          * Initializes the engine
-         * @param assetDirectory The directory where all assets are located (needs to be relative to the runtime directory)
-         * @param shaderDirectory The directory where all the shader files are located relative to the asset directory
+         * @param config Engine configuration
          * @note All file paths handed over to the engine should be relative the asset directory
          */
-        static void Init(std::string assetDirectory, std::string shaderDirectory);
+        static void Init(EngineConfig config);
 
         /**
          * Shuts down the engine

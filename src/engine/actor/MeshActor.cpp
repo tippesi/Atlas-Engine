@@ -9,14 +9,19 @@ namespace Atlas {
 
             if (matrixChanged || parentUpdate) {
 
+                if (!mesh->data.IsLoaded()) {
+                    // Force re-evaluation until mesh is finally loaded
+                    matrixChanged = true;
+                    return;
+                }
+
                 lastGlobalMatrix = globalMatrix;
 
                 matrixChanged = false;
 
                 globalMatrix = parentTransform * GetMatrix();
 
-                aabb = mesh->data.aabb.Transform(globalMatrix);
-
+                aabb = mesh->data->aabb.Transform(globalMatrix);
             }
 
         }

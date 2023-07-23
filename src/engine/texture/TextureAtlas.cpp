@@ -118,7 +118,7 @@ namespace Atlas {
             textureArray = Texture2DArray(width, height, layers, format,
                 Wrapping::ClampToEdge, Filtering::Linear);
 
-            auto commandList = graphicsDevice->GetCommandList(Graphics::TransferQueue, true);
+            auto commandList = graphicsDevice->GetCommandList(Graphics::GraphicsQueue, true);
 
             commandList->BeginCommands();
 

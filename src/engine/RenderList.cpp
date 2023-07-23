@@ -82,6 +82,9 @@ namespace Atlas {
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
 
+        if (!actor->mesh->data.IsLoaded())
+            return;
+
         if (!meshToActorMap.contains(actor->mesh)) {
             meshToActorMap[actor->mesh] = { actor };
         }

@@ -49,31 +49,7 @@ void ImguiWrapper::Load(Atlas::Window* window) {
     auto textInputEventHandler = std::bind(&ImguiWrapper::TextInputHandler, this, std::placeholders::_1);
     textInputID = Atlas::Events::EventManager::TextInputEventDelegate.Subscribe(textInputEventHandler);
 
-    auto instance = Atlas::Graphics::Instance::DefaultInstance;
-    auto device = instance->GetGraphicsDevice();
-    pool = device->CreateDescriptorPool();
-
-    //this initializes imgui for Vulkan
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = instance->GetNativeInstance();
-    init_info.PhysicalDevice = device->physicalDevice;
-    init_info.Device = device->device;
-    init_info.Queue = device->GetQueue(Atlas::Graphics::GraphicsQueue);
-    init_info.DescriptorPool = pool->GetNativePool();
-    init_info.MinImageCount = 3;
-    init_info.ImageCount = 3;
-    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-    ImGui_ImplVulkan_Init(&init_info, device->swapChain->renderPass);
-
-    //execute a gpu command to upload imgui font textures
-    device->memoryManager->transferManager->ImmediateSubmit(
-        [&](VkCommandBuffer cmd) {
-        ImGui_ImplVulkan_CreateFontsTexture(cmd);
-    });
-
-    //clear font textures from cpu data
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    RecreateImGuiResources();
 
 }
 
@@ -108,13 +84,14 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
         Atlas::Events::EventManager::DisableTextInput();
 
     UpdateMouseCursor();
-    ImGui_ImplVulkan_NewFrame();
 
 }
 
-void ImguiWrapper::Render() {
+void ImguiWrapper::Render(bool clearSwapChain) {
 
     ImGuiIO& io = ImGui::GetIO();
+
+    ImGui_ImplVulkan_NewFrame();
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
@@ -129,7 +106,7 @@ void ImguiWrapper::Render() {
     Atlas::Graphics::Profiler::BeginThread("ImGui thread", commandList);
     Atlas::Graphics::Profiler::BeginQuery("ImGui");
 
-    commandList->BeginRenderPass(swapChain, false);
+    commandList->BeginRenderPass(swapChain, clearSwapChain);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandList->commandBuffer);
     commandList->EndRenderPass();
 
@@ -139,6 +116,60 @@ void ImguiWrapper::Render() {
     commandList->EndCommands();
 
     device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+
+}
+
+void ImguiWrapper::RecreateImGuiResources() {
+
+    static bool initialized = false;
+
+    if (initialized) {
+        ImGui_ImplVulkan_Shutdown();
+    }
+
+    auto instance = Atlas::Graphics::Instance::DefaultInstance;
+    auto device = instance->GetGraphicsDevice();
+    pool = device->CreateDescriptorPool();
+
+    auto queue = device->GetAndLockQueue(Atlas::Graphics::GraphicsQueue);
+
+    //this initializes imgui for Vulkan
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = instance->GetNativeInstance();
+    init_info.PhysicalDevice = device->physicalDevice;
+    init_info.Device = device->device;
+    init_info.Queue = queue.queue;
+    init_info.DescriptorPool = pool->GetNativePool();
+    init_info.MinImageCount = 3;
+    init_info.ImageCount = 3;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info, device->swapChain->renderPass);
+
+    //execute a gpu command to upload imgui font textures
+    device->memoryManager->transferManager->ImmediateSubmit(Atlas::Graphics::GraphicsQueue,
+        [&](Atlas::Graphics::CommandList* commandList) {
+            ImGui_ImplVulkan_CreateFontsTexture(commandList->commandBuffer);
+        });
+
+    //clear font textures from cpu data
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+    imageViewToDescriptorSetMap.clear();
+
+    initialized = true;
+
+}
+
+VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture2D& texture,
+    VkImageLayout layout) {
+
+    if (!imageViewToDescriptorSetMap.contains(texture.image->view)) {
+        imageViewToDescriptorSetMap[texture.image->view] =
+            ImGui_ImplVulkan_AddTexture(texture.sampler->sampler, texture.image->view, layout);
+    }
+
+    return imageViewToDescriptorSetMap[texture.image->view];
 
 }
 

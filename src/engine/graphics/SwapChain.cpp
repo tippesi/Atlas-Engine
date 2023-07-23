@@ -37,10 +37,10 @@ namespace Atlas {
         }
 
         SwapChain::SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
-            GraphicsDevice* device, int desiredWidth, int32_t desiredHeight, VkPresentModeKHR desiredMode,
-            SwapChain* oldSwapchain) : device(device) {
+            GraphicsDevice* device, int desiredWidth, int32_t desiredHeight, ColorSpace preferredColorSpace,
+            VkPresentModeKHR desiredMode, SwapChain* oldSwapchain) : device(device) {
 
-            surfaceFormat = ChooseSurfaceFormat(supportDetails.formats);
+            surfaceFormat = ChooseSurfaceFormat(supportDetails.formats, preferredColorSpace);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
             extent = ChooseExtent(supportDetails.capabilities, desiredWidth, desiredHeight);
 
@@ -234,6 +234,9 @@ namespace Atlas {
             switch(surfaceFormat.colorSpace) {
                 case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
                 case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+                case VK_COLOR_SPACE_HDR10_HLG_EXT:
+                case VK_COLOR_SPACE_DOLBYVISION_EXT:
+                case VK_COLOR_SPACE_HDR10_ST2084_EXT:
                     return false;
                 default:
                     return true;
@@ -241,24 +244,62 @@ namespace Atlas {
 
         }
 
-        VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats) {
+        VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats,
+            ColorSpace preferredColorSpace) {
+
+            VkSurfaceFormatKHR selectedFormat = formats.front();
+
+            auto preferHDRColorSpace = preferredColorSpace == HDR10_HLG || preferredColorSpace == HDR10_ST2084
+                || preferredColorSpace == DOLBY_VISION;
+
+            VkColorSpaceKHR preferredSpace;
+            switch(preferredColorSpace) {
+                case HDR10_ST2084: preferredSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT; break;
+                case HDR10_HLG: preferredSpace = VK_COLOR_SPACE_HDR10_HLG_EXT; break;
+                case DOLBY_VISION: preferredSpace = VK_COLOR_SPACE_DOLBYVISION_EXT; break;
+                default: preferredSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; break;
+            }
+
+            bool foundPreferredSpace = false;
+            bool foundSpaceIn16Bit = false;
 
             for (const auto& availableFormat : formats) {
 
                 if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                    availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                    return availableFormat;
+                    availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR &&
+                    !foundPreferredSpace) {
+                    selectedFormat = availableFormat;
+                    if (preferredSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                        foundPreferredSpace = true;
+                    }
                 }
 
-                /*
-                if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
-                    availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT) {
-                    return availableFormat;
+                if (preferHDRColorSpace && availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT ||
+                    availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT ||
+                    availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT) {
+                    // Try to find preferred space
+                    if (availableFormat.colorSpace == preferredSpace && !foundSpaceIn16Bit) {
+                        if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT) {
+                            foundSpaceIn16Bit = true;
+                        }
+                        selectedFormat = availableFormat;
+                        foundPreferredSpace = true;
+                    }
+                    else if (availableFormat.colorSpace != preferredSpace && !foundPreferredSpace) {
+                        selectedFormat = availableFormat;
+                    }
                 }
-                 */
             }
 
-            return formats.front();
+            switch(selectedFormat.colorSpace) {
+                case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: colorSpace = SRGB_NONLINEAR; break;
+                case VK_COLOR_SPACE_HDR10_ST2084_EXT: colorSpace = HDR10_ST2084; break;
+                case VK_COLOR_SPACE_HDR10_HLG_EXT: colorSpace = HDR10_HLG; break;
+                case VK_COLOR_SPACE_DOLBYVISION_EXT: colorSpace = DOLBY_VISION; break;
+                default: colorSpace = OTHER; break;
+            }
+
+            return selectedFormat;
 
         }
 

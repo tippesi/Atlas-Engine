@@ -3,6 +3,7 @@
 
 #include "../System.h"
 #include "../common/Image.h"
+#include "../common/Path.h"
 #include "AssetLoader.h"
 #include "../Log.h"
 
@@ -30,15 +31,17 @@ namespace Atlas {
              * @return An Image object with all the important data.
              */
             template<typename T>
-            static Common::Image<T> LoadImage(std::string filename, bool colorSpaceConversion = false, int32_t forceChannels = 0,
+            static Ref<Common::Image<T>> LoadImage(const std::string& filename, bool colorSpaceConversion = false, int32_t forceChannels = 0,
                 int32_t maxImageResolution = 8192) {
 
+                const auto normalizedFileName = Common::Path::Normalize(filename);
+
                 Common::Image<T> image;
-                auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
+                auto fileStream = AssetLoader::ReadFile(normalizedFileName, std::ios::in | std::ios::binary);
 
                 if (!fileStream.is_open()) {
-                    Log::Error("Failed to load image " + filename);
-                    return image;
+                    Log::Error("Failed to load image " + normalizedFileName);
+                    return CreateRef(image);
                 }
 
                 auto buffer = AssetLoader::GetFileContent(fileStream);
@@ -84,32 +87,32 @@ namespace Atlas {
                     image.GammaToLinear();
                 }
 
-                auto fileFormatPosition = filename.find_last_of('.') + 1;
-                auto fileFormat = filename.substr(fileFormatPosition, filename.length());
+                auto fileFormatPosition = normalizedFileName.find_last_of('.') + 1;
+                auto fileFormat = normalizedFileName.substr(fileFormatPosition, normalizedFileName.length());
 
                 std::transform(fileFormat.begin(), fileFormat.end(), fileFormat.begin(), ::tolower);
 
                 if (fileFormat == "png") {
-                    image.fileFormat = AE_IMAGE_PNG;
+                    image.fileFormat = Common::ImageFormat::PNG;
                 }
                 else if (fileFormat == "jpg" || fileFormat == "jpeg") {
-                    image.fileFormat = AE_IMAGE_JPG;
+                    image.fileFormat =Common::ImageFormat::JPG;
                 }
                 else if (fileFormat == "bmp") {
-                    image.fileFormat = AE_IMAGE_BMP;
+                    image.fileFormat = Common::ImageFormat::BMP;
                 }
                 else if (fileFormat == "pgm") {
-                    image.fileFormat = AE_IMAGE_PGM;
+                    image.fileFormat = Common::ImageFormat::PGM;
                 }
                 else if (fileFormat == "hdr") {
-                    image.fileFormat = AE_IMAGE_HDR;
+                    image.fileFormat = Common::ImageFormat::HDR;
                 }
 
-                image.fileName = filename;
+                image.fileName = normalizedFileName;
 
-                Log::Message("Loaded image " + filename);
+                Log::Message("Loaded image " + normalizedFileName);
 
-                return image;
+                return CreateRef(image);
 
             }
 
@@ -120,19 +123,21 @@ namespace Atlas {
              * @note By changing the fileFormat in the Image object the output file changes as well.
              */
             template<typename T>
-            static void SaveImage(Common::Image<T>& image, std::string filename) {
+            static void SaveImage(Ref<Common::Image<T>>& image, const std::string& filename) {
+
+                const auto normalizedFileName = Common::Path::Normalize(filename);
 
                 std::ofstream imageStream;
 
-                if (image.fileFormat == AE_IMAGE_PGM) {
-                    imageStream = AssetLoader::WriteFile(filename, std::ios::out);
+                if (image->fileFormat == Common::ImageFormat::PGM) {
+                    imageStream = AssetLoader::WriteFile(normalizedFileName, std::ios::out);
                 }
                 else {
-                    imageStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
+                    imageStream = AssetLoader::WriteFile(normalizedFileName, std::ios::out | std::ios::binary);
                 }
 
                 if (!imageStream.is_open()) {
-                    Log::Error("Couldn't write image " + filename);
+                    Log::Error("Couldn't write image " + normalizedFileName);
                     return;
                 }
 
@@ -142,33 +147,33 @@ namespace Atlas {
                     imageStream->write((char*)data, size);
                 };
 
-                if (image.fileFormat == AE_IMAGE_JPG) {
+                if (image->fileFormat == Common::ImageFormat::JPG) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
-                        stbi_write_jpg_to_func(lambda, &imageStream, image.width,
-                            image.height, image.channels, image.GetData().data(), 100);
+                        stbi_write_jpg_to_func(lambda, &imageStream, image->width,
+                            image->height, image->channels, image->GetData().data(), 100);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_BMP) {
+                else if (image->fileFormat == Common::ImageFormat::BMP) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
-                        stbi_write_bmp_to_func(lambda, &imageStream, image.width,
-                            image.height, image.channels, image.GetData().data());
+                        stbi_write_bmp_to_func(lambda, &imageStream, image->width,
+                            image->height, image->channels, image->GetData().data());
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_PNG) {
+                else if (image->fileFormat == Common::ImageFormat::PNG) {
                     if constexpr (std::is_same_v<T, uint8_t>) {
-                        stbi_write_png_to_func(lambda, &imageStream, image.width, image.height,
-                            image.channels, image.GetData().data(), image.channels * image.width);
+                        stbi_write_png_to_func(lambda, &imageStream, image->width, image->height,
+                            image->channels, image->GetData().data(), image->channels * image->width);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_PGM) {
+                else if (image->fileFormat == Common::ImageFormat::PGM) {
                     if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>) {
                         SavePGM(image, imageStream);
                     }
                 }
-                else if (image.fileFormat == AE_IMAGE_HDR) {
+                else if (image->fileFormat == Common::ImageFormat::HDR) {
                     if constexpr (std::is_same_v<T, float>) {
-                        stbi_write_hdr_to_func(lambda, &imageStream, image.width,
-                            image.height, image.channels, image.GetData().data());
+                        stbi_write_hdr_to_func(lambda, &imageStream, image->width,
+                            image->height, image->channels, image->GetData().data());
                     }
                 }
 
@@ -178,7 +183,7 @@ namespace Atlas {
 
         private:
             template<typename T>
-            static void SavePGM(Common::Image<T>& image, std::ofstream& imageStream) {
+            static void SavePGM(Ref<Common::Image<T>>& image, std::ofstream& imageStream) {
 
                 static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>,
                     "Unsupported PGM format. Supported are uint8_t, uint16_t");
@@ -187,8 +192,8 @@ namespace Atlas {
 
                 // Create image header
                 header.append("P2 ");
-                header.append(std::to_string(image.width) + " ");
-                header.append(std::to_string(image.height) + " ");
+                header.append(std::to_string(image->width) + " ");
+                header.append(std::to_string(image->height) + " ");
 
                 if constexpr (std::is_same_v<T, uint8_t>) {
                     header.append("255\n");
@@ -199,7 +204,7 @@ namespace Atlas {
 
                 imageStream << header;
 
-                auto imageData = image.GetData();
+                auto imageData = image->GetData();
 
                 for (auto data : imageData) {
                     imageStream << data;

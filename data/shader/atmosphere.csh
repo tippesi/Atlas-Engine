@@ -12,8 +12,8 @@ layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 0, rgba16f) writeonly uniform imageCube colorImage;
 #endif
 
-#define iSteps 20
-#define jSteps 10
+#define iSteps 10
+#define jSteps 5
 
 layout(set = 3, binding = 3, std140) uniform UniformBuffer {
     mat4 ivMatrix;

@@ -1,3 +1,5 @@
+#include <common/eotf.hsh>
+
 layout (location = 0) out vec4 outColor;
 
 layout (location = 0) in vec2 positionVS;
@@ -124,30 +126,20 @@ void main() {
     // Apply the tone mapping because we want the colors to be back in
     // normal range
 #ifdef HDR
-    color = ToneMap(color);
+    // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
+    // Haven't tested with Dolby Vision
+#ifdef HYBRID_LOG_GAMMA_EOTF
+    // Dark regions are getting crushed too much, correct for that
+    color = pow(color, vec3(0.9));
+    color = Rec709ToRec2020(color);
+    color.rgb = InverseHybridLogGammeEotf(color);
+#endif
 
-    // HLG curve: Rec. 2100 (for HLG)
-    float a = 0.17883277;
-    float b = 0.28466892;
-    float c = 0.55991073;
-    float threshold = 1.0 / 12.0;
-    color.r = color.r <= threshold ? sqrt(3.0 * color.r) : a * log(12.0 * color.r - b) + c;
-    color.g = color.g <= threshold ? sqrt(3.0 * color.g) : a * log(12.0 * color.g - b) + c;
-    color.b = color.b <= threshold ? sqrt(3.0 * color.b) : a * log(12.0 * color.b - b) + c;
-
-    /*
-    // PQ curve
-    float m1 = 1305.0 / 8192.0;
-    float m2 = 2523.0 / 32.0;
-    float c1 = 107.0 / 128.0;
-    float c2 = 2413.0 / 128.0;
-    float c3 = 2392.0 / 128.0;
-
-    vec3 Y = color / 10000.0;
-    vec3 Ym1 = pow(Y, vec3(m1));
-
-    color = pow((c1 + c2 * Ym1) / (1 + c3 * Ym1), vec3(m2));
-    */
+#ifdef PERCEPTUAL_QUANTIZER_EOTF
+    color = Rec709ToRec2020(color);
+    color = InversePerceptualQuantizerEotf(color);
+#endif
+    
 #else
 #ifdef FILMIC_TONEMAPPING
     color = ACESToneMap(color);

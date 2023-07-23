@@ -8,8 +8,8 @@ namespace Atlas {
     namespace Graphics {
 
         CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-            bool frameIndependent) : memoryManager(device->memoryManager), device(device->device),
-            frameIndependent(frameIndependent), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
+            const std::vector<VkQueue>& queues, bool frameIndependent) : memoryManager(device->memoryManager),
+            device(device->device), frameIndependent(frameIndependent), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
             VK_CHECK(vkCreateCommandPool(device->device, &poolCreateInfo, nullptr, &commandPool))
@@ -17,11 +17,19 @@ namespace Atlas {
             VkCommandBufferAllocateInfo bufferAllocateInfo = Initializers::InitCommandBufferAllocateInfo(commandPool, 1);
             VK_CHECK(vkAllocateCommandBuffers(device->device, &bufferAllocateInfo, &commandBuffer))
 
-            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-            VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore))
-
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
             VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
+
+            for (auto queue : queues) {
+                Semaphore semaphore{
+                    .queue = queue
+                };
+
+                VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
+                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore.semaphore))
+
+                semaphores.push_back(semaphore);
+            }
 
             descriptorPool = new DescriptorPool(device);
 
@@ -33,7 +41,9 @@ namespace Atlas {
 
             delete descriptorPool;
 
-            vkDestroySemaphore(device, semaphore, nullptr);
+            for (auto& semaphore : semaphores)
+                vkDestroySemaphore(device, semaphore.semaphore, nullptr);
+
             vkDestroyFence(device, fence, nullptr);
             vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -102,6 +112,8 @@ namespace Atlas {
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
             swapChainInUse = swapChain;
+
+            wasSwapChainAccessed = true;
 
             if (clear) ClearAttachments();
 
@@ -888,7 +900,6 @@ namespace Atlas {
                         if (!descriptorBindingData.images[i][j]) continue;
                         const auto& binding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
                         const auto descriptorType = binding.layoutBinding.descriptorType;
@@ -948,6 +959,30 @@ namespace Atlas {
             }
 
             return extent;
+
+        }
+
+        const VkSemaphore CommandList::GetSemaphore(VkQueue queue) {
+
+            for (auto& semaphore : semaphores) {
+                if (semaphore.queue == queue)
+                    return semaphore.semaphore;
+            }
+
+            assert(0 && "Queue not found in available semaphores");
+
+            return semaphores.front().semaphore;
+
+        }
+
+        const std::vector<VkSemaphore> CommandList::GetSemaphores() const {
+
+            std::vector<VkSemaphore> resultSemaphores;
+
+            for (auto& semaphore : semaphores)
+                resultSemaphores.push_back(semaphore.semaphore);
+
+            return resultSemaphores;
 
         }
 

@@ -55,7 +55,7 @@ namespace Atlas {
             }
 
 
-            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale, 
+            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale,
                 bool useEmissivesAsLights) {
 
                 this->scene = scene;
@@ -75,6 +75,10 @@ namespace Atlas {
             void RayTracingHelper::DispatchAndHit(Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
+
+                auto& rtData = scene->rtData;
+
+                if (!rtData.IsValid()) return;
 
                 // Select lights once per initial ray dispatch
                 {
@@ -111,8 +115,6 @@ namespace Atlas {
 
                     lightBuffer.SetData(selectedLights.data(), 0, selectedLights.size());
                 }
-
-                auto& rtData = scene->rayTracingData;
 
                 // Bind textures and buffers
                 {
@@ -177,6 +179,8 @@ namespace Atlas {
             void RayTracingHelper::DispatchRayGen(Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
+
+                if (!scene->rtData.IsValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -253,7 +257,8 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                 std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rayTracingData;
+                auto& rtData = scene->rtData;
+                if (!rtData.IsValid()) return;
 
                 // Bind textures and buffers
                 {
@@ -458,6 +463,12 @@ namespace Atlas {
                 commandList->FillBuffer(counterBuffer0.Get(), &zero);
                 commandList->FillBuffer(counterBuffer1.Get(), &zero);
 
+                bufferBarriers.clear();
+                bufferBarriers.push_back({counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                bufferBarriers.push_back({counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
             }
 
             Buffer::Buffer* RayTracingHelper::GetRayBuffer() {
@@ -470,7 +481,6 @@ namespace Atlas {
             void RayTracingHelper::UpdateLights() {
 
                 lights.clear();
-                auto& rtData = scene->rayTracingData;
 
                 auto lightSources = scene->GetLights();
 
@@ -512,9 +522,11 @@ namespace Atlas {
                     lights.push_back(gpuLight);
                 }
 
-                if (useEmissivesAsLights)
+                if (useEmissivesAsLights) {
+                    auto& rtData = scene->rtData;
                     lights.insert(lights.end(), rtData.triangleLights.begin(), rtData.triangleLights.end());
-
+                }
+                    
                 // Find the maximum weight
                 auto maxWeight = 0.0f;
                 for (auto& light : lights) {

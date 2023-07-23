@@ -69,7 +69,7 @@ namespace Atlas {
             PipelineConfig distanceConfig;
 
             Buffer::UniformBuffer uniformBuffer;
-            Buffer::UniformBuffer terrainMaterialBuffer;
+            Buffer::Buffer terrainMaterialBuffer;
 
             PipelineConfig GeneratePipelineConfig(RenderTarget* target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig);

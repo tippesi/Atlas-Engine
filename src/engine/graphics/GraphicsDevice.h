@@ -3,6 +3,7 @@
 
 #include "Common.h"
 #include "Surface.h"
+#include "Queue.h"
 #include "SwapChain.h"
 #include "CommandList.h"
 #include "Shader.h"
@@ -28,6 +29,12 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
+        struct CommandListSubmission {
+            CommandList* cmd;
+
+            VkPipelineStageFlags waitStage;
+        };
+
         class FrameData {
         public:
             VkSemaphore semaphore = VK_NULL_HANDLE;
@@ -38,6 +45,8 @@ namespace Atlas {
 
             std::mutex submissionMutex;
             std::vector<CommandList*> submittedCommandLists;
+
+            std::vector<CommandListSubmission> submissions;
 
             void WaitAndReset(VkDevice device) {
                 if (submittedCommandLists.size() > 0) {
@@ -51,9 +60,11 @@ namespace Atlas {
 
                 for (auto commandList : submittedCommandLists) {
                     commandList->ResetDescriptors();
+                    commandList->wasSwapChainAccessed = false;
                     commandList->isLocked = false;
                 }
                 submittedCommandLists.clear();
+                submissions.clear();
             }
 
             void RecreateSemaphore(VkDevice device) {
@@ -77,7 +88,8 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
-            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR);
+            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR,
+                ColorSpace preferredColorSpace = SRGB_NONLINEAR);
 
             Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
 
@@ -105,7 +117,7 @@ namespace Atlas {
                 bool frameIndependentList = false);
 
             void SubmitCommandList(CommandList* cmd, VkPipelineStageFlags waitStage =
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, ExecutionOrder order = ExecutionOrder::Sequential);
 
             void FlushCommandList(CommandList* cmd);
 
@@ -113,7 +125,7 @@ namespace Atlas {
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
-            VkQueue GetQueue(QueueType queueType) const;
+            QueueRef GetAndLockQueue(QueueType queueType);
 
             void WaitForIdle() const;
 
@@ -137,9 +149,20 @@ namespace Atlas {
             static GraphicsDevice* DefaultDevice;
 
         private:
+            struct QueueFamily {
+                uint32_t index;
+
+                std::vector<Ref<Queue>> queues;
+                std::vector<float> queuePriorities;
+
+                bool supportsGraphics;
+                bool supportsTransfer;
+                bool supportsPresentation;
+            };
+
             struct QueueFamilyIndices {
                 std::optional<uint32_t> queueFamilies[3];
-                VkQueue queues[3];
+                std::vector<QueueFamily> families;
 
                 bool IsComplete() {
                     return queueFamilies[QueueType::GraphicsQueue].has_value() &&
@@ -147,6 +170,11 @@ namespace Atlas {
                         queueFamilies[QueueType::TransferQueue].has_value();
                 }
             };
+
+            QueueRef SubmitAllCommandLists();
+
+            void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
+                const QueueRef& queue, const QueueRef& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions);
@@ -156,7 +184,7 @@ namespace Atlas {
 
             bool FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos(float* priority);
+            std::vector<VkDeviceQueueCreateInfo> CreateQueueInfos();
 
             bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice,
                 const std::vector<const char*>& extensionNames);
@@ -175,6 +203,10 @@ namespace Atlas {
 
             CommandList* GetOrCreateCommandList(QueueType queueType, std::mutex& mutex,
                 std::vector<CommandList*>& commandLists, bool frameIndependent);
+
+            QueueRef FindAndLockQueue(QueueType queueType);
+
+            QueueRef FindAndLockQueue(uint32_t familyIndex);
 
             QueueFamilyIndices queueFamilyIndices;
 

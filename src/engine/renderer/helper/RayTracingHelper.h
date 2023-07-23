@@ -20,7 +20,7 @@ namespace Atlas {
             public:
                 RayTracingHelper();
 
-                void SetScene(Scene::Scene* scene, int32_t textureDownscale = 1, 
+                void SetScene(Scene::Scene* scene, int32_t textureDownscale = 1,
                     bool useEmissivesAsLights = false);
 
                 void SetRayBufferSize(size_t rayCount);

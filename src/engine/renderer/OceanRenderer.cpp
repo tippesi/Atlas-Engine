@@ -96,7 +96,7 @@ namespace Atlas {
                 lightUniform.shadow.distance = 0.0f;
             }
 
-            lightUniformBuffer.SetData(&lightUniform, 0, 1);
+            lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
 
             {
@@ -230,7 +230,7 @@ namespace Atlas {
                     ocean->rippleTexture.Bind(commandList, 3, 10);
                 }
 
-                uniformBuffer.SetData(&uniforms, 0, 1);
+                uniformBuffer.SetData(&uniforms, 0);
                 uniformBuffer.Bind(commandList, 3, 11);
 
                 auto renderList = ocean->GetRenderList();

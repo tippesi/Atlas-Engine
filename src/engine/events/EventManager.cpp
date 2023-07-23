@@ -18,7 +18,7 @@ namespace Atlas {
         EventDelegate<TextInputEvent> EventManager::TextInputEventDelegate;
         EventDelegate<AudioDeviceEvent> EventManager::AudioDeviceEventDelegate;
         EventDelegate<DropEvent> EventManager::DropEventDelegate;
-        EventDelegate<ClockEvent> EventManager::ClockEventDelegate;
+        EventDelegate<FrameEvent> EventManager::FrameEventDelegate;
         EventDelegate<> EventManager::QuitEventDelegate;
 
         std::mutex EventManager::handlerMutex;
@@ -28,9 +28,9 @@ namespace Atlas {
 
             std::lock_guard<std::mutex> guard(handlerMutex);
 
-            ClockEvent clockEvent(Clock::GetDelta());
+            FrameEvent clockEvent(Clock::GetDelta());
 
-            ClockEventDelegate.Fire(clockEvent);
+            FrameEventDelegate.Fire(clockEvent);
 
             SDL_Event e;
 

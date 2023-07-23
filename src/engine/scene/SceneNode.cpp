@@ -271,20 +271,26 @@ namespace Atlas {
 
             }
 
-            for (auto& meshActor : addableStaticMeshActors) {
+            for (size_t i = 0; i < addableStaticMeshActors.size(); i++) {
+                auto meshActor = addableStaticMeshActors[i];
 
-                staticMeshActors.push_back(meshActor);
-                meshActor->Update(*camera, deltaTime,
-                    parentTransformation, true);
-                // Because they won't be updated we need to do this right here
-                meshActor->lastGlobalMatrix = meshActor->globalMatrix;
-                spacePartitioning->Add(meshActor);
+                if (meshActor->mesh->data.IsLoaded()) {
 
-                changed = true;
+                    staticMeshActors.push_back(meshActor);
+                    meshActor->Update(*camera, deltaTime,
+                        parentTransformation, true);
+                    // Because they won't be updated we need to do this right here
+                    meshActor->lastGlobalMatrix = meshActor->globalMatrix;
+                    spacePartitioning->Add(meshActor);
 
+                    std::swap(addableStaticMeshActors[i], addableStaticMeshActors.back());
+                    addableStaticMeshActors.pop_back();
+                    i--;
+
+                    changed = true;
+
+                }
             }
-
-            addableStaticMeshActors.clear();
 
             for (auto &meshActor : movableMeshActors) {
 

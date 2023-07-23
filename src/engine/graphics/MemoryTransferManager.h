@@ -2,6 +2,7 @@
 #define AE_MEMORYUPLOADMANAGER_H
 
 #include "Common.h"
+#include "Queue.h"
 
 #define VMA_STATS_STRING_ENABLED 0
 #include <vk_mem_alloc.h>
@@ -15,12 +16,12 @@ namespace Atlas {
         class MemoryManager;
         class Buffer;
         class Image;
+        class CommandList;
 
         class MemoryTransferManager {
 
         public:
-            MemoryTransferManager(GraphicsDevice* device, MemoryManager* memManager,
-                uint32_t transferQueueFamilyIndex, VkQueue transferQueue);
+            MemoryTransferManager(GraphicsDevice* device, MemoryManager* memManager);
 
             ~MemoryTransferManager();
 
@@ -36,7 +37,7 @@ namespace Atlas {
 
             void GenerateMipMaps(Image* image, VkCommandBuffer cmd);
 
-            void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
+            void ImmediateSubmit(QueueType queueType, std::function<void(CommandList*)>&& function);
 
         private:
             struct StagingBufferAllocation {
@@ -47,13 +48,6 @@ namespace Atlas {
             StagingBufferAllocation CreateStagingBuffer(size_t size);
 
             void DestroyStagingBuffer(StagingBufferAllocation& allocation);
-
-            VkFence fence;
-            VkCommandPool commandPool;
-            VkCommandBuffer commandBuffer;
-
-            uint32_t transferQueueFamilyIndex;
-            VkQueue transferQueue;
 
             GraphicsDevice* device;
             MemoryManager* memoryManager;

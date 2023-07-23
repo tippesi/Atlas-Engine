@@ -158,6 +158,9 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     stack[0][threadID] = nodePtr;
 
     ray.hitDistance = tMax;
+
+    if (isnan3(ray.direction))
+        return;
     
     while (stackPtr != 0u) {
         if(nodePtr < 0) {
@@ -187,6 +190,9 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 }
 
 bool HitAny(inout Ray ray, float tMin, float tMax) {
+
+    if (isnan3(ray.direction))
+        return false;
     
     bool hit = false;
 
@@ -224,6 +230,9 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
 }
 
 float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
+
+    if (isnan3(ray.direction))
+        return 1.0;
     
     float transparency = 1.0;
 

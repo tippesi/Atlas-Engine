@@ -6,7 +6,7 @@
 #include <../common/octahedron.hsh>
 
 #define INF 1000000000000.0
-#define EPSILON 0.001
+#define EPSILON 0.01
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1

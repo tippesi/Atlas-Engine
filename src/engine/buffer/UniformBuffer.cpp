@@ -9,7 +9,7 @@ namespace Atlas {
         UniformBuffer::UniformBuffer(size_t elementSize, size_t elementCount, bool hostAccess)
             : elementCount(elementCount), elementSize(elementSize), hostAccess(hostAccess) {
 
-            Reallocate(nullptr);
+            Reallocate();
 
         }
 
@@ -19,25 +19,22 @@ namespace Atlas {
 
         }
 
-        void UniformBuffer::SetSize(size_t elementCount, void *data) {
+        void UniformBuffer::SetSize(size_t elementCount) {
 
             // If the element count is the same we can reuse the old buffer
             if (this->elementCount == elementCount) {
-                if (!data)
-                    return;
-                SetData(data, 0, elementCount);
                 return;
             }
 
             this->elementCount = elementCount;
 
-            Reallocate(data);
+            Reallocate();
 
         }
 
-        void UniformBuffer::SetData(void *data, size_t offset, size_t length) {
+        void UniformBuffer::SetData(void *data, size_t offset) {
 
-            buffer->SetData(data, offset * elementSize, length * elementSize);
+            buffer->SetData(data, offset * Graphics::Buffer::GetAlignedSize(elementSize), elementSize);
 
         }
 
@@ -61,7 +58,7 @@ namespace Atlas {
 
         size_t UniformBuffer::GetSize() {
 
-            return elementSize * elementCount;
+            return Graphics::Buffer::GetAlignedSize(elementSize) * elementCount;
 
         }
 
@@ -71,16 +68,15 @@ namespace Atlas {
 
         }
 
-        void UniformBuffer::Reallocate(void *data) {
+        void UniformBuffer::Reallocate() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-            auto sizeInBytes = elementCount * elementSize;
+            auto sizeInBytes = Graphics::Buffer::GetAlignedSize(elementCount) * elementSize;
 
             Graphics::BufferDesc desc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 .domain = hostAccess ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
-                .data = data,
                 .size = sizeInBytes
             };
             buffer = device->CreateMultiBuffer(desc);

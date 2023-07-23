@@ -45,7 +45,7 @@ namespace Atlas {
              * @param image The image object.
              * @param filtering The filtering of the texture.
              */
-            explicit Texture2D(Common::Image<uint8_t>& image, Filtering filtering = Filtering::Anisotropic);
+            explicit Texture2D(Ref<Common::Image<uint8_t>>& image, Filtering filtering = Filtering::Anisotropic);
 
             /**
              * Resizes the texture
@@ -65,7 +65,7 @@ namespace Atlas {
             void Save(std::string filename, bool flipHorizontally = false);
 
         private:
-            void InitializeInternal(Common::Image<uint8_t>& image, Wrapping wrapping,
+            void InitializeInternal(Ref<Common::Image<uint8_t>>& image, Wrapping wrapping,
                 Filtering filtering);
 
         };
@@ -73,18 +73,18 @@ namespace Atlas {
         template<typename T>
         void Texture2D::Save(std::string filename, bool flipHorizontally) {
 
-            Common::Image<T> image(width, height, channels);
+            auto image = CreateRef<Common::Image<T>>(width, height, channels);
 
             if constexpr (std::is_same_v<T, uint8_t>) {
-                image.fileFormat = AE_IMAGE_PNG;
+                image.fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
-                image.fileFormat = AE_IMAGE_PGM;
+                image.fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
             }
             else if constexpr (std::is_same_v<T, float>) {
-                image.fileFormat = AE_IMAGE_HDR;
+                image.fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
             }
 

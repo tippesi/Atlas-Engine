@@ -139,6 +139,14 @@ namespace Atlas {
 
     }
 
+    bool Window::IsFocused() const {
+
+        auto flags = GetFlags();
+        return flags & SDL_WINDOW_INPUT_FOCUS && flags & SDL_WINDOW_MOUSE_FOCUS
+               && !(flags & SDL_WINDOW_MINIMIZED);
+
+    }
+
     void Window::Show() {
 
         SDL_ShowWindow(sdlWindow);

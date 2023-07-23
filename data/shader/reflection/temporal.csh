@@ -8,8 +8,8 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout(set = 3, binding = 0, r16f) writeonly uniform image2D resolveImage;
-layout(set = 3, binding = 1, r16f) writeonly uniform image2D momentsImage;
+layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D resolveImage;
+layout(set = 3, binding = 1, rgba16f) writeonly uniform image2D momentsImage;
 
 layout(set = 3, binding = 2) uniform sampler2D currentTexture;
 layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
@@ -194,26 +194,6 @@ vec4 SampleCatmullRom(vec2 uv) {
 
 }
 
-vec4 SampleHistory(vec2 texCoord) {
-
-    vec4 historyColor;
-
-    historyColor = SampleCatmullRom(texCoord);
-
-    return historyColor;
-
-}
-
-vec4 SampleHistoryMoments(vec2 texCoord) {
-
-    vec4 moments;
-
-    moments = texture(historyMomentsTexture, texCoord);
-
-    return moments;
-
-}
-
 void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     vec3 m1 = vec3(0.0);
@@ -255,6 +235,81 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
 }
 
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
+    
+    history = vec4(0.0);
+    historyMoments = vec4(0.0);
+
+    float totalWeight = 0.0;
+    float x    = fract(historyPixel.x);
+    float y    = fract(historyPixel.y);
+
+    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
+
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
+    // Calculate confidence over 2x2 bilinear neighborhood
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
+        float confidence = 1.0;
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.1) {
+            totalWeight += weights[i];
+            history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
+            historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        history /= totalWeight;
+        historyMoments /= totalWeight;
+        return true;
+    }
+
+    /*
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        float confidence = 1.0;
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.1) {
+            history = texelFetch(historyTexture, offsetPixel, 0);
+            historyMoments = texelFetch(historyMomentsTexture, offsetPixel, 0);
+            return true;
+        }
+    }
+    */
+
+    history = vec4(0.0);
+    historyMoments = vec4(0.0);
+
+    return false;
+
+}
+
 void main() {
 
     LoadGroupSharedData();
@@ -271,10 +326,12 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    vec2 historyPixel = vec2(pixel) + velocity * resolution;
 
-    // Maybe we might want to filter the current input pixel
-    vec4 history = SampleHistory(uv);
-    vec4 historyMoments = SampleHistoryMoments(uv);
+    bool valid = true;
+    vec4 history;
+    vec4 historyMoments;
+    valid = SampleHistory(pixel, historyPixel, history, historyMoments);
 
     vec3 historyColor = history.rgb;
     vec3 currentColor = texelFetch(currentTexture, pixel, 0).rgb;
@@ -295,50 +352,18 @@ void main() {
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
-    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, 0.97);
+    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, 0.95);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
-    float depth = texelFetch(depthTexture, pixel, 0).r;
-
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-
-    ivec2 historyPixel = ivec2(floor(((vec2(pixel) + vec2(0.5)) / resolution + velocity) * resolution - ivec2(0.5)));
-    float maxConfidence = 0.0;
-    // Calculate confidence over 2x2 bilinear neighborhood
-    // Note that 3x3 neighborhoud could help on edges
-    for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = historyPixel + offsets[i];
-        float confidence = 1.0;
-
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
-        
-        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
-
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) / linearDepth));
-        
-        maxConfidence = max(maxConfidence, confidence);
-    }
-    
-    factor *= maxConfidence;
-
     float historyLength = historyMoments.b;
-    if (factor < 0.1 * roughness) {
+    if (factor < 0.1 * roughness || !valid) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;
     }
 
     factor = min(factor, historyLength / (historyLength + 1.0));
-
-    if (abs(velocity.x) + abs(velocity.y) >= 0.001) {
-        factor = min(factor, 0.9);
-    }
 
     vec3 resolve = mix(currentColor, historyColor, factor);
     vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);
@@ -351,6 +376,6 @@ void main() {
     variance = roughness <= 0.02 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
+    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance * variance));
 
 }

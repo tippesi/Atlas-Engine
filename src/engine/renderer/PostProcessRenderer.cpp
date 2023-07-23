@@ -158,6 +158,13 @@ namespace Atlas {
 
             std::vector<std::string> macros;
             if (device->swapChain->IsHDR()) {
+                if (device->swapChain->colorSpace == Graphics::HDR10_HLG) {
+                    macros.push_back("HYBRID_LOG_GAMMA_EOTF");
+                }
+                else {
+                    // Dolby vision and st2084 use this eotf
+                    macros.push_back("PERCEPTUAL_QUANTIZER_EOTF");
+                }
                 macros.push_back("HDR");
             }
             if (device->swapChain->NeedsGammaCorrection()) {

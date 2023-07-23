@@ -2,6 +2,7 @@
 #define AE_GRAPHICSCOMMANDLIST_H
 
 #include "Common.h"
+#include "Queue.h"
 #include "Barrier.h"
 #include "MemoryManager.h"
 #include "SwapChain.h"
@@ -26,12 +27,6 @@ namespace Atlas {
             Parallel = 1
         };
 
-        enum QueueType {
-            GraphicsQueue = 0,
-            PresentationQueue,
-            TransferQueue
-        };
-
         class GraphicsDevice;
         class FrameData;
 
@@ -42,7 +37,7 @@ namespace Atlas {
 
         public:
             CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-                bool frameIndependent = false);
+                const std::vector<VkQueue>& queues, bool frameIndependent = false);
 
             CommandList(const CommandList& that) = delete;
 
@@ -153,7 +148,6 @@ namespace Atlas {
 
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
-            VkSemaphore semaphore;
             VkFence fence;
             uint32_t queueFamilyIndex;
 
@@ -169,6 +163,8 @@ namespace Atlas {
 
             std::vector<CommandList*> dependencies;
             ExecutionOrder executionOrder = ExecutionOrder::Sequential;
+
+            int32_t id = 0;
 
         private:
             struct DescriptorBindingData {
@@ -213,11 +209,20 @@ namespace Atlas {
                 }
             }descriptorBindingData;
 
+            struct Semaphore {
+                VkSemaphore semaphore;
+                VkQueue queue;
+            };
+
             void BindDescriptorSets();
 
             void ResetDescriptors();
 
             const VkExtent2D GetRenderPassExtent() const;
+
+            const VkSemaphore GetSemaphore(VkQueue queue);
+
+            const std::vector<VkSemaphore> GetSemaphores() const;
 
             VkDevice device;
             MemoryManager* memoryManager = nullptr;
@@ -225,6 +230,9 @@ namespace Atlas {
 
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;
+            std::atomic_bool wasSwapChainAccessed = false;
+
+            std::vector<Semaphore> semaphores;
 
         };
 

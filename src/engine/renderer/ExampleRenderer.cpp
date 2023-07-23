@@ -2,6 +2,7 @@
 
 #include "../loader/ShaderLoader.h"
 #include "../loader/ModelLoader.h"
+#include "../resource/ResourceManager.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
 #include "../Clock.h"
@@ -115,9 +116,9 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                // Loading a mesh and setup pipeline
-                auto meshData = Loader::ModelLoader::LoadMesh("sponza/sponza.obj", false,
-                    glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+                auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+                    "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
+                );
                 mesh = std::make_shared<Mesh::Mesh>(meshData);
 
                 auto shaderConfig = ShaderConfig {
@@ -203,7 +204,7 @@ namespace Atlas {
 
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
-                for (auto &subData: mesh->data.subData) {
+                for (auto &subData: mesh->data->subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
                     if (baseColorTexture) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);

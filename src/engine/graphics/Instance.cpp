@@ -207,7 +207,8 @@ namespace Atlas {
             //if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
             //    return VK_FALSE;
 
-            std::string output = "Vulkan debug log:";
+            std::string output = "Vulkan debug log:\n";
+            output.append(pCallbackData->pMessage);
             output.append("\nType: ");
 
             switch (messageType) {

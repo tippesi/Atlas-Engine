@@ -36,65 +36,65 @@ namespace Atlas {
                 if (prefix == "BMP") {
                     material->baseColorMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->baseColorMapPath, true, 4);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->baseColorMap->SetData(image.GetData());
+                    material->baseColorMap->SetData(image->GetData());
                 }
                 if (prefix == "OMP") {
                     material->opacityMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->opacityMapPath, false, 1);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->baseColorMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->baseColorMap->SetData(image.GetData());
+                    material->baseColorMap->SetData(image->GetData());
                 }
                 else if (prefix == "NMP") {
                     material->normalMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->normalMapPath, false, 4);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->normalMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->normalMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->normalMap->SetData(image.GetData());
+                    material->normalMap->SetData(image->GetData());
                 }
                 else if (prefix == "RMP") {
                     material->roughnessMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->roughnessMapPath, false, 1);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->roughnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->roughnessMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->roughnessMap->SetData(image.GetData());
+                    material->roughnessMap->SetData(image->GetData());
                 }
                 else if (prefix == "MMP") {
                     material->metalnessMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->metalnessMapPath, false, 1);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->metalnessMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->metalnessMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->metalnessMap->SetData(image.GetData());
+                    material->metalnessMap->SetData(image->GetData());
                 }
                 else if (prefix == "AMP") {
                     material->aoMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->aoMapPath, false, 1);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->aoMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->aoMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->aoMap->SetData(image.GetData());
+                    material->aoMap->SetData(image->GetData());
                 }
                 else if (prefix == "DMP") {
                     material->displacementMapPath = ReadFilePath(line, materialDirectory);
                     auto image = ImageLoader::LoadImage<uint8_t>(material->displacementMapPath, false, 1);
-                    if ((image.width != mapResolution || image.height != mapResolution) && mapResolution)
-                        image.Resize(mapResolution, mapResolution);
-                    material->displacementMap = std::make_shared<Texture::Texture2D>(image.width, image.height,
+                    if ((image->width != mapResolution || image->height != mapResolution) && mapResolution)
+                        image->Resize(mapResolution, mapResolution);
+                    material->displacementMap = std::make_shared<Texture::Texture2D>(image->width, image->height,
                         VK_FORMAT_R8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                    material->displacementMap->SetData(image.GetData());
+                    material->displacementMap->SetData(image->GetData());
                 }
             }
 

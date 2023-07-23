@@ -133,57 +133,62 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
+    vec3 indirect = vec3(0.0);
 
-    vec3 geometryNormal;
-    // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
-    Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
+    if (depth < 1.0) {
 
-    vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
-    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
-    vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
-    vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
+        vec3 geometryNormal;
+        // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
+        Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-    // Indirect diffuse BRDF
+        vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
+        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
+        vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
+        vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
+
+        // Indirect diffuse BRDF
 #ifdef DDGI
-    vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
-    vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ? 
-        GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
-    prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
-    prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
-    vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;
+        vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
+        vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+            GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
+        prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
+        prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
+        vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;
 #else
-    vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
-    vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
+        vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
+        vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
 #endif
 
-    // Indirect specular BRDF
-    vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
-    float mipLevel = sqrt(surface.material.roughness) * 9.0;
-    vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
-    // We multiply by local sky visibility because the reflection probe only includes the sky
-    //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
-    //    * prefilteredDiffuseLocal.a;
+        // Indirect specular BRDF
+        vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
+        float mipLevel = sqrt(surface.material.roughness) * 9.0;
+        vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
+        // We multiply by local sky visibility because the reflection probe only includes the sky
+        //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
+        //    * prefilteredDiffuseLocal.a;
 #ifdef REFLECTION
-    vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ? 
-        UpsampleReflection2x(depth, texCoord) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
+        vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ?
+            UpsampleReflection2x(depth, texCoord) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
 #else
 #ifdef DDGI
-    vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
+        vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
 #else
-    vec3 indirectSpecular = prefilteredSpecular;
+        vec3 indirectSpecular = prefilteredSpecular;
 #endif
 #endif
 
-    indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
-    vec3 indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
-    
-    // This normally only accounts for diffuse occlusion, we need seperate terms
-    // for diffuse and specular.
+        indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
+        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+
+        // This normally only accounts for diffuse occlusion, we need seperate terms
+        // for diffuse and specular.
 #ifdef AO
-    float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ? 
-        UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-    indirect *= pow(occlusionFactor, Uniforms.aoStrength);
-#endif    
+        float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ?
+            UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
+        indirect *= pow(occlusionFactor, Uniforms.aoStrength);
+#endif
+
+    }
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(direct + indirect, 0.0));

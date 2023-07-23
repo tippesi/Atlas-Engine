@@ -35,6 +35,8 @@ namespace Atlas {
 
             void UpdateTextures();
 
+            bool IsValid();
+
             void Clear();
 
         private:
@@ -142,6 +144,9 @@ namespace Atlas {
             Texture::TextureAtlas aoTextureAtlas;
 
             std::vector<GPULight> triangleLights;
+
+            std::atomic_bool isValid = false;
+            std::mutex mutex;
 
         };
 

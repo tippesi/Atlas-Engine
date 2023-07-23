@@ -116,7 +116,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // will be heavily biased or not there entirely. Better lobe
     // selection etc. helps
     if (Uniforms.bounceCount > 0) {
-        const float radianceLimit = 100.0;
+        const float radianceLimit = 25.0;
         float radianceMax = max(max(radiance.r, 
             max(radiance.g, radiance.b)), radianceLimit);
         radiance *= radianceLimit / radianceMax;

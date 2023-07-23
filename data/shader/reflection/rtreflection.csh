@@ -13,6 +13,7 @@
 #include <../common/bluenoise.hsh>
 
 #include <../brdf/brdfEval.hsh>
+#include <../brdf/brdfSample.hsh>
 #include <../brdf/importanceSample.hsh>
 #include <../brdf/surface.hsh>
 
@@ -44,7 +45,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
-    float padding;
+    int textureLevel;
     Shadow shadow;
 } uniforms;
 
@@ -88,30 +89,32 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 1.0) {
+        if (material.roughness < 1.0 && depth < 1.0) {
+
+            float alpha = sqr(material.roughness);
+
+            vec3 V = normalize(-viewVec);
+            vec3 N = worldNorm;
+
+            Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
             const uint sampleCount = 1u;
             for (uint i = 0; i < sampleCount; i++) {
                 Ray ray;
 
-                float alpha = sqr(material.roughness);
-
-                vec3 V = normalize(-viewVec);
-                vec3 N = worldNorm;
-
                 blueNoiseVec.y *= (1.0 - uniforms.bias);
 
+                float pdf = 1.0;
+                BRDFSample brdfSample;
                 if (material.roughness > 0.02) {
-                    float pdf;
                     ImportanceSampleGGX(blueNoiseVec, N, V, alpha,
-                                        ray.direction, pdf);
+                        ray.direction, pdf);
                 }
                 else {
                     ray.direction = normalize(reflect(-V, N));
                 }
 
-                if (dot(N, ray.direction) < 0.0) {
-                    //reflection += vec3(100.0, 0.0, 0.0);
+                if (isnan(ray.direction.x) ||isnan(ray.direction.y) || isnan(ray.direction.z) || dot(N, ray.direction) < 0.0) {
                     continue;
                 }
 
@@ -161,7 +164,7 @@ vec3 EvaluateHit(inout Ray ray) {
     // Unpack the compressed triangle and extract surface parameters
     Triangle tri = UnpackTriangle(triangles[ray.hitID]);
     bool backfaceHit;    
-    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, 4);
+    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, uniforms.textureLevel);
     
     radiance += surface.material.emissiveColor;
 
