@@ -238,6 +238,7 @@ void main() {
     float currentValue = texelFetch(currentTexture, pixel, 0).r;
 
     // In case of clipping we might also reject the sample. TODO: Investigate
+    currentValue = clamp(currentValue, localNeighbourhoodMin, localNeighbourhoodMax);
     historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
 
     float factor = 0.95;

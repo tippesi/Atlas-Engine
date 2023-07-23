@@ -22,6 +22,10 @@ namespace Atlas {
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
+            float temporalWeight = 0.95f;
+            float historyClipFactor = 2.0f;
+            float currentClipFactor = 2.0f;
+
             bool enable = true;
             bool rt = false;
             bool gi = true;

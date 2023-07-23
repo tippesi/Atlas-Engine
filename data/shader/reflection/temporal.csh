@@ -34,6 +34,12 @@ const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadi
 
 shared vec4 sharedRadianceDepth[sharedDataSize];
 
+layout(push_constant) uniform constants {
+    float temporalWeight;
+    float historyClipFactor;
+    float currentClipFactor;
+} pushConstants;
+
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
     ivec2(0, -1),
@@ -194,14 +200,14 @@ vec4 SampleCatmullRom(vec2 uv) {
 
 }
 
-void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
+void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = kernelRadius;
+    const int radius = 5;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -228,11 +234,8 @@ void ComputeVarianceMinMax(out vec3 aabbMin, out vec3 aabbMax) {
 
     float oneDividedBySampleCount = 1.0 / float((2.0 * radius + 1.0) * (2.0 * radius + 1.0));
     float gamma = 1.0;
-    vec3 mu = m1 * oneDividedBySampleCount;
-    vec3 sigma = sqrt(max((m2 * oneDividedBySampleCount) - (mu * mu), 0.0));
-    aabbMin = mu - gamma * sigma;
-    aabbMax = mu + gamma * sigma;
-
+    mean = m1 * oneDividedBySampleCount;
+    std = sqrt(max((m2 * oneDividedBySampleCount) - (mean * mean), 0.0));
 }
 
 bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
@@ -280,29 +283,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         return true;
     }
 
-    /*
-    for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
-        float confidence = 1.0;
-
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
-
-        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
-
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-
-        if (confidence > 0.1) {
-            history = texelFetch(historyTexture, offsetPixel, 0);
-            historyMoments = texelFetch(historyMomentsTexture, offsetPixel, 0);
-            return true;
-        }
-    }
-    */
-
     history = vec4(0.0);
     historyMoments = vec4(0.0);
 
@@ -319,8 +299,8 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
-    vec3 localNeighbourhoodMin, localNeighbourhoodMax;
-    ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
+    vec3 mean, std;
+    ComputeVarianceMinMax(mean, std);
 
     ivec2 velocityPixel = pixel;
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -340,10 +320,17 @@ void main() {
     currentMoments.r = Luma(currentColor);
     currentMoments.g = currentMoments.r * currentMoments.r;
 
+    vec3 historyNeighbourhoodMin = mean - pushConstants.historyClipFactor * std;
+    vec3 historyNeighbourhoodMax = mean + pushConstants.historyClipFactor * std;
+
+    vec3 currentNeighbourhoodMin = mean - pushConstants.currentClipFactor * std;
+    vec3 currentNeighbourhoodMax = mean + pushConstants.currentClipFactor * std;
+
     // In case of clipping we might also reject the sample. TODO: Investigate
-    float clipBlend = ClipBoundingBox(localNeighbourhoodMin, localNeighbourhoodMax,
+    float clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
         historyColor, currentColor);
-    float adjClipBlend = saturate(clipBlend);
+    float adjClipBlend = clamp(clipBlend, 0.0, 1.0);
+    currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
@@ -352,7 +339,7 @@ void main() {
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
-    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, 0.95);
+    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, pushConstants.temporalWeight);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -376,6 +363,6 @@ void main() {
     variance = roughness <= 0.02 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance * variance));
+    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
 
 }
