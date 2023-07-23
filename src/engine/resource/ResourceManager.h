@@ -3,7 +3,6 @@
 
 #include "System.h"
 #include "Resource.h"
-#include "ResourceMemoryManager.h"
 #include "events/EventManager.h"
 
 #include <type_traits>
@@ -33,21 +32,14 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->Load(std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->Load(std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -57,21 +49,14 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->LoadWithExternalLoader(std::function(loaderFunction), std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->LoadWithExternalLoader(std::function(loaderFunction), std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -81,21 +66,14 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -108,23 +86,16 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->future = std::async(std::launch::async,
+                    &Resource<T>::template Load<Args...>,
+                    resources[path].get(), std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->future = std::async(std::launch::async,
-                &Resource<T>::template Load<Args...>,
-                resources[path].get(), std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -134,23 +105,16 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->future = std::async(std::launch::async,
+                    &Resource<T>::template LoadWithExternalLoader<Args...>,
+                    resources[path].get(), loaderFunction, std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->future = std::async(std::launch::async,
-                &Resource<T>::template LoadWithExternalLoader<Args...>,
-                resources[path].get(), loaderFunction, std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -160,23 +124,16 @@ namespace Atlas {
 
             CheckInitialization();
 
-            {
-                std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto& resource = resources[path];
-                    resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
-                    return ResourceHandle<T>(resource);
-                }
-
-                resources[path] = std::make_shared<Resource<T>>(path);
+            auto handle = GetHandleOrCreateResource(path);
+            if (!handle.IsValid()) {
+                resources[path]->future = std::async(std::launch::async,
+                    &Resource<T>::template LoadWithExternalLoader<Args...>,
+                    resources[path].get(), std::function(loaderFunction), std::forward<Args>(args)...);
+                NotifyAllSubscribers(resources[path]);
+                handle = ResourceHandle<T>(resources[path]);
             }
 
-            // Load only after mutex is unlocked
-            resources[path]->future = std::async(std::launch::async,
-                &Resource<T>::template LoadWithExternalLoader<Args...>,
-                resources[path].get(), std::function(loaderFunction), std::forward<Args>(args)...);
-            NotifyAllSubscribers(resources[path]);
-            return ResourceHandle<T>(resources[path]);
+            return handle;
 
         }
 
@@ -234,11 +191,31 @@ namespace Atlas {
 
         }
 
-        static void Subscribe(std::function<void(Ref<Resource<T>>&)> function) {
+        static int32_t Subscribe(std::function<void(Ref<Resource<T>>&)> function) {
 
             std::lock_guard lock(subscriberMutex);
 
-            subscribers.push_back(function);
+            subscribers.emplace_back({
+                .ID = subscriberCount,
+                .function = function
+            });
+
+            return subscriberCount++;
+
+        }
+
+        static void Unsubscribe(int32_t subscriptionID) {
+
+            std::lock_guard lock(subscriberMutex);
+
+            auto item = std::find_if(subscribers.begin(), subscribers.end(),
+                [&](ResourceSubscriber<T> subscriber) {
+                    return subscriber.ID == subscriptionID;
+            });
+
+            if (item != subscribers.end()) {
+                subscribers.erase(item);
+            }
 
         }
 
@@ -250,9 +227,9 @@ namespace Atlas {
 
         static std::atomic_bool isInitialized;
 
-        static ResourceMemoryManager<T> memoryManager;
+        static std::vector<ResourceSubscriber<T>> subscribers;
 
-        static std::vector<std::function<void(Ref<Resource<T>>&)>> subscribers;
+        static std::atomic_int subscriberCount;
 
         static inline void CheckInitialization() {
 
@@ -266,6 +243,18 @@ namespace Atlas {
                     ResourceManager<T>::ShutdownHandler);
             }
 
+        }
+
+        static inline ResourceHandle<T> GetHandleOrCreateResource(const std::string& path) {
+            std::lock_guard lock(mutex);
+            if (resources.contains(path)) {
+                auto& resource = resources[path];
+                resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                return ResourceHandle<T>(resource);
+            }
+
+            resources[path] = std::make_shared<Resource<T>>(path);
+            return ResourceHandle<T>();
         }
 
         static void UpdateHandler(Events::FrameEvent event) {
@@ -305,7 +294,7 @@ namespace Atlas {
             std::lock_guard lock(subscriberMutex);
 
             for (auto& subscriber : subscribers) {
-                subscriber(resource);
+                subscriber.function(resource);
             }
 
         }
@@ -325,10 +314,10 @@ namespace Atlas {
     std::atomic_bool ResourceManager<T>::isInitialized = false;
 
     template<typename T>
-    ResourceMemoryManager<T> ResourceManager<T>::memoryManager;
+    std::vector<ResourceSubscriber<T>> ResourceManager<T>::subscribers;
 
     template<typename T>
-    std::vector<std::function<void(Ref<Resource<T>>&)>> ResourceManager<T>::subscribers;
+    std::atomic_int ResourceManager<T>::subscriberCount = 0;
 
 }
 

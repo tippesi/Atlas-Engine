@@ -154,6 +154,12 @@ namespace Atlas {
 
     };
 
+    template<typename T>
+    struct ResourceSubscriber {
+        int32_t ID = 0;
+        std::function<void(Ref<Resource<T>>&)> function;
+    };
+
 }
 
 #endif
