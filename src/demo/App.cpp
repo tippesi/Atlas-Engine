@@ -784,11 +784,9 @@ bool App::LoadScene() {
 
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
         meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            "emissivesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "chromesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
-
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -814,8 +812,6 @@ bool App::LoadScene() {
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
-
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 100.0f;
         directionalLight->GetVolumetric()->intensity = 0.28f;
@@ -838,8 +834,6 @@ bool App::LoadScene() {
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
-
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 100.0f;
@@ -867,8 +861,6 @@ bool App::LoadScene() {
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
-
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
         directionalLight->GetVolumetric()->intensity = 0.08f;
@@ -891,8 +883,6 @@ bool App::LoadScene() {
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
-
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
         directionalLight->GetVolumetric()->intensity = 0.08f;
@@ -914,8 +904,6 @@ bool App::LoadScene() {
 
         auto& mesh = meshes.back();
         mesh.invertUVs = true;
-
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
