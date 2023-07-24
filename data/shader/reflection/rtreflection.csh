@@ -178,7 +178,7 @@ vec3 EvaluateHit(inout Ray ray) {
     // This enables metallic materials to have some kind of secondary reflection
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
         EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
 #endif
 
     return radiance;

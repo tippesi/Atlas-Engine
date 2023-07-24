@@ -938,9 +938,7 @@ bool App::LoadScene() {
         */
 
         scene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
-        //scene.reset();
 
-        //scene = Atlas::CreateRef<Atlas::Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
         auto sceneMeshes = scene->GetMeshes();
 
         for (auto handle : sceneMeshes) {
