@@ -379,7 +379,7 @@ namespace Atlas {
                         assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
                     normal = normalize(normal);
 
-                    normals[i] = vec4(normal, 0.0f);
+                    normals[j] = vec4(normal, 0.0f);
 
                     if (hasTangents && assimpMesh->mTangents != nullptr) {
                         vec3 tangent = vec3(assimpMesh->mTangents[j].x,
@@ -393,11 +393,11 @@ namespace Atlas {
 
                         float dotProduct = dot(estimatedBitangent, correctBitangent);
 
-                        tangents[i] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
+                        tangents[j] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
                     }
 
                     if (hasTexCoords && assimpMesh->mTextureCoords[0] != nullptr) {
-                        texCoords[i] = vec2(assimpMesh->mTextureCoords[0][j].x,
+                        texCoords[j] = vec2(assimpMesh->mTextureCoords[0][j].x,
                             assimpMesh->mTextureCoords[0][j].y);
                     }
 
@@ -426,7 +426,7 @@ namespace Atlas {
                     .indicesCount = indexCount,
 
                     .material = &material,
-                    .materialIdx = int32_t(materialIdx),
+                    .materialIdx = 0,
 
                     .aabb = meshData.aabb
                 });

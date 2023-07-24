@@ -7,7 +7,7 @@
 #include <surface.hsh>
 #include <buffers.hsh>
 
-#define STACK_SIZE 32
+#define STACK_SIZE 64
 #define TLAS_INVALID 1000000
 
 struct PackedBVHNode {

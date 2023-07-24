@@ -937,7 +937,7 @@ bool App::LoadScene() {
         mesh.invertUVs = true;
         */
 
-        scene = Atlas::Loader::ModelLoader::LoadScene("pica pica/mesh/scene.gltf");
+        scene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
         //scene.reset();
 
         //scene = Atlas::CreateRef<Atlas::Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
@@ -1104,8 +1104,9 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    for (auto& mesh : meshes) {
-        sceneAABB.Grow(mesh->data.aabb);
+    auto meshActors = scene->GetMeshActors();
+    for (auto& actor : meshActors) {
+        sceneAABB.Grow(actor->aabb);
     }
 
     for (auto& mesh : meshes) {
