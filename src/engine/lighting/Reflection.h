@@ -17,13 +17,13 @@ namespace Atlas {
             void SetSampleCount(int32_t sampleCount);
 
             int32_t sampleCount = 1;
-            int32_t textureLevel = 4;
-            float radianceLimit = 2.0f;
+            int32_t textureLevel = 3;
+            float radianceLimit = 10.0f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
             float temporalWeight = 0.95f;
-            float historyClipFactor = 2.0f;
+            float historyClipMax = 0.1f;
             float currentClipFactor = 2.0f;
 
             bool enable = true;

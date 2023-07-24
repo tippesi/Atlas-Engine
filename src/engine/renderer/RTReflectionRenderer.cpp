@@ -172,7 +172,7 @@ namespace Atlas {
 
                 TemporalConstants constants = {
                     .temporalWeight = reflection->temporalWeight,
-                    .historyClipFactor = reflection->historyClipFactor,
+                    .historyClipMax = reflection->historyClipMax,
                     .currentClipFactor = reflection->currentClipFactor
                 };
                 commandList->PushConstants("constants", &constants);

@@ -131,7 +131,6 @@ namespace Atlas {
                 vec2 uv2;
 
                 int32_t materialIdx;
-                bool endOfNode;
             };
 
             uint32_t triangleCount = 0;
@@ -270,7 +269,6 @@ namespace Atlas {
             triangles.shrink_to_fit();
 
             auto& nodes = bvh.GetTree();
-            Log::Warning("Nodes " + std::to_string(nodes.size()));
             gpuBvhNodes = std::vector<GPUBVHNode>(nodes.size());
             // Copy to GPU format
             for (size_t i = 0; i < nodes.size(); i++) {

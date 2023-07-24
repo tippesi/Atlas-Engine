@@ -255,7 +255,7 @@ namespace Atlas {
         }
 
         BVHBuilder::BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount, const uint32_t binCount) :
-            depth(depth), binCount(binCount), aabb(aabb) {
+            depth(depth), binCount(binCount), minOverlap(0.0f), aabb(aabb) {
 
             // Calculate cost for current node
             nodeCost = float(refCount) * this->aabb.GetSurfaceArea();

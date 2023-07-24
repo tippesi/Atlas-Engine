@@ -113,20 +113,22 @@ ivec2 FindNearest3x3(ivec2 pixel) {
 
 }
 
-void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
+void ComputeVarianceMinMax(out float mean, out float std) {
 
     float m1 = 0.0;
     float m2 = 0.0;
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = 4;
+    const int radius = kernelRadius;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
+    float totalWeight = 0.0;
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
@@ -136,21 +138,17 @@ void ComputeVarianceMinMax(out float aabbMin, out float aabbMax) {
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
-
-            sampleAo *= weight;
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
         
-            m1 += sampleAo;
-            m2 += sampleAo * sampleAo;
+            m1 += sampleAo * weight;
+            m2 += sampleAo * sampleAo * weight;
+
+            totalWeight += weight;
         }
     }
 
-    float oneDividedBySampleCount = 1.0 / float((2.0 * radius + 1.0) * (2.0 * radius + 1.0));
-    float gamma = 1.0;
-    float mu = m1 * oneDividedBySampleCount;
-    float sigma = sqrt(max((m2 * oneDividedBySampleCount) - (mu * mu), 0.0));
-    aabbMin = mu - gamma * sigma;
-    aabbMax = mu + gamma * sigma;
+    mean = m1 / totalWeight;
+    std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
 
 }
 
@@ -220,8 +218,15 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
-    float localNeighbourhoodMin, localNeighbourhoodMax;
-    ComputeVarianceMinMax(localNeighbourhoodMin, localNeighbourhoodMax);
+    float mean, std;
+    ComputeVarianceMinMax(mean, std);
+
+    const float historyClipFactor = .3;
+    float historyNeighbourhoodMin = mean - historyClipFactor * std;
+    float historyNeighbourhoodMax = mean + historyClipFactor * std;
+
+    float currentNeighbourhoodMin = mean - std;
+    float currentNeighbourhoodMax = mean + std;
 
     ivec2 velocityPixel = pixel;
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -238,8 +243,8 @@ void main() {
     float currentValue = texelFetch(currentTexture, pixel, 0).r;
 
     // In case of clipping we might also reject the sample. TODO: Investigate
-    currentValue = clamp(currentValue, localNeighbourhoodMin, localNeighbourhoodMax);
-    historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
+    currentValue = clamp(currentValue, currentNeighbourhoodMin, currentNeighbourhoodMax);
+    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

@@ -51,7 +51,7 @@ namespace Atlas {
 
             struct alignas(16) TemporalConstants {
                 float temporalWeight;
-                float historyClipFactor;
+                float historyClipMax;
                 float currentClipFactor;
             };
 

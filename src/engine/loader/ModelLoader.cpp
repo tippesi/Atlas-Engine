@@ -281,6 +281,8 @@ namespace Atlas {
             assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metalness);
             assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided);
 
+            //assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
+
             material.name = std::string(name.C_Str());
 
             material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
@@ -298,6 +300,11 @@ namespace Atlas {
             material.metalness = glm::clamp(metalness, 0.0f, 1.0f);
 
             material.twoSided = twoSided;
+
+            if (shadingModel == aiShadingMode_PBR_BRDF) {
+                assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.metalness);
+                assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
+            }
             
             if (images.baseColorImage && images.baseColorImage->HasData()) {
                 material.baseColorMap = std::make_shared<Texture::Texture2D>(images.baseColorImage);

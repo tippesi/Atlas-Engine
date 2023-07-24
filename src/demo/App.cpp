@@ -449,7 +449,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Denoiser");
                 ImGui::SliderFloat("Spatial filter strength##Reflection", &reflection->spatialFilterStrength, 0.0f, 10.0f);
                 ImGui::SliderFloat("Temporal weight##Reflection", &reflection->temporalWeight, 0.0f, 1.0f);
-                ImGui::SliderFloat("History clip factor##Reflection", &reflection->historyClipFactor, 0.0f, 10.0f);
+                ImGui::SliderFloat("Maximum history clip factor##Reflection", &reflection->historyClipMax, 0.0f, 1.0f);
                 ImGui::SliderFloat("Current clip factor##Reflection", &reflection->currentClipFactor, 0.0f, 10.0f);
             }
             if (ImGui::CollapsingHeader("Camera")) {

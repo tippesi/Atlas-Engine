@@ -27,7 +27,7 @@ layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 7;
+const int kernelRadius = 5;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -36,7 +36,7 @@ shared vec4 sharedRadianceDepth[sharedDataSize];
 
 layout(push_constant) uniform constants {
     float temporalWeight;
-    float historyClipFactor;
+    float historyClipMax;
     float currentClipFactor;
 } pushConstants;
 
@@ -207,13 +207,15 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = 5;
+    const int radius = kernelRadius;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+
+    float totalWeight = 0.0;
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
@@ -224,18 +226,16 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
             float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
-
-            sampleRadiance *= weight;
         
-            m1 += sampleRadiance;
-            m2 += sampleRadiance * sampleRadiance;
+            m1 += sampleRadiance * weight;
+            m2 += sampleRadiance * sampleRadiance * weight;
+
+            totalWeight += weight;
         }
     }
 
-    float oneDividedBySampleCount = 1.0 / float((2.0 * radius + 1.0) * (2.0 * radius + 1.0));
-    float gamma = 1.0;
-    mean = m1 * oneDividedBySampleCount;
-    std = sqrt(max((m2 * oneDividedBySampleCount) - (mean * mean), 0.0));
+    mean = m1 / totalWeight;
+    std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
 }
 
 bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
@@ -320,8 +320,8 @@ void main() {
     currentMoments.r = Luma(currentColor);
     currentMoments.g = currentMoments.r * currentMoments.r;
 
-    vec3 historyNeighbourhoodMin = mean - pushConstants.historyClipFactor * std;
-    vec3 historyNeighbourhoodMax = mean + pushConstants.historyClipFactor * std;
+    vec3 historyNeighbourhoodMin = mean - std;
+    vec3 historyNeighbourhoodMax = mean + std;
 
     vec3 currentNeighbourhoodMin = mean - pushConstants.currentClipFactor * std;
     vec3 currentNeighbourhoodMax = mean + pushConstants.currentClipFactor * std;
@@ -329,7 +329,7 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     float clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
         historyColor, currentColor);
-    float adjClipBlend = clamp(clipBlend, 0.0, 1.0);
+    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
     historyColor = mix(historyColor, currentColor, adjClipBlend);
 
