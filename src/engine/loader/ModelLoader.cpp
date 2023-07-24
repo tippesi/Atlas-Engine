@@ -46,6 +46,7 @@ namespace Atlas {
 
             if (!scene) {
                 Log::Error("Error processing model " + std::string(importer.GetErrorString()));
+                return nullptr;
             }
 
             int32_t indexCount = 0;
@@ -283,6 +284,7 @@ namespace Atlas {
 
             if (!assimpScene) {
                 Log::Error("Error processing model " + std::string(importer.GetErrorString()));
+                return nullptr;
             }
 
             std::atomic_int32_t counter = 0;
@@ -295,7 +297,7 @@ namespace Atlas {
                     auto& images = materialImages[i];
 
                     LoadMaterialImages(assimpScene->mMaterials[i], images, directoryPath,
-                        isObj, false, maxTextureResolution, false);
+                        isObj, true, maxTextureResolution, false);
 
                     i = counter++;
                 }

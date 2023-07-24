@@ -81,7 +81,6 @@ namespace Atlas {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
-        auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
         if (!actor->mesh.IsLoaded())
             return;
@@ -89,6 +88,8 @@ namespace Atlas {
         auto id = actor->mesh.GetID();
 
         if (!meshToActorMap.contains(id)) {
+            auto& meshIdToMeshMap = pass.meshIdToMeshMap;
+
             meshToActorMap[id] = { actor };
             meshIdToMeshMap[id] = actor->mesh;
         }
