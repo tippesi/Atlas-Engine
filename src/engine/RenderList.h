@@ -2,7 +2,6 @@
 #define AE_RENDERLIST_H
 
 #include "System.h"
-#include "actor/ActorBatch.h"
 #include "actor/MeshActor.h"
 #include "actor/DecalActor.h"
 #include "lighting/Light.h"
@@ -36,8 +35,9 @@ namespace Atlas {
             Lighting::Light* light;
             uint32_t layer;
 
-            std::map<Mesh::Mesh*, std::vector<Actor::MeshActor*>> meshToActorMap;
-            std::map<Mesh::Mesh*, MeshInstances> meshToInstancesMap;
+            std::map<size_t, std::vector<Actor::MeshActor*>> meshToActorMap;
+            std::map<size_t, MeshInstances> meshToInstancesMap;
+            std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
 
         RenderList();

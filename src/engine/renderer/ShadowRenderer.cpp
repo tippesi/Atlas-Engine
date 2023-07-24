@@ -87,9 +87,11 @@ namespace Atlas {
                     auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
                     // Retrieve all possible materials
-                    std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
-                    for (auto& [mesh, _] : shadowPass->meshToInstancesMap) {
-                        for (auto& subData : mesh->data->subData) {
+                    std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
+                    for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
+
+                        auto mesh = shadowPass->meshIdToMeshMap[meshId];
+                        for (auto& subData : mesh->data.subData) {
                             subDatas.push_back({ &subData, mesh });
                         }
                     }
@@ -111,7 +113,7 @@ namespace Atlas {
 
                     size_t prevHash = 0;
                     Ref<Graphics::Pipeline> currentPipeline = nullptr;
-                    Mesh::Mesh* prevMesh = nullptr;
+                    ResourceHandle<Mesh::Mesh> prevMesh;
                     for (auto [subData, mesh] : subDatas) {
                         auto material = subData->material;
                         if (material->shadowConfig.variantHash != prevHash) {
@@ -120,12 +122,12 @@ namespace Atlas {
                             prevHash = material->shadowConfig.variantHash;
                         }
 
-                        if (mesh != prevMesh) {
+                        if (mesh.GetID() != prevMesh.GetID()) {
                             mesh->vertexArray.Bind(commandList);
                             prevMesh = mesh;
                         }
 
-                        auto& instance = shadowPass->meshToInstancesMap[mesh];
+                        auto& instance = shadowPass->meshToInstancesMap[mesh.GetID()];
 
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
@@ -188,7 +190,7 @@ namespace Atlas {
         }
 
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+            ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 

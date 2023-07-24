@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Scene {
 
         Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-                                                          SpacePartitioning(min, max, depth), rtData(this) {
+            SpacePartitioning(min, max, depth), rtData(this) {
 
             AddToScene(this, &rootMeshMap);
 
@@ -40,10 +40,6 @@ namespace Atlas {
         void Scene::Update(Camera *camera, float deltaTime) {
 
             auto meshes = GetMeshes();
-
-            for (auto mesh : meshes) {
-                mesh->CheckForLoad();
-            }
 
             if (terrain) {
                 terrain->Update(camera);
@@ -82,13 +78,13 @@ namespace Atlas {
 
         }
 
-        std::vector<Mesh::Mesh*> Scene::GetMeshes() {
+        std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {
 
-            std::vector<Mesh::Mesh*> meshes;
+            std::vector<ResourceHandle<Mesh::Mesh>> meshes;
 
             // Not really efficient, but does the job
-            for (auto& [mesh, count] : rootMeshMap) {
-                meshes.push_back(mesh);
+            for (auto& [meshId, registeredMesh] : rootMeshMap) {
+                meshes.push_back(registeredMesh.mesh);
             }
 
             return meshes;
@@ -113,14 +109,14 @@ namespace Atlas {
 
             auto meshes = GetMeshes();
             if (vegetation) {
-                auto vegMeshes = vegetation->GetMeshes();
-                meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
+                // auto vegMeshes = vegetation->GetMeshes();
+                // meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
 
             for (auto mesh : meshes) {
-                if (!mesh->data.IsLoaded())
+                if (!mesh.IsLoaded())
                     continue;
-                for (auto& material : mesh->data->materials) {
+                for (auto& material : mesh->data.materials) {
                     materials.push_back(&material);
                 }
             }
@@ -146,7 +142,7 @@ namespace Atlas {
             auto meshes = GetMeshes();
 
             for(auto mesh : meshes) {
-                mesh->data.WaitForLoad();
+                mesh.WaitForLoad();
             }
 
         }
@@ -158,7 +154,7 @@ namespace Atlas {
             auto meshes = GetMeshes();
 
             for(auto mesh : meshes) {
-                loaded &= mesh->data.IsLoaded();
+                loaded &= mesh.IsLoaded();
             }
 
             return loaded;

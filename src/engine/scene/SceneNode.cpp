@@ -274,7 +274,7 @@ namespace Atlas {
             for (size_t i = 0; i < addableStaticMeshActors.size(); i++) {
                 auto meshActor = addableStaticMeshActors[i];
 
-                if (meshActor->mesh->data.IsLoaded()) {
+                if (meshActor->mesh.IsLoaded()) {
 
                     staticMeshActors.push_back(meshActor);
                     meshActor->Update(*camera, deltaTime,
@@ -349,7 +349,7 @@ namespace Atlas {
         }
 
         void SceneNode::AddToScene(SpacePartitioning* spacePartitioning,
-            std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) {
+            std::unordered_map<size_t, RegisteredMesh>* meshMap) {
 
             if (sceneSet)
                 return;
@@ -434,13 +434,17 @@ namespace Atlas {
             if (!sceneSet)
                 return;
 
-            auto it = meshMap->find(actor->mesh);
+            auto meshId = actor->mesh.GetID();
+            auto it = meshMap->find(meshId);
 
             if (it == meshMap->end()) {
-                (*meshMap)[actor->mesh] = 1;
+                (*meshMap)[meshId] = RegisteredMesh {
+                    .mesh = actor->mesh,
+                    .actorCount = 1
+                };
             }
             else {
-                it->second++;
+                it->second.actorCount++;
             }
 
         }
@@ -450,14 +454,15 @@ namespace Atlas {
             if (!sceneSet)
                 return;
 
-            auto it = meshMap->find(actor->mesh);
+            auto meshId = actor->mesh.GetID();
+            auto it = meshMap->find(meshId);
 
             if (it == meshMap->end())
                 return;
 
-            it->second--;
+            it->second.actorCount--;
 
-            if (!it->second) {
+            if (!it->second.actorCount) {
                 meshMap->erase(it->first);
             }
 

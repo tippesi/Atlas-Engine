@@ -81,15 +81,19 @@ namespace Atlas {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
-        if (!actor->mesh->data.IsLoaded())
+        if (!actor->mesh.IsLoaded())
             return;
 
-        if (!meshToActorMap.contains(actor->mesh)) {
-            meshToActorMap[actor->mesh] = { actor };
+        auto id = actor->mesh.GetID();
+
+        if (!meshToActorMap.contains(id)) {
+            meshToActorMap[id] = { actor };
+            meshIdToMeshMap[id] = actor->mesh;
         }
         else {
-            meshToActorMap[actor->mesh].push_back(actor);
+            meshToActorMap[id].push_back(actor);
         }
 
     }
@@ -102,11 +106,13 @@ namespace Atlas {
         auto type = pass.type;
         auto& meshToActorMap = pass.meshToActorMap;
         auto& meshToInstancesMap = pass.meshToInstancesMap;
+        auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
         size_t maxActorCount = 0;
         size_t maxImpostorCount = 0;
 
-        for (auto& [mesh, actors] : meshToActorMap) {
+        for (auto& [meshId, actors] : meshToActorMap) {
+            auto mesh = meshIdToMeshMap[meshId];
             if (!mesh->castShadow && type == RenderPassType::Shadow)
                 continue;
 
@@ -119,7 +125,8 @@ namespace Atlas {
         lastActorMatrices.reserve(maxActorCount);
         impostorMatrices.reserve(maxImpostorCount);
 
-        for (auto& [mesh, actors] : meshToActorMap) {
+        for (auto& [meshId, actors] : meshToActorMap) {
+            auto mesh = meshIdToMeshMap[meshId];
             if (!actors.size()) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
@@ -166,7 +173,7 @@ namespace Atlas {
 
             instances.count = currentActorMatrices.size() - instances.offset;
             instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
-            meshToInstancesMap[mesh] = instances;
+            meshToInstancesMap[meshId] = instances;
 
         }
 

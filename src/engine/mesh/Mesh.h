@@ -25,7 +25,7 @@ namespace Atlas {
         public:
             Mesh() = default;
 
-            explicit Mesh(ResourceHandle<MeshData> meshData,
+            explicit Mesh(MeshData& meshData,
                 MeshMobility mobility = MeshMobility::Stationary);
 
             void SetTransform(mat4 transform);
@@ -36,7 +36,7 @@ namespace Atlas {
 
             std::string name = "";
 
-            ResourceHandle<MeshData> data;
+            MeshData data;
             MeshMobility mobility = MeshMobility::Stationary;
             Buffer::VertexArray vertexArray;
 

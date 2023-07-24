@@ -68,7 +68,7 @@ namespace Atlas {
             std::vector<GPULight> triangleLights;
 
             std::unordered_map<Material*, int32_t> materialAccess;
-            std::unordered_map<Mesh::Mesh*, GPUMesh> meshInfo;
+            std::unordered_map<size_t, GPUMesh> meshInfo;
 
             std::atomic_bool isValid = false;
             std::mutex mutex;

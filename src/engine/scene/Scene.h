@@ -75,7 +75,7 @@ namespace Atlas {
             void SetMatrix() {}
 
             /**
-             * Removes everthing from the scene.
+             * Removes everything from the scene.
              */
             void Clear();
 
@@ -83,7 +83,7 @@ namespace Atlas {
              * Returns all the scenes meshes
              * @return The meshes of the scene
              */
-            std::vector<Mesh::Mesh*> GetMeshes();
+            std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
             /**
              * Returns all the scenes materials
@@ -115,6 +115,10 @@ namespace Atlas {
              */
             bool IsFullyLoaded();
 
+            /**
+             *
+             * @return
+             */
             bool IsRtDataValid();
 
             /**
@@ -137,7 +141,7 @@ namespace Atlas {
             PostProcessing::PostProcessing postProcessing;
 
         private:
-            std::unordered_map<Mesh::Mesh*, int32_t> rootMeshMap;
+            std::unordered_map<size_t, RegisteredMesh> rootMeshMap;
 
             RTData rtData;
 

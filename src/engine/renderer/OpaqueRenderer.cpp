@@ -23,9 +23,11 @@ namespace Atlas {
             auto mainPass = renderList->GetMainPass();
 
             // Retrieve all possible materials
-            std::vector<std::pair<Mesh::MeshSubData*, Mesh::Mesh*>> subDatas;
-            for (auto& [mesh, _] : mainPass->meshToInstancesMap) {
-                for (auto& subData : mesh->data->subData) {
+            std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
+            for (auto& [meshId, _] : mainPass->meshToInstancesMap) {
+
+                auto mesh = mainPass->meshIdToMeshMap[meshId];
+                for (auto& subData : mesh->data.subData) {
                     subDatas.push_back({ &subData, mesh });
                 }
             }
@@ -47,7 +49,7 @@ namespace Atlas {
 
             size_t prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
-            Mesh::Mesh* prevMesh = nullptr;
+            ResourceHandle<Mesh::Mesh> prevMesh;
             for (auto [subData, mesh] : subDatas) {
                 auto material = subData->material;
                 if (material->mainConfig.variantHash != prevHash) {
@@ -56,12 +58,12 @@ namespace Atlas {
                     prevHash = material->mainConfig.variantHash;
                 }
 
-                if (mesh != prevMesh) {
+                if (mesh.GetID() != prevMesh.GetID()) {
                     mesh->vertexArray.Bind(commandList);
                     prevMesh = mesh;
                 }
 
-                auto& instance = mainPass->meshToInstancesMap[mesh];
+                auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
 
                 if (material->HasBaseColorMap())
                     commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
@@ -100,7 +102,7 @@ namespace Atlas {
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, RenderTarget *target) {
+            ResourceHandle<Mesh::Mesh>& mesh, RenderTarget *target) {
 
             auto shaderConfig = ShaderConfig {
                 {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},

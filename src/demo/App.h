@@ -39,7 +39,8 @@ private:
         MEDIEVAL,
         PICAPICA,
         SUBWAY,
-        MATERIALS
+        MATERIALS,
+        FOREST
     };
 
     void DisplayLoadingScreen();
@@ -51,7 +52,7 @@ private:
 
     void SetResolution(int32_t width, int32_t height);
 
-    SceneSelection sceneSelection = SPONZA;
+    SceneSelection sceneSelection = FOREST;
 
     Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
     Atlas::RenderTarget renderTarget;
@@ -61,11 +62,10 @@ private:
 
     Atlas::Camera camera;
 
-    Atlas::Scene::Scene scene;
-
+    Ref<Atlas::Scene::Scene> scene;
     Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
-    std::vector<Atlas::Mesh::Mesh> meshes;
+    std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
     std::vector<Atlas::Actor::MovableMeshActor> actors;
 
     Atlas::Lighting::EnvironmentProbe probe;

@@ -37,18 +37,18 @@ namespace Atlas {
 
             int32_t materialCount = 0;
             for (auto& mesh : meshes) {
-                if (!mesh->data.IsLoaded())
+                if (!mesh.IsLoaded())
                     continue;
 
                 // Not all meshes might have a bvh
-                if (!mesh->data->gpuTriangles.size())
+                if (!mesh->data.gpuTriangles.size())
                     continue;
 
                 auto triangleOffset = int32_t(gpuTriangles.size());
                 auto nodeOffset = int32_t(gpuBvhNodes.size());
 
-                for (size_t i = 0; i < mesh->data->gpuBvhNodes.size(); i++) {
-                    auto gpuBvhNode = mesh->data->gpuBvhNodes[i];
+                for (size_t i = 0; i < mesh->data.gpuBvhNodes.size(); i++) {
+                    auto gpuBvhNode = mesh->data.gpuBvhNodes[i];
 
                     auto leftPtr = gpuBvhNode.leftPtr;
                     auto rightPtr = gpuBvhNode.rightPtr;
@@ -60,9 +60,9 @@ namespace Atlas {
                 }
 
                 // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data->gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data->gpuTriangles[i];
-                    auto gpuBvhTriangle = mesh->data->gpuBvhTriangles[i];
+                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
+                    auto gpuTriangle = mesh->data.gpuTriangles[i];
+                    auto gpuBvhTriangle = mesh->data.gpuBvhTriangles[i];
 
                     auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
                     auto materialIdx = localMaterialIdx + materialCount;
@@ -74,7 +74,7 @@ namespace Atlas {
                     gpuBvhTriangles.push_back(gpuBvhTriangle);
                 }
 
-                for (auto& material : mesh->data->materials) {
+                for (auto& material : mesh->data.materials) {
                     materialAccess[&material] = materialCount++;
                 }
 
@@ -82,7 +82,7 @@ namespace Atlas {
                     .nodeOffset = nodeOffset,
                     .triangleOffset = triangleOffset
                 };
-                meshInfo[mesh] = gpuMesh;
+                meshInfo[mesh.GetID()] = gpuMesh;
 
             }
 
@@ -169,11 +169,11 @@ namespace Atlas {
             std::vector<Volume::AABB> actorAABBs;
 
             for (auto& actor : actors) {
-                if (!actor->mesh->data.IsLoaded())
+                if (!actor->mesh.IsLoaded())
                     continue;
 
                 actorAABBs.push_back(actor->aabb);
-                auto mesh = meshInfo[actor->mesh];
+                auto mesh = meshInfo[actor->mesh.GetID()];
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix))),
@@ -239,10 +239,10 @@ namespace Atlas {
             materials.resize(materialAccess.size());
 
             for (auto& mesh : meshes) {
-                if (!mesh->data.IsLoaded())
+                if (!mesh.IsLoaded())
                     continue;
 
-                for (auto& material : mesh->data->materials) {
+                for (auto& material : mesh->data.materials) {
                     if (!materialAccess.contains(&material))
                         continue;
 
@@ -315,7 +315,7 @@ namespace Atlas {
 
             auto actors = scene->GetMeshActors();
 
-            std::unordered_set<Mesh::Mesh*> meshes;
+            std::unordered_set<size_t> meshes;
             std::vector<Ref<Texture::Texture2D>> baseColorTextures;
             std::vector<Ref<Texture::Texture2D>> opacityTextures;
             std::vector<Ref<Texture::Texture2D>> normalTextures;
@@ -324,8 +324,8 @@ namespace Atlas {
             std::vector<Ref<Texture::Texture2D>> aoTextures;
 
             for (auto& actor : actors) {
-                if (meshes.find(actor->mesh) == meshes.end() && actor->mesh->data.IsLoaded()) {
-                    auto& actorMaterials = actor->mesh->data->materials;
+                if (meshes.find(actor->mesh.GetID()) == meshes.end()) {
+                    auto& actorMaterials = actor->mesh->data.materials;
                     for (auto& material : actorMaterials) {
                         if (material.HasBaseColorMap())
                             baseColorTextures.push_back(material.baseColorMap);
@@ -340,7 +340,7 @@ namespace Atlas {
                         if (material.HasAoMap())
                             aoTextures.push_back(material.aoMap);
                     }
-                    meshes.insert(actor->mesh);
+                    meshes.insert(actor->mesh.GetID());
                 }
             }
 

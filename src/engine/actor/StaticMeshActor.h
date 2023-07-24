@@ -10,9 +10,9 @@ namespace Atlas {
         class StaticMeshActor : public MeshActor {
 
         public:
-            StaticMeshActor() : MeshActor(nullptr) {}
+            StaticMeshActor() : MeshActor(ResourceHandle<Mesh::Mesh>()) {}
 
-            StaticMeshActor(Mesh::Mesh* mesh, mat4 matrix);
+            StaticMeshActor(ResourceHandle<Mesh::Mesh> mesh, mat4 matrix);
 
             void SetMatrix() {}
 

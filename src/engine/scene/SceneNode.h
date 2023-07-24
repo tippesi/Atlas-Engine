@@ -17,6 +17,11 @@ namespace Atlas {
 
     namespace Scene {
 
+        struct RegisteredMesh {
+            ResourceHandle<Mesh::Mesh> mesh;
+            int32_t actorCount;
+        };
+
         class SceneNode {
 
         public:
@@ -30,8 +35,8 @@ namespace Atlas {
             /**
              * 
              */
-            SceneNode(SpacePartitioning* partitioning, 
-                std::unordered_map<Mesh::Mesh*, int32_t>* meshMap) { AddToScene(partitioning, meshMap); }
+            SceneNode(SpacePartitioning* partitioning,
+                std::unordered_map<size_t, RegisteredMesh>* meshMap) { AddToScene(partitioning, meshMap); }
 
             /**
              * 
@@ -149,8 +154,8 @@ namespace Atlas {
              *
              * @param scene
              */
-            virtual void AddToScene(SpacePartitioning* spacePartitioning, 
-                std::unordered_map<Mesh::Mesh*, int32_t>* meshMap);
+            virtual void AddToScene(SpacePartitioning* spacePartitioning,
+                std::unordered_map<size_t, RegisteredMesh>* meshMap);
 
             /**
              *
@@ -185,7 +190,7 @@ namespace Atlas {
             std::vector<Actor::StaticMeshActor*> addableStaticMeshActors;
 
             SpacePartitioning* spacePartitioning = nullptr;
-            std::unordered_map<Mesh::Mesh*, int32_t>* meshMap = nullptr;
+            std::unordered_map<size_t, RegisteredMesh>* meshMap = nullptr;
 
         private:
             virtual void AddInternal(Actor::MeshActor* actor);

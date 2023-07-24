@@ -15,7 +15,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        Ref<Mesh::MeshData> ModelLoader::LoadMesh(const std::string& filename,
+        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
             Mesh::MeshData meshData;
@@ -66,7 +66,8 @@ namespace Atlas {
             traverseNodeTree = [&](aiNode* node, mat4 accTransform) {
                 accTransform = accTransform * glm::transpose(glm::make_mat4(&node->mTransformation.a1));
                 for (uint32_t i = 0; i < node->mNumMeshes; i++) {
-                    auto mesh = scene->mMeshes[i];
+                    auto meshId = node->mMeshes[i];
+                    auto mesh = scene->mMeshes[meshId];
 
                     meshSorted[mesh->mMaterialIndex].push_back({ mesh, accTransform });
 
@@ -167,7 +168,6 @@ namespace Atlas {
                 auto& images = materialImages[i];
                 auto& subData = meshData.subData[i];
 
-                // No material loading for now
                 LoadMaterial(scene->mMaterials[i], images, material);
 
                 subData.material = &material;
@@ -250,7 +250,220 @@ namespace Atlas {
 
             meshData.filename = filename;
 
-            return CreateRef(meshData);
+            return CreateRef<Mesh::Mesh>(meshData);
+
+        }
+
+        Ref<Scene::Scene> ModelLoader::LoadScene(const std::string& filename,
+            bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
+
+            auto directoryPath = GetDirectoryPath(filename);
+
+            AssetLoader::UnpackFile(filename);
+
+            auto fileType = Common::Path::GetFileType(filename);
+            bool isObj = fileType == "obj" || fileType == "OBJ";
+
+            Assimp::Importer importer;
+            importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
+
+            // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
+            // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
+            // Right now we just use flat normals everytime normals are missing.
+            const aiScene* assimpScene = importer.ReadFile(AssetLoader::GetFullPath(filename),
+                aiProcess_CalcTangentSpace |
+                aiProcess_JoinIdenticalVertices |
+                aiProcess_Triangulate |
+                aiProcess_OptimizeGraph |
+                aiProcess_OptimizeMeshes |
+                aiProcess_RemoveRedundantMaterials |
+                aiProcess_GenNormals |
+                aiProcess_LimitBoneWeights |
+                aiProcess_ImproveCacheLocality);
+
+            if (!assimpScene) {
+                Log::Error("Error processing model " + std::string(importer.GetErrorString()));
+            }
+
+            std::atomic_int32_t counter = 0;
+            std::vector<MaterialImages> materialImages(assimpScene->mNumMaterials);
+            auto loadImagesLambda = [&]() {
+                auto i = counter++;
+
+                while (i < int32_t(materialImages.size())) {
+
+                    auto& images = materialImages[i];
+
+                    LoadMaterialImages(assimpScene->mMaterials[i], images, directoryPath,
+                        isObj, false, maxTextureResolution, false);
+
+                    i = counter++;
+                }
+
+            };
+
+            auto threadCount = std::thread::hardware_concurrency();
+            std::vector<std::thread> threads;
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads.emplace_back(std::thread{ loadImagesLambda });
+            }
+
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads[i].join();
+            }
+
+            std::map<aiMesh*, ResourceHandle<Mesh::Mesh>> meshMap;
+
+            for (uint32_t i = 0; i < assimpScene->mNumMeshes; i++) {
+                auto assimpMesh = assimpScene->mMeshes[i];
+                auto materialIdx = assimpMesh->mMaterialIndex;
+                auto assimpMaterial = assimpScene->mMaterials[materialIdx];
+
+                uint32_t indexCount = assimpMesh->mNumFaces * 3;
+                uint32_t vertexCount = assimpMesh->mNumVertices;
+
+                bool hasTangents = false;
+                bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
+
+                Mesh::MeshData meshData;
+
+                hasTangents |= forceTangents;
+                if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
+                    hasTangents = true;
+                if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
+                    hasTangents = true;
+
+                if (vertexCount > 65535) {
+                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
+                }
+                else {
+                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
+                }
+
+                meshData.vertices.SetType(Mesh::ComponentFormat::Float);
+                meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
+                meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
+                meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+
+                meshData.SetIndexCount(indexCount);
+                meshData.SetVertexCount(vertexCount);
+
+                std::vector<uint32_t> indices(indexCount);
+
+                std::vector<vec3> vertices(vertexCount);
+                std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
+                std::vector<vec4> normals(vertexCount);
+                std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
+
+                meshData.materials = std::vector<Material>(1);
+
+                auto min = vec3(std::numeric_limits<float>::max());
+                auto max = vec3(-std::numeric_limits<float>::max());
+
+                auto& images = materialImages[materialIdx];
+                auto& material = meshData.materials.front();
+
+                LoadMaterial(assimpMaterial, images, material);
+
+                for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
+
+                    vec3 vertex = vec3(assimpMesh->mVertices[j].x,
+                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
+
+                    vertices[j] = vertex;
+
+                    max = glm::max(vertex, max);
+                    min = glm::min(vertex, min);
+
+                    vec3 normal = vec3(assimpMesh->mNormals[j].x,
+                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
+                    normal = normalize(normal);
+
+                    normals[i] = vec4(normal, 0.0f);
+
+                    if (hasTangents && assimpMesh->mTangents != nullptr) {
+                        vec3 tangent = vec3(assimpMesh->mTangents[j].x,
+                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z);
+                        tangent = normalize(tangent - normal * dot(normal, tangent));
+
+                        vec3 estimatedBitangent = normalize(cross(tangent, normal));
+                        vec3 correctBitangent = vec3(assimpMesh->mBitangents[j].x,
+                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z);
+                        correctBitangent = normalize(correctBitangent);
+
+                        float dotProduct = dot(estimatedBitangent, correctBitangent);
+
+                        tangents[i] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
+                    }
+
+                    if (hasTexCoords && assimpMesh->mTextureCoords[0] != nullptr) {
+                        texCoords[i] = vec2(assimpMesh->mTextureCoords[0][j].x,
+                            assimpMesh->mTextureCoords[0][j].y);
+                    }
+
+                }
+
+                // Copy indices
+                for (uint32_t j = 0; j < assimpMesh->mNumFaces; j++) {
+                    for (uint32_t k = 0; k < 3; k++) {
+                        indices[j * 3 + k] = assimpMesh->mFaces[j].mIndices[k];
+                    }
+                }
+
+                meshData.aabb = Volume::AABB(min, max);
+
+                meshData.indices.Set(indices);
+                meshData.vertices.Set(vertices);
+                meshData.normals.Set(normals);
+
+                if (hasTexCoords)
+                    meshData.texCoords.Set(texCoords);
+                if (hasTangents)
+                    meshData.tangents.Set(tangents);
+
+                meshData.subData.push_back({
+                    .indicesOffset = 0,
+                    .indicesCount = indexCount,
+
+                    .material = &material,
+                    .materialIdx = int32_t(materialIdx),
+
+                    .aabb = meshData.aabb
+                });
+
+                meshData.filename = std::string(assimpMesh->mName.C_Str());
+
+                auto mesh = CreateRef<Mesh::Mesh>(meshData);
+                mesh->name = meshData.filename;
+
+                auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name, mesh);
+                meshMap[assimpMesh] = handle;
+            }
+
+            auto scene = CreateRef<Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
+
+            scene->name = filename;
+
+            std::function<void(aiNode*, mat4)> traverseNodeTree;
+            traverseNodeTree = [&](aiNode* node, mat4 accTransform) {
+                accTransform = accTransform * glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+                for (uint32_t i = 0; i < node->mNumMeshes; i++) {
+                    auto meshId = node->mMeshes[i];
+                    auto mesh = assimpScene->mMeshes[meshId];
+
+                    auto atlasMesh = meshMap[mesh];
+                    auto actor = new Actor::StaticMeshActor(atlasMesh, accTransform);
+                    scene->Add(actor);
+                }
+
+                for (uint32_t i = 0; i < node->mNumChildren; i++) {
+                    traverseNodeTree(node->mChildren[i], accTransform);
+                }
+            };
+
+            traverseNodeTree(assimpScene->mRootNode, transform);
+
+            return scene;
 
         }
 
