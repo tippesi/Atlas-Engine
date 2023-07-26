@@ -156,6 +156,10 @@ namespace Atlas {
             return resource;
         }
 
+        inline void Reset() {
+            resource = nullptr;
+        }
+
         inline T& operator*() {
             return resource->data.operator*();
         }

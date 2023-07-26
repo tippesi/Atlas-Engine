@@ -16,6 +16,8 @@ void App::LoadContent() {
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
 
+    loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
+
     font = Atlas::Font("font/roboto.ttf", 22, 5);
 
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
@@ -162,6 +164,11 @@ void App::Render(float deltaTime) {
         return;
     }
 
+    if (!loadingComplete) {
+        DisplayLoadingScreen(deltaTime);
+        return;
+    }
+
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
     if (pathTrace) {
@@ -180,24 +187,24 @@ void App::Render(float deltaTime) {
 
             if (debugAo) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
             }
             else if (debugReflection) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
             }
             else if (debugClouds) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
             }
             else if (debugSSS) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
             }
             else if (debugMotion) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
                     renderTarget.GetData(Atlas::FULL_RES)->velocityTexture.get(),
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), false, true);
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 10.0f, false, true);
             }
 
             commandList->EndRenderPass();
@@ -678,7 +685,7 @@ void App::Render(float deltaTime) {
 
 }
 
-void App::DisplayLoadingScreen() {
+void App::DisplayLoadingScreen(float deltaTime) {
 
     auto commandList = graphicsDevice->GetCommandList();
 
@@ -686,26 +693,35 @@ void App::DisplayLoadingScreen() {
     graphicsDevice->swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
     commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
-    float textWidth, textHeight;
-    font.ComputeDimensions("Loading...", 2.5f, &textWidth, &textHeight);
-
     auto windowSize = window.GetDrawableSize();
 
-    float x = windowSize.x / 2 - textWidth / 2;
-    float y = windowSize.y / 2 - textHeight / 2;
+    float width = float(loadingTexture->width);
+    float height = float(loadingTexture->height);
+
+    float x = windowSize.x / 2 - width / 2;
+    float y = windowSize.y / 2 - height / 2;
+
+    static float rotation = 0.0f;
+
+    rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
+
+    mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
+        loadingTexture.get(), x, y, width, height, rotation);
+
+    float textWidth, textHeight;
+    font.ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
+
+    x = windowSize.x / 2 - textWidth / 2;
+    y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
     viewport.Set(0, 0, windowSize.x, windowSize.y);
     mainRenderer->textRenderer.Render(commandList, &viewport, &font,
-        "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.5f);
+        "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
     commandList->EndCommands();
+
     graphicsDevice->SubmitCommandList(commandList);
-    graphicsDevice->CompleteFrame();
-
-    graphicsDevice->WaitForIdle();
-
-    window.Show();
 
 }
 
@@ -732,8 +748,6 @@ bool App::LoadScene() {
 
     bool successful = false;
     loadingComplete = false;
-
-    DisplayLoadingScreen();
 
     Atlas::Texture::Cubemap sky;
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
@@ -924,63 +938,14 @@ bool App::LoadScene() {
         scene->sss->enable = true;
     }
     else if (sceneSelection == FOREST) {
-        /*
-        meshes.reserve(1);
+        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
+        otherScene->Update(&camera, 1.0f);
 
-        auto transform = glm::scale(glm::vec3(8.0f));
-        auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoaderAsync(
-            "material demo/materials.obj", ModelLoader::LoadMesh, false, transform, 2048
-        );
-        meshes.push_back(Atlas::Mesh::Mesh{ meshData, Atlas::Mesh::MeshMobility::Movable });
-
-        auto& mesh = meshes.back();
-        mesh.invertUVs = true;
-        */
-
-        scene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
-
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (auto handle : sceneMeshes) {
-            meshes.push_back(handle);
-        }
-
-        directionalLight = std::make_shared<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
-        directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
-        glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-        directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-        directionalLight->AddVolumetric(10, 0.28f);
-
-        scene->sky.sun = directionalLight;
-
-        scene->ao = std::make_shared<Atlas::Lighting::AO>(16);
-        scene->ao->rt = true;
-        scene->reflection = std::make_shared<Atlas::Lighting::Reflection>(1);
-        scene->reflection->useShadowMap = true;
-
-        scene->fog = std::make_shared<Atlas::Lighting::Fog>();
-        scene->fog->enable = true;
-        scene->fog->density = 0.0002f;
-        scene->fog->heightFalloff = 0.0284f;
-        scene->fog->height = 0.0f;
-        scene->fog->scatteringAnisotropy = 0.0f;
-
-        scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
-        scene->sky.clouds->minHeight = 100.0f;
-        scene->sky.clouds->maxHeight = 600.0f;
-
-        scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
-
-        scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
-        scene->postProcessing.sharpen.enable = true;
-        scene->postProcessing.sharpen.factor = 0.15f;
-
-        scene->sss = std::make_shared<Atlas::Lighting::SSS>();
+        CopyActors(otherScene);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.0f;
+        directionalLight->intensity = 50.0f;
+        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -988,8 +953,6 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
-        scene->sky.clouds->enable = false;
-        scene->sss->enable = true;
     }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
@@ -1028,21 +991,36 @@ bool App::LoadScene() {
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
-    //actors.reserve(meshes.size());
+    if (sceneSelection != FOREST) {
+        auto meshCount = 0;
+        for (auto &mesh: meshes) {
+            if (meshCount == 10) {
+                meshCount++;
+                continue;
+            }
+            actors.push_back(Atlas::Actor::MovableMeshActor{mesh, glm::translate(glm::mat4(1.0f),
+                glm::vec3(0.0f))});
 
-    /*
-    auto meshCount = 0;
-    for (auto& mesh : meshes) {
-        actors.push_back(Atlas::Actor::MovableMeshActor{ mesh, glm::translate(glm::mat4(1.0f),
-            glm::vec3(0.0f)) });
+            /*
+            if (meshCount == 1) {
+                for (int32_t i = 0; i < 20000; i++) {
+                    auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
+                    auto y = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
+                    auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
 
-        meshCount++;
+                    actors.push_back(Atlas::Actor::MovableMeshActor{mesh, glm::translate(glm::mat4(1.0f),
+                        glm::vec3(x, y, z))});
+                }
+            }
+            */
+
+            meshCount++;
+        }
+
+        for (auto &actor: actors) {
+            scene->Add(&actor);
+        }
     }
-
-    for (auto& actor : actors) {
-        scene->Add(&actor);
-    }
-    */
 
     camera.Update();
     scene->Update(&camera, 1.0f);
@@ -1082,7 +1060,9 @@ void App::CheckLoadScene() {
     static std::future<void> future;
 
     auto buildRTStructure = [&]() {
-        for (auto& mesh : meshes) {
+        auto sceneMeshes = scene->GetMeshes();
+
+        for (auto& mesh : sceneMeshes) {
             mesh->data.BuildBVH();
         }
         scene->BuildRTStructures();
@@ -1102,8 +1082,8 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    auto meshActors = scene->GetMeshActors();
-    for (auto& actor : meshActors) {
+    auto sceneActors = scene->GetMeshActors();
+    for (auto& actor : sceneActors) {
         sceneAABB.Grow(actor->aabb);
     }
 
@@ -1181,6 +1161,28 @@ void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget.Resize(width, height);
     pathTraceTarget.Resize(width, height);
+
+}
+
+void App::CopyActors(Atlas::Ref<Atlas::Scene::Scene> otherScene) {
+
+    auto otherActors = otherScene->GetMeshActors();
+
+    for (auto actor : otherActors) {
+
+        actors.push_back(Atlas::Actor::MovableMeshActor{actor->mesh, actor->globalMatrix});
+
+        delete actor;
+
+    }
+
+    auto otherMeshes = otherScene->GetMeshes();
+
+    for (auto mesh : otherMeshes) {
+
+        meshes.push_back(mesh);
+
+    }
 
 }
 

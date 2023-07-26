@@ -14,7 +14,8 @@ namespace Atlas {
         }
 
         void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
-            Texture::Texture2D* texture, float x, float y, float width, float height, bool alphaBlending, bool invert) {
+            Texture::Texture2D* texture, float x, float y, float width, float height,
+            float rotation, float brightness, bool alphaBlending, bool invert) {
 
 
             float viewportWidth = (float)viewport->width;
@@ -24,17 +25,17 @@ namespace Atlas {
             vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
 
             RenderTexture2D(commandList, viewport, texture, x, y, width, height,
-                clipArea, blendArea, alphaBlending, invert);
+                clipArea, blendArea, rotation, brightness, alphaBlending, invert);
 
 
         }
 
         void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
-            Texture::Texture2D* texture, float x, float y, float width, float height,
-            vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
+            Texture::Texture2D* texture, float x, float y, float width, float height, vec4 clipArea,
+            vec4 blendArea, float rotation, float brightness, bool alphaBlending, bool invert) {
 
-            Draw(commandList, viewport, texture, 0.0f, x, y, width, height,
-                clipArea, blendArea, alphaBlending, invert, "TEXTURE2D");
+            Draw(commandList, viewport, texture, 0.0f, x, y, width, height, clipArea, blendArea,
+                rotation, brightness, alphaBlending, invert, "TEXTURE2D");
 
         }
 
@@ -58,7 +59,7 @@ namespace Atlas {
             vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             Draw(commandList, viewport, texture, depth, x, y, width, height,
-                clipArea, blendArea, alphaBlending, invert, "TEXTURE2D_ARRAY");
+                clipArea, blendArea, 0.0f, 1.0f, alphaBlending, invert, "TEXTURE2D_ARRAY");
 
         }
 
@@ -82,13 +83,13 @@ namespace Atlas {
             vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
             Draw(commandList, viewport, texture, depth, x, y, width, height,
-                clipArea, blendArea, alphaBlending, invert, "TEXTURE3D");
+                clipArea, blendArea, 0.0f, 1.0f, alphaBlending, invert, "TEXTURE3D");
 
         }
 
         void TextureRenderer::Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
             float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
-            bool alphaBlending, bool invert, const std::string& macro) {
+            float rotation, float brightness, bool alphaBlending, bool invert, const std::string& macro) {
 
             std::vector<std::string> macros = { macro };
 
@@ -111,7 +112,9 @@ namespace Atlas {
                 .offset = vec2(x, y),
                 .scale = vec2(width, height),
                 .invert = invert ? 1 : 0,
-                .depth = float(depth)
+                .depth = float(depth),
+                .rotation = rotation,
+                .brightness = brightness
             };
             commandList->PushConstants("constants", &constants);
 

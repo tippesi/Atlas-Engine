@@ -236,18 +236,34 @@ namespace Atlas {
 
             }
 
+            importer.FreeScene();
+
             materialImages.clear();
 
             meshData.aabb = Volume::AABB(min, max);
 
             meshData.indices.Set(indices);
-            meshData.vertices.Set(vertices);
-            meshData.normals.Set(normals);
+            indices.clear();
+            indices.shrink_to_fit();
 
-            if (hasTexCoords)
+            meshData.vertices.Set(vertices);
+            vertices.clear();
+            vertices.shrink_to_fit();
+
+            meshData.normals.Set(normals);
+            normals.clear();
+            normals.shrink_to_fit();
+
+            if (hasTexCoords) {
                 meshData.texCoords.Set(texCoords);
-            if (hasTangents)
+                texCoords.clear();
+                texCoords.shrink_to_fit();
+            }
+            if (hasTangents) {
                 meshData.tangents.Set(tangents);
+                tangents.clear();
+                tangents.shrink_to_fit();
+            }
 
             meshData.filename = filename;
 
@@ -369,28 +385,28 @@ namespace Atlas {
 
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
-                    vec3 vertex = vec3(assimpMesh->mVertices[j].x,
-                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
+                    vec3 vertex = vec3(transform * vec4(assimpMesh->mVertices[j].x,
+                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z, 1.0f));
 
                     vertices[j] = vertex;
 
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
 
-                    vec3 normal = vec3(assimpMesh->mNormals[j].x,
-                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
+                    vec3 normal = vec3(transform * vec4(assimpMesh->mNormals[j].x,
+                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z, 0.0f));
                     normal = normalize(normal);
 
                     normals[j] = vec4(normal, 0.0f);
 
                     if (hasTangents && assimpMesh->mTangents != nullptr) {
-                        vec3 tangent = vec3(assimpMesh->mTangents[j].x,
-                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z);
+                        vec3 tangent = vec3(transform * vec4(assimpMesh->mTangents[j].x,
+                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z, 0.0f));
                         tangent = normalize(tangent - normal * dot(normal, tangent));
 
                         vec3 estimatedBitangent = normalize(cross(tangent, normal));
-                        vec3 correctBitangent = vec3(assimpMesh->mBitangents[j].x,
-                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z);
+                        vec3 correctBitangent = vec3(transform * vec4(assimpMesh->mBitangents[j].x,
+                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z, 0.0f));
                         correctBitangent = normalize(correctBitangent);
 
                         float dotProduct = dot(estimatedBitangent, correctBitangent);
@@ -446,6 +462,8 @@ namespace Atlas {
 
             scene->name = filename;
 
+            int32_t triangleCount = 0;
+
             std::function<void(aiNode*, mat4)> traverseNodeTree;
             traverseNodeTree = [&](aiNode* node, mat4 accTransform) {
                 accTransform = accTransform * glm::transpose(glm::make_mat4(&node->mTransformation.a1));
@@ -453,8 +471,9 @@ namespace Atlas {
                     auto meshId = node->mMeshes[i];
                     auto mesh = assimpScene->mMeshes[meshId];
 
-                    auto atlasMesh = meshMap[mesh];
-                    auto actor = new Actor::StaticMeshActor(atlasMesh, accTransform);
+                    triangleCount += mesh->mNumFaces;
+
+                    auto actor = new Actor::StaticMeshActor(meshMap[mesh], accTransform);
                     scene->Add(actor);
                 }
 
@@ -463,7 +482,7 @@ namespace Atlas {
                 }
             };
 
-            traverseNodeTree(assimpScene->mRootNode, transform);
+            traverseNodeTree(assimpScene->mRootNode, mat4(1.0f));
 
             return scene;
 

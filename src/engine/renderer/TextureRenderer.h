@@ -19,11 +19,12 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
-                float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
+                float x, float y, float width, float height, float rotation = 0.0f, float brightness = 1.0f,
+                bool alphaBlending = false, bool invert = false);
 
             void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
-                bool alphaBlending = false, bool invert = false);
+                float rotation = 0.0f, float brightness = 1.0f, bool alphaBlending = false, bool invert = false);
 
             void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
                 int32_t depth, float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
@@ -48,11 +49,13 @@ namespace Atlas {
                 vec2 scale;
                 int invert;
                 float depth;
+                float rotation;
+                float brightness;
             };
 
             void Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
                 float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
-                bool alphaBlending, bool invert, const std::string& macro);
+                float rotation, float brightness, bool alphaBlending, bool invert, const std::string& macro);
 
             PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 const std::vector<std::string>& macros);

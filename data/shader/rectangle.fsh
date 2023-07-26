@@ -22,6 +22,8 @@ layout(push_constant) uniform constants {
     vec2 scale;
     int invert;
     float depth;
+    float rotation;
+    float brightness;
 } pushConstants;
 
 void main() {
@@ -49,5 +51,7 @@ void main() {
 #else
     colorFS = rectangleColor;
 #endif
+
+    colorFS *= pushConstants.brightness;
 
 }

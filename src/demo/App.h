@@ -43,7 +43,7 @@ private:
         FOREST
     };
 
-    void DisplayLoadingScreen();
+    void DisplayLoadingScreen(float deltaTime);
 
     bool IsSceneAvailable(SceneSelection selection);
     bool LoadScene();
@@ -51,6 +51,8 @@ private:
     void CheckLoadScene();
 
     void SetResolution(int32_t width, int32_t height);
+
+    void CopyActors(Ref<Atlas::Scene::Scene> otherScene);
 
     SceneSelection sceneSelection = FOREST;
 
@@ -72,6 +74,8 @@ private:
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+
+    Ref<Atlas::Texture::Texture2D> loadingTexture;
 
     bool renderUI = true;
     bool renderEnvProbe = true;
