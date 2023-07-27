@@ -37,8 +37,10 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             for (auto& item : renderPass->meshToInstancesMap) {
-                auto mesh = item.first;
+                auto meshId = item.first;
                 auto instance = item.second;
+
+                auto mesh = renderPass->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)

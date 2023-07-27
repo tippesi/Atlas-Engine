@@ -170,6 +170,13 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
 
+                TemporalConstants constants = {
+                    .temporalWeight = reflection->temporalWeight,
+                    .historyClipMax = reflection->historyClipMax,
+                    .currentClipFactor = reflection->currentClipFactor
+                };
+                commandList->PushConstants("constants", &constants);
+
                 imageBarriers = {
                     {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}

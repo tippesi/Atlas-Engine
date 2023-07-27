@@ -37,16 +37,21 @@ namespace Atlas {
         public:
             struct Ref {
                 uint32_t idx = 0;
+                uint32_t nodeIdx = 0;
                 bool endOfNode = false;
                 AABB aabb = InitialAABB();
             };
 
-            BVHBuilder(const AABB aabb, const std::vector<Ref> refs,
-                uint32_t depth, const float minOverlap, const uint32_t binCount = 128);
+            BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount,
+                const float minOverlap, const uint32_t binCount);
+
+            BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount, const uint32_t binCount);
 
             ~BVHBuilder();
 
-            void Build(const std::vector<BVHTriangle>& data);
+            void Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data);
+
+            void Build(std::vector<Ref>& refs);
 
             void Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs);
 
@@ -88,22 +93,22 @@ namespace Atlas {
                 AABB rightAABB = InitialAABB();
             };
 
-            Split FindObjectSplit();
+            Split FindObjectSplit(std::vector<Ref>& refs);
 
-            void PerformObjectSplit(std::vector<Ref>& rightRefs,
+            void PerformObjectSplit(std::vector<Ref>& refs, std::vector<Ref>& rightRefs,
                 std::vector<Ref>& leftRefs, Split& split);
 
-            Split FindSpatialSplit(const std::vector<BVHTriangle>& data);
+            Split FindSpatialSplit(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data);
 
-            void PerformSpatialSplit(const std::vector<BVHTriangle>& data,
+            void PerformSpatialSplit(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data,
                 std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split);
 
             void SplitReference(const BVHTriangle triangle, Ref currentRef,
                 Ref& leftRef, Ref& rightRef, const float planePos, const int32_t axis);
 
-            Split PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs);
+            Split PerformMedianSplit(std::vector<Ref>& refs, std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs);
 
-            void CreateLeaf();
+            void CreateLeaf(std::vector<Ref>& refs);
 
             static AABB InitialAABB();
 
@@ -116,6 +121,8 @@ namespace Atlas {
             BVH() = default;
 
             BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data);
+
+            BVH(std::vector<AABB>& aabbs);
 
             bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
                 glm::vec3& intersection);
@@ -131,6 +138,7 @@ namespace Atlas {
 
             std::vector<AABB> aabbs;
             std::vector<BVHTriangle> data;
+            std::vector<BVHBuilder::Ref> refs;
 
             std::vector<BVHNode> nodes;
 

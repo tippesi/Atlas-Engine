@@ -786,6 +786,9 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
 
             for (auto mesh : meshes) {
+                if (!mesh.IsLoaded())
+                    continue;
+
                 auto impostor = mesh->impostor;
 
                 if (!impostor)

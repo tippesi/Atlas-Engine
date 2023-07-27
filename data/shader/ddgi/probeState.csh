@@ -24,7 +24,7 @@ layout(std430, set = 3, binding = 1) buffer RayHits {
 shared uint probeState;
 shared uint backFaceHits;
 shared uint inCellHits;
-shared float temporalPercentageBackface;
+shared float temporalCellHits;
 
 void main() {
 
@@ -35,7 +35,7 @@ void main() {
         backFaceHits = 0u;
         inCellHits = 0u;
         probeState = GetProbeState(baseIdx);
-        temporalPercentageBackface = probeStates[baseIdx].y;
+        temporalCellHits = probeStates[baseIdx].y;
     }
 
     barrier();
@@ -63,17 +63,15 @@ void main() {
     if (gl_LocalInvocationID.x == 0u) {
         probeState = PROBE_STATE_INACTIVE;
 
-        float percentageBackface = float(backFaceHits) / float(probeRayCount);
-        temporalPercentageBackface = mix(percentageBackface, temporalPercentageBackface, ddgiData.hysteresis);
+        float temporalCellHits = mix(float(inCellHits), temporalCellHits, ddgiData.hysteresis);
+
         // Use temporally stable information to decide probe state
-        if (inCellHits > 0u && temporalPercentageBackface < 0.2) {
+        if (temporalCellHits > 0.0) {
             probeState = PROBE_STATE_ACTIVE;
         }
-
-        //probeState = PROBE_STATE_ACTIVE;
         
         probeStates[baseIdx].x = uintBitsToFloat(probeState);
-        probeStates[baseIdx].y = temporalPercentageBackface;
+        probeStates[baseIdx].y = temporalCellHits;
     }
 
 }

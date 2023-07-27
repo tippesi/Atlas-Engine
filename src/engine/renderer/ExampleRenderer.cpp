@@ -116,10 +116,9 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                auto meshData = Atlas::ResourceManager<Atlas::Mesh::MeshData>::GetResourceWithLoader(
+                auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoader(
                     "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
                 );
-                mesh = std::make_shared<Mesh::Mesh>(meshData);
 
                 auto shaderConfig = ShaderConfig {
                     {"example/mesh.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -204,7 +203,7 @@ namespace Atlas {
 
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
-                for (auto &subData: mesh->data->subData) {
+                for (auto &subData: mesh->data.subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
                     if (baseColorTexture) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);

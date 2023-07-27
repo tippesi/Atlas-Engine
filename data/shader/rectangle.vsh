@@ -14,17 +14,26 @@ layout(push_constant) uniform constants {
     vec2 scale;
     int invert;
     float depth;
+    float rotation;
+    float brightness;
 } pushConstants;
 
 void main() {
+
+    float x = vPosition.x;
+    float y = vPosition.y;
+    float rad = -pushConstants.rotation;
+
+    vec2 position = vec2(cos(rad) * x - sin(rad) * y,
+        sin(rad) * x + cos(rad) * y);
     
-    vec2 position = (vPosition + 1.0) / 2.0;
+    position = (position + 1.0) / 2.0;
     screenPositionVS = position * pushConstants.scale + pushConstants.offset;
     gl_Position = pushConstants.pMatrix * vec4(screenPositionVS, 0.0, 1.0);
     gl_Position.y *= -1.0f;
     
 #if defined(TEXTURE2D) || defined(TEXTURE2D_ARRAY) || defined(TEXTURE3D)
-    texCoordVS = position;
+    texCoordVS = (vPosition + 1.0) / 2.0;;
 #endif
     
 }

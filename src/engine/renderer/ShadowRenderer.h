@@ -27,7 +27,7 @@ namespace Atlas {
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
             using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
 

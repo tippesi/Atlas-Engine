@@ -2,6 +2,7 @@
 #define AE_RESOURCE_H
 
 #include "System.h"
+#include "../common/Hash.h"
 
 #include <vector>
 #include <mutex>
@@ -35,7 +36,11 @@ namespace Atlas {
         Resource() = default;
 
         Resource(const std::string& path, ResourceOrigin origin, Ref<T> data = nullptr) :
-            path(path), origin(origin), data(data), isLoaded(data != nullptr) {}
+            path(path), origin(origin), data(data), isLoaded(data != nullptr) {
+
+            HashCombine(ID, path);
+
+        }
 
         template<typename ...Args>
         void Load(Args&&... args) {
@@ -85,6 +90,8 @@ namespace Atlas {
             data = nullptr;
         }
 
+        size_t ID = 0;
+
         ResourceOrigin origin = System;
 
         const std::string path;
@@ -127,6 +134,12 @@ namespace Atlas {
             }
         }
 
+        inline size_t GetID() {
+            if (!IsValid()) return 0;
+
+            return resource->ID;
+        }
+
         inline Ref<T>& Get() {
             return resource->data;
         }
@@ -141,6 +154,10 @@ namespace Atlas {
 
         inline Ref<Resource<T>>& GetResource() {
             return resource;
+        }
+
+        inline void Reset() {
+            resource = nullptr;
         }
 
         inline T& operator*() {

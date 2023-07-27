@@ -1,7 +1,7 @@
 // Based on: Spatial Splits in Bounding Volume Hierarchies, Stich et. al.
 // https://www.nvidia.in/docs/IO/77714/sbvh.pdf
 #include <numeric>
-#include <thread>
+#include <future>
 
 #include "BVH.h"
 #include "Log.h"
@@ -39,11 +39,10 @@ namespace Atlas {
                 aabb.Grow(aabbs[ref.idx]);
 
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
-            auto builder = new BVHBuilder(aabb, refs, 0, minOverlap, 256);
-            refs.clear();
-            refs.reserve(data.size());
+            auto builder = new BVHBuilder(aabb, 0, refs.size(), minOverlap, 256);
 
-            builder->Build(data);
+            builder->Build(refs, data);
+            refs.reserve(data.size());
 
             Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
 
@@ -70,6 +69,49 @@ namespace Atlas {
             Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
             Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
             Log::Message("Finished BVH build");
+
+        }
+
+        BVH::BVH(std::vector<AABB>& aabbs) {
+
+            refs.resize(aabbs.size());
+            for (size_t i = 0; i < refs.size(); i++) {
+                refs[i].idx = uint32_t(i);
+                refs[i].aabb = aabbs[i];
+            }
+
+            // Calculate initial aabb of root
+            AABB aabb(glm::vec3(std::numeric_limits<float>::max()),
+                glm::vec3(-std::numeric_limits<float>::max()));
+            for (auto& ref : refs)
+                aabb.Grow(aabbs[ref.idx]);
+
+            auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
+
+            builder->Build(refs);
+
+            refs.reserve(data.size());
+
+            if (!nodes.size() && aabbs.size() == 1) {
+                BVHNode node;
+                node.leftPtr = ~0;
+                node.rightPtr = ~0;
+                node.leftAABB = aabb;
+                node.rightAABB = AABB(vec3(0.0f), vec3(0.0f));
+
+                nodes.push_back(node);
+            }
+
+            builder->Flatten(nodes, refs);
+
+            this->aabbs.resize(refs.size());
+
+            for (size_t i = 0; i < refs.size(); i++) {
+                auto ref = refs[i];
+                this->aabbs[i] = aabbs[ref.idx];
+            }
+
+            delete builder;
 
         }
 
@@ -201,12 +243,22 @@ namespace Atlas {
 
         }
 
-        BVHBuilder::BVHBuilder(const AABB aabb, const std::vector<Ref> refs,
-            uint32_t depth, const float minOverlap, const uint32_t binCount) :
-            depth(depth), binCount(binCount), minOverlap(minOverlap), aabb(aabb), refs(refs) {
+        BVHBuilder::BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount,
+            const float minOverlap, const uint32_t binCount) :
+            depth(depth), binCount(binCount), minOverlap(minOverlap), aabb(aabb) {
 
             // Calculate cost for current node
-            nodeCost = float(refs.size()) * this->aabb.GetSurfaceArea();
+            nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
+
+            totalSurfaceArea += this->aabb.GetSurfaceArea();
+
+        }
+
+        BVHBuilder::BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount, const uint32_t binCount) :
+            depth(depth), binCount(binCount), minOverlap(0.0f), aabb(aabb) {
+
+            // Calculate cost for current node
+            nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
 
             totalSurfaceArea += this->aabb.GetSurfaceArea();
 
@@ -219,50 +271,50 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::Build(const std::vector<BVHTriangle>& data) {
+        void BVHBuilder::Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data) {
 
             const size_t refCount = 2;
             // Create leaf node
             if (refs.size() <= refCount || depth >= 32) {
-                CreateLeaf();
+                CreateLeaf(refs);
                 return;
             }
 
             Split objectSplit;
-            objectSplit = FindObjectSplit();
+            objectSplit = FindObjectSplit(refs);
 
             Split spatialSplit;
             if (depth <= 16) {
                 AABB overlap = objectSplit.leftAABB;
                 overlap.Intersect(objectSplit.rightAABB);
                 if (overlap.GetSurfaceArea() >= minOverlap) {
-                    spatialSplit = FindSpatialSplit(data);
+                    spatialSplit = FindSpatialSplit(refs, data);
                 }
             }
 
             std::vector<Ref> leftRefs;
             std::vector<Ref> rightRefs;
 
-            leftRefs.reserve(refs.size() / 2);
-            rightRefs.reserve(refs.size() / 2);
+            leftRefs.reserve(refs.size());
+            rightRefs.reserve(refs.size());
 
             Split split;
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                CreateLeaf();
+                CreateLeaf(refs);
                 return;
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
-                    PerformSpatialSplit(data, rightRefs, leftRefs, spatialSplit);
+                    PerformSpatialSplit(refs, data, rightRefs, leftRefs, spatialSplit);
                     split = spatialSplit;
                 }
 
                 if (objectSplit.cost <= spatialSplit.cost) {
                     leftRefs.clear();
                     rightRefs.clear();
-                    PerformObjectSplit(rightRefs, leftRefs, objectSplit);
+                    PerformObjectSplit(refs, rightRefs, leftRefs, objectSplit);
                     split = objectSplit;
                 }
                 else {
@@ -274,35 +326,99 @@ namespace Atlas {
             refs.shrink_to_fit();
 
             if (depth <= 5) {
-                std::thread leftBuilderThread, rightBuilderThread;
-
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
-                    leftChild->Build(data);
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
+                    leftChild->Build(leftRefs, data);
                 };
 
                 auto rightLambda = [&]() {
                     if (!rightRefs.size()) return;
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
-                    rightChild->Build(data);
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
+                    rightChild->Build(rightRefs, data);
                 };
 
-                leftBuilderThread = std::thread{ leftLambda };
-                rightBuilderThread = std::thread{ rightLambda };
+                auto leftBuilderFuture = std::async(leftLambda);
+                auto rightBuilderFuture = std::async(rightLambda);
 
-                leftBuilderThread.join();
-                rightBuilderThread.join();
+                leftBuilderFuture.get();
+                rightBuilderFuture.get();
             }
             else {
                 if (leftRefs.size()) {
-                    leftChild = new BVHBuilder(split.leftAABB, leftRefs, depth + 1, minOverlap, binCount);
-                    leftChild->Build(data);
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
+                    leftChild->Build(leftRefs, data);
                 }
 
                 if (rightRefs.size()) {
-                    rightChild = new BVHBuilder(split.rightAABB, rightRefs, depth + 1, minOverlap, binCount);
-                    rightChild->Build(data);
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
+                    rightChild->Build(rightRefs, data);
+                }
+            }
+
+        }
+
+        void BVHBuilder::Build(std::vector<Ref>& refs) {
+
+            // Create leaf node
+            if (refs.size() == 1) {
+                CreateLeaf(refs);
+                return;
+            }
+
+            Split objectSplit;
+            objectSplit = FindObjectSplit(refs);
+
+            std::vector<Ref> leftRefs;
+            std::vector<Ref> rightRefs;
+
+            leftRefs.reserve(refs.size() / 2);
+            rightRefs.reserve(refs.size() / 2);
+
+            Split split;
+            // If we haven't found a cost improvement but need to continue since only one item per leaf is allowed
+            if (objectSplit.axis < 0 || objectSplit.cost >= nodeCost) {
+                split = PerformMedianSplit(refs, rightRefs, leftRefs);
+            }
+            else {
+                leftRefs.clear();
+                rightRefs.clear();
+                PerformObjectSplit(refs, rightRefs, leftRefs, objectSplit);
+                split = objectSplit;
+            }
+
+            refs.clear();
+            refs.shrink_to_fit();
+
+            if (depth <= 5) {
+                auto leftLambda = [&]() {
+                    if (!leftRefs.size()) return;
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
+                    leftChild->Build(leftRefs);
+                };
+
+                auto rightLambda = [&]() {
+                    if (!rightRefs.size()) return;
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
+                    rightChild->Build(rightRefs);
+                };
+
+                auto leftBuilderFuture = std::async(leftLambda);
+                auto rightBuilderFuture = std::async(rightLambda);
+
+                leftBuilderFuture.get();
+                rightBuilderFuture.get();
+
+            }
+            else {
+                if (leftRefs.size()) {
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
+                    leftChild->Build(leftRefs);
+                }
+
+                if (rightRefs.size()) {
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
+                    rightChild->Build(rightRefs);
                 }
             }
 
@@ -312,6 +428,9 @@ namespace Atlas {
 
             // Check for leaf
             if (this->refs.size()) {
+                for (auto& ref : this->refs) {
+                    ref.nodeIdx = uint32_t(nodes.size() - 1);
+                }
                 refs.insert(refs.end(), this->refs.begin(), this->refs.end());
                 refs[refs.size() - 1].endOfNode = true;
             }
@@ -337,7 +456,7 @@ namespace Atlas {
         }
 
 
-        BVHBuilder::Split BVHBuilder::FindObjectSplit() {
+        BVHBuilder::Split BVHBuilder::FindObjectSplit(std::vector<Ref>& refs) {
 
             Split split;
             const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
@@ -423,7 +542,7 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::PerformObjectSplit(std::vector<Ref>& rightRefs,
+        void BVHBuilder::PerformObjectSplit(std::vector<Ref>& refs, std::vector<Ref>& rightRefs,
             std::vector<Ref>& leftRefs, Split& split) {
 
             const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
@@ -451,7 +570,7 @@ namespace Atlas {
 
         }
 
-        BVHBuilder::Split BVHBuilder::FindSpatialSplit(const std::vector<BVHTriangle>& data) {
+        BVHBuilder::Split BVHBuilder::FindSpatialSplit(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data) {
 
             Split split;
             const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
@@ -562,7 +681,7 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::PerformSpatialSplit(const std::vector<BVHTriangle>& data,
+        void BVHBuilder::PerformSpatialSplit(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data,
             std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs, Split& split) {
 
             const auto depthBinCount = std::max(binCount / (depth + 1), 16u);
@@ -693,7 +812,8 @@ namespace Atlas {
 
         }
 
-        BVHBuilder::Split BVHBuilder::PerformMedianSplit(std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs) {
+        BVHBuilder::Split BVHBuilder::PerformMedianSplit(std::vector<Ref>& refs,
+            std::vector<Ref>& rightRefs, std::vector<Ref>& leftRefs) {
 
             Split split;
 
@@ -724,7 +844,9 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::CreateLeaf() {
+        void BVHBuilder::CreateLeaf(std::vector<Ref>& refs) {
+
+            this->refs = refs;
 
             maxDepth = std::max(depth, maxDepth);
             minTriangles = std::min(uint32_t(refs.size()), minTriangles);

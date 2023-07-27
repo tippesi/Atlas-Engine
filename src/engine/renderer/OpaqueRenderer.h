@@ -25,7 +25,7 @@ namespace Atlas {
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, RenderTarget* target);
+                ResourceHandle<Mesh::Mesh>& mesh, RenderTarget* target);
 
             struct PushConstants {
                 uint32_t vegetation;

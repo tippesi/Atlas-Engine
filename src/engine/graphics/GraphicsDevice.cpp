@@ -19,17 +19,26 @@ namespace Atlas {
 
             instance = Instance::DefaultInstance;
 
-            const std::vector<const char*> requiredExtensions = {
+            std::vector<const char*> requiredExtensions = {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 #ifdef AE_OS_MACOS
                     , "VK_KHR_portability_subset"
 #endif
             };
 
-            SelectPhysicalDevice(instance->instance,
-                surface->GetNativeSurface(), requiredExtensions);
+            std::vector<const char*> optionalExtensions = {
+#ifdef AE_BUILDTYPE_DEBUG
+                VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+#endif
+            };
 
+            SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
+                requiredExtensions, optionalExtensions);
             vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+            auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
+            requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
+                optionalExtensionOverlap.end());
 
             auto queueCreateInfos = CreateQueueInfos();
 
@@ -589,7 +598,7 @@ namespace Atlas {
         }
 
         bool GraphicsDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
-            const std::vector<const char*>& requiredExtensions) {
+            const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions) {
 
             uint32_t deviceCount = 0;
             VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
@@ -600,7 +609,7 @@ namespace Atlas {
 
             std::multimap<int32_t, VkPhysicalDevice> candidates;
             for (const auto& candidate : devices) {
-                int32_t score = RateDeviceSuitability(candidate, surface, requiredExtensions);
+                int32_t score = RateDeviceSuitability(candidate, surface, requiredExtensions, optionalExtensions);
                 candidates.insert(std::make_pair(score, candidate));
             }
 
@@ -635,7 +644,7 @@ namespace Atlas {
         }
 
         int32_t GraphicsDevice::RateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR surface,
-            const std::vector<const char*>& requiredExtensions) {
+            const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions) {
 
             int32_t score = 0;
 
@@ -822,9 +831,30 @@ namespace Atlas {
             for (const auto& extension : availableExtensions) {
                 requiredExtensions.erase(extension.extensionName);
             }
-            assert(requiredExtensions.empty() && "Not all required extensions were found");
 
             return requiredExtensions.empty();
+
+        }
+
+        std::vector<const char*> GraphicsDevice::CheckDeviceOptionalExtensionSupport(VkPhysicalDevice physicalDevice,
+            std::vector<const char*> &extensionNames) {
+
+            uint32_t extensionCount;
+            vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+            std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+            vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+            std::vector<const char*> extensionOverlap;
+            for (const auto extensionName : extensionNames) {
+                for (const auto& extension : availableExtensions) {
+                    if (std::string(extension.extensionName) == std::string(extensionName)) {
+                        extensionOverlap.push_back(extensionName);
+                    }
+                }
+            }
+
+            return extensionOverlap;
 
         }
 

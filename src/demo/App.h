@@ -39,10 +39,11 @@ private:
         MEDIEVAL,
         PICAPICA,
         SUBWAY,
-        MATERIALS
+        MATERIALS,
+        FOREST
     };
 
-    void DisplayLoadingScreen();
+    void DisplayLoadingScreen(float deltaTime);
 
     bool IsSceneAvailable(SceneSelection selection);
     bool LoadScene();
@@ -50,6 +51,8 @@ private:
     void CheckLoadScene();
 
     void SetResolution(int32_t width, int32_t height);
+
+    void CopyActors(Ref<Atlas::Scene::Scene> otherScene);
 
     SceneSelection sceneSelection = SPONZA;
 
@@ -61,17 +64,18 @@ private:
 
     Atlas::Camera camera;
 
-    Atlas::Scene::Scene scene;
-
+    Ref<Atlas::Scene::Scene> scene;
     Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
-    std::vector<Atlas::Mesh::Mesh> meshes;
-    std::vector<Atlas::Actor::StaticMeshActor> actors;
+    std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
+    std::vector<Atlas::Actor::MovableMeshActor> actors;
 
     Atlas::Lighting::EnvironmentProbe probe;
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+
+    Ref<Atlas::Texture::Texture2D> loadingTexture;
 
     bool renderUI = true;
     bool renderEnvProbe = true;

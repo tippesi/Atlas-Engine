@@ -49,6 +49,12 @@ namespace Atlas {
                 Shadow shadow;
             };
 
+            struct alignas(16) TemporalConstants {
+                float temporalWeight;
+                float historyClipMax;
+                float currentClipFactor;
+            };
+
             struct alignas(16) AtrousConstants {
                 int32_t stepSize;
                 float strength;
