@@ -543,6 +543,7 @@ void App::Render(float deltaTime) {
                     auto label = material->name + "##mat" + std::to_string(id++);
 
                     if (ImGui::TreeNode(label.c_str())) {
+                        auto twoSidedLabel = "Two sided##" + label;
                         auto baseColorLabel = "Base color##" + label;
                         auto emissionColorLabel = "Emission color##" + label;
                         auto emissionPowerLabel = "Emission power##" + label;
@@ -551,6 +552,7 @@ void App::Render(float deltaTime) {
                         auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
                             glm::max(material->emissiveColor.b, 1.0f)));
                         material->emissiveColor /= emissionPower;
+                        ImGui::Checkbox(twoSidedLabel.c_str(), &material->twoSided);
                         ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
                         ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
                         ImGui::SliderFloat(emissionPowerLabel.c_str(), &emissionPower, 1.0f, 10000.0f,
@@ -1016,10 +1018,10 @@ bool App::LoadScene() {
 
             meshCount++;
         }
+    }
 
-        for (auto &actor: actors) {
-            scene->Add(&actor);
-        }
+    for (auto& actor : actors) {
+        scene->Add(&actor);
     }
 
     camera.Update();
@@ -1089,6 +1091,7 @@ void App::CheckLoadScene() {
 
     for (auto& mesh : meshes) {
         mesh->invertUVs = true;
+        mesh->cullBackFaces = false;
     }
 
     if (sceneSelection == CORNELL) {

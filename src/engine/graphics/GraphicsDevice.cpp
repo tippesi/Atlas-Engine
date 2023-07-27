@@ -408,7 +408,7 @@ namespace Atlas {
             }
 
             // Do dummy commandList submit in case swap chain was not accessed in current frame
-            if (!wasSwapChainAccessed) {
+            if (!wasSwapChainAccessed && swapChain->isComplete) {
                 auto commandList = GetCommandList(GraphicsQueue);
                 commandList->BeginCommands();
                 commandList->BeginRenderPass(swapChain, true);

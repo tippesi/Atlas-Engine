@@ -152,6 +152,7 @@ void main() {
     normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
     // We want the normal always to face the camera for two sided materials
     geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    normalFS *= dot(geometryNormalFS, normalFS) < 0.0 ? -1.0 : 1.0;
     normalFS = 0.5 * normalFS + 0.5;
 #else
     // We want the normal always to face the camera for two sided materials

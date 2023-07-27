@@ -31,6 +31,8 @@ namespace Atlas {
 
             if (!scene->sky.sun) return;
 
+            Graphics::Profiler::BeginQuery("Direct lighting");
+
             auto light = scene->sky.sun;
             auto sss = scene->sss;
 
@@ -100,6 +102,8 @@ namespace Atlas {
             groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            Graphics::Profiler::EndQuery();
 
         }
 

@@ -172,6 +172,9 @@ namespace Atlas {
                 if (!actor->mesh.IsLoaded())
                     continue;
 
+                if (!meshInfo.contains(actor->mesh.GetID()))
+                    continue;
+
                 actorAABBs.push_back(actor->aabb);
                 auto mesh = meshInfo[actor->mesh.GetID()];
 
