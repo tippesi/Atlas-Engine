@@ -293,6 +293,26 @@ namespace Atlas {
 
         }
 
+        Ref<BLAS> GraphicsDevice::CreateBLAS(BLASDesc desc) {
+
+            auto blas = std::make_shared<BLAS>(this, desc);
+
+            blases.push_back(blas);
+
+            return blas;
+
+        }
+
+        Ref<TLAS> GraphicsDevice::CreateTLAS(TLASDesc desc) {
+
+            auto tlas = std::make_shared<TLAS>(this, desc);
+
+            tlases.push_back(tlas);
+
+            return tlas;
+
+        }
+
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType, bool frameIndependentList) {
 
             if (frameIndependentList) {
@@ -1053,6 +1073,26 @@ namespace Atlas {
                     poolRef.swap(queryPools.back());
                     memoryManager->DestroyAllocation(queryPools.back());
                     queryPools.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < blases.size(); i++) {
+                auto& blasRef = blases[i];
+                if (blasRef.use_count() == 1) {
+                    blasRef.swap(blases.back());
+                    memoryManager->DestroyAllocation(blases.back());
+                    blases.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < tlases.size(); i++) {
+                auto& tlasRef = tlases[i];
+                if (tlasRef.use_count() == 1) {
+                    tlasRef.swap(tlases.back());
+                    memoryManager->DestroyAllocation(tlases.back());
+                    tlases.pop_back();
                     i--;
                 }
             }

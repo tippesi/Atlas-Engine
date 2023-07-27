@@ -7,7 +7,19 @@ namespace Atlas {
 
     namespace Graphics {
 
+        class GraphicsDevice;
+        class MemoryManager;
 
+        struct TLASDesc {
+            
+        };
+
+        class TLAS {
+
+        public:
+            TLAS(GraphicsDevice* device, TLASDesc desc);
+
+        };
 
     }
 

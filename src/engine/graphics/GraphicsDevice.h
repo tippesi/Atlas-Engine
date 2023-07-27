@@ -13,6 +13,8 @@
 #include "Sampler.h"
 #include "Descriptor.h"
 #include "QueryPool.h"
+#include "BLAS.h"
+#include "TLAS.h"
 #include "Framebuffer.h"
 #include "MemoryManager.h"
 
@@ -112,6 +114,10 @@ namespace Atlas {
             Ref<DescriptorPool> CreateDescriptorPool();
 
             Ref<QueryPool> CreateQueryPool(QueryPoolDesc desc);
+
+            Ref<BLAS> CreateBLAS(BLASDesc desc);
+
+            Ref<TLAS> CreateTLAS(TLASDesc desc);
 
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue,
                 bool frameIndependentList = false);
@@ -226,6 +232,8 @@ namespace Atlas {
             std::vector<Ref<Sampler>> samplers;
             std::vector<Ref<DescriptorPool>> descriptorPools;
             std::vector<Ref<QueryPool>> queryPools;
+            std::vector<Ref<BLAS>> blases;
+            std::vector<Ref<TLAS>> tlases;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
