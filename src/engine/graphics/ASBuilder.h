@@ -10,12 +10,13 @@ namespace Atlas {
 
     namespace Graphics {
 
-        class AccelerationStructureBuilder {
+        class ASBuilder {
 
         public:
-            AccelerationStructureBuilder() = default;
+            ASBuilder() = default;
 
-            BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer);
+            BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
+                size_t vertexCount, size_t vertexSize, size_t indexCount, size_t indexSize);
 
             void BuildBLAS(std::vector<Ref<BLAS>>& blases);
             

@@ -31,6 +31,10 @@ namespace Atlas {
         class Instance;
         class ImguiWrapper;
 
+        struct DeviceSupport {
+            bool hardwareRayTracing = false;
+        };
+
         struct CommandListSubmission {
             CommandList* cmd;
 
@@ -149,6 +153,8 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+
+            DeviceSupport support;
 
             bool isComplete = false;
 

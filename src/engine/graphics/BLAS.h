@@ -14,11 +14,10 @@ namespace Atlas {
         class MemoryManager;
 
         struct BLASDesc {
-            Ref<Buffer> vertexBuffer;
-            Ref<Buffer> indexBuffer;
+            VkBuildAccelerationStructureFlagsKHR flags;
 
-            VkAccelerationStructureGeometryKHR geometry;
-            VkAccelerationStructureBuildRangeInfoKHR buildRange;
+            std::vector<VkAccelerationStructureGeometryKHR> geometries;
+            std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRanges;
         };
 
         class BLAS {
@@ -26,8 +25,19 @@ namespace Atlas {
         public:
             BLAS(GraphicsDevice* device, BLASDesc desc);
 
+            void Allocate(size_t size);
+
+            VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo;
+            VkAccelerationStructureBuildSizesInfoKHR sizesInfo;
+
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure;
+
+        private:
+            GraphicsDevice* device;
+
+            std::vector<VkAccelerationStructureGeometryKHR> geometries;
+            std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRanges;
 
         };
 

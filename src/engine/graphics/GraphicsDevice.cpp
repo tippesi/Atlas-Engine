@@ -916,6 +916,7 @@ namespace Atlas {
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
 
+                support.hardwareRayTracing = true;
             }
 
 #ifdef AE_OS_MACOS

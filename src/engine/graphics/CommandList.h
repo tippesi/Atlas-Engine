@@ -146,6 +146,10 @@ namespace Atlas {
 
             void GenerateMipMap(const Ref<Image>& image);
 
+            void BuildBLAS(const Ref<BLAS>& blas);
+
+            void BuildTLAS(const Ref<TLAS>& tlas);
+
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
             VkFence fence;

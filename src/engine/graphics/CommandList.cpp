@@ -770,6 +770,18 @@ namespace Atlas {
 
         }
 
+        void CommandList::BuildBLAS(const Ref<BLAS> &blas) {
+
+
+
+        }
+
+        void CommandList::BuildTLAS(const Ref<TLAS> &tlas) {
+
+
+
+        }
+
         void CommandList::BindDescriptorSets() {
 
             VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
