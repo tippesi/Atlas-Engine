@@ -194,6 +194,9 @@ namespace Atlas {
 
             void BuildPhysicalDeviceFeatures(VkPhysicalDevice device);
 
+            void CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
+                const std::vector<const char*>& extensions, bool enableValidationLayers);
+
             bool CheckForWindowResize();
 
             void CreateFrameData();

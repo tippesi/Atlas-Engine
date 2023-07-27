@@ -53,6 +53,8 @@ namespace Atlas {
 
             void Unmap();
 
+            VkDeviceAddress GetDeviceAddress();
+
             VkBuffer buffer;
             VmaAllocation allocation;
             VkAccessFlags accessMask = VK_ACCESS_MEMORY_READ_BIT |
