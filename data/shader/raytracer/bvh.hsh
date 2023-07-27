@@ -1,5 +1,4 @@
 #extension GL_ARB_shader_ballot : require
-#extension GL_EXT_debug_printf : enable
 
 #include <common.hsh>
 #include <intersections.hsh>
