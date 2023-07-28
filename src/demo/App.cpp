@@ -1092,7 +1092,7 @@ void App::CheckLoadScene() {
 
     for (auto& mesh : meshes) {
         mesh->invertUVs = true;
-        mesh->cullBackFaces = false;
+        mesh->cullBackFaces = true;
     }
 
     if (sceneSelection == CORNELL) {

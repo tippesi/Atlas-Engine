@@ -1,4 +1,5 @@
 #include "ShaderCompiler.h"
+#include "GraphicsDevice.h"
 #include "Log.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
@@ -28,6 +29,8 @@ namespace Atlas {
         std::vector<uint32_t> ShaderCompiler::Compile(const ShaderStageFile& shaderFile,
             const std::vector<std::string>& macros, bool& success) {
 
+            auto device = GraphicsDevice::DefaultDevice;
+
             std::vector<uint32_t> spirvBinary;
 
             TBuiltInResource Resources = {};
@@ -36,7 +39,13 @@ namespace Atlas {
             EShLanguage stage = FindLanguage(shaderFile.shaderStage);
             glslang::TShader shader(stage);
 
-            shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
+            if (device->support.hardwareRayTracing) {
+                // Mac struggles with Spv 1.4, so use only when necessary
+                shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
+            }
+            else {
+                shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+            }
 
             // Enable SPIR-V and Vulkan rules when parsing GLSL
             EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
@@ -59,7 +68,7 @@ namespace Atlas {
                 success = false;
                 return spirvBinary;
             }
-            
+
             glslang::SpvOptions options;
             glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary, &options);
 

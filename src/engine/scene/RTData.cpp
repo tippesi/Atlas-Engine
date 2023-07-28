@@ -38,7 +38,6 @@ namespace Atlas {
             else {
                 BuildForSoftwareRayTracing();
             }
-            
 
             isValid = true;
 
