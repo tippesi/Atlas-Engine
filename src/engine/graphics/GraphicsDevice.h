@@ -149,7 +149,10 @@ namespace Atlas {
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;
-            VkPhysicalDeviceProperties deviceProperties;
+
+            VkPhysicalDeviceProperties2 deviceProperties = {};
+            VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
+            VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
 
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};

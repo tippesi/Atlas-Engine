@@ -990,6 +990,7 @@ namespace Atlas {
 
                         auto& tlasInfo = tlasInfos[bindingCounter];
                         tlasInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        tlasInfo.pNext = nullptr;
                         tlasInfo.accelerationStructureCount = 1;
                         tlasInfo.pAccelerationStructures = &tlas->accelerationStructure;
 

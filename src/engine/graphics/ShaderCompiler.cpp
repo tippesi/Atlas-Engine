@@ -36,6 +36,8 @@ namespace Atlas {
             EShLanguage stage = FindLanguage(shaderFile.shaderStage);
             glslang::TShader shader(stage);
 
+            shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
+
             // Enable SPIR-V and Vulkan rules when parsing GLSL
             EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
 

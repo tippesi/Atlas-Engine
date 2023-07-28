@@ -1,5 +1,12 @@
 #extension GL_ARB_shader_ballot : require
 
+#ifdef AE_HARDWARE_RAYTRACING
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+
+layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
+#endif
+
 #include <common.hsh>
 #include <intersections.hsh>
 #include <structures.hsh>
@@ -44,6 +51,8 @@ layout(std430, set = 2, binding = 10) buffer BlasNodes {
 layout(std430, set = 2, binding = 22) buffer TlasNodes {
     PackedBVHNode tlasNodes[];
 };
+
+#ifndef AE_HARDWARE_RAYTRACING
 
 BVHNode UnpackNode(PackedBVHNode compressed) {
     BVHNode node;
@@ -421,3 +430,47 @@ float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
     return transparency;
 
 }
+
+#else
+
+void HitClosest(inout Ray ray, float tMin, float tMax) {
+
+    ray.hitDistance = tMax;
+
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
+        ray.origin, tMin, ray.direction, tMax);
+
+    // Start traversal: return false if traversal is complete
+    while(rayQueryProceedEXT(rayQuery)) {}
+
+    // Returns type of committed (true) intersection
+    if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+    {
+        ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
+        ray.hitInstanceID = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
+        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true);
+    }
+}
+
+bool HitAny(inout Ray ray, float tMin, float tMax) {
+    
+    ray.hitDistance = tMax;
+
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
+        ray.origin, tMin, ray.direction, tMax);
+
+    // Start traversal: return false if traversal is complete
+    while(rayQueryProceedEXT(rayQuery)) {}
+
+    // Returns type of committed (true) intersection
+    if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+    {
+        return true;
+    }
+
+    return false;
+
+}
+#endif

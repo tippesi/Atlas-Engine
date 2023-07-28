@@ -34,6 +34,12 @@ namespace Atlas {
 
         }
 
+        BLAS::~BLAS() {
+
+            vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
+
+        }
+
         void BLAS::Allocate() {
 
             BufferDesc desc = {
@@ -46,6 +52,7 @@ namespace Atlas {
 
             VkAccelerationStructureCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+            createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             createInfo.size = sizesInfo.accelerationStructureSize;
             createInfo.buffer = buffer->buffer;
 

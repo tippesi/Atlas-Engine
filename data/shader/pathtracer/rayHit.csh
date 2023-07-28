@@ -252,7 +252,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
         ray.inverseDirection = 1.0 / ray.direction;
-        return HitAnyShadow(ray, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) ? 0.0 : 1.0;
     }
     else {
         return 0.0;

@@ -55,6 +55,11 @@ namespace Atlas {
                 .data = data,
                 .size = sizeInBytes
             };
+
+            if (device->support.hardwareRayTracing) {
+                desc.usageFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            }
+
             buffer = device->CreateBuffer(desc);
 
         }

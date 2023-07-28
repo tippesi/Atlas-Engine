@@ -3,6 +3,8 @@
 
 #include <System.h>
 
+#include "../graphics/BLAS.h"
+
 namespace Atlas {
 
     struct GPUTriangle {
@@ -74,6 +76,7 @@ namespace Atlas {
     struct GPUMesh {
         int32_t nodeOffset;
         int32_t triangleOffset;
+        Ref<Graphics::BLAS> blas;
     };
 
     struct GPUBVHInstance {

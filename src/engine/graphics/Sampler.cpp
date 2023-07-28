@@ -11,7 +11,7 @@ namespace Atlas {
                 desc.mode, desc.mipmapMode, desc.maxLod, desc.mipLodBias);
             if (desc.anisotropicFiltering) {
                 samplerInfo.anisotropyEnable = VK_TRUE;
-                samplerInfo.maxAnisotropy = device->deviceProperties.limits.maxSamplerAnisotropy;
+                samplerInfo.maxAnisotropy = device->deviceProperties.properties.limits.maxSamplerAnisotropy;
             }
             if (desc.compareEnabled) {
                 samplerInfo.compareEnable = VK_TRUE;

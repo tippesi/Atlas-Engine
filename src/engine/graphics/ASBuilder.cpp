@@ -60,7 +60,8 @@ namespace Atlas {
             auto scratchBufferDesc = BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = BufferDomain::Device,
-                .size = maxScratchSize
+                .size = maxScratchSize,
+                .alignment = device->accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment
             };
             auto scratchBuffer = device->CreateBuffer(scratchBufferDesc);
 
@@ -92,6 +93,8 @@ namespace Atlas {
 
             auto commandList = device->GetCommandList(GraphicsQueue, true);
 
+            commandList->BeginCommands();
+
             BufferDesc desc = {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
                               | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -109,7 +112,8 @@ namespace Atlas {
             auto scratchBufferDesc = BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = BufferDomain::Device,
-                .size = tlas->sizesInfo.buildScratchSize
+                .size = tlas->sizesInfo.buildScratchSize,
+                .alignment = device->accelerationStructureProperties.minAccelerationStructureScratchOffsetAlignment
             };
             auto scratchBuffer = device->CreateBuffer(scratchBufferDesc);
 
@@ -119,6 +123,8 @@ namespace Atlas {
             buildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
 
             commandList->BuildTLAS(tlas, buildInfo);
+
+            commandList->EndCommands();
 
             device->FlushCommandList(commandList);
 
@@ -132,6 +138,8 @@ namespace Atlas {
             auto device = GraphicsDevice::DefaultDevice;
 
             auto commandList = device->GetCommandList(GraphicsQueue, true);
+
+            commandList->BeginCommands();
 
             VkDeviceAddress scratchAddress = scratchBuffer->GetDeviceAddress();
 
@@ -149,6 +157,8 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
             }
+
+            commandList->EndCommands();
 
             device->FlushCommandList(commandList);
 

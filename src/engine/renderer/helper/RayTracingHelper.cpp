@@ -156,11 +156,17 @@ namespace Atlas {
 
                     rtData.materialBuffer.Bind(commandList, 2, 7);
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
-                    rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                    rtData.blasNodeBuffer.Bind(commandList, 2, 10);
                     rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
                     lightBuffer.Bind(commandList, 2, 11);
+
+                    if (rtData.hardwareRayTracing) {
+                        commandList->BindTLAS(rtData.tlas, 2, 23);
+                    }
+                    else {
+                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
+                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
+                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                    }
                 }
 
                 // Execute shader
@@ -302,11 +308,17 @@ namespace Atlas {
 
                     rtData.materialBuffer.Bind(commandList, 2, 7);
                     rtData.triangleBuffer.Bind(commandList, 2, 8);
-                    rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                    rtData.blasNodeBuffer.Bind(commandList, 2, 10);
                     rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
                     lightBuffer.Bind(commandList, 2, 11);
+
+                    if (rtData.hardwareRayTracing) {
+                        commandList->BindTLAS(rtData.tlas, 2, 23);
+                    }
+                    else {
+                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
+                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
+                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                    }
                 }
 
                 Graphics::Profiler::BeginQuery("Setup command buffer");

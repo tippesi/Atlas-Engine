@@ -30,11 +30,11 @@ namespace Atlas {
             }
 
             if (device->support.shaderPrintf) {
-                glslCode.append("#define AE_SHADER_PRINTF");
+                glslCode.append("#define AE_SHADER_PRINTF\n");
             }
 
             if (device->support.hardwareRayTracing) {
-                glslCode.append("#define AE_HARDWARE_RAYTRACING");
+                glslCode.append("#define AE_HARDWARE_RAYTRACING\n");
             }
 
             // Extensions have to come first

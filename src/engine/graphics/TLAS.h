@@ -12,16 +12,15 @@ namespace Atlas {
         class MemoryManager;
 
         struct TLASDesc {
-            VkBuildAccelerationStructureFlagsKHR flags;
-
-            VkAccelerationStructureGeometryKHR geometry;
-            VkAccelerationStructureBuildRangeInfoKHR buildRange;
+            VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
         };
 
         class TLAS {
 
         public:
             TLAS(GraphicsDevice* device, TLASDesc desc);
+
+            ~TLAS();
 
             void Allocate(VkDeviceAddress instancesAddress, uint32_t instancesCount, bool update);
 

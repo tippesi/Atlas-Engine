@@ -3,12 +3,17 @@
 
 #include "../mesh/MeshData.h"
 #include "../volume/BVH.h"
+#include "../graphics/ASBuilder.h"
 
 namespace Atlas {
 
     namespace Scene {
 
         RTData::RTData(Scene* scene) : scene(scene) {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            hardwareRayTracing = device->support.hardwareRayTracing;
 
             triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
             bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(BVHTriangle));
@@ -27,131 +32,13 @@ namespace Atlas {
 
             isValid = false;
 
-            std::vector<GPUTriangle> gpuTriangles;
-            std::vector<BVHTriangle> gpuBvhTriangles;
-            std::vector<GPUBVHNode> gpuBvhNodes;
-
-            auto meshes = scene->GetMeshes();
-
-            materialAccess.clear();
-
-            int32_t materialCount = 0;
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                // Not all meshes might have a bvh
-                if (!mesh->data.gpuTriangles.size())
-                    continue;
-
-                auto triangleOffset = int32_t(gpuTriangles.size());
-                auto nodeOffset = int32_t(gpuBvhNodes.size());
-
-                for (size_t i = 0; i < mesh->data.gpuBvhNodes.size(); i++) {
-                    auto gpuBvhNode = mesh->data.gpuBvhNodes[i];
-
-                    auto leftPtr = gpuBvhNode.leftPtr;
-                    auto rightPtr = gpuBvhNode.rightPtr;
-
-                    gpuBvhNode.leftPtr = leftPtr < 0 ? ~((~leftPtr) + triangleOffset) : leftPtr + nodeOffset;
-                    gpuBvhNode.rightPtr = rightPtr < 0 ? ~((~rightPtr) + triangleOffset) : rightPtr + nodeOffset;
-
-                    gpuBvhNodes.push_back(gpuBvhNode);
-                }
-
-                // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data.gpuTriangles[i];
-                    auto gpuBvhTriangle = mesh->data.gpuBvhTriangles[i];
-
-                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
-                    auto materialIdx = localMaterialIdx + materialCount;
-
-                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
-                    gpuBvhTriangle.v1.w = reinterpret_cast<float&>(materialIdx);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                    gpuBvhTriangles.push_back(gpuBvhTriangle);
-                }
-
-                for (auto& material : mesh->data.materials) {
-                    materialAccess[&material] = materialCount++;
-                }
-
-                GPUMesh gpuMesh = {
-                    .nodeOffset = nodeOffset,
-                    .triangleOffset = triangleOffset
-                };
-                meshInfo[mesh.GetID()] = gpuMesh;
-
+            if (hardwareRayTracing) {
+                BuildForHardwareRayTracing();
             }
-
-            if (!gpuTriangles.size())
-                return;
-
-            // Upload triangles
-            triangleBuffer.SetSize(gpuTriangles.size());
-            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
-
-            bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
-            bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
-
-            blasNodeBuffer.SetSize(gpuBvhNodes.size());
-            blasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, true);
-
-            triangleLights.clear();
-
-            // Triangle lights
-            for (size_t i = 0; i < gpuTriangles.size(); i++) {
-                auto& triangle = gpuTriangles[i];
-                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
-                auto& material = materials[idx];
-
-                auto radiance = material.emissiveColor;
-                auto brightness = dot(radiance, vec3(0.3333f));
-
-                if (brightness > 0.0f) {
-                    // Extract normal information again
-                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
-                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
-                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
-
-                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
-                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
-                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
-
-                    // Compute neccessary information
-                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
-                    auto N = (n0 + n1 + n2) / 3.0f;
-
-                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
-                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
-                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
-                    auto p = 0.5f * (a + b + c);
-                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
-
-                    auto weight = area * brightness;
-
-                    // Compress light
-                    auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
-                    auto cn = reinterpret_cast<float&>(pn);
-
-                    uint32_t data = 0;
-                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
-                    data |= uint32_t(i);
-                    auto cd = reinterpret_cast<float&>(data);
-
-                    GPULight light;
-                    light.data0 = vec4(P, radiance.r);
-                    light.data1 = vec4(cd, weight, area, radiance.g);
-                    light.N = vec4(N, radiance.b);
-
-                    triangleLights.push_back(light);
-                }
+            else {
+                BuildForSoftwareRayTracing();
             }
+            
 
             isValid = true;
 
@@ -190,33 +77,15 @@ namespace Atlas {
             if (!gpuBvhInstances.size())
                 return;
 
-            auto bvh = Volume::BVH(actorAABBs);
-
-            auto& nodes = bvh.GetTree();
-            auto gpuBvhNodes = std::vector<GPUBVHNode>(nodes.size());
-            // Copy to GPU format
-            for (size_t i = 0; i < nodes.size(); i++) {
-                gpuBvhNodes[i].leftPtr = nodes[i].leftPtr;
-                gpuBvhNodes[i].rightPtr = nodes[i].rightPtr;
-
-                gpuBvhNodes[i].leftAABB.min = nodes[i].leftAABB.min;
-                gpuBvhNodes[i].leftAABB.max = nodes[i].leftAABB.max;
-
-                gpuBvhNodes[i].rightAABB.min = nodes[i].rightAABB.min;
-                gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
+            if (hardwareRayTracing) {
+                UpdateForHardwareRayTracing(actors);
+            }
+            else {
+                gpuBvhInstances = UpdateForSoftwareRayTracing(gpuBvhInstances, actorAABBs);
             }
 
-            // Order after the BVH build to fit the node indices
-            std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
-            for (size_t i = 0; i < bvh.refs.size(); i++) {
-                orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
-            }
-
-            tlasNodeBuffer.SetSize(gpuBvhNodes.size());
-            tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
-
-            bvhInstanceBuffer.SetSize(orderedGpuBvhInstances.size());
-            bvhInstanceBuffer.SetData(orderedGpuBvhInstances.data(), 0, orderedGpuBvhInstances.size());
+            bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+            bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
 
         }
 
@@ -406,6 +275,326 @@ namespace Atlas {
             level.valid = 1;
 
             return level;
+
+        }
+
+        void RTData::BuildForSoftwareRayTracing() {
+
+            std::vector<GPUTriangle> gpuTriangles;
+            std::vector<BVHTriangle> gpuBvhTriangles;
+            std::vector<GPUBVHNode> gpuBvhNodes;
+
+            auto meshes = scene->GetMeshes();
+
+            materialAccess.clear();
+
+            int32_t materialCount = 0;
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded())
+                    continue;
+
+                // Not all meshes might have a bvh
+                if (!mesh->data.gpuTriangles.size())
+                    continue;
+
+                auto triangleOffset = int32_t(gpuTriangles.size());
+                auto nodeOffset = int32_t(gpuBvhNodes.size());
+
+                for (size_t i = 0; i < mesh->data.gpuBvhNodes.size(); i++) {
+                    auto gpuBvhNode = mesh->data.gpuBvhNodes[i];
+
+                    auto leftPtr = gpuBvhNode.leftPtr;
+                    auto rightPtr = gpuBvhNode.rightPtr;
+
+                    gpuBvhNode.leftPtr = leftPtr < 0 ? ~((~leftPtr) + triangleOffset) : leftPtr + nodeOffset;
+                    gpuBvhNode.rightPtr = rightPtr < 0 ? ~((~rightPtr) + triangleOffset) : rightPtr + nodeOffset;
+
+                    gpuBvhNodes.push_back(gpuBvhNode);
+                }
+
+                // Subtract and reassign material offset
+                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
+                    auto gpuTriangle = mesh->data.gpuTriangles[i];
+                    auto gpuBvhTriangle = mesh->data.gpuBvhTriangles[i];
+
+                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
+                    auto materialIdx = localMaterialIdx + materialCount;
+
+                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
+                    gpuBvhTriangle.v1.w = reinterpret_cast<float&>(materialIdx);
+
+                    gpuTriangles.push_back(gpuTriangle);
+                    gpuBvhTriangles.push_back(gpuBvhTriangle);
+                }
+
+                for (auto& material : mesh->data.materials) {
+                    materialAccess[&material] = materialCount++;
+                }
+
+                GPUMesh gpuMesh = {
+                    .nodeOffset = nodeOffset,
+                    .triangleOffset = triangleOffset
+                };
+                meshInfo[mesh.GetID()] = gpuMesh;
+
+            }
+
+            if (!gpuTriangles.size())
+                return;
+
+            // Upload triangles
+            triangleBuffer.SetSize(gpuTriangles.size());
+            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+
+            bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
+            bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
+
+            blasNodeBuffer.SetSize(gpuBvhNodes.size());
+            blasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
+
+            std::vector<GPUMaterial> materials;
+            UpdateMaterials(materials, true);
+
+            triangleLights.clear();
+
+            // Triangle lights
+            for (size_t i = 0; i < gpuTriangles.size(); i++) {
+                auto& triangle = gpuTriangles[i];
+                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
+                auto& material = materials[idx];
+
+                auto radiance = material.emissiveColor;
+                auto brightness = dot(radiance, vec3(0.3333f));
+
+                if (brightness > 0.0f) {
+                    // Extract normal information again
+                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
+                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
+                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
+
+                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
+                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
+                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
+
+                    // Compute neccessary information
+                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
+                    auto N = (n0 + n1 + n2) / 3.0f;
+
+                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
+                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
+                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
+                    auto p = 0.5f * (a + b + c);
+                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
+
+                    auto weight = area * brightness;
+
+                    // Compress light
+                    auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
+                    auto cn = reinterpret_cast<float&>(pn);
+
+                    uint32_t data = 0;
+                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
+                    data |= uint32_t(i);
+                    auto cd = reinterpret_cast<float&>(data);
+
+                    GPULight light;
+                    light.data0 = vec4(P, radiance.r);
+                    light.data1 = vec4(cd, weight, area, radiance.g);
+                    light.N = vec4(N, radiance.b);
+
+                    triangleLights.push_back(light);
+                }
+            }
+
+        }
+
+        void RTData::BuildForHardwareRayTracing() {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            std::vector<GPUTriangle> gpuTriangles;
+
+            Graphics::ASBuilder asBuilder;
+
+            auto meshes = scene->GetMeshes();
+
+            materialAccess.clear();
+            blases.clear();
+
+            int32_t materialCount = 0;
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded())
+                    continue;
+
+                // Not all meshes might have a bvh
+                if (!mesh->data.gpuTriangles.size())
+                    continue;
+
+                auto triangleOffset = int32_t(gpuTriangles.size());
+
+                // Subtract and reassign material offset
+                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
+                    auto gpuTriangle = mesh->data.gpuTriangles[i];
+
+                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
+                    auto materialIdx = localMaterialIdx + materialCount;
+
+                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
+
+                    gpuTriangles.push_back(gpuTriangle);
+                }
+
+                for (auto& material : mesh->data.materials) {
+                    materialAccess[&material] = materialCount++;
+                }
+
+                auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(mesh->vertexBuffer.buffer, mesh->indexBuffer.buffer,
+                    mesh->vertexBuffer.elementCount, mesh->vertexBuffer.elementSize,
+                    mesh->indexBuffer.elementCount, mesh->indexBuffer.elementSize);
+
+                blases.push_back(device->CreateBLAS(blasDesc));
+
+                GPUMesh gpuMesh = {
+                    .nodeOffset = 0,
+                    .triangleOffset = triangleOffset,
+                    .blas = blases.back()
+                };
+                meshInfo[mesh.GetID()] = gpuMesh;
+
+            }
+
+            if (!gpuTriangles.size())
+                return;
+
+            // Upload triangles
+            triangleBuffer.SetSize(gpuTriangles.size());
+            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+
+            std::vector<GPUMaterial> materials;
+            UpdateMaterials(materials, true);
+
+            triangleLights.clear();
+
+            // Triangle lights
+            for (size_t i = 0; i < gpuTriangles.size(); i++) {
+                auto& triangle = gpuTriangles[i];
+                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
+                auto& material = materials[idx];
+
+                auto radiance = material.emissiveColor;
+                auto brightness = dot(radiance, vec3(0.3333f));
+
+                if (brightness > 0.0f) {
+                    // Extract normal information again
+                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
+                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
+                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
+
+                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
+                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
+                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
+
+                    // Compute neccessary information
+                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
+                    auto N = (n0 + n1 + n2) / 3.0f;
+
+                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
+                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
+                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
+                    auto p = 0.5f * (a + b + c);
+                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
+
+                    auto weight = area * brightness;
+
+                    // Compress light
+                    auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
+                    auto cn = reinterpret_cast<float&>(pn);
+
+                    uint32_t data = 0;
+                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
+                    data |= uint32_t(i);
+                    auto cd = reinterpret_cast<float&>(data);
+
+                    GPULight light;
+                    light.data0 = vec4(P, radiance.r);
+                    light.data1 = vec4(cd, weight, area, radiance.g);
+                    light.N = vec4(N, radiance.b);
+
+                    triangleLights.push_back(light);
+                }
+            }
+
+            asBuilder.BuildBLAS(blases);
+
+        }
+
+        std::vector<GPUBVHInstance> RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+            std::vector<Volume::AABB>& actorAABBs) {
+
+            auto bvh = Volume::BVH(actorAABBs);
+
+            auto& nodes = bvh.GetTree();
+            auto gpuBvhNodes = std::vector<GPUBVHNode>(nodes.size());
+            // Copy to GPU format
+            for (size_t i = 0; i < nodes.size(); i++) {
+                gpuBvhNodes[i].leftPtr = nodes[i].leftPtr;
+                gpuBvhNodes[i].rightPtr = nodes[i].rightPtr;
+
+                gpuBvhNodes[i].leftAABB.min = nodes[i].leftAABB.min;
+                gpuBvhNodes[i].leftAABB.max = nodes[i].leftAABB.max;
+
+                gpuBvhNodes[i].rightAABB.min = nodes[i].rightAABB.min;
+                gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
+            }
+
+            // Order after the BVH build to fit the node indices
+            std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
+            for (size_t i = 0; i < bvh.refs.size(); i++) {
+                orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
+            }
+
+            tlasNodeBuffer.SetSize(gpuBvhNodes.size());
+            tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
+
+            return orderedGpuBvhInstances;
+
+        }
+
+        void RTData::UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors) {
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            Graphics::ASBuilder asBuilder;
+
+            std::vector<VkAccelerationStructureInstanceKHR> instances;
+
+            uint32_t instanceCount = 0;
+            for (auto actor : actors) {
+                if (!actor->mesh.IsLoaded())
+                    continue;
+
+                if (!meshInfo.contains(actor->mesh.GetID()))
+                    continue;
+
+                VkAccelerationStructureInstanceKHR inst = {};
+                VkTransformMatrixKHR transform;
+
+                auto transposed = glm::transpose(actor->globalMatrix);
+                std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
+
+                inst.transform = transform;
+                inst.instanceCustomIndex = instanceCount++;
+                inst.accelerationStructureReference = meshInfo[actor->mesh.GetID()].blas->GetDeviceAddress();
+                inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                inst.mask = 0xFF;
+                inst.instanceShaderBindingTableRecordOffset = 0;
+                instances.push_back(inst);
+            }
+
+            auto tlasDesc = Graphics::TLASDesc();
+            tlas = device->CreateTLAS(tlasDesc);
+
+            asBuilder.BuildTLAS(tlas, instances);
 
         }
 

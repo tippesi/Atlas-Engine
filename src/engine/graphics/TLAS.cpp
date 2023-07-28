@@ -24,6 +24,12 @@ namespace Atlas {
 
         }
 
+        TLAS::~TLAS() {
+
+            vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
+
+        }
+
         void TLAS::Allocate(VkDeviceAddress instancesAddress, uint32_t instancesCount, bool update) {
 
             VkAccelerationStructureGeometryInstancesDataKHR instances = {};
@@ -59,6 +65,7 @@ namespace Atlas {
 
             VkAccelerationStructureCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+            createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
             createInfo.size = sizesInfo.accelerationStructureSize;
             createInfo.buffer = buffer->buffer;
 

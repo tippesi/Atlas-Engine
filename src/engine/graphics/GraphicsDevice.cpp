@@ -30,7 +30,8 @@ namespace Atlas {
             std::vector<const char*> optionalExtensions = {
                 VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-                VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+                VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+                VK_KHR_RAY_QUERY_EXTENSION_NAME
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
@@ -38,7 +39,13 @@ namespace Atlas {
 
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
-            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+            accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+            rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            deviceProperties.pNext = &rayTracingPipelineProperties;
+            rayTracingPipelineProperties.pNext = &accelerationStructureProperties;
+            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
             auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
             requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
@@ -86,6 +93,16 @@ namespace Atlas {
             // Deleted pipelines might reference e.g. still active frame buffers,
             // so delete all of the memoryManager content before cleaning the rest
             memoryManager->DestroyAllImmediate();
+
+            for (auto& tlasRef : tlases) {
+                assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
+                tlasRef.reset();
+            }
+
+            for (auto& blasRef : blases) {
+                assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
+                blasRef.reset();
+            }
 
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
@@ -907,14 +924,23 @@ namespace Atlas {
 
             VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeature = {};
             rtPipelineFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+            
+            VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
+            rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
             // Check for ray tracing extension support
             if (availableExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
                 availableExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME)) {
+                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+                availableExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+
+                accelerationStructureFeature.accelerationStructure = VK_TRUE;
+                rtPipelineFeature.rayTracingPipeline = VK_TRUE;
+                rayQueryFeature.rayQuery = VK_TRUE;
                
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
+                featureBuilder.Append(rayQueryFeature);
 
                 support.hardwareRayTracing = true;
             }

@@ -196,7 +196,7 @@ namespace Atlas {
             // Generate BVH
             auto bvh = Volume::BVH(aabbs, bvhTriangles);
 
-            for (auto& bvhTriangle : bvh.data) {
+            for (auto& bvhTriangle : bvhTriangles) {
 
                 auto& triangle = triangles[bvhTriangle.idx];
 

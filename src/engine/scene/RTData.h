@@ -53,14 +53,16 @@ namespace Atlas {
 
             void BuildForHardwareRayTracing();
 
-            void UpdateForSoftwareRayTracing();
+            std::vector<GPUBVHInstance> UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+                std::vector<Volume::AABB>& actorAABBs);
 
-            void UpdateForHardwareRayTracing();
+            void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
 
             Scene* scene;
 
             Ref<Graphics::TLAS> tlas;
-            std::vector<Graphics::BLAS> blases;
+            Ref<Graphics::Buffer> instanceBuffer;
+            std::vector<Ref<Graphics::BLAS>> blases;
 
             Buffer::Buffer triangleBuffer;
             Buffer::Buffer bvhTriangleBuffer;
@@ -80,6 +82,8 @@ namespace Atlas {
 
             std::unordered_map<Material*, int32_t> materialAccess;
             std::unordered_map<size_t, GPUMesh> meshInfo;
+
+            bool hardwareRayTracing = false;
 
             std::atomic_bool isValid = false;
             std::mutex mutex;
