@@ -919,6 +919,10 @@ namespace Atlas {
                 support.hardwareRayTracing = true;
             }
 
+            if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+                support.shaderPrintf = true;
+            }
+
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
             // This is hacked since I can't get it to work otherwise

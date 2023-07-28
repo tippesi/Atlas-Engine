@@ -33,6 +33,7 @@ namespace Atlas {
 
         struct DeviceSupport {
             bool hardwareRayTracing = false;
+            bool shaderPrintf = false;
         };
 
         struct CommandListSubmission {

@@ -395,6 +395,7 @@ namespace Atlas {
                 descriptorBindingData.buffers[set][binding] = nullptr;
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
                 descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
             else {
@@ -406,6 +407,7 @@ namespace Atlas {
                 descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
                 descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
 
@@ -427,6 +429,7 @@ namespace Atlas {
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
 
@@ -446,6 +449,7 @@ namespace Atlas {
                 descriptorBindingData.buffers[set][binding] = nullptr;
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
                 descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
             else {
@@ -457,6 +461,7 @@ namespace Atlas {
                 descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
                 descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
         }
@@ -477,6 +482,7 @@ namespace Atlas {
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
 
@@ -492,6 +498,7 @@ namespace Atlas {
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -509,6 +516,24 @@ namespace Atlas {
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
             descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindTLAS(const Ref<Atlas::Graphics::TLAS> &tlas, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            if (descriptorBindingData.tlases[set][binding] == tlas.get())
+                return;
+
+            descriptorBindingData.tlases[set][binding] = tlas.get();
+            descriptorBindingData.buffers[set][binding] = nullptr;
+            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
+            descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.changed[set] = true;
 
         }
@@ -595,6 +620,19 @@ namespace Atlas {
                 nullptr, 1, &barrier.barrier, 0, nullptr);
 
             barrier.buffer->accessMask = barrier.newAccessMask;
+
+        }
+
+        void CommandList::MemoryBarrier(VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask) {
+
+            VkMemoryBarrier barrier = {};
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.srcAccessMask = srcAccessMask;
+            barrier.dstAccessMask = dstAccessMask;
+
+            vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 1,
+                &barrier, 0, nullptr, 0, nullptr);
 
         }
 
@@ -770,15 +808,15 @@ namespace Atlas {
 
         }
 
-        void CommandList::BuildBLAS(const Ref<BLAS> &blas) {
+        void CommandList::BuildBLAS(const Ref<BLAS> &blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo) {
 
-
+            vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfo, &blas->rangeInfo);
 
         }
 
-        void CommandList::BuildTLAS(const Ref<TLAS> &tlas) {
+        void CommandList::BuildTLAS(const Ref<TLAS> &tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo) {
 
-
+            vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildInfo, &tlas->rangeInfo);
 
         }
 
@@ -787,6 +825,7 @@ namespace Atlas {
             VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
             VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
             VkDescriptorImageInfo imageInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
 
             uint32_t dynamicOffsets[2 * BINDINGS_PER_DESCRIPTOR_SET];
 
@@ -934,6 +973,34 @@ namespace Atlas {
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                         setWrite.pImageInfo = &imageInfo;
+                    }
+
+                    // TOP-LEVEL ACCELERATION STRUCTURES
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.tlases[i][j]) continue;
+                        const auto& binding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!binding.valid) continue;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+                            continue;
+
+                        auto tlas = descriptorBindingData.tlases[i][j];
+
+                        auto& tlasInfo = tlasInfos[bindingCounter];
+                        tlasInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        tlasInfo.accelerationStructureCount = 1;
+                        tlasInfo.pAccelerationStructures = &tlas->accelerationStructure;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                        setWrite.pNext = &tlasInfo;
                     }
 
                     vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);

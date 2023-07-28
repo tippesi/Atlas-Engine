@@ -23,6 +23,8 @@ namespace Atlas {
             allocatorInfo.instance = device->instance->GetNativeInstance();
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+            allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);

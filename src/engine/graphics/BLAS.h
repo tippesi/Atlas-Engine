@@ -22,13 +22,18 @@ namespace Atlas {
 
         class BLAS {
 
+            friend GraphicsDevice;
+
         public:
             BLAS(GraphicsDevice* device, BLASDesc desc);
 
-            void Allocate(size_t size);
+            void Allocate();
+
+            VkDeviceAddress GetDeviceAddress();
 
             VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo;
             VkAccelerationStructureBuildSizesInfoKHR sizesInfo;
+            VkAccelerationStructureBuildRangeInfoKHR* rangeInfo;
 
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure;

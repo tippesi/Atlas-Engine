@@ -49,7 +49,8 @@ namespace Atlas {
             auto sizeInBytes = elementCount * elementSize;
 
             Graphics::BufferDesc desc {
-                .usageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                .usageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                    | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                 .domain = Graphics::BufferDomain::Device,
                 .data = data,
                 .size = sizeInBytes

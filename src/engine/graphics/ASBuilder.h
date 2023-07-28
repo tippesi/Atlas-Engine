@@ -20,11 +20,11 @@ namespace Atlas {
 
             void BuildBLAS(std::vector<Ref<BLAS>>& blases);
             
-            void BuildTLAS(const std::vector<Ref<BLAS>>& blases);
+            Ref<Buffer> BuildTLAS(Ref<TLAS>& tlas, std::vector<VkAccelerationStructureInstanceKHR>& instances);
 
         private:
-
-
+            void BuildBLASBatch(const std::vector<uint32_t>& batchIndices,
+                std::vector<Ref<BLAS>>& blases, Ref<Buffer>& scratchBuffer);
 
         };
 

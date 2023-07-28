@@ -49,7 +49,18 @@ namespace Atlas {
 
             GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
+            void BuildForSoftwareRayTracing();
+
+            void BuildForHardwareRayTracing();
+
+            void UpdateForSoftwareRayTracing();
+
+            void UpdateForHardwareRayTracing();
+
             Scene* scene;
+
+            Ref<Graphics::TLAS> tlas;
+            std::vector<Graphics::BLAS> blases;
 
             Buffer::Buffer triangleBuffer;
             Buffer::Buffer bvhTriangleBuffer;
