@@ -40,12 +40,7 @@ namespace Atlas {
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
 
-            accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
-            rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-            deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-            deviceProperties.pNext = &rayTracingPipelineProperties;
-            rayTracingPipelineProperties.pNext = &accelerationStructureProperties;
-            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+            GetPhysicalDeviceProperties(physicalDevice);
 
             auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
             requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
@@ -888,6 +883,21 @@ namespace Atlas {
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+
+        }
+
+        void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
+
+            StructureChainBuilder propertiesBuilder(deviceProperties);
+
+            accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+            rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+            propertiesBuilder.Append(rayTracingPipelineProperties);
+            propertiesBuilder.Append(accelerationStructureProperties);
+
+            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
         }
 

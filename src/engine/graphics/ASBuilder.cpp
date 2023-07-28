@@ -91,7 +91,7 @@ namespace Atlas {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            auto commandList = device->GetCommandList(GraphicsQueue);
 
             commandList->BeginCommands();
 
@@ -126,7 +126,7 @@ namespace Atlas {
 
             commandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+            device->SubmitCommandList(commandList);
 
             return instanceBuffer;
 
