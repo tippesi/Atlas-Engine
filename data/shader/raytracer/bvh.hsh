@@ -438,7 +438,7 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF, 
         ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
@@ -449,7 +449,10 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
-        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true);
+
+        BVHInstance instance = bvhInstances[ray.hitInstanceID];
+
+        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + instance.triangleOffset;
     }
 }
 

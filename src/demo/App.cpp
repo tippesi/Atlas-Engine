@@ -127,7 +127,6 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
-    /*
     if (sceneSelection == SPONZA) {
         auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
         matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -139,7 +138,6 @@ void App::Update(float deltaTime) {
 
         actors[2].SetMatrix(matrix);
     }
-    */
 
     scene->Update(&camera, deltaTime);
 
@@ -789,7 +787,7 @@ bool App::LoadScene() {
             "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-        /*
+ 
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
             "metallicwall.gltf", ModelLoader::LoadMesh, false, transform, 2048
@@ -801,7 +799,7 @@ bool App::LoadScene() {
             "chromesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-        */
+       
 
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);

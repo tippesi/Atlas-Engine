@@ -305,7 +305,7 @@ namespace Atlas {
             commandList->BeginRenderPass(device->swapChain, true);
             
             textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
             commandList->EndRenderPass();
 
