@@ -981,8 +981,6 @@ bool App::LoadScene() {
         );
         meshes.push_back(mesh);
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
-
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
         directionalLight->intensity = 100.0f;

@@ -165,6 +165,7 @@ namespace Atlas {
 
             VkDeviceAddress scratchAddress = scratchBuffer->GetDeviceAddress();
 
+            uint32_t poolCounter = 0;
             for (const auto idx : batchIndices) {
                 auto& blas = blases[idx];
 
@@ -184,7 +185,7 @@ namespace Atlas {
                 if (queryPool) {
                     vkCmdWriteAccelerationStructuresPropertiesKHR(commandList->commandBuffer, 1,
                         &blas->accelerationStructure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
-                        queryPool->pool, idx);
+                        queryPool->pool, poolCounter++);
                 }
             }
 
@@ -203,13 +204,14 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            std::vector<size_t> compactSizes(blases.size());
-            queryPool->GetResult(0, uint32_t(blases.size()), blases.size() * sizeof(size_t),
+            std::vector<size_t> compactSizes(batchIndices.size());
+            queryPool->GetResult(0, uint32_t(batchIndices.size()), batchIndices.size() * sizeof(size_t),
                 compactSizes.data(), sizeof(size_t), VK_QUERY_RESULT_WAIT_BIT);
 
+            uint32_t poolCounter = 0;
             for (const auto idx : batchIndices) {
                 auto& blas = blases[idx];
-                auto compactedSize = compactSizes[idx];
+                auto compactedSize = compactSizes[poolCounter++];
 
                 BLASDesc desc;
                 desc.geometries = blas->geometries;
