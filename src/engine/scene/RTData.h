@@ -46,7 +46,7 @@ namespace Atlas {
             struct MeshInfo {
                 Ref<Graphics::BLAS> blas = nullptr;
 
-                int32_t nodeOffset = 0;
+                int32_t offset = 0;
                 int32_t triangleOffset = 0;
 
                 std::vector<GPULight> triangleLights;
@@ -84,6 +84,7 @@ namespace Atlas {
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
             Buffer::Buffer blasNodeBuffer;
+            Buffer::Buffer geometryTriangleOffsetBuffer;
 
             Texture::TextureAtlas baseColorTextureAtlas;
             Texture::TextureAtlas opacityTextureAtlas;

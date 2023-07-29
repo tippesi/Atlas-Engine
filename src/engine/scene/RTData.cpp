@@ -18,6 +18,7 @@ namespace Atlas {
             triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
             bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(BVHTriangle));
             blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
+            geometryTriangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
 
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
                 Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit;
@@ -72,9 +73,11 @@ namespace Atlas {
                 actorAABBs.push_back(actor->aabb);
                 auto& meshInfo = meshInfos[actor->mesh.GetID()];
 
+                auto inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix)));
+
                 GPUBVHInstance gpuBvhInstance = {
-                    .inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix))),
-                    .blasOffset = meshInfo.nodeOffset,
+                    .inverseMatrix = inverseMatrix,
+                    .blasOffset = meshInfo.offset,
                     .triangleOffset = meshInfo.triangleOffset
                 };
 
@@ -82,6 +85,9 @@ namespace Atlas {
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
+                if (hardwareRayTracing) {
+                    
+                }
             }
 
             if (!gpuBvhInstances.size())
@@ -348,7 +354,7 @@ namespace Atlas {
                 }
 
                 MeshInfo meshInfo = {
-                    .nodeOffset = nodeOffset,
+                    .offset = nodeOffset,
                     .triangleOffset = triangleOffset
                 };
                 meshInfos[mesh.GetID()] = meshInfo;
@@ -376,6 +382,7 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
+            std::vector<uint32_t> triangleOffsets;
             std::vector<GPUTriangle> gpuTriangles;
 
             Graphics::ASBuilder asBuilder;
@@ -395,6 +402,7 @@ namespace Atlas {
                     continue;
 
                 auto triangleOffset = int32_t(gpuTriangles.size());
+                auto offset = int32_t(triangleOffsets.size());
 
                 // Subtract and reassign material offset
                 for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
@@ -412,19 +420,33 @@ namespace Atlas {
                     materialAccess[&material] = materialCount++;
                 }
 
+                std::vector<Graphics::ASGeometryRegion> geometryRegions;
+                for (auto& subData : mesh->data.subData) {
+                    geometryRegions.emplace_back(Graphics::ASGeometryRegion{
+                        .indexCount = subData.indicesCount,
+                        .indexOffset = subData.indicesOffset,
+                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
+                        });
+                }
+
                 auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(mesh->vertexBuffer.buffer, mesh->indexBuffer.buffer,
                     mesh->vertexBuffer.elementCount, mesh->vertexBuffer.elementSize,
-                    mesh->indexBuffer.elementCount, mesh->indexBuffer.elementSize);
+                    mesh->indexBuffer.elementSize, geometryRegions);
 
                 blases.push_back(device->CreateBLAS(blasDesc));
 
                 MeshInfo meshInfo = {
                     .blas = blases.back(),
 
-                    .nodeOffset = 0,
+                    .offset = offset,
                     .triangleOffset = triangleOffset
                 };
                 meshInfos[mesh.GetID()] = meshInfo;
+
+                for (auto& subData : mesh->data.subData) {
+                    auto totalTriangleOffset = triangleOffset + subData.indicesOffset / 3;
+                    triangleOffsets.push_back(totalTriangleOffset);
+                }
 
                 BuildTriangleLightsForMesh(mesh);
 
@@ -436,6 +458,9 @@ namespace Atlas {
             // Upload triangles
             triangleBuffer.SetSize(gpuTriangles.size());
             triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
+
+            geometryTriangleOffsetBuffer.SetSize(triangleOffsets.size());
+            geometryTriangleOffsetBuffer.SetData(triangleOffsets.data(), 0, triangleOffsets.size());
 
             asBuilder.BuildBLAS(blases);
 
@@ -489,6 +514,8 @@ namespace Atlas {
                 if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
+                auto& meshInfo = meshInfos[actor->mesh.GetID()];
+
                 VkAccelerationStructureInstanceKHR inst = {};
                 VkTransformMatrixKHR transform;
 
@@ -496,8 +523,8 @@ namespace Atlas {
                 std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
 
                 inst.transform = transform;
-                inst.instanceCustomIndex = instanceCount++;
-                inst.accelerationStructureReference = meshInfos[actor->mesh.GetID()].blas->GetDeviceAddress();
+                inst.instanceCustomIndex = meshInfo.offset;
+                inst.accelerationStructureReference = meshInfo.blas->GetDeviceAddress();
                 inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                 inst.mask = 0xFF;
                 inst.instanceShaderBindingTableRecordOffset = 0;

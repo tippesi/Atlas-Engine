@@ -3,6 +3,10 @@
 #extension GL_EXT_ray_query : enable
 
 layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
+
+layout(std430, set = 2, binding = 22) buffer GeometryTriangleOffsets {
+    uint geometryTriangleOffsets[];
+};
 #endif
 
 #include <common.hsh>
@@ -42,6 +46,8 @@ layout (std430, set = 2, binding = 9) buffer BVHTriangles {
     PackedBVHTriangle bvhTriangles[];
 };
 
+#ifndef AE_HARDWARE_RAYTRACING
+
 layout(std430, set = 2, binding = 10) buffer BlasNodes {
     PackedBVHNode blasNodes[];
 };
@@ -49,8 +55,6 @@ layout(std430, set = 2, binding = 10) buffer BlasNodes {
 layout(std430, set = 2, binding = 22) buffer TlasNodes {
     PackedBVHNode tlasNodes[];
 };
-
-#ifndef AE_HARDWARE_RAYTRACING
 
 BVHNode UnpackNode(PackedBVHNode compressed) {
     BVHNode node;
@@ -346,7 +350,7 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
         
 }
 
-float HitAnyShadow(inout Ray ray, float tMin, float tMax) {
+float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
 
     if (isnan3(ray.direction))
         return 1.0;
@@ -440,17 +444,22 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
         ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
-    while(rayQueryProceedEXT(rayQuery)) {}
+    while(rayQueryProceedEXT(rayQuery)) {
+        if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
+            rayQueryConfirmIntersectionEXT(rayQuery);
+        }
+    }
 
     // Returns type of committed (true) intersection
-    if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
-    {
+    if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
-        ray.hitInstanceID = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
+        ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
 
-        Instance instance = bvhInstances[ray.hitInstanceID];
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
+        int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true) + geometryOffset;
 
-        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + instance.triangleOffset;
+        int triangleOffset = int(geometryTriangleOffsets[idx]);
+        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
     }
 }
 
@@ -463,7 +472,11 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
         ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
-    while(rayQueryProceedEXT(rayQuery)) {}
+    while(rayQueryProceedEXT(rayQuery)) {
+        if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
+            rayQueryConfirmIntersectionEXT(rayQuery);
+        }
+    }
 
     // Returns type of committed (true) intersection
     if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
@@ -472,6 +485,91 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
     }
 
     return false;
+
+}
+
+void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
+
+    ray.hitDistance = tMax;
+
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF, 
+        ray.origin, tMin, ray.direction, tMax);
+
+    // Start traversal: return false if traversal is complete
+    bool proceed = true;
+    while(rayQueryProceedEXT(rayQuery)) {
+
+        if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
+            int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+            int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false) + geometryOffset;
+
+            int triangleOffset = int(geometryTriangleOffsets[idx]);
+            int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
+
+            vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
+
+            Triangle tri = UnpackTriangle(triangles[hitID]);
+
+            if (GetOpacity(tri, barrycentric, 0) > 0.999) {
+                rayQueryConfirmIntersectionEXT(rayQuery);
+            }
+
+        }
+        
+    }
+
+    if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+        ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
+        ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
+        int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true) + geometryOffset;
+
+        int triangleOffset = int(geometryTriangleOffsets[idx]);
+        ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
+    }
+
+}
+
+float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
+    
+    float transparency = 1.0;
+
+    ray.hitDistance = tMax;
+
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
+        ray.origin, tMin, ray.direction, tMax);
+
+    while(rayQueryProceedEXT(rayQuery)) {
+
+        if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
+           int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+            int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false) + geometryOffset;
+
+            int triangleOffset = int(geometryTriangleOffsets[idx]);
+            int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
+
+            vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
+
+            Triangle tri = UnpackTriangle(triangles[hitID]);
+            transparency *= (1.0 - GetOpacity(tri, barrycentric, 0));
+
+            if (transparency < 0.001) {
+                rayQueryTerminateEXT(rayQuery);
+                return 0.0;
+            }
+
+        }
+        
+    }
+
+    if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+        return 0.0;
+    }
+
+    return transparency;
 
 }
 #endif

@@ -20,7 +20,11 @@ void main() {
         ray.hitID = -1;
         ray.hitDistance = 0.0;
         // Find any triangle in the BVH
+#ifdef AE_HARDWARE_RAYTRACING
+        HitClosestTransparency(ray, offset, INF);
+#else
         HitClosest(ray, offset, INF);
+#endif
 
         uint writeOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
         rays[index + writeOffset] = PackRay(ray);

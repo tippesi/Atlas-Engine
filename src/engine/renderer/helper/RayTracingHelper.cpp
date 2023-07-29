@@ -16,7 +16,7 @@ namespace Atlas {
 
             RayTracingHelper::RayTracingHelper() {
 
-                const size_t lightCount = 256;
+                const size_t lightCount = 128;
 
                 indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit,
                     3 * sizeof(uint32_t), 0);
@@ -161,6 +161,7 @@ namespace Atlas {
 
                     if (rtData.hardwareRayTracing) {
                         commandList->BindTLAS(rtData.tlas, 2, 23);
+                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
                         rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
@@ -313,6 +314,7 @@ namespace Atlas {
 
                     if (rtData.hardwareRayTracing) {
                         commandList->BindTLAS(rtData.tlas, 2, 23);
+                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
                         rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
