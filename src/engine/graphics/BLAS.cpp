@@ -7,7 +7,7 @@ namespace Atlas {
     namespace Graphics {
 
         BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : device(device), geometries(desc.geometries),
-            buildRanges(desc.buildRanges) {
+            buildRanges(desc.buildRanges), flags(desc.flags) {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -29,8 +29,6 @@ namespace Atlas {
 
             vkGetAccelerationStructureBuildSizesKHR(device->device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
                 &buildGeometryInfo, maxPrimitivesCount.data(), &sizesInfo);
-
-            Allocate();
 
         }
 

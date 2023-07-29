@@ -12,6 +12,7 @@ namespace Atlas {
 
         class GraphicsDevice;
         class MemoryManager;
+        class ASBuilder;
 
         struct BLASDesc {
             VkBuildAccelerationStructureFlagsKHR flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
@@ -23,6 +24,7 @@ namespace Atlas {
         class BLAS {
 
             friend GraphicsDevice;
+            friend ASBuilder;
 
         public:
             BLAS(GraphicsDevice* device, BLASDesc desc);
@@ -38,7 +40,7 @@ namespace Atlas {
             VkAccelerationStructureBuildRangeInfoKHR* rangeInfo;
 
             Ref<Buffer> buffer;
-            VkAccelerationStructureKHR accelerationStructure;
+            VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 
         private:
             GraphicsDevice* device;
@@ -46,16 +48,7 @@ namespace Atlas {
             std::vector<VkAccelerationStructureGeometryKHR> geometries;
             std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRanges;
 
-        };
-
-        class BLASBuilder {
-
-        public:
-            BLASBuilder() = default;
-
-            void Build(std::vector<Ref<BLAS>> blases);
-
-        private:
+            VkBuildAccelerationStructureFlagsKHR flags;
 
         };
 

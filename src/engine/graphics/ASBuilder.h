@@ -32,7 +32,7 @@ namespace Atlas {
 
         private:
             void BuildBLASBatch(const std::vector<uint32_t>& batchIndices,
-                std::vector<Ref<BLAS>>& blases, Ref<Buffer>& scratchBuffer);
+                std::vector<Ref<BLAS>>& blases, Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool);
 
             void CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
                 std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool);

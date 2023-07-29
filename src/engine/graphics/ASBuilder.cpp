@@ -71,15 +71,17 @@ namespace Atlas {
             };
             auto scratchBuffer = device->CreateBuffer(scratchBufferDesc);
 
+            Ref<QueryPool> queryPool = nullptr;
+            if (compactionCount == blases.size()) {
+                auto queryPoolDesc = QueryPoolDesc{
+                    .queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
+                    .queryCount = uint32_t(compactionCount)
+                };
+                queryPool = device->CreateQueryPool(queryPoolDesc);
+            }
+
             size_t batchSize = 0;
             size_t batchSizeLimit = 256000000;
-
-            /*
-            auto queryPoolDesc = QueryPoolDesc{
-                .queryType = 
-            }
-            auto queryPool = device->CreateQueryPool();
-            */
 
             std::vector<uint32_t> batchIndices;
             for (size_t i = 0; i < blases.size(); i++) {
@@ -88,7 +90,14 @@ namespace Atlas {
                 batchSize += blases[i]->sizesInfo.accelerationStructureSize;
 
                 if (batchSize >= batchSizeLimit || i == blases.size() - 1) {
-                    BuildBLASBatch(batchIndices, blases, scratchBuffer);
+
+                    queryPool->Reset();
+
+                    BuildBLASBatch(batchIndices, blases, scratchBuffer, queryPool);
+
+                    if (queryPool) {
+                        CompactBLASBatch(batchIndices, blases, queryPool);
+                    }
 
                     batchIndices.clear();
                     batchSize = 0;
@@ -146,7 +155,7 @@ namespace Atlas {
         }
 
         void ASBuilder::BuildBLASBatch(const std::vector<uint32_t> &batchIndices,
-            std::vector<Ref<BLAS>> &blases, Ref<Buffer>& scratchBuffer) {
+            std::vector<Ref<BLAS>> &blases, Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
@@ -159,6 +168,8 @@ namespace Atlas {
             for (const auto idx : batchIndices) {
                 auto& blas = blases[idx];
 
+                blas->Allocate();
+
                 auto buildInfo = blas->buildGeometryInfo;
                 buildInfo.dstAccelerationStructure = blas->accelerationStructure;
                 buildInfo.scratchData.deviceAddress = scratchAddress;
@@ -169,6 +180,12 @@ namespace Atlas {
                     VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+
+                if (queryPool) {
+                    vkCmdWriteAccelerationStructuresPropertiesKHR(commandList->commandBuffer, 1,
+                        &blas->buildGeometryInfo.dstAccelerationStructure,
+                        VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool->pool, idx);
+                }
             }
 
             commandList->EndCommands();
@@ -186,20 +203,34 @@ namespace Atlas {
 
             commandList->BeginCommands();
 
-            
+            std::vector<size_t> compactSizes(blases.size());
+            queryPool->GetResult(0, uint32_t(blases.size()), blases.size() * sizeof(size_t),
+                compactSizes.data(), sizeof(size_t), VK_QUERY_RESULT_WAIT_BIT);
 
             for (const auto idx : batchIndices) {
                 auto& blas = blases[idx];
+                auto compactedSize = compactSizes[idx];
 
-                auto buildInfo = blas->buildGeometryInfo;
-                buildInfo.dstAccelerationStructure = blas->accelerationStructure;
+                BLASDesc desc;
+                desc.geometries = blas->geometries;
+                desc.buildRanges = blas->buildRanges;
+                desc.flags = blas->flags;
 
-                commandList->BuildBLAS(blas, buildInfo);
+                auto compactedBlas = device->CreateBLAS(desc);
 
-                commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
-                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
-                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+                compactedBlas->sizesInfo.accelerationStructureSize = compactedSize;
+
+                compactedBlas->Allocate();
+
+                // Copy generated BLAS into compacted one
+                VkCopyAccelerationStructureInfoKHR copyInfo = {};
+                copyInfo.sType = VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR;
+                copyInfo.src  = blas->accelerationStructure;
+                copyInfo.dst  = compactedBlas->accelerationStructure;
+                copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+                
+                vkCmdCopyAccelerationStructureKHR(commandList->commandBuffer, &copyInfo);
+
             }
 
             commandList->EndCommands();
