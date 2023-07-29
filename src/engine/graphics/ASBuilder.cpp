@@ -53,12 +53,10 @@ namespace Atlas {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            size_t totalSize = 0;
             size_t maxScratchSize = 0;
             size_t compactionCount = 0;
 
             for(size_t i = 0; i < blases.size(); i++) {
-                totalSize += blases[i]->sizesInfo.accelerationStructureSize;
                 maxScratchSize = std::max(maxScratchSize, size_t(blases[i]->sizesInfo.buildScratchSize));
                 compactionCount += blases[i]->buildGeometryInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR ? 1 : 0;
             }
@@ -91,7 +89,9 @@ namespace Atlas {
 
                 if (batchSize >= batchSizeLimit || i == blases.size() - 1) {
 
-                    queryPool->Reset();
+                    if (queryPool) {
+                        queryPool->Reset();
+                    }
 
                     BuildBLASBatch(batchIndices, blases, scratchBuffer, queryPool);
 
@@ -183,8 +183,8 @@ namespace Atlas {
 
                 if (queryPool) {
                     vkCmdWriteAccelerationStructuresPropertiesKHR(commandList->commandBuffer, 1,
-                        &blas->buildGeometryInfo.dstAccelerationStructure,
-                        VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, queryPool->pool, idx);
+                        &blas->accelerationStructure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,
+                        queryPool->pool, idx);
                 }
             }
 
@@ -230,6 +230,8 @@ namespace Atlas {
                 copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
                 
                 vkCmdCopyAccelerationStructureKHR(commandList->commandBuffer, &copyInfo);
+
+                blases[idx] = compactedBlas;
 
             }
 
