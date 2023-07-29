@@ -79,6 +79,8 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
+                rtaoPipelineConfig.ManageMacro("OPACITY_CHECK", ao->opacityCheck);
+
                 auto pipeline = PipelineManager::GetPipeline(rtaoPipelineConfig);
 
                 auto uniforms = RTUniforms {

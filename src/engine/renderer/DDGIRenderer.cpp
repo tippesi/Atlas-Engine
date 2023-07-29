@@ -130,7 +130,7 @@ namespace Atlas {
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 25);
 
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
-            helper.DispatchHitClosest(commandList, rayHitPipeline, false,
+            helper.DispatchHitClosest(commandList, rayHitPipeline, false, volume->opacityCheck,
                 [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();

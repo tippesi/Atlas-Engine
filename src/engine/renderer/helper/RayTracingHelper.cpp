@@ -264,7 +264,7 @@ namespace Atlas {
 
             void RayTracingHelper::DispatchHitClosest(Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
-                std::function<void(void)> prepare) {
+                bool opacityCheck, std::function<void(void)> prepare) {
 
                 auto& rtData = scene->rtData;
                 if (!rtData.IsValid()) return;
@@ -414,7 +414,11 @@ namespace Atlas {
 
                 // Trace rays for closest intersection
                 {
-                    auto pipeline = PipelineManager::GetPipeline(traceClosestPipelineConfig);
+                    auto pipelineConfig = traceClosestPipelineConfig;
+                    if (opacityCheck) {
+                        pipelineConfig.AddMacro("OPACITY_CHECK");
+                    }
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                     commandList->BindPipeline(pipeline);
 
                     PushConstants constants;

@@ -138,6 +138,38 @@ bool CheckLeaf(inout Ray ray, int nodePtr, float tmin, float tmax) {
     
 }
 
+void CheckLeafClosestTransparency(inout Ray ray, int nodePtr, float tmin, float tmax) {
+
+    int triPtr = ~nodePtr;
+    bool endOfNode = false;
+    
+    vec3 sol, v0, v1, v2, n;
+    
+    while (!endOfNode) {
+        Triangle tri = UnpackTriangle(triangles[triPtr]);
+        v0 = tri.v0.xyz;
+        v1 = tri.v1.xyz;
+        v2 = tri.v2.xyz;
+        endOfNode = tri.endOfNode;
+        float d = 0.0;
+#ifdef BACKFACE_CULLING
+        n = cross(v0 - v1, v0 - v2);
+        d = dot(n, ray.direction);
+#endif
+        bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
+        if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+            float opacity = GetOpacity(tri, sol.yz, 0);
+            if (opacity > 0.0) {
+                ray.hitDistance = sol.x;
+                ray.hitID = triPtr;
+                ray.hitInstanceID = ray.currentInstanceID;
+            }
+        }
+        triPtr++;
+    }
+
+}
+
 float CheckLeafTransparency(inout Ray ray, int nodePtr, float tmin, float tmax, float transparency) {
 
     int triPtr = ~nodePtr;
@@ -239,6 +271,87 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
         else {
             if(nodePtr < 0) {
                 CheckLeafClosest(ray, nodePtr, tMin, ray.hitDistance);
+                nodePtr = stack[--stackPtr][threadID];
+            }
+            else {
+                BVHNode node = UnpackNode(blasNodes[nodePtr]);
+
+                float hitL = 0.0, hitR = 0.0;
+                bool intersectL = IntersectAABB(ray,
+                node.leftAABB, tMin, ray.hitDistance, hitL);
+                bool intersectR = IntersectAABB(ray,
+                node.rightAABB, tMin, ray.hitDistance, hitR);
+
+                bool noIntersection = !intersectL && !intersectR;
+                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+                int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+
+                if (intersectR && intersectL) {
+                    stack[stackPtr++][threadID] = stackIdx;
+                }
+            }
+        }
+    }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
+    ray.inverseDirection = 1.0 / ray.direction;
+        
+}
+
+void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
+    
+    uint stackPtr = 1u;
+    int nodePtr = 0;
+    uint threadID = gl_LocalInvocationIndex;
+    stack[0][threadID] = nodePtr;
+
+    vec3 originalRayOrigin = ray.origin;
+    vec3 originalRayDirection = ray.direction;
+
+    ray.hitDistance = tMax;
+
+    if (isnan3(ray.direction))
+        return;
+
+    uint tlasIndex = TLAS_INVALID;
+    
+    while (stackPtr != 0u) {
+        if (tlasIndex == TLAS_INVALID || stackPtr < tlasIndex) {
+            if (tlasIndex != TLAS_INVALID) {
+                ray.origin = originalRayOrigin;
+                ray.direction = originalRayDirection;
+                ray.inverseDirection = 1.0 / ray.direction;
+            }
+            tlasIndex = TLAS_INVALID;
+            if (nodePtr < 0) {
+                tlasIndex = stackPtr;
+
+                CheckInstance(ray, nodePtr);
+            }
+            else {
+                BVHNode node = UnpackNode(tlasNodes[nodePtr]);
+
+                float hitL = 0.0, hitR = 0.0;
+                bool intersectL = IntersectAABB(ray,
+                node.leftAABB, tMin, ray.hitDistance, hitL);
+                bool intersectR = IntersectAABB(ray,
+                node.rightAABB, tMin, ray.hitDistance, hitR);
+
+                bool noIntersection = !intersectL && !intersectR;
+                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+                int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+
+                if (intersectR && intersectL) {
+                    stack[stackPtr++][threadID] = stackIdx;
+                }
+            }
+        }
+        else {
+            if(nodePtr < 0) {
+                CheckLeafClosestTransparency(ray, nodePtr, tMin, ray.hitDistance);
                 nodePtr = stack[--stackPtr][threadID];
             }
             else {
@@ -511,7 +624,7 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
 
             Triangle tri = UnpackTriangle(triangles[hitID]);
 
-            if (GetOpacity(tri, barrycentric, 0) > 0.999) {
+            if (GetOpacity(tri, barrycentric, 0) > 0.0) {
                 rayQueryConfirmIntersectionEXT(rayQuery);
             }
 

@@ -23,6 +23,7 @@ namespace Atlas {
 
             bool enable = true;
             bool rt = false;
+            bool opacityCheck = false;
 
             Texture::Texture2D noiseTexture;
             std::vector<vec4> samples;

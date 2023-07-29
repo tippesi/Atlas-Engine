@@ -127,7 +127,7 @@ void main() {
                 vec3 radiance = vec3(0.0);
 
                 if (material.roughness < 0.9) {
-#ifdef AE_HARDWARE_RAYTRACING
+#ifdef OPACITY_CHECK
                     HitClosestTransparency(ray, 10e-9, INF);
 #else
                     HitClosest(ray, 10e-9, INF);

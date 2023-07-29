@@ -103,6 +103,7 @@ namespace Atlas {
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
                 rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
+                rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
 

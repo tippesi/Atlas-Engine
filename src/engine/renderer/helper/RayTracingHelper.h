@@ -35,7 +35,7 @@ namespace Atlas {
 
                 void DispatchHitClosest(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
-                    std::function<void(void)> prepare);
+                    bool opacityCheck, std::function<void(void)> prepare);
 
                 void DispatchHitAny(Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, std::function<void(void)> prepare);

@@ -100,6 +100,7 @@ namespace Atlas {
             bool optimizeProbes = true;
             bool useShadowMap = false;
             bool lowerResMoments = false;
+            bool opacityCheck = false;
 
             InternalIrradianceVolume internal;
 
