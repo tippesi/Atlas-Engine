@@ -1,5 +1,3 @@
-#extension GL_ARB_shader_ballot : require
-
 #ifdef AE_HARDWARE_RAYTRACING
 #extension GL_EXT_ray_tracing : enable
 #extension GL_EXT_ray_query : enable
@@ -14,7 +12,7 @@ layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
 #include <buffers.hsh>
 
 #define STACK_SIZE 32
-#define TLAS_INVALID 1000000
+#define TLAS_INVALID (STACK_SIZE + 2)
 
 struct PackedBVHNode {
     vec4 data0;
@@ -172,7 +170,7 @@ void CheckInstance(inout Ray ray, inout int nodePtr) {
 
     int instancePtr = ~nodePtr;
 
-    BVHInstance instance = bvhInstances[instancePtr];
+    Instance instance = bvhInstances[instancePtr];
 
     // We don't normalize the direction in case there is a scale in the
     // matrix. In that case the normalization leads to wrong scales in closest hit distance
@@ -450,7 +448,7 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
 
-        BVHInstance instance = bvhInstances[ray.hitInstanceID];
+        Instance instance = bvhInstances[ray.hitInstanceID];
 
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + instance.triangleOffset;
     }

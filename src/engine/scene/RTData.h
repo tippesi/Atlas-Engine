@@ -32,7 +32,7 @@ namespace Atlas {
 
             void Build();
 
-            void Update();
+            void Update(bool updateTriangleLights);
 
             void UpdateMaterials(bool updateTextures = false);
 
@@ -43,6 +43,17 @@ namespace Atlas {
             void Clear();
 
         private:
+            struct MeshInfo {
+                Ref<Graphics::BLAS> blas = nullptr;
+
+                int32_t nodeOffset = 0;
+                int32_t triangleOffset = 0;
+
+                std::vector<GPULight> triangleLights;
+                std::vector<uint32_t> instanceIndices;
+                std::vector<mat4x3> matrices;
+            };
+
             void UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures);
 
             GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
@@ -58,10 +69,13 @@ namespace Atlas {
 
             void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
 
+            void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
+
+            void UpdateTriangleLights();
+
             Scene* scene;
 
             Ref<Graphics::TLAS> tlas;
-            Ref<Graphics::Buffer> instanceBuffer;
             std::vector<Ref<Graphics::BLAS>> blases;
 
             Buffer::Buffer triangleBuffer;
@@ -81,7 +95,7 @@ namespace Atlas {
             std::vector<GPULight> triangleLights;
 
             std::unordered_map<Material*, int32_t> materialAccess;
-            std::unordered_map<size_t, GPUMesh> meshInfo;
+            std::unordered_map<size_t, MeshInfo> meshInfos;
 
             bool hardwareRayTracing = false;
 

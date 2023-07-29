@@ -1,5 +1,6 @@
 #include <lights.hsh>
 #include <common.hsh>
+#include <surface.hsh>
 #include <../common/random.hsh>
 
 int GetLightCount() {
@@ -56,7 +57,9 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
         float r1 = random(seed0, seed1);
 
         if (light.type == uint(TRIANGLE_LIGHT)) {
-            Triangle tri = UnpackTriangle(triangles[light.idx]);
+            Instance instance = bvhInstances[light.instanceIdx];
+            Triangle tri = UnpackTriangle(triangles[light.triangleIdx + instance.triangleOffset]);
+            TransformTriangle(tri, instance);
             lightSample = SampleTriangleLight(light, tri, surface, r0, r1);
         }
 

@@ -118,6 +118,7 @@ namespace Atlas {
         void MeshData::BuildBVH() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
+            bool hardwareRayTracing = device->support.hardwareRayTracing;
 
             struct Triangle {
                 vec3 v0;
@@ -195,145 +196,89 @@ namespace Atlas {
 
             }
 
-            // Generate BVH
-
-            if (device->support.hardwareRayTracing) {
-                for (auto& bvhTriangle : bvhTriangles) {
-
-                    auto& triangle = triangles[bvhTriangle.idx];
-
-                    auto v0v1 = triangle.v1 - triangle.v0;
-                    auto v0v2 = triangle.v2 - triangle.v0;
-
-                    auto uv0uv1 = triangle.uv1 - triangle.uv0;
-                    auto uv0uv2 = triangle.uv2 - triangle.uv0;
-
-                    auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
-
-                    auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
-                        uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
-                        uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
-
-                    auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
-                        uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
-                        uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
-
-                    auto normal = glm::normalize(triangle.n0 + triangle.n1 + triangle.n2);
-
-                    auto tangent = glm::normalize(s - normal * dot(normal, s));
-                    auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
-
-                    auto bitangent = handedness * glm::normalize(glm::cross(tangent, normal));
-
-                    // Compress data
-                    auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f));
-                    auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f));
-                    auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f));
-
-                    auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
-                    auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
-
-                    auto puv0 = glm::packHalf2x16(triangle.uv0);
-                    auto puv1 = glm::packHalf2x16(triangle.uv1);
-                    auto puv2 = glm::packHalf2x16(triangle.uv2);
-
-                    auto cn0 = reinterpret_cast<float&>(pn0);
-                    auto cn1 = reinterpret_cast<float&>(pn1);
-                    auto cn2 = reinterpret_cast<float&>(pn2);
-
-                    auto ct = reinterpret_cast<float&>(pt);
-                    auto cbt = reinterpret_cast<float&>(pbt);
-
-                    auto cuv0 = reinterpret_cast<float&>(puv0);
-                    auto cuv1 = reinterpret_cast<float&>(puv1);
-                    auto cuv2 = reinterpret_cast<float&>(puv2);
-
-                    GPUTriangle gpuTriangle;
-
-                    gpuTriangle.v0 = vec4(triangle.v0, cn0);
-                    gpuTriangle.v1 = vec4(triangle.v1, cn1);
-                    gpuTriangle.v2 = vec4(triangle.v2, cn2);
-                    gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
-                    gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                }
-            }
-            else {
-                auto bvh = Volume::BVH(aabbs, bvhTriangles);
+            Volume::BVH bvh;
+            if (!hardwareRayTracing) {
+                // Generate BVH
+                bvh = Volume::BVH(aabbs, bvhTriangles);
 
                 bvhTriangles.clear();
                 bvhTriangles.shrink_to_fit();
+            }
 
-                for (auto& bvhTriangle : bvh.data) {
+            auto& data = hardwareRayTracing ? bvhTriangles : bvh.data;
 
-                    auto& triangle = triangles[bvhTriangle.idx];
+            for (auto& bvhTriangle : data) {
 
-                    auto v0v1 = triangle.v1 - triangle.v0;
-                    auto v0v2 = triangle.v2 - triangle.v0;
+                auto& triangle = triangles[bvhTriangle.idx];
 
-                    auto uv0uv1 = triangle.uv1 - triangle.uv0;
-                    auto uv0uv2 = triangle.uv2 - triangle.uv0;
+                auto v0v1 = triangle.v1 - triangle.v0;
+                auto v0v2 = triangle.v2 - triangle.v0;
 
-                    auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
+                auto uv0uv1 = triangle.uv1 - triangle.uv0;
+                auto uv0uv2 = triangle.uv2 - triangle.uv0;
 
-                    auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
-                        uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
-                        uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
+                auto r = 1.0f / (uv0uv1.x * uv0uv2.y - uv0uv2.x * uv0uv1.y);
 
-                    auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
-                        uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
-                        uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
+                auto s = vec3(uv0uv2.y * v0v1.x - uv0uv1.y * v0v2.x,
+                    uv0uv2.y * v0v1.y - uv0uv1.y * v0v2.y,
+                    uv0uv2.y * v0v1.z - uv0uv1.y * v0v2.z) * r;
 
-                    auto normal = glm::normalize(triangle.n0 + triangle.n1 + triangle.n2);
+                auto t = vec3(uv0uv1.x * v0v2.x - uv0uv2.x * v0v1.x,
+                    uv0uv1.x * v0v2.y - uv0uv2.x * v0v1.y,
+                    uv0uv1.x * v0v2.z - uv0uv2.x * v0v1.z) * r;
 
-                    auto tangent = glm::normalize(s - normal * dot(normal, s));
-                    auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
+                auto normal = glm::normalize(triangle.n0 + triangle.n1 + triangle.n2);
 
-                    auto bitangent = handedness * glm::normalize(glm::cross(tangent, normal));
+                auto tangent = glm::normalize(s - normal * dot(normal, s));
+                auto handedness = (glm::dot(glm::cross(tangent, normal), t) < 0.0f ? 1.0f : -1.0f);
 
-                    // Compress data
-                    auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f));
-                    auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f));
-                    auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f));
+                auto bitangent = handedness * glm::normalize(glm::cross(tangent, normal));
 
-                    auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
-                    auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
+                // Compress data
+                auto pn0 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n0, 0.0f));
+                auto pn1 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n1, 0.0f));
+                auto pn2 = Common::Packing::PackSignedVector3x10_1x2(vec4(triangle.n2, 0.0f));
 
-                    auto puv0 = glm::packHalf2x16(triangle.uv0);
-                    auto puv1 = glm::packHalf2x16(triangle.uv1);
-                    auto puv2 = glm::packHalf2x16(triangle.uv2);
+                auto pt = Common::Packing::PackSignedVector3x10_1x2(vec4(tangent, 0.0f));
+                auto pbt = Common::Packing::PackSignedVector3x10_1x2(vec4(bitangent, 0.0f));
 
-                    auto cn0 = reinterpret_cast<float&>(pn0);
-                    auto cn1 = reinterpret_cast<float&>(pn1);
-                    auto cn2 = reinterpret_cast<float&>(pn2);
+                auto puv0 = glm::packHalf2x16(triangle.uv0);
+                auto puv1 = glm::packHalf2x16(triangle.uv1);
+                auto puv2 = glm::packHalf2x16(triangle.uv2);
 
-                    auto ct = reinterpret_cast<float&>(pt);
-                    auto cbt = reinterpret_cast<float&>(pbt);
+                auto cn0 = reinterpret_cast<float&>(pn0);
+                auto cn1 = reinterpret_cast<float&>(pn1);
+                auto cn2 = reinterpret_cast<float&>(pn2);
 
-                    auto cuv0 = reinterpret_cast<float&>(puv0);
-                    auto cuv1 = reinterpret_cast<float&>(puv1);
-                    auto cuv2 = reinterpret_cast<float&>(puv2);
+                auto ct = reinterpret_cast<float&>(pt);
+                auto cbt = reinterpret_cast<float&>(pbt);
 
-                    GPUTriangle gpuTriangle;
+                auto cuv0 = reinterpret_cast<float&>(puv0);
+                auto cuv1 = reinterpret_cast<float&>(puv1);
+                auto cuv2 = reinterpret_cast<float&>(puv2);
 
-                    gpuTriangle.v0 = vec4(triangle.v0, cn0);
-                    gpuTriangle.v1 = vec4(triangle.v1, cn1);
-                    gpuTriangle.v2 = vec4(triangle.v2, cn2);
-                    gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
-                    gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
+                GPUTriangle gpuTriangle;
 
-                    gpuTriangles.push_back(gpuTriangle);
+                gpuTriangle.v0 = vec4(triangle.v0, cn0);
+                gpuTriangle.v1 = vec4(triangle.v1, cn1);
+                gpuTriangle.v2 = vec4(triangle.v2, cn2);
+                gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
+                gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
 
+                gpuTriangles.push_back(gpuTriangle);
+
+                if (!hardwareRayTracing) {
                     BVHTriangle gpuBvhTriangle;
                     gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
-                    gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float&>(triangle.materialIdx));
+                    gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float &>(triangle.materialIdx));
                     gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
 
                     gpuBvhTriangles.push_back(gpuBvhTriangle);
-
                 }
 
+            }
+
+            if (!hardwareRayTracing) {
                 triangles.clear();
                 triangles.shrink_to_fit();
 

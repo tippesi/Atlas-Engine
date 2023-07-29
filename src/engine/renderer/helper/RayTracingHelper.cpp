@@ -16,7 +16,7 @@ namespace Atlas {
 
             RayTracingHelper::RayTracingHelper() {
 
-                const size_t lightCount = 512;
+                const size_t lightCount = 256;
 
                 indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit,
                     3 * sizeof(uint32_t), 0);
@@ -89,7 +89,7 @@ namespace Atlas {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
-                            weights.push_back(light.data1.y);
+                            weights.push_back(light.data.y);
                         }
 
                         auto piecewiseDistribution = Common::Piecewise1D(weights);
@@ -103,12 +103,12 @@ namespace Atlas {
                         }
 
                         for (auto& light : selectedLights) {
-                            light.data1.y *= float(selectedLights.size());
+                            light.data.y *= float(selectedLights.size());
                         }
                     }
                     else {
                         for (auto light : lights) {
-                            light.data1.y = 1.0f;
+                            light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
                     }
@@ -203,7 +203,7 @@ namespace Atlas {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
-                            weights.push_back(light.data1.y);
+                            weights.push_back(light.data.y);
                         }
 
                         auto piecewiseDistribution = Common::Piecewise1D(weights);
@@ -217,12 +217,12 @@ namespace Atlas {
                         }
 
                         for (auto& light : selectedLights) {
-                            light.data1.y *= float(selectedLights.size());
+                            light.data.y *= float(selectedLights.size());
                         }
                     }
                     else {
                         for (auto light : lights) {
-                            light.data1.y = 1.0f;
+                            light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
                     }
@@ -531,9 +531,10 @@ namespace Atlas {
                     auto cd = reinterpret_cast<float&>(data);
 
                     GPULight gpuLight;
-                    gpuLight.data0 = vec4(P, radiance.r);
-                    gpuLight.data1 = vec4(cd, weight, area, radiance.g);
-                    gpuLight.N = vec4(N, radiance.b);
+                    gpuLight.P = vec4(P, 1.0f);
+                    gpuLight.N = vec4(N, 0.0f);
+                    gpuLight.color = vec4(radiance, 0.0f);
+                    gpuLight.data = vec4(cd, weight, area, 0.0f);
 
                     lights.push_back(gpuLight);
                 }
@@ -546,7 +547,7 @@ namespace Atlas {
                 // Find the maximum weight
                 auto maxWeight = 0.0f;
                 for (auto& light : lights) {
-                    maxWeight = glm::max(maxWeight, light.data1.y);
+                    maxWeight = glm::max(maxWeight, light.data.y);
                 }
 
                 // Calculate min weight and adjust lights based on it
@@ -555,12 +556,12 @@ namespace Atlas {
                 auto totalWeight = 0.0f;
 
                 for (auto& light : lights) {
-                    light.data1.y = glm::max(light.data1.y, minWeight);
-                    totalWeight += light.data1.y;
+                    light.data.y = glm::max(light.data.y, minWeight);
+                    totalWeight += light.data.y;
                 }
 
                 for (auto& light : lights) {
-                    light.data1.y /= totalWeight;
+                    light.data.y /= totalWeight;
                 }
             }
             

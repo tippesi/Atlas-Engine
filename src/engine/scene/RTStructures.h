@@ -73,12 +73,6 @@ namespace Atlas {
         vec3 max;
     };
 
-    struct GPUMesh {
-        int32_t nodeOffset;
-        int32_t triangleOffset;
-        Ref<Graphics::BLAS> blas;
-    };
-
     struct GPUBVHInstance {
         mat3x4 inverseMatrix;
 
@@ -100,9 +94,10 @@ namespace Atlas {
     };
 
     struct GPULight {
-        vec4 data0;
-        vec4 data1;
+        vec4 P;
         vec4 N;
+        vec4 color;
+        vec4 data;
     };
 
 }

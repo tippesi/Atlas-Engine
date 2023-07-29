@@ -39,11 +39,14 @@ namespace Atlas {
                 BuildForSoftwareRayTracing();
             }
 
+            std::vector<GPUMaterial> materials;
+            UpdateMaterials(materials, true);
+
             isValid = true;
 
         }
 
-        void RTData::Update() {
+        void RTData::Update(bool updateTriangleLights) {
 
             auto actors = scene->GetMeshActors();
 
@@ -54,22 +57,29 @@ namespace Atlas {
             std::vector<GPUBVHInstance> gpuBvhInstances;
             std::vector<Volume::AABB> actorAABBs;
 
+            for (auto& [_, meshInfo] : meshInfos) {
+                meshInfo.instanceIndices.clear();
+                meshInfo.matrices.clear();
+            }
+
             for (auto& actor : actors) {
                 if (!actor->mesh.IsLoaded())
                     continue;
 
-                if (!meshInfo.contains(actor->mesh.GetID()))
+                if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
                 actorAABBs.push_back(actor->aabb);
-                auto mesh = meshInfo[actor->mesh.GetID()];
+                auto& meshInfo = meshInfos[actor->mesh.GetID()];
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix))),
-                    .blasOffset = mesh.nodeOffset,
-                    .triangleOffset = mesh.triangleOffset
+                    .blasOffset = meshInfo.nodeOffset,
+                    .triangleOffset = meshInfo.triangleOffset
                 };
 
+                meshInfo.matrices.push_back(actor->globalMatrix);
+                meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
             }
@@ -83,6 +93,12 @@ namespace Atlas {
             else {
                 gpuBvhInstances = UpdateForSoftwareRayTracing(gpuBvhInstances, actorAABBs);
             }
+
+            std::vector<GPUMaterial> materials;
+            UpdateMaterials(materials, false);
+
+            if (updateTriangleLights)
+                UpdateTriangleLights();
 
             bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
@@ -331,11 +347,13 @@ namespace Atlas {
                     materialAccess[&material] = materialCount++;
                 }
 
-                GPUMesh gpuMesh = {
+                MeshInfo meshInfo = {
                     .nodeOffset = nodeOffset,
                     .triangleOffset = triangleOffset
                 };
-                meshInfo[mesh.GetID()] = gpuMesh;
+                meshInfos[mesh.GetID()] = meshInfo;
+
+                BuildTriangleLightsForMesh(mesh);
 
             }
 
@@ -351,60 +369,6 @@ namespace Atlas {
 
             blasNodeBuffer.SetSize(gpuBvhNodes.size());
             blasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, true);
-
-            triangleLights.clear();
-
-            // Triangle lights
-            for (size_t i = 0; i < gpuTriangles.size(); i++) {
-                auto& triangle = gpuTriangles[i];
-                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
-                auto& material = materials[idx];
-
-                auto radiance = material.emissiveColor;
-                auto brightness = dot(radiance, vec3(0.3333f));
-
-                if (brightness > 0.0f) {
-                    // Extract normal information again
-                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
-                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
-                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
-
-                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
-                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
-                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
-
-                    // Compute neccessary information
-                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
-                    auto N = (n0 + n1 + n2) / 3.0f;
-
-                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
-                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
-                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
-                    auto p = 0.5f * (a + b + c);
-                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
-
-                    auto weight = area * brightness;
-
-                    // Compress light
-                    auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
-                    auto cn = reinterpret_cast<float&>(pn);
-
-                    uint32_t data = 0;
-                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
-                    data |= uint32_t(i);
-                    auto cd = reinterpret_cast<float&>(data);
-
-                    GPULight light;
-                    light.data0 = vec4(P, radiance.r);
-                    light.data1 = vec4(cd, weight, area, radiance.g);
-                    light.N = vec4(N, radiance.b);
-
-                    triangleLights.push_back(light);
-                }
-            }
 
         }
 
@@ -454,12 +418,15 @@ namespace Atlas {
 
                 blases.push_back(device->CreateBLAS(blasDesc));
 
-                GPUMesh gpuMesh = {
+                MeshInfo meshInfo = {
+                    .blas = blases.back(),
+
                     .nodeOffset = 0,
-                    .triangleOffset = triangleOffset,
-                    .blas = blases.back()
+                    .triangleOffset = triangleOffset
                 };
-                meshInfo[mesh.GetID()] = gpuMesh;
+                meshInfos[mesh.GetID()] = meshInfo;
+
+                BuildTriangleLightsForMesh(mesh);
 
             }
 
@@ -469,60 +436,6 @@ namespace Atlas {
             // Upload triangles
             triangleBuffer.SetSize(gpuTriangles.size());
             triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, true);
-
-            triangleLights.clear();
-
-            // Triangle lights
-            for (size_t i = 0; i < gpuTriangles.size(); i++) {
-                auto& triangle = gpuTriangles[i];
-                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
-                auto& material = materials[idx];
-
-                auto radiance = material.emissiveColor;
-                auto brightness = dot(radiance, vec3(0.3333f));
-
-                if (brightness > 0.0f) {
-                    // Extract normal information again
-                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
-                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
-                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
-
-                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
-                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
-                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
-
-                    // Compute neccessary information
-                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
-                    auto N = (n0 + n1 + n2) / 3.0f;
-
-                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
-                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
-                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
-                    auto p = 0.5f * (a + b + c);
-                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
-
-                    auto weight = area * brightness;
-
-                    // Compress light
-                    auto pn = Common::Packing::PackSignedVector3x10_1x2(vec4(N, 0.0f));
-                    auto cn = reinterpret_cast<float&>(pn);
-
-                    uint32_t data = 0;
-                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
-                    data |= uint32_t(i);
-                    auto cd = reinterpret_cast<float&>(data);
-
-                    GPULight light;
-                    light.data0 = vec4(P, radiance.r);
-                    light.data1 = vec4(cd, weight, area, radiance.g);
-                    light.N = vec4(N, radiance.b);
-
-                    triangleLights.push_back(light);
-                }
-            }
 
             asBuilder.BuildBLAS(blases);
 
@@ -573,7 +486,7 @@ namespace Atlas {
                 if (!actor->mesh.IsLoaded())
                     continue;
 
-                if (!meshInfo.contains(actor->mesh.GetID()))
+                if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
                 VkAccelerationStructureInstanceKHR inst = {};
@@ -584,7 +497,7 @@ namespace Atlas {
 
                 inst.transform = transform;
                 inst.instanceCustomIndex = instanceCount++;
-                inst.accelerationStructureReference = meshInfo[actor->mesh.GetID()].blas->GetDeviceAddress();
+                inst.accelerationStructureReference = meshInfos[actor->mesh.GetID()].blas->GetDeviceAddress();
                 inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                 inst.mask = 0xFF;
                 inst.instanceShaderBindingTableRecordOffset = 0;
@@ -595,6 +508,94 @@ namespace Atlas {
             tlas = device->CreateTLAS(tlasDesc);
 
             asBuilder.BuildTLAS(tlas, instances);
+
+        }
+
+        void RTData::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
+
+            auto& gpuTriangles = mesh->data.gpuTriangles;
+            auto& materials = mesh->data.materials;
+
+            auto& meshInfo = meshInfos[mesh.GetID()];
+
+            // Triangle lights
+            for (size_t i = 0; i < gpuTriangles.size(); i++) {
+                auto& triangle = gpuTriangles[i];
+                auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
+                auto& material = materials[idx];
+
+                auto radiance = material.emissiveColor;
+                auto brightness = dot(radiance, vec3(0.3333f));
+
+                if (brightness > 0.0f) {
+                    // Extract normal information again
+                    auto cn0 = reinterpret_cast<int32_t&>(triangle.v0.w);
+                    auto cn1 = reinterpret_cast<int32_t&>(triangle.v1.w);
+                    auto cn2 = reinterpret_cast<int32_t&>(triangle.v2.w);
+
+                    auto n0 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn0));
+                    auto n1 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn1));
+                    auto n2 = vec3(Common::Packing::UnpackSignedVector3x10_1x2(cn2));
+
+                    // Compute necessary information
+                    auto P = (vec3(triangle.v0) + vec3(triangle.v1) + vec3(triangle.v2)) / 3.0f;
+                    auto N = (n0 + n1 + n2) / 3.0f;
+
+                    auto a = glm::distance(vec3(triangle.v1), vec3(triangle.v0));
+                    auto b = glm::distance(vec3(triangle.v2), vec3(triangle.v0));
+                    auto c = glm::distance(vec3(triangle.v1), vec3(triangle.v2));
+                    auto p = 0.5f * (a + b + c);
+                    auto area = glm::sqrt(p * (p - a) * (p - b) * (p - c));
+
+                    auto weight = area * brightness;
+
+                    uint32_t data = 0;
+                    data |= (1 << 28u); // Type TRIANGLE_LIGHT (see RayTracingHelper.cpp)
+                    data |= uint32_t(i);
+                    auto cd = reinterpret_cast<float&>(data);
+
+                    GPULight light;
+                    light.P = vec4(P, 1.0f);
+                    light.N = vec4(N, 0.0f);
+                    light.color = vec4(radiance, 0.0f);
+                    light.data = vec4(cd, weight, area, 0.0f);
+
+                    meshInfo.triangleLights.push_back(light);
+                }
+            }
+
+        }
+
+        void RTData::UpdateTriangleLights() {
+
+            triangleLights.clear();
+
+            for (auto& [meshIdx, meshInfo] : meshInfos) {
+
+                for (auto& light : meshInfo.triangleLights) {
+
+                    for (size_t i = 0; i < meshInfo.instanceIndices.size(); i++) {
+
+                        auto instanceIdx = meshInfo.instanceIndices[i];
+                        auto& matrix = meshInfo.matrices[i];
+
+                        vec3 P = matrix * vec4(vec3(light.P), 1.0f);
+                        vec3 N = matrix * vec4(vec3(light.N), 0.0f);
+
+                        auto transformedLight = light;
+
+                        transformedLight.data.w = reinterpret_cast<float&>(instanceIdx);
+
+                        transformedLight.P = vec4(P, light.P.w);
+                        transformedLight.N = vec4(N, light.N.w);
+
+                        triangleLights.push_back(transformedLight);
+
+                    }
+
+                }
+
+            }
 
         }
 

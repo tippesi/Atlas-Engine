@@ -28,6 +28,6 @@ layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
     uint rayBinOffsets[];
 };
 
-layout(std430, set = 2, binding = 21) buffer BvhInstances {
-    BVHInstance bvhInstances[];
+layout(std430, set = 2, binding = 21) buffer Instances {
+    Instance bvhInstances[];
 };
