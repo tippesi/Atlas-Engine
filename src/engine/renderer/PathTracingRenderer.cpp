@@ -139,7 +139,7 @@ namespace Atlas {
 
                 Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-                helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false,
+                helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);

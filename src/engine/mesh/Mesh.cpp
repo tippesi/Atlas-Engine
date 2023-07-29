@@ -27,13 +27,13 @@ namespace Atlas {
 
             if (data.indices.ContainsData()) {
                 auto type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-                Buffer::IndexBuffer buffer(type, data.GetIndexCount(), data.indices.GetConvertedVoid());
-                vertexArray.AddIndexComponent(buffer);
+                indexBuffer = Buffer::IndexBuffer(type, data.GetIndexCount(), data.indices.GetConvertedVoid());
+                vertexArray.AddIndexComponent(indexBuffer);
             }
             if (data.vertices.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.vertices.GetFormat(), data.GetVertexCount(),
+                vertexBuffer = Buffer::VertexBuffer(data.vertices.GetFormat(), data.GetVertexCount(),
                     data.vertices.GetConvertedVoid());
-                vertexArray.AddComponent(0, buffer);
+                vertexArray.AddComponent(0, vertexBuffer);
             }
             if (data.normals.ContainsData()) {
                 Buffer::VertexBuffer buffer(data.normals.GetFormat(), data.GetVertexCount(),

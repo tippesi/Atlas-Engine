@@ -90,6 +90,8 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
+            void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
+
             void ResetBindings();
 
             void ImageMemoryBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask,
@@ -112,6 +114,10 @@ namespace Atlas {
 
             void BufferMemoryBarrier(BufferBarrier& barrier, VkPipelineStageFlags srcStageMask,
                 VkPipelineStageFlags dstStageMask);
+
+            void MemoryBarrier(VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             void PipelineBarrier(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -146,6 +152,10 @@ namespace Atlas {
 
             void GenerateMipMap(const Ref<Image>& image);
 
+            void BuildBLAS(const Ref<BLAS>& blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
+
+            void BuildTLAS(const Ref<TLAS>& tlas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
+
             VkCommandPool commandPool;
             VkCommandBuffer commandBuffer;
             VkFence fence;
@@ -172,6 +182,7 @@ namespace Atlas {
                 std::pair<Buffer*, uint32_t> dynamicBuffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 Image* images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
@@ -191,6 +202,7 @@ namespace Atlas {
                             dynamicBuffers[i][j] = { nullptr, 0u };
                             images[i][j] = nullptr;
                             sampledImages[i][j] = { nullptr, nullptr };
+                            tlases[i][j] = nullptr;
                         }
                         sets[i] = nullptr;
                         changed[i] = true;
@@ -203,6 +215,7 @@ namespace Atlas {
                         dynamicBuffers[set][j] = { nullptr, 0u };
                         images[set][j] = nullptr;
                         sampledImages[set][j] = { nullptr, nullptr };
+                        tlases[set][j] = nullptr;
                     }
                     sets[set] = nullptr;
                     changed[set] = true;

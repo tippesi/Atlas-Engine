@@ -31,6 +31,7 @@ namespace Atlas {
 
             void* data = nullptr;
             size_t size;
+            size_t alignment = 0;
         };
 
         struct BufferAllocation {
@@ -53,6 +54,8 @@ namespace Atlas {
 
             void Unmap();
 
+            VkDeviceAddress GetDeviceAddress();
+
             VkBuffer buffer;
             VmaAllocation allocation;
             VkAccessFlags accessMask = VK_ACCESS_MEMORY_READ_BIT |
@@ -62,6 +65,7 @@ namespace Atlas {
             BufferDomain domain;
 
             const size_t size = 0;
+            const size_t alignment = 0;
 
         private:
             MemoryManager* memoryManager;

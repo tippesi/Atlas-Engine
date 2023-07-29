@@ -13,6 +13,8 @@
 #include "Sampler.h"
 #include "Descriptor.h"
 #include "QueryPool.h"
+#include "BLAS.h"
+#include "TLAS.h"
 #include "Framebuffer.h"
 #include "MemoryManager.h"
 
@@ -28,6 +30,11 @@ namespace Atlas {
 
         class Instance;
         class ImguiWrapper;
+
+        struct DeviceSupport {
+            bool hardwareRayTracing = false;
+            bool shaderPrintf = false;
+        };
 
         struct CommandListSubmission {
             CommandList* cmd;
@@ -113,6 +120,10 @@ namespace Atlas {
 
             Ref<QueryPool> CreateQueryPool(QueryPoolDesc desc);
 
+            Ref<BLAS> CreateBLAS(BLASDesc desc);
+
+            Ref<TLAS> CreateTLAS(TLASDesc desc);
+
             CommandList* GetCommandList(QueueType queueType = QueueType::GraphicsQueue,
                 bool frameIndependentList = false);
 
@@ -138,11 +149,16 @@ namespace Atlas {
 
             VkPhysicalDevice physicalDevice;
             VkDevice device;
-            VkPhysicalDeviceProperties deviceProperties;
+
+            VkPhysicalDeviceProperties2 deviceProperties = {};
+            VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
+            VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
 
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+
+            DeviceSupport support;
 
             bool isComplete = false;
 
@@ -194,6 +210,11 @@ namespace Atlas {
 
             void BuildPhysicalDeviceFeatures(VkPhysicalDevice device);
 
+            void GetPhysicalDeviceProperties(VkPhysicalDevice device);
+
+            void CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
+                const std::vector<const char*>& extensions, bool enableValidationLayers);
+
             bool CheckForWindowResize();
 
             void CreateFrameData();
@@ -223,6 +244,8 @@ namespace Atlas {
             std::vector<Ref<Sampler>> samplers;
             std::vector<Ref<DescriptorPool>> descriptorPools;
             std::vector<Ref<QueryPool>> queryPools;
+            std::vector<Ref<BLAS>> blases;
+            std::vector<Ref<TLAS>> tlases;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;

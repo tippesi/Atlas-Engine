@@ -32,7 +32,7 @@ namespace Atlas {
 
             void Build();
 
-            void Update();
+            void Update(bool updateTriangleLights);
 
             void UpdateMaterials(bool updateTextures = false);
 
@@ -43,13 +43,40 @@ namespace Atlas {
             void Clear();
 
         private:
+            struct MeshInfo {
+                Ref<Graphics::BLAS> blas = nullptr;
+
+                int32_t offset = 0;
+                int32_t triangleOffset = 0;
+
+                std::vector<GPULight> triangleLights;
+                std::vector<uint32_t> instanceIndices;
+                std::vector<mat4x3> matrices;
+            };
+
             void UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures);
 
             GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
 
             GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
+            void BuildForSoftwareRayTracing();
+
+            void BuildForHardwareRayTracing();
+
+            std::vector<GPUBVHInstance> UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+                std::vector<Volume::AABB>& actorAABBs);
+
+            void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
+
+            void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
+
+            void UpdateTriangleLights();
+
             Scene* scene;
+
+            Ref<Graphics::TLAS> tlas;
+            std::vector<Ref<Graphics::BLAS>> blases;
 
             Buffer::Buffer triangleBuffer;
             Buffer::Buffer bvhTriangleBuffer;
@@ -57,6 +84,7 @@ namespace Atlas {
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
             Buffer::Buffer blasNodeBuffer;
+            Buffer::Buffer geometryTriangleOffsetBuffer;
 
             Texture::TextureAtlas baseColorTextureAtlas;
             Texture::TextureAtlas opacityTextureAtlas;
@@ -68,7 +96,9 @@ namespace Atlas {
             std::vector<GPULight> triangleLights;
 
             std::unordered_map<Material*, int32_t> materialAccess;
-            std::unordered_map<size_t, GPUMesh> meshInfo;
+            std::unordered_map<size_t, MeshInfo> meshInfos;
+
+            bool hardwareRayTracing = false;
 
             std::atomic_bool isValid = false;
             std::mutex mutex;

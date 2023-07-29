@@ -3,6 +3,8 @@
 
 #include <System.h>
 
+#include "../graphics/BLAS.h"
+
 namespace Atlas {
 
     struct GPUTriangle {
@@ -71,19 +73,14 @@ namespace Atlas {
         vec3 max;
     };
 
-    struct GPUMesh {
-        int32_t nodeOffset;
-        int32_t triangleOffset;
-    };
-
     struct GPUBVHInstance {
         mat3x4 inverseMatrix;
 
         int32_t blasOffset;
+        int32_t triangleOffset;
 
         int32_t padding0;
         int32_t padding1;
-        int32_t padding2;
     };
 
     struct GPUBVHNode {
@@ -97,9 +94,10 @@ namespace Atlas {
     };
 
     struct GPULight {
-        vec4 data0;
-        vec4 data1;
+        vec4 P;
         vec4 N;
+        vec4 color;
+        vec4 data;
     };
 
 }

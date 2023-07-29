@@ -30,6 +30,7 @@ namespace Atlas {
             bool rt = false;
             bool gi = true;
             bool useShadowMap = false;
+            bool opacityCheck = false;
 
         };
 

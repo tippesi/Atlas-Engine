@@ -1,5 +1,6 @@
 #include "GraphicsDevice.h"
 #include "Instance.h"
+#include "StructureChainBuilder.h"
 #include "../EngineInstance.h"
 
 #include <vector>
@@ -27,14 +28,19 @@ namespace Atlas {
             };
 
             std::vector<const char*> optionalExtensions = {
+                VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+                VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+                VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+                VK_KHR_RAY_QUERY_EXTENSION_NAME
 #ifdef AE_BUILDTYPE_DEBUG
-                VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+                , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
             };
 
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
-            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+            GetPhysicalDeviceProperties(physicalDevice);
 
             auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
             requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
@@ -44,39 +50,12 @@ namespace Atlas {
 
             BuildPhysicalDeviceFeatures(physicalDevice);
 
-            VkDeviceCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.pQueueCreateInfos = queueCreateInfos.data();
-            createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
-
-            createInfo.pEnabledFeatures = nullptr;
-            createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
-            createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-
-            if (enableValidationLayers) {
-                createInfo.enabledLayerCount = uint32_t(instance->layerNames.size());
-                createInfo.ppEnabledLayerNames = instance->layerNames.data();
-            } else {
-                createInfo.enabledLayerCount = 0;
-            }
-
 #ifdef AE_OS_MACOS
-            VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-            // This is hacked since I can't get it to work otherwise
-            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
-            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
-            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
-            portabilityFeatures.pNext = &features;
-
-            // This feature struct is the last one in the pNext chain for now
-            createInfo.pNext = &portabilityFeatures;
-
             setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-#else
-            createInfo.pNext = &features;
 #endif
 
-            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
+            // Uses the physical device structures generated above
+            CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
 
             for (auto& queueFamily : queueFamilyIndices.families) {
                 for (auto& queue : queueFamily.queues) {
@@ -109,6 +88,16 @@ namespace Atlas {
             // Deleted pipelines might reference e.g. still active frame buffers,
             // so delete all of the memoryManager content before cleaning the rest
             memoryManager->DestroyAllImmediate();
+
+            for (auto& tlasRef : tlases) {
+                assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
+                tlasRef.reset();
+            }
+
+            for (auto& blasRef : blases) {
+                assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
+                blasRef.reset();
+            }
 
             for (auto& pipelineRef : pipelines) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
@@ -313,6 +302,26 @@ namespace Atlas {
             queryPools.push_back(pool);
 
             return pool;
+
+        }
+
+        Ref<BLAS> GraphicsDevice::CreateBLAS(BLASDesc desc) {
+
+            auto blas = std::make_shared<BLAS>(this, desc);
+
+            blases.push_back(blas);
+
+            return blas;
+
+        }
+
+        Ref<TLAS> GraphicsDevice::CreateTLAS(TLASDesc desc) {
+
+            auto tlas = std::make_shared<TLAS>(this, desc);
+
+            tlases.push_back(tlas);
+
+            return tlas;
 
         }
 
@@ -877,6 +886,95 @@ namespace Atlas {
 
         }
 
+        void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
+
+            StructureChainBuilder propertiesBuilder(deviceProperties);
+
+            accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+            rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+            propertiesBuilder.Append(rayTracingPipelineProperties);
+            propertiesBuilder.Append(accelerationStructureProperties);
+
+            vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
+
+        }
+
+        void GraphicsDevice::CreateDevice(const std::vector<VkDeviceQueueCreateInfo>& queueCreateInfos,
+            const std::vector<const char*>& extensions, bool enableValidationLayers) {
+
+            VkDeviceCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+            createInfo.pQueueCreateInfos = queueCreateInfos.data();
+            createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
+
+            createInfo.pEnabledFeatures = nullptr;
+            createInfo.enabledExtensionCount = uint32_t(extensions.size());
+            createInfo.ppEnabledExtensionNames = extensions.data();
+
+            if (enableValidationLayers) {
+                createInfo.enabledLayerCount = uint32_t(instance->layerNames.size());
+                createInfo.ppEnabledLayerNames = instance->layerNames.data();
+            }
+            else {
+                createInfo.enabledLayerCount = 0;
+            }
+
+            std::set<std::string> availableExtensions;
+
+            for (auto extensionName : extensions) {
+                availableExtensions.insert(extensionName);
+            }
+
+            StructureChainBuilder featureBuilder(createInfo);
+
+            VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature = {};
+            accelerationStructureFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
+            VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeature = {};
+            rtPipelineFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+            
+            VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
+            rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+
+            // Check for ray tracing extension support
+            if (availableExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+                availableExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+                availableExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+
+                accelerationStructureFeature.accelerationStructure = VK_TRUE;
+                rtPipelineFeature.rayTracingPipeline = VK_TRUE;
+                rayQueryFeature.rayQuery = VK_TRUE;
+               
+                featureBuilder.Append(accelerationStructureFeature);
+                featureBuilder.Append(rtPipelineFeature);
+                featureBuilder.Append(rayQueryFeature);
+
+                support.hardwareRayTracing = true;
+            }
+
+            if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+                support.shaderPrintf = true;
+            }
+
+#ifdef AE_OS_MACOS
+            VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
+            // This is hacked since I can't get it to work otherwise
+            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
+            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
+            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+
+            // This feature struct is the last one in the pNext chain for now
+            featureBuilder.Append(portabilityFeatures);
+#endif
+            featureBuilder.Append(features);
+
+            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
+
+        }
+
         bool GraphicsDevice::CheckForWindowResize() {
 
             auto nativeWindow = surface->GetNativeWindow();
@@ -1016,6 +1114,26 @@ namespace Atlas {
                     poolRef.swap(queryPools.back());
                     memoryManager->DestroyAllocation(queryPools.back());
                     queryPools.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < blases.size(); i++) {
+                auto& blasRef = blases[i];
+                if (blasRef.use_count() == 1) {
+                    blasRef.swap(blases.back());
+                    memoryManager->DestroyAllocation(blases.back());
+                    blases.pop_back();
+                    i--;
+                }
+            }
+
+            for (size_t i = 0; i < tlases.size(); i++) {
+                auto& tlasRef = tlases[i];
+                if (tlasRef.use_count() == 1) {
+                    tlasRef.swap(tlases.back());
+                    memoryManager->DestroyAllocation(tlases.back());
+                    tlases.pop_back();
                     i--;
                 }
             }

@@ -20,11 +20,21 @@ namespace Atlas {
 
         const std::string ShaderStageFile::GetGlslCode(const std::vector<std::string>& macros) const {
 
+            auto device = GraphicsDevice::DefaultDevice;
+
             std::string glslCode = "";
             glslCode.append("#version 460\n\n");
 
             if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
                 glslCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
+            }
+
+            if (device->support.shaderPrintf) {
+                glslCode.append("#define AE_SHADER_PRINTF\n");
+            }
+
+            if (device->support.hardwareRayTracing) {
+                glslCode.append("#define AE_HARDWARE_RAYTRACING\n");
             }
 
             // Extensions have to come first

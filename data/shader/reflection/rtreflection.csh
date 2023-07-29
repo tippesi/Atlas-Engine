@@ -51,7 +51,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
 
 vec3 EvaluateHit(inout Ray ray);
 vec3 EvaluateDirectLight(inout Surface surface);
-bool CheckVisibility(Surface surface, float lightDistance);
+float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 
@@ -127,7 +127,12 @@ void main() {
                 vec3 radiance = vec3(0.0);
 
                 if (material.roughness < 0.9) {
-                    HitClosest(ray, 0.0, INF);
+#ifdef OPACITY_CHECK
+                    HitClosestTransparency(ray, 10e-9, INF);
+#else
+                    HitClosest(ray, 10e-9, INF);
+#endif
+
                     radiance = EvaluateHit(ray);
                 }
                 else {
@@ -211,24 +216,24 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
         surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
-    radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+    radiance *= CheckVisibility(surface, lightDistance);
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;
 
 }
 
-bool CheckVisibility(Surface surface, float lightDistance) {
+float CheckVisibility(Surface surface, float lightDistance) {
 
     if (surface.NdotL > 0.0) {
         Ray ray;
         ray.direction = surface.L;
-        ray.origin = surface.P + surface.N * 2.0 * EPSILON;
+        ray.origin = surface.P + surface.N * EPSILON;
         ray.inverseDirection = 1.0 / ray.direction;
-        return HitAny(ray, 0.0, lightDistance - 4.0 * EPSILON) == false;
+        return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
-        return false;
+        return 0.0;
     }
 
 }

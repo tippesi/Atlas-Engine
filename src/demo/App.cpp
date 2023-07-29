@@ -352,6 +352,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Visualize probes##DDGI", &volume->debug);
                 ImGui::Checkbox("Sample emissives##DDGI", &volume->sampleEmissives);
                 ImGui::Checkbox("Use shadow map##DDGI", &volume->useShadowMap);
+                ImGui::Checkbox("Opacity check##DDGI", &volume->opacityCheck);
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
                     ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
                         This is only possible when cascaded shadow maps are not used.");
@@ -436,6 +437,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
                 ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
                 ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
+                ImGui::Checkbox("Opacity check##Ao", &ao->opacityCheck);
                 ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
                 ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
@@ -450,6 +452,7 @@ void App::Render(float deltaTime) {
                         This is only possible when cascaded shadow maps are not used.");
                 }
                 ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
+                ImGui::Checkbox("Opacity check##Reflection", &reflection->opacityCheck);
                 // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
                 ImGui::SliderFloat("Radiance Limit##Reflection", &reflection->radianceLimit, 0.0f, 10.0f);
                 ImGui::SliderFloat("Bias##Reflection", &reflection->bias, 0.0f, 1.0f);
@@ -787,7 +790,7 @@ bool App::LoadScene() {
             "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-
+ 
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
             "metallicwall.gltf", ModelLoader::LoadMesh, false, transform, 2048
@@ -799,6 +802,7 @@ bool App::LoadScene() {
             "chromesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
+       
 
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -977,8 +981,6 @@ bool App::LoadScene() {
         );
         meshes.push_back(mesh);
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
-
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
         directionalLight->intensity = 100.0f;
@@ -1091,7 +1093,7 @@ void App::CheckLoadScene() {
 
     for (auto& mesh : meshes) {
         mesh->invertUVs = true;
-        mesh->cullBackFaces = false;
+        mesh->cullBackFaces = true;
     }
 
     if (sceneSelection == CORNELL) {

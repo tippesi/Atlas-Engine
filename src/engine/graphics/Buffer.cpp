@@ -8,7 +8,7 @@ namespace Atlas {
     namespace Graphics {
 
         Buffer::Buffer(GraphicsDevice *device, const BufferDesc& desc) : usageFlags(desc.usageFlags),
-            domain(desc.domain), size(desc.size), memoryManager(device->memoryManager) {
+            domain(desc.domain), size(desc.size), alignment(desc.alignment), memoryManager(device->memoryManager) {
 
             VkBufferCreateInfo bufferInfo = {};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -26,8 +26,14 @@ namespace Atlas {
                 allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             }
 
-            VK_CHECK(vmaCreateBuffer(memoryManager->allocator, &bufferInfo,
-                &allocationCreateInfo, &buffer, &allocation, nullptr))
+            if (alignment == 0) {
+                VK_CHECK(vmaCreateBuffer(memoryManager->allocator, &bufferInfo,
+                    &allocationCreateInfo, &buffer, &allocation, nullptr))
+            }
+            else {
+                VK_CHECK(vmaCreateBufferWithAlignment(memoryManager->allocator, &bufferInfo,
+                    &allocationCreateInfo, alignment, &buffer, &allocation, nullptr))
+            }
 
             if (desc.data) SetData(desc.data, 0, desc.size);
 
@@ -80,11 +86,21 @@ namespace Atlas {
 
         }
 
+        VkDeviceAddress Buffer::GetDeviceAddress() {
+
+            VkBufferDeviceAddressInfo info = {};
+            info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+            info.buffer = buffer;
+            
+            return vkGetBufferDeviceAddress(memoryManager->device->device, &info);
+
+        }
+
         size_t Buffer::GetAlignedSize(size_t size) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
-            size_t minUboAlignment = device->deviceProperties.limits.minUniformBufferOffsetAlignment;
+            size_t minUboAlignment = device->deviceProperties.properties.limits.minUniformBufferOffsetAlignment;
             size_t alignedSize = size;
             if (minUboAlignment > 0) {
                 alignedSize = (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);

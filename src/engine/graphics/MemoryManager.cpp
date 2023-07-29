@@ -23,6 +23,8 @@ namespace Atlas {
             allocatorInfo.instance = device->instance->GetNativeInstance();
             allocatorInfo.pVulkanFunctions = &vulkanFunctions;
             allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+            allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
@@ -111,6 +113,20 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyAllocation(Ref<BLAS>& allocation) {
+
+            deleteBLASAllocations
+                .emplace_back(DeleteResource<BLAS> { allocation, frameIndex + framesToDeletion });
+
+        }
+
+        void MemoryManager::DestroyAllocation(Ref<TLAS>& allocation) {
+
+            deleteTLASAllocations
+                .emplace_back(DeleteResource<TLAS> { allocation, frameIndex + framesToDeletion });
+
+        }
+
         void MemoryManager::DestroyRawAllocation(std::function<void()> destroyLambda) {
 
             deleteRawAllocations.push_back(DeleteLambda { destroyLambda, frameIndex + framesToDeletion } );
@@ -143,6 +159,8 @@ namespace Atlas {
                 deleteRawAllocations.pop_front();
             }
 
+            DeleteAllocations(deleteTLASAllocations);
+            DeleteAllocations(deleteBLASAllocations);
             DeleteAllocations(deletePipelineAllocations);
             DeleteAllocations(deleteFrameBufferAllocations);
             DeleteAllocations(deleteRenderPassAllocations);

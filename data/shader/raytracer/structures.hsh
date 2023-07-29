@@ -130,9 +130,10 @@ struct RaytraceMaterial {
 };
 
 struct PackedLight {
-    vec4 data0;
-    vec4 data1;
+    vec4 P;
     vec4 N;
+    vec4 color;
+    vec4 data;
 };
 
 struct Light {
@@ -142,7 +143,8 @@ struct Light {
     vec3 radiance;
 
     uint type;
-    uint idx;
+    int triangleIdx;
+    int instanceIdx;
 
     float pdf;
     float area;
@@ -156,14 +158,14 @@ struct LightSample {
     float pdf;
 };
 
-struct BVHInstance {
+struct Instance {
     mat3x4 inverseMatrix;
 
     int blasOffset;
-
+    int triangleOffset;
+    
     int padding0;
     int padding1;
-    int padding2;
 };
 
 layout(push_constant) uniform constants {

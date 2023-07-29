@@ -117,6 +117,9 @@ namespace Atlas {
 
         void MeshData::BuildBVH() {
 
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            bool hardwareRayTracing = device->support.hardwareRayTracing;
+
             struct Triangle {
                 vec3 v0;
                 vec3 v1;
@@ -193,10 +196,18 @@ namespace Atlas {
 
             }
 
-            // Generate BVH
-            auto bvh = Volume::BVH(aabbs, bvhTriangles);
+            Volume::BVH bvh;
+            if (!hardwareRayTracing) {
+                // Generate BVH
+                bvh = Volume::BVH(aabbs, bvhTriangles);
 
-            for (auto& bvhTriangle : bvh.data) {
+                bvhTriangles.clear();
+                bvhTriangles.shrink_to_fit();
+            }
+
+            auto& data = hardwareRayTracing ? bvhTriangles : bvh.data;
+
+            for (auto& bvhTriangle : data) {
 
                 auto& triangle = triangles[bvhTriangle.idx];
 
@@ -256,30 +267,34 @@ namespace Atlas {
 
                 gpuTriangles.push_back(gpuTriangle);
 
-                BVHTriangle gpuBvhTriangle;
-                gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
-                gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float&>(triangle.materialIdx));
-                gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
+                if (!hardwareRayTracing) {
+                    BVHTriangle gpuBvhTriangle;
+                    gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
+                    gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float &>(triangle.materialIdx));
+                    gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
 
-                gpuBvhTriangles.push_back(gpuBvhTriangle);
+                    gpuBvhTriangles.push_back(gpuBvhTriangle);
+                }
 
             }
 
-            triangles.clear();
-            triangles.shrink_to_fit();
+            if (!hardwareRayTracing) {
+                triangles.clear();
+                triangles.shrink_to_fit();
 
-            auto& nodes = bvh.GetTree();
-            gpuBvhNodes = std::vector<GPUBVHNode>(nodes.size());
-            // Copy to GPU format
-            for (size_t i = 0; i < nodes.size(); i++) {
-                gpuBvhNodes[i].leftPtr = nodes[i].leftPtr;
-                gpuBvhNodes[i].rightPtr = nodes[i].rightPtr;
+                auto& nodes = bvh.GetTree();
+                gpuBvhNodes = std::vector<GPUBVHNode>(nodes.size());
+                // Copy to GPU format
+                for (size_t i = 0; i < nodes.size(); i++) {
+                    gpuBvhNodes[i].leftPtr = nodes[i].leftPtr;
+                    gpuBvhNodes[i].rightPtr = nodes[i].rightPtr;
 
-                gpuBvhNodes[i].leftAABB.min = nodes[i].leftAABB.min;
-                gpuBvhNodes[i].leftAABB.max = nodes[i].leftAABB.max;
+                    gpuBvhNodes[i].leftAABB.min = nodes[i].leftAABB.min;
+                    gpuBvhNodes[i].leftAABB.max = nodes[i].leftAABB.max;
 
-                gpuBvhNodes[i].rightAABB.min = nodes[i].rightAABB.min;
-                gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
+                    gpuBvhNodes[i].rightAABB.min = nodes[i].rightAABB.min;
+                    gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
+                }
             }
 
         }

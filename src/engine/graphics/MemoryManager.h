@@ -11,6 +11,8 @@
 #include "Descriptor.h"
 #include "QueryPool.h"
 #include "Framebuffer.h"
+#include "BLAS.h"
+#include "TLAS.h"
 #include "MemoryTransferManager.h"
 
 #define VMA_STATS_STRING_ENABLED 0
@@ -74,6 +76,10 @@ namespace Atlas {
 
             void DestroyAllocation(Ref<QueryPool>& allocation);
 
+            void DestroyAllocation(Ref<BLAS>& allocation);
+
+            void DestroyAllocation(Ref<TLAS>& allocation);
+
             void DestroyRawAllocation(std::function<void(void)> destroyLambda);
 
             void DestroyAllImmediate();
@@ -118,6 +124,8 @@ namespace Atlas {
             std::deque<DeleteResource<Sampler>> deleteSamplerAllocations;
             std::deque<DeleteResource<DescriptorPool>> deleteDescriptorPoolAllocations;
             std::deque<DeleteResource<QueryPool>> deleteQueryPoolAllocations;
+            std::deque<DeleteResource<BLAS>> deleteBLASAllocations;
+            std::deque<DeleteResource<TLAS>> deleteTLASAllocations;
 
         };
 

@@ -91,11 +91,13 @@ void main() {
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
 
-                //float hit = 1.0 - HitAnyShadow(ray, 0.0, uniforms.radius);
-                //ao += hit;
-
+#ifdef OPACITY_CHECK
+                float hit = 1.0 - HitAnyTransparency(ray, 0.0, uniforms.radius);
+                ao += hit;
+#else
                 bool hit = HitAny(ray, 0.0, uniforms.radius);
                 ao += hit ? 1.0 : 0.0;
+#endif
 
             }
 

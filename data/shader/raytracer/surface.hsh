@@ -27,7 +27,7 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
     return mat;
 }
 
-void TransformTriangle(inout Triangle tri, BVHInstance instance) {
+void TransformTriangle(inout Triangle tri, Instance instance) {
 
     mat4 matrix = inverse(mat4(transpose(instance.inverseMatrix)));
 
@@ -50,7 +50,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     RaytraceMaterial rayMat;
     Material mat = GetTriangleMaterial(tri, rayMat);
 
-    BVHInstance instance = bvhInstances[ray.hitInstanceID];
+    Instance instance = bvhInstances[ray.hitInstanceID];
     TransformTriangle(tri, instance);
 
     // The ray doesn't provide us with the barrycentric coordinates

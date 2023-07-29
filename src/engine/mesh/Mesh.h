@@ -10,6 +10,7 @@
 #include "Impostor.h"
 
 #include "../graphics/Buffer.h"
+#include "../graphics/BLAS.h"
 
 namespace Atlas {
 
@@ -38,7 +39,12 @@ namespace Atlas {
 
             MeshData data;
             MeshMobility mobility = MeshMobility::Stationary;
+
             Buffer::VertexArray vertexArray;
+            Buffer::IndexBuffer indexBuffer;
+            Buffer::VertexBuffer vertexBuffer;
+
+            Ref<Graphics::BLAS> blas = nullptr;
 
             Impostor* impostor = nullptr;
 

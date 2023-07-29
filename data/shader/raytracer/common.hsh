@@ -95,18 +95,19 @@ Light UnpackLight(PackedLight compressed) {
 
     Light light;
 
-    light.P = compressed.data0.xyz;
-    light.N = vec3(compressed.N);
+    light.P = compressed.P.xyz;
+    light.N = compressed.N.xyz;
 
-    light.radiance = vec3(compressed.data0.w, 
-        compressed.data1.w, compressed.N.w);
+    light.radiance = compressed.color.rgb;
 
-    uint data = floatBitsToUint(compressed.data1.x);
+    uint data = floatBitsToUint(compressed.data.x);
     light.type = ((data & 0xF0000000u) >> 28u);
-    light.idx = (data & 0x0FFFFFFFu);
 
-    light.pdf = compressed.data1.y;
-    light.area = compressed.data1.z;
+    light.triangleIdx = int(data & 0x0FFFFFFFu);
+    light.instanceIdx = floatBitsToInt(compressed.data.w);
+
+    light.pdf = compressed.data.y;
+    light.area = compressed.data.z;
     light.brightness = dot(light.radiance, vec3(0.33333));
 
     return light;
