@@ -54,7 +54,7 @@ private:
 
     void CopyActors(Ref<Atlas::Scene::Scene> otherScene);
 
-    SceneSelection sceneSelection = BISTRO;
+    SceneSelection sceneSelection = SPONZA;
 
     Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
     Atlas::RenderTarget renderTarget;

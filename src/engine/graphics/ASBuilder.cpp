@@ -55,11 +55,12 @@ namespace Atlas {
 
             size_t totalSize = 0;
             size_t maxScratchSize = 0;
+            size_t compactionCount = 0;
 
             for(size_t i = 0; i < blases.size(); i++) {
                 totalSize += blases[i]->sizesInfo.accelerationStructureSize;
                 maxScratchSize = std::max(maxScratchSize, size_t(blases[i]->sizesInfo.buildScratchSize));
-                // nbCompactions += hasFlag(buildAs[idx].buildInfo.flags, VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+                compactionCount += blases[i]->buildGeometryInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR ? 1 : 0;
             }
 
             auto scratchBufferDesc = BufferDesc {
@@ -72,6 +73,13 @@ namespace Atlas {
 
             size_t batchSize = 0;
             size_t batchSizeLimit = 256000000;
+
+            /*
+            auto queryPoolDesc = QueryPoolDesc{
+                .queryType = 
+            }
+            auto queryPool = device->CreateQueryPool();
+            */
 
             std::vector<uint32_t> batchIndices;
             for (size_t i = 0; i < blases.size(); i++) {
@@ -154,6 +162,37 @@ namespace Atlas {
                 auto buildInfo = blas->buildGeometryInfo;
                 buildInfo.dstAccelerationStructure = blas->accelerationStructure;
                 buildInfo.scratchData.deviceAddress = scratchAddress;
+
+                commandList->BuildBLAS(blas, buildInfo);
+
+                commandList->MemoryBarrier(VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+            }
+
+            commandList->EndCommands();
+
+            device->FlushCommandList(commandList);
+
+        }
+
+        void ASBuilder::CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
+            std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool) {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            auto commandList = device->GetCommandList(GraphicsQueue, true);
+
+            commandList->BeginCommands();
+
+            
+
+            for (const auto idx : batchIndices) {
+                auto& blas = blases[idx];
+
+                auto buildInfo = blas->buildGeometryInfo;
+                buildInfo.dstAccelerationStructure = blas->accelerationStructure;
 
                 commandList->BuildBLAS(blas, buildInfo);
 

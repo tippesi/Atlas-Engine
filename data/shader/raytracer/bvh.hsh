@@ -143,7 +143,7 @@ void CheckLeafClosestTransparency(inout Ray ray, int nodePtr, float tmin, float 
     int triPtr = ~nodePtr;
     bool endOfNode = false;
     
-    vec3 sol, v0, v1, v2, n;
+    vec3 sol, v0, v1, v2, n;    
     
     while (!endOfNode) {
         Triangle tri = UnpackTriangle(triangles[triPtr]);
@@ -157,7 +157,7 @@ void CheckLeafClosestTransparency(inout Ray ray, int nodePtr, float tmin, float 
         d = dot(n, ray.direction);
 #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
-        if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
+        if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0 && sol.x < ray.hitDistance) {
             float opacity = GetOpacity(tri, sol.yz, 0);
             if (opacity > 0.0) {
                 ray.hitDistance = sol.x;
