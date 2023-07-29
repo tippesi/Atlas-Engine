@@ -506,7 +506,6 @@ namespace Atlas {
 
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
-            uint32_t instanceCount = 0;
             for (auto actor : actors) {
                 if (!actor->mesh.IsLoaded())
                     continue;

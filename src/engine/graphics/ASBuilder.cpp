@@ -58,7 +58,7 @@ namespace Atlas {
 
             for(size_t i = 0; i < blases.size(); i++) {
                 maxScratchSize = std::max(maxScratchSize, size_t(blases[i]->sizesInfo.buildScratchSize));
-                compactionCount += blases[i]->buildGeometryInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR ? 1 : 0;
+                compactionCount += (blases[i]->buildGeometryInfo.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ? 1 : 0;
             }
 
             auto scratchBufferDesc = BufferDesc {
