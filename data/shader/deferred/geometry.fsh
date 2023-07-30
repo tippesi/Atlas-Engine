@@ -43,8 +43,12 @@ layout(location=2) in vec2 texCoordVS;
 layout(location=3) in vec3 ndcCurrentVS;
 layout(location=4) in vec3 ndcLastVS;
 
+#ifdef VERTEX_COLORS
+layout(location=5) in vec4 vertexColorsVS;
+#endif
+
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=5) in mat3 TBN;
+layout(location=6) in mat3 TBN;
 #endif
 
 #ifdef GENERATE_IMPOSTOR
@@ -126,8 +130,14 @@ void main() {
     baseColorFS = vec4(1.0);
 #endif
 
+#if defined(OPACITY_MAP) || defined(VERTEX_COLORS)
+    float opacity = 1.0;
 #ifdef OPACITY_MAP
-    float opacity = texture(opacityMap, texCoords).r;
+    opacity *= texture(opacityMap, texCoords).r;
+#endif
+#ifdef VERTEX_COLORS
+    opacity *= vertexColorsVS.a;
+#endif
     if (opacity < 0.2)
         discard;
 #endif
@@ -143,6 +153,10 @@ void main() {
 
 #ifdef GENERATE_IMPOSTOR
     baseColorFS *= vec4(baseColor, 1.0);
+#endif
+
+#ifdef VERTEX_COLORS
+    baseColorFS *= vertexColorsVS.rgb;
 #endif
 
     geometryNormalFS = normalize(normalVS);

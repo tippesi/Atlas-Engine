@@ -13,6 +13,7 @@ namespace Atlas {
         vec4 v2;
         vec4 d0;
         vec4 d1;
+        vec4 d2;
     };
 
     struct BVHTriangle {

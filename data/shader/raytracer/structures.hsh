@@ -50,6 +50,7 @@ struct PackedTriangle {
     vec4 v2;
     vec4 d0;
     vec4 d1;
+    vec4 d2;
     
 };
 
@@ -69,6 +70,10 @@ struct Triangle {
     vec2 uv0;
     vec2 uv1;
     vec2 uv2;
+
+    vec4 color0;
+    vec4 color1;
+    vec4 color2;
     
     int materialIndex;
     bool endOfNode;

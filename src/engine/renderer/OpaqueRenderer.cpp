@@ -148,6 +148,9 @@ namespace Atlas {
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
             }
+            if (mesh->data.colors.ContainsData()) {
+                macros.push_back("VERTEX_COLORS");
+            }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

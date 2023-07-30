@@ -21,6 +21,10 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=3) in vec4 vTangent;
 #endif
 
+#ifdef VERTEX_COLORS
+layout(location=4) in vec4 vVertexColors;
+#endif
+
 layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
     mat4 currentMatrices[];
 };
@@ -35,12 +39,16 @@ layout(location=1) out vec3 normalVS;
 #ifdef TEX_COORDS
 layout(location=2) out vec2 texCoordVS;
 #endif
-
 layout(location=3) out vec3 ndcCurrentVS;
 layout(location=4) out vec3 ndcLastVS;
 
+#ifdef VERTEX_COLORS
+layout(location=5) out vec4 vertexColorsVS;
+#endif
+
+// Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=5) out mat3 TBN;
+layout(location=6) out mat3 TBN;
 #endif
 
 layout(push_constant) uniform constants {
@@ -109,6 +117,10 @@ void main() {
         cross(tangent, normal));
 
     TBN = mat3(tangent, bitangent, normal);
+#endif
+
+#ifdef VERTEX_COLORS
+    vertexColorsVS = vVertexColors;
 #endif
     
 }

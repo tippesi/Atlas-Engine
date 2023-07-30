@@ -20,6 +20,7 @@ namespace Atlas {
             texCoords = DataComponent<vec2>(ComponentFormat::HalfFloat);
             normals = DataComponent<vec4>(ComponentFormat::PackedFloat);
             tangents = DataComponent<vec4>(ComponentFormat::PackedFloat);
+            colors = DataComponent<vec4>(ComponentFormat::PackedColor);
 
         }
 
@@ -133,6 +134,10 @@ namespace Atlas {
                 vec2 uv1;
                 vec2 uv2;
 
+                vec4 color0;
+                vec4 color1;
+                vec4 color2;
+
                 int32_t materialIdx;
             };
 
@@ -174,6 +179,17 @@ namespace Atlas {
                         triangles[k].uv0 = texCoords.Get()[idx0];
                         triangles[k].uv1 = texCoords.Get()[idx1];
                         triangles[k].uv2 = texCoords.Get()[idx2];
+                    }
+
+                    if (colors.ContainsData()) {
+                        triangles[k].color0 = colors.Get()[idx0];
+                        triangles[k].color1 = colors.Get()[idx1];
+                        triangles[k].color2 = colors.Get()[idx2];
+                    }
+                    else {
+                        triangles[k].color0 = vec4(1.0f);
+                        triangles[k].color1 = vec4(1.0f);
+                        triangles[k].color2 = vec4(1.0f);
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
@@ -246,6 +262,10 @@ namespace Atlas {
                 auto puv1 = glm::packHalf2x16(triangle.uv1);
                 auto puv2 = glm::packHalf2x16(triangle.uv2);
 
+                auto pc0 = glm::packUnorm4x8(triangle.color0);
+                auto pc1 = glm::packUnorm4x8(triangle.color1);
+                auto pc2 = glm::packUnorm4x8(triangle.color2);
+
                 auto cn0 = reinterpret_cast<float&>(pn0);
                 auto cn1 = reinterpret_cast<float&>(pn1);
                 auto cn2 = reinterpret_cast<float&>(pn2);
@@ -257,6 +277,10 @@ namespace Atlas {
                 auto cuv1 = reinterpret_cast<float&>(puv1);
                 auto cuv2 = reinterpret_cast<float&>(puv2);
 
+                auto cc0 = reinterpret_cast<float&>(pc0);
+                auto cc1 = reinterpret_cast<float&>(pc1);
+                auto cc2 = reinterpret_cast<float&>(pc2);
+
                 GPUTriangle gpuTriangle;
 
                 gpuTriangle.v0 = vec4(triangle.v0, cn0);
@@ -264,6 +288,7 @@ namespace Atlas {
                 gpuTriangle.v2 = vec4(triangle.v2, cn2);
                 gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
                 gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
+                gpuTriangle.d2 = vec4(cc0, cc1, cc2, 0.0f);
 
                 gpuTriangles.push_back(gpuTriangle);
 
@@ -309,6 +334,7 @@ namespace Atlas {
             texCoords = that.texCoords;
             normals = that.normals;
             tangents = that.tangents;
+            colors = that.colors;
 
             indexCount = that.indexCount;
             vertexCount = that.vertexCount;

@@ -341,6 +341,7 @@ namespace Atlas {
                 uint32_t vertexCount = assimpMesh->mNumVertices;
 
                 bool hasTangents = false;
+                bool hasVertexColors = false;
                 bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
 
                 Mesh::MeshData meshData;
@@ -358,10 +359,13 @@ namespace Atlas {
                     meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
                 }
 
+                hasVertexColors = assimpMesh->HasVertexColors(0);
+
                 meshData.vertices.SetType(Mesh::ComponentFormat::Float);
                 meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
                 meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
                 meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+                meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
                 meshData.SetIndexCount(indexCount);
                 meshData.SetVertexCount(vertexCount);
@@ -372,6 +376,7 @@ namespace Atlas {
                 std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
                 std::vector<vec4> normals(vertexCount);
                 std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
+                std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
 
                 meshData.materials = std::vector<Material>(1);
 
@@ -419,6 +424,11 @@ namespace Atlas {
                             assimpMesh->mTextureCoords[0][j].y);
                     }
 
+                    if (hasVertexColors && assimpMesh->mColors[0] != nullptr) {
+                        colors[j] = vec4(assimpMesh->mColors[0][j].r, assimpMesh->mColors[0][j].g,
+                            assimpMesh->mColors[0][j].b, assimpMesh->mColors[0][j].a);
+                    }
+
                 }
 
                 // Copy indices
@@ -438,6 +448,8 @@ namespace Atlas {
                     meshData.texCoords.Set(texCoords);
                 if (hasTangents)
                     meshData.tangents.Set(tangents);
+                if (hasVertexColors)
+                    meshData.colors.Set(colors);
 
                 meshData.subData.push_back({
                     .indicesOffset = 0,

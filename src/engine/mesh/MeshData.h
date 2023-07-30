@@ -96,6 +96,7 @@ namespace Atlas {
             DataComponent<vec2> texCoords;
             DataComponent<vec4> normals;
             DataComponent<vec4> tangents;
+            DataComponent<vec4> colors;
 
             std::vector<Material> materials;
             std::vector<MeshSubData> subData;
