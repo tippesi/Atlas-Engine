@@ -9,7 +9,7 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
-            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 256, 1);
+            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
         }
 
         void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -37,7 +37,7 @@ namespace Atlas {
 
             auto materials = terrain->storage.GetMaterials();
 
-            std::vector<TerrainMaterial> terrainMaterials(materials.size());
+            std::vector<TerrainMaterial> terrainMaterials(128);
 
             for (size_t i = 0; i < materials.size(); i++) {
                 if (materials[i]) {

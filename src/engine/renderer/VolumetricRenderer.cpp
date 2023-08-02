@@ -24,7 +24,7 @@ namespace Atlas {
 
             volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricUniforms));
             resolveUniformBuffer = Buffer::UniformBuffer(sizeof(ResolveUniforms));
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
+            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
 
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
