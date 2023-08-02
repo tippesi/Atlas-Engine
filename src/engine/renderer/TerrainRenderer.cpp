@@ -9,7 +9,7 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
-            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial), 256);
+            terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 256, 1);
         }
 
         void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -41,7 +41,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < materials.size(); i++) {
                 if (materials[i]) {
-                    terrainMaterials[i].idx = (uint32_t)materialMap[&materials[i]];
+                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].get()];
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
                     terrainMaterials[i].ao = materials[i]->ao;
@@ -52,7 +52,7 @@ namespace Atlas {
 
             }
 
-            terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, terrainMaterials.size());
+            terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
 
             terrain->vertexArray.Bind(commandList);
 

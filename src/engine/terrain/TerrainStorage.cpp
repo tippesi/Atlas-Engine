@@ -68,7 +68,7 @@ namespace Atlas {
         void TerrainStorage::BeginMaterialWrite() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
-            commandList = device->GetCommandList(Graphics::QueueType::TransferQueue, true);
+            commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
 
             commandList->BeginCommands();
 

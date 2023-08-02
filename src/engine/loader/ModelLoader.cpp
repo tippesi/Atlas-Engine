@@ -623,7 +623,9 @@ namespace Atlas {
                 aiString aiPath;
                 material->GetTexture(aiTextureType_OPACITY, 0, &aiPath);
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
-                images.opacityImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+                if (path != images.baseColorImage->fileName) {
+                    images.opacityImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
+                }
             }
             if ((material->GetTextureCount(aiTextureType_NORMALS) > 0 ||
                 (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))

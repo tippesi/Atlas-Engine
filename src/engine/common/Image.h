@@ -526,6 +526,9 @@ namespace Atlas {
             auto& level = mipLevels[mipLevel];
             Image<T> image(level.width, level.height, channelCount);
 
+            image.fileFormat = this->fileFormat;
+            image.fileName = this->fileName;
+
             image.SetData(GetChannelData(channelOffset, channelCount, mipLevel));
 
             return CreateRef(image);
