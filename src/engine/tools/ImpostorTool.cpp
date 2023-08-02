@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Tools {
 
-        Mesh::Impostor* ImpostorTool::GenerateImpostor(Mesh::Mesh* mesh, 
+        Ref<Mesh::Impostor> ImpostorTool::GenerateImpostor(ResourceHandle<Mesh::Mesh> mesh,
             int32_t views, int32_t resolution, bool octahedron) {
 
             const bool orthoProjection = false;
@@ -15,7 +15,7 @@ namespace Atlas {
             Renderer::ImpostorRenderer renderer;
             Viewport viewport(0, 0, resolution, resolution);
 
-            auto impostor = new Mesh::Impostor(views, resolution);
+            auto impostor = CreateRef<Mesh::Impostor>(views, resolution);
 
             std::vector<mat4> viewMatrices;
 
@@ -71,7 +71,7 @@ namespace Atlas {
                     1.0f, 1.0f, dist + 2.0f * radius);
             }
 
-            renderer.Generate(&viewport, viewMatrices, projectionMatrix, mesh, impostor);
+            renderer.Generate(&viewport, viewMatrices, projectionMatrix, mesh.Get().get(), impostor.get());
 
             impostor->center = center;
             impostor->radius = radius;

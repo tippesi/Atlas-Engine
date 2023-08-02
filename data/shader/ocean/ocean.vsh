@@ -6,6 +6,7 @@
 layout(location=0) in vec3 vPosition;
 
 layout(set = 3, binding = 0) uniform sampler2D displacementMap;
+layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
 
 layout(location=0) out vec4 fClipSpace;
 layout(location=1) out vec3 fPosition;
@@ -17,6 +18,7 @@ layout(location=6) out float shoreScaling;
 layout(location=7) out vec3 ndcCurrent;
 layout(location=8) out vec3 ndcLast;
 layout(location=9) out vec3 normalShoreWave;
+layout(location=10) out float perlinScale;
 
 const float shoreStartScaling = 15.0;
 const float shoreOffsetScaling = 5.0;
@@ -51,6 +53,9 @@ vec3 stitch(vec3 position) {
     
 }
 
+const float fadeoutDistance = 100.0;
+const float fadeoutFalloff = 0.2;
+
 void main() {
     
     float waterDepth = shoreStartScaling;
@@ -82,10 +87,20 @@ void main() {
     vec2 vTexCoord = vec2(fPosition.x, fPosition.z) / Uniforms.tiling;
 
     fOriginalCoord = fPosition;
-    
-    fPosition.y += textureLod(displacementMap, vTexCoord, 0.0).r * Uniforms.displacementScale * shoreScaling;
-    fPosition.x += textureLod(displacementMap, vTexCoord, 0.0).g * Uniforms.choppyScale * shoreScaling;
-    fPosition.z += textureLod(displacementMap, vTexCoord, 0.0).b * Uniforms.choppyScale * shoreScaling;
+
+    vec3 displacement = textureLod(displacementMap, vTexCoord, 0.0).grb;
+    displacement.y *= Uniforms.displacementScale * shoreScaling;
+    displacement.x *= Uniforms.choppyScale * shoreScaling;
+    displacement.z *= Uniforms.choppyScale * shoreScaling;
+
+    float perlin = textureLod(perlinNoiseMap, vTexCoord * 0.125 * 0.5, 0.0).r;
+
+    vec3 octaveFadeout = vec3(400.0, 200.0, 100.0);
+
+    perlinScale = sqr(clamp(perlin, 0.0, 1.0));
+    displacement = perlinScale * displacement;
+
+    fPosition += displacement;
 
     vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(fPosition + vec3(0.1, 0.0, 0.0));
     vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(fPosition + vec3(0.0, 0.0, 0.1));

@@ -827,7 +827,7 @@ namespace Atlas {
 
                 materials.push_back(packed);
 
-                materialMap[impostor] =  idx++;
+                materialMap[impostor.get()] =  idx++;
             }
             
 

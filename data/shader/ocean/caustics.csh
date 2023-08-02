@@ -33,6 +33,9 @@ float caustics(vec3 pos) {
              )), 7.0) * 25.0;
 }
 
+const float fadeoutDistance = 40.0;
+const float fadeoutFalloff = 0.2;
+
 void main() {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
@@ -48,8 +51,11 @@ void main() {
     vec3 viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
 
+    float distanceToCamera = length(viewSpacePos);
+    float fadeout = min(1.0, 1.0 - (distanceToCamera - fadeoutDistance) / (fadeoutFalloff * fadeoutDistance));
+
     float waterDepth = PushConstants.waterHeight - pixelPos.y;
-    if (waterDepth <= 0.0)
+    if (waterDepth <= 0.0 || fadeout <= 0.0)
         return;
 
     float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, vec3(0.0, 1.0, 0.0), 0.0), 0.0);
@@ -69,7 +75,7 @@ void main() {
     vec3 data = imageLoad(refractionImage, pixel).rgb;
 
     shadowFactor = saturate(2.0 * dot(data, vec3(0.333)));
-    intensity *= shadowFactor;
+    intensity *= shadowFactor * fadeout;
 
     imageStore(refractionImage, pixel, vec4(data + intensity, 0.0));
 

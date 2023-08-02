@@ -7,7 +7,7 @@ namespace Atlas {
         void TerrainRenderer::Init(Graphics::GraphicsDevice* device) {
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
-            auto usage = Buffer::BufferUsageBits::HostAccessBit || Buffer::BufferUsageBits::MultiBufferedBit ||
+            auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
             terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial), 256);
         }

@@ -67,7 +67,7 @@ namespace Atlas {
                         .radius = mesh->impostor->radius,
                         .views = mesh->impostor->views,
                         .cutoff = mesh->impostor->cutoff,
-                        .materialIdx = uint32_t(materialMap[mesh->impostor]),
+                        .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
                     };
                     commandList->PushConstants("constants", &constants);
 

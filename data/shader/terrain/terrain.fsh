@@ -144,19 +144,19 @@ void main() {
     vec2 splatOffset = floor(off);
     off = off - floor(off);
 
-    float texel = 1.0 / (8.0 * PushConstants.patchSize);
-    tex = (floor(coords / PushConstants.nodeSideLength / texel) + splatOffset) * texel;
-    indices.x = textureLod(splatMap, tex, 0).r;
-    indices.y = textureLod(splatMap, tex + vec2(texel, 0.0), 0).r;
-    indices.z = textureLod(splatMap, tex + vec2(0.0, texel), 0).r;
-    indices.w = textureLod(splatMap, tex + vec2(texel, texel), 0).r;
-    
-    vec4 tiling = vec4(
-        Materials.materials[indices.x].tiling,
-        Materials.materials[indices.y].tiling,
-        Materials.materials[indices.z].tiling,
-        Materials.materials[indices.w].tiling
-    );
+	float texel = 1.0 / (8.0 * PushConstants.patchSize);
+	tex = (floor(coords / PushConstants.nodeSideLength / texel) + splatOffset) * texel;
+	indices.x = nonuniformEXT(textureLod(splatMap, tex, 0).r);
+	indices.y = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, 0.0), 0).r);
+	indices.z = nonuniformEXT(textureLod(splatMap, tex + vec2(0.0, texel), 0).r);
+	indices.w = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, texel), 0).r);
+	
+	vec4 tiling = vec4(
+		Materials.materials[indices.x].tiling,
+		Materials.materials[indices.y].tiling,
+		Materials.materials[indices.z].tiling,
+		Materials.materials[indices.w].tiling
+	);
 
     baseColorFS = SampleBaseColor(off, indices, tiling);
 

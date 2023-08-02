@@ -42,6 +42,7 @@ namespace Atlas {
                 vec4 terrainTranslation;
 
                 float terrainHeightScale;
+                int32_t N;
             };
 
             struct alignas(16) Cascade {

@@ -11,7 +11,7 @@ namespace Atlas {
 
             this->device = device;
 
-            Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
+            Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f, false);
 
             causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
 
@@ -166,7 +166,7 @@ namespace Atlas {
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
             }
             
             {
@@ -199,6 +199,7 @@ namespace Atlas {
                     .shoreWaveSpeed = ocean->shoreWaveSpeed,
                     .shoreWaveLength = ocean->shoreWaveLength,
                     .terrainSideLength = -1.0f,
+                    .N = ocean->simulation.N,
                 };
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
@@ -232,6 +233,8 @@ namespace Atlas {
 
                 uniformBuffer.SetData(&uniforms, 0);
                 uniformBuffer.Bind(commandList, 3, 11);
+
+                ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
 
                 auto renderList = ocean->GetRenderList();
 
@@ -276,7 +279,7 @@ namespace Atlas {
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 
-            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             pipelineDesc.rasterizer.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 

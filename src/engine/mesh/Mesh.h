@@ -46,7 +46,7 @@ namespace Atlas {
 
             Ref<Graphics::BLAS> blas = nullptr;
 
-            Impostor* impostor = nullptr;
+            Ref<Impostor> impostor = nullptr;
 
             bool cullBackFaces = true;
             bool depthTest = true;

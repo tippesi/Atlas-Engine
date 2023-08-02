@@ -130,7 +130,7 @@ void main() {
     baseColorFS = vec4(1.0);
 #endif
 
-#if defined(OPACITY_MAP) || defined(VERTEX_COLORS)
+#if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
 #ifdef OPACITY_MAP
     opacity *= texture(opacityMap, texCoords).r;
