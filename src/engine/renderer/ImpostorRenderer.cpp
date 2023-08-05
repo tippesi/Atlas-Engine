@@ -24,6 +24,10 @@ namespace Atlas {
                 int views = 1;
                 float cutoff = 1.0f;
                 uint32_t materialIdx = 0;
+
+                float depthNear;
+                float depthFar;
+                float depthDiff;
             };
 
             Graphics::Profiler::BeginQuery("Impostors");
@@ -34,7 +38,7 @@ namespace Atlas {
 
             for (uint8_t i = 0; i < 2; i++) {
 
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, i > 0);
+                auto config = GetPipelineConfig(target->gBufferFrameBuffer, i > 0, true);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
@@ -57,9 +61,10 @@ namespace Atlas {
                     mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
                     mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
                     mesh->impostor->normalTexture.Bind(commandList, 3, 2);
+                    mesh->impostor->depthTexture.Bind(commandList, 3, 3);
 
                     // Base 0 is used by the materials
-                    mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 3);
+                    mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
 
                     PushConstants constants = {
                         .center = vec4(mesh->impostor->center, 0.0f),
@@ -68,6 +73,10 @@ namespace Atlas {
                         .views = mesh->impostor->views,
                         .cutoff = mesh->impostor->cutoff,
                         .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
+
+                        .depthNear = camera->nearPlane,
+                        .depthFar = camera->farPlane,
+                        .depthDiff = camera->farPlane - camera->nearPlane,
                     };
                     commandList->PushConstants("constants", &constants);
 
@@ -81,7 +90,7 @@ namespace Atlas {
         }
 
         void ImpostorRenderer::Generate(Atlas::Viewport *viewport, const std::vector<mat4> &viewMatrices,
-            glm::mat4 projectionMatrix, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
+            glm::mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
             struct alignas(16) PushConstants {
                 mat4 vMatrix = mat4(1.0f);
@@ -93,6 +102,7 @@ namespace Atlas {
                 uint32_t twoSided = 0;
                 float normalScale = 1.0f;
                 float displacementScale = 1.0f;
+                float distanceToPlaneCenter = 1.0f;
             };
 
             struct Uniforms {
@@ -126,6 +136,7 @@ namespace Atlas {
                     {impostor->baseColorTexture.image,            layout, access},
                     {impostor->normalTexture.image,               layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                    {impostor->depthTexture.image, layout, access},
                     {frameBuffer->GetDepthImage(), layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
@@ -137,6 +148,7 @@ namespace Atlas {
                 frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture.image, i, 0);
                 frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 1);
                 frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 2);
+                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture.image, i, 3);
                 frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -175,6 +187,7 @@ namespace Atlas {
                         .twoSided = material->twoSided ? 1u : 0u,
                         .normalScale = material->normalScale,
                         .displacementScale = material->displacementScale,
+                        .distanceToPlaneCenter = distToCenter
                     };
                     commandList->PushConstants("constants", &pushConstants);
 
@@ -236,6 +249,7 @@ namespace Atlas {
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
+                {.imageFormat = VK_FORMAT_R16_SFLOAT},
                 {.imageFormat = VK_FORMAT_D32_SFLOAT}
             };
 
@@ -246,8 +260,8 @@ namespace Atlas {
             }
 
             auto renderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {attachments[0], attachments[1], attachments[2]},
-                .depthAttachment = {attachments[3]},
+                .colorAttachments = {attachments[0], attachments[1], attachments[2], attachments[3]},
+                .depthAttachment = {attachments[4]},
                 .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
             };
             auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
@@ -257,7 +271,8 @@ namespace Atlas {
                 .colorAttachments = {
                     {impostor->baseColorTexture.image, 0, true},
                     {impostor->normalTexture.image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture.image, 0, true}
+                    {impostor->roughnessMetalnessAoTexture.image, 0, true},
+                    {impostor->depthTexture.image, 0, true}
                 },
                 .depthAttachment = {depthImage, 0, true},
                 .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
@@ -266,7 +281,8 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer, bool interpolation) {
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+            bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostor.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -280,8 +296,11 @@ namespace Atlas {
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
-            return interpolation ? PipelineConfig(shaderConfig, pipelineDesc, {"INTERPOLATION"}) :
-                   PipelineConfig(shaderConfig, pipelineDesc);
+            std::vector<std::string> macros;
+            if (interpolation) macros.push_back("INTERPOLATION");
+            if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+
+            return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
         }
 

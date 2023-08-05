@@ -24,9 +24,22 @@ layout(location=9) flat in float weight2VS;
 layout(location=4) flat in int indexVS;
 #endif
 
+#ifdef PIXEL_DEPTH_OFFSET
+layout(location=10) flat in int instanceIndexVS;
+layout(location=11) in vec4 modelPositionVS;
+#endif
+
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 layout(set = 3, binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
 layout(set = 3, binding = 2) uniform sampler2DArray normalMap;
+
+#ifdef PIXEL_DEPTH_OFFSET
+layout(set = 3, binding = 3) uniform sampler2DArray depthMap;
+#endif
+
+layout(std430, set = 1, binding = 2) buffer Matrices {
+    mat4 matrices[];
+};
 
 layout(push_constant) uniform constants {
     vec4 center;
@@ -35,9 +48,15 @@ layout(push_constant) uniform constants {
     int views;
     float cutoff;
     uint materialIdx;
+
+    float depthNear;
+    float depthFar;
+    float depthDiff;
 } PushConstants;
 
 void main() {
+
+    mat4 mMatrix = matrices[instanceIndexVS];
 
     vec4 baseColor;
 
@@ -101,5 +120,23 @@ void main() {
 	velocityFS = (ndcL - ndcC) * 0.5;
 
     materialIdxFS = PushConstants.materialIdx;
+
+#ifdef PIXEL_DEPTH_OFFSET
+#ifdef INTERPOLATION
+    float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS))).r;
+    float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS))).r;
+    float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS))).r;
+
+    float depthOffset = weight0VS * depth0 +
+        weight1VS * depth1 +
+        weight2VS * depth2;
+#else
+    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS))).r;
+#endif
+    vec4 modelPosition = modelPositionVS + vec4(0.0, 0.0, depthOffset, 0.0);
+    vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * mMatrix * vec4(modelPosition.xyz, 1.0);
+    float modelDepth = modelPositionFS.z / modelPositionFS.w;
+    gl_FragDepth = modelDepth;
+#endif
 
 }

@@ -26,6 +26,7 @@ namespace Atlas {
             Texture::Texture2DArray baseColorTexture;
             Texture::Texture2DArray roughnessMetalnessAoTexture;
             Texture::Texture2DArray normalTexture;
+            Texture::Texture2DArray depthTexture;
 
             Buffer::Buffer viewPlaneBuffer;
 
@@ -38,6 +39,7 @@ namespace Atlas {
             float cutoff = 0.7f;
 
             bool interpolation = false;
+            bool pixelDepthOffset = true;
             vec3 transmissiveColor = vec3(0.0f);
 
         private:

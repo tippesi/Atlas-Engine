@@ -14,7 +14,7 @@ layout(std430, set = 1, binding = 2) buffer Matrices {
 	mat4 matrices[];
 };
 
-layout (std430, set = 3, binding = 3) buffer ViewPlanes {
+layout (std430, set = 3, binding = 4) buffer ViewPlanes {
 	ViewPlane viewPlanes[];
 };
 
@@ -35,6 +35,11 @@ layout(location=9) flat out float weight2VS;
 layout(location=4) flat out int indexVS;
 #endif
 
+#ifdef PIXEL_DEPTH_OFFSET
+layout(location=10) flat out int instanceIndexVS;
+layout(location=11) out vec4 modelPositionVS;
+#endif
+
 layout(push_constant) uniform constants {
 	vec4 center;
 
@@ -42,6 +47,10 @@ layout(push_constant) uniform constants {
 	int views;
 	float cutoff;
 	uint materialIdx;
+
+	float depthNear;
+	float depthFar;
+	float depthDiff;
 } PushConstants;
 
 const bool hemiOctahedron = true;
@@ -63,7 +72,7 @@ vec4 InterpolateTriangle(vec2 coord) {
 }
 
 void main() {
-	
+
 	mat4 mMatrix = matrices[gl_InstanceIndex];
     texCoordVS = 0.5 * vPosition + 0.5;
 	
@@ -130,9 +139,14 @@ void main() {
 	right = viewPlane.right;
 #endif
 
-    vec4 modelPosition = vec4((normalize(up.xyz) * position.y
+	vec4 modelPosition = vec4((normalize(up.xyz) * position.y
         + normalize(right.xyz) * position.x) + PushConstants.center.xyz, 1.0);
 	positionVS = vec3(globalData.vMatrix * mMatrix * modelPosition);
+
+#ifdef PIXEL_DEPTH_OFFSET
+	instanceIndexVS = int(gl_InstanceIndex);
+	modelPositionVS = modelPosition;
+#endif
 
     gl_Position =  globalData.pMatrix * vec4(positionVS, 1.0);
 

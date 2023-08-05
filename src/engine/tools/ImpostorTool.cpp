@@ -71,7 +71,7 @@ namespace Atlas {
                     1.0f, 1.0f, dist + 2.0f * radius);
             }
 
-            renderer.Generate(&viewport, viewMatrices, projectionMatrix, mesh.Get().get(), impostor.get());
+            renderer.Generate(&viewport, viewMatrices, projectionMatrix, dist, mesh.Get().get(), impostor.get());
 
             impostor->center = center;
             impostor->radius = radius;
@@ -86,6 +86,7 @@ namespace Atlas {
             impostor->baseColorTexture.GenerateMipmap();
             impostor->roughnessMetalnessAoTexture.GenerateMipmap();
             impostor->normalTexture.GenerateMipmap();
+            impostor->depthTexture.GenerateMipmap();
 
             return impostor;
 

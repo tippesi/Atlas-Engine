@@ -16,6 +16,9 @@ namespace Atlas {
             normalTexture = Atlas::Texture::Texture2DArray(resolution,
                 resolution, views * views, VK_FORMAT_R8G8B8A8_UNORM,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+            depthTexture = Atlas::Texture::Texture2DArray(resolution,
+                resolution, views * views, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 
         }
 
