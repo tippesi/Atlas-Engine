@@ -80,6 +80,8 @@ namespace Atlas {
                 int downsampled2x;
                 int cloudsEnabled;
                 int fogEnabled;
+                float innerCloudRadius;
+                float planetRadius;
             };
 
             Filter blurFilter;

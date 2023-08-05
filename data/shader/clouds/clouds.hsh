@@ -129,3 +129,26 @@ float ComputeScattering(float lightDotView, float g) {
     result /= (4.0 * 3.14 * pow(1.0 + g2 - (2.0 * g) * lightDotView, 1.5));
     return result;
 }
+
+vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
+
+    vec3 L = pos - origin;
+    float DT = dot(L, direction);
+    float r2 = radius * radius;
+
+    float ct2 = dot(L, L) - DT * DT;
+
+    if (ct2 > r2)
+    return vec2(-1.0);
+
+    float AT = sqrt(r2 - ct2);
+    float BT = AT;
+
+    float AO = DT - AT;
+    float BO = DT + BT;
+
+    float minDist = min(AO, BO);
+    float maxDist = max(AO, BO);
+
+    return vec2(minDist, maxDist);
+}

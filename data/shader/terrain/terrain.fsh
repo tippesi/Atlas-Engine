@@ -1,4 +1,4 @@
-#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_nonuniform_qualifier : require
 
 #include <terrainMaterial.hsh>
 #include <../globals.hsh>
@@ -56,10 +56,10 @@ layout(location=3) in vec3 ndcLast;
 
 vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling) {
     
-    vec3 q00 = texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).rgb;
-    vec3 q10 = indices.y != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).rgb : q00;
-    vec3 q01 = indices.z != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).rgb : q00;
-    vec3 q11 = indices.w != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).rgb : q00;
+    vec3 q00 = nonuniformEXT(texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).rgb);
+    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).rgb : q00);
+    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).rgb : q00);
+    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).rgb : q00);
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);
@@ -72,10 +72,10 @@ vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling) {
 
 float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling) {
 
-    float q00 = texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).r;
-    float q10 = indices.y != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).r : q00;
-    float q01 = indices.z != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).r : q00;
-    float q11 = indices.w != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).r : q00;
+    float q00 = nonuniformEXT(texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).r);
+    float q10 = nonuniformEXT(indices.y != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).r : q00);
+    float q01 = nonuniformEXT(indices.z != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).r : q00);
+    float q11 = nonuniformEXT(indices.w != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).r : q00);
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -88,10 +88,10 @@ float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling) {
 
 float SampleAo(vec2 off, uvec4 indices, vec4 tiling) {
     
-    float q00 = texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).r;
-    float q10 = indices.y != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).r : q00;
-    float q01 = indices.z != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).r : q00;
-    float q11 = indices.w != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).r : q00;
+    float q00 = nonuniformEXT(texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).r);
+    float q10 = nonuniformEXT(indices.y != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).r : q00);
+    float q01 = nonuniformEXT(indices.z != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).r : q00);
+    float q11 = nonuniformEXT(indices.w != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).r : q00);
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -104,10 +104,10 @@ float SampleAo(vec2 off, uvec4 indices, vec4 tiling) {
 
 vec3 SampleNormal(vec2 off, uvec4 indices, vec4 tiling) {
 
-    vec3 q00 = texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).rgb;
-    vec3 q10 = indices.y != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).rgb : q00;
-    vec3 q01 = indices.z != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).rgb : q00;
-    vec3 q11 = indices.w != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).rgb : q00;
+    vec3 q00 = nonuniformEXT(texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x)))).rgb);
+    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y)))).rgb : q00);
+    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z)))).rgb : q00);
+    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w)))).rgb : q00);
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);
@@ -144,45 +144,48 @@ void main() {
     vec2 splatOffset = floor(off);
     off = off - floor(off);
 
-	float texel = 1.0 / (8.0 * PushConstants.patchSize);
-	tex = (floor(coords / PushConstants.nodeSideLength / texel) + splatOffset) * texel;
-	indices.x = nonuniformEXT(textureLod(splatMap, tex, 0).r);
-	indices.y = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, 0.0), 0).r);
-	indices.z = nonuniformEXT(textureLod(splatMap, tex + vec2(0.0, texel), 0).r);
-	indices.w = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, texel), 0).r);
-	
-	vec4 tiling = vec4(
-		Materials.materials[indices.x].tiling,
-		Materials.materials[indices.y].tiling,
-		Materials.materials[indices.z].tiling,
-		Materials.materials[indices.w].tiling
-	);
+    splatOffset = vec2(0.0);
+    off = tex - floor(tex);
+
+    float texel = 1.0 / (8.0 * PushConstants.patchSize);
+    tex = nonuniformEXT((floor(coords / PushConstants.nodeSideLength / texel) + splatOffset) * texel);
+    indices.x = nonuniformEXT(textureLod(splatMap, tex, 0).r);
+    indices.y = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, 0.0), 0).r);
+    indices.z = nonuniformEXT(textureLod(splatMap, tex + vec2(0.0, texel), 0).r);
+    indices.w = nonuniformEXT(textureLod(splatMap, tex + vec2(texel, texel), 0).r);
+    
+    vec4 tiling = vec4(
+        Materials.materials[nonuniformEXT(indices.x)].tiling,
+        Materials.materials[nonuniformEXT(indices.y)].tiling,
+        Materials.materials[nonuniformEXT(indices.z)].tiling,
+        Materials.materials[nonuniformEXT(indices.w)].tiling
+    );
 
     baseColorFS = SampleBaseColor(off, indices, tiling);
 
     float roughness = Interpolate(
-        Materials.materials[indices.x].roughness,
-        Materials.materials[indices.y].roughness,
-        Materials.materials[indices.z].roughness,
-        Materials.materials[indices.w].roughness,
+        Materials.materials[nonuniformEXT(indices.x)].roughness,
+        Materials.materials[nonuniformEXT(indices.y)].roughness,
+        Materials.materials[nonuniformEXT(indices.z)].roughness,
+        Materials.materials[nonuniformEXT(indices.w)].roughness,
         off
     );
     float metalness = Interpolate(
-        Materials.materials[indices.x].metalness,
-        Materials.materials[indices.y].metalness,
-        Materials.materials[indices.z].metalness,
-        Materials.materials[indices.w].metalness,
+        Materials.materials[nonuniformEXT(indices.x)].metalness,
+        Materials.materials[nonuniformEXT(indices.y)].metalness,
+        Materials.materials[nonuniformEXT(indices.z)].metalness,
+        Materials.materials[nonuniformEXT(indices.w)].metalness,
         off
         );
     float ao = Interpolate(
-        Materials.materials[indices.x].ao,
-        Materials.materials[indices.y].ao,
-        Materials.materials[indices.z].ao,
-        Materials.materials[indices.w].ao,
+        Materials.materials[nonuniformEXT(indices.x)].ao,
+        Materials.materials[nonuniformEXT(indices.y)].ao,
+        Materials.materials[nonuniformEXT(indices.z)].ao,
+        Materials.materials[nonuniformEXT(indices.w)].ao,
         off
         );
     
-    materialIdxFS = Materials.materials[indices.x].idx;
+    materialIdxFS = Materials.materials[nonuniformEXT(indices.x)].idx;
 
     // We should move this to the tesselation evaluation shader
     // so we only have to calculate these normals once. After that 
@@ -197,10 +200,10 @@ void main() {
 #ifndef DISTANCE
     // Normal mapping only for near tiles
     float normalScale = Interpolate(
-        Materials.materials[indices.x].normalScale,
-        Materials.materials[indices.y].normalScale,
-        Materials.materials[indices.z].normalScale,
-        Materials.materials[indices.w].normalScale,
+        Materials.materials[nonuniformEXT(indices.x)].normalScale,
+        Materials.materials[nonuniformEXT(indices.y)].normalScale,
+        Materials.materials[nonuniformEXT(indices.z)].normalScale,
+        Materials.materials[nonuniformEXT(indices.w)].normalScale,
         off
         );
     normalFS = SampleNormal(off, indices, tiling);
@@ -215,7 +218,7 @@ void main() {
     roughness *= SampleRoughness(off, indices, tiling);
 #else
     normalFS = norm;
-#endif    
+#endif
     
     normalFS = 0.5 * normalize(mat3(globalData.vMatrix) * normalFS) + 0.5;
     roughnessMetalnessAoFS = vec3(roughness, metalness, ao);

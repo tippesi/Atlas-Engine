@@ -9,6 +9,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
+
 #include <fog.hsh>
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricImage;

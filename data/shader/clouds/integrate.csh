@@ -116,29 +116,6 @@ float GetNoiseOffset(int idx) {
 
 }
 
-vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
-
-    vec3 L = pos - origin;
-    float DT = dot(L, direction);
-    float r2 = radius * radius;
-    
-    float ct2 = dot(L, L) - DT * DT;
-    
-    if (ct2 > r2)
-        return vec2(-1.0);
-    
-    float AT = sqrt(r2 - ct2);
-    float BT = AT;
-    
-    float AO = DT - AT;
-    float BO = DT + BT;
-
-    float minDist = min(AO, BO);
-    float maxDist = max(AO, BO);
-
-    return vec2(minDist, maxDist);
-}
-
 float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
      vec3 weatherData, float lod) {
 
@@ -299,8 +276,6 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
         return vec4(0.0, 0.0, 0.0, 1.0);
 
     float rayLength = depth < 1.0 ? min(length(fragPos), outDist - inDist) : outDist - inDist;
-    if (inDist > rayLength && depth < 1.0)
-        return vec4(0.0, 0.0, 0.0, 1.0);
 
     const int sampleCount = uniforms.sampleCount;
     int raySampleCount = max(sampleCount, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
