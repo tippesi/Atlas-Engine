@@ -71,7 +71,8 @@ namespace Atlas {
                     1.0f, 1.0f, dist + 2.0f * radius);
             }
 
-            renderer.Generate(&viewport, viewMatrices, projectionMatrix, dist, mesh.Get().get(), impostor.get());
+            // Distance to center is center offset + one unit vector
+            renderer.Generate(&viewport, viewMatrices, projectionMatrix, dist + 1.0f, mesh.Get().get(), impostor.get());
 
             impostor->center = center;
             impostor->radius = radius;

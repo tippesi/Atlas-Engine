@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
             Graphics::CommandList* commandList, RenderList* renderList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
@@ -25,10 +25,10 @@ namespace Atlas {
                 float cutoff = 1.0f;
                 uint32_t materialIdx = 0;
 
-                float depthNear;
-                float depthFar;
-                float depthDiff;
+                float mipBias = -1.0f;
             };
+
+            auto light = scene->sky.sun;
 
             Graphics::Profiler::BeginQuery("Impostors");
 
@@ -36,53 +36,43 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            for (uint8_t i = 0; i < 2; i++) {
+            for (auto& item : mainPass->meshToInstancesMap) {
 
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, i > 0, true);
+                auto meshId = item.first;
+                auto instance = item.second;
+
+                auto mesh = mainPass->meshIdToMeshMap[meshId];
+
+                // If there aren't any impostors there won't be a buffer
+                if (!instance.impostorCount)
+                    continue;
+
+                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
 
-                for (auto& item : mainPass->meshToInstancesMap) {
+                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
+                mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
+                mesh->impostor->normalTexture.Bind(commandList, 3, 2);
+                mesh->impostor->depthTexture.Bind(commandList, 3, 3);
 
-                    auto meshId = item.first;
-                    auto instance = item.second;
+                // Base 0 is used by the materials
+                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
 
-                    auto mesh = mainPass->meshIdToMeshMap[meshId];
+                PushConstants constants = {
+                    .center = vec4(mesh->impostor->center, 0.0f),
 
-                    // If there aren't any impostors there won't be a buffer
-                    if (!instance.impostorCount)
-                        continue;
+                    .radius = mesh->impostor->radius,
+                    .views = mesh->impostor->views,
+                    .cutoff = mesh->impostor->cutoff,
+                    .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
 
-                    if (!mesh->impostor->interpolation && i > 0 ||
-                        mesh->impostor->interpolation && i == 0)
-                        continue;
+                    .mipBias = mesh->impostor->mipBias
+                };
+                commandList->PushConstants("constants", &constants);
 
-                    mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                    mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
-                    mesh->impostor->normalTexture.Bind(commandList, 3, 2);
-                    mesh->impostor->depthTexture.Bind(commandList, 3, 3);
-
-                    // Base 0 is used by the materials
-                    mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
-
-                    PushConstants constants = {
-                        .center = vec4(mesh->impostor->center, 0.0f),
-
-                        .radius = mesh->impostor->radius,
-                        .views = mesh->impostor->views,
-                        .cutoff = mesh->impostor->cutoff,
-                        .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
-
-                        .depthNear = camera->nearPlane,
-                        .depthFar = camera->farPlane,
-                        .depthDiff = camera->farPlane - camera->nearPlane,
-                    };
-                    commandList->PushConstants("constants", &constants);
-
-                    commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
-                }
-
+                commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 
             Graphics::Profiler::EndQuery();
@@ -209,6 +199,7 @@ namespace Atlas {
                     {impostor->baseColorTexture.image, layout, access},
                     {impostor->normalTexture.image, layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                    {impostor->depthTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -216,11 +207,13 @@ namespace Atlas {
                 commandList->GenerateMipMap(impostor->baseColorTexture.image);
                 commandList->GenerateMipMap(impostor->normalTexture.image);
                 commandList->GenerateMipMap(impostor->roughnessMetalnessAoTexture.image);
+                commandList->GenerateMipMap(impostor->depthTexture.image);
 
                 imageBarriers = {
                     {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);

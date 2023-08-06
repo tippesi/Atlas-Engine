@@ -76,6 +76,6 @@ void main() {
 	TBN = mat3(tangent, bitangent, normal);
 #endif
 
-	depthVS = positionToCamera.z - PushConstants.distanceToPlaneCenter;
+	depthVS = -length(positionToCamera) + PushConstants.distanceToPlaneCenter;
 	
 }

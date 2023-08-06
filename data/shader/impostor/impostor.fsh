@@ -32,10 +32,7 @@ layout(location=11) in vec4 modelPositionVS;
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 layout(set = 3, binding = 1) uniform sampler2DArray roughnessMetalnessAoMap;
 layout(set = 3, binding = 2) uniform sampler2DArray normalMap;
-
-#ifdef PIXEL_DEPTH_OFFSET
 layout(set = 3, binding = 3) uniform sampler2DArray depthMap;
-#endif
 
 layout(std430, set = 1, binding = 2) buffer Matrices {
     mat4 matrices[];
@@ -49,27 +46,23 @@ layout(push_constant) uniform constants {
     float cutoff;
     uint materialIdx;
 
-    float depthNear;
-    float depthFar;
-    float depthDiff;
+    float mipBias;
 } PushConstants;
 
 void main() {
 
-    mat4 mMatrix = matrices[instanceIndexVS];
-
     vec4 baseColor;
 
 #ifdef INTERPOLATION
-    vec4 baseColor0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS))).rgba;
-    vec4 baseColor1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS))).rgba;
-    vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS))).rgba;
+    vec4 baseColor0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).rgba;
+    vec4 baseColor1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).rgba;
+    vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).rgba;
 
     baseColor = weight0VS * baseColor0 + 
 		weight1VS * baseColor1 + 
 		  weight2VS * baseColor2;
 #else
-    baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS))).rgba;
+    baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).rgba;
 #endif
 
     if (baseColor.a < PushConstants.cutoff)
@@ -78,15 +71,15 @@ void main() {
     baseColorFS = vec4(baseColor.rgb, 1.0);
 
 #ifdef INTERPOLATION
-    vec3 normal0 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index0VS))).rgb - 1.0;
-    vec3 normal1 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index1VS))).rgb - 1.0;
-    vec3 normal2 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index2VS))).rgb - 1.0;
+    vec3 normal0 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).rgb - 1.0;
+    vec3 normal1 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).rgb - 1.0;
+    vec3 normal2 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).rgb - 1.0;
 
     geometryNormalFS = weight0VS * normal0 +
 		weight1VS * normal1 + 
 		weight2VS * normal2;
 #else
-	geometryNormalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS))).rgb - 1.0;
+	geometryNormalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).rgb - 1.0;
 #endif
 
     geometryNormalFS = normalize(vec3(globalData.vMatrix * vec4(geometryNormalFS, 0.0)));
@@ -97,9 +90,9 @@ void main() {
     normalFS = vec3(0.0);
 
 #ifdef INTERPOLATION
-    vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS))).rgb;
-    vec3 matInfo1 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index1VS))).rgb;
-    vec3 matInfo2 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index2VS))).rgb;
+    vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).rgb;
+    vec3 matInfo1 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).rgb;
+    vec3 matInfo2 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).rgb;
 
     vec3 matInfo = weight0VS * matInfo0 + 
 		weight1VS * matInfo1 + 
@@ -107,7 +100,7 @@ void main() {
 
     roughnessMetalnessAoFS = matInfo;
 #else
-	roughnessMetalnessAoFS = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(indexVS))).rgb;
+	roughnessMetalnessAoFS = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).rgb;
 #endif
 
     // Calculate velocity
@@ -122,16 +115,17 @@ void main() {
     materialIdxFS = PushConstants.materialIdx;
 
 #ifdef PIXEL_DEPTH_OFFSET
+    mat4 mMatrix = matrices[instanceIndexVS];
 #ifdef INTERPOLATION
-    float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS))).r;
-    float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS))).r;
-    float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS))).r;
+    float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).r;
+    float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).r;
+    float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).r;
 
     float depthOffset = weight0VS * depth0 +
         weight1VS * depth1 +
         weight2VS * depth2;
 #else
-    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS))).r;
+    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).r;
 #endif
     vec4 modelPosition = modelPositionVS + vec4(0.0, 0.0, depthOffset, 0.0);
     vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * mMatrix * vec4(modelPosition.xyz, 1.0);

@@ -27,14 +27,10 @@ namespace Atlas {
                 float radius = 1.0f;
                 int32_t views = 1;
                 float cutoff = 1.0f;
+                float mipBias = -1.0f;
             };
 
             vertexArray.Bind(commandList);
-
-            auto config = GetPipelineConfig(frameBuffer);
-            auto pipeline = PipelineManager::GetPipeline(config);
-
-            commandList->BindPipeline(pipeline);
 
             for (auto& item : renderPass->meshToInstancesMap) {
                 auto meshId = item.first;
@@ -46,9 +42,15 @@ namespace Atlas {
                 if (!instance.impostorCount)
                     continue;
 
+                auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
+                auto pipeline = PipelineManager::GetPipeline(config);
+
+                commandList->BindPipeline(pipeline);
+
                 mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
                 // Base 0 is used by the materials
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 1);
+                mesh->impostor->depthTexture.Bind(commandList, 3, 2);
 
                 PushConstants constants = {
                     .lightSpaceMatrix = lightSpaceMatrix,
@@ -59,6 +61,8 @@ namespace Atlas {
                     .radius = mesh->impostor->radius,
                     .views = mesh->impostor->views,
                     .cutoff = mesh->impostor->cutoff,
+
+                    .mipBias = mesh->impostor->mipBias
                 };
                 commandList->PushConstants("constants", &constants);
 
@@ -67,7 +71,8 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer) {
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+            bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostorShadow.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -81,7 +86,11 @@ namespace Atlas {
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
-            return PipelineConfig(shaderConfig, pipelineDesc);
+            std::vector<std::string> macros;
+            if (interpolation) macros.push_back("INTERPOLATION");
+            if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+
+            return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
         }
 

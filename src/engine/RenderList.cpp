@@ -157,6 +157,7 @@ namespace Atlas {
                     else {
                         impostorMatrices.push_back(actor->globalMatrix);
                     }
+                    //impostorMatrices.push_back(actor->globalMatrix);
                 }
             }
             else {

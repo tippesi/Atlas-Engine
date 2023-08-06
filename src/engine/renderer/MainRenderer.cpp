@@ -155,7 +155,7 @@ namespace Atlas {
 
                 terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
 
-                impostorRenderer.Render(viewport, target, camera, commandList, &renderList, materialMap);
+                impostorRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
 
                 commandList->EndRenderPass();
 

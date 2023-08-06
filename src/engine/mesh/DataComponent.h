@@ -184,7 +184,7 @@ namespace Atlas {
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
                     case ComponentFormat::PackedFloat: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                     case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
-                    default: assert(0 && "Invalid combination of formats");
+                    default: assert(0 && "Invalid combination of formats"); 
                 }
             }
         }

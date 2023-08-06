@@ -48,9 +48,7 @@ layout(push_constant) uniform constants {
 	float cutoff;
 	uint materialIdx;
 
-	float depthNear;
-	float depthFar;
-	float depthDiff;
+	float mipBias;
 } PushConstants;
 
 const bool hemiOctahedron = true;
