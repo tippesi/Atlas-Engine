@@ -87,6 +87,9 @@ namespace Atlas {
             for (auto layerView : attachmentViews) {
                 vkDestroyImageView(device->device, layerView, nullptr);
             }
+            for (auto layerView : mipMapViews) {
+                vkDestroyImageView(device->device, layerView, nullptr);
+            }
             vmaDestroyImage(memoryManager->allocator, image, allocation);
 
         }

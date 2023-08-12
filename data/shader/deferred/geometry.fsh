@@ -68,12 +68,12 @@ layout(push_constant) uniform constants {
     float displacementScale;
 } PushConstants;
 
-vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) { 
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 #ifdef HEIGHT_MAP
-    // number of depth layers (changes are a bit distracting right now)
-    const float minLayers = 32.0;
-    const float maxLayers = 32.0;
-    float numLayers = 16.0;  
+    float NdotV = max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0);
+    const float minLayers = 4.0;
+    const float maxLayers = 16.0;
+    float numLayers = mix(minLayers, maxLayers, 1.0 - NdotV);
     // calculate the size of each layer
     float layerDepth = 1.0 / numLayers;
     // depth of current layer
