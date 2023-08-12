@@ -161,7 +161,7 @@ void main() {
 
         // Indirect specular BRDF
         vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
-        float mipLevel = sqrt(surface.material.roughness) * 9.0;
+        float mipLevel = sqrt(surface.material.roughness) * 8.0;
         vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
         // We multiply by local sky visibility because the reflection probe only includes the sky
         //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)

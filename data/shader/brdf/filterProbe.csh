@@ -48,11 +48,21 @@ void main() {
         vec3 L;
         float NdotL;
         float pdf;
+
+#ifdef FILTER_DIFFUSE
         ImportanceSampleCosDir(N, Xi, L, NdotL, pdf);
+#else
+
+#endif
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
             /*
+            
+            */
+#ifdef FILTER_DIFFUSE
+            acc.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 1.0);
+#else
             // Only works for specular
             // https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-20-gpu-based-importance-sampling
             float pdf = max(0.0, dot(N, L) / PI);
@@ -60,9 +70,9 @@ void main() {
             float solidAngleTexel = 4.0 * PI / (6.0 * float(size.x * size.y));
             float solidAngleSample = 1.0 / (float(sampleCount) * pdf);
             float lod = clamp(0.5 * log2(float(solidAngleSample / solidAngleTexel)), 0.0, 7.0);
-            */
 
-            acc.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 1.0);
+            
+#endif
         }
 
     }

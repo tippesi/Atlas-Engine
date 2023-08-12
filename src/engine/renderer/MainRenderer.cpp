@@ -623,7 +623,9 @@ namespace Atlas {
                            vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
                            vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh");
+            Graphics::Profiler::BeginQuery("Filter diffuse probe");
+
+            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             struct PushConstants {
@@ -656,6 +658,12 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+            Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
+
+
+
+            Graphics::Profiler::EndQuery();
 
             Graphics::Profiler::EndQuery();
 

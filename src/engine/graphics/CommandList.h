@@ -86,7 +86,7 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<MultiBuffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
-            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding);
+            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel = 0);
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
@@ -180,7 +180,7 @@ namespace Atlas {
             struct DescriptorBindingData {
                 Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Buffer*, uint32_t> dynamicBuffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                Image* images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
@@ -200,7 +200,7 @@ namespace Atlas {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                             buffers[i][j] = nullptr;
                             dynamicBuffers[i][j] = { nullptr, 0u };
-                            images[i][j] = nullptr;
+                            images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
                             tlases[i][j] = nullptr;
                         }
@@ -213,7 +213,7 @@ namespace Atlas {
                     for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         buffers[set][j] = nullptr;
                         dynamicBuffers[set][j] = { nullptr, 0u };
-                        images[set][j] = nullptr;
+                        images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
                         tlases[set][j] = nullptr;
                     }
