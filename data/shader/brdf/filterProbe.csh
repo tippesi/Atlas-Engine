@@ -12,8 +12,11 @@ layout(set = 3, binding = 1) uniform samplerCube cubeMap;
 layout(push_constant) uniform constants {
     int cubeMapMipLevels;
     float roughness;
-    ivec2 filteredSize;
+    uint mipLevel;
 } pushConstants;
+
+vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize);
+vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize);
 
 vec3 CubeCoordToWorld(ivec3 cubeCoord, vec2 cubemapSize) {
     vec2 texCoord = (vec2(cubeCoord.xy) + 0.5) / cubemapSize;
@@ -39,72 +42,92 @@ void main() {
     vec3 worldDirection = CubeCoordToWorld(ivec3(gl_GlobalInvocationID),
         vec2(imageSize(filteredCubeMap).xy));
 
-#ifdef FILTER_DIFFUSE
-    uint sampleCount = 256u;
-#else
-    uint sampleCount = 64u;
-#endif
-    vec4 acc = vec4(0.0);
-
     ivec2 size = textureSize(cubeMap, 0);
     vec3 N = normalize(worldDirection);
 
-    // This is a necessary approximation for the specular probe
-    vec3 V = N;
+#ifdef FILTER_DIFFUSE
+    vec3 color = FilterDiffuse(worldDirection, size);
+#else
+    vec3 color = FilterSpecular(worldDirection, size);
+#endif
 
-    float totalWeight = 0.0;
+    imageStore(filteredCubeMap, ivec3(gl_GlobalInvocationID), vec4(color, 0.0));
+
+}
+
+vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
+
+    const uint sampleCount = 256u;
+
+    vec4 color = vec4(0.0);
+
+    vec3 N = normalize(worldDirection);
 
     for (uint i = 0u; i < sampleCount; i++) {
-        float raySeed = float(pixel.x + pixel.y * size.x) + pushConstants.roughness;
-        float curSeed = float(i);
-        float u0 = random(raySeed, curSeed);
-        curSeed += 0.5;
-        float u1 = random(raySeed, curSeed);
-
-        vec2 Xi = vec2(u0, u1);
+        vec2 Xi = Hammersley(i, sampleCount);
 
         vec3 L;
         float NdotL;
         float pdf;
-
-        float alpha = sqr(pushConstants.roughness);
-
-#ifdef FILTER_DIFFUSE
         ImportanceSampleCosDir(N, Xi, L, NdotL, pdf);
-#else
-        Xi = Hammersley(i, sampleCount);
-
-        ImportanceSampleGGX(Xi, N, V, alpha, L, pdf);
-
-        NdotL = dot(N, L);
-        vec3 H = normalize(L + V);
-#endif
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
-#ifdef FILTER_DIFFUSE
-            acc.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 1.0);
-            totalWeight += 1.0;
-#else
-            float NdotH = saturate(dot(N , H));
-            float LdotH = saturate(dot(L , H));
-
-            pdf = DistributionGGX(NdotH, alpha) / 4.0;
-
-            float solidAngleTexel = 4.0 * PI / (6.0 * float(size.x * size.y));
-            float solidAngleSample = 1.0 / (float(sampleCount) * pdf);
-            float lod = clamp(0.5 * log2(float(solidAngleSample / solidAngleTexel)) + 1.0, 
-                0.0, float(pushConstants.cubeMapMipLevels - 1.0));
-
-            acc.xyz += clamp(textureLod(cubeMap, L, lod).rgb, vec3(0.0), vec3(5.0)) * NdotL;
-            totalWeight += NdotL;
-#endif
+            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 1.0);
+            color.w += 1.0;
         }
 
     }
 
-    vec4 color = acc / totalWeight;
+    return color.rgb / color.a;
 
-    imageStore(filteredCubeMap, ivec3(gl_GlobalInvocationID), color);
+}
+
+vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
+
+    const uint maxSampleCount = 512u;
+
+    uint sampleCount = uint(mix(16.0, float(maxSampleCount), pushConstants.roughness));
+    sampleCount = pushConstants.mipLevel == 0u ? 1u : sampleCount;
+
+    vec4 color = vec4(0.0);
+
+    vec3 N = normalize(worldDirection);
+    vec3 V = N;
+
+    for (uint i = 0u; i < sampleCount; i++) {
+        vec2 Xi = Hammersley(i, sampleCount);
+
+        vec3 L;
+        float NdotL;
+        float pdf;
+        float alpha = sqr(pushConstants.roughness);
+        ImportanceSampleGGXVNDF(Xi, N, V, alpha, L, pdf);
+
+        NdotL = dot(N, L);
+        vec3 H = normalize(L + V);
+        NdotL = saturate(NdotL);
+
+        if (NdotL > 0.0) {
+            float NdotH = saturate(dot(N, H));
+            float LdotH = saturate(dot(L, H));
+
+            pdf = DistributionGGX(NdotH, alpha) / 4.0;
+
+            float solidAngleTexel = 4.0 * PI / (6.0 * float(cubeMapSize.x * cubeMapSize.y));
+            float solidAngleSample = 1.0 / (float(sampleCount) * pdf);
+            float lod = clamp(0.5 * log2(float(solidAngleSample / solidAngleTexel)) + 1.0,
+                0.0, float(pushConstants.cubeMapMipLevels - 1.0));
+
+            lod = pushConstants.mipLevel == 0u ? 0.0 : lod;
+
+            color.xyz += clamp(textureLod(cubeMap, L, lod).rgb, vec3(0.0), vec3(5.0)) * NdotL;
+            color.w += NdotL;
+
+        }
+
+    }
+
+    return color.rgb / color.a;
 
 }

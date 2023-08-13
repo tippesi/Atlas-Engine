@@ -661,7 +661,7 @@ namespace Atlas {
             struct PushConstants {
                 int cubeMapMipLevels;
                 float roughness;
-                ivec2 filteredSize;
+                uint32_t mipLevel;
             };
 
             commandList->BindPipeline(pipeline);
@@ -683,7 +683,7 @@ namespace Atlas {
                 PushConstants pushConstants = {
                     .cubeMapMipLevels = int32_t(probe->cubemap.image->mipLevels),
                     .roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
-                    .filteredSize = res
+                    .mipLevel = i
                 };
                 commandList->PushConstants("constants", &pushConstants);
                
