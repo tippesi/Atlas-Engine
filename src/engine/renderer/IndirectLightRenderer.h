@@ -24,6 +24,7 @@ namespace Atlas {
                 int aoDownsampled2x;
                 int reflectionEnabled;
                 float aoStrength;
+                int specularProbeMipLevels;
             };
 
             PipelineConfig pipelineConfig;

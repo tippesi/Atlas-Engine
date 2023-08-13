@@ -99,7 +99,7 @@ void main() {
 
     if (LdotV > sunAngle) {
         float sunDisk = clamp(0.5 * (LdotV - sunAngle) / (1.0 - sunAngle), 0.0, 1.0);
-        color += uniforms.sunIntensity * sunDisk;
+        color += uniforms.sunIntensity * sunDisk * 5.0;
     }
 
 #ifndef ENVIRONMENT_PROBE

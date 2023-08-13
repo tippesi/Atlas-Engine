@@ -119,6 +119,8 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
         surface.material.metalness);
     surface.F90 = 1.0;
 
+    UpdateSurface(surface);
+
     return surface;
 
 }

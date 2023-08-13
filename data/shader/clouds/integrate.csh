@@ -275,7 +275,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (inDist <= 0.0 && outDist <= 0.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    if (length(fragPos) < inDist)
+    if (length(fragPos) < inDist && depth != 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
     float rayLength = depth < 1.0 ? min(length(fragPos), outDist - inDist) : outDist - inDist;

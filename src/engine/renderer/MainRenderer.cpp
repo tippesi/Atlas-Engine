@@ -172,8 +172,8 @@ namespace Atlas {
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
 
             if (scene->sky.GetProbe()) {
-                commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
-                    scene->sky.GetProbe()->cubemap.sampler, 1, 9);
+                commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
             }
@@ -628,11 +628,6 @@ namespace Atlas {
             auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            struct PushConstants {
-                mat4 vMatrix;
-                mat4 pMatrix;
-            };
-
             commandList->BindPipeline(pipeline);
 
             //auto constantRange = pipeline->shader->GetPushConstantRange("constants");
@@ -653,7 +648,6 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-            // It's only accessed in compute shaders
             commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
@@ -661,7 +655,55 @@ namespace Atlas {
 
             Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
 
+            pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
+            pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
+            struct PushConstants {
+                int cubeMapMipLevels;
+                float roughness;
+                ivec2 filteredSize;
+            };
+
+            commandList->BindPipeline(pipeline);
+
+            commandList->ImageMemoryBarrier(probe->filteredSpecular.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            int32_t width = int32_t(probe->filteredSpecular.width);
+            int32_t height = int32_t(probe->filteredSpecular.height);
+
+            for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
+                Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
+
+                ivec2 res = ivec2(width, height);
+
+                commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
+
+                PushConstants pushConstants = {
+                    .cubeMapMipLevels = int32_t(probe->cubemap.image->mipLevels),
+                    .roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
+                    .filteredSize = res
+                };
+                commandList->PushConstants("constants", &pushConstants);
+               
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 6);
+
+                width /= 2;
+                height /= 2;
+
+                Graphics::Profiler::EndQuery();
+
+            }
+
+            commandList->ImageMemoryBarrier(probe->filteredSpecular.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             Graphics::Profiler::EndQuery();
 
