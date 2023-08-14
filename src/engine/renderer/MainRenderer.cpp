@@ -12,6 +12,7 @@
 #define FEATURE_METALNESS_MAP (1 << 5)
 #define FEATURE_AO_MAP (1 << 6)
 #define FEATURE_TRANSMISSION (1 << 7)
+#define FEATURE_VERTEX_COLORS (1 << 8)
 
 namespace Atlas {
 
@@ -827,6 +828,7 @@ namespace Atlas {
                 packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
                 packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
                 packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
+                packed.features |= material->vertexColors ? FEATURE_VERTEX_COLORS : 0;
 
                 materials.push_back(packed);
 

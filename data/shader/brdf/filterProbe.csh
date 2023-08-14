@@ -85,7 +85,7 @@ vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
 
 vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
 
-    const uint maxSampleCount = 512u;
+    const uint maxSampleCount = 256u;
 
     uint sampleCount = uint(mix(16.0, float(maxSampleCount), pushConstants.roughness));
     sampleCount = pushConstants.mipLevel == 0u ? 1u : sampleCount;
@@ -102,7 +102,7 @@ vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
         float NdotL;
         float pdf;
         float alpha = sqr(pushConstants.roughness);
-        ImportanceSampleGGXVNDF(Xi, N, V, alpha, L, pdf);
+        ImportanceSampleGGX(Xi, N, V, alpha, L, pdf);
 
         NdotL = dot(N, L);
         vec3 H = normalize(L + V);

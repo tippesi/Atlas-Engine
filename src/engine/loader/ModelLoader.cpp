@@ -55,6 +55,7 @@ namespace Atlas {
 
             bool hasTangents = false;
             bool hasTexCoords = false;
+            bool hasVertexColors = false;
 
             struct AssimpMesh {
                 aiMesh* mesh;
@@ -76,7 +77,8 @@ namespace Atlas {
                     vertexCount += mesh->mNumVertices;
                     bonesCount += mesh->mNumBones;
 
-                    hasTexCoords = mesh->mNumUVComponents[0] > 0 ? true : hasTexCoords;
+                    hasTexCoords |= mesh->mNumUVComponents[0] > 0;
+                    hasVertexColors |= mesh->HasVertexColors(0);
                 }
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
@@ -105,6 +107,7 @@ namespace Atlas {
             meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
             meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
             meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+            meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
             meshData.SetIndexCount(indexCount);
             meshData.SetVertexCount(vertexCount);
@@ -128,6 +131,7 @@ namespace Atlas {
             std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
             std::vector<vec4> normals(vertexCount);
             std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
+            std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
             auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
@@ -170,6 +174,8 @@ namespace Atlas {
                 auto& subData = meshData.subData[i];
 
                 LoadMaterial(scene->mMaterials[i], images, material);
+
+                material.vertexColors = hasVertexColors;
 
                 subData.material = &material;
                 subData.materialIdx = i;
@@ -215,6 +221,14 @@ namespace Atlas {
                         if (hasTexCoords && mesh->mTextureCoords[0] != nullptr) {
                             texCoords[usedVertices] = vec2(mesh->mTextureCoords[0][j].x,
                                                            mesh->mTextureCoords[0][j].y);
+                        }
+
+                        if (hasVertexColors && mesh->mColors[0] != nullptr) {
+                            colors[j] = vec4(mesh->mColors[0][j].r, mesh->mColors[0][j].g,
+                                mesh->mColors[0][j].b, mesh->mColors[0][j].a);
+                        }
+                        else if (hasVertexColors && mesh->mColors[0] == nullptr) {
+                            colors[j] = vec4(1.0f);
                         }
 
                         usedVertices++;
@@ -263,6 +277,11 @@ namespace Atlas {
                 meshData.tangents.Set(tangents);
                 tangents.clear();
                 tangents.shrink_to_fit();
+            }
+            if (hasVertexColors) {
+                meshData.colors.Set(colors);
+                colors.clear();
+                colors.shrink_to_fit();
             }
 
             meshData.filename = filename;
@@ -387,6 +406,8 @@ namespace Atlas {
                 auto& material = meshData.materials.front();
 
                 LoadMaterial(assimpMaterial, images, material);
+
+                material.vertexColors = hasVertexColors;
 
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 

@@ -17,7 +17,7 @@ Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;
     Material material = UnpackMaterial(materialIdx);
 
-    if (material.baseColorMap) {
+    if (material.baseColorMap || material.vertexColors) {
         material.baseColor *= textureLod(baseColorTexture, texCoord, 0).rgb;
     }
     if (material.roughnessMap) {

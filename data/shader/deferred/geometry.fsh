@@ -128,6 +128,8 @@ void main() {
 
 #ifdef GENERATE_IMPOSTOR
     baseColorFS = vec4(1.0);
+#else
+    baseColorFS = vec3(1.0);
 #endif
 
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
@@ -147,7 +149,7 @@ void main() {
 #ifdef GENERATE_IMPOSTOR
     baseColorFS *= vec4(textureColor.rgb, 1.0);
 #else
-    baseColorFS = textureColor.rgb;
+    baseColorFS *= textureColor.rgb;
 #endif
 #endif
 
@@ -156,7 +158,7 @@ void main() {
 #endif
 
 #ifdef VERTEX_COLORS
-    baseColorFS *= vertexColorsVS.rgb;
+    baseColorFS = vertexColorsVS.rgb;
 #endif
 
     geometryNormalFS = normalize(normalVS);
