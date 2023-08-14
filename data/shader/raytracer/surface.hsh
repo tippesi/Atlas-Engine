@@ -80,7 +80,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     backfaceHit = rayMat.twoSided > 0 ? false : flipNormal;
     triangleNormal *= flipNormal ? -1.0 : 1.0;
 
-    vec3 geometryNormal = normal;
+    vec3 geometryNormal = triangleNormal;
     
     int level = textureLevel;
     // mat.opacity *= vertexColor.a;
@@ -118,8 +118,6 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     surface.F0 = mix(vec3(0.04), surface.material.baseColor,
         surface.material.metalness);
     surface.F90 = 1.0;
-
-    UpdateSurface(surface);
 
     return surface;
 

@@ -158,7 +158,7 @@ void main() {
 #endif
 
 #ifdef VERTEX_COLORS
-    baseColorFS = vertexColorsVS.rgb;
+    baseColorFS *= vertexColorsVS.rgb;
 #endif
 
     geometryNormalFS = normalize(normalVS);
