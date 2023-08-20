@@ -1,7 +1,5 @@
+#include <../globals.hsh>
 #include <structures.hsh>
-
-uniform vec4 frustumPlanes[6];
-uniform vec3 cameraLocation;
 
 bool IsInstanceVisible(Instance instance, MeshInformation meshInfo) {
 
@@ -9,15 +7,15 @@ bool IsInstanceVisible(Instance instance, MeshInformation meshInfo) {
     vec3 max = meshInfo.aabbMin.xyz + instance.position.xyz;
 
     for (int i = 0; i < 6; i++) {
-        vec3 normal = frustumPlanes[i].xyz;
-        float distance = frustumPlanes[i].w;
+        vec3 normal = globalData.frustumPlanes[i].xyz;
+        float dist = globalData.frustumPlanes[i].w;
         
         vec3 s;
         s.x = normal.x >= 0.0 ? min.x : max.x;
         s.y = normal.y >= 0.0 ? min.y : max.y;
         s.z = normal.z >= 0.0 ? min.z : max.z;
                 
-        if (distance + dot(normal, s) < 0.0) {
+        if (dist + dot(normal, s) < 0.0) {
             return false;
         }
     }
@@ -28,7 +26,7 @@ uint GetBin(Instance instance, MeshInformation meshInfo) {
 
     const float binScale = 32.0;
 
-    float dist = distance(cameraLocation, instance.position.xyz);
+    float dist = distance(globalData.cameraLocation.xyz, instance.position.xyz);
     // return uint(log2((dist * binScale) + 1.0));
     return uint(sqrt(dist * binScale));
     //return uint(sqrt(sqrt(dist * 64000.0)));

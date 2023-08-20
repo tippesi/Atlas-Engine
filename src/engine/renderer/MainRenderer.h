@@ -149,6 +149,7 @@ namespace Atlas {
             };
 
             struct alignas(16) GlobalUniforms {
+                vec4 frustumPlanes[6];
                 mat4 vMatrix;
                 mat4 pMatrix;
                 mat4 ivMatrix;

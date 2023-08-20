@@ -129,6 +129,9 @@ namespace Atlas {
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
+            void DrawIndexedIndirect(const Ref<Buffer>& buffer, size_t offset = 0,
+                uint32_t drawCount = 1, uint32_t stride = 0);
+
             void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
                 uint32_t firstInstance = 0);
 

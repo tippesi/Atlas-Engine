@@ -1,4 +1,6 @@
 #include "VegetationHelper.h"
+
+#include "../../pipeline/PipelineManager.h"
 #include "../../graphics/Profiler.h"
 
 namespace Atlas {
@@ -9,95 +11,99 @@ namespace Atlas {
 
             VegetationHelper::VegetationHelper() {
 
-                /*
-                instanceCullingShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceCulling.csh");
-                instanceCullingShader.Compile();
-
-                instanceBinningShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceBinning.csh");
-                instanceBinningShader.Compile();
-
-                instanceBinningOffsetShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceBinningOffset.csh");
-                instanceBinningOffsetShader.Compile();
-
-                instanceDrawCallShader.AddStage(AE_COMPUTE_STAGE, "vegetation/instanceDrawCall.csh");
-                instanceDrawCallShader.Compile();
-
-                indirectDrawCallBuffer = Buffer::Buffer(AE_DRAW_INDIRECT_BUFFER, 
+                indirectDrawCallBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit,
                     sizeof(DrawElementsIndirectCommand), 0);
 
-                meshInformationBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-                    sizeof(MeshInformation), 0);
+                meshInformationBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                    Buffer::BufferUsageBits::HostAccessBit, sizeof(MeshInformation));
 
-                meshSubdataInformationBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
-                    sizeof(MeshSubdataInformation), 0);
+                meshSubdataInformationBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                    Buffer::BufferUsageBits::HostAccessBit, sizeof(MeshSubdataInformation));
 
-                instanceCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+                instanceCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
                     sizeof(uint32_t), 0);
 
-                binCounterBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, 
+                binCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
                     sizeof(uint32_t), 0);
 
-                binOffsetBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER,
+                binOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
                     sizeof(uint32_t), 0);
-                 */
 
             }
 
-            void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation, Camera* camera) {
+            void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation,
+                Camera* camera, Graphics::CommandList* commandList) {
 
-                /*
+                struct PushConstants {
+                    int32_t instanceCount;
+                    int32_t meshIdx;
+                    uint32_t binCount;
+                };
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+
                 Graphics::Profiler::BeginQuery("Culling");
 
                 auto meshes = vegetation.GetMeshes();
 
                 // Check if the vegetation meshes have changed
                 size_t meshFoundCount = 0;
-                //for (auto mesh : meshes) meshFoundCount += meshToIdxMap.find(mesh) != meshToIdxMap.end() ? 1 : 0;
-                //if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size())
-                    //GenerateBuffers(vegetation);
+                for (auto mesh : meshes) meshFoundCount += meshToIdxMap.find(&mesh) != meshToIdxMap.end() ? 1 : 0;
+                if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size())
+                    GenerateBuffers(vegetation, commandList);
 
-                meshInformationBuffer.BindBase(0);
-                meshSubdataInformationBuffer.BindBase(1);
-                binCounterBuffer.BindBase(2);
-                binOffsetBuffer.BindBase(3);
-                instanceCounterBuffer.BindBase(4);
-                
+                if (!meshFoundCount) return;
+
+                meshInformationBuffer.Bind(commandList, 3, 0);
+                meshSubdataInformationBuffer.Bind(commandList, 3, 1);
+                binCounterBuffer.Bind(commandList, 3, 2);
+                binOffsetBuffer.Bind(commandList, 3, 3);
+                instanceCounterBuffer.Bind(commandList, 3, 4);
 
                 Graphics::Profiler::BeginQuery("Cull and count bins");
 
                 // Cull unseen vegetation and count bins
                 {
-                    instanceCullingShader.Bind();
+                    auto pipelineConfig = PipelineConfig("vegetation/instanceCulling.csh");
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-                    instanceCullingShader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
-                    instanceCullingShader.GetUniform("frustumPlanes")->SetValue(camera->frustum.GetPlanes().data(), 6);
+                    commandList->BindPipeline(pipeline);
                 
                     for (auto mesh : meshes) {
                         auto buffers = vegetation.GetBuffers(mesh);
 
                         auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
-                        auto idx = meshToIdxMap[mesh];
+                        auto idx = meshToIdxMap[&mesh];
 
-                        buffers->instanceData.BindBase(5);
-                        buffers->culledInstanceData.BindBase(6);
+                        buffers->instanceData.Bind(commandList, 3, 5);
+                        buffers->culledInstanceData.Bind(commandList, 3, 6);
 
-
-                        instanceCullingShader.GetUniform("instanceCount")->SetValue(instanceCount);
-                        instanceCullingShader.GetUniform("meshIdx")->SetValue(idx);
-                        instanceCullingShader.GetUniform("binCount")->SetValue(binCount);
+                        PushConstants constants = {
+                            .instanceCount = instanceCount,
+                            .meshIdx = idx,
+                            .binCount = binCount
+                        };
+                        commandList->PushConstants("constants", &constants);
 
                         auto groupSize = 64;
                         auto groupCount = instanceCount / groupSize;
                         groupCount += (groupCount % groupSize == 0) ? 0 : 1;
 
-                        // glDispatchCompute(groupCount, 1, 1);
+                        commandList->Dispatch(groupCount, 1, 1);
                     }
+
+                    commandList->BufferMemoryBarrier(binCounterBuffer.Get(),
+                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
                 }
 
                 Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
 
                 {
-                    instanceBinningOffsetShader.Bind();
+                    auto pipelineConfig = PipelineConfig("vegetation/instanceBinningOffset.csh");
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+                    commandList->BindPipeline(pipeline);
 
                     auto binCount = int32_t(binCounterBuffer.GetElementCount());
 
@@ -105,44 +111,47 @@ namespace Atlas {
                     auto groupCount = binCount / groupSize;
                     groupCount += (groupCount % groupSize == 0) ? 0 : 1;
 
-                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                    // glDispatchCompute(groupCount, 1, 1);
+                    commandList->Dispatch(groupCount, 1, 1);
+
+                    bufferBarriers.push_back({binOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT});
+                    for (auto mesh : meshes) {
+                        auto buffers = vegetation.GetBuffers(mesh);
+                        bufferBarriers.push_back({buffers->culledInstanceData.Get(),
+                            VK_ACCESS_SHADER_READ_BIT});
+                    }
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
                 }
 
                 Graphics::Profiler::EndAndBeginQuery("Sort by bins");
 
                 // Move culled per instance data into own buffer
                 {
-                    instanceBinningShader.Bind();
-                    bool firstMesh = true;
+                    auto pipelineConfig = PipelineConfig("vegetation/instanceBinning.csh");
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-                    instanceBinningShader.GetUniform("cameraLocation")->SetValue(camera->GetLocation());
+                    commandList->BindPipeline(pipeline);
 
                     for (auto mesh : meshes) {
                         auto buffers = vegetation.GetBuffers(mesh);
 
                         auto instanceCount = int32_t(buffers->instanceData.GetElementCount());
-                        auto idx = meshToIdxMap[mesh];
+                        auto idx = meshToIdxMap[&mesh];
 
-                        buffers->culledInstanceData.BindBase(5);
-                        buffers->binnedInstanceData.BindBase(6);
-                        
-                        instanceBinningShader.GetUniform("instanceCount")->SetValue(instanceCount);
-                        instanceBinningShader.GetUniform("meshIdx")->SetValue(idx);
-                        instanceBinningShader.GetUniform("binCount")->SetValue(binCount);
+                        buffers->culledInstanceData.Bind(commandList, 3, 5);
+                        buffers->binnedInstanceData.Bind(commandList, 3, 6);
+
+                        PushConstants constants = {
+                            .instanceCount = instanceCount,
+                            .meshIdx = idx,
+                            .binCount = binCount
+                        };
+                        commandList->PushConstants("constants", &constants);
 
                         auto groupSize = 64;
                         auto groupCount = instanceCount / groupSize;
                         groupCount += (groupCount % groupSize == 0) ? 0 : 1;
 
-                        // Just use a memory barrier for the first call
-                        // It's synchronized afterwards
-                        if (firstMesh) {
-                            firstMesh = false;
-                            // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                        }
-
-                        // glDispatchCompute(groupCount, 1, 1);
+                        commandList->Dispatch(groupCount, 1, 1);
                     }
                 }
 
@@ -150,32 +159,46 @@ namespace Atlas {
 
                 // Prepare the command buffer
                 {
-                    instanceDrawCallShader.Bind();
+                    auto pipelineConfig = PipelineConfig("vegetation/instanceDrawCall.csh");
+                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+                    commandList->BindPipeline(pipeline);
 
                     int32_t drawCallCount = int32_t(indirectDrawCallBuffer.GetElementCount());
-
-                    instanceDrawCallShader.GetUniform("drawCallCount")->SetValue(drawCallCount);
+                    commandList->PushConstants("constants", &drawCallCount);
 
                     auto groupSize = 64;
                     auto groupCount = glm::max(drawCallCount / groupSize, 1);
                     if (drawCallCount > groupSize)
                         groupCount += groupCount % groupSize == 0 ? 0 : 1;
 
-                    // indirectDrawCallBuffer.BindBaseAs(AE_SHADER_STORAGE_BUFFER, 7);
+                    indirectDrawCallBuffer.Bind(commandList, 3, 7);
 
-                    // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                    // glDispatchCompute(groupCount, 1, 1);
+                    commandList->Dispatch(groupCount, 1, 1);
                 }
 
                 // Reset lod counter buffer
                 if (binCounterBuffer.GetElementCount()) {
-                    ResetCounterBuffer(binCounterBuffer);
-                    ResetCounterBuffer(instanceCounterBuffer);
+                    ResetCounterBuffers(commandList);
                 }
+
+                // Reset access mask manually
+                indirectDrawCallBuffer.Get()->accessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                // Can't group barriers together because of different access patterns
+                commandList->BufferMemoryBarrier(indirectDrawCallBuffer.Get(), VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+
+                bufferBarriers.clear();
+                for (auto mesh : meshes) {
+                    auto buffers = vegetation.GetBuffers(mesh);
+                    bufferBarriers.push_back({buffers->binnedInstanceData.Get(),
+                        VK_ACCESS_SHADER_READ_BIT});
+                }
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
                 Graphics::Profiler::EndQuery();
                 Graphics::Profiler::EndQuery();
-                 */
 
             }
 
@@ -185,7 +208,7 @@ namespace Atlas {
 
             }
 
-            size_t VegetationHelper::GetCommandBufferOffset(Mesh::VegetationMesh& mesh,
+            size_t VegetationHelper::GetCommandBufferOffset(ResourceHandle<Mesh::Mesh>& mesh,
                 Mesh::MeshSubData& subData) {
 
                 auto meshIdx = meshToIdxMap[&mesh];
@@ -204,7 +227,7 @@ namespace Atlas {
 
             }
 
-            void VegetationHelper::GenerateBuffers(Scene::Vegetation& vegetation) {
+            void VegetationHelper::GenerateBuffers(Scene::Vegetation& vegetation, Graphics::CommandList* commandList) {
 
                 auto meshes = vegetation.GetMeshes();
 
@@ -218,7 +241,7 @@ namespace Atlas {
                 for (auto mesh : meshes) {
                     meshInformation.push_back({ vec4(mesh->data.aabb.min, reinterpret_cast<float&>(binCounter)),
                                                 vec4(mesh->data.aabb.max, 0.0)});
-                    meshToIdxMap[mesh] = int32_t(idx);
+                    meshToIdxMap[&mesh] = int32_t(idx);
 
                     for (auto& subdata : mesh->data.subData) {
                         meshSubdataInformation.push_back({ idx,
@@ -235,27 +258,38 @@ namespace Atlas {
 
                 binCounterBuffer.SetSize(size_t(binCounter));
                 binOffsetBuffer.SetSize(size_t(binCounter));
-                ResetCounterBuffer(binCounterBuffer);
-                
                 instanceCounterBuffer.SetSize(size_t(meshCounter));
-                ResetCounterBuffer(instanceCounterBuffer);
 
+                ResetCounterBuffers(commandList);
+
+                // There should be no need for a barrier after this write, since it happens on the host side
+                // and should be available immediately
                 meshInformationBuffer.SetSize(meshInformation.size(), 
                     meshInformation.data());
                 meshSubdataInformationBuffer.SetSize(meshSubdataInformation.size(),
                     meshSubdataInformation.data());
-
-                // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
             }
 
-            void VegetationHelper::ResetCounterBuffer(Buffer::Buffer& buffer) {
+            void VegetationHelper::ResetCounterBuffers(Graphics::CommandList* commandList) {
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+
+                bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
+                bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 uint32_t zero = 0;
-                /*
-                buffer.Bind();
-                buffer.InvalidateData();
-                buffer.ClearData(AE_R32UI, GL_UNSIGNED_INT, &zero);
-                */
+                commandList->FillBuffer(binCounterBuffer.Get(), &zero);
+                commandList->FillBuffer(instanceCounterBuffer.Get(), &zero);
+
+                bufferBarriers.clear();
+                bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
             }
 
         }

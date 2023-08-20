@@ -692,6 +692,19 @@ namespace Atlas {
 
         }
 
+        void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
+            uint32_t drawCount, uint32_t stride) {
+
+            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            BindDescriptorSets();
+
+            vkCmdDrawIndexedIndirect(commandBuffer, buffer->buffer, offset, drawCount, stride);
+
+        }
+
         void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
             uint32_t firstInstance) {
 

@@ -2,8 +2,8 @@
 #define AE_VEGETATION_H
 
 #include "../System.h"
+#include "mesh/Mesh.h"
 #include "actor/VegetationActor.h"
-#include "mesh/VegetationMesh.h"
 
 #include <map>
 
@@ -28,15 +28,17 @@ namespace Atlas {
 
             void UpdateActorData();
 
-            void UpdateActorData(Mesh::VegetationMesh* mesh);
+            void UpdateActorData(Mesh::Mesh* mesh);
 
-            std::vector<Mesh::VegetationMesh*> GetMeshes();
+            std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
-            Buffers GetBuffers(Mesh::VegetationMesh* mesh);
+            Buffers* GetBuffers(const ResourceHandle<Mesh::Mesh>& mesh);
 
         private:
-            std::map<Mesh::VegetationMesh*, std::vector<Actor::VegetationActor*>> meshToActorMap;
-            std::map<Mesh::VegetationMesh*, Buffers> meshToBufferMap;
+            std::map<Mesh::Mesh*, std::vector<Actor::VegetationActor*>> meshToActorMap;
+            std::map<Mesh::Mesh*, Buffers> meshToBufferMap;
+
+            std::vector<ResourceHandle<Mesh::Mesh>> meshes;
 
         };
 

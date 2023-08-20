@@ -4,7 +4,8 @@ namespace Atlas {
 
     namespace Actor {
 
-        VegetationActor::VegetationActor(Mesh::VegetationMesh* mesh, vec3 position) : mesh(mesh), position(position) {
+        VegetationActor::VegetationActor(const ResourceHandle<Mesh::Mesh>& mesh, vec3 position)
+            : mesh(mesh), position(position) {
 
 
 

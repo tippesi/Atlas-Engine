@@ -164,8 +164,12 @@ namespace Atlas {
             return resource->data.operator*();
         }
 
-        inline T* operator->() {
+        inline T* operator->() const {
             return resource->data.operator->();
+        }
+
+        inline T* operator&() const {
+            return resource->data.get();
         }
 
     private:

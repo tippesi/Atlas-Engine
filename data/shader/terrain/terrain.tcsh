@@ -87,7 +87,7 @@ void main() {
         maxVec += dir * .25;
         minVec -= dir * .25;
 
-        if (true) {
+        if (IsTileVisible(minVec, maxVec)) {
     
 #ifndef DISTANCE
             vec3 midAB = vec3(gl_in[0].gl_Position + gl_in[1].gl_Position) / 2.0;

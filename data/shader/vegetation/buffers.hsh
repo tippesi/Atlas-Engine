@@ -1,34 +1,34 @@
 #include <../common/indirectcommand.hsh>
 #include <structures.hsh>
 
-layout(std430, binding = 0) buffer MeshInformations {
+layout(std430, set = 3, binding = 0) buffer MeshInformations {
     MeshInformation meshInformations[];
 };
 
-layout(std430, binding = 1) buffer MeshSubdataInformations {
+layout(std430, set = 3, binding = 1) buffer MeshSubdataInformations {
     MeshSubdataInformation meshSubdataInformations[];
 };
 
-layout (std430, binding = 2) buffer BinCounters {
+layout (std430, set = 3, binding = 2) buffer BinCounters {
     uint binCounters[];
 };
 
-layout (std430, binding = 3) buffer BinOffsets {
+layout (std430, set = 3, binding = 3) buffer BinOffsets {
     uint binOffsets[];
 };
 
-layout(std430, binding = 4) buffer InstanceCounters {
+layout(std430, set = 3, binding = 4) buffer InstanceCounters {
     uint instanceCounters[];
 };
 
-layout(std430, binding = 5) buffer InstanceData {
+layout(std430, set = 3, binding = 5) buffer InstanceData {
     Instance instanceData[];
 };
 
-layout (std430, binding = 6) buffer InstanceDataSwap {
+layout (std430, set = 3, binding = 6) buffer InstanceDataSwap {
     Instance instanceDataSwap[];
 };
 
-layout (std430, binding = 7) buffer IndirectCommands {
+layout (std430, set = 3, binding = 7) buffer IndirectCommands {
     DrawElementsIndirectCommand indirectCommands[];
 };

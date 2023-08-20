@@ -94,9 +94,6 @@ namespace Atlas {
 
             FillRenderList(scene, camera);
 
-            if (scene->vegetation)
-                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
-
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
 
@@ -116,6 +113,9 @@ namespace Atlas {
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);
+
+            if (scene->vegetation)
+                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
 
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
@@ -153,6 +153,8 @@ namespace Atlas {
                 opaqueRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
 
                 ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
+
+                vegetationRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
 
                 terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
 
@@ -739,6 +741,9 @@ namespace Atlas {
                 .frameCount = frameCount
             };
 
+            auto frustumPlanes = camera->frustum.GetPlanes();
+            std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
+
             globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
             if (scene->irradianceVolume) {
@@ -881,7 +886,7 @@ namespace Atlas {
 
                 materialMap[impostor.get()] =  idx++;
             }
-            
+
 
         }
 

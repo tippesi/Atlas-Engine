@@ -2,11 +2,13 @@
 
 layout (local_size_x = 64) in;
 
-uniform int drawCallCount;
+layout(push_constant) uniform constants {
+    int drawCallCount;
+} PushConstants;
 
 void main() {
 
-    if (int(gl_GlobalInvocationID.x) >= drawCallCount)
+    if (int(gl_GlobalInvocationID.x) >= PushConstants.drawCallCount)
         return;
 
     uint meshSubdataIdx = gl_GlobalInvocationID.x / 64u;
@@ -24,7 +26,7 @@ void main() {
     bool hasInstances = instanceCount > 0;
 
     // We assume triangles
-    command.count = hasInstances ? 3 * subDataInfo.indicesCount : 0;
+    command.count = hasInstances ? subDataInfo.indicesCount : 0;
     command.instanceCount = instanceCount;
     command.firstIndex = 0;
     command.baseVertex = 0;

@@ -1,69 +1,72 @@
+#include <structures.hsh>
 #include <../wind.hsh>
-#include <buffers.hsh>
-
-// New naming convention:
-// Vertex attributes v[Name]
-// Fragment attributes f[Name]
-// Etc.
-// Vertex stage out paramters [name]VS
-// Fragment stage out paramters [name]FS
-// Etc.
-// Uniform names: camelCase (variables in general)
+#include <../globals.hsh>
 
 // Per vertex attributes
 layout(location=0) in vec3 vPosition;
 layout(location=1) in vec3 vNormal;
+#ifdef TEX_COORDS
 layout(location=2) in vec2 vTexCoord;
+#endif
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=3) in vec4 vTangent;
 #endif
 
-// Vertex out parameters
-out vec3 positionVS;
-out vec3 normalVS;
-out vec2 texCoordVS;
-
-out vec3 ndcCurrentVS;
-out vec3 ndcLastVS;
-
-#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-out mat3 TBN;
+#ifdef VERTEX_COLORS
+layout(location=4) in vec4 vVertexColors;
 #endif
 
-// Uniforms
-uniform mat4 pMatrix;
-uniform mat4 vMatrix;
+// Vertex out parameters
+#ifdef NORMAl_MAP
+layout(location=0) out vec3 positionVS;
+#endif
+layout(location=1) out vec3 normalVS;
+#ifdef TEX_COORDS
+layout(location=2) out vec2 texCoordVS;
+#endif
+layout(location=3) out vec3 ndcCurrentVS;
+layout(location=4) out vec3 ndcLastVS;
 
-uniform float time;
+#ifdef VERTEX_COLORS
+layout(location=5) out vec4 vertexColorsVS;
+#endif
 
-uniform bool invertUVs;
+layout(std430, set = 3, binding = 7) buffer InstanceData {
+    Instance instanceData[];
+};
 
-uniform mat4 pvMatrixLast;
-uniform mat4 pvMatrixCurrent;
+layout(push_constant) uniform constants {
+    uint invertUVs;
+    uint twoSided;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
+} pushConstants;
 
-// Functions
 void main() {
 
-    Instance instance = instanceData[gl_InstanceID + gl_BaseInstance];
-    texCoordVS = invertUVs ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    Instance instance = instanceData[gl_InstanceIndex];
+    texCoordVS = pushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
     
-    mat4 mvMatrix = vMatrix;
+    mat4 mvMatrix = globalData.vMatrix;
 
     vec3 position = instance.position.xyz + vPosition;
 
-    position = instance.position.xyz + WindAnimation(vPosition, time, instance.position.xyz);
+    position = instance.position.xyz + WindAnimation(vPosition, globalData.time, instance.position.xyz);;
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
+#ifdef NORMAL_MAP
     positionVS = positionToCamera.xyz;
+#endif
     
-    gl_Position = pMatrix * positionToCamera;
+    gl_Position = globalData.pMatrix * positionToCamera;
 
     // Needed for velocity buffer calculation 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
     // For moving objects we need the last frames matrix
     vec3 lastPosition = position;
-    vec4 last = pvMatrixLast * vec4(lastPosition, 1.0);
+    vec4 last = globalData.pvMatrixLast * vec4(lastPosition, 1.0);
     ndcLastVS = vec3(last.xy, last.w);
     
     normalVS = mat3(mvMatrix) * vNormal;
@@ -71,13 +74,17 @@ void main() {
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (invertUVs ? -1.0 : 1.0);
+    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
     vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
     
     vec3 bitangent = normalize(correctionFactor * 
         cross(tangent, normal));
 
     TBN = mat3(tangent, bitangent, normal);
+#endif
+
+#ifdef VERTEX_COLORS
+    vertexColorsVS = vVertexColors;
 #endif
     
 }
