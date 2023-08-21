@@ -53,7 +53,8 @@ void main() {
 
     vec3 position = instance.position.xyz + vPosition;
 
-    position = instance.position.xyz + WindAnimation(vPosition, globalData.time, instance.position.xyz);;
+    position = instance.position.xyz + WindAnimation(vPosition, globalData.time, instance.position.xyz);
+    vec3 lastPosition = instance.position.xyz + WindAnimation(vPosition, globalData.time - globalData.deltaTime, instance.position.xyz);
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 #ifdef NORMAL_MAP
@@ -65,7 +66,6 @@ void main() {
     // Needed for velocity buffer calculation 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
     // For moving objects we need the last frames matrix
-    vec3 lastPosition = position;
     vec4 last = globalData.pvMatrixLast * vec4(lastPosition, 1.0);
     ndcLastVS = vec3(last.xy, last.w);
     

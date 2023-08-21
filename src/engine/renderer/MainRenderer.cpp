@@ -935,7 +935,8 @@ namespace Atlas {
             auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             const int32_t res = 256;
-            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT);
+            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
 
