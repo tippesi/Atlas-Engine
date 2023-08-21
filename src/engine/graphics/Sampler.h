@@ -18,6 +18,8 @@ namespace Atlas {
             float maxLod = 0.0f;
             float mipLodBias = 0.0f;
 
+            VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+
             bool compareEnabled = false;
             VkCompareOp compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 

@@ -240,6 +240,7 @@ namespace Atlas {
                 if (cloudsEnabled) {
                     uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
                     uniforms.planetRadius = scene->sky.planetRadius;
+                    uniforms.cloudDistanceLimit = clouds->distanceLimit;
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 

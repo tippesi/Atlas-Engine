@@ -821,7 +821,13 @@ namespace Atlas {
                     convertedData.push_back(reinterpret_cast<R>(value));
                 }
                 else if constexpr (std::is_same_v<R, float16>) {
-                    float t  = reinterpret_cast<float>(value);
+                    float t = 0.0f;
+                    if constexpr (std::is_same_v<T, float>) {
+                        t = value;
+                    }
+                    else {
+                        t = reinterpret_cast<float>(value);
+                    }
                     convertedData.push_back(glm::detail::toFloat16(t));
                 }
             }

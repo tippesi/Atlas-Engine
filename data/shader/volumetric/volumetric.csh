@@ -39,7 +39,8 @@ void main() {
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    vec3 radiance = ComputeVolumetric(pixelPos, texCoord);
+    vec3 radiance = vec3(0.0);
+    radiance = ComputeVolumetric(pixelPos, texCoord);
     imageStore(volumetricImage, pixel, vec4(radiance, 0.0));
 
 }

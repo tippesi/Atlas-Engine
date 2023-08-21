@@ -20,7 +20,9 @@ namespace Atlas {
 
         enum class Wrapping {
             Repeat = 0,
-            ClampToEdge
+            ClampToEdge,
+            ClampToWhite,
+            ClampToBlack
         };
 
         enum class Filtering {

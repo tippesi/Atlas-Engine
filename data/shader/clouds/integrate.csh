@@ -17,13 +17,14 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudI
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
 layout(set = 3, binding = 3) uniform sampler3D detailTexture;
+layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
 
-layout(set = 3, binding = 4) uniform sampler2D scramblingRankingTexture;
-layout(set = 3, binding = 5) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 5) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 6) uniform sampler2D sobolSequenceTexture;
 
 layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
 
-layout(std140, set = 3, binding = 6) uniform UniformBuffer {
+layout(std140, set = 3, binding = 7) uniform UniformBuffer {
     Light light;
 
     float planetRadius;
@@ -33,15 +34,16 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 
     float heightStretch;
 
+    float coverageScale;
     float shapeScale;
     float detailScale;
+    float coverageSpeed;
     float shapeSpeed;
     float detailSpeed;
     float detailStrength;
 
     float extinctionFactor;
     float scatteringFactor;
-    vec4 extinctionCoefficients;
 
     float eccentricityFirstPhase;
     float eccentricitySecondPhase;
@@ -57,6 +59,8 @@ layout(std140, set = 3, binding = 6) uniform UniformBuffer {
 
     float darkEdgeFocus;
     float darkEdgeAmbient;
+
+    vec4 extinctionCoefficients;
 } uniforms;
 
 const float multiscatterAttenuation = 0.5;
@@ -65,14 +69,15 @@ const float multiscatterEccentricityAttenuation = 0.5;
 
 const float epsilon = 0.001;
 const float logEpsilon = -log(epsilon);
-const vec3 windDirection = normalize(vec3(0.4, -0.4, 0.4));
+const vec3 windDirection = vec3(0.4, -0.4, 0.4);
 const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
+const vec2 windDirectionCoverage = vec2(0.4, 0.4);
 const float windSpeed = 0.001;
 
 vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 vec4 blueNoiseVec = vec4(0.0);
 
-vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords);
+vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords, out float rayLength);
 
 void main() {
 
@@ -94,7 +99,9 @@ void main() {
             SampleBlueNoise(pixel, sampleIdx, 3, scramblingRankingTexture, sobolSequenceTexture)
             );
 
-    vec4 scattering = ComputeVolumetricClouds(pixelPos, depth, texCoord);
+    float rayLength;
+    vec4 scattering = ComputeVolumetricClouds(pixelPos, depth, texCoord, rayLength);
+
     imageStore(volumetricCloudImage, pixel, scattering);
 
 }
@@ -117,7 +124,7 @@ float GetNoiseOffset(int idx) {
 }
 
 float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
-     vec3 weatherData, float lod) {
+    vec2 coverageTexCoords, vec3 weatherData, float lod) {
 
     float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
@@ -127,7 +134,8 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
     baseCloudDensity *= saturate(densityHeightGradient);
 
-    const float cloudCoverage = uniforms.densityMultiplier;
+    const float cloudCoverage = min(uniforms.densityMultiplier *
+        (textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.5), 1.0);
     baseCloudDensity = Remap(baseCloudDensity, cloudCoverage,
         1.0, 0.0, 1.0);
     float finalCloudDensity = baseCloudDensity;
@@ -146,7 +154,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
 }
 
-void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoords) {
+void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoords, out vec2 coverageTexCoords) {
 
     float distFromCenter = distance(pos, planetCenter);
 
@@ -158,6 +166,9 @@ void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoo
     detailTexCoords.y = (distFromCenter - uniforms.innerRadius) / (uniforms.outerRadius - uniforms.innerRadius);
     detailTexCoords *= uniforms.detailScale;
     detailTexCoords += windDirectionDetail * uniforms.shapeSpeed * uniforms.detailSpeed * windSpeed * uniforms.time;
+
+    coverageTexCoords = pos.xz * uniforms.coverageScale * 0.001;
+    coverageTexCoords += windDirectionCoverage * uniforms.coverageSpeed * windSpeed * uniforms.time;
 
 }
 
@@ -230,10 +241,12 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx) {
             float t = t0 + delta * noiseOffset;
             vec3 samplePoint = pos + rayDirection * t * rayLength;
 
+            vec2 coverageTexCoords;
             vec3 shapeTexCoords, detailTexCoords;
-            CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords);
+            CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords, coverageTexCoords);
 
-            float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords, vec3(1.0), floor(0.0)));
+            float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords,
+                coverageTexCoords, vec3(1.0), floor(0.0)));
             vec4 extinctionCoefficient = uniforms.extinctionFactor * uniforms.extinctionCoefficients * density;
 
             extinctionAccumulation += extinctionCoefficient * delta * rayLength;
@@ -262,7 +275,7 @@ float DualPhaseFunction(float g0, float g1, float alpha, float LDotV) {
 
 }
 
-vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
+vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords, out float rayLength) {
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
@@ -278,7 +291,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     if (length(fragPos) < inDist && depth != 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    float rayLength = depth < 1.0 ? min(length(fragPos), outDist - inDist) : outDist - inDist;
+    rayLength = depth < 1.0 ? min(length(fragPos), outDist - inDist) : outDist - inDist;
 
     const int sampleCount = uniforms.sampleCount;
     int raySampleCount = max(sampleCount, int((rayLength / uniforms.distanceLimit) * float(sampleCount)));
@@ -299,8 +312,9 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
     for (int i = 0; i < raySampleCount; i++) {
 
         if (extinction.a > epsilon) {
+            vec2 coverageTexCoords;
             vec3 shapeTexCoords, detailTexCoords;
-            CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords);
+            CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords, coverageTexCoords);
 
             float distToPlanetCenter = distance(rayPos, planetCenter);
             // This can happen if we look from inside the cloud layer trough it below the cloud
@@ -316,7 +330,8 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth, vec2 texCoords) {
                 continue;
             }
 
-            float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords, vec3(1.0), 0.0));
+            float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
+                coverageTexCoords, vec3(1.0), 0.0));
 
             if (density > 0.0) {
                 vec3 scatteringCoefficient = uniforms.scatteringFactor * uniforms.extinctionCoefficients.rgb * density;

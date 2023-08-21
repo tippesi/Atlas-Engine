@@ -548,8 +548,6 @@ namespace Atlas {
             assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metalness);
             assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided);
 
-            //assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
-
             material.name = std::string(name.C_Str());
 
             material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);

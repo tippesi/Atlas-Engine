@@ -82,15 +82,16 @@ namespace Atlas {
 
                     .heightStretch = clouds->heightStretch,
 
+                    .coverageScale = clouds->coverageScale,
                     .shapeScale = clouds->shapeScale,
                     .detailScale = clouds->detailScale,
+                    .coverageSpeed = clouds->coverageSpeed,
                     .shapeSpeed = clouds->shapeSpeed,
                     .detailSpeed = clouds->detailSpeed,
                     .detailStrength = clouds->detailStrength,
 
                     .extinctionFactor = clouds->scattering.extinctionFactor,
                     .scatteringFactor = clouds->scattering.scatteringFactor,
-                    .extinctionCoefficients = clouds->scattering.extinctionCoefficients,
 
                     .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
                     .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
@@ -106,6 +107,8 @@ namespace Atlas {
 
                     .darkEdgeDirect = clouds->darkEdgeFocus,
                     .darkEdgeDetail = clouds->darkEdgeAmbient,
+
+                    .extinctionCoefficients = clouds->scattering.extinctionCoefficients
                 };
 
                 if (sun) {
@@ -123,9 +126,10 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
                 commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
-                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
-                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
-                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 6);
+                commandList->BindImage(clouds->coverageTexture.image, clouds->coverageTexture.sampler, 3, 4);
+                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 5);
+                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 6);
+                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 7);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

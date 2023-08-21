@@ -23,6 +23,7 @@ layout(set = 3, binding = 5) uniform  UniformBuffer {
     int fogEnabled;
     float innerCloudRadius;
     float planetRadius;
+    float cloudDistanceLimit;
 } uniforms;
 
 // (localSize / 2 + 2)^2
@@ -171,12 +172,16 @@ void main() {
         planetCenter, uniforms.planetRadius);
 
     // x => first intersection with sphere, y => second intersection with sphere
+    float cloudFadeout = 1.0;
     float cloudDist = intersectDists.y;
     float planetDist = planetDists.x < 0.0 ? planetDists.y : planetDists.x;
     if (depth == 1.0) {
         float maxDist = max(cloudDist, planetDist);
         // If we don't hit at all we don't want any fog
-        viewPosition *= intersectDists.y > 0.0 ? (maxDist / viewLength) : 0.0;
+        viewPosition *= intersectDists.y > 0.0 ? max(maxDist / viewLength, 1.0) : 0.0;
+
+        cloudFadeout = intersectDists.x < 0.0 ? saturate((uniforms.cloudDistanceLimit
+            - cloudDist) / uniforms.cloudDistanceLimit) : cloudFadeout;
     }
 
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
@@ -184,16 +189,18 @@ void main() {
     vec4 resolve = imageLoad(resolveImage, pixel);
 
     float fogAmount = uniforms.fogEnabled > 0 ? saturate(1.0 - ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
-    resolve = uniforms.fogEnabled > 0 ? mix(resolve, uniforms.fog.color, fogAmount) + volumetric : resolve + volumetric;
 
 #ifdef CLOUDS
     if (uniforms.cloudsEnabled > 0) {
+        cloudScattering.rgb *= cloudFadeout;
+        cloudScattering.a = mix(1.0, cloudScattering.a, cloudFadeout);
+
         float alpha = cloudScattering.a;
         fogAmount = intersectDists.x < 0.0 ? fogAmount : fogAmount * alpha;
-        cloudScattering = uniforms.fogEnabled > 0 ? mix(cloudScattering, uniforms.fog.color, fogAmount) : cloudScattering;
         resolve = alpha * resolve + cloudScattering;
     }
 #endif
+    resolve = uniforms.fogEnabled > 0 ? mix(resolve, uniforms.fog.color, fogAmount) + volumetric : resolve + volumetric;
 
     imageStore(resolveImage, pixel, resolve);
 

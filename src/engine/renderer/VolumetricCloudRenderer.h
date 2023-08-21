@@ -66,15 +66,16 @@ namespace Atlas {
 
                 float heightStretch;
 
+                float coverageScale;
                 float shapeScale;
                 float detailScale;
+                float coverageSpeed;
                 float shapeSpeed;
                 float detailSpeed;
                 float detailStrength;
 
                 float extinctionFactor;
                 float scatteringFactor;
-                vec4 extinctionCoefficients;
 
                 float eccentricityFirstPhase;
                 float eccentricitySecondPhase;
@@ -90,6 +91,8 @@ namespace Atlas {
 
                 float darkEdgeDirect;
                 float darkEdgeDetail;
+
+                vec4 extinctionCoefficients;
             };
 
             void GenerateShapeTexture(Graphics::CommandList* commandList,

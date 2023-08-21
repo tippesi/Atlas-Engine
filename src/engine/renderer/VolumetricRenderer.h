@@ -82,6 +82,7 @@ namespace Atlas {
                 int fogEnabled;
                 float innerCloudRadius;
                 float planetRadius;
+                float cloudDistanceLimit;
             };
 
             Filter blurFilter;
