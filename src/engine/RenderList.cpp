@@ -150,7 +150,7 @@ namespace Atlas {
                         vec3(actor->globalMatrix[3]),
                         cameraLocation);
 
-                    if (distance < sqdDistance || !hasImpostor) {
+                    if (distance < sqdDistance) {
                         currentActorMatrices.push_back(actor->globalMatrix);
                         if (needsHistory) lastActorMatrices.push_back(actor->lastGlobalMatrix);
                     }

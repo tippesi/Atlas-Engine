@@ -22,9 +22,15 @@ layout(set = 3, binding = 1) uniform sampler2DArrayShadow cascadeMaps;
 #ifdef SCREEN_SPACE_SHADOWS
 layout(set = 3, binding = 2) uniform sampler2D sssTexture;
 #endif
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 3) uniform sampler2D cloudMap;
+#endif
 
-layout(std140, set = 3, binding = 3) uniform LightBuffer {
+layout(std140, set = 3, binding = 4) uniform LightBuffer {
     Light light;
+
+    mat4 cloudShadowViewMatrix;
+    mat4 cloudShadowProjectionMatrix;
 } lightData;
 
 void main() {
@@ -63,7 +69,15 @@ void main() {
         float sssFactor = textureLod(sssTexture, texCoord, 0).r;
         shadowFactor = min(sssFactor, shadowFactor);
 #endif
+#ifdef CLOUD_SHADOWS
+        vec4 cloudShadowViewCoords = lightData.cloudShadowViewMatrix * vec4(surface.P, 1.0);
+        vec4 cloudShadowCoords = lightData.cloudShadowProjectionMatrix * cloudShadowViewCoords;
+        cloudShadowCoords.xyz /= cloudShadowCoords.w;
 
+        float cloudExpDepth = textureLod(cloudMap, cloudShadowCoords.xy, 0.0).r;
+        float cloudShadowFactor = cloudExpDepth * exp(-cloudShadowViewCoords.z);
+        shadowFactor = min(shadowFactor, cloudShadowFactor);
+#endif
         vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;
         direct = direct * radiance * surface.NdotL * shadowFactor;
 

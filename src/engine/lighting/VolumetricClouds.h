@@ -2,6 +2,7 @@
 #define AE_VOLUMETRICCLOUDS_H
 
 #include "../System.h"
+#include "../Camera.h"
 #include "../RenderTarget.h"
 #include "../texture/Texture3D.h"
 
@@ -12,11 +13,15 @@ namespace Atlas {
         class VolumetricClouds {
 
         public:
-            VolumetricClouds(int32_t coverageResolution = 512, int32_t shapeResolution = 128, int32_t detailResolution = 32);
+            VolumetricClouds(int32_t coverageResolution = 512, int32_t shapeResolution = 128,
+                int32_t detailResolution = 32, int32_t shadowResolution = 512);
+
+            void GetShadowMatrices(Camera* camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
 
             Texture::Texture2D coverageTexture;
             Texture::Texture3D shapeTexture;
             Texture::Texture3D detailTexture;
+            Texture::Texture2D shadowTexture;
 
             struct Scattering {
                 float extinctionFactor = 0.24f;
@@ -55,6 +60,7 @@ namespace Atlas {
 
             bool needsNoiseUpdate = true;
             bool enable = true;
+            bool castShadow = false;
 
         };
 

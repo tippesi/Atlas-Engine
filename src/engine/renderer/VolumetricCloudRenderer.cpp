@@ -25,10 +25,10 @@ namespace Atlas {
             detailNoisePipelineConfig = PipelineConfig("clouds/detailNoise.csh");
             integratePipelineConfig = PipelineConfig("clouds/integrate.csh");
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
+            shadowPipelineConfig = PipelineConfig("clouds/shadow.csh");
 
-            auto bufferUsage = Buffer::BufferUsageBits::UniformBufferBit | Buffer::BufferUsageBits::HostAccessBit
-                               | Buffer::BufferUsageBits::MultiBufferedBit;
-            volumetricUniformBuffer = Buffer::Buffer(bufferUsage, sizeof(VolumetricCloudUniforms), 1);
+            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
+            shadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadowUniforms), 1);
 
         }
 
@@ -60,8 +60,6 @@ namespace Atlas {
             std::vector<Graphics::ImageBarrier> imageBarriers;
             
             {
-                static uint32_t frameCount = 0;
-
                 Graphics::Profiler::BeginQuery("Integrate");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
@@ -74,53 +72,9 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->swapVolumetricCloudsTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                VolumetricCloudUniforms uniforms{
-                    .planetRadius = scene->sky.planetRadius,
-                    .innerRadius = scene->sky.planetRadius + clouds->minHeight,
-                    .outerRadius = scene->sky.planetRadius + clouds->maxHeight,
-                    .distanceLimit = clouds->distanceLimit,
+                auto uniforms = GetUniformStructure(camera, scene);
 
-                    .heightStretch = clouds->heightStretch,
-
-                    .coverageScale = clouds->coverageScale,
-                    .shapeScale = clouds->shapeScale,
-                    .detailScale = clouds->detailScale,
-                    .coverageSpeed = clouds->coverageSpeed,
-                    .shapeSpeed = clouds->shapeSpeed,
-                    .detailSpeed = clouds->detailSpeed,
-                    .detailStrength = clouds->detailStrength,
-
-                    .extinctionFactor = clouds->scattering.extinctionFactor,
-                    .scatteringFactor = clouds->scattering.scatteringFactor,
-
-                    .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
-                    .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
-                    .phaseAlpha = clouds->scattering.phaseAlpha,
-
-                    .densityMultiplier = clouds->densityMultiplier,
-
-                    .time = Clock::Get(),
-                    .frameSeed = frameCount++,
-
-                    .sampleCount = clouds->sampleCount,
-                    .shadowSampleCount = clouds->shadowSampleCount,
-
-                    .darkEdgeDirect = clouds->darkEdgeFocus,
-                    .darkEdgeDetail = clouds->darkEdgeAmbient,
-
-                    .extinctionCoefficients = clouds->scattering.extinctionCoefficients
-                };
-
-                if (sun) {
-                    uniforms.light.direction = vec4(sun->direction, 0.0f);
-                    uniforms.light.color = vec4(sun->color, 1.0f);
-                    uniforms.light.intensity = sun->intensity;
-                }
-                else {
-                    uniforms.light.intensity = 0.0f;
-                }
-
-                volumetricUniformBuffer.SetData(&uniforms, 0, 1);
+                volumetricUniformBuffer.SetData(&uniforms, 0);
 
                 commandList->BindImage(target->swapVolumetricCloudsTexture.image, 3, 0);
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
@@ -129,7 +83,8 @@ namespace Atlas {
                 commandList->BindImage(clouds->coverageTexture.image, clouds->coverageTexture.sampler, 3, 4);
                 commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 5);
                 commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 6);
-                commandList->BindBuffer(volumetricUniformBuffer.GetMultiBuffer(), 3, 7);
+
+                volumetricUniformBuffer.Bind(commandList, 3, 7);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -188,6 +143,41 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
             
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void VolumetricCloudRenderer::RenderShadow(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
+
+            auto clouds = scene->sky.clouds;
+            auto sun = scene->sky.sun;
+            if (!clouds || !clouds->enable) return;
+
+
+
+            if (!clouds->castShadow) return;
+
+            Graphics::Profiler::BeginQuery("Volumetric cloud shadow");
+
+            if (clouds->needsNoiseUpdate) {
+                GenerateTextures(scene, commandList);
+                clouds->needsNoiseUpdate = false;
+            }
+
+            auto shadowMap = clouds->shadowTexture;
+
+            auto res = ivec2(shadowMap.width, shadowMap.height);
+
+            ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+            groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+
+            auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+
+
             Graphics::Profiler::EndQuery();
 
         }
@@ -258,6 +248,64 @@ namespace Atlas {
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             Graphics::Profiler::EndQuery();
+
+        }
+
+        VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(Camera *camera,
+            Scene::Scene *scene) {
+
+            static uint32_t frameCount = 0;
+
+            auto clouds = scene->sky.clouds;
+            auto sun = scene->sky.sun;
+
+            VolumetricCloudUniforms uniforms{
+                .planetRadius = scene->sky.planetRadius,
+                .innerRadius = scene->sky.planetRadius + clouds->minHeight,
+                .outerRadius = scene->sky.planetRadius + clouds->maxHeight,
+                .distanceLimit = clouds->distanceLimit,
+
+                .heightStretch = clouds->heightStretch,
+
+                .coverageScale = clouds->coverageScale,
+                .shapeScale = clouds->shapeScale,
+                .detailScale = clouds->detailScale,
+                .coverageSpeed = clouds->coverageSpeed,
+                .shapeSpeed = clouds->shapeSpeed,
+                .detailSpeed = clouds->detailSpeed,
+                .detailStrength = clouds->detailStrength,
+
+                .extinctionFactor = clouds->scattering.extinctionFactor,
+                .scatteringFactor = clouds->scattering.scatteringFactor,
+
+                .eccentricityFirstPhase = clouds->scattering.eccentricityFirstPhase,
+                .eccentricitySecondPhase = clouds->scattering.eccentricitySecondPhase,
+                .phaseAlpha = clouds->scattering.phaseAlpha,
+
+                .densityMultiplier = clouds->densityMultiplier,
+
+                .time = Clock::Get(),
+                .frameSeed = frameCount++,
+
+                .sampleCount = clouds->sampleCount,
+                .shadowSampleCount = clouds->shadowSampleCount,
+
+                .darkEdgeDirect = clouds->darkEdgeFocus,
+                .darkEdgeDetail = clouds->darkEdgeAmbient,
+
+                .extinctionCoefficients = clouds->scattering.extinctionCoefficients
+            };
+
+            if (sun) {
+                uniforms.light.direction = vec4(sun->direction, 0.0f);
+                uniforms.light.color = vec4(sun->color, 1.0f);
+                uniforms.light.intensity = sun->intensity;
+            }
+            else {
+                uniforms.light.intensity = 0.0f;
+            }
+
+            return uniforms;
 
         }
 

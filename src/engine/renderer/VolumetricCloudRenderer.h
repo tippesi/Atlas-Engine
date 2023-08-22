@@ -19,6 +19,9 @@ namespace Atlas {
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
+            void RenderShadow(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
             void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
 
         private:
@@ -95,11 +98,19 @@ namespace Atlas {
                 vec4 extinctionCoefficients;
             };
 
+            struct alignas(16) CloudShadowUniforms {
+                mat4 ivMatrix;
+                mat4 ipMatrix;
+            };
+
             void GenerateShapeTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
             
             void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
+
+            VolumetricCloudUniforms GetUniformStructure(Camera* camera,
+                Scene::Scene* scene);
 
             PipelineConfig shapeNoisePipelineConfig;
             PipelineConfig detailNoisePipelineConfig;
@@ -107,9 +118,12 @@ namespace Atlas {
             PipelineConfig integratePipelineConfig;
             PipelineConfig temporalPipelineConfig;
 
+            PipelineConfig shadowPipelineConfig;
+
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
-            Buffer::Buffer volumetricUniformBuffer;
+            Buffer::UniformBuffer volumetricUniformBuffer;
+            Buffer::UniformBuffer shadowUniformBuffer;
 
         };
 

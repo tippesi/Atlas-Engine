@@ -11,7 +11,7 @@ namespace Atlas {
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
-                .size = sizeof(Light)
+                .size = sizeof(Uniforms)
             };
             uniformBuffer = device->CreateMultiBuffer(bufferDesc);
 
@@ -35,10 +35,13 @@ namespace Atlas {
 
             auto light = scene->sky.sun;
             auto sss = scene->sss;
+            auto clouds = scene->sky.clouds;
 
             vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
 
-            Light lightUniform;
+            Uniforms uniforms;
+
+            auto& lightUniform = uniforms.light;
             lightUniform.location = vec4(0.0f);
             lightUniform.direction = vec4(direction, 0.0f);
             lightUniform.color = vec4(light->color, 0.0f);
@@ -82,18 +85,26 @@ namespace Atlas {
                 }
             }
 
-            uniformBuffer->SetData(&lightUniform, 0, sizeof(lightUniform));
-
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
+            pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            commandList->BindBuffer(uniformBuffer, 3, 3);
+            commandList->BindBuffer(uniformBuffer, 3, 4);
 
             if (sss && sss->enable) {
                 commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 2);
             }
+
+            if (clouds && clouds->enable && clouds->castShadow) {
+                clouds->shadowTexture.Bind(commandList, 3, 3);
+
+                clouds->GetShadowMatrices(camera, glm::normalize(light->direction),
+                    uniforms.cloudShadowViewMatrix, uniforms.cloudShadowProjectionMatrix);
+            }
+
+            uniformBuffer->SetData(&uniforms, 0, sizeof(uniforms));
 
             ivec2 res = ivec2(target->GetWidth(), target->GetHeight());
             int32_t groupSize = 8;

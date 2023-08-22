@@ -52,6 +52,13 @@ namespace Atlas {
                 Shadow shadow;
             };
 
+            struct alignas(16) Uniforms {
+                Light light;
+
+                mat4 cloudShadowViewMatrix;
+                mat4 cloudShadowProjectionMatrix;
+            };
+
             PipelineConfig pipelineConfig;
 
             Ref<Graphics::MultiBuffer> uniformBuffer;

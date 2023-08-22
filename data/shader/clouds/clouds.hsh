@@ -1,4 +1,66 @@
 #include <../common/utility.hsh>
+#include <../structures>
+
+layout(set = 3, binding = 1) uniform sampler2D depthTexture;
+layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
+layout(set = 3, binding = 3) uniform sampler3D detailTexture;
+layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
+
+layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
+
+layout(std140, set = 3, binding = 7) uniform CloudUniformBuffer {
+    Light light;
+
+    float planetRadius;
+    float innerRadius;
+    float outerRadius;
+    float distanceLimit;
+
+    float heightStretch;
+
+    float coverageScale;
+    float shapeScale;
+    float detailScale;
+    float coverageSpeed;
+    float shapeSpeed;
+    float detailSpeed;
+    float detailStrength;
+
+    float extinctionFactor;
+    float scatteringFactor;
+
+    float eccentricityFirstPhase;
+    float eccentricitySecondPhase;
+    float phaseAlpha;
+
+    float densityMultiplier;
+
+    float time;
+    uint frameSeed;
+
+    int sampleCount;
+    int shadowSampleCount;
+
+    float darkEdgeFocus;
+    float darkEdgeAmbient;
+
+    vec4 extinctionCoefficients;
+} cloudUniforms;
+
+const float multiscatterAttenuation = 0.5;
+const float multiscatterContribution = 0.5;
+const float multiscatterEccentricityAttenuation = 0.5;
+
+const float epsilon = 0.001;
+const float logEpsilon = -log(epsilon);
+const vec3 windDirection = vec3(0.4, -0.4, 0.4);
+const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
+const vec2 windDirectionCoverage = vec2(0.4, 0.4);
+const float windSpeed = 0.001;
+
+vec3 cloudPlanetCenter = -vec3(0.0, cloudUniforms.planetRadius, 0.0);
+
+#define MULTISCATTER_OCTAVES 2
 
 vec3 Random3(vec3 p){
     vec3 q = vec3(dot(p, vec3(127.1, 311.7, 74.7)),
@@ -151,4 +213,36 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
     float maxDist = max(AO, BO);
 
     return vec2(minDist, maxDist);
+}
+
+float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
+    vec2 coverageTexCoords, vec3 weatherData, float lod) {
+
+    float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
+
+    float distFromCenter = distance(pos, cloudPlanetCenter);
+    float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
+        (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
+    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / cloudUniforms.heightStretch);
+
+    baseCloudDensity *= saturate(densityHeightGradient);
+
+    const float cloudCoverage = min(cloudUniforms.densityMultiplier *
+        (textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.5), 1.0);
+    baseCloudDensity = Remap(baseCloudDensity, cloudCoverage,
+    1.0, 0.0, 1.0);
+    float finalCloudDensity = baseCloudDensity;
+
+    if (baseCloudDensity > 0.0) {
+        float highFrequencyFBM = textureLod(detailTexture, detailTexCoords, lod).r;
+
+        float highFrequencyNoiseModifier = mix(highFrequencyFBM,
+        1.0 - highFrequencyFBM, saturate(heightFraction * 10.0));
+
+        finalCloudDensity = Remap(baseCloudDensity,
+        highFrequencyNoiseModifier * cloudUniforms.detailStrength, 1.0, 0.0, 1.0);
+    }
+
+    return saturate(finalCloudDensity);
+
 }

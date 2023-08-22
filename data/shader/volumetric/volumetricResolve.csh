@@ -180,8 +180,8 @@ void main() {
         // If we don't hit at all we don't want any fog
         viewPosition *= intersectDists.y > 0.0 ? max(maxDist / viewLength, 1.0) : 0.0;
 
-        cloudFadeout = intersectDists.x < 0.0 ? saturate((uniforms.cloudDistanceLimit
-            - cloudDist) / uniforms.cloudDistanceLimit) : cloudFadeout;
+        cloudFadeout = intersectDists.x < 0.0 ? sqr(saturate((uniforms.cloudDistanceLimit
+            - cloudDist) / (0.5 * uniforms.cloudDistanceLimit))) : cloudFadeout;
     }
 
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
