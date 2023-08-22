@@ -101,6 +101,7 @@ namespace Atlas {
             struct alignas(16) CloudShadowUniforms {
                 mat4 ivMatrix;
                 mat4 ipMatrix;
+                vec4 lightDirection;
             };
 
             void GenerateShapeTexture(Graphics::CommandList* commandList,
@@ -123,7 +124,9 @@ namespace Atlas {
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
             Buffer::UniformBuffer volumetricUniformBuffer;
+
             Buffer::UniformBuffer shadowUniformBuffer;
+            Buffer::UniformBuffer shadowVolumetricUniformBuffer;
 
         };
 

@@ -29,6 +29,7 @@ namespace Atlas {
 
             volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
             shadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadowUniforms), 1);
+            shadowVolumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
 
         }
 
@@ -66,15 +67,14 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
+                auto uniforms = GetUniformStructure(camera, scene);
+                volumetricUniformBuffer.SetData(&uniforms, 0);
+
                 auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
                 commandList->ImageMemoryBarrier(target->swapVolumetricCloudsTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-
-                auto uniforms = GetUniformStructure(camera, scene);
-
-                volumetricUniformBuffer.SetData(&uniforms, 0);
 
                 commandList->BindImage(target->swapVolumetricCloudsTexture.image, 3, 0);
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
@@ -152,11 +152,7 @@ namespace Atlas {
 
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;
-            if (!clouds || !clouds->enable) return;
-
-
-
-            if (!clouds->castShadow) return;
+            if (!clouds || !clouds->enable || !clouds->castShadow) return;
 
             Graphics::Profiler::BeginQuery("Volumetric cloud shadow");
 
@@ -173,10 +169,37 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-            auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
+            commandList->ImageMemoryBarrier(clouds->shadowTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            auto pipeline = PipelineManager::GetPipeline(shadowPipelineConfig);
             commandList->BindPipeline(pipeline);
 
+            commandList->BindImage(clouds->shadowTexture.image, 3, 0);
+            clouds->shapeTexture.Bind(commandList, 3, 2);
+            clouds->detailTexture.Bind(commandList, 3, 3);
+            clouds->coverageTexture.Bind(commandList, 3, 4);
 
+            CloudShadowUniforms shadowUniforms;
+            clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
+                shadowUniforms.ivMatrix, shadowUniforms.ipMatrix);
+
+            shadowUniforms.ipMatrix = glm::inverse(shadowUniforms.ipMatrix);
+            shadowUniforms.ivMatrix = glm::inverse(shadowUniforms.ivMatrix);
+            shadowUniforms.lightDirection = vec4(normalize(sun->direction), 0.0f);
+            shadowUniformBuffer.SetData(&shadowUniforms, 0);
+
+            auto uniforms = GetUniformStructure(camera, scene);
+            uniforms.distanceLimit = 10e9f;
+            shadowVolumetricUniformBuffer.SetData(&uniforms, 0);
+
+            shadowVolumetricUniformBuffer.Bind(commandList, 3, 7);
+            shadowUniformBuffer.Bind(commandList, 3, 8);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            commandList->ImageMemoryBarrier(clouds->shadowTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             Graphics::Profiler::EndQuery();
 

@@ -17,6 +17,8 @@ layout(set = 3, binding = 0, r16f) writeonly uniform image2D volumetricCloudShad
 layout(std140, set = 3, binding = 8) uniform UniformBuffer {
     mat4 ivMatrix;
     mat4 ipMatrix;
+
+    vec4 lightDirection;
 } uniforms;
 
 float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos);
@@ -34,50 +36,51 @@ void main() {
     vec3 maxDepthPos = ConvertDepthToViewSpace(1.0, texCoord, uniforms.ipMatrix);
 
     float depth = ComputeVolumetricClouds(minDepthPos, maxDepthPos);
-    imageStore(volumetricCloudShadowImage, pixel, vec4(exp(depth)));
+    imageStore(volumetricCloudShadowImage, pixel, vec4(depth));
 
 }
 
 float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
 
-    vec3 rayDirection = normalize(vec3(uniforms.ivMatrix * vec4(minDepthPos, 0.0)));
+    vec3 rayDirection = uniforms.lightDirection.xyz;
     vec3 rayOrigin = vec3(uniforms.ivMatrix * vec4(minDepthPos, 1.0));
 
     float inDist, outDist;
     CalculateRayLength(rayOrigin, rayDirection, inDist, outDist);
 
-    if (inDist <= 0.0 && outDist <= 0.0)
-        return 1.0;
-
     float rayLength = outDist - inDist;
     float rayStart = inDist;
 
-    const int sampleCount = cloudUniforms.sampleCount;
-    int raySampleCount = max(sampleCount, int((rayLength / cloudUniforms.distanceLimit) * float(sampleCount)));
+    int raySampleCount = cloudUniforms.sampleCount / 4;
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
     float depth = maxDepthPos.z;
-    float transmittance = 1.0;
+    float extinction = 1.0;
     vec3 rayPos = rayOrigin + rayDirection * rayStart;
 
     for (int i = 0; i < raySampleCount; i++) {
-        if (transmittance > epsilon) {
+        if (extinction > epsilon) {
             vec2 coverageTexCoords;
             vec3 shapeTexCoords, detailTexCoords;
             CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords, coverageTexCoords);
 
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
-                coverageTexCoords, vec3(1.0), 0.0));
-            transmittance *= exp(-density * stepLength);
+                coverageTexCoords, vec3(1.0), 0.0, false));
 
-            float currentDepth = rayStart + float(i) * stepLength;
-            depth = mix(depth, currentDepth, pow(transmittance, 4.0));
+            if (density > 0.0) {
+                float extinctionCoefficient = cloudUniforms.extinctionFactor *
+                cloudUniforms.extinctionCoefficients.a * density;
+                extinction *= exp(-extinctionCoefficient * stepLength);
+
+                float currentDepth = rayStart + float(i) * stepLength;
+                depth = mix(depth, currentDepth, pow(extinction, 4.0));
+            }
         }
 
         rayPos += stepVector;
     }
 
-    return depth;
+    return extinction;
 
 }

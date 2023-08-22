@@ -216,7 +216,7 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 }
 
 float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
-    vec2 coverageTexCoords, vec3 weatherData, float lod) {
+    vec2 coverageTexCoords, vec3 weatherData, float lod, bool sampleDetail) {
 
     float baseCloudDensity = textureLod(shapeTexture, shapeTexCoords, lod).r;
 
@@ -233,7 +233,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     1.0, 0.0, 1.0);
     float finalCloudDensity = baseCloudDensity;
 
-    if (baseCloudDensity > 0.0) {
+    if (baseCloudDensity > 0.0 && sampleDetail) {
         float highFrequencyFBM = textureLod(detailTexture, detailTexCoords, lod).r;
 
         float highFrequencyNoiseModifier = mix(highFrequencyFBM,

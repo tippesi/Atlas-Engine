@@ -38,7 +38,7 @@ namespace Atlas {
             // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
             // shadows (or lights) view matrix. This is just a hack
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
-            viewMatrix = lookAt(cascadeCenter - lightDirection, cascadeCenter, up);
+            viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
             std::vector<vec3> corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
@@ -48,7 +48,6 @@ namespace Atlas {
             auto maxLength = 0.0f;
 
             for (auto corner : corners) {
-
                 maxLength = glm::max(maxLength, glm::length(corner - cascadeCenter));
 
                 corner = vec3(viewMatrix * vec4(corner, 1.0f));
@@ -64,12 +63,17 @@ namespace Atlas {
 
             maxLength = glm::ceil(maxLength);
 
-            projectionMatrix = glm::ortho(-maxLength,
-                maxLength,
-                -maxLength,
-                maxLength,
-                -maxLength - 5050.0f, // We need to render stuff behind the camera
-                maxLength + 10.0f);
+            const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
+
+            projectionMatrix = glm::ortho(minProj.x,
+                maxProj.x,
+                minProj.y,
+                maxProj.y,
+                -maxProj.z - 5250.0f, // We need to render stuff behind the camera
+                -minProj.z + 10.0f);
 
         }
 

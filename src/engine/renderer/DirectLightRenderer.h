@@ -53,10 +53,10 @@ namespace Atlas {
             };
 
             struct alignas(16) Uniforms {
-                Light light;
-
                 mat4 cloudShadowViewMatrix;
                 mat4 cloudShadowProjectionMatrix;
+
+                Light light;
             };
 
             PipelineConfig pipelineConfig;

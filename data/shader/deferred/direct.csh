@@ -27,10 +27,10 @@ layout(set = 3, binding = 3) uniform sampler2D cloudMap;
 #endif
 
 layout(std140, set = 3, binding = 4) uniform LightBuffer {
-    Light light;
-
     mat4 cloudShadowViewMatrix;
     mat4 cloudShadowProjectionMatrix;
+
+    Light light;
 } lightData;
 
 void main() {
@@ -70,13 +70,13 @@ void main() {
         shadowFactor = min(sssFactor, shadowFactor);
 #endif
 #ifdef CLOUD_SHADOWS
-        vec4 cloudShadowViewCoords = lightData.cloudShadowViewMatrix * vec4(surface.P, 1.0);
+        vec4 cloudShadowViewCoords = lightData.cloudShadowViewMatrix * globalData.ivMatrix * vec4(surface.P, 1.0);
         vec4 cloudShadowCoords = lightData.cloudShadowProjectionMatrix * cloudShadowViewCoords;
         cloudShadowCoords.xyz /= cloudShadowCoords.w;
 
-        float cloudExpDepth = textureLod(cloudMap, cloudShadowCoords.xy, 0.0).r;
-        float cloudShadowFactor = cloudExpDepth * exp(-cloudShadowViewCoords.z);
-        shadowFactor = min(shadowFactor, cloudShadowFactor);
+        float cloudDepth = textureLod(cloudMap, 0.5 * cloudShadowCoords.xy + 0.5, 0.0).r;
+        float cloudShadowFactor = exp(80.0 * cloudDepth) * exp(-80.0 * cloudShadowViewCoords.z);
+        shadowFactor = min(shadowFactor, cloudDepth);
 #endif
         vec3 radiance = lightData.light.color.rgb * lightData.light.intensity;
         direct = direct * radiance * surface.NdotL * shadowFactor;

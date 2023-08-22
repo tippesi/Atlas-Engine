@@ -62,6 +62,7 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth) {
 
     float rayLength = depth < 1.0 ? min(length(fragPos), outDist - inDist) : outDist - inDist;
 
-    return IntegrateVolumetricClouds(rayOrigin, rayDirection, inDist, rayLength, blueNoiseVec);
+    return IntegrateVolumetricClouds(rayOrigin, rayDirection, inDist,
+        rayLength, blueNoiseVec);
 
 }

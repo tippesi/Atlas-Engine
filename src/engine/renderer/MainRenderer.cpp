@@ -181,6 +181,8 @@ namespace Atlas {
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
             }
 
+            volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
+
             if (!target->HasHistory()) {
                 auto rtData = target->GetHistoryData(HALF_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
