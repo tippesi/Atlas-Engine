@@ -3,6 +3,7 @@
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
+#include <../clouds/shadow.hsh>
 #include <../structures>
 
 #include <shoreInteraction.hsh>
@@ -22,6 +23,7 @@ layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
 layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
+layout(set = 3, binding = 15) uniform sampler2D cloudMap;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
@@ -76,7 +78,14 @@ void main() {
     
     float shadowFactor = max(CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 0.0), 0.01);
-    
+
+#ifdef CLOUD_SHADOWS
+    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudMap);
+    shadowFactor = min(shadowFactor, cloudShadowFactor);
+#endif
+
+    shadowFactor = max(shadowFactor, 0.01);
+
     fNormal = mix(normalShoreWave, fNormal, shoreScaling);
 
     // Create TBN matrix for normal mapping

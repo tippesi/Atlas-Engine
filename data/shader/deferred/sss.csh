@@ -3,6 +3,7 @@
 #include <../globals.hsh>
 #include <../ddgi/ddgi.hsh>
 #include <../brdf/brdfEval.hsh>
+#include <../common/ign.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
@@ -19,16 +20,6 @@ layout(push_constant) uniform constants {
     float maxLength;
     float thickness;
 } pushConstants;
-
-// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
-float GetInterleavedGradientNoise(vec2 screenPos) {
-    uint frame = globalData.frameCount % 64u;
-    float x = float(screenPos.x) + 5.588238 * float(frame);
-    float y = float(screenPos.y) + 5.588238 * float(frame);
-    
-    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
-    return fract(magic.z * fract(dot(vec2(x, y), magic.xy)));
-}
 
 float EdgeFadeOut(vec2 screenPos, float fadeDist) {
 

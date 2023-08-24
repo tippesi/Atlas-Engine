@@ -1,0 +1,27 @@
+#include <../structures>
+#include <../globals.hsh>
+#include <../common/convert.hsh>
+
+float CalculateCloudShadow(vec3 P, CloudShadow cloudShadow, sampler2D shadowMap) {
+
+    vec4 cloudShadowViewCoords = cloudShadow.vMatrix * vec4(P, 1.0);
+    vec4 cloudShadowCoords = cloudShadow.pMatrix * cloudShadowViewCoords;
+    cloudShadowCoords.xyz /= cloudShadowCoords.w;
+
+    vec2 texCoord = 0.5 * cloudShadowCoords.xy + 0.5;
+
+    vec3 rayOrigin = ConvertDepthToViewSpace(0.0, texCoord, cloudShadow.ipMatrix);
+    float rayStart = rayOrigin.z;
+
+    vec2 depthExtinction = textureLod(shadowMap, texCoord, 0.0).rg;
+
+    vec4 depths = textureGather(shadowMap, texCoord, 0);
+    float minDepth = min(depths.x, min(depths.y, min(depths.z, depths.w)));
+
+    float cloudDepth = -minDepth + rayStart;
+    float fragmentDepth = cloudShadowViewCoords.z;
+    float cloudShadowFactor = exp(80.0 * cloudDepth) * exp(-80.0 * fragmentDepth);
+
+    return cloudDepth > fragmentDepth ? depthExtinction.g : 1.0;
+
+}

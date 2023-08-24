@@ -73,7 +73,7 @@ vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
 
         NdotL = saturate(NdotL);
         if (NdotL > 0.0) {
-            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 1.0);
+            color.xyz += min(textureLod(cubeMap, L, 5.0).rgb, 5.0);
             color.w += 1.0;
         }
 

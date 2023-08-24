@@ -12,7 +12,7 @@
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
-layout(set = 3, binding = 0, r16f) writeonly uniform image2D volumetricCloudShadowImage;
+layout(set = 3, binding = 0, rg16f) writeonly uniform image2D volumetricCloudShadowImage;
 
 layout(std140, set = 3, binding = 8) uniform UniformBuffer {
     mat4 ivMatrix;
@@ -21,7 +21,7 @@ layout(std140, set = 3, binding = 8) uniform UniformBuffer {
     vec4 lightDirection;
 } uniforms;
 
-float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos);
+vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos);
 
 void main() {
 
@@ -35,12 +35,12 @@ void main() {
     vec3 minDepthPos = ConvertDepthToViewSpace(0.0, texCoord, uniforms.ipMatrix);
     vec3 maxDepthPos = ConvertDepthToViewSpace(1.0, texCoord, uniforms.ipMatrix);
 
-    float depth = ComputeVolumetricClouds(minDepthPos, maxDepthPos);
-    imageStore(volumetricCloudShadowImage, pixel, vec4(depth));
+    vec2 depthExtinction = ComputeVolumetricClouds(minDepthPos, maxDepthPos);
+    imageStore(volumetricCloudShadowImage, pixel, vec4(depthExtinction, 0.0, 1.0));
 
 }
 
-float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
+vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
 
     vec3 rayDirection = uniforms.lightDirection.xyz;
     vec3 rayOrigin = vec3(uniforms.ivMatrix * vec4(minDepthPos, 1.0));
@@ -55,7 +55,9 @@ float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 
-    float depth = maxDepthPos.z;
+    float maxDepth = abs(maxDepthPos.z - minDepthPos.z);
+
+    float depth = maxDepth;
     float extinction = 1.0;
     vec3 rayPos = rayOrigin + rayDirection * rayStart;
 
@@ -68,19 +70,17 @@ float ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
                 coverageTexCoords, vec3(1.0), 0.0, false));
 
-            if (density > 0.0) {
-                float extinctionCoefficient = cloudUniforms.extinctionFactor *
-                cloudUniforms.extinctionCoefficients.a * density;
-                extinction *= exp(-extinctionCoefficient * stepLength);
+            float extinctionCoefficient = cloudUniforms.extinctionFactor *
+            cloudUniforms.extinctionCoefficients.a * density;
+            extinction *= exp(-extinctionCoefficient * stepLength);
 
-                float currentDepth = rayStart + float(i) * stepLength;
-                depth = mix(depth, currentDepth, pow(extinction, 4.0));
-            }
+            float currentDepth = rayStart + float(i) * stepLength;
+            depth = mix(depth, currentDepth, pow(extinction, 4.0));
         }
 
         rayPos += stepVector;
     }
 
-    return extinction;
+    return vec2(extinction < 1.0 ? depth : maxDepth, extinction);
 
 }

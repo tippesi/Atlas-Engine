@@ -29,6 +29,10 @@ layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {
     Light light;
 } LightUniforms;
 
+layout (set = 3, binding = 14, std140) uniform CloudShadowUniformBuffer {
+    CloudShadow cloudShadow;
+} cloudShadowUniforms;
+
 layout(push_constant) uniform constants {
     float nodeSideLength;
     float tileScale;

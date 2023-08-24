@@ -6,23 +6,27 @@ layout (local_size_x = 8, local_size_y = 8) in;
 
 #include <../globals.hsh>
 #include <../structures>
+#include <../common/ign.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
+#include <../clouds/shadow.hsh>
 
 #include <fog.hsh>
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricImage;
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler2DArrayShadow cascadeMaps;
+layout(set = 3, binding = 3) uniform sampler2D cloudMap;
 
-layout(std140, set = 3, binding = 3) uniform UniformBuffer {
+layout(std140, set = 3, binding = 4) uniform UniformBuffer {
     int sampleCount;
     float intensity;
     float seed;
     int fogEnabled;
     Fog fog;
     Light light;
+    CloudShadow cloudShadow;
 } uniforms;
 
 vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords);
@@ -45,9 +49,6 @@ void main() {
 
 }
 
-const float ditherPattern[16] = float[](0.0, 0.5, 0.125, 0.625, 0.75, 0.22, 0.875, 0.375,
-        0.1875, 0.6875, 0.0625, 0.5625, 0.9375, 0.4375, 0.8125, 0.3125);
-
 vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
     vec2 resolution = vec2(imageSize(volumetricImage));
@@ -63,13 +64,9 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
     vec3 foginess = vec3(0.0);
     
     texCoords = (0.5 * texCoords + 0.5) * resolution;
-    
-    float rndSeed = uniforms.seed;
-    float rnd0 = random(texCoords, rndSeed) * 0.0;
-    float rnd1 = random(texCoords, rndSeed) * 0.0;
-    float ditherValue = ditherPattern[(int(texCoords.x + rnd0) % 4) * 4 + int(texCoords.y + rnd1) % 4];
-   
-    vec3 currentPosition = stepVector * ditherValue;
+
+    float noiseOffset = GetInterleavedGradientNoise(texCoords);
+    vec3 currentPosition = stepVector * noiseOffset;
 
     int cascadeIndex = 0;
     int lastCascadeIndex = 0;
@@ -113,7 +110,10 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         float shadowValue = texture(cascadeMaps, 
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
 #endif
-
+#ifdef CLOUD_SHADOWS
+        float cloudShadowValue = CalculateCloudShadow(currentPosition, uniforms.cloudShadow, cloudMap);
+        shadowValue = min(shadowValue, cloudShadowValue);
+#endif
         vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
         
         float fogAmount = uniforms.fogEnabled > 0 ? (1.0 - saturate(ComputeVolumetricFog(uniforms.fog, viewPosition, worldPosition))) : 1.0;
