@@ -17,6 +17,7 @@ namespace Atlas {
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
+            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -42,6 +43,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Ocean");
 
             auto ocean = scene->ocean;
+            auto clouds = scene->sky.clouds;
 
             ocean->simulation.Compute(commandList);
 
@@ -98,6 +100,25 @@ namespace Atlas {
 
             lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
+
+            bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            CloudShadow cloudShadowUniform;
+
+            if (cloudShadowsEnabled) {
+                clouds->shadowTexture.Bind(commandList, 3, 15);
+
+                clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
+                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+
+                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+            }
+
+            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
+            cloudShadowUniformBuffer.Bind(commandList, 3, 14);
 
             {
                 Graphics::Profiler::BeginQuery("Caustics");
@@ -176,6 +197,8 @@ namespace Atlas {
                     target->lightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);
+                if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
+
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);

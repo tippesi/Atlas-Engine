@@ -40,9 +40,6 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Render volumetric");
 
-            auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
-            commandList->BindPipeline(volumetricPipeline);
-
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
 
@@ -118,8 +115,30 @@ namespace Atlas {
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
+                auto clouds = scene->sky.clouds;
+                bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+
+                if (cloudShadowsEnabled) {
+                    auto& cloudShadowUniform = uniforms.cloudShadow;
+
+                    clouds->shadowTexture.Bind(commandList, 3, 3);
+
+                    clouds->GetShadowMatrices(camera, directionalLight->direction,
+                        cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+
+                    cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+                    cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+                }
+
                 volumetricUniformBuffer.SetData(&uniforms, 0);
-                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 3);
+                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 4);
+
+                volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
+
+                commandList->BindPipeline(volumetricPipeline);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }

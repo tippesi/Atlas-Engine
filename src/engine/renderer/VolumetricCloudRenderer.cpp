@@ -36,6 +36,8 @@ namespace Atlas {
         void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
             Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
+            frameCount++;
+
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;
             if (!clouds || !clouds->enable) return;
@@ -277,8 +279,6 @@ namespace Atlas {
         VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(Camera *camera,
             Scene::Scene *scene) {
 
-            static uint32_t frameCount = 0;
-
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;
 
@@ -308,7 +308,7 @@ namespace Atlas {
                 .densityMultiplier = clouds->densityMultiplier,
 
                 .time = Clock::Get(),
-                .frameSeed = frameCount++,
+                .frameSeed = frameCount,
 
                 .sampleCount = clouds->sampleCount,
                 .shadowSampleCount = clouds->shadowSampleCount,

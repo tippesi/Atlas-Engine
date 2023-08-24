@@ -68,9 +68,7 @@ int main(int argc, char* argv[]) {
         engineInstance->Render(deltaTime);
 
         graphicsDevice->CompleteFrame();
-
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
+        
     }
 
     engineInstance->UnloadContent();

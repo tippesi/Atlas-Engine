@@ -15,7 +15,7 @@ namespace Atlas {
             detailTexture(detailResolution, detailResolution, detailResolution,
                 VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear),
             shadowTexture(shadowResolution, shadowResolution,
-                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear) {
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear) {
 
             Common::Image<float> noiseImage(coverageResolution, coverageResolution, 1);
             std::vector<float> amplitudes = {0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.25f, 0.125f};
@@ -61,18 +61,16 @@ namespace Atlas {
                 minProj.z = glm::min(minProj.z, corner.z);
             }
 
-            maxLength = glm::ceil(maxLength);
-
             const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, -1.0f, 0.0f, 0.0f,
                 0.0f, 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f, 1.0f);
 
-            projectionMatrix = glm::ortho(minProj.x,
+            projectionMatrix = clip * glm::ortho(minProj.x,
                 maxProj.x,
                 minProj.y,
                 maxProj.y,
-                -maxProj.z - 5250.0f, // We need to render stuff behind the camera
+                -maxProj.z - 10250.0f, // We need to render stuff behind the camera
                 -minProj.z + 10.0f);
 
         }

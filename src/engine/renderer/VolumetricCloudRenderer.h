@@ -25,40 +25,6 @@ namespace Atlas {
             void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) Cascade {
-                float distance;
-                float texelSize;
-                float aligment0;
-                float aligment1;
-                mat4 cascadeSpace;
-            };
-
-            struct alignas(16) Shadow {
-                float distance;
-                float bias;
-
-                float cascadeBlendDistance;
-
-                int cascadeCount;
-                vec2 resolution;
-
-                Cascade cascades[6];
-            };
-
-            struct alignas(16) Light {
-                vec4 location;
-                vec4 direction;
-
-                vec4 color;
-                float intensity;
-
-                float scatteringFactor;
-
-                float radius;
-
-                Shadow shadow;
-            };
-
             struct alignas(16) VolumetricCloudUniforms {
                 Light light;
 
@@ -127,6 +93,8 @@ namespace Atlas {
 
             Buffer::UniformBuffer shadowUniformBuffer;
             Buffer::UniformBuffer shadowVolumetricUniformBuffer;
+
+            uint32_t frameCount = 0;
 
         };
 

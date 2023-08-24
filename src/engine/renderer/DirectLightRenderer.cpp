@@ -13,7 +13,8 @@ namespace Atlas {
                 .domain = Graphics::BufferDomain::Host,
                 .size = sizeof(Uniforms)
             };
-            uniformBuffer = device->CreateMultiBuffer(bufferDesc);
+            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
+            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             pipelineConfig = PipelineConfig("deferred/direct.csh");
 
@@ -85,26 +86,35 @@ namespace Atlas {
                 }
             }
 
+            uniformBuffer.SetData(&uniforms, 0);
+
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            commandList->BindBuffer(uniformBuffer, 3, 4);
+            uniformBuffer.Bind(commandList, 3, 4);
 
             if (sss && sss->enable) {
                 commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 2);
             }
 
+            CloudShadow cloudShadowUniform;
             if (clouds && clouds->enable && clouds->castShadow) {
                 clouds->shadowTexture.Bind(commandList, 3, 3);
 
                 clouds->GetShadowMatrices(camera, glm::normalize(light->direction),
-                    uniforms.cloudShadowViewMatrix, uniforms.cloudShadowProjectionMatrix);
+                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
             }
 
-            uniformBuffer->SetData(&uniforms, 0, sizeof(uniforms));
+            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
+            cloudShadowUniformBuffer.Bind(commandList, 3, 5);
 
             ivec2 res = ivec2(target->GetWidth(), target->GetHeight());
             int32_t groupSize = 8;
