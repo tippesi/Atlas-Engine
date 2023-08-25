@@ -52,7 +52,6 @@ layout(location=0) in vec2 materialTexCoords;
 layout(location=1) in vec2 texCoords;
 layout(location=2) in vec3 ndcCurrent;
 layout(location=3) in vec3 ndcLast;
-// layout(location=4) flat in uvec4 materialIndicesTE;
 
 vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling) {
     
@@ -197,7 +196,7 @@ void main() {
 
     geometryNormalFS = 0.5 * normalize(mat3(globalData.vMatrix) * norm) + 0.5;
     
-#ifndef DISTANCE
+#ifdef MATERIAL_MAPPING
     // Normal mapping only for near tiles
     float normalScale = Interpolate(
         Materials.materials[nonuniformEXT(indices.x)].normalScale,

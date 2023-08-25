@@ -25,14 +25,29 @@ namespace Atlas {
 
             terrain->UpdateRenderlist(&camera->frustum, camera->GetLocation());
 
+            std::vector<Terrain::TerrainNode*> detailDisplacementNodes;
             std::vector<Terrain::TerrainNode*> detailNodes;
             std::vector<Terrain::TerrainNode*> distanceNodes;
 
+            vec3 cameraLocation = camera->GetLocation();
+
             for (auto node : terrain->renderList) {
-                if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx)
-                    detailNodes.push_back(node);
-                else
+                if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx) {
+                    vec2 nodeMin = vec2(node->location);
+                    vec2 nodeMax = nodeMin + node->sideLength;
+
+                    auto dx = glm::max(glm::max(nodeMin.x - cameraLocation.x, cameraLocation.x - nodeMax.x), 0.0f);
+                    auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
+                    auto dist = glm::sqrt(dx * dx + dy * dy);
+
+                    if (dist < terrain->displacementDistance)
+                        detailDisplacementNodes.push_back(node);
+                    else
+                        detailNodes.push_back(node);
+                }
+                else {
                     distanceNodes.push_back(node);
+                }
             }
 
             auto materials = terrain->storage.GetMaterials();
@@ -53,8 +68,6 @@ namespace Atlas {
             }
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
-
-            terrain->vertexArray.Bind(commandList);
 
             terrain->storage.baseColorMaps.Bind(commandList, 3, 3);
             terrain->storage.roughnessMaps.Bind(commandList, 3, 4);
@@ -81,17 +94,24 @@ namespace Atlas {
             terrainMaterialBuffer.Bind(commandList, 3, 8);
             uniformBuffer.Bind(commandList, 3, 9);
 
-            for (uint8_t i = 0; i < 2; i++) {
+            for (uint8_t i = 0; i < 3; i++) {
 
                 std::vector<Terrain::TerrainNode*> nodes;
 
                 PipelineConfig config;
                 switch (i) {
-                    case 0: config = GeneratePipelineConfig(target, terrain, true);
+                case 0: config = GeneratePipelineConfig(target, terrain, true, true);
+                    terrain->vertexArray.Bind(commandList);
+                    Graphics::Profiler::BeginQuery("Detail with displacement");
+                    nodes = detailDisplacementNodes;
+                    break;
+                case 1: config = GeneratePipelineConfig(target, terrain, false, true);
+                    terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Detail");
                     nodes = detailNodes;
                     break;
-                case 1: config = GeneratePipelineConfig(target, terrain, false);
+                case 2: config = GeneratePipelineConfig(target, terrain, false, false);
+                    terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Distance");
                     nodes = distanceNodes;
                     break;
@@ -126,7 +146,10 @@ namespace Atlas {
 
                     commandList->PushConstants("constants", &constants);
 
-                    commandList->Draw(terrain->patchVertexCount, 64);
+                    if (i == 0)
+                        commandList->Draw(terrain->patchVertexCount, 64);
+                    else
+                        commandList->DrawIndexed(terrain->distanceVertexArray.GetIndexComponent().elementCount);
 
                 }
 
@@ -139,27 +162,47 @@ namespace Atlas {
         }
 
         PipelineConfig TerrainRenderer::GeneratePipelineConfig(RenderTarget *target,
-            Ref<Terrain::Terrain>& terrain, bool detailConfig) {
+            Ref<Terrain::Terrain>& terrain, bool detailConfig, bool materialMappingConfig) {
 
-            const auto shaderConfig = ShaderConfig {
-                {"terrain/terrain.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"terrain/terrain.tcsh", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
-                {"terrain/terrain.tesh", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
-                {"terrain/terrain.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
-            };
+            if (detailConfig) {
+                const auto shaderConfig = ShaderConfig{
+                    {"terrain/terrain.vsh",  VK_SHADER_STAGE_VERTEX_BIT},
+                    {"terrain/terrain.tcsh", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
+                    {"terrain/terrain.tesh", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
+                    {"terrain/terrain.fsh",  VK_SHADER_STAGE_FRAGMENT_BIT},
+                };
 
-            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = target->gBufferFrameBuffer,
-                .vertexInputInfo = terrain->vertexArray.GetVertexInputState(),
-            };
+                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                    .frameBuffer = target->gBufferFrameBuffer,
+                    .vertexInputInfo = terrain->vertexArray.GetVertexInputState(),
+                };
 
-            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-            pipelineDesc.tessellationInfo.patchControlPoints = 4;
-            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
-            pipelineDesc.rasterizer.polygonMode = terrain->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+                pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+                pipelineDesc.tessellationInfo.patchControlPoints = 4;
+                pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+                pipelineDesc.rasterizer.polygonMode = terrain->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 
-            return detailConfig ? PipelineConfig(shaderConfig, pipelineDesc) :
-                   PipelineConfig(shaderConfig, pipelineDesc, {"DISTANCE"});
+                return !materialMappingConfig ? PipelineConfig(shaderConfig, pipelineDesc) :
+                    PipelineConfig(shaderConfig, pipelineDesc, {"MATERIAL_MAPPING"});
+            }
+            else {
+                const auto shaderConfig = ShaderConfig{
+                    {"terrain/terrain.vsh",  VK_SHADER_STAGE_VERTEX_BIT},
+                    {"terrain/terrain.fsh",  VK_SHADER_STAGE_FRAGMENT_BIT},
+                };
+
+                auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+                    .frameBuffer = target->gBufferFrameBuffer,
+                    .vertexInputInfo = terrain->distanceVertexArray.GetVertexInputState(),
+                };
+
+                pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+                pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+                pipelineDesc.rasterizer.polygonMode = terrain->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+
+                return !materialMappingConfig ? PipelineConfig(shaderConfig, pipelineDesc, {"DISTANCE"}) :
+                       PipelineConfig(shaderConfig, pipelineDesc, {"DISTANCE", "MATERIAL_MAPPING"});
+            }
 
         }
 
