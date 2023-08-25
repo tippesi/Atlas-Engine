@@ -25,8 +25,8 @@ layout(location=4) flat in int indexVS;
 #endif
 
 #ifdef PIXEL_DEPTH_OFFSET
-layout(location=10) flat in int instanceIndexVS;
-layout(location=11) in vec4 modelPositionVS;
+layout(location=10) in vec3 modelPositionVS;
+layout(location=11) flat in mat4 instanceMatrix;
 #endif
 
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
@@ -85,6 +85,7 @@ void main() {
     geometryNormalFS = normalize(vec3(globalData.vMatrix * vec4(geometryNormalFS, 0.0)));
     // We want the normal always two face the camera for two sided materials
     geometryNormalFS *= -dot(geometryNormalFS, positionVS);
+    geometryNormalFS = normalize(geometryNormalFS);
     geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
 
     normalFS = vec3(0.0);
@@ -115,7 +116,6 @@ void main() {
     materialIdxFS = PushConstants.materialIdx;
 
 #ifdef PIXEL_DEPTH_OFFSET
-    mat4 mMatrix = matrices[instanceIndexVS];
 #ifdef INTERPOLATION
     float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).r;
     float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).r;
@@ -127,8 +127,8 @@ void main() {
 #else
     float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).r;
 #endif
-    vec4 modelPosition = modelPositionVS + vec4(0.0, 0.0, depthOffset, 0.0);
-    vec4 modelPositionFS = globalData.pMatrix * globalData.vMatrix * mMatrix * vec4(modelPosition.xyz, 1.0);
+    vec3 modelPosition = modelPositionVS + depthOffset * -globalData.cameraDirection.xyz;
+    vec4 modelPositionFS = instanceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;
 #endif

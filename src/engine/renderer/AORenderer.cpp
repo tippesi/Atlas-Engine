@@ -123,7 +123,7 @@ namespace Atlas {
                 auto uniforms = SSUniforms {
                     .radius = ao->radius,
                     .sampleCount = ao->sampleCount,
-                    .frameCount = 0
+                    .frameCount = frameCount++
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
                 ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);

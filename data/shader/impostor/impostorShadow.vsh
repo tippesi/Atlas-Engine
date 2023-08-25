@@ -17,8 +17,8 @@ layout(location=6) flat out float weight2VS;
 layout(location=1) flat out int indexVS;
 #endif
 #ifdef PIXEL_DEPTH_OFFSET
-layout(location=7) flat out int instanceIndexVS;
-layout(location=8) out vec4 modelPositionVS;
+layout(location=7) out vec3 modelPositionVS;
+layout(location=8) flat out mat4 instanceMatrix;
 #endif
 
 
@@ -129,8 +129,8 @@ void main() {
         + normalize(right.xyz) * position.x) + PushConstants.center.xyz, 1.0);
 
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceIndexVS = int(gl_InstanceIndex);
-	modelPositionVS = modelPosition;
+	instanceMatrix = PushConstants.lightSpaceMatrix * mMatrix;
+	modelPositionVS = modelPosition.xyz;
 #endif
 
     gl_Position =  PushConstants.lightSpaceMatrix * mMatrix * modelPosition;

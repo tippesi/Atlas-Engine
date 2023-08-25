@@ -143,6 +143,15 @@ namespace Atlas {
                 terrainShadowRenderer.Render(viewport, target, camera, scene, commandList);
             }
 
+            if (scene->sky.GetProbe()) {
+                commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
+                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
+            }
+
+            volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
+
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             {
@@ -173,15 +182,6 @@ namespace Atlas {
             commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 5);
             commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 6);
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
-
-            if (scene->sky.GetProbe()) {
-                commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
-                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
-            }
-
-            volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
 
             if (!target->HasHistory()) {
                 auto rtData = target->GetHistoryData(HALF_RES);

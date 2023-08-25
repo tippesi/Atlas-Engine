@@ -36,8 +36,8 @@ layout(location=4) flat out int indexVS;
 #endif
 
 #ifdef PIXEL_DEPTH_OFFSET
-layout(location=10) flat out int instanceIndexVS;
-layout(location=11) out vec4 modelPositionVS;
+layout(location=10) out vec3 modelPositionVS;
+layout(location=11) flat out mat4 instanceMatrix;
 #endif
 
 layout(push_constant) uniform constants {
@@ -142,8 +142,8 @@ void main() {
 	positionVS = vec3(globalData.vMatrix * mMatrix * modelPosition);
 
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceIndexVS = int(gl_InstanceIndex);
-	modelPositionVS = modelPosition;
+	instanceMatrix = globalData.pMatrix * globalData.vMatrix * mMatrix;
+	modelPositionVS = modelPosition.xyz;
 #endif
 
     gl_Position =  globalData.pMatrix * vec4(positionVS, 1.0);
