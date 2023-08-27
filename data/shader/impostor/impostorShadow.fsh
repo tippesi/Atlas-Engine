@@ -19,57 +19,63 @@ layout(location=8) flat in mat4 instanceMatrix;
 
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 #ifdef PIXEL_DEPTH_OFFSET
-layout(set = 3, binding = 2) uniform sampler2DArray depthMap;
+layout(set = 3, binding = 1) uniform sampler2DArray depthMap;
 #endif
 
 layout(std430, set = 1, binding = 2) buffer Matrices {
     mat4 matrices[];
 };
 
+layout(set = 3, binding = 3, std140) uniform UniformBuffer{
+	vec4 center;
+
+    float radius;
+	int views;
+
+	float cutoff;
+	float mipBias;
+} uniforms;
+
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
 
     vec4 lightLocation;
-    vec4 center;
-
-    float radius;
-    int views;
-    float cutoff;
-    float mipBias;
-} PushConstants;
+	vec4 lightUp;
+	vec4 lightRight;
+} pushConstants;
 
 void main() {
 
     vec4 baseColor;
 
 #ifdef INTERPOLATION
-    vec4 baseColor0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).rgba;
-    vec4 baseColor1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).rgba;
-    vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).rgba;
+    vec4 baseColor0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).rgba;
+    vec4 baseColor1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).rgba;
+    vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).rgba;
 
     baseColor = weight0VS * baseColor0 + 
 		weight1VS * baseColor1 + 
 		  weight2VS * baseColor2;
 #else
-    baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).rgba;
+    baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).rgba;
 #endif
 
-    if (baseColor.a < PushConstants.cutoff)
+    if (baseColor.a < uniforms.cutoff)
         discard;
 
 #ifdef PIXEL_DEPTH_OFFSET
 #ifdef INTERPOLATION
-    float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS)), PushConstants.mipBias).r;
-    float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), PushConstants.mipBias).r;
-    float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS)), PushConstants.mipBias).r;
+    float depth0 = texture(depthMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).r;
+    float depth1 = texture(depthMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).r;
+    float depth2 = texture(depthMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).r;
 
     float depthOffset = weight0VS * depth0 +
         weight1VS * depth1 +
         weight2VS * depth2;
 #else
-    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), PushConstants.mipBias).r;
+    float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).r;
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * normalize(PushConstants.lightLocation.xyz);
+    vec3 modelPosition = modelPositionVS + depthOffset * normalize(pushConstants.lightLocation.xyz);
     vec4 modelPositionFS = instanceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

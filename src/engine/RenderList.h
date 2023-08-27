@@ -58,9 +58,9 @@ namespace Atlas {
 
         void FillBuffers();
 
-        std::vector<mat4> currentActorMatrices;
-        std::vector<mat4> lastActorMatrices;
-        std::vector<mat4> impostorMatrices;
+        std::vector<mat3x4> currentActorMatrices;
+        std::vector<mat3x4> lastActorMatrices;
+        std::vector<mat3x4> impostorMatrices;
 
         Ref<Graphics::MultiBuffer> currentMatricesBuffer;
         Ref<Graphics::MultiBuffer> lastMatricesBuffer;

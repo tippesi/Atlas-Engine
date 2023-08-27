@@ -5,12 +5,19 @@
 #include "../volume/AABB.h"
 #include "../texture/Texture2DArray.h"
 #include "../buffer/Buffer.h"
+#include "../buffer/UniformBuffer.h"
 
 namespace Atlas {
+
+    namespace Renderer {
+        class MainRenderer;
+    }
 
     namespace Mesh {
 
         class Impostor {
+
+            friend Renderer::MainRenderer;
 
         public:
             Impostor() = default;
@@ -29,6 +36,7 @@ namespace Atlas {
             Texture::Texture2DArray depthTexture;
 
             Buffer::Buffer viewPlaneBuffer;
+            Buffer::UniformBuffer impostorInfoBuffer;
 
             vec3 center = vec3(0.0f);
             float radius = 1.0f;
@@ -47,6 +55,16 @@ namespace Atlas {
             struct ViewPlane {
                 vec4 right;
                 vec4 up;
+            };
+
+            struct ImpostorInfo {
+                vec4 center;
+
+                float radius;
+                int32_t views;
+
+                float cutoff;
+                float mipBias;
             };
 
         };

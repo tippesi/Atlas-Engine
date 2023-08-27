@@ -160,6 +160,8 @@ namespace Atlas {
                 vec2 jitterCurrent;
                 vec4 cameraLocation;
                 vec4 cameraDirection;
+                vec4 cameraUp;
+                vec4 cameraRight;
                 float time;
                 float deltaTime;
                 uint32_t frameCount;

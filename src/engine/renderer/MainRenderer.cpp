@@ -294,6 +294,8 @@ namespace Atlas {
                 .jitterCurrent = camera->GetJitter(),
                 .cameraLocation = vec4(camera->location, 0.0f),
                 .cameraDirection = vec4(camera->direction, 0.0f),
+                .cameraUp = vec4(camera->up, 0.0f),
+                .cameraRight = vec4(camera->right, 0.0f),
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta()
             };
@@ -738,6 +740,8 @@ namespace Atlas {
                 .jitterCurrent = camera->GetJitter(),
                 .cameraLocation = vec4(camera->location, 0.0f),
                 .cameraDirection = vec4(camera->direction, 0.0f),
+                .cameraUp = vec4(camera->up, 0.0f),
+                .cameraRight = vec4(camera->right, 0.0f),
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
                 .frameCount = frameCount
@@ -776,6 +780,23 @@ namespace Atlas {
                     .volumeEnabled = 0
                 };
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+            }
+
+            auto meshes = scene->GetMeshes();
+
+            for (auto& mesh : meshes) {
+                if (!mesh->impostor) continue;
+
+                auto impostor = mesh->impostor;
+                Mesh::Impostor::ImpostorInfo impostorInfo = {
+                    .center = vec4(impostor->center, 1.0f),
+                    .radius = impostor->radius,
+                    .views = impostor->views,
+                    .cutoff = impostor->cutoff,
+                    .mipBias = impostor->mipBias
+                };
+
+                impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
             }
 
         }

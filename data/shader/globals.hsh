@@ -10,6 +10,8 @@ layout(std140, set = 0, binding = 0) uniform GlobalBuffer {
     vec2 jitterCurrent;
     vec4 cameraLocation;
     vec4 cameraDirection;
+    vec4 cameraUp;
+    vec4 cameraRight;
     float time;
     float deltaTime;
     uint frameCount;

@@ -16,21 +16,19 @@ namespace Atlas {
 
         void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
             Graphics::CommandList* commandList, RenderList::Pass* renderPass,
-            mat4 lightSpaceMatrix, vec3 lightLocation) {
+            mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
             struct alignas(16) PushConstants {
-                mat4 lightSpaceMatrix = mat4(1.0f);
+                mat4 lightSpaceMatrix;
 
-                vec4 lightLocation = vec4(0.0f);
-                vec4 center = vec4(0.0f);
-
-                float radius = 1.0f;
-                int32_t views = 1;
-                float cutoff = 1.0f;
-                float mipBias = -1.0f;
+                vec4 lightLocation;
+                vec4 lightUp;
+                vec4 lightRight;
             };
 
             vertexArray.Bind(commandList);
+
+            auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
             for (auto& item : renderPass->meshToInstancesMap) {
                 auto meshId = item.first;
@@ -48,21 +46,16 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                // Base 0 is used by the materials
-                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 1);
-                mesh->impostor->depthTexture.Bind(commandList, 3, 2);
+                mesh->impostor->depthTexture.Bind(commandList, 3, 1);
+                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
+                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
 
                 PushConstants constants = {
                     .lightSpaceMatrix = lightSpaceMatrix,
 
                     .lightLocation = vec4(lightLocation, 1.0f),
-                    .center = vec4(mesh->impostor->center, 0.0f),
-
-                    .radius = mesh->impostor->radius,
-                    .views = mesh->impostor->views,
-                    .cutoff = mesh->impostor->cutoff,
-
-                    .mipBias = mesh->impostor->mipBias
+                    .lightUp = glm::transpose(lightViewMatrix)[1],
+                    .lightRight = glm::transpose(lightViewMatrix)[0]
                 };
                 commandList->PushConstants("constants", &constants);
 

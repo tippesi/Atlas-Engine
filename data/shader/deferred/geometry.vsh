@@ -26,11 +26,11 @@ layout(location=4) in vec4 vVertexColors;
 #endif
 
 layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
-    mat4 currentMatrices[];
+    mat3x4 currentMatrices[];
 };
 
 layout(std430, set = 1, binding = 1) buffer LastMatrices {
-    mat4 lastMatrices[];
+    mat3x4 lastMatrices[];
 };
 
 // Vertex out parameters
@@ -64,8 +64,8 @@ layout(push_constant) uniform constants {
 // Functions
 void main() {
 
-    mat4 mMatrix = currentMatrices[gl_InstanceIndex];
-    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : lastMatrices[gl_InstanceIndex];
+    mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
+    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;

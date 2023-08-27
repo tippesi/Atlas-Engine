@@ -20,6 +20,8 @@ namespace Atlas {
                 resolution, views * views, VK_FORMAT_R16_SFLOAT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
 
+            impostorInfoBuffer = Buffer::UniformBuffer(sizeof(ImpostorInfo));
+
         }
 
         void Impostor::FillViewPlaneBuffer(std::vector<vec3> rightVectors, std::vector<vec3> upVectors) {

@@ -11,7 +11,7 @@ struct ViewPlane {
 };
 
 layout(std430, set = 1, binding = 2) buffer Matrices {
-	mat4 matrices[];
+	mat3x4 matrices[];
 };
 
 layout (std430, set = 3, binding = 4) buffer ViewPlanes {
@@ -40,15 +40,18 @@ layout(location=10) out vec3 modelPositionVS;
 layout(location=11) flat out mat4 instanceMatrix;
 #endif
 
-layout(push_constant) uniform constants {
+layout(set = 3, binding = 5, std140) uniform UniformBuffer{
 	vec4 center;
 
 	float radius;
 	int views;
-	float cutoff;
-	uint materialIdx;
 
+	float cutoff;
 	float mipBias;
+} uniforms;
+
+layout(push_constant) uniform constants {
+	uint materialIdx;
 } PushConstants;
 
 const bool hemiOctahedron = true;
@@ -71,13 +74,13 @@ vec4 InterpolateTriangle(vec2 coord) {
 
 void main() {
 
-	mat4 mMatrix = matrices[gl_InstanceIndex];
+	mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
     texCoordVS = 0.5 * vPosition + 0.5;
 	
-	vec3 pos = vec3(mMatrix * vec4(0.0, 0.0, 0.0, 1.0));
+	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
 	vec3 dir = normalize(globalData.cameraLocation.xyz - pos);
 
-    float frames = float(PushConstants.views);
+    float frames = float(uniforms.views);
 
 	vec2 octahedron;
 	if (hemiOctahedron) {
@@ -113,7 +116,7 @@ void main() {
 	indexVS = Flatten2D(ivec2(coord), ivec2(frames));
 #endif
 	
-    vec2 position = vPosition.xy * PushConstants.radius;
+    vec2 position = vPosition.xy * uniforms.radius;
 
 	vec4 up, right;
 
@@ -126,7 +129,7 @@ void main() {
 	up = weight0VS * viewPlane0.up + 
 		weight1VS * viewPlane1.up + 
 		weight2VS * viewPlane2.up;
-
+	
 	right = weight0VS * viewPlane0.right + 
 		weight1VS * viewPlane1.right + 
 		weight2VS * viewPlane2.right;
@@ -136,9 +139,12 @@ void main() {
 	up = viewPlane.up;
 	right = viewPlane.right;
 #endif
+	
+	// up = globalData.cameraUp;
+	// right = globalData.cameraRight;
 
 	vec4 modelPosition = vec4((normalize(up.xyz) * position.y
-        + normalize(right.xyz) * position.x) + PushConstants.center.xyz, 1.0);
+        + normalize(right.xyz) * position.x) + uniforms.center.xyz, 1.0);
 	positionVS = vec3(globalData.vMatrix * mMatrix * modelPosition);
 
 #ifdef PIXEL_DEPTH_OFFSET

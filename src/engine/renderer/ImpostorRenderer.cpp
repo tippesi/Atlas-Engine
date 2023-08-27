@@ -18,14 +18,7 @@ namespace Atlas {
             std::unordered_map<void*, uint16_t> materialMap) {
 
             struct alignas(16) PushConstants {
-                vec4 center = vec4(0.0f);
-
-                float radius = 1.0f;
-                int views = 1;
-                float cutoff = 1.0f;
-                uint32_t materialIdx = 0;
-
-                float mipBias = -1.0f;
+                uint32_t materialIdx;
             };
 
             auto light = scene->sky.sun;
@@ -59,16 +52,10 @@ namespace Atlas {
 
                 // Base 0 is used by the materials
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
+                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
 
                 PushConstants constants = {
-                    .center = vec4(mesh->impostor->center, 0.0f),
-
-                    .radius = mesh->impostor->radius,
-                    .views = mesh->impostor->views,
-                    .cutoff = mesh->impostor->cutoff,
                     .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
-
-                    .mipBias = mesh->impostor->mipBias
                 };
                 commandList->PushConstants("constants", &constants);
 

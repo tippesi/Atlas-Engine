@@ -146,7 +146,7 @@ namespace Atlas {
                     }
 
                     impostorRenderer.Render(frameBuffer, renderList, commandList,
-                        shadowPass, lightSpaceMatrix, lightLocation);
+                        shadowPass, component->viewMatrix, component->projectionMatrix, lightLocation);
 
                     commandList->EndRenderPass();
 
