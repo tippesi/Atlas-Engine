@@ -17,11 +17,28 @@ namespace Atlas {
 
         }
 
+        BufferBarrier::BufferBarrier(const Ref<MultiBuffer> &buffer, VkAccessFlags newAccessMask)
+            : newAccessMask(newAccessMask) {
+
+            Update(buffer);
+
+        }
+
         BufferBarrier& BufferBarrier::Update(const Ref<Buffer> &buffer) {
 
             this->buffer = buffer.get();
             barrier = Initializers::InitBufferMemoryBarrier(buffer->buffer,
                 buffer->accessMask, newAccessMask);
+
+            return *this;
+
+        }
+
+        BufferBarrier& BufferBarrier::Update(const Ref<MultiBuffer> &buffer) {
+
+            this->buffer = buffer->GetCurrent();
+            barrier = Initializers::InitBufferMemoryBarrier(this->buffer->buffer,
+                this->buffer->accessMask, newAccessMask);
 
             return *this;
 

@@ -768,6 +768,14 @@ namespace Atlas {
 
         }
 
+        void CommandList::FillBuffer(const Ref<MultiBuffer> &buffer, void *data) {
+
+            // The data has to have a size of 4 bytes and only 4 bytes are taken
+            uint32_t word = *static_cast<uint32_t*>(data);
+            vkCmdFillBuffer(commandBuffer, buffer->GetCurrent()->buffer, 0, VK_WHOLE_SIZE, word);
+
+        }
+
         void CommandList::CopyImage(const Ref<Image>& srcImage,const Ref<Image>& dstImage) {
 
             VkImageCopy copy = {};

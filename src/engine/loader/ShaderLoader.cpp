@@ -17,7 +17,8 @@ namespace Atlas {
 
             std::vector<std::string> includes;
             std::vector<Graphics::ShaderStageFile::Extension> extensions;
-            auto code = ReadShaderFile(path, true, includes, extensions);
+            std::filesystem::file_time_type lastModified;
+            auto code = ReadShaderFile(path, true, includes, extensions, lastModified);
 
             Graphics::ShaderStageFile shaderStageFile;
 
@@ -26,7 +27,7 @@ namespace Atlas {
             shaderStageFile.includes = includes;
             shaderStageFile.extensions = extensions;
             shaderStageFile.shaderStage = shaderStage;
-            shaderStageFile.lastModified = std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(path));
+            shaderStageFile.lastModified = lastModified;
 
             return shaderStageFile;
 
@@ -37,7 +38,8 @@ namespace Atlas {
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
 
-            return std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(path)) != fileTime;
+            auto pathLastModified = std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(path));
+            return pathLastModified > fileTime;
 
         }
 
@@ -48,11 +50,15 @@ namespace Atlas {
         }
 
         std::string ShaderLoader::ReadShaderFile(const std::string& filename, bool mainFile,
-            std::vector<std::string>& includes, std::vector<Graphics::ShaderStageFile::Extension>& extensions) {
+            std::vector<std::string>& includes, std::vector<Graphics::ShaderStageFile::Extension>& extensions,
+            std::filesystem::file_time_type& lastModified) {
 
             std::string shaderCode;
             std::ifstream shaderFile;
             std::stringstream shaderStream;
+
+            if (mainFile)
+                lastModified = std::filesystem::last_write_time(Loader::AssetLoader::GetFullPath(filename));
 
             shaderFile = Loader::AssetLoader::ReadFile(filename, std::ios::in);
 
@@ -75,14 +81,15 @@ namespace Atlas {
                 shaderCode += codeLine + "\n\r";
             }
 
-            shaderCode = ExtractIncludes(filename, shaderCode, includes, extensions);
+            shaderCode = ExtractIncludes(filename, shaderCode, includes, extensions, lastModified);
 
             return shaderCode;
 
         }
 
         std::string ShaderLoader::ExtractIncludes(const std::string& filename, std::string& code,
-            std::vector<std::string>& includes, std::vector<Graphics::ShaderStageFile::Extension>& extensions) {
+            std::vector<std::string>& includes, std::vector<Graphics::ShaderStageFile::Extension>& extensions,
+            std::filesystem::file_time_type& lastModified) {
 
             auto directory = Common::Path::GetDirectory(filename) + "/";
 
@@ -108,7 +115,10 @@ namespace Atlas {
                 if (std::find(includes.begin(), includes.end(), includePath) == includes.end()) {
 
                     includes.push_back(includePath);
-                    auto includeCode = ReadShaderFile(includePath, false, includes, extensions);
+
+                    auto includeLastModified = std::filesystem::last_write_time(includePath);
+                    lastModified = includeLastModified > lastModified ? includeLastModified : lastModified;
+                    auto includeCode = ReadShaderFile(includePath, false, includes, extensions, lastModified);
 
                     code = codeBeforeInclude + includeCode + codeAfterInclude;
 

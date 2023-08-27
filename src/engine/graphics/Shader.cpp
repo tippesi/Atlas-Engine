@@ -104,7 +104,7 @@ namespace Atlas {
 
         }
 
-        bool Shader::Reload() {
+        bool Shader::Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap) {
 
             std::lock_guard lock(variantMutex);
 
@@ -112,6 +112,15 @@ namespace Atlas {
             for (auto& shaderStage : shaderStageFiles) {
                 if (Loader::ShaderLoader::CheckForReload(shaderStage.filename, shaderStage.lastModified)) {
                     reload = true;
+                }
+
+                for (auto& includePath : shaderStage.includes) {
+                    auto lastModified = lastModifiedMap.find(includePath);
+
+                    if (lastModified == lastModifiedMap.end()) continue;
+
+                    if (lastModified->second > shaderStage.lastModified)
+                        reload = true;
                 }
             }
 

@@ -145,6 +145,8 @@ namespace Atlas {
 
             void FillBuffer(const Ref<Buffer>& buffer, void* data);
 
+            void FillBuffer(const Ref<MultiBuffer>& buffer, void* data);
+
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageCopy copy);

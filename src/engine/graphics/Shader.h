@@ -9,6 +9,8 @@
 
 namespace Atlas {
 
+    class PipelineManager;
+
     namespace Graphics {
 
         class GraphicsDevice;
@@ -110,6 +112,8 @@ namespace Atlas {
 
         class Shader {
 
+            friend PipelineManager;
+
         public:
             Shader(GraphicsDevice* device, const ShaderDesc& desc);
 
@@ -119,7 +123,7 @@ namespace Atlas {
 
             Ref<ShaderVariant> GetVariant(std::vector<std::string> macros);
 
-            bool Reload();
+            bool Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap);
 
         private:
             Ref<ShaderVariant> FindVariant(const std::vector<std::string>& macros);
