@@ -152,6 +152,33 @@ namespace Atlas {
 
             volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
 
+            {
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+
+                auto lights = scene->GetLights();
+                if (scene->sky.sun) {
+                    lights.push_back(scene->sky.sun.get());
+                }
+
+                for (auto& light : lights) {
+
+                    auto shadow = light->GetShadow();
+
+                    if (!shadow) {
+                        continue;
+                    }
+
+                    imageBarriers.push_back({ shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, layout, access });
+
+                }
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+            }
+
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             {
@@ -226,23 +253,6 @@ namespace Atlas {
                     {rtData->stencilTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
                 };
-
-                auto lights = scene->GetLights();
-                if (scene->sky.sun) {
-                    lights.push_back(scene->sky.sun.get());
-                }
-
-                for (auto& light : lights) {
-
-                    auto shadow = light->GetShadow();
-
-                    if (!shadow) {
-                        continue;
-                    }
-
-                    imageBarriers.push_back({ shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, layout, access });
-
-                }
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }

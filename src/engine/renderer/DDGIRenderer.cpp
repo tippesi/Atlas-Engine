@@ -171,7 +171,7 @@ namespace Atlas {
                 }
             );
 
-            commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
 
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
@@ -211,6 +211,8 @@ namespace Atlas {
 
             // Update the states of the probes
             {
+                commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
                 auto pipeline = PipelineManager::GetPipeline(probeStatePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
@@ -261,7 +263,8 @@ namespace Atlas {
 
             helper.InvalidateRayBuffer(commandList);
 
-            commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->BufferMemoryBarrier(probeOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT);
             commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

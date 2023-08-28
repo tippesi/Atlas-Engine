@@ -68,6 +68,7 @@ void App::LoadContent() {
     scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 100.0f;
     scene->sky.clouds->maxHeight = 600.0f;
+    scene->sky.clouds->castShadow = false;
 
     scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
 
@@ -489,6 +490,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
+                ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::Text("Quality");
                 ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
