@@ -19,6 +19,22 @@ namespace Atlas {
 
         }
 
+        VkDescriptorSet DescriptorPool::GetCachedSet(VkDescriptorSetLayout layout) {
+
+            auto it = layoutAllocationsMap.find(layout);
+            if (it == layoutAllocationsMap.end()) {
+                layoutAllocationsMap[layout] = LayoutAllocations{};
+                it = layoutAllocationsMap.find(layout);
+            }
+
+            auto& layoutAllocations = it->second;
+            if (layoutAllocations.counter == layoutAllocations.sets.size()) {
+                layoutAllocations.sets.push_back(Allocate(layout));
+            }
+
+            return layoutAllocations.sets[layoutAllocations.counter++];
+        }
+
         VkDescriptorSet DescriptorPool::Allocate(VkDescriptorSetLayout layout) {
 
             VkDescriptorSetAllocateInfo allocInfo = {};
@@ -38,8 +54,7 @@ namespace Atlas {
                 }
                 allocInfo.descriptorPool = pools[poolIdx];
                 VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
-            }
-            else {
+            } else {
                 VK_CHECK(result);
             }
 
@@ -54,6 +69,14 @@ namespace Atlas {
             }
 
             poolIdx = 0;
+
+        }
+
+        void DescriptorPool::ResetAllocationCounters() {
+
+            for (auto& [layout, allocations] : layoutAllocationsMap) {
+                allocations.counter = 0;
+            }
 
         }
 

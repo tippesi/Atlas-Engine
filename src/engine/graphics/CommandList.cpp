@@ -880,7 +880,7 @@ namespace Atlas {
                     uint32_t bindingCounter = 0;
                     descriptorBindingData.changed[i] = false;
 
-                    descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
+                    descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
 
                     // DYNAMIC BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -1043,7 +1043,7 @@ namespace Atlas {
         void CommandList::ResetDescriptors() {
 
             descriptorBindingData.Reset();
-            descriptorPool->Reset();
+            descriptorPool->ResetAllocationCounters();
 
         }
 
