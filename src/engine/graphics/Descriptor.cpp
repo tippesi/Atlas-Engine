@@ -21,6 +21,8 @@ namespace Atlas {
 
         VkDescriptorSet DescriptorPool::GetCachedSet(VkDescriptorSetLayout layout) {
 
+            // This approach might lead to memory issues. Need to release
+            // the cached descriptors at some point
             auto it = layoutAllocationsMap.find(layout);
             if (it == layoutAllocationsMap.end()) {
                 layoutAllocationsMap[layout] = LayoutAllocations{};
@@ -33,6 +35,7 @@ namespace Atlas {
             }
 
             return layoutAllocations.sets[layoutAllocations.counter++];
+
         }
 
         VkDescriptorSet DescriptorPool::Allocate(VkDescriptorSetLayout layout) {

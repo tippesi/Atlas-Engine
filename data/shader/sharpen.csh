@@ -13,8 +13,7 @@ layout(push_constant) uniform constants {
 void main() {
 
     ivec2 size = textureSize(textureIn, 0);
-    ivec2 groupOffset = GetGroupOffset2D(8);
-    ivec2 coord = ivec2(gl_LocalInvocationID) + groupOffset;
+    ivec2 coord = ivec2(gl_GlobalInvocationID);
     
     if (coord.x < size.x &&
         coord.y < size.y) {
@@ -31,7 +30,5 @@ void main() {
         imageStore(textureOut, coord, vec4(color, 1.0));
         
     }
-
-
 
 }
