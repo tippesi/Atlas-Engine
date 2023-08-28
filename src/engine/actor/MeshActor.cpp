@@ -20,6 +20,7 @@ namespace Atlas {
                 matrixChanged = false;
 
                 globalMatrix = parentTransform * GetMatrix();
+                inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));
 
                 aabb = mesh->data.aabb.Transform(globalMatrix);
             }

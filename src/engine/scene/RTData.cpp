@@ -73,7 +73,7 @@ namespace Atlas {
                 actorAABBs.push_back(actor->aabb);
                 auto& meshInfo = meshInfos[actor->mesh.GetID()];
 
-                auto inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix)));
+                auto inverseMatrix = mat3x4(glm::transpose(actor->inverseGlobalMatrix));
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
@@ -84,10 +84,6 @@ namespace Atlas {
                 meshInfo.matrices.push_back(actor->globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-
-                if (hardwareRayTracing) {
-                    
-                }
             }
 
             if (!gpuBvhInstances.size())

@@ -130,8 +130,8 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                auto pipeline = PipelineManager::GetPipeline(causticPipelineConfig);
                 causticPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                auto pipeline = PipelineManager::GetPipeline(causticPipelineConfig);
 
                 commandList->BindPipeline(pipeline);
 

@@ -845,12 +845,12 @@ namespace Atlas {
 
         void CommandList::BindDescriptorSets() {
 
-            VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorImageInfo imageInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            VkWriteDescriptorSet setWrites[BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorBufferInfo bufferInfos[BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorImageInfo imageInfos[BINDINGS_PER_DESCRIPTOR_SET];
+            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[BINDINGS_PER_DESCRIPTOR_SET];
 
-            uint32_t dynamicOffsets[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET];
 
             auto shader = pipelineInUse->shader;
 

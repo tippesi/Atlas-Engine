@@ -49,6 +49,7 @@ namespace Atlas {
 
             Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
             mat4 globalMatrix = mat4{ 1.0f };
+            mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
             bool matrixChanged = true;
             bool visible = true;
