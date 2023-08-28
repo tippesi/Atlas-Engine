@@ -204,13 +204,13 @@ namespace Atlas {
                     auto& fbAttachment = frameBufferInUse->colorAttachments[i];
                     if (!fbAttachment.isValid) continue;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = rpAttachment.dstAccessMask;
+                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
                 if (frameBufferInUse->depthAttachment.isValid) {
                     auto& rpAttachment = renderPassInUse->depthAttachment;
                     auto& fbAttachment = frameBufferInUse->depthAttachment;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = rpAttachment.dstAccessMask;
+                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
             }
 

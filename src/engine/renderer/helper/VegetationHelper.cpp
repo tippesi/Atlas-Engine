@@ -53,7 +53,7 @@ namespace Atlas {
                 if (meshFoundCount != meshToIdxMap.size() || meshFoundCount != meshes.size())
                     GenerateBuffers(vegetation, commandList);
 
-                if (!meshFoundCount) return;
+                if (!meshFoundCount && meshToIdxMap.size() == 0) return;
 
                 meshInformationBuffer.Bind(commandList, 3, 0);
                 meshSubdataInformationBuffer.Bind(commandList, 3, 1);
@@ -93,8 +93,9 @@ namespace Atlas {
                         commandList->Dispatch(groupCount, 1, 1);
                     }
 
-                    commandList->BufferMemoryBarrier(binCounterBuffer.Get(),
-                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                    bufferBarriers.clear();
+                    bufferBarriers.push_back({ binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
                 }
 
                 Graphics::Profiler::EndAndBeginQuery("Compute bin offsets");
@@ -113,11 +114,14 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount, 1, 1);
 
-                    bufferBarriers.push_back({binOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT});
+                    bufferBarriers.clear();
+                    bufferBarriers.push_back({binOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    bufferBarriers.push_back({binCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    bufferBarriers.push_back({instanceCounterBuffer.Get(), VK_ACCESS_SHADER_READ_BIT});
                     for (auto mesh : meshes) {
                         auto buffers = vegetation.GetBuffers(mesh);
                         bufferBarriers.push_back({buffers->culledInstanceData.Get(),
-                            VK_ACCESS_SHADER_READ_BIT});
+                            VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                     }
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
                 }
@@ -192,7 +196,7 @@ namespace Atlas {
                 for (auto mesh : meshes) {
                     auto buffers = vegetation.GetBuffers(mesh);
                     bufferBarriers.push_back({buffers->binnedInstanceData.Get(),
-                        VK_ACCESS_SHADER_READ_BIT});
+                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 }
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);

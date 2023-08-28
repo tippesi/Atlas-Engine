@@ -193,6 +193,7 @@ namespace Atlas {
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
+                    {rtData->roughnessMetallicAoTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -205,6 +206,45 @@ namespace Atlas {
                     {target->historyVolumetricCloudsTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
+
+            {
+                auto rtData = target->GetHistoryData(FULL_RES);
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {rtData->baseColorTexture->image, layout, access},
+                    {rtData->depthTexture->image, layout, access},
+                    {rtData->normalTexture->image, layout, access},
+                    {rtData->geometryNormalTexture->image, layout, access},
+                    {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->offsetTexture->image, layout, access},
+                    {rtData->materialIdxTexture->image, layout, access},
+                    {rtData->stencilTexture->image, layout, access},
+                    {rtData->velocityTexture->image, layout, access},
+                };
+
+                auto lights = scene->GetLights();
+                if (scene->sky.sun) {
+                    lights.push_back(scene->sky.sun.get());
+                }
+
+                for (auto& light : lights) {
+
+                    auto shadow = light->GetShadow();
+
+                    if (!shadow) {
+                        continue;
+                    }
+
+                    imageBarriers.push_back({ shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, layout, access });
+
+                }
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
             {
