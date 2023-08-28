@@ -32,7 +32,7 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
-layout(std430, set = 3, binding = 7) buffer InstanceData {
+layout(std430, set = 3, binding = 7) readonly buffer InstanceData {
     Instance instanceData[];
 };
 
