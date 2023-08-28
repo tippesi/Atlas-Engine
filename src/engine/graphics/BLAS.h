@@ -33,14 +33,14 @@ namespace Atlas {
 
             void Allocate();
 
-            VkDeviceAddress GetDeviceAddress();
-
             VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo;
             VkAccelerationStructureBuildSizesInfoKHR sizesInfo;
             VkAccelerationStructureBuildRangeInfoKHR* rangeInfo;
 
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
+
+            VkDeviceAddress bufferDeviceAddress;
 
         private:
             GraphicsDevice* device;

@@ -524,7 +524,7 @@ namespace Atlas {
 
                 inst.transform = transform;
                 inst.instanceCustomIndex = meshInfo.offset;
-                inst.accelerationStructureReference = meshInfo.blas->GetDeviceAddress();
+                inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
                 inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                 inst.mask = 0xFF;
                 inst.instanceShaderBindingTableRecordOffset = 0;

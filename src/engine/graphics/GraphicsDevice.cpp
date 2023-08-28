@@ -913,14 +913,6 @@ namespace Atlas {
             createInfo.enabledExtensionCount = uint32_t(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
-            if (enableValidationLayers) {
-                createInfo.enabledLayerCount = uint32_t(instance->layerNames.size());
-                createInfo.ppEnabledLayerNames = instance->layerNames.data();
-            }
-            else {
-                createInfo.enabledLayerCount = 0;
-            }
-
             std::set<std::string> availableExtensions;
 
             for (auto extensionName : extensions) {

@@ -47,6 +47,7 @@ namespace Atlas {
                 .size = sizesInfo.accelerationStructureSize
             };
             buffer = device->CreateBuffer(desc);
+            bufferDeviceAddress = buffer->GetDeviceAddress();
 
             VkAccelerationStructureCreateInfoKHR createInfo = {};
             createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -55,12 +56,6 @@ namespace Atlas {
             createInfo.buffer = buffer->buffer;
 
             VK_CHECK(vkCreateAccelerationStructureKHR(device->device, &createInfo, nullptr, &accelerationStructure))
-
-        }
-
-        VkDeviceAddress BLAS::GetDeviceAddress() {
-
-            return buffer->GetDeviceAddress();
 
         }
 

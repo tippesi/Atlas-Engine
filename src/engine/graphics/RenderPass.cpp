@@ -28,7 +28,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::AttachColor(const RenderPassAttachment& attachment, uint32_t slot) {
+        void RenderPass::AttachColor(const RenderPassColorAttachment& attachment, uint32_t slot) {
 
             assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
 
@@ -37,7 +37,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::AttachDepth(const RenderPassAttachment& attachment) {
+        void RenderPass::AttachDepth(const RenderPassDepthAttachment& attachment) {
 
             depthAttachment = attachment;
             depthAttachment.isValid = true;
@@ -81,7 +81,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::CompleteColorAttachment(const RenderPassAttachment& attachment, uint32_t slot) {
+        void RenderPass::CompleteColorAttachment(const RenderPassColorAttachment& attachment, uint32_t slot) {
 
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
                 attachment.imageFormat, attachment.initialLayout,
@@ -91,10 +91,10 @@ namespace Atlas {
             colorDependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
             colorDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
             colorDependency.dstSubpass = 0;
-            colorDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            colorDependency.srcAccessMask = 0; // TODO: This could be an issue
-            colorDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            colorDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            colorDependency.srcStageMask = attachment.srcStageMask;
+            colorDependency.srcAccessMask = attachment.srcAccessMask;
+            colorDependency.dstStageMask = attachment.dstStageMask;
+            colorDependency.dstAccessMask = attachment.dstAccessMask;
 
             VkAttachmentReference2 colorAttachmentReference = Initializers::InitAttachmentReference(slot,
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -106,7 +106,7 @@ namespace Atlas {
 
         }
 
-        void RenderPass::CompleteDepthAttachment(const RenderPassAttachment& attachment) {
+        void RenderPass::CompleteDepthAttachment(const RenderPassDepthAttachment& attachment) {
 
             VkAttachmentDescription2 depthAttachmentDescription = Initializers::InitAttachmentDescription(
                 attachment.imageFormat, attachment.initialLayout,
@@ -116,10 +116,10 @@ namespace Atlas {
             depthDependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
             depthDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
             depthDependency.dstSubpass = 0;
-            depthDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-            depthDependency.srcAccessMask = 0;
-            depthDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-            depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            depthDependency.srcStageMask = attachment.srcStageMask;
+            depthDependency.srcAccessMask = attachment.srcAccessMask;
+            depthDependency.dstStageMask = attachment.dstStageMask;
+            depthDependency.dstAccessMask = attachment.dstAccessMask;
 
             uint32_t depthAttachmentSlot = uint32_t(colorAttachmentReferences.size());
             depthAttachmentReference = Initializers::InitAttachmentReference(depthAttachmentSlot,

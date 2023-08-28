@@ -26,7 +26,7 @@ namespace Atlas {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         {
-            Graphics::RenderPassAttachment attachments[] = {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
                 {.imageFormat = targetData.baseColorTexture->format},
                 {.imageFormat = targetData.normalTexture->format},
                 {.imageFormat = targetData.geometryNormalTexture->format},
@@ -34,39 +34,51 @@ namespace Atlas {
                 {.imageFormat = targetData.materialIdxTexture->format},
                 {.imageFormat = targetData.velocityTexture->format},
                 {.imageFormat = targetData.stencilTexture->format},
-                {.imageFormat = targetData.depthTexture->format}
             };
 
-            for (auto &attachment: attachments) {
+            for (auto &attachment: colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = targetData.depthTexture->format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+
             auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {attachments[0], attachments[1], attachments[2],
-                                     attachments[3], attachments[4], attachments[5], attachments[6]},
-                .depthAttachment = {attachments[7]}
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2],
+                                     colorAttachments[3], colorAttachments[4], colorAttachments[5], colorAttachments[6]},
+                .depthAttachment = depthAttachment
             };
             gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
         }
         {
-            Graphics::RenderPassAttachment attachments[] = {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
                 {.imageFormat = lightingTexture.format},
                 {.imageFormat = targetData.velocityTexture->format},
                 {.imageFormat = targetData.stencilTexture->format},
-                {.imageFormat = targetData.depthTexture->format}
             };
 
-            for (auto &attachment: attachments) {
+            for (auto &attachment: colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                 attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = targetData.depthTexture->format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+
             auto lightingRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {attachments[0], attachments[1], attachments[2]},
-                .depthAttachment = {attachments[3]}
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
+                .depthAttachment = depthAttachment
             };
             lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);          
         }

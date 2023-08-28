@@ -225,23 +225,29 @@ namespace Atlas {
             };
             auto depthImage = graphicsDevice->CreateImage(imageDesc);
 
-            Graphics::RenderPassAttachment attachments[] = {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_R16_SFLOAT},
-                {.imageFormat = VK_FORMAT_D32_SFLOAT}
+                {.imageFormat = VK_FORMAT_R16_SFLOAT}
             };
 
-            for (auto &attachment : attachments) {
+            for (auto &attachment : colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = VK_FORMAT_D32_SFLOAT,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
+
             auto renderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {attachments[0], attachments[1], attachments[2], attachments[3]},
-                .depthAttachment = {attachments[4]},
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3]},
+                .depthAttachment = depthAttachment,
                 .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
             };
             auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
