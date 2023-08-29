@@ -6,7 +6,8 @@ namespace Atlas {
 
     namespace Buffer {
 
-        IndexBuffer::IndexBuffer(VkIndexType type, size_t elementCount, void* data) : type(type) {
+        IndexBuffer::IndexBuffer(VkIndexType type, size_t elementCount, void* data, bool hostAccess)
+            : type(type), hostAccessible(hostAccess) {
 
             switch(type) {
                 case VK_INDEX_TYPE_UINT16: elementSize = 2; break;
@@ -51,7 +52,7 @@ namespace Atlas {
             Graphics::BufferDesc desc {
                 .usageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
                     | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                .domain = Graphics::BufferDomain::Device,
+                .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
                 .data = data,
                 .size = sizeInBytes
             };
