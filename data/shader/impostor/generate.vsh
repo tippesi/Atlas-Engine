@@ -26,6 +26,7 @@ layout(location=1) out vec3 normalVS;
 #ifdef TEX_COORDS
 layout(location=2) out vec2 texCoordVS;
 #endif
+layout(location=3) out float depthVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=5) out mat3 TBN;
@@ -41,6 +42,7 @@ layout(push_constant) uniform constants {
 	uint twoSided;
 	float normalScale;
 	float displacementScale;
+	float distanceToPlaneCenter;
 } PushConstants;
 
 layout (set = 3, binding = 7, std140) uniform UniformBuffer {
@@ -73,5 +75,7 @@ void main() {
 
 	TBN = mat3(tangent, bitangent, normal);
 #endif
+
+	depthVS = positionToCamera.z + PushConstants.distanceToPlaneCenter;
 	
 }

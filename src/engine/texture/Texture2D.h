@@ -31,21 +31,34 @@ namespace Atlas {
                 Filtering filtering = Filtering::Nearest);
 
             /**
-             * Constructs a Texture2D object from an image file.
-             * @param filename The filename of the image
-             * @param colorSpaceConversion Whether or not a sRGB to RGB conversion should be done
-             * @param filtering The filtering of the texture.
-             * @param forceChannels Can be used to force a number of channels which should be loaded from the file.
-             */
+            * Constructs a Texture2D object from an image file.
+            * @param filename The filename of the image
+            * @param colorSpaceConversion Whether or not a sRGB to RGB conversion should be done
+            * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+            * @param filtering The filtering of the texture.
+            * @param forceChannels Can be used to force a number of channels which should be loaded from the file.
+            */
             explicit Texture2D(std::string filename, bool colorSpaceConversion = true,
-                Filtering filtering = Filtering::Anisotropic, int32_t forceChannels = 0);
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Anisotropic,
+                int32_t forceChannels = 0);
 
             /**
              * Constructs a Texture2D object from an image object.
              * @param image The image object.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
              * @param filtering The filtering of the texture.
              */
-            explicit Texture2D(Ref<Common::Image<uint8_t>>& image, Filtering filtering = Filtering::Anisotropic);
+            explicit Texture2D(Ref<Common::Image<uint8_t>>& image, Wrapping wrapping = Wrapping::Repeat,
+                Filtering filtering = Filtering::Anisotropic);
+
+            /**
+             * Constructs a Texture2D object from an image object.
+             * @param image The image object.
+             * @param wrapping The wrapping of the texture. Controls texture border behaviour.
+             * @param filtering The filtering of the texture.
+             */
+            explicit Texture2D(Ref<Common::Image<float>>& image, Wrapping wrapping = Wrapping::Repeat,
+                Filtering filtering = Filtering::Anisotropic);
 
             /**
              * Resizes the texture
@@ -65,7 +78,8 @@ namespace Atlas {
             void Save(std::string filename, bool flipHorizontally = false);
 
         private:
-            void InitializeInternal(Ref<Common::Image<uint8_t>>& image, Wrapping wrapping,
+            template<typename T>
+            void InitializeInternal(Ref<Common::Image<T>>& image, Wrapping wrapping,
                 Filtering filtering);
 
         };
@@ -97,7 +111,42 @@ namespace Atlas {
 
         }
 
+        template<typename T>
+        void Texture2D::InitializeInternal(Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering) {
 
+            // RGB images are mostly not supported
+            if (image->channels == 3) {
+                image->ExpandToChannelCount(4, 0);
+            }
+
+            if constexpr (std::is_same_v<T, uint8_t>) {
+                switch(image->channels) {
+                    case 1: format = VK_FORMAT_R8_UNORM; break;
+                    case 2: format = VK_FORMAT_R8G8_UNORM; break;
+                    default: format = VK_FORMAT_R8G8B8A8_UNORM; break;
+                }
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+                switch(image->channels) {
+                    case 1: format = VK_FORMAT_R32_SFLOAT; break;
+                    case 2: format = VK_FORMAT_R32G32_SFLOAT; break;
+                    default: format = VK_FORMAT_R32G32B32A32_SFLOAT; break;
+                }
+            }
+            else if constexpr (std::is_same_v<T, float16>) {
+                switch(image->channels) {
+                    case 1: format = VK_FORMAT_R16_SFLOAT; break;
+                    case 2: format = VK_FORMAT_R16G16_SFLOAT; break;
+                    default: format = VK_FORMAT_R16G16B16A16_SFLOAT; break;
+                }
+            }
+
+            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping);
+            RecreateSampler(filtering, wrapping);
+
+            SetData(image->GetData());
+
+        }
 
     }
 

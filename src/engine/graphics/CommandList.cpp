@@ -204,13 +204,13 @@ namespace Atlas {
                     auto& fbAttachment = frameBufferInUse->colorAttachments[i];
                     if (!fbAttachment.isValid) continue;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = rpAttachment.outputAccessMask;
+                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
                 if (frameBufferInUse->depthAttachment.isValid) {
                     auto& rpAttachment = renderPassInUse->depthAttachment;
                     auto& fbAttachment = frameBufferInUse->depthAttachment;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
-                    fbAttachment.image->accessMask = rpAttachment.outputAccessMask;
+                    fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
             }
 
@@ -394,7 +394,7 @@ namespace Atlas {
                 descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), 0};
                 descriptorBindingData.buffers[set][binding] = nullptr;
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.images[set][binding] = { nullptr, 0u };
                 descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
@@ -406,7 +406,7 @@ namespace Atlas {
                 descriptorBindingData.buffers[set][binding] = buffer.get();
                 descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.images[set][binding] = { nullptr, 0u };
                 descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
@@ -428,7 +428,7 @@ namespace Atlas {
             descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), uint32_t(offset)};
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-            descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
@@ -448,7 +448,7 @@ namespace Atlas {
                 descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), 0};
                 descriptorBindingData.buffers[set][binding] = nullptr;
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.images[set][binding] = { nullptr, 0u };
                 descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
@@ -460,7 +460,7 @@ namespace Atlas {
                 descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
                 descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
                 descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = nullptr;
+                descriptorBindingData.images[set][binding] = { nullptr, 0u };
                 descriptorBindingData.tlases[set][binding] = nullptr;
                 descriptorBindingData.changed[set] = true;
             }
@@ -481,20 +481,22 @@ namespace Atlas {
             descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-            descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
 
-        void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding) {
+        void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(mipLevel < image->mipLevels && "Invalid mip level selected");
 
-            if (descriptorBindingData.images[set][binding] == image.get())
+            if (descriptorBindingData.images[set][binding].first == image.get() &&
+                descriptorBindingData.images[set][binding].second == mipLevel)
                 return;
 
-            descriptorBindingData.images[set][binding] = image.get();
+            descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
@@ -515,7 +517,7 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.buffers[set][binding] = nullptr;
             descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -531,8 +533,8 @@ namespace Atlas {
 
             descriptorBindingData.tlases[set][binding] = tlas.get();
             descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.images[set][binding] = nullptr;
+            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0u};
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.changed[set] = true;
 
@@ -690,6 +692,19 @@ namespace Atlas {
 
         }
 
+        void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
+            uint32_t drawCount, uint32_t stride) {
+
+            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            BindDescriptorSets();
+
+            vkCmdDrawIndexedIndirect(commandBuffer, buffer->buffer, offset, drawCount, stride);
+
+        }
+
         void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
             uint32_t firstInstance) {
 
@@ -750,6 +765,14 @@ namespace Atlas {
             // The data has to have a size of 4 bytes and only 4 bytes are taken
             uint32_t word = *static_cast<uint32_t*>(data);
             vkCmdFillBuffer(commandBuffer, buffer->buffer, 0, VK_WHOLE_SIZE, word);
+
+        }
+
+        void CommandList::FillBuffer(const Ref<MultiBuffer> &buffer, void *data) {
+
+            // The data has to have a size of 4 bytes and only 4 bytes are taken
+            uint32_t word = *static_cast<uint32_t*>(data);
+            vkCmdFillBuffer(commandBuffer, buffer->GetCurrent()->buffer, 0, VK_WHOLE_SIZE, word);
 
         }
 
@@ -822,12 +845,12 @@ namespace Atlas {
 
         void CommandList::BindDescriptorSets() {
 
-            VkWriteDescriptorSet setWrites[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorBufferInfo bufferInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorImageInfo imageInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
-            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            VkWriteDescriptorSet setWrites[BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorBufferInfo bufferInfos[BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorImageInfo imageInfos[BINDINGS_PER_DESCRIPTOR_SET];
+            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[BINDINGS_PER_DESCRIPTOR_SET];
 
-            uint32_t dynamicOffsets[2 * BINDINGS_PER_DESCRIPTOR_SET];
+            uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET];
 
             auto shader = pipelineInUse->shader;
 
@@ -857,7 +880,7 @@ namespace Atlas {
                     uint32_t bindingCounter = 0;
                     descriptorBindingData.changed[i] = false;
 
-                    descriptorBindingData.sets[i] = descriptorPool->Allocate(shader->sets[i].layout);
+                    descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
 
                     // DYNAMIC BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
@@ -948,7 +971,7 @@ namespace Atlas {
 
                     // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.images[i][j]) continue;
+                        if (!descriptorBindingData.images[i][j].first) continue;
                         const auto& binding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
@@ -957,11 +980,11 @@ namespace Atlas {
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
                             continue;
 
-                        auto image = descriptorBindingData.images[i][j];
+                        auto [image, mipLevel] = descriptorBindingData.images[i][j];
 
                         auto& imageInfo = imageInfos[bindingCounter];
                         imageInfo.sampler = VK_NULL_HANDLE;
-                        imageInfo.imageView = image->view;
+                        imageInfo.imageView = mipLevel == 0 ? image->view : image->mipMapViews[mipLevel];
                         imageInfo.imageLayout = image->layout;
 
                         auto& setWrite = setWrites[bindingCounter++];
@@ -1020,7 +1043,7 @@ namespace Atlas {
         void CommandList::ResetDescriptors() {
 
             descriptorBindingData.Reset();
-            descriptorPool->Reset();
+            descriptorPool->ResetAllocationCounters();
 
         }
 

@@ -61,14 +61,8 @@ void main() {
     fold = mix(fold, history, blend);
     */
 
-    vec3 normal;
-
-    normal.x = left.y - right.y;
-    normal.y = 2.0 * tileSize;
-    normal.z = bottom.y - top.y;
-
-    normal = 0.5 * normalize(normal) + 0.5;
+    vec2 gradient = vec2(left.y - right.y, bottom.y - top.y);
     
-    imageStore(normalMap, coord, vec4(normal, fold));
+    imageStore(normalMap, coord, vec4(gradient, 0.0, fold));
 
 }

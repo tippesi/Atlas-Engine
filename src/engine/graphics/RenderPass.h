@@ -12,19 +12,39 @@ namespace Atlas {
 
         class GraphicsDevice;
 
-        struct RenderPassAttachment {
+        struct RenderPassColorAttachment {
             VkFormat imageFormat = {};
             VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             VkImageLayout outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            VkAccessFlags outputAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            bool isValid = false;
+        };
+
+        struct RenderPassDepthAttachment {
+            VkFormat imageFormat = {};
+            VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            VkImageLayout initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            VkImageLayout outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            VkAccessFlags srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            VkAccessFlags dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
             bool isValid = false;
         };
 
         struct RenderPassDesc {
-            RenderPassAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
-            RenderPassAttachment depthAttachment;
+            RenderPassColorAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
+            RenderPassDepthAttachment depthAttachment;
 
             VkClearValue colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 1.0f } } };
             VkClearValue depthClearValue = { .depthStencil = {.depth = 1.0f } };
@@ -39,16 +59,16 @@ namespace Atlas {
 
             ~RenderPass();
 
-            void AttachColor(const RenderPassAttachment& attachment, uint32_t slot);
+            void AttachColor(const RenderPassColorAttachment& attachment, uint32_t slot);
 
-            void AttachDepth(const RenderPassAttachment& attachment);
+            void AttachDepth(const RenderPassDepthAttachment& attachment);
 
             void Complete();
 
             VkRenderPass renderPass = {};
 
-            RenderPassAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
-            RenderPassAttachment depthAttachment;
+            RenderPassColorAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
+            RenderPassDepthAttachment depthAttachment;
 
             uint32_t colorAttachmentCount = 0;
 
@@ -58,9 +78,9 @@ namespace Atlas {
             bool isComplete = false;
         
         private:
-            void CompleteColorAttachment(const RenderPassAttachment& attachment, uint32_t slot);
+            void CompleteColorAttachment(const RenderPassColorAttachment& attachment, uint32_t slot);
 
-            void CompleteDepthAttachment(const RenderPassAttachment& attachment);
+            void CompleteDepthAttachment(const RenderPassDepthAttachment& attachment);
 
             std::vector<VkAttachmentDescription2> attachmentDescriptions;
             std::vector<VkSubpassDependency2> subPassDependencies;

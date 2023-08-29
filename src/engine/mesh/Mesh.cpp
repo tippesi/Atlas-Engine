@@ -50,6 +50,11 @@ namespace Atlas {
                     data.tangents.GetConvertedVoid());
                 vertexArray.AddComponent(3, buffer);
             }
+            if (data.colors.ContainsData()) {
+                Buffer::VertexBuffer buffer(data.colors.GetFormat(), data.GetVertexCount(),
+                    data.colors.GetConvertedVoid());
+                vertexArray.AddComponent(4, buffer);
+            }
 
         }
 

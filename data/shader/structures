@@ -12,7 +12,18 @@ struct Light {
     float scatteringFactor;
         
     float radius;
+    float alignment;
 
     Shadow shadow;
+
+};
+
+struct CloudShadow {
+
+    mat4 vMatrix;
+    mat4 pMatrix;
+
+    mat4 ivMatrix;
+    mat4 ipMatrix;
 
 };

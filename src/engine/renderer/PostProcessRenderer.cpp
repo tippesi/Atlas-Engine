@@ -82,6 +82,7 @@ namespace Atlas {
                     pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
                     pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
+                    pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
 
                     auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                     commandList->BindPipeline(pipeline);
@@ -119,12 +120,12 @@ namespace Atlas {
 
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
+            const auto& filmGrain = postProcessing.filmGrain;
 
             Uniforms uniforms = {
                 .exposure = camera->exposure,
                 .whitePoint = postProcessing.whitePoint,
                 .saturation = postProcessing.saturation,
-                .timeInMilliseconds = Clock::Get() * 1000.0f,
             };
 
             if (chromaticAberration.enable) {
@@ -140,6 +141,10 @@ namespace Atlas {
                 uniforms.vignettePower = vignette.power;
                 uniforms.vignetteStrength = vignette.strength;
                 uniforms.vignetteColor = vec4(vignette.color, 0.0f);
+            }
+
+            if (filmGrain.enable) {
+                uniforms.filmGrainStrength = filmGrain.strength;
             }
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));

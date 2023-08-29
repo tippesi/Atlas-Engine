@@ -13,18 +13,15 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
+        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
             Graphics::CommandList* commandList, RenderList* renderList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
             struct alignas(16) PushConstants {
-                vec4 center = vec4(0.0f);
-
-                float radius = 1.0f;
-                int views = 1;
-                float cutoff = 1.0f;
-                uint32_t materialIdx = 0;
+                uint32_t materialIdx;
             };
+
+            auto light = scene->sky.sun;
 
             Graphics::Profiler::BeginQuery("Impostors");
 
@@ -32,48 +29,37 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            for (uint8_t i = 0; i < 2; i++) {
+            for (auto& item : mainPass->meshToInstancesMap) {
 
-                auto config = GetPipelineConfig(target->gBufferFrameBuffer, i > 0);
+                auto meshId = item.first;
+                auto instance = item.second;
+
+                auto mesh = mainPass->meshIdToMeshMap[meshId];
+
+                // If there aren't any impostors there won't be a buffer
+                if (!instance.impostorCount)
+                    continue;
+
+                auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
 
-                for (auto& item : mainPass->meshToInstancesMap) {
+                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
+                mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
+                mesh->impostor->normalTexture.Bind(commandList, 3, 2);
+                mesh->impostor->depthTexture.Bind(commandList, 3, 3);
 
-                    auto meshId = item.first;
-                    auto instance = item.second;
+                // Base 0 is used by the materials
+                mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
+                mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
 
-                    auto mesh = mainPass->meshIdToMeshMap[meshId];
+                PushConstants constants = {
+                    .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
+                };
+                commandList->PushConstants("constants", &constants);
 
-                    // If there aren't any impostors there won't be a buffer
-                    if (!instance.impostorCount)
-                        continue;
-
-                    if (!mesh->impostor->interpolation && i > 0 ||
-                        mesh->impostor->interpolation && i == 0)
-                        continue;
-
-                    mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                    mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
-                    mesh->impostor->normalTexture.Bind(commandList, 3, 2);
-
-                    // Base 0 is used by the materials
-                    mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 3);
-
-                    PushConstants constants = {
-                        .center = vec4(mesh->impostor->center, 0.0f),
-
-                        .radius = mesh->impostor->radius,
-                        .views = mesh->impostor->views,
-                        .cutoff = mesh->impostor->cutoff,
-                        .materialIdx = uint32_t(materialMap[mesh->impostor]),
-                    };
-                    commandList->PushConstants("constants", &constants);
-
-                    commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
-                }
-
+                commandList->Draw(4, instance.impostorCount, 0, instance.impostorOffset);
             }
 
             Graphics::Profiler::EndQuery();
@@ -81,7 +67,7 @@ namespace Atlas {
         }
 
         void ImpostorRenderer::Generate(Atlas::Viewport *viewport, const std::vector<mat4> &viewMatrices,
-            glm::mat4 projectionMatrix, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
+            glm::mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
             struct alignas(16) PushConstants {
                 mat4 vMatrix = mat4(1.0f);
@@ -93,6 +79,7 @@ namespace Atlas {
                 uint32_t twoSided = 0;
                 float normalScale = 1.0f;
                 float displacementScale = 1.0f;
+                float distanceToPlaneCenter = 1.0f;
             };
 
             struct Uniforms {
@@ -126,6 +113,7 @@ namespace Atlas {
                     {impostor->baseColorTexture.image,            layout, access},
                     {impostor->normalTexture.image,               layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                    {impostor->depthTexture.image, layout, access},
                     {frameBuffer->GetDepthImage(), layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
@@ -137,6 +125,7 @@ namespace Atlas {
                 frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture.image, i, 0);
                 frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 1);
                 frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 2);
+                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture.image, i, 3);
                 frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -175,6 +164,7 @@ namespace Atlas {
                         .twoSided = material->twoSided ? 1u : 0u,
                         .normalScale = material->normalScale,
                         .displacementScale = material->displacementScale,
+                        .distanceToPlaneCenter = distToCenter
                     };
                     commandList->PushConstants("constants", &pushConstants);
 
@@ -196,6 +186,7 @@ namespace Atlas {
                     {impostor->baseColorTexture.image, layout, access},
                     {impostor->normalTexture.image, layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
+                    {impostor->depthTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -203,11 +194,13 @@ namespace Atlas {
                 commandList->GenerateMipMap(impostor->baseColorTexture.image);
                 commandList->GenerateMipMap(impostor->normalTexture.image);
                 commandList->GenerateMipMap(impostor->roughnessMetalnessAoTexture.image);
+                commandList->GenerateMipMap(impostor->depthTexture.image);
 
                 imageBarriers = {
                     {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -232,22 +225,29 @@ namespace Atlas {
             };
             auto depthImage = graphicsDevice->CreateImage(imageDesc);
 
-            Graphics::RenderPassAttachment attachments[] = {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
                 {.imageFormat = VK_FORMAT_R8G8B8A8_UNORM},
-                {.imageFormat = VK_FORMAT_D32_SFLOAT}
+                {.imageFormat = VK_FORMAT_R16_SFLOAT}
             };
 
-            for (auto &attachment : attachments) {
+            for (auto &attachment : colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = VK_FORMAT_D32_SFLOAT,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
+
             auto renderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {attachments[0], attachments[1], attachments[2]},
-                .depthAttachment = {attachments[3]},
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3]},
+                .depthAttachment = depthAttachment,
                 .colorClearValue = { .color = { { 0.0f, 0.0f, 0.0f, 0.0f } } },
             };
             auto renderPass = graphicsDevice->CreateRenderPass(renderPassDesc);
@@ -257,7 +257,8 @@ namespace Atlas {
                 .colorAttachments = {
                     {impostor->baseColorTexture.image, 0, true},
                     {impostor->normalTexture.image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture.image, 0, true}
+                    {impostor->roughnessMetalnessAoTexture.image, 0, true},
+                    {impostor->depthTexture.image, 0, true}
                 },
                 .depthAttachment = {depthImage, 0, true},
                 .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}
@@ -266,7 +267,8 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer, bool interpolation) {
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+            bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
                 {"impostor/impostor.vsh", VK_SHADER_STAGE_VERTEX_BIT},
@@ -280,8 +282,11 @@ namespace Atlas {
             pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
 
-            return interpolation ? PipelineConfig(shaderConfig, pipelineDesc, {"INTERPOLATION"}) :
-                   PipelineConfig(shaderConfig, pipelineDesc);
+            std::vector<std::string> macros;
+            if (interpolation) macros.push_back("INTERPOLATION");
+            if (pixelDepthOffset) macros.push_back("PIXEL_DEPTH_OFFSET");
+
+            return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
         }
 

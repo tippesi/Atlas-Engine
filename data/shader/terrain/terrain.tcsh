@@ -2,9 +2,6 @@
 
 layout(vertices = 16) out;
 
-//layout(location=0) flat in uvec4 materialIndicesVS[];
-//layout(location=0) flat out uvec4 materialIndicesTC[];
-
 const int AB = 2;
 const int BC = 3;
 const int CD = 0;
@@ -67,8 +64,6 @@ void main() {
 
     if(gl_InvocationID == 0) {
     
-        //materialIndicesTC[gl_InvocationID] = materialIndicesVS[0];
-    
         vec3 minVec = min(gl_in[0].gl_Position.xyz,
             min(gl_in[1].gl_Position.xyz,
             min(gl_in[2].gl_Position.xyz,
@@ -87,7 +82,7 @@ void main() {
         maxVec += dir * .25;
         minVec -= dir * .25;
 
-        if (true) {
+        if (IsTileVisible(minVec, maxVec)) {
     
 #ifndef DISTANCE
             vec3 midAB = vec3(gl_in[0].gl_Position + gl_in[1].gl_Position) / 2.0;

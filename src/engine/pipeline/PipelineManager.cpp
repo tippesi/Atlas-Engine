@@ -28,9 +28,25 @@ namespace Atlas {
 
     void PipelineManager::Update() {
 
+        std::lock_guard lock(shaderToVariantsMutex);
+
+        std::unordered_map<std::string, std::filesystem::file_time_type> lastModifiedMap;
+        if (hotReload) {
+            for (auto& [_, variants] : shaderToVariantsMap) {
+                for (auto& stageFile : variants->shader->shaderStageFiles) {
+                    for (auto& includePath : stageFile.includes) {
+                        if (lastModifiedMap.find(includePath) != lastModifiedMap.end())
+                            continue;
+
+                        lastModifiedMap[includePath] = std::filesystem::last_write_time(includePath);
+                    }
+                }
+            }
+        }
+
         // Do check for hot reload only once per frame
         for (auto& [hash, variants] : shaderToVariantsMap) {
-            if (hotReload && variants->shader->Reload()) {
+            if (hotReload && variants->shader->Reload(lastModifiedMap)) {
                 // Clear variants on hot reload
                 variants->variants.clear();
             }

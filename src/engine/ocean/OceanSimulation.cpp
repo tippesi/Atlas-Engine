@@ -38,6 +38,8 @@ namespace Atlas {
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
             normalMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
+            perlinNoiseMap = Texture::Texture2D(N * 2, N * 2, VK_FORMAT_R32G32B32A32_SFLOAT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
             displacementMapPrev = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 
@@ -57,6 +59,8 @@ namespace Atlas {
 
             horizontalButterflyConfig.AddMacro("HORIZONTAL");
             verticalButterflyConfig.AddMacro("VERTICAL");
+
+            CalculatePerlinNoiseTexture();
 
         }
 
@@ -376,6 +380,35 @@ namespace Atlas {
             }
 
             return reversed;
+
+        }
+
+        void OceanSimulation::CalculatePerlinNoiseTexture() {
+
+
+
+            Common::Image<float> image(perlinNoiseMap.width, perlinNoiseMap.height, 1);
+            std::vector<float> amplitudes = {1.0f, 1.0f, 1.0f, 1.f, 1.f, 1.f, 0.125f ,
+                                             0.125f / 2.0f, 0.125f / 2.0f, 0.125f / 4.0f};
+            Common::NoiseGenerator::GeneratePerlinNoise2D(image, amplitudes, 0);
+
+            Common::Image<float> noiseImage(perlinNoiseMap.width, perlinNoiseMap.height, 4);
+            for (int32_t y = 0; y < image.height; y++) {
+                for (int32_t x = 0; x < image.height; x++) {
+                    float center = image.Sample(x, y).r;
+                    float left = image.Sample(x - 1, y).r;
+                    float right = image.Sample(x + 1, y).r;
+                    float top = image.Sample(x, y - 1).r;
+                    float bottom = image.Sample(x, y + 1).r;
+
+                    vec2 gradient = vec2(left - right, bottom - top);
+                    noiseImage.SetData(x, y, 0, center);
+                    noiseImage.SetData(x, y, 1, gradient.x);
+                    noiseImage.SetData(x, y, 2, gradient.y);
+                }
+            }
+
+            perlinNoiseMap.SetData(noiseImage.GetData());
 
         }
 

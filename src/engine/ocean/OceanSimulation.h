@@ -28,11 +28,13 @@ namespace Atlas {
 
             Texture::Texture2D displacementMap;
             Texture::Texture2D normalMap;
+            Texture::Texture2D perlinNoiseMap;
 
             Texture::Texture2D twiddleIndices;
 
             Texture::Texture2D displacementMapPrev;
 
+            int32_t N;
             int32_t L;
 
             float choppinessScale = 3.0f;
@@ -64,7 +66,7 @@ namespace Atlas {
 
             int32_t ReverseBits(int32_t data, int32_t bitCount);
 
-            int32_t N;
+            void CalculatePerlinNoiseTexture();
 
             float time = 0.0f;
 

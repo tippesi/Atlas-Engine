@@ -12,6 +12,8 @@
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
 
+#include "helper/CommonStructures.h"
+
 namespace Atlas {
 
     namespace Renderer {

@@ -37,7 +37,7 @@ namespace Atlas {
             ssUniformBuffer = Buffer::UniformBuffer(sizeof(SSUniforms));
             // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
             ssSamplesUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * 64);
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
+            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
 
         }
 
@@ -123,7 +123,7 @@ namespace Atlas {
                 auto uniforms = SSUniforms {
                     .radius = ao->radius,
                     .sampleCount = ao->sampleCount,
-                    .frameCount = 0
+                    .frameCount = frameCount++
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
                 ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);

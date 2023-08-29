@@ -145,7 +145,7 @@ namespace Atlas {
             // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
             // shadows (or lights) view matrix. This is just a hack
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
-            cascade->viewMatrix = lookAt(cascadeCenter - lightDirection, cascadeCenter, up);
+            cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
             std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, 
                 cascade->farDistance + shadow->cascadeBlendDistance);

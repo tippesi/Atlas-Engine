@@ -22,11 +22,16 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     vec4 terrainTranslation;
 
     float terrainHeightScale;
+    int N;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {
     Light light;
 } LightUniforms;
+
+layout (set = 3, binding = 14, std140) uniform CloudShadowUniformBuffer {
+    CloudShadow cloudShadow;
+} cloudShadowUniforms;
 
 layout(push_constant) uniform constants {
     float nodeSideLength;
@@ -41,3 +46,6 @@ layout(push_constant) uniform constants {
 
     vec2 nodeLocation;
 } PushConstants;
+
+const vec4 perlinAmplitude = vec4(1.0, 1.0, 1.0, 1.0);
+const vec4 perlinOctave = vec4(4.0, 2.0, 1.0, 0.5) * 0.125;

@@ -18,6 +18,8 @@ namespace Atlas {
                 samplerInfo.compareOp = desc.compareOp;
             }
 
+            samplerInfo.borderColor = desc.borderColor;
+
             VK_CHECK(vkCreateSampler(device->device, &samplerInfo, nullptr, &sampler))
 
         }

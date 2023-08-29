@@ -8,6 +8,8 @@
 #include <perlin noise/PerlinNoise.h>
 #include <algorithm>
 
+#include <glm/gtc/noise.hpp>
+
 namespace Atlas {
 
     namespace Common {
@@ -38,8 +40,6 @@ namespace Atlas {
             static void GeneratePerlinNoise2D(Image<T>& image, std::vector<float> amplitudes,
                 uint32_t seed, float exp = 1.0f) {
 
-                const PerlinNoise noise(seed);
-
                 auto& data = image.GetData();
 
                 auto amplitude = std::accumulate(amplitudes.begin(), amplitudes.end(), 0.0f);
@@ -50,8 +50,16 @@ namespace Atlas {
                     for (size_t x = 0; x < image.width; x++) {
                         auto fx = (float)x / (float)image.width;
                         auto fy = (float)y / (float)image.height;
-                        auto value = noise.octaveNoise((float)fx, (float)fy, amplitudes) *
-                            amplitude;
+
+                        float noise = 0.0f;
+                        float oct = 1.0f;
+                        for (auto amp : amplitudes) {
+                            vec2 coord = vec2(fx, fy) * oct;
+                            noise += glm::perlin(coord, vec2(oct)) * amp;
+                            oct *= 2.0f;
+                        }
+
+                        auto value = noise * amplitude;
                         value = powf(0.5f * value + 0.5f, exp);
                         for (size_t channel = 0; channel < image.channels; channel++) {
                             auto idx = (y * image.width + x) * image.channels + channel;

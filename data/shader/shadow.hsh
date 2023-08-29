@@ -7,6 +7,10 @@ struct Cascade {
     
     float distance;
     float texelSize;
+
+    float aligment0;
+    float aligment1;
+
     mat4 cascadeSpace;
 
 };
@@ -20,10 +24,14 @@ struct Shadow {
     float cascadeBlendDistance;
     
     int cascadeCount;
+
+    float aligment0;
+    float aligment1;
+
     vec2 resolution;
-    
+
     Cascade cascades[6];
-    
+
 };
 
 // Filtering based on http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/

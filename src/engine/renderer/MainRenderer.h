@@ -149,6 +149,7 @@ namespace Atlas {
             };
 
             struct alignas(16) GlobalUniforms {
+                vec4 frustumPlanes[6];
                 mat4 vMatrix;
                 mat4 pMatrix;
                 mat4 ivMatrix;
@@ -159,6 +160,8 @@ namespace Atlas {
                 vec2 jitterCurrent;
                 vec4 cameraLocation;
                 vec4 cameraDirection;
+                vec4 cameraUp;
+                vec4 cameraRight;
                 float time;
                 float deltaTime;
                 uint32_t frameCount;

@@ -11,7 +11,7 @@ layout(location=0) out vec2 texCoordVS;
 #endif
 
 layout(std430, set = 1, binding = 0) buffer Matrices {
-    mat4 matrices[];
+    mat3x4 matrices[];
 };
 
 layout(push_constant) uniform constants {
@@ -22,7 +22,7 @@ layout(push_constant) uniform constants {
 
 void main() {
 
-    mat4 mMatrix = matrices[gl_InstanceIndex];
+    mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
     
 #ifdef OPACITY_MAP
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;

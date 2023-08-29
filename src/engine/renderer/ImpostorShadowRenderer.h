@@ -17,12 +17,13 @@ namespace Atlas {
 
             void Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
                 Graphics::CommandList* commandList, RenderList::Pass* renderPass,
-                mat4 lightSpaceMatrix, vec3 lightLocation);
+                mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation);
 
         private:
             Buffer::VertexArray vertexArray;
 
-            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer);
+            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer,
+                bool interpolation, bool pixelDepthOffset);
 
         };
 

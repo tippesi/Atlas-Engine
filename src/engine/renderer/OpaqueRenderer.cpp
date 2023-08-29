@@ -66,19 +66,19 @@ namespace Atlas {
                 auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
 
                 if (material->HasBaseColorMap())
-                    commandList->BindImage(material->baseColorMap->image, material->baseColorMap->sampler, 3, 0);
+                    material->baseColorMap->Bind(commandList, 3, 0);
                 if (material->HasOpacityMap())
-                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
+                    material->opacityMap->Bind(commandList, 3, 1);
                 if (material->HasNormalMap())
-                    commandList->BindImage(material->normalMap->image, material->normalMap->sampler, 3, 2);
+                    material->normalMap->Bind(commandList, 3, 2);
                 if (material->HasRoughnessMap())
-                    commandList->BindImage(material->roughnessMap->image, material->roughnessMap->sampler, 3, 3);
+                    material->roughnessMap->Bind(commandList, 3, 3);
                 if (material->HasMetalnessMap())
-                    commandList->BindImage(material->metalnessMap->image, material->metalnessMap->sampler, 3, 4);
+                    material->metalnessMap->Bind(commandList, 3, 4);
                 if (material->HasAoMap())
-                    commandList->BindImage(material->aoMap->image, material->aoMap->sampler, 3, 5);
+                    material->aoMap->Bind(commandList, 3, 5);
                 if (material->HasDisplacementMap())
-                    commandList->BindImage(material->displacementMap->image, material->displacementMap->sampler, 3, 6);
+                    material->displacementMap->Bind(commandList, 3, 6);
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
@@ -147,6 +147,9 @@ namespace Atlas {
             }
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
+            }
+            if (mesh->data.colors.ContainsData()) {
+                macros.push_back("VERTEX_COLORS");
             }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);

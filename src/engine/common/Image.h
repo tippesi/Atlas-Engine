@@ -213,6 +213,14 @@ namespace Atlas {
             void ExpandToChannelCount(int32_t channels, T fill);
 
             /**
+             * Converts the data into the specified type
+             * @tparam R
+             * @return
+             */
+            template<typename R>
+            std::vector<R> ConvertData();
+
+            /**
              * Determines the maximum pixel value depending on the format type T.
              * @return The maximum pixel value depending on the format type T.
              */
@@ -518,6 +526,9 @@ namespace Atlas {
             auto& level = mipLevels[mipLevel];
             Image<T> image(level.width, level.height, channelCount);
 
+            image.fileFormat = this->fileFormat;
+            image.fileName = this->fileName;
+
             image.SetData(GetChannelData(channelOffset, channelCount, mipLevel));
 
             return CreateRef(image);
@@ -784,6 +795,44 @@ namespace Atlas {
                     data[i * channels + j] = j < oldChannels ? oldData[i * oldChannels + j] : fill;
                 }
             }
+
+        }
+
+        template<typename T>
+        template<typename R>
+        std::vector<R> Image<T>::ConvertData() {
+
+            static_assert(std::is_same_v<R, uint8_t> || std::is_same_v<R, uint16_t> ||
+                std::is_same_v<R, float> || std::is_same_v<R, float16>, "Unsupported conversion format");
+
+            std::vector<R> convertedData;
+            auto& data = GetData();
+
+            for (auto value : data) {
+                if constexpr (std::is_same_v<R, uint8_t>) {
+                    T t = std::max(T(0), std::min(T(255), value));
+                    convertedData.push_back(reinterpret_cast<R>(t));
+                }
+                else if constexpr (std::is_same_v<R, uint16_t>) {
+                    T t = std::max(T(0), std::min(T(65535), value));
+                    convertedData.push_back(reinterpret_cast<R>(t));
+                }
+                else if constexpr (std::is_same_v<R, float>) {
+                    convertedData.push_back(reinterpret_cast<R>(value));
+                }
+                else if constexpr (std::is_same_v<R, float16>) {
+                    float t = 0.0f;
+                    if constexpr (std::is_same_v<T, float>) {
+                        t = value;
+                    }
+                    else {
+                        t = reinterpret_cast<float>(value);
+                    }
+                    convertedData.push_back(glm::detail::toFloat16(t));
+                }
+            }
+
+            return convertedData;
 
         }
 

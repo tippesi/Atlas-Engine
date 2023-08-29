@@ -3,8 +3,8 @@
 
 #include "../System.h"
 #include "../Camera.h"
+#include "../mesh/Mesh.h"
 #include "../volume/AABB.h"
-#include "../mesh/VegetationMesh.h"
 
 namespace Atlas {
 
@@ -15,13 +15,13 @@ namespace Atlas {
         public:
             VegetationActor() = default;
 
-            VegetationActor(Mesh::VegetationMesh* mesh, vec3 position);
+            VegetationActor(const ResourceHandle<Mesh::Mesh>& mesh, vec3 position);
 
             ~VegetationActor() {}
 
             vec3 GetPosition() const;
 
-            Mesh::VegetationMesh* mesh = nullptr;
+            ResourceHandle<Mesh::Mesh> mesh;
 
         private:
             vec3 position = vec3(0.0f);

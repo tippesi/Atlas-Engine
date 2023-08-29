@@ -27,8 +27,12 @@ namespace Atlas {
                 int32_t vertexCount = subdivisions * subdivisions;
                 int32_t indexCount = 0;
 
+                int32_t stripCount = subdivisions - 1;
+                int32_t degenCount = 2 * (stripCount - 1);
+                int32_t indicesPerStrip = 2 * subdivisions;
+
                 if (strip)
-                    indexCount = (subdivisions * 2 + 2) * (subdivisions - 1);
+                    indexCount = indicesPerStrip * stripCount + degenCount;
                 else
                     indexCount = (subdivisions - 1) * (subdivisions - 1) * 6;
 
@@ -57,15 +61,18 @@ namespace Atlas {
 
                     for (int32_t z = 0; z < subdivisions - 1; z++) {
 
-                        indices[i++] = z * subdivisions;
+                        if (z > 0) {
+                            indices[i++] = z * subdivisions;
+                        }
 
                         for (int32_t x = 0; x < subdivisions; x++) {
                             indices[i++] = z * subdivisions + x;
                             indices[i++] = (z + 1) * subdivisions + x;
                         }
 
-                        indices[i++] = (z + 1) * subdivisions + (subdivisions - 1);
-
+                        if (z < subdivisions - 2) {
+                            indices[i++] = (z + 1) * subdivisions + (subdivisions - 1);
+                        }
                     }
                 }
                 else {

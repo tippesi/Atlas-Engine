@@ -42,6 +42,7 @@ namespace Atlas {
                 vec4 terrainTranslation;
 
                 float terrainHeightScale;
+                int32_t N;
             };
 
             struct alignas(16) Cascade {
@@ -59,7 +60,14 @@ namespace Atlas {
                 float cascadeBlendDistance;
 
                 int cascadeCount;
+
+                float aligment0;
+                float aligment1;
+
                 vec2 resolution;
+
+                mat4 cloudViewMatrix;
+                mat4 cloudProjectionMatrix;
 
                 Cascade cascades[6];
             };
@@ -74,6 +82,8 @@ namespace Atlas {
                 float scatteringFactor;
 
                 float radius;
+
+                float alignment;
 
                 Shadow shadow;
             };
@@ -103,6 +113,7 @@ namespace Atlas {
 
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
+            Buffer::UniformBuffer cloudShadowUniformBuffer;
 
             Ref<Graphics::Sampler> nearestSampler;
             Ref<Graphics::Sampler> shadowSampler;

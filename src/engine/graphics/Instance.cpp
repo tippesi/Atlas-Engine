@@ -134,7 +134,8 @@ namespace Atlas {
             for (auto& extensionProperty : extensionProperties) {
                 // Workaround for issue with Nsight Graphics GPU Profiler
                 // This extensions is given back but not supported by the instance
-                if (std::string(extensionProperty.extensionName) == "VK_EXT_tooling_info")
+                if (std::string(extensionProperty.extensionName) == "VK_EXT_tooling_info" ||
+                    std::string(extensionProperty.extensionName) == "VK_LUNARG_direct_driver_loading")
                     continue;
                 extensionNames.push_back(extensionProperty.extensionName);
             }
@@ -254,6 +255,11 @@ namespace Atlas {
                 case Log::Type::TYPE_WARNING: Log::Warning(pCallbackData->pMessage, logSeverity); break;
                 case Log::Type::TYPE_ERROR: Log::Error(pCallbackData->pMessage, logSeverity); break;
             }
+
+#ifndef AE_BUILDTYPE_RELEASE
+            if (logSeverity == Log::Severity::SEVERITY_HIGH)
+                throw std::runtime_error(output);
+#endif
 
             return VK_TRUE;
 

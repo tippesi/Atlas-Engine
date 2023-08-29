@@ -86,7 +86,7 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<MultiBuffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
-            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding);
+            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel = 0);
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
@@ -129,6 +129,9 @@ namespace Atlas {
             void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0,
                 int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
+            void DrawIndexedIndirect(const Ref<Buffer>& buffer, size_t offset = 0,
+                uint32_t drawCount = 1, uint32_t stride = 0);
+
             void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0,
                 uint32_t firstInstance = 0);
 
@@ -141,6 +144,8 @@ namespace Atlas {
             void CopyBuffer(const Ref<Buffer>& srcBuffer, const Ref<Buffer>& dstBuffer, VkBufferCopy copy);
 
             void FillBuffer(const Ref<Buffer>& buffer, void* data);
+
+            void FillBuffer(const Ref<MultiBuffer>& buffer, void* data);
 
             void CopyImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage);
 
@@ -180,7 +185,7 @@ namespace Atlas {
             struct DescriptorBindingData {
                 Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Buffer*, uint32_t> dynamicBuffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                Image* images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
@@ -200,7 +205,7 @@ namespace Atlas {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                             buffers[i][j] = nullptr;
                             dynamicBuffers[i][j] = { nullptr, 0u };
-                            images[i][j] = nullptr;
+                            images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
                             tlases[i][j] = nullptr;
                         }
@@ -213,7 +218,7 @@ namespace Atlas {
                     for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         buffers[set][j] = nullptr;
                         dynamicBuffers[set][j] = { nullptr, 0u };
-                        images[set][j] = nullptr;
+                        images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
                         tlases[set][j] = nullptr;
                     }

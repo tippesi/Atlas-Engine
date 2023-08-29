@@ -73,7 +73,7 @@ namespace Atlas {
                 actorAABBs.push_back(actor->aabb);
                 auto& meshInfo = meshInfos[actor->mesh.GetID()];
 
-                auto inverseMatrix = mat3x4(glm::transpose(glm::inverse(actor->globalMatrix)));
+                auto inverseMatrix = mat3x4(glm::transpose(actor->inverseGlobalMatrix));
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
@@ -84,10 +84,6 @@ namespace Atlas {
                 meshInfo.matrices.push_back(actor->globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-
-                if (hardwareRayTracing) {
-                    
-                }
             }
 
             if (!gpuBvhInstances.size())
@@ -207,9 +203,8 @@ namespace Atlas {
 
         void RTData::UpdateTextures() {
 
-            auto actors = scene->GetMeshActors();
+            auto meshes = scene->GetMeshes();
 
-            std::unordered_set<size_t> meshes;
             std::vector<Ref<Texture::Texture2D>> baseColorTextures;
             std::vector<Ref<Texture::Texture2D>> opacityTextures;
             std::vector<Ref<Texture::Texture2D>> normalTextures;
@@ -217,24 +212,26 @@ namespace Atlas {
             std::vector<Ref<Texture::Texture2D>> metalnessTextures;
             std::vector<Ref<Texture::Texture2D>> aoTextures;
 
-            for (auto& actor : actors) {
-                if (meshes.find(actor->mesh.GetID()) == meshes.end()) {
-                    auto& actorMaterials = actor->mesh->data.materials;
-                    for (auto& material : actorMaterials) {
-                        if (material.HasBaseColorMap())
-                            baseColorTextures.push_back(material.baseColorMap);
-                        if (material.HasOpacityMap())
-                            opacityTextures.push_back(material.opacityMap);
-                        if (material.HasNormalMap())
-                            normalTextures.push_back(material.normalMap);
-                        if (material.HasRoughnessMap())
-                            roughnessTextures.push_back(material.roughnessMap);
-                        if (material.HasMetalnessMap())
-                            metalnessTextures.push_back(material.metalnessMap);
-                        if (material.HasAoMap())
-                            aoTextures.push_back(material.aoMap);
-                    }
-                    meshes.insert(actor->mesh.GetID());
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded())
+                    continue;
+
+                for (auto& material : mesh->data.materials) {
+                    if (!materialAccess.contains(&material))
+                        continue;
+
+                    if (material.HasBaseColorMap())
+                        baseColorTextures.push_back(material.baseColorMap);
+                    if (material.HasOpacityMap())
+                        opacityTextures.push_back(material.opacityMap);
+                    if (material.HasNormalMap())
+                        normalTextures.push_back(material.normalMap);
+                    if (material.HasRoughnessMap())
+                        roughnessTextures.push_back(material.roughnessMap);
+                    if (material.HasMetalnessMap())
+                        metalnessTextures.push_back(material.metalnessMap);
+                    if (material.HasAoMap())
+                        aoTextures.push_back(material.aoMap);
                 }
             }
 
@@ -523,7 +520,7 @@ namespace Atlas {
 
                 inst.transform = transform;
                 inst.instanceCustomIndex = meshInfo.offset;
-                inst.accelerationStructureReference = meshInfo.blas->GetDeviceAddress();
+                inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
                 inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                 inst.mask = 0xFF;
                 inst.instanceShaderBindingTableRecordOffset = 0;

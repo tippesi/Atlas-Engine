@@ -41,13 +41,10 @@ layout(push_constant) uniform constants {
     vec2 nodeLocation;
 } PushConstants;
 
-// layout(location=0) flat in uvec4 materialIndicesTC[];
-
 layout(location=0) out vec2 materialTexCoords;
 layout(location=1) out vec2 texCoords;
 layout(location=2) out vec3 ndcCurrent;
 layout(location=3) out vec3 ndcLast;
-//layout(location=4) flat out uvec4 materialIndicesTE;
 
 float SampleDisplacement(vec2 off, uvec4 indices) {
 
@@ -98,8 +95,6 @@ void main(){
     materialTexCoords = texCoords;
     
     texCoords /= PushConstants.nodeSideLength;
-    
-    //materialIndicesTE = materialIndicesTC[0];
     
 #ifndef DISTANCE
     float vertexDistance = distance(position.xyz, globalData.cameraLocation.xyz);

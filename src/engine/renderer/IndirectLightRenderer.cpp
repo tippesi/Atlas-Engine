@@ -45,11 +45,12 @@ namespace Atlas {
                 commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
             }
 
-            auto uniforms = Uniforms {
+            auto uniforms = Uniforms{
                 .aoEnabled = aoEnabled ? 1 : 0,
                 .aoDownsampled2x = target->GetAOResolution() == RenderResolution::HALF_RES,
                 .reflectionEnabled = reflectionEnabled ? 1 : 0,
-                .aoStrength = aoEnabled ? ao->strength : 1.0f
+                .aoStrength = aoEnabled ? ao->strength : 1.0f,
+                .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->cubemap.image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 

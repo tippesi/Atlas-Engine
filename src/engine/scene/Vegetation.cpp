@@ -12,19 +12,21 @@ namespace Atlas {
 
         void Vegetation::Add(Actor::VegetationActor* actor) {
 
-            auto iterator = meshToActorMap.find(actor->mesh);
+            auto iterator = meshToActorMap.find(&actor->mesh);
             if (iterator != meshToActorMap.end()) {
                 auto& actors = iterator->second;
                 actors.push_back(actor);
                 return;
             }
 
-            meshToActorMap[actor->mesh] = std::vector<Actor::VegetationActor*>{ actor };
-            meshToBufferMap[actor->mesh] = Buffers {
+            meshToActorMap[&actor->mesh] = std::vector<Actor::VegetationActor*>{ actor };
+            meshToBufferMap[&actor->mesh] = Buffers {
                 Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4)),
                 Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4)),
                 Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4))
             };
+
+            meshes.push_back(actor->mesh);
 
         }
 
@@ -36,7 +38,7 @@ namespace Atlas {
 
         }
 
-        void Vegetation::UpdateActorData(Mesh::VegetationMesh* mesh) {
+        void Vegetation::UpdateActorData(Mesh::Mesh* mesh) {
 
             struct InstanceData {
                 glm::vec4 position;
@@ -60,20 +62,16 @@ namespace Atlas {
 
         }
 
-        std::vector<Mesh::VegetationMesh*> Vegetation::GetMeshes() {
-
-            std::vector<Mesh::VegetationMesh*> meshes;
-            for (auto& [mesh, value] : meshToActorMap) {
-                meshes.push_back(mesh);
-            }
+        std::vector<ResourceHandle<Mesh::Mesh>> Vegetation::GetMeshes() {
 
             return meshes;
 
         }
 
-        Vegetation::Buffers Vegetation::GetBuffers(Mesh::VegetationMesh* mesh)
-        {
-            return meshToBufferMap[mesh];
+        Vegetation::Buffers* Vegetation::GetBuffers(const ResourceHandle<Mesh::Mesh>& mesh) {
+
+            return &meshToBufferMap[&mesh];
+
         }
 
     }

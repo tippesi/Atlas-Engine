@@ -9,6 +9,7 @@
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
+#include <../common/normalencode.hsh>
 #include <../common/PI.hsh>
 #include <../common/bluenoise.hsh>
 
@@ -73,7 +74,7 @@ void main() {
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
 
         int sampleIdx = int(uniforms.frameSeed);
         vec2 blueNoiseVec = vec2(

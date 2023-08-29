@@ -39,7 +39,6 @@ namespace Atlas {
             else {
                 componentCount = 1;
 
-
                 maps = Texture::Texture2DArray(resolution, resolution, 1, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }

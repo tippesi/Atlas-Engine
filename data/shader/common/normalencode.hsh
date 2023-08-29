@@ -1,0 +1,31 @@
+#include <octahedron.hsh>
+
+vec2 EncodeNormal(vec3 normal) {
+
+    normal.xz /= dot(abs(normal), vec3(1.0));
+
+    // Lower hemisphere
+    if (normal.y < 0.0) {
+        vec2 orig = normal.xz;
+        normal.x = (orig.x >= 0.0 ? 1.0 : -1.0) * (1.0 - abs(orig.y));
+        normal.z = (orig.y >= 0.0 ? 1.0 : -1.0) * (1.0 - abs(orig.x));
+    }
+
+    return normal.xz;
+
+}
+
+vec3 DecodeNormal(vec2 coord) {
+
+    float y = 1.0 - dot(abs(coord), vec2(1.0));
+
+    // Lower hemisphere
+    if (y < 0.0) {
+        vec2 orig = coord;
+        coord.x = (orig.x >= 0.0 ? 1.0 : -1.0) * (1.0 - abs(orig.y));
+        coord.y = (orig.y >= 0.0 ? 1.0 : -1.0) * (1.0 - abs(orig.x));
+    }
+
+    return normalize(vec3(coord.x, y, coord.y));
+
+}

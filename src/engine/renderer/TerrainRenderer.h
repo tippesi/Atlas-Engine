@@ -72,7 +72,8 @@ namespace Atlas {
             Buffer::Buffer terrainMaterialBuffer;
 
             PipelineConfig GeneratePipelineConfig(RenderTarget* target,
-                Ref<Terrain::Terrain>& terrain, bool detailConfig);
+                Ref<Terrain::Terrain>& terrain, bool detailConfig,
+                bool materialMappingConfig);
         };
 
     }

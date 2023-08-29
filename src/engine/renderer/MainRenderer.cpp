@@ -12,6 +12,7 @@
 #define FEATURE_METALNESS_MAP (1 << 5)
 #define FEATURE_AO_MAP (1 << 6)
 #define FEATURE_TRANSMISSION (1 << 7)
+#define FEATURE_VERTEX_COLORS (1 << 8)
 
 namespace Atlas {
 
@@ -93,9 +94,6 @@ namespace Atlas {
 
             FillRenderList(scene, camera);
 
-            if (scene->vegetation)
-                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera);
-
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
 
@@ -115,6 +113,9 @@ namespace Atlas {
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 0, 2);
+
+            if (scene->vegetation)
+                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
 
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
@@ -142,6 +143,42 @@ namespace Atlas {
                 terrainShadowRenderer.Render(viewport, target, camera, scene, commandList);
             }
 
+            if (scene->sky.GetProbe()) {
+                commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
+                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
+            }
+
+            volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
+
+            {
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers;
+
+                auto lights = scene->GetLights();
+                if (scene->sky.sun) {
+                    lights.push_back(scene->sky.sun.get());
+                }
+
+                for (auto& light : lights) {
+
+                    auto shadow = light->GetShadow();
+
+                    if (!shadow) {
+                        continue;
+                    }
+
+                    imageBarriers.push_back({ shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, layout, access });
+
+                }
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+            }
+
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             {
@@ -153,9 +190,11 @@ namespace Atlas {
 
                 ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
 
+                vegetationRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
+
                 terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
 
-                impostorRenderer.Render(viewport, target, camera, commandList, &renderList, materialMap);
+                impostorRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
 
                 commandList->EndRenderPass();
 
@@ -171,13 +210,6 @@ namespace Atlas {
             commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 6);
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
 
-            if (scene->sky.GetProbe()) {
-                commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
-                    scene->sky.GetProbe()->cubemap.sampler, 1, 9);
-                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
-            }
-
             if (!target->HasHistory()) {
                 auto rtData = target->GetHistoryData(HALF_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -188,6 +220,7 @@ namespace Atlas {
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
+                    {rtData->roughnessMetallicAoTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -200,6 +233,28 @@ namespace Atlas {
                     {target->historyVolumetricCloudsTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
+
+            {
+                auto rtData = target->GetHistoryData(FULL_RES);
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {rtData->baseColorTexture->image, layout, access},
+                    {rtData->depthTexture->image, layout, access},
+                    {rtData->normalTexture->image, layout, access},
+                    {rtData->geometryNormalTexture->image, layout, access},
+                    {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->offsetTexture->image, layout, access},
+                    {rtData->materialIdxTexture->image, layout, access},
+                    {rtData->stencilTexture->image, layout, access},
+                    {rtData->velocityTexture->image, layout, access},
+                };
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
             {
@@ -289,6 +344,8 @@ namespace Atlas {
                 .jitterCurrent = camera->GetJitter(),
                 .cameraLocation = vec4(camera->location, 0.0f),
                 .cameraDirection = vec4(camera->direction, 0.0f),
+                .cameraUp = vec4(camera->up, 0.0f),
+                .cameraRight = vec4(camera->right, 0.0f),
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta()
             };
@@ -623,13 +680,10 @@ namespace Atlas {
                            vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
                            vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh");
-            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+            Graphics::Profiler::BeginQuery("Filter diffuse probe");
 
-            struct PushConstants {
-                mat4 vMatrix;
-                mat4 pMatrix;
-            };
+            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
+            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             commandList->BindPipeline(pipeline);
 
@@ -651,11 +705,64 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-            // It's only accessed in compute shaders
             commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+            Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
+
+            pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
+            pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+            struct PushConstants {
+                int cubeMapMipLevels;
+                float roughness;
+                uint32_t mipLevel;
+            };
+
+            commandList->BindPipeline(pipeline);
+
+            commandList->ImageMemoryBarrier(probe->filteredSpecular.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            int32_t width = int32_t(probe->filteredSpecular.width);
+            int32_t height = int32_t(probe->filteredSpecular.height);
+
+            for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
+                Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
+
+                ivec2 res = ivec2(width, height);
+
+                commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
+
+                PushConstants pushConstants = {
+                    .cubeMapMipLevels = int32_t(probe->cubemap.image->mipLevels),
+                    .roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
+                    .mipLevel = i
+                };
+                commandList->PushConstants("constants", &pushConstants);
+               
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 6);
+
+                width /= 2;
+                height /= 2;
+
+                Graphics::Profiler::EndQuery();
+
+            }
+
+            commandList->ImageMemoryBarrier(probe->filteredSpecular.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+            Graphics::Profiler::EndQuery();
 
             Graphics::Profiler::EndQuery();
 
@@ -683,10 +790,15 @@ namespace Atlas {
                 .jitterCurrent = camera->GetJitter(),
                 .cameraLocation = vec4(camera->location, 0.0f),
                 .cameraDirection = vec4(camera->direction, 0.0f),
+                .cameraUp = vec4(camera->up, 0.0f),
+                .cameraRight = vec4(camera->right, 0.0f),
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
                 .frameCount = frameCount
             };
+
+            auto frustumPlanes = camera->frustum.GetPlanes();
+            std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
 
             globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
@@ -718,6 +830,23 @@ namespace Atlas {
                     .volumeEnabled = 0
                 };
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+            }
+
+            auto meshes = scene->GetMeshes();
+
+            for (auto& mesh : meshes) {
+                if (!mesh->impostor) continue;
+
+                auto impostor = mesh->impostor;
+                Mesh::Impostor::ImpostorInfo impostorInfo = {
+                    .center = vec4(impostor->center, 1.0f),
+                    .radius = impostor->radius,
+                    .views = impostor->views,
+                    .cutoff = impostor->cutoff,
+                    .mipBias = impostor->mipBias
+                };
+
+                impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
             }
 
         }
@@ -777,6 +906,7 @@ namespace Atlas {
                 packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
                 packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
                 packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
+                packed.features |= material->vertexColors ? FEATURE_VERTEX_COLORS : 0;
 
                 materials.push_back(packed);
 
@@ -827,9 +957,9 @@ namespace Atlas {
 
                 materials.push_back(packed);
 
-                materialMap[impostor] =  idx++;
+                materialMap[impostor.get()] =  idx++;
             }
-            
+
 
         }
 
@@ -878,7 +1008,8 @@ namespace Atlas {
             auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
 
             const int32_t res = 256;
-            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT);
+            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
 

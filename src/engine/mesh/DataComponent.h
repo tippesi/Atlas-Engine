@@ -21,7 +21,8 @@ namespace Atlas {
             UnsignedShort = 1,
             Float = 2,
             HalfFloat = 3,
-            PackedFloat = 4
+            PackedFloat = 4,
+            PackedColor = 5
         };
 
         /**
@@ -106,6 +107,11 @@ namespace Atlas {
             void* GetConvertedVoid();
 
             /**
+             * Clears all the data
+             */
+            void Clear();
+
+            /**
              * Clears the converted data which is created by to free space.
              * @note This makes the previously returned converted data invalid.
              */
@@ -182,7 +188,8 @@ namespace Atlas {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
                     case ComponentFormat::PackedFloat: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
-                    default: assert(0 && "Invalid combination of formats");
+                    case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
+                    default: assert(0 && "Invalid combination of formats"); 
                 }
             }
         }
@@ -219,6 +226,7 @@ namespace Atlas {
                 case ComponentFormat::Float: size = sizeof(float) * GetStride(); break;
                 case ComponentFormat::HalfFloat: size = sizeof(float16) * GetStride(); break;
                 case ComponentFormat::PackedFloat: size = sizeof(uint32_t); break;
+                case ComponentFormat::PackedColor: size = sizeof(uint32_t); break;
             }
 
             return size;
@@ -238,6 +246,14 @@ namespace Atlas {
 
             ConvertData();
             return static_cast<void*>(converted.data());
+
+        }
+
+        template <class T>
+        void DataComponent<T>::Clear() {
+
+            data.clear();
+            converted.clear();
 
         }
 
@@ -296,6 +312,14 @@ namespace Atlas {
                     std::vector<uint32_t> convertedData(data.size());
                     std::transform(data.begin(), data.end(), convertedData.begin(),
                                    [](auto x) { return Common::Packing::PackNormalizedFloat3x10_1x2(x); });
+                    std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
+                }
+            }
+            else if (format == ComponentFormat::PackedColor) {
+                if constexpr(std::is_same_v<T, vec4>) {
+                    std::vector<uint32_t> convertedData(data.size());
+                    std::transform(data.begin(), data.end(), convertedData.begin(),
+                        [](auto x) { return glm::packUnorm4x8(x); });
                     std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
                 }
             }

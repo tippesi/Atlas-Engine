@@ -150,24 +150,25 @@ namespace Atlas {
                         vec3(actor->globalMatrix[3]),
                         cameraLocation);
 
-                    if (distance < sqdDistance || !hasImpostor) {
-                        currentActorMatrices.push_back(actor->globalMatrix);
-                        if (needsHistory) lastActorMatrices.push_back(actor->lastGlobalMatrix);
+                    if (distance < sqdDistance) {
+                        currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                        if (needsHistory) lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
                     }
                     else {
-                        impostorMatrices.push_back(actor->globalMatrix);
+                        impostorMatrices.push_back(glm::transpose(actor->globalMatrix));
                     }
+                    //impostorMatrices.push_back(actor->globalMatrix);
                 }
             }
             else {
                 for (auto actor : actors) {
-                    currentActorMatrices.push_back(actor->globalMatrix);
+                    currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
                     if (needsHistory) {
-                        lastActorMatrices.push_back(actor->lastGlobalMatrix);
+                        lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
                     }
                     else {
                         // For now push back anyways
-                        lastActorMatrices.push_back(actor->globalMatrix);
+                        lastActorMatrices.push_back(glm::transpose(actor->globalMatrix));
                     }
                 }
             }
@@ -184,9 +185,9 @@ namespace Atlas {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat4) * currentActorMatrices.size()) {
+        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat3x4) * currentActorMatrices.size()) {
             auto newSize = currentMatricesBuffer != nullptr ? currentMatricesBuffer->size * 2 :
-                           sizeof(mat4) * currentActorMatrices.size();
+                           sizeof(mat3x4) * currentActorMatrices.size();
             newSize = std::max(newSize, size_t(1));
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -197,9 +198,9 @@ namespace Atlas {
             if (newSize > 0) lastMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
-        if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat4) * impostorMatrices.size()) {
+        if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat3x4) * impostorMatrices.size()) {
             auto newSize = impostorMatricesBuffer != nullptr ? impostorMatricesBuffer->size * 2 :
-                           sizeof(mat4) * impostorMatrices.size();
+                           sizeof(mat3x4) * impostorMatrices.size();
             newSize = std::max(newSize, size_t(1));
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -211,11 +212,11 @@ namespace Atlas {
 
         // Probably better to use a device local buffer since we upload once per frame
         if (currentActorMatrices.size() > 0)
-            currentMatricesBuffer->SetData(currentActorMatrices.data(), 0, currentActorMatrices.size() * sizeof(mat4));
+            currentMatricesBuffer->SetData(currentActorMatrices.data(), 0, currentActorMatrices.size() * sizeof(mat3x4));
         if (lastActorMatrices.size() > 0)
-            lastMatricesBuffer->SetData(lastActorMatrices.data(), 0, lastActorMatrices.size() * sizeof(mat4));
+            lastMatricesBuffer->SetData(lastActorMatrices.data(), 0, lastActorMatrices.size() * sizeof(mat3x4));
         if (impostorMatrices.size() > 0)
-            impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat4));
+            impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
 
     }
 

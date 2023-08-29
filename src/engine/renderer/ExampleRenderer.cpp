@@ -77,19 +77,19 @@ namespace Atlas {
                 auto depthImage = device->CreateImage(depthImageDesc);
 
                 // Define attachments
-                auto colorAttachment = Graphics::RenderPassAttachment {
+                auto colorAttachment = Graphics::RenderPassColorAttachment {
                     .imageFormat = colorImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
-                auto colorAttachment2 = Graphics::RenderPassAttachment {
+                auto colorAttachment2 = Graphics::RenderPassColorAttachment{
                     .imageFormat = dummyImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                     .outputLayout = VK_IMAGE_LAYOUT_GENERAL,
                 };
-                auto depthAttachment = Graphics::RenderPassAttachment {
+                auto depthAttachment = Graphics::RenderPassDepthAttachment{
                     .imageFormat = depthImage->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,

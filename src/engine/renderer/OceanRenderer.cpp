@@ -11,12 +11,13 @@ namespace Atlas {
 
             this->device = device;
 
-            Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f);
+            Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f, false);
 
             causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
+            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -42,6 +43,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Ocean");
 
             auto ocean = scene->ocean;
+            auto clouds = scene->sky.clouds;
 
             ocean->simulation.Compute(commandList);
 
@@ -99,6 +101,25 @@ namespace Atlas {
             lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
 
+            bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            CloudShadow cloudShadowUniform;
+
+            if (cloudShadowsEnabled) {
+                clouds->shadowTexture.Bind(commandList, 3, 15);
+
+                clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
+                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+
+                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+            }
+
+            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
+            cloudShadowUniformBuffer.Bind(commandList, 3, 14);
+
             {
                 Graphics::Profiler::BeginQuery("Caustics");
 
@@ -109,6 +130,7 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
+                causticPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
                 auto pipeline = PipelineManager::GetPipeline(causticPipelineConfig);
 
                 commandList->BindPipeline(pipeline);
@@ -166,7 +188,7 @@ namespace Atlas {
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
             
             {
@@ -176,6 +198,8 @@ namespace Atlas {
                     target->lightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);
+                if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
+
                 auto pipeline = PipelineManager::GetPipeline(config);
 
                 commandList->BindPipeline(pipeline);
@@ -199,6 +223,7 @@ namespace Atlas {
                     .shoreWaveSpeed = ocean->shoreWaveSpeed,
                     .shoreWaveLength = ocean->shoreWaveLength,
                     .terrainSideLength = -1.0f,
+                    .N = ocean->simulation.N,
                 };
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
@@ -233,6 +258,8 @@ namespace Atlas {
                 uniformBuffer.SetData(&uniforms, 0);
                 uniformBuffer.Bind(commandList, 3, 11);
 
+                ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
+
                 auto renderList = ocean->GetRenderList();
 
                 for (auto node : renderList) {
@@ -256,6 +283,23 @@ namespace Atlas {
 
                 commandList->EndRenderPass();
 
+                {
+                    auto rtData = target->GetHistoryData(FULL_RES);
+
+                    VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                    std::vector<Graphics::BufferBarrier> bufferBarriers;
+                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                        {target->lightingTexture.image, layout, access},
+                        {rtData->depthTexture->image, layout, access},
+                        {rtData->stencilTexture->image, layout, access},
+                        {rtData->velocityTexture->image, layout, access},
+                    };
+
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                }
+
                 Graphics::Profiler::EndQuery();
 
             }
@@ -276,7 +320,7 @@ namespace Atlas {
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 
-            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             pipelineDesc.rasterizer.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 

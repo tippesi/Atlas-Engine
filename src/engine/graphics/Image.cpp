@@ -49,6 +49,13 @@ namespace Atlas {
             VkImageViewCreateInfo imageViewInfo = Initializers::InitImageViewCreateInfo(desc.format,
                 image, desc.aspectFlags, viewType, imageInfo.arrayLayers);
             if (desc.mipMapping) {
+                mipMapViews.resize(mipLevels);
+                for (uint32_t i = 0; i < mipLevels; i++) {
+                    imageViewInfo.subresourceRange.baseMipLevel = i;
+                    imageViewInfo.subresourceRange.levelCount = 1;
+                    VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &mipMapViews[i]))
+                }
+                imageViewInfo.subresourceRange.baseMipLevel = 0;
                 imageViewInfo.subresourceRange.levelCount = mipLevels;
             }
             VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &view))
@@ -78,6 +85,9 @@ namespace Atlas {
 
             vkDestroyImageView(device->device, view, nullptr);
             for (auto layerView : attachmentViews) {
+                vkDestroyImageView(device->device, layerView, nullptr);
+            }
+            for (auto layerView : mipMapViews) {
                 vkDestroyImageView(device->device, layerView, nullptr);
             }
             vmaDestroyImage(memoryManager->allocator, image, allocation);

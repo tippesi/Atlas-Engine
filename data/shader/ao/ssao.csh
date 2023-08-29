@@ -6,6 +6,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
+#include <../common/normalencode.hsh>
 
 layout (set = 3, binding = 0, r16f) writeonly uniform image2D textureOut;
 layout(set = 3, binding = 1) uniform sampler2D normalTexture;
@@ -38,10 +39,11 @@ void main() {
     float depth = texelFetch(shadowMap, pixel, 0).r;
     
     // Early exit, also prevents halo
-        
     vec3 fragPos = ConvertDepthToViewSpace(depth, texCoord);
-    vec3 norm = 2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0;
-    vec3 randomVec = vec3(2.0 * texelFetch(randomTexture, pixel % ivec2(4), 0).xy - 1.0, 0.0);
+    vec3 norm = DecodeNormal(textureLod(normalTexture, texCoord, 0).rg);
+
+    ivec2 randomPixel = pixel + Unflatten2D(uniforms.frameCount % 16, ivec2(4));
+    vec3 randomVec = vec3(2.0 * texelFetch(randomTexture, randomPixel % ivec2(4), 0).xy - 1.0, 0.0);
     
     //Create TBN matrix
     vec3 tang = normalize(randomVec - norm * dot(randomVec, norm));

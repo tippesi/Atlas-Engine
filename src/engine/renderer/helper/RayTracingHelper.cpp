@@ -335,6 +335,10 @@ namespace Atlas {
                     auto pipeline = PipelineManager::GetPipeline(traceDispatchPipelineConfig);
                     commandList->BindPipeline(pipeline);
 
+                    // Can't group barriers together because of different access patterns
+                    commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT,
+                        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+
                     if (dispatchCounter % 2 == 0) {
                         bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT });
                         bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT });
@@ -347,8 +351,6 @@ namespace Atlas {
                         commandList->BindBuffer(counterBuffer0.Get(), 2, 14);
                         commandList->BindBuffer(counterBuffer1.Get(), 2, 13);
                     }
-
-                    bufferBarriers.push_back({ indirectDispatchBuffer.Get(), VK_ACCESS_SHADER_WRITE_BIT });
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->Dispatch(1, 1, 1);
@@ -357,7 +359,10 @@ namespace Atlas {
                 bufferBarriers.clear();
                 imageBarriers.clear();
 
-                bufferBarriers.push_back({ indirectDispatchBuffer.Get(), VK_ACCESS_MEMORY_READ_BIT });
+                // Can't group barriers together because of different access patterns
+                commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+
                 bufferBarriers.push_back({ rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 bufferBarriers.push_back({ rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);

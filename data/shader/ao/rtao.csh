@@ -7,6 +7,7 @@
 #include <../common/random.hsh>
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
+#include <../common/normalencode.hsh>
 #include <../common/bluenoise.hsh>
 #include <../brdf/brdfSample.hsh>
 
@@ -63,7 +64,7 @@ void main() {
 
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(2.0 * textureLod(normalTexture, texCoord, 0).rgb - 1.0, 0.0)));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
 
         float ao = 0.0;
 

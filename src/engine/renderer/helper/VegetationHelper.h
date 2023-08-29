@@ -19,11 +19,11 @@ namespace Atlas {
                 VegetationHelper();
 
                 void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
-                    Camera* camera);
+                    Camera* camera, Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetCommandBuffer();
 
-                size_t GetCommandBufferOffset(Mesh::VegetationMesh& mesh,
+                size_t GetCommandBufferOffset(ResourceHandle<Mesh::Mesh>& mesh,
                     Mesh::MeshSubData& subData);
 
                 struct DrawElementsIndirectCommand {
@@ -32,6 +32,9 @@ namespace Atlas {
                     uint32_t firstIndex;
                     uint32_t baseVertex;
                     uint32_t baseInstance;
+                    uint32_t padding1;
+                    uint32_t padding2;
+                    uint32_t padding3;
                 };
 
                 const uint32_t binCount = 64;
@@ -46,18 +49,12 @@ namespace Atlas {
                     uint32_t meshIdx;
                     uint32_t indicesOffset;
                     uint32_t indicesCount;
+                    uint32_t padding;
                 };
 
-                void GenerateBuffers(Scene::Vegetation& vegetation);
+                void GenerateBuffers(Scene::Vegetation& vegetation, Graphics::CommandList* commandList);
 
-                void ResetCounterBuffer(Buffer::Buffer& buffer);
-
-                /*
-                OldShader::OldShader instanceCullingShader;
-                OldShader::OldShader instanceBinningShader;
-                OldShader::OldShader instanceBinningOffsetShader;
-                OldShader::OldShader instanceDrawCallShader;
-                */
+                void ResetCounterBuffers(Graphics::CommandList* commandList);
 
                 Buffer::Buffer indirectDrawCallBuffer;
 
@@ -69,7 +66,7 @@ namespace Atlas {
                 Buffer::Buffer meshInformationBuffer;
                 Buffer::Buffer meshSubdataInformationBuffer;
 
-                std::map<Mesh::VegetationMesh*, int32_t> meshToIdxMap;
+                std::map<Mesh::Mesh*, int32_t> meshToIdxMap;
                 std::vector<MeshSubdataInformation> meshSubdataInformation;
 
             };

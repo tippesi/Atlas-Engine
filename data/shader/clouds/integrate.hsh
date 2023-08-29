@@ -1,0 +1,205 @@
+#include <clouds.hsh>
+
+void CalculateTexCoords(vec3 pos, out vec3 shapeTexCoords, out vec3 detailTexCoords, out vec2 coverageTexCoords) {
+
+    float distFromCenter = distance(pos, cloudPlanetCenter);
+
+    shapeTexCoords.xz = pos.xz * cloudUniforms.shapeScale * 0.001;
+    shapeTexCoords.y = (distFromCenter - cloudUniforms.innerRadius)
+        / (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
+    shapeTexCoords += windDirection * cloudUniforms.shapeSpeed * windSpeed * cloudUniforms.time;
+
+    detailTexCoords.xz = pos.xz * cloudUniforms.shapeScale * 0.001;
+    detailTexCoords.y = (distFromCenter - cloudUniforms.innerRadius)
+        / (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
+    detailTexCoords *= cloudUniforms.detailScale;
+    detailTexCoords += windDirectionDetail * cloudUniforms.shapeSpeed *
+        cloudUniforms.detailSpeed * windSpeed * cloudUniforms.time;
+
+    coverageTexCoords = pos.xz * cloudUniforms.coverageScale * 0.001;
+    coverageTexCoords += windDirectionCoverage * cloudUniforms.coverageSpeed * windSpeed * cloudUniforms.time;
+
+}
+
+void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, out float maxDist) {
+
+    vec3 spherePos = cloudPlanetCenter;
+    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, spherePos, cloudUniforms.planetRadius);
+    vec2 inDist = IntersectSphere(rayOrigin, rayDirection, spherePos, cloudUniforms.innerRadius);
+    vec2 outDist = IntersectSphere(rayOrigin, rayDirection, spherePos, cloudUniforms.outerRadius);
+
+    // We're in the inner layer
+    if (inDist.x < 0.0 && inDist.y >= 0.0) {
+        // When the planet is in front of the inner layer set dist to zero
+        minDist = planetDist.x >= 0.0 ? 0.0 : inDist.y;
+        maxDist = planetDist.x >= 0.0 ? 0.0 : outDist.y;
+    }
+    else {
+        // We can't see the inner layer
+        if (inDist.x < 0.0 && inDist.y < 0.0) {
+            minDist = 0.0;
+            // We might see the outer layer or not
+            maxDist = max(0.0, outDist.y);
+        }
+        // We can see the inner layer and are in between layers
+        if (inDist.x > 0.0 && inDist.y > 0.0 &&
+        outDist.x < 0.0 && outDist.y >= 0.0) {
+            minDist = 0.0;
+            maxDist = planetDist.x >= 0.0 ? inDist.x : outDist.y;
+        }
+        // We are out of both layers and looking down
+        if (outDist.x > 0.0 && outDist.y > 0.0) {
+            minDist = outDist.x;
+            maxDist = inDist.x >= 0.0 ? inDist.x : outDist.x;
+        }
+    }
+
+    // If the distance gets to big, we might undersample near detail which can go missing
+    // This is especially the case when we are in between the two radii layers
+    minDist = min(cloudUniforms.distanceLimit, minDist);
+    maxDist = min(cloudUniforms.distanceLimit, maxDist);
+
+}
+
+vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
+
+    const int lightSampleCount = cloudUniforms.shadowSampleCount;
+
+    vec3 rayDirection = -normalize(cloudUniforms.light.direction.xyz);
+
+    float inDist, outDist;
+    CalculateRayLength(pos, rayDirection, inDist, outDist);
+
+    float rayLength = (outDist - inDist) * 0.5;
+
+    // Dither secondary rays
+    float noiseOffset = noiseVector[ditherIdx % 4];
+    noiseOffset = 0.5;
+
+    vec4 extinctionAccumulation = vec4(0.0);
+    for (int i = 0; i < lightSampleCount; i++) {
+        if (extinctionAccumulation.a < logEpsilon) {
+            // Sampling scheme based on: https://github.com/turanszkij/WickedEngine/blob/master/WickedEngine/shaders/volumetricCloud_renderCS.hlsl
+            float t0 = float(i) / float(lightSampleCount);
+            float t1 = float(i + 1) / float(lightSampleCount);
+
+            t0 = t0 * t0;
+            t1 = t1 * t1;
+
+            float delta = t1 - t0;
+            float t = t0 + delta * noiseOffset;
+            vec3 samplePoint = pos + rayDirection * t * rayLength;
+
+            vec2 coverageTexCoords;
+            vec3 shapeTexCoords, detailTexCoords;
+            CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords, coverageTexCoords);
+
+            float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords,
+                coverageTexCoords, vec3(1.0), floor(0.0), true));
+            vec4 extinctionCoefficient = cloudUniforms.extinctionFactor *
+                cloudUniforms.extinctionCoefficients * density;
+
+            extinctionAccumulation += extinctionCoefficient * delta * rayLength;
+        }
+    }
+
+    return exp(-extinctionAccumulation);
+
+}
+
+vec3 ComputeAmbientColor(vec3 pos) {
+
+    float distFromCenter = distance(pos, cloudPlanetCenter);
+
+    vec3 isotropicLightTop = textureLod(diffuseProbe, vec3(0.0, 1.0, 0.0), 0.0).rgb;
+
+    float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
+        (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
+    float ambientContribution = saturate(heightFraction + 0.1);
+    return 0.5 * isotropicLightTop * ambientContribution;
+
+}
+
+float DualPhaseFunction(float g0, float g1, float alpha, float LDotV) {
+
+    return mix(ComputeScattering(LDotV, g0), ComputeScattering(LDotV, g1), alpha);
+
+}
+
+vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart, float rayLength, vec4 noiseVector) {
+
+    const int sampleCount = cloudUniforms.sampleCount;
+    int raySampleCount = max(sampleCount, int((rayLength / cloudUniforms.distanceLimit) * float(sampleCount)));
+    float stepLength = rayLength / float(raySampleCount);
+    vec3 stepVector = rayDirection * stepLength;
+
+    // Primary noise always uses index 0
+    float noiseValue = noiseVector[0];
+    rayOrigin += stepVector * noiseValue;
+
+    vec3 integration = vec3(0.0);
+    vec3 rayPos = rayOrigin + rayDirection * rayStart;
+
+    vec4 extinction = vec4(1.0);
+    vec3 scattering = vec3(0.0);
+
+    int noiseIdx = 0;
+    for (int i = 0; i < raySampleCount; i++) {
+
+        if (extinction.a > epsilon) {
+            vec2 coverageTexCoords;
+            vec3 shapeTexCoords, detailTexCoords;
+            CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords, coverageTexCoords);
+
+            float distToPlanetCenter = distance(rayPos, cloudPlanetCenter);
+            // This can happen if we look from inside the cloud layer trough it below the cloud
+            // layer. We need to find the next intersection with the inner layer
+            if (distToPlanetCenter < cloudUniforms.innerRadius) {
+                /*
+                CalculateRayLength(rayPos, rayDirection, inDist, outDist);
+                stepLength = rayLength / float(sampleCount - i);
+                stepVector = rayDirection * stepLength;
+                rayPos += rayDirection * inDist;
+                */
+                rayPos += stepVector;
+                continue;
+            }
+
+            float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
+                coverageTexCoords, vec3(1.0), 0.0, true));
+
+            if (density > 0.0) {
+                vec3 scatteringCoefficient = cloudUniforms.scatteringFactor *
+                    cloudUniforms.extinctionCoefficients.rgb * density;
+                vec4 extinctionCoefficient = cloudUniforms.extinctionFactor *
+                    cloudUniforms.extinctionCoefficients * density;
+
+                float darkEdgeFactor = exp(-density * cloudUniforms.darkEdgeFocus);
+
+                float directAlbedo = 1.0 - darkEdgeFactor;
+                float ambientAlbedo = 1.0 - darkEdgeFactor * cloudUniforms.darkEdgeAmbient;
+
+                vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
+                vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);
+
+                float lightDotView = dot(normalize(cloudUniforms.light.direction.xyz), normalize(rayDirection));
+                vec3 lightColor = cloudUniforms.light.color.rgb * cloudUniforms.light.intensity;
+                vec4 lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++, noiseVector);
+
+                float phaseFunction = DualPhaseFunction(cloudUniforms.eccentricityFirstPhase,
+                    cloudUniforms.eccentricitySecondPhase, cloudUniforms.phaseAlpha, lightDotView);
+                vec3 stepScattering = scatteringCoefficient * (directAlbedo * phaseFunction * lightColor * lightExtinction.rgb
+                + ambientAlbedo * ComputeAmbientColor(rayPos));
+
+                vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction.rgb) / clampedExtinction.rgb;
+                scattering += luminanceIntegral * extinction.rgb;
+                extinction *= stepExtinction;
+            }
+        }
+
+        rayPos += stepVector;
+    }
+
+    return vec4(scattering, extinction.a);
+
+}

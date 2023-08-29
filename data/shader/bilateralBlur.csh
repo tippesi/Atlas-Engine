@@ -1,6 +1,7 @@
 // NOTE: The kernel is limited to a total size of 65 (2 * 32 + 1).
 #include <common/utility.hsh>
 #include <common/convert.hsh>
+#include <common/normalencode.hsh>
 
 #ifdef HORIZONTAL
 layout (local_size_x = 256, local_size_y = 1) in;
@@ -30,7 +31,7 @@ layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
 } weights;
 
 const float normalPhi = 32.0;
-const float depthPhi = 1.0;
+const float depthPhi = 0.5;
 
 #ifdef BLUR_RGB
 shared vec3 inputs[320];
@@ -77,7 +78,7 @@ void LoadGroupSharedData() {
         depths[i] = ConvertDepthToViewSpaceDepth(localDepth);
 #endif
 #ifdef NORMAL_WEIGHT
-        vec3 localNormal = 2.0 * texelFetch(normalTexture, localOffset, 0).rgb - 1.0;
+        vec3 localNormal = DecodeNormal(texelFetch(normalTexture, localOffset, 0).rg);
         normals[i] = localNormal;
 #endif
     }

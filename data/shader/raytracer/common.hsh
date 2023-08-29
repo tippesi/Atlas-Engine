@@ -28,6 +28,10 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
     tri.uv0 = unpackHalf2x16(floatBitsToUint(triangle.d0.x));
     tri.uv1 = unpackHalf2x16(floatBitsToUint(triangle.d0.y));
     tri.uv2 = unpackHalf2x16(floatBitsToUint(triangle.d0.z));
+
+    tri.color0 = unpackUnorm4x8(floatBitsToUint(triangle.d2.x));
+    tri.color1 = unpackUnorm4x8(floatBitsToUint(triangle.d2.y));
+    tri.color2 = unpackUnorm4x8(floatBitsToUint(triangle.d2.z));
     
     tri.materialIndex = floatBitsToInt(triangle.d0.w);
     tri.endOfNode = triangle.d1.z > 0.0 ? true : false;

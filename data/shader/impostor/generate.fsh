@@ -3,6 +3,7 @@
 layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec3 normalFS;
 layout (location = 2) out vec3 roughnessMetalnessAoFS;
+layout (location = 3) out float depthFS;
 
 #ifdef BASE_COLOR_MAP
 layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
@@ -31,6 +32,7 @@ layout(location=1) in vec3 normalVS;
 #ifdef TEX_COORDS
 layout(location=2) in vec2 texCoordVS;
 #endif
+layout(location=3) in float depthVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=5) in mat3 TBN;
@@ -156,5 +158,7 @@ void main() {
 
 	roughnessMetalnessAoFS = vec3(roughnessFactor,
 		metalnessFactor, aoFactor);
+
+	depthFS = depthVS;
 	
 }

@@ -6,6 +6,7 @@
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
+#include <../common/normalencode.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -25,7 +26,7 @@ float GetInterleavedGradientNoise(vec2 screenPos) {
     uint frame = globalData.frameCount % 64u;
     float x = float(screenPos.x) + 5.588238 * float(frame);
     float y = float(screenPos.y) + 5.588238 * float(frame);
-    
+
     vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
     return fract(magic.z * fract(dot(vec2(x, y), magic.xy)));
 }
@@ -56,7 +57,7 @@ void main() {
         return;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
@@ -107,7 +108,7 @@ void main() {
         float depthDelta = rayDepth - stepLinearDepth;
 
         // Check if the camera can't "see" the ray (ray depth must be larger than the camera depth, so positive depth_delta)
-        if (depthDelta > 0.0 && depthDelta < pushConstants.thickness && 
+        if (depthDelta > 0.0 && depthDelta < pushConstants.thickness &&
             depthDelta > pushConstants.thickness * 0.25) {
             // Mark as occluded
             occlusion = 1.0;

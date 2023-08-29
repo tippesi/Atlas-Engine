@@ -148,9 +148,12 @@ namespace Atlas {
             }
 
             VkSamplerAddressMode mode;
+            VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
             switch(wrapping) {
                 case Wrapping::Repeat: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
                 case Wrapping::ClampToEdge: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; break;
+                case Wrapping::ClampToWhite: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; break;
+                case Wrapping::ClampToBlack: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; break;
                 default: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
             }
 
@@ -166,6 +169,7 @@ namespace Atlas {
                 .mode = mode,
                 .mipmapMode = mipmapMode,
                 .maxLod = float(this->image->mipLevels),
+                .borderColor = borderColor,
                 .anisotropicFiltering = generateMipMaps && anisotropicFiltering
             };
             sampler = GetOrCreateSampler(samplerDesc);

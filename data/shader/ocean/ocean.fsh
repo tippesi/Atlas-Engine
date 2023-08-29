@@ -3,6 +3,7 @@
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
+#include <../clouds/shadow.hsh>
 #include <../structures>
 
 #include <shoreInteraction.hsh>
@@ -21,6 +22,8 @@ layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
+layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
+layout(set = 3, binding = 15) uniform sampler2D cloudMap;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
@@ -32,6 +35,7 @@ layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
 layout(location=8) in vec3 ndcLast;
 layout(location=9) in vec3 normalShoreWave;
+layout(location=10) in float perlinScale;
 
 const vec3 waterBodyColor = pow(vec3(0.1, 1.0, 0.7), vec3(2.2));
 const vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
@@ -50,13 +54,22 @@ const float specularIntensity = 350.0;
 // Shore softness (lower is softer)
 const float shoreSoftness = 70.5;
 
+const float fadeoutDistance = 100.0;
+const float fadeoutFalloff = 0.2;
+
 void main() {
 
     Light light = LightUniforms.light;
     
     // Retrieve precalculated normals and wave folding information
-    vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
+    //vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
     float fold = texture(normalMap, fTexCoord).a;
+
+    vec2 gradientDisplacement = texture(normalMap, fTexCoord).rg;
+
+    vec2 gradient = perlinScale * gradientDisplacement;
+    float tileSize = Uniforms.tiling / float(Uniforms.N);
+    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
@@ -65,7 +78,14 @@ void main() {
     
     float shadowFactor = max(CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 0.0), 0.01);
-    
+
+#ifdef CLOUD_SHADOWS
+    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudMap);
+    shadowFactor = min(shadowFactor, cloudShadowFactor);
+#endif
+
+    shadowFactor = max(shadowFactor, 0.01);
+
     fNormal = mix(normalShoreWave, fNormal, shoreScaling);
 
     // Create TBN matrix for normal mapping
@@ -99,7 +119,7 @@ void main() {
     float fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - nDotE, 5.0);
     
     // Calculate reflection vector    
-    vec3 reflectionVec = reflect(eyeDir, norm);
+    vec3 reflectionVec = normalize(reflect(eyeDir, norm));
     reflectionVec.y = max(0.0, reflectionVec.y);
     
     // Calculate sun spot
@@ -178,6 +198,10 @@ void main() {
         color = mix(depthFog, textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb, min(1.0 , exp(-waterViewDepth / 2.0)));
     }
     */
+
+    //color = vec3(mod(fTexCoord, 1.0), 0.0);
+    //color = vec3(reflectionVec.y);
+    //color = vec3(perlinDisplacement);
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;

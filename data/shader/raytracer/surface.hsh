@@ -69,6 +69,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     vec3 position = ray.origin + dist * ray.direction;
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
+    vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
         
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
     
@@ -79,9 +80,11 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     backfaceHit = rayMat.twoSided > 0 ? false : flipNormal;
     triangleNormal *= flipNormal ? -1.0 : 1.0;
 
-    vec3 geometryNormal = normal;
+    vec3 geometryNormal = triangleNormal;
     
     int level = textureLevel;
+    // mat.opacity *= vertexColor.a;
+    mat.baseColor *= vertexColor.rgb;
     mat.baseColor *= SampleBaseColorBilinear(GetTextureLevel(rayMat.baseColorTexture, level), texCoord);
     mat.opacity *= SampleOpacityBilinear(GetTextureLevel(rayMat.opacityTexture, level), texCoord);
     
@@ -132,8 +135,10 @@ float GetOpacity(Triangle tri, vec2 barrycentric, int textureLevel) {
 
     RaytraceMaterial rayMat = materials[tri.materialIndex];
 
+    float vertexAlpha = r * tri.color0.a + s * tri.color1.a + t * tri.color2.a;
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;        
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
-    return rayMat.opacity * SampleOpacityBilinear(GetTextureLevel(rayMat.opacityTexture, textureLevel), texCoord);
+    return SampleOpacityBilinear(GetTextureLevel(rayMat.opacityTexture, textureLevel), texCoord)
+        * rayMat.opacity;
 }

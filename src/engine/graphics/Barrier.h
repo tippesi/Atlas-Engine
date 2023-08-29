@@ -18,7 +18,11 @@ namespace Atlas {
 
             BufferBarrier(const Ref<Buffer>& buffer, VkAccessFlags newAccessMask);
 
+            BufferBarrier(const Ref<MultiBuffer>& buffer, VkAccessFlags newAccessMask);
+
             BufferBarrier& Update(const Ref<Buffer>& buffer);
+
+            BufferBarrier& Update(const Ref<MultiBuffer>& buffer);
 
             Buffer* buffer = nullptr;
 

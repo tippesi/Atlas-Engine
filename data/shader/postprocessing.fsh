@@ -1,4 +1,6 @@
+#include <globals.hsh>
 #include <common/eotf.hsh>
+#include <common/random.hsh>
 
 layout (location = 0) out vec4 outColor;
 
@@ -13,7 +15,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
     float whitePoint;
     float saturation;
-    float timeInMilliseconds;
+    float filmGrainStrength;
     int bloomPasses;
     float aberrationStrength;
     float aberrationReversed;
@@ -21,6 +23,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float vignettePower;
     float vignetteStrength;
     vec4 vignetteColor;
+
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
@@ -75,7 +78,7 @@ void main() {
     
 #ifdef CHROMATIC_ABERRATION
     vec2 uvRedChannel = (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
-        * aberrationReversed) * 0.5f + 0.5f;
+        * Uniforms.aberrationReversed) * 0.5f + 0.5f;
     vec2 uvGreenChannel = (positionVS - positionVS * 0.0025f * Uniforms.aberrationStrength) * 0.5f + 0.5f;
     vec2 uvBlueChannel =  (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
         * (1.0f - Uniforms.aberrationReversed)) * 0.5f + 0.5f;
@@ -120,8 +123,11 @@ void main() {
 #endif
 
     color *= Uniforms.exposure;
-    
-    //color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
+
+#ifdef FILM_GRAIN
+    color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData.time)) - 1.0);
+    color = max(color, vec3(0.0));
+#endif
     
     // Apply the tone mapping because we want the colors to be back in
     // normal range

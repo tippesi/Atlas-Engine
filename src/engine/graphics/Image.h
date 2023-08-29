@@ -71,6 +71,7 @@ namespace Atlas {
             VkAccessFlags accessMask = VK_ACCESS_NONE;
 
             std::vector<VkImageView> attachmentViews;
+            std::vector<VkImageView> mipMapViews;
 
             uint32_t width = 1;
             uint32_t height = 1;

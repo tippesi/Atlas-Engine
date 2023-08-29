@@ -149,7 +149,7 @@ namespace Atlas {
                 return lightMap[light];
             }
             else {
-                Graphics::RenderPassAttachment attachment = {
+                Graphics::RenderPassDepthAttachment attachment = {
                     .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
                                    shadow->maps.format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,

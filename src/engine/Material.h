@@ -62,6 +62,7 @@ namespace Atlas {
         std::string displacementMapPath;
 
         bool twoSided = false;
+        bool vertexColors = false;
 
         PipelineConfig mainConfig;
         PipelineConfig shadowConfig;

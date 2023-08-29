@@ -68,6 +68,7 @@ void App::LoadContent() {
     scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 100.0f;
     scene->sky.clouds->maxHeight = 600.0f;
+    scene->sky.clouds->castShadow = false;
 
     scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
 
@@ -489,6 +490,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
+                ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::Text("Quality");
                 ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
@@ -538,6 +540,14 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
                 ImGui::SliderFloat("Saturation##Postprocessing", &postProcessing.saturation, 0.0f, 2.0f);
                 ImGui::SliderFloat("White point##Postprocessing", &postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
+                ImGui::Separator();
+                ImGui::Text("Chromatic aberration");
+                ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);
+                ImGui::Checkbox("Colors reversed##Chromatic aberration", &postProcessing.chromaticAberration.colorsReversed);
+                ImGui::SliderFloat("Strength##Chromatic aberration", &postProcessing.chromaticAberration.strength, 0.0f, 4.0f);
+                ImGui::Text("Film grain");
+                ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
+                ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
@@ -1060,6 +1070,12 @@ void App::CheckLoadScene() {
 
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
+
+    if (sceneSelection == NEWSPONZA) {
+        for (auto& mesh : meshes) {
+            mesh->data.colors.Clear();
+        }
+    }
 
     static std::future<void> future;
 

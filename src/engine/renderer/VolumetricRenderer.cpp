@@ -24,7 +24,7 @@ namespace Atlas {
 
             volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricUniforms));
             resolveUniformBuffer = Buffer::UniformBuffer(sizeof(ResolveUniforms));
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * (size_t(filterSize / 4) + 1));
+            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
 
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
@@ -39,9 +39,6 @@ namespace Atlas {
             Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Render volumetric");
-
-            auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
-            commandList->BindPipeline(volumetricPipeline);
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -118,8 +115,30 @@ namespace Atlas {
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
+                auto clouds = scene->sky.clouds;
+                bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+
+                if (cloudShadowsEnabled) {
+                    auto& cloudShadowUniform = uniforms.cloudShadow;
+
+                    clouds->shadowTexture.Bind(commandList, 3, 3);
+
+                    clouds->GetShadowMatrices(camera, directionalLight->direction,
+                        cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+
+                    cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+                    cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+                }
+
                 volumetricUniformBuffer.SetData(&uniforms, 0);
-                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 3);
+                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 4);
+
+                volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
+
+                commandList->BindPipeline(volumetricPipeline);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
@@ -238,6 +257,9 @@ namespace Atlas {
                 }
 
                 if (cloudsEnabled) {
+                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.planetRadius = scene->sky.planetRadius;
+                    uniforms.cloudDistanceLimit = clouds->distanceLimit;
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 

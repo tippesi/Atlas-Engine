@@ -21,12 +21,16 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=3) in vec4 vTangent;
 #endif
 
+#ifdef VERTEX_COLORS
+layout(location=4) in vec4 vVertexColors;
+#endif
+
 layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
-    mat4 currentMatrices[];
+    mat3x4 currentMatrices[];
 };
 
 layout(std430, set = 1, binding = 1) buffer LastMatrices {
-    mat4 lastMatrices[];
+    mat3x4 lastMatrices[];
 };
 
 // Vertex out parameters
@@ -35,12 +39,16 @@ layout(location=1) out vec3 normalVS;
 #ifdef TEX_COORDS
 layout(location=2) out vec2 texCoordVS;
 #endif
-
 layout(location=3) out vec3 ndcCurrentVS;
 layout(location=4) out vec3 ndcLastVS;
 
+#ifdef VERTEX_COLORS
+layout(location=5) out vec4 vertexColorsVS;
+#endif
+
+// Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=5) out mat3 TBN;
+layout(location=6) out mat3 TBN;
 #endif
 
 layout(push_constant) uniform constants {
@@ -56,8 +64,8 @@ layout(push_constant) uniform constants {
 // Functions
 void main() {
 
-    mat4 mMatrix = currentMatrices[gl_InstanceIndex];
-    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : lastMatrices[gl_InstanceIndex];
+    mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
+    mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
@@ -78,11 +86,6 @@ void main() {
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
     positionVS = positionToCamera.xyz;
 
-    mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f,-1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.5f, 0.0f,
-        0.0f, 0.0f, 0.5f, 1.0f);
-    
     gl_Position = globalData.pMatrix * positionToCamera;
 
     // Needed for velocity buffer calculation 
@@ -109,6 +112,10 @@ void main() {
         cross(tangent, normal));
 
     TBN = mat3(tangent, bitangent, normal);
+#endif
+
+#ifdef VERTEX_COLORS
+    vertexColorsVS = vVertexColors;
 #endif
     
 }

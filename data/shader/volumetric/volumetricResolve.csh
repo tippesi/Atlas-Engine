@@ -2,6 +2,7 @@
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
+
 #include <fog.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -20,6 +21,9 @@ layout(set = 3, binding = 5) uniform  UniformBuffer {
     int downsampled2x;
     int cloudsEnabled;
     int fogEnabled;
+    float innerCloudRadius;
+    float planetRadius;
+    float cloudDistanceLimit;
 } uniforms;
 
 // (localSize / 2 + 2)^2
@@ -29,6 +33,8 @@ shared vec4 clouds[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
+
+vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
 
 void LoadGroupSharedData() {
 
@@ -107,6 +113,29 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
 #endif
 }
 
+vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
+
+    vec3 L = pos - origin;
+    float DT = dot(L, direction);
+    float r2 = radius * radius;
+
+    float ct2 = dot(L, L) - DT * DT;
+
+    if (ct2 > r2)
+    return vec2(-1.0);
+
+    float AT = sqrt(r2 - ct2);
+    float BT = AT;
+
+    float AO = DT - AT;
+    float BO = DT + BT;
+
+    float minDist = min(AO, BO);
+    float maxDist = max(AO, BO);
+
+    return vec2(minDist, maxDist);
+}
+
 void main() {
 
     if (uniforms.downsampled2x > 0) LoadGroupSharedData();
@@ -133,25 +162,45 @@ void main() {
     }
 
     vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
-    // Handle as infinity
+    float viewLength = length(viewPosition);
+
+    vec3 worldDirection = normalize(vec3(globalData.ivMatrix * vec4(viewPosition, 0.0)));
+
+    vec2 intersectDists = IntersectSphere(globalData.cameraLocation.xyz, worldDirection,
+        planetCenter, uniforms.innerCloudRadius);
+    vec2 planetDists = IntersectSphere(globalData.cameraLocation.xyz, worldDirection,
+        planetCenter, uniforms.planetRadius);
+
+    // x => first intersection with sphere, y => second intersection with sphere
+    float cloudFadeout = 1.0;
+    float cloudDist = intersectDists.y;
+    float planetDist = planetDists.x < 0.0 ? planetDists.y : planetDists.x;
     if (depth == 1.0) {
-        viewPosition *= 1000.0;
+        float maxDist = max(cloudDist, planetDist);
+        // If we don't hit at all we don't want any fog
+        viewPosition *= intersectDists.y > 0.0 ? max(maxDist / viewLength, 1.0) : 0.0;
+
+        cloudFadeout = intersectDists.x < 0.0 ? saturate((uniforms.cloudDistanceLimit
+            - cloudDist) / (uniforms.cloudDistanceLimit)) : cloudFadeout;
     }
 
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 
     vec4 resolve = imageLoad(resolveImage, pixel);
 
-    float fogAmount = uniforms.fogEnabled > 0 ? saturate(ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
-    resolve = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, resolve, fogAmount) + volumetric : resolve + volumetric;
+    float fogAmount = uniforms.fogEnabled > 0 ? saturate(1.0 - ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition)) : 0.0;
 
 #ifdef CLOUDS
     if (uniforms.cloudsEnabled > 0) {
-        cloudScattering = uniforms.fogEnabled > 0 ? mix(uniforms.fog.color, cloudScattering, fogAmount) : cloudScattering;
+        cloudScattering.rgb *= cloudFadeout;
+        cloudScattering.a = mix(1.0, cloudScattering.a, cloudFadeout);
+
         float alpha = cloudScattering.a;
+        fogAmount = intersectDists.x < 0.0 ? fogAmount : fogAmount * alpha;
         resolve = alpha * resolve + cloudScattering;
     }
 #endif
+    resolve = uniforms.fogEnabled > 0 ? mix(resolve, uniforms.fog.color, fogAmount) + volumetric : resolve + volumetric;
 
     imageStore(resolveImage, pixel, resolve);
 

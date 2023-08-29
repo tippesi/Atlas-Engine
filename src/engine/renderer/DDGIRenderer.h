@@ -37,26 +37,6 @@ namespace Atlas {
                 mat4 rotationMatrix;
             };
 
-            struct alignas(16) Cascade {
-                float distance;
-                float texelSize;
-                float aligment0;
-                float aligment1;
-                mat4 cascadeSpace;
-            };
-
-            struct alignas(16) Shadow {
-                float distance;
-                float bias;
-
-                float cascadeBlendDistance;
-
-                int cascadeCount;
-                vec2 resolution;
-
-                Cascade cascades[6];
-            };
-
             struct alignas(16) RayHitUniforms {
                 float seed;
                 Shadow shadow;
