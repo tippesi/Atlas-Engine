@@ -1,9 +1,10 @@
 #include <../globals.hsh>
 #include <../common/random.hsh>
+#include <../common/normalencode.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
-layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 1) out vec2 normalFS;
+layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
@@ -83,8 +84,8 @@ void main() {
     baseColorFS.rgb *= vertexColorsVS.rgb;
 #endif
 
-    geometryNormalFS = normalize(normalVS);
-    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+    vec3 geometryNormal = normalize(normalVS);
+    geometryNormalFS = EncodeNormal(geometryNormal);
 
     float roughnessFactor = 1.0;
     float metalnessFactor = 1.0;

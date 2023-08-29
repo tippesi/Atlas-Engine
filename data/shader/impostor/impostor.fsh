@@ -1,8 +1,8 @@
 #include <../globals.hsh>
+#include <../common/normalencode.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
-layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
@@ -78,20 +78,18 @@ void main() {
     vec3 normal1 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).rgb - 1.0;
     vec3 normal2 = 2.0 * texture(normalMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).rgb - 1.0;
 
-    geometryNormalFS = weight0VS * normal0 +
+    vec3 geometryNormal = weight0VS * normal0 +
 		weight1VS * normal1 + 
 		weight2VS * normal2;
 #else
-	geometryNormalFS = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).rgb - 1.0;
+	vec3 geometryNormal = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).rgb - 1.0;
 #endif
 
-    geometryNormalFS = normalize(vec3(globalData.vMatrix * vec4(geometryNormalFS, 0.0)));
+    geometryNormal = normalize(vec3(globalData.vMatrix * vec4(geometryNormal, 0.0)));
     // We want the normal always two face the camera for two sided materials
-    geometryNormalFS *= -dot(geometryNormalFS, positionVS);
-    geometryNormalFS = normalize(geometryNormalFS);
-    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
-
-    normalFS = vec3(0.0);
+    geometryNormal *= -dot(geometryNormal, positionVS);
+    geometryNormal = normalize(geometryNormal);
+    geometryNormalFS = EncodeNormal(geometryNormal);
 
 #ifdef INTERPOLATION
     vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).rgb;

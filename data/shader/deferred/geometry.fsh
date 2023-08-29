@@ -1,4 +1,5 @@
 #include <../common/random.hsh>
+#include <../common/normalencode.hsh>
 #include <../globals.hsh>
 
 #ifdef GENERATE_IMPOSTOR
@@ -6,8 +7,8 @@ layout (location = 0) out vec4 baseColorFS;
 #else
 layout (location = 0) out vec3 baseColorFS;
 #endif
-layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 1) out vec2 normalFS;
+layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
@@ -161,21 +162,21 @@ void main() {
     baseColorFS *= vertexColorsVS.rgb;
 #endif
 
-    geometryNormalFS = normalize(normalVS);
+    vec3 geometryNormal = normalize(normalVS);
 
 #ifdef NORMAL_MAP
     vec3 normalColor = texture(normalMap, texCoords).rgb;
-    normalFS = mix(geometryNormalFS, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
+    vec3 normal = mix(geometryNormal, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
     // We want the normal always to face the camera for two sided materials
-    geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
-    normalFS *= dot(geometryNormalFS, normalFS) < 0.0 ? -1.0 : 1.0;
-    normalFS = 0.5 * normalFS + 0.5;
+    geometryNormal *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
+    normalFS = EncodeNormal(normal);
 #else
     // We want the normal always to face the camera for two sided materials
-    geometryNormalFS *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    geometryNormal *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
 #endif
     
-    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+    geometryNormalFS = EncodeNormal(geometryNormal);
 
 #ifdef GENERATE_IMPOSTOR
     float roughnessFactor = roughness;

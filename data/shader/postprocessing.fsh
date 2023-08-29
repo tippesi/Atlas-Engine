@@ -1,8 +1,4 @@
-#include <globals.hsh>
 #include <common/eotf.hsh>
-#include <common/random.hsh>
-
-#define FILM_GRAIN
 
 layout (location = 0) out vec4 outColor;
 
@@ -124,10 +120,8 @@ void main() {
 #endif
 
     color *= Uniforms.exposure;
-
-#ifdef FILM_GRAIN
-    color = color + color * 0.5 * (2.0 * random(vec3(texCoord * 1000.0, globalData.time)) - 1.0);
-#endif
+    
+    //color = color + n2rand(2.0 * fTexCoord - 1.0) / 256.0;
     
     // Apply the tone mapping because we want the colors to be back in
     // normal range

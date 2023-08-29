@@ -3,10 +3,11 @@
 #include <terrainMaterial.hsh>
 #include <../globals.hsh>
 #include <../common/utility.hsh>
+#include <../common/normalencode.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
-layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 1) out vec2 normalFS;
+layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
@@ -194,7 +195,7 @@ void main() {
         + 0.5 * PushConstants.normalTexelSize;
     vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 
-    geometryNormalFS = 0.5 * normalize(mat3(globalData.vMatrix) * norm) + 0.5;
+    geometryNormalFS = EncodeNormal(normalize(mat3(globalData.vMatrix) * norm));
     
 #ifdef MATERIAL_MAPPING
     // Normal mapping only for near tiles
@@ -205,21 +206,21 @@ void main() {
         Materials.materials[nonuniformEXT(indices.w)].normalScale,
         off
         );
-    normalFS = SampleNormal(off, indices, tiling);
+    vec3 normal = SampleNormal(off, indices, tiling);
     vec3 tang = vec3(1.0, 0.0, 0.0);
     tang.y = -((norm.x*tang.x) / norm.y) - ((norm.z*tang.z) / norm.y);
     tang = normalize(tang);
     vec3 bitang = normalize(cross(tang, norm));
     mat3 tbn = mat3(tang, bitang, norm);
-    normalFS = normalize(tbn * (2.0 * normalFS - 1.0));
-    normalFS = mix(norm, normalFS, normalScale);
+    normal = normalize(tbn * (2.0 * normal - 1.0));
+    normal = mix(norm, normal, normalScale);
     ao *= SampleAo(off, indices, tiling);
     roughness *= SampleRoughness(off, indices, tiling);
 #else
-    normalFS = norm;
+    vec3 normal = norm;
 #endif
     
-    normalFS = 0.5 * normalize(mat3(globalData.vMatrix) * normalFS) + 0.5;
+    normalFS = EncodeNormal(normalize(mat3(globalData.vMatrix) * normal));
     roughnessMetalnessAoFS = vec3(roughness, metalness, ao);
     
     // Calculate velocity

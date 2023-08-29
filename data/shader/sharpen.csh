@@ -26,6 +26,7 @@ void main() {
         vec3 right = sampleTex(textureIn, coord + ivec2(1, 0), SAMPLE_CLAMP).rgb;
         
         color = color + PushConstants.sharpenFactor * (4.0 * color - up - down - left - right);
+        color = max(color, vec3(0.0));
         
         imageStore(textureOut, coord, vec4(color, 1.0));
         

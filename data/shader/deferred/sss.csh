@@ -6,6 +6,7 @@
 #include <../common/flatten.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
+#include <../common/normalencode.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
@@ -56,7 +57,7 @@ void main() {
         return;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 

@@ -1,0 +1,13 @@
+#include <octahedron.hsh>
+
+vec2 EncodeNormal(vec3 normal) {
+
+    return UnitVectorToOctahedron(normal);
+
+}
+
+vec3 DecodeNormal(vec2 normal) {
+
+    return OctahedronToUnitVector(normal);
+
+}

@@ -4,6 +4,7 @@
 #include <../common/stencil.hsh>
 #include <../common/flatten.hsh>
 #include <../common/random.hsh>
+#include <../common/normalencode.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -166,7 +167,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-    vec3 normal = 2.0 * texelFetch(normalTexture, pixel, 0).rgb - 1.0;
+    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
@@ -180,7 +181,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
         uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
         confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
-        vec3 historyNormal = 2.0 * texelFetch(historyNormalTexture, offsetPixel, 0).rgb - 1.0;
+        vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;

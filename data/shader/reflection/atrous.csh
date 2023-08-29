@@ -3,6 +3,7 @@
 #include <../common/flatten.hsh>
 #include <../common/barrier.hsh>
 #include <../common/material.hsh>
+#include <../common/normalencode.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -98,7 +99,7 @@ void LoadGroupSharedData() {
         data.roughness = material.roughness;
         data.roughness *= material.roughnessMap ? texelFetch(roughnessTexture, texel, 0).r : 1.0;
 
-        data.normal = 2.0 * texelFetch(normalTexture, texel, 0).rgb - 1.0;    
+        data.normal = DecodeNormal(texelFetch(normalTexture, texel, 0).rg);
 
         pixelData[i] = PackPixelData(data);
     }

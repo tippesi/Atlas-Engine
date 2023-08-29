@@ -5,22 +5,16 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../structures>
 #include <../shadow.hsh>
 #include <../globals.hsh>
-#include <../clouds/shadow.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 
 layout(set = 3, binding = 0) uniform sampler2D depthTexture;
 layout(set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 1, rgba16f) uniform image2D refractionImage;
-layout(set = 3, binding = 15) uniform sampler2D cloudMap;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {
     Light light;
 } LightUniforms;
-
-layout (set = 3, binding = 14, std140) uniform CloudShadowUniformBuffer {
-    CloudShadow cloudShadow;
-} cloudShadowUniforms;
 
 layout(push_constant) uniform constants {
     float waterHeight;
@@ -65,11 +59,6 @@ void main() {
         return;
 
     float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, vec3(0.0, 1.0, 0.0), 0.0), 0.0);
-
-#ifdef CLOUD_SHADOWS
-    float cloudShadowFactor = CalculateCloudShadow(viewSpacePos, cloudShadowUniforms.cloudShadow, cloudMap);
-    shadowFactor = min(shadowFactor, cloudShadowFactor);
-#endif
 
     vec3 pos = vec3(pixelPos.x, globalData.time * 0.5, pixelPos.z);
     pos *= 2.0;
