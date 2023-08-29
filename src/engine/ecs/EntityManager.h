@@ -113,6 +113,18 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            std::vector<Entity>::const_iterator begin() const {
+
+                return entities.begin();
+
+            }
+
+            std::vector<Entity>::const_iterator end() const {
+
+                return entities.end();
+
+            }
+
         private:
             Pools pools;
 

@@ -70,6 +70,7 @@ find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_subdirectory(${ATLAS_LOCATION})
 

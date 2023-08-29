@@ -39,7 +39,7 @@ endif()
 if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt nlohmann_json::nlohmann_json
             volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
@@ -52,7 +52,7 @@ if(APPLE)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk volk::volk_headers SPIRV-Tools-opt
+            volk::volk volk::volk_headers SPIRV-Tools-opt nlohmann_json::nlohmann_json
             unofficial::vulkan-memory-allocator::vulkan-memory-allocator
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
@@ -75,7 +75,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static nlohmann_json::nlohmann_json
             volk::volk volk::volk_headers unofficial::vulkan-memory-allocator::vulkan-memory-allocator
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 endif()

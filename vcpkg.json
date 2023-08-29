@@ -30,7 +30,8 @@
             "features": []
         },
         "spirv-reflect",
-        "spirv-tools"
+        "spirv-tools",
+        "nlohmann-json"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
