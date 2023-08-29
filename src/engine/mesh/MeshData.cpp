@@ -18,8 +18,8 @@ namespace Atlas {
 
             vertices = DataComponent<vec3>(ComponentFormat::Float);
             texCoords = DataComponent<vec2>(ComponentFormat::HalfFloat);
-            normals = DataComponent<vec4>(ComponentFormat::PackedFloat);
-            tangents = DataComponent<vec4>(ComponentFormat::PackedFloat);
+            normals = DataComponent<vec4>(ComponentFormat::PackedNormal);
+            tangents = DataComponent<vec4>(ComponentFormat::PackedNormal);
             colors = DataComponent<vec4>(ComponentFormat::PackedColor);
 
         }

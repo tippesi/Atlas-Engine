@@ -104,9 +104,9 @@ namespace Atlas {
             }
 
             meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-            meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
+            meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-            meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+            meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
             meshData.SetIndexCount(indexCount);
@@ -381,9 +381,9 @@ namespace Atlas {
                 hasVertexColors = assimpMesh->HasVertexColors(0);
 
                 meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-                meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
+                meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
                 meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-                meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+                meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
                 meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
                 meshData.SetIndexCount(indexCount);
