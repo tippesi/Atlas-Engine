@@ -107,6 +107,11 @@ namespace Atlas {
             void* GetConvertedVoid();
 
             /**
+             * Clears all the data
+             */
+            void Clear();
+
+            /**
              * Clears the converted data which is created by to free space.
              * @note This makes the previously returned converted data invalid.
              */
@@ -241,6 +246,14 @@ namespace Atlas {
 
             ConvertData();
             return static_cast<void*>(converted.data());
+
+        }
+
+        template <class T>
+        void DataComponent<T>::Clear() {
+
+            data.clear();
+            converted.clear();
 
         }
 

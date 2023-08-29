@@ -1071,6 +1071,12 @@ void App::CheckLoadScene() {
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
 
+    if (sceneSelection == NEWSPONZA) {
+        for (auto& mesh : meshes) {
+            mesh->data.colors.Clear();
+        }
+    }
+
     static std::future<void> future;
 
     auto buildRTStructure = [&]() {

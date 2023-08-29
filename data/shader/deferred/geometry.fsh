@@ -139,7 +139,7 @@ void main() {
     opacity *= texture(opacityMap, texCoords).r;
 #endif
 #ifdef VERTEX_COLORS
-    opacity *= vertexColorsVS.a;
+    // opacity *= vertexColorsVS.a;
 #endif
     if (opacity < 0.2)
         discard;
