@@ -6,6 +6,7 @@
 #include "Vignette.h"
 #include "ChromaticAberration.h"
 #include "Sharpen.h"
+#include "FilmGrain.h"
 #include "TAA.h"
 
 namespace Atlas {
@@ -23,6 +24,7 @@ namespace Atlas {
             TAA taa;
             Vignette vignette;
             ChromaticAberration chromaticAberration;
+            FilmGrain filmGrain;
             Sharpen sharpen;
 
         };
