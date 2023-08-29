@@ -25,6 +25,7 @@ option(ATLAS_OPENGL_ES "Use OpenGL ES instead of OpenGL" OFF)
 option(ATLAS_EXPORT_MAIN "Add main file in root of directory tree. Add ${ATLAS_ENGINE_MAIN_FILE} to your executable" OFF)
 option(ATLAS_NO_APP "Disables the engines main function" OFF)
 option(ATLAS_DEMO "Build demo executable" OFF)
+option(ATLAS_DEMO "Build editor executable" ON)
 option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 
@@ -52,6 +53,7 @@ endif()
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
+set (EDITOR_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/editor)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
@@ -79,4 +81,8 @@ endif()
 
 if (ATLAS_DEMO)
     add_subdirectory(${DEMO_LOCATION})
+endif()
+
+if (ATLAS_EDITOR)
+    add_subdirectory(${EDITOR_LOCATION})
 endif()
