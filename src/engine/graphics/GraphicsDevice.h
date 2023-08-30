@@ -185,6 +185,12 @@ namespace Atlas {
                         queueFamilies[QueueType::PresentationQueue].has_value() &&
                         queueFamilies[QueueType::TransferQueue].has_value();
                 }
+            }; 
+
+            template <class T>
+            struct Resources {
+                std::vector<Ref<T>> data;
+                std::mutex mutex;
             };
 
             QueueRef SubmitAllCommandLists();
@@ -232,20 +238,36 @@ namespace Atlas {
 
             QueueRef FindAndLockQueue(uint32_t familyIndex);
 
+            template<class T>
+            void DeleteOutdatedResources(Resources<T>& resources) {
+                std::lock_guard<std::mutex> guard(resources.mutex);
+
+                auto& data = resources.data;
+                for (size_t i = 0; i < data.size(); i++) {
+                    auto& ref = data[i];
+                    if (ref.use_count() == 1) {
+                        ref.swap(data.back());
+                        memoryManager->DestroyAllocation(data.back());
+                        data.pop_back();
+                        i--;
+                    }
+                }
+            }
+
             QueueFamilyIndices queueFamilyIndices;
 
-            std::vector<Ref<RenderPass>> renderPasses;
-            std::vector<Ref<FrameBuffer>> frameBuffers;
-            std::vector<Ref<Shader>> shaders;
-            std::vector<Ref<Pipeline>> pipelines;
-            std::vector<Ref<Buffer>> buffers;
-            std::vector<Ref<MultiBuffer>> multiBuffers;
-            std::vector<Ref<Image>> images;
-            std::vector<Ref<Sampler>> samplers;
-            std::vector<Ref<DescriptorPool>> descriptorPools;
-            std::vector<Ref<QueryPool>> queryPools;
-            std::vector<Ref<BLAS>> blases;
-            std::vector<Ref<TLAS>> tlases;
+            Resources<RenderPass> renderPasses;
+            Resources<FrameBuffer> frameBuffers;
+            Resources<Shader> shaders;
+            Resources<Pipeline> pipelines;
+            Resources<Buffer> buffers;
+            Resources<MultiBuffer> multiBuffers;
+            Resources<Image> images;
+            Resources<Sampler> samplers;
+            Resources<DescriptorPool> descriptorPools;
+            Resources<QueryPool> queryPools;
+            Resources<BLAS> blases;
+            Resources<TLAS> tlases;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
