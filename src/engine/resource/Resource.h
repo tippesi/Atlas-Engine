@@ -90,7 +90,7 @@ namespace Atlas {
             data = nullptr;
         }
 
-        size_t ID = 0;
+        Hash ID = 0;
 
         ResourceOrigin origin = System;
 

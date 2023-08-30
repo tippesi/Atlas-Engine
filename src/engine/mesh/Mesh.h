@@ -21,24 +21,32 @@ namespace Atlas {
             Movable
         };
 
+        typedef uint32_t MeshUsage;
+
+        typedef enum MeshUsageBits {
+            MultiBufferedBit = (1 << 0),
+            HostAccessBit = (1 << 1),
+        } MeshUsageBits;
+
         class Mesh {
 
         public:
             Mesh() = default;
 
-            explicit Mesh(MeshData& meshData,
-                MeshMobility mobility = MeshMobility::Stationary);
+            explicit Mesh(MeshData& meshData, MeshMobility mobility = MeshMobility::Stationary,
+                MeshUsage usage = 0);
+
+            explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
 
             void SetTransform(mat4 transform);
 
             void UpdateData();
 
-            bool CheckForLoad();
-
             std::string name = "";
 
             MeshData data;
             MeshMobility mobility = MeshMobility::Stationary;
+            MeshUsage usage = 0;
 
             Buffer::VertexArray vertexArray;
             Buffer::IndexBuffer indexBuffer;

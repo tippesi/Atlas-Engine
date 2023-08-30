@@ -62,6 +62,7 @@ namespace Atlas {
                 float darkEdgeDetail;
 
                 vec4 extinctionCoefficients;
+                vec4 planetCenter;
             };
 
             struct alignas(16) CloudShadowUniforms {

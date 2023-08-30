@@ -3,6 +3,7 @@
 
 #include "System.h"
 #include "Resource.h"
+#include "Log.h"
 #include "events/EventManager.h"
 
 #include <type_traits>
@@ -40,6 +41,21 @@ namespace Atlas {
             }
 
             return handle;
+
+        }
+
+        static ResourceHandle<T> GetResource(const std::string& path, ResourceOrigin origin) {
+
+            CheckInitialization();
+
+            std::lock_guard lock(mutex);
+            if (resources.contains(path)) {
+                auto& resource = resources[path];
+                resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                return ResourceHandle<T>(resource);
+            }
+
+            return ResourceHandle<T>();
 
         }
 

@@ -2,6 +2,7 @@
 #define AE_PIPELINECONFIG_H
 
 #include "../graphics/Pipeline.h"
+#include "../common/Hash.h"
 
 #include <string>
 #include <vector>
@@ -39,8 +40,8 @@ namespace Atlas {
 
         bool IsValid() const;
 
-        size_t shaderHash = 0;
-        size_t variantHash = 0;
+        Hash shaderHash = 0;
+        Hash variantHash = 0;
 
     private:
         void CalculateShaderHash();

@@ -50,6 +50,7 @@ namespace Atlas {
                 float innerCloudRadius;
                 float planetRadius;
                 float cloudDistanceLimit;
+                vec4 planetCenter;
             };
 
             Filter blurFilter;

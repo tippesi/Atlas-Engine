@@ -72,6 +72,7 @@ void main() {
     float shoreDistance = 0.0;
     vec2 shoreGradient = vec2(0.0);
 
+#ifdef TERRAIN
     if (hasTerrain && terrainTex.x >= 0.0 && terrainTex.y >= 0.0
         && terrainTex.x <= 1.0 && terrainTex.y <= 1.0) {
         waterDepth = fPosition.y - textureLod(terrainHeight, terrainTex, 0.0).r 
@@ -79,6 +80,7 @@ void main() {
         shoreDistance = textureLod(terrainHeight, terrainTex, 0.0).g;
         shoreGradient = normalize(2.0 * textureLod(terrainHeight, terrainTex, 0.0).ba - 1.0);
     }
+#endif
     
     float depthScaling = clamp((waterDepth - shoreOffsetScaling) / 
         (shoreStartScaling - shoreOffsetScaling), minShoreScaling, 1.0);
@@ -102,12 +104,14 @@ void main() {
 
     fPosition += displacement;
 
+#ifdef TERRAIN
     vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(fPosition + vec3(0.1, 0.0, 0.0));
     vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(fPosition + vec3(0.0, 0.0, 0.1));
     vec3 centerOffset = CalculateGerstner(fPosition);
 
     normalShoreWave = normalize(cross(dz - centerOffset, dx - centerOffset));
     fPosition += centerOffset;
+#endif
 
     fModelCoord = fPosition;
     

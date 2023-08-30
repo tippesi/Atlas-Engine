@@ -24,6 +24,7 @@ layout(set = 3, binding = 5) uniform  UniformBuffer {
     float innerCloudRadius;
     float planetRadius;
     float cloudDistanceLimit;
+    vec4 planetCenter;
 } uniforms;
 
 // (localSize / 2 + 2)^2
@@ -34,7 +35,7 @@ shared vec4 clouds[36];
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
 
-vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
+vec3 planetCenter = uniforms.planetCenter.xyz;
 
 void LoadGroupSharedData() {
 
@@ -183,6 +184,8 @@ void main() {
         cloudFadeout = intersectDists.x < 0.0 ? saturate((uniforms.cloudDistanceLimit
             - cloudDist) / (uniforms.cloudDistanceLimit)) : cloudFadeout;
     }
+
+    // cloudFadeout = 1.0;
 
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 

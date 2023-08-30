@@ -76,8 +76,8 @@ void main() {
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
     
-    float shadowFactor = max(CalculateCascadedShadow(light.shadow,
-        cascadeMaps, fPosition, fNormal, 0.0), 0.01);
+    float shadowFactor = CalculateCascadedShadow(light.shadow,
+        cascadeMaps, fPosition, fNormal, 1.0);
 
 #ifdef CLOUD_SHADOWS
     float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudMap);
@@ -86,7 +86,9 @@ void main() {
 
     shadowFactor = max(shadowFactor, 0.01);
 
+#ifdef TERRAIN
     fNormal = mix(normalShoreWave, fNormal, shoreScaling);
+#endif
 
     // Create TBN matrix for normal mapping
     vec3 norm = fNormal;
@@ -99,12 +101,12 @@ void main() {
     // Normal mapping normal (offsets actual normal)
     vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
-    if (Uniforms.hasRippleTexture > 0) {
+#ifdef RIPPLE_TEXTURE
         rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2)).rgb - 1.0);
         rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05)).rgb - 1.0);
         // Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
         norm = normalize(tbn * rippleNormal);
-    }
+#endif
     
     // Scale ripples based on actual (not view) depth of water
     float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
@@ -165,8 +167,11 @@ void main() {
 
     // Update refraction color based on water depth (exponential falloff)
     refractionColor = mix(waterColor, refractionColor, min(1.0 , exp(-waterViewDepth / 2.0)));
-    
-    vec2 shoreInteraction = CalculateShoreInteraction(fModelCoord);
+
+    vec2 shoreInteraction = vec2(0.0);
+#ifdef TERRAIN
+    shoreInteraction = CalculateShoreInteraction(fModelCoord);
+#endif
 
     // Calculate foam based on folding of wave and fade it out near shores
     float foam = 0.0;
@@ -181,9 +186,11 @@ void main() {
     color += specularIntensity * fresnel * specularFactor * light.color.rgb;
     color += scatterColor * scatterFactor;
 
-    vec3 foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) * 
+    vec3 foamColor = vec3(1.0);
+#ifdef FOAM_TEXTURE
+    foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) *
         nDotL * light.intensity;
-    
+#endif
     color = mix(color, vec3(mix(scatterColor * 0.1, vec3(1.0), 
         foamColor)), foam);
 

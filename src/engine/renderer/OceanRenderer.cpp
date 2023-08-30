@@ -199,6 +199,9 @@ namespace Atlas {
 
                 auto config = GeneratePipelineConfig(target, ocean->wireframe);
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
+                if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
+                if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
+                if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
 

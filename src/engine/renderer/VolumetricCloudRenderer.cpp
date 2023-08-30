@@ -316,7 +316,8 @@ namespace Atlas {
                 .darkEdgeDirect = clouds->darkEdgeFocus,
                 .darkEdgeDetail = clouds->darkEdgeAmbient,
 
-                .extinctionCoefficients = clouds->scattering.extinctionCoefficients
+                .extinctionCoefficients = clouds->scattering.extinctionCoefficients,
+                .planetCenter = vec4(scene->sky.planetCenter, 1.0f)
             };
 
             if (sun) {

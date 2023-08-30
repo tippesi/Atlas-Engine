@@ -260,6 +260,7 @@ namespace Atlas {
                     uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
                     uniforms.planetRadius = scene->sky.planetRadius;
                     uniforms.cloudDistanceLimit = clouds->distanceLimit;
+                    uniforms.planetCenter = vec4(scene->sky.planetCenter, 1.0f);
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 

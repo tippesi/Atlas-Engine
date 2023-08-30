@@ -97,10 +97,6 @@ void main() {
     // Only after ndc calculation apply the clip correction
     gl_Position = gl_Position;
     
-#ifdef GENERATE_IMPOSTOR
-    mvMatrix = globalData.mMatrix;
-#endif
-    
     normalVS = mat3(mvMatrix) * vNormal;    
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)

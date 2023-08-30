@@ -45,49 +45,6 @@ namespace Atlas {
                 int32_t N;
             };
 
-            struct alignas(16) Cascade {
-                float distance;
-                float texelSize;
-                float aligment0;
-                float aligment1;
-                mat4 cascadeSpace;
-            };
-
-            struct alignas(16) Shadow {
-                float distance;
-                float bias;
-
-                float cascadeBlendDistance;
-
-                int cascadeCount;
-
-                float aligment0;
-                float aligment1;
-
-                vec2 resolution;
-
-                mat4 cloudViewMatrix;
-                mat4 cloudProjectionMatrix;
-
-                Cascade cascades[6];
-            };
-
-            struct alignas(16) Light {
-                vec4 location;
-                vec4 direction;
-
-                vec4 color;
-                float intensity;
-
-                float scatteringFactor;
-
-                float radius;
-
-                float alignment;
-
-                Shadow shadow;
-            };
-
             struct alignas(16) PushConstants {
                 float nodeSideLength;
                 float tileScale;
