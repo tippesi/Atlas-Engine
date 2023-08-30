@@ -28,7 +28,9 @@ layout(set = 3, binding = 15) uniform sampler2D cloudMap;
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
 layout(location=2) in vec3 fModelCoord;
+#ifdef FOAM_TEXTURE
 layout(location=3) in vec3 fOriginalCoord;
+#endif
 layout(location=4) in vec2 fTexCoord;
 // layout(location=5) in float waterDepth;
 layout(location=6) in float shoreScaling;

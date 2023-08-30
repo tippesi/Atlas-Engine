@@ -11,13 +11,17 @@ layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
 layout(location=0) out vec4 fClipSpace;
 layout(location=1) out vec3 fPosition;
 layout(location=2) out vec3 fModelCoord;
+#ifdef FOAM_TEXTURE
 layout(location=3) out vec3 fOriginalCoord;
+#endif
 layout(location=4) out vec2 fTexCoord;
 // layout(location=5) out float waterDepth;
 layout(location=6) out float shoreScaling;
 layout(location=7) out vec3 ndcCurrent;
 layout(location=8) out vec3 ndcLast;
+#ifdef TERRAIN
 layout(location=9) out vec3 normalShoreWave;
+#endif
 layout(location=10) out float perlinScale;
 
 const float shoreStartScaling = 15.0;
@@ -88,7 +92,9 @@ void main() {
     
     vec2 vTexCoord = vec2(fPosition.x, fPosition.z) / Uniforms.tiling;
 
+#ifdef FOAM_TEXTURE
     fOriginalCoord = fPosition;
+#endif
 
     vec3 displacement = textureLod(displacementMap, vTexCoord, 0.0).grb;
     displacement.y *= Uniforms.displacementScale * shoreScaling;

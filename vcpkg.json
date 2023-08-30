@@ -37,6 +37,7 @@
             { "name": "assimp", "version": "5.2.5" },
             { "name": "spirv-tools", "version": "2022.1#0" },
             { "name": "glslang", "version": "11.11.0#1" },
-            { "name": "sdl2", "version": "2.24.2" }
+            { "name": "sdl2", "version": "2.24.2" },
+            { "name": "vulkan-memory-allocator",  "version": "3.0.1#3" }
     ]
 }

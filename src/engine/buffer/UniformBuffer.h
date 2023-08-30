@@ -46,6 +46,15 @@ namespace Atlas {
              * @param offset The offset in the buffer in elements (not bytes).
              */
             void SetData(void* data, size_t offset);
+            
+            /**
+             * Sets the data of a buffer if it isn't mapped.
+             * @param data A pointer to the data.
+             * @param offset The offset in the buffer in bytes.
+             * @param length The length in bytes
+             * @note This method exists in case we need only partial upload of an element (in case of an array)
+             */
+            void SetData(void* data, size_t offset, size_t length);
 
             /**
              * Returns an owning pointer to a graphics multi buffer

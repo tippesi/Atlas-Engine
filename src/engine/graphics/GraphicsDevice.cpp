@@ -1022,7 +1022,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < renderPasses.size(); i++) {
                 auto& renderPassRef = renderPasses[i];
-                if (renderPassRef.use_count() == 1) {
+                if (renderPassRef.unique()) {
                     renderPassRef.swap(renderPasses.back());
                     memoryManager->DestroyAllocation(renderPasses.back());
                     renderPasses.pop_back();
@@ -1032,7 +1032,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < pipelines.size(); i++) {
                 auto& pipelineRef = pipelines[i];
-                if (pipelineRef.use_count() == 1) {
+                if (pipelineRef.unique()) {
                     pipelineRef.swap(pipelines.back());
                     memoryManager->DestroyAllocation(pipelines.back());
                     pipelines.pop_back();
@@ -1042,7 +1042,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < shaders.size(); i++) {
                 auto& shaderRef = shaders[i];
-                if (shaderRef.use_count() == 1) {
+                if (shaderRef.unique()) {
                     shaderRef.swap(shaders.back());
                     memoryManager->DestroyAllocation(shaders.back());
                     shaders.pop_back();
@@ -1052,7 +1052,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < buffers.size(); i++) {
                 auto& bufferRef = buffers[i];
-                if (bufferRef.use_count() == 1) {
+                if (bufferRef.unique()) {
                     bufferRef.swap(buffers.back());
                     memoryManager->DestroyAllocation(buffers.back());
                     buffers.pop_back();
@@ -1062,7 +1062,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < multiBuffers.size(); i++) {
                 auto& multiBufferRef = multiBuffers[i];
-                if (multiBufferRef.use_count() == 1) {
+                if (multiBufferRef.unique()) {
                     multiBufferRef.swap(multiBuffers.back());
                     memoryManager->DestroyAllocation(multiBuffers.back());
                     multiBuffers.pop_back();
@@ -1072,7 +1072,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < images.size(); i++) {
                 auto& imageRef = images[i];
-                if (imageRef.use_count() == 1) {
+                if (imageRef.unique()) {
                     imageRef.swap(images.back());
                     memoryManager->DestroyAllocation(images.back());
                     images.pop_back();
@@ -1082,7 +1082,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < samplers.size(); i++) {
                 auto& samplerRef = samplers[i];
-                if (samplerRef.use_count() == 1) {
+                if (samplerRef.unique()) {
                     samplerRef.swap(samplers.back());
                     memoryManager->DestroyAllocation(samplers.back());
                     samplers.pop_back();
@@ -1092,7 +1092,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < descriptorPools.size(); i++) {
                 auto& poolRef = descriptorPools[i];
-                if (poolRef.use_count() == 1) {
+                if (poolRef.unique()) {
                     poolRef.swap(descriptorPools.back());
                     memoryManager->DestroyAllocation(descriptorPools.back());
                     descriptorPools.pop_back();
@@ -1102,7 +1102,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < queryPools.size(); i++) {
                 auto& poolRef = queryPools[i];
-                if (poolRef.use_count() == 1) {
+                if (poolRef.unique()) {
                     poolRef.swap(queryPools.back());
                     memoryManager->DestroyAllocation(queryPools.back());
                     queryPools.pop_back();
@@ -1112,7 +1112,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < blases.size(); i++) {
                 auto& blasRef = blases[i];
-                if (blasRef.use_count() == 1) {
+                if (blasRef.unique()) {
                     blasRef.swap(blases.back());
                     memoryManager->DestroyAllocation(blases.back());
                     blases.pop_back();
@@ -1122,7 +1122,7 @@ namespace Atlas {
 
             for (size_t i = 0; i < tlases.size(); i++) {
                 auto& tlasRef = tlases[i];
-                if (tlasRef.use_count() == 1) {
+                if (tlasRef.unique()) {
                     tlasRef.swap(tlases.back());
                     memoryManager->DestroyAllocation(tlases.back());
                     tlases.pop_back();
