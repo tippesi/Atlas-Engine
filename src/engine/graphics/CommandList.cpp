@@ -379,6 +379,25 @@ namespace Atlas {
 
         }
 
+        void CommandList::BindVertexBuffers(std::vector<Ref<Buffer>> &buffers, uint32_t bindingOffset,
+            uint32_t bindingCount) {
+
+            assert(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            std::vector<VkDeviceSize> offsets;
+            std::vector<VkBuffer> bindBuffers;
+            for (const auto& buffer : buffers) {
+                if (!buffer->buffer) return;
+                assert(buffer->size > 0 && "Invalid buffer size");
+                bindBuffers.push_back(buffer->buffer);
+                offsets.push_back(0);
+            }
+
+            vkCmdBindVertexBuffers(commandBuffer, bindingOffset, bindingCount, bindBuffers.data(), offsets.data());
+
+        }
+
         void CommandList::BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");

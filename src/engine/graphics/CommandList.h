@@ -78,6 +78,8 @@ namespace Atlas {
 
             void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
 
+            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, uint32_t bindingOffset, uint32_t bindingCount);
+
             void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
             void BindBufferOffset(const Ref<Buffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
