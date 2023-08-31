@@ -1,4 +1,4 @@
-#define SHADOW_FILTER_1x1
+#define SHADOW_FILTER_3x3
 
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>

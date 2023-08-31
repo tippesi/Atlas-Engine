@@ -78,20 +78,28 @@ namespace Atlas {
                 shadowUniform.distance = distance;
                 shadowUniform.bias = shadow->bias;
                 shadowUniform.cascadeCount = shadow->componentCount;
+                shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
 
-                for (int32_t i = 0; i < sun->GetShadow()->componentCount; i++) {
-                    auto& cascade = shadow->components[i];
-                    auto& cascadeUniform = shadowUniform.cascades[i];
-                    auto frustum = Volume::Frustum(cascade.frustumMatrix);
-                    auto corners = frustum.GetCorners();
-                    auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                        abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
-                    cascadeUniform.distance = cascade.farDistance;
-                    cascadeUniform.cascadeSpace = cascade.projectionMatrix * cascade.viewMatrix * camera->invViewMatrix;
-                    cascadeUniform.texelSize = texelSize;
+                auto componentCount = shadow->componentCount;
+                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                    if (i < componentCount) {
+                        auto cascade = &shadow->components[i];
+                        auto frustum = Volume::Frustum(cascade->frustumMatrix);
+                        auto corners = frustum.GetCorners();
+                        auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                            abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+                        shadowUniform.cascades[i].distance = cascade->farDistance;
+                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                                                 cascade->viewMatrix * camera->invViewMatrix;
+                        shadowUniform.cascades[i].texelSize = texelSize;
+                    }
+                    else {
+                        auto cascade = &shadow->components[componentCount - 1];
+                        shadowUniform.cascades[i].distance = cascade->farDistance;
+                    }
                 }
             }
             else {

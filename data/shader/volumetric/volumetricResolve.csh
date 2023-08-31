@@ -18,13 +18,13 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 
 layout(set = 3, binding = 5) uniform  UniformBuffer {
     Fog fog;
+    vec4 planetCenter;
     int downsampled2x;
     int cloudsEnabled;
     int fogEnabled;
     float innerCloudRadius;
     float planetRadius;
     float cloudDistanceLimit;
-    vec4 planetCenter;
 } uniforms;
 
 // (localSize / 2 + 2)^2
@@ -184,8 +184,6 @@ void main() {
         cloudFadeout = intersectDists.x < 0.0 ? saturate((uniforms.cloudDistanceLimit
             - cloudDist) / (uniforms.cloudDistanceLimit)) : cloudFadeout;
     }
-
-    // cloudFadeout = 1.0;
 
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
 

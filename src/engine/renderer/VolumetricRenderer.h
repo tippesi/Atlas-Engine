@@ -44,13 +44,13 @@ namespace Atlas {
 
             struct alignas(16) ResolveUniforms {
                 Fog fog;
+                vec4 planetCenter;
                 int downsampled2x;
                 int cloudsEnabled;
                 int fogEnabled;
                 float innerCloudRadius;
                 float planetRadius;
                 float cloudDistanceLimit;
-                vec4 planetCenter;
             };
 
             Filter blurFilter;

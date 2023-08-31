@@ -38,9 +38,22 @@ namespace Atlas {
 
             explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
 
+            /**
+             * Transforms the underlying mesh data and updates the buffer data afterwards
+             * @param transform
+             */
             void SetTransform(mat4 transform);
 
+            /**
+             * Fully updates the buffer data with data available through the MeshData member
+             */
             void UpdateData();
+
+            /**
+             * Updates the vertex array based on the state of the vertex buffers.
+             * @note This is useful when running your own data pipeline
+             */
+            void UpdateVertexArray();
 
             std::string name = "";
 
@@ -49,8 +62,13 @@ namespace Atlas {
             MeshUsage usage = 0;
 
             Buffer::VertexArray vertexArray;
+
             Buffer::IndexBuffer indexBuffer;
             Buffer::VertexBuffer vertexBuffer;
+            Buffer::VertexBuffer normalBuffer;
+            Buffer::VertexBuffer texCoordBuffer;
+            Buffer::VertexBuffer tangentBuffer;
+            Buffer::VertexBuffer colorBuffer;
 
             Ref<Graphics::BLAS> blas = nullptr;
 

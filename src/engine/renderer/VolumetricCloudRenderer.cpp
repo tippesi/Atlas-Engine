@@ -189,6 +189,7 @@ namespace Atlas {
             shadowUniforms.ipMatrix = glm::inverse(shadowUniforms.ipMatrix);
             shadowUniforms.ivMatrix = glm::inverse(shadowUniforms.ivMatrix);
             shadowUniforms.lightDirection = vec4(normalize(sun->direction), 0.0f);
+            shadowUniforms.shadowSampleFraction = clouds->shadowSampleFraction;
             shadowUniformBuffer.SetData(&shadowUniforms, 0);
 
             auto uniforms = GetUniformStructure(camera, scene);
@@ -311,7 +312,7 @@ namespace Atlas {
                 .frameSeed = frameCount,
 
                 .sampleCount = clouds->sampleCount,
-                .shadowSampleCount = clouds->shadowSampleCount,
+                .occlusionSampleCount = clouds->occlusionSampleCount,
 
                 .darkEdgeDirect = clouds->darkEdgeFocus,
                 .darkEdgeDetail = clouds->darkEdgeAmbient,

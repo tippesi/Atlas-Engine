@@ -56,7 +56,7 @@ namespace Atlas {
                 uint32_t frameSeed;
 
                 int32_t sampleCount;
-                int32_t shadowSampleCount;
+                int32_t occlusionSampleCount;
 
                 float darkEdgeDirect;
                 float darkEdgeDetail;
@@ -69,6 +69,7 @@ namespace Atlas {
                 mat4 ivMatrix;
                 mat4 ipMatrix;
                 vec4 lightDirection;
+                int32_t shadowSampleFraction;
             };
 
             void GenerateShapeTexture(Graphics::CommandList* commandList,

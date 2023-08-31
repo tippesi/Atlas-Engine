@@ -37,33 +37,44 @@ namespace Atlas {
                 auto type = data.indices.GetElementSize() == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
                 indexBuffer = Buffer::IndexBuffer(type, data.GetIndexCount(),
                     data.indices.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddIndexComponent(indexBuffer);
             }
             if (data.vertices.ContainsData()) {
                 vertexBuffer = Buffer::VertexBuffer(data.vertices.GetFormat(), data.GetVertexCount(),
                     data.vertices.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddComponent(0, vertexBuffer);
             }
             if (data.normals.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.normals.GetFormat(), data.GetVertexCount(),
+                normalBuffer = Buffer::VertexBuffer(data.normals.GetFormat(), data.GetVertexCount(),
                     data.normals.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddComponent(1, buffer);
             }
             if (data.texCoords.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.texCoords.GetFormat(), data.GetVertexCount(),
+                texCoordBuffer = Buffer::VertexBuffer(data.texCoords.GetFormat(), data.GetVertexCount(),
                     data.texCoords.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddComponent(2, buffer);
             }
             if (data.tangents.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.tangents.GetFormat(), data.GetVertexCount(),
+                tangentBuffer = Buffer::VertexBuffer(data.tangents.GetFormat(), data.GetVertexCount(),
                     data.tangents.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddComponent(3, buffer);
             }
             if (data.colors.ContainsData()) {
-                Buffer::VertexBuffer buffer(data.colors.GetFormat(), data.GetVertexCount(),
+                colorBuffer = Buffer::VertexBuffer(data.colors.GetFormat(), data.GetVertexCount(),
                     data.colors.GetConvertedVoid(), hostAccessible);
-                vertexArray.AddComponent(4, buffer);
             }
+
+            UpdateVertexArray();
+
+        }
+
+        void Mesh::UpdateVertexArray() {
+
+            vertexArray.AddIndexComponent(indexBuffer);
+            vertexArray.AddComponent(0, vertexBuffer);
+            if (data.normals.ContainsData())
+                vertexArray.AddComponent(1, normalBuffer);
+            if (data.texCoords.ContainsData())
+                vertexArray.AddComponent(2, texCoordBuffer);
+            if (data.tangents.ContainsData())
+                vertexArray.AddComponent(3, tangentBuffer);
+            if (data.colors.ContainsData())
+                vertexArray.AddComponent(4, colorBuffer);
 
         }
 

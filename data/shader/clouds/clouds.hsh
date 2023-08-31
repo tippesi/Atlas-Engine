@@ -39,7 +39,7 @@ layout(std140, set = 3, binding = 7) uniform CloudUniformBuffer {
     uint frameSeed;
 
     int sampleCount;
-    int shadowSampleCount;
+    int occlusionSampleCount;
 
     float darkEdgeFocus;
     float darkEdgeAmbient;
