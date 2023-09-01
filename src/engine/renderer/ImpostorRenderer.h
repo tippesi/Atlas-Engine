@@ -1,5 +1,4 @@
-#ifndef AE_IMPOSTORRENDERER_H
-#define AE_IMPOSTORRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -38,5 +37,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

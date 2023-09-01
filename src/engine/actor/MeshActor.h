@@ -1,5 +1,4 @@
-#ifndef AE_MESHACTOR_H
-#define AE_MESHACTOR_H
+#pragma once
 
 #include "System.h"
 #include "Actor.h"
@@ -28,5 +27,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

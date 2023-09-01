@@ -1,5 +1,4 @@
-#ifndef AE_PIPELINECONFIG_H
-#define AE_PIPELINECONFIG_H
+#pragma once
 
 #include "../graphics/Pipeline.h"
 #include "../common/Hash.h"
@@ -56,5 +55,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

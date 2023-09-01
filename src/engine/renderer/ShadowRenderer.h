@@ -1,5 +1,4 @@
-#ifndef AE_SHADOWRENDERER_H
-#define AE_SHADOWRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderList.h"
@@ -46,5 +45,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

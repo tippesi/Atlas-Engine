@@ -1,5 +1,4 @@
-#ifndef AE_OCEANNODE_H
-#define AE_OCEANNODE_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -51,5 +50,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

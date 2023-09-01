@@ -1,5 +1,4 @@
-#ifndef AE_FOG_H
-#define AE_FOG_H
+#pragma once
 
 #include "../System.h"
 
@@ -27,5 +26,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_VOLUMETRIC_H
-#define AE_VOLUMETRIC_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderTarget.h"
@@ -22,5 +21,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

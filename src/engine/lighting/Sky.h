@@ -1,5 +1,4 @@
-#ifndef AE_SKY_H
-#define AE_SKY_H
+#pragma once
 
 #include "../System.h"
 
@@ -33,6 +32,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

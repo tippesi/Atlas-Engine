@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSCOMMON_H
-#define AE_GRAPHICSCOMMON_H
+#pragma once
 
 #include "Initializers.h"
 #include "../Log.h"
@@ -75,5 +74,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

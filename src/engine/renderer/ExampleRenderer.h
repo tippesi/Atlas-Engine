@@ -1,5 +1,4 @@
-#ifndef ATLASENGINE_VULKANTESTRENDERER_H
-#define ATLASENGINE_VULKANTESTRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -54,5 +53,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

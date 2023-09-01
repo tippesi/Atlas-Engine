@@ -1,5 +1,4 @@
-#ifndef AE_PIPELINEMANAGER_H
-#define AE_PIPELINEMANAGER_H
+#pragma once
 
 #include "PipelineConfig.h"
 
@@ -50,5 +49,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

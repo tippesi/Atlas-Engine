@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSPIPELINE_H
-#define AE_GRAPHICSPIPELINE_H
+#pragma once
 
 #include "Common.h"
 #include "Shader.h"
@@ -80,5 +79,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

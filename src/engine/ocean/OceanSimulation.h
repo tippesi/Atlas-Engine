@@ -1,5 +1,4 @@
-#ifndef AE_OCEANSIMULATION_H
-#define AE_OCEANSIMULATION_H
+#pragma once
 
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
@@ -92,34 +91,8 @@ namespace Atlas {
             Texture::Texture2D hTD;
             Texture::Texture2D hTDPingpong;
 
-            /*
-            OldShader::Uniform* htNUniform;
-            OldShader::Uniform* htLUniform;
-            OldShader::Uniform* htTimeUniform;
-
-            OldShader::Uniform* butterflyStageUniform;
-            OldShader::Uniform* butterflyPingpongUniform;
-            OldShader::Uniform* butterflyNUniform;
-            OldShader::Uniform* butterflyPreTwiddleUniform;
-
-            OldShader::Uniform* inversionNUniform;
-            OldShader::Uniform* inversionPingpongUniform;
-
-            OldShader::Uniform* normalNUniform;
-            OldShader::Uniform* normalLUniform;
-            OldShader::Uniform* normalChoppyScaleUniform;
-            OldShader::Uniform* normalDisplacementScaleUniform;
-            OldShader::Uniform* normalTilingUniform;
-            OldShader::Uniform* normalFoamTemporalWeightUniform;
-            OldShader::Uniform* normalFoamTemporalThresholdUniform;
-            OldShader::Uniform* normalFoamOffsetUniform;
-            */
-
         };
 
     }
 
 }
-
-
-#endif

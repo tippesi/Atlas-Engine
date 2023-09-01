@@ -1,5 +1,4 @@
-#ifndef GRAPHICSASBUILDER_H
-#define GRAPHICSASBUILDER_H
+#pragma once
 
 #include "Common.h"
 
@@ -42,5 +41,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

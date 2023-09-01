@@ -1,5 +1,4 @@
-#ifndef AE_BLURRENDERER_H
-#define AE_BLURRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -36,5 +35,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

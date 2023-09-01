@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSDEVICE_H
-#define AE_GRAPHICSDEVICE_H
+#pragma once
 
 #include "Common.h"
 #include "Surface.h"
@@ -282,5 +281,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

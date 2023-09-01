@@ -1,5 +1,4 @@
-#ifndef AE_ILIGHT_H
-#define AE_ILIGHT_H
+#pragma once
 
 #include "../System.h"
 #include "Shadow.h"
@@ -52,6 +51,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

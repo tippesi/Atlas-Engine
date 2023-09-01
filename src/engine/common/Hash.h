@@ -1,5 +1,4 @@
-#ifndef AE_HASH_H
-#define AE_HASH_H
+#pragma once
 
 #include <functional>
 #include <cstdint>
@@ -15,5 +14,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

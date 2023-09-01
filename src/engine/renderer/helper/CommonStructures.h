@@ -1,5 +1,4 @@
-#ifndef AE_COMMONSTRUCTURES_H
-#define AE_COMMONSTRUCTURES_H
+#pragma once
 
 #include "../../System.h"
 
@@ -58,5 +57,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

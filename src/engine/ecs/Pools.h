@@ -1,5 +1,4 @@
-#ifndef AE_ECSPOOLS_H
-#define AE_ECSPOOLS_H
+#pragma once
 
 #include "Pool.h"
 #include "TypeIndex.h"
@@ -57,5 +56,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

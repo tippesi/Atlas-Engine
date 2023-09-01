@@ -1,5 +1,4 @@
-#ifndef AE_SSSRENDERER_H
-#define AE_SSSRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -35,6 +34,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

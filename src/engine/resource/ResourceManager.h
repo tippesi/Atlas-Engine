@@ -1,5 +1,4 @@
-#ifndef AE_RESOURCEMANAGER_H
-#define AE_RESOURCEMANAGER_H
+#pragma once
 
 #include "System.h"
 #include "Resource.h"
@@ -383,5 +382,3 @@ namespace Atlas {
     std::atomic_int ResourceManager<T>::subscriberCount = 0;
 
 }
-
-#endif

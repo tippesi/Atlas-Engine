@@ -1,5 +1,4 @@
-#ifndef AE_MESHDATA_H
-#define AE_MESHDATA_H
+#pragma once
 
 #include "../System.h"
 #include "../volume/AABB.h"
@@ -122,5 +121,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

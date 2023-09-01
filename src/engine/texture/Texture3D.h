@@ -1,5 +1,4 @@
-#ifndef AE_TEXTURE3D_H
-#define AE_TEXTURE3D_H
+#pragma once
 
 #include "Texture.h"
 
@@ -41,5 +40,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

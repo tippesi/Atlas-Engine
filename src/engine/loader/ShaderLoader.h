@@ -1,5 +1,4 @@
-#ifndef AE_SHADERLOADER_H
-#define AE_SHADERLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../graphics/Shader.h"
@@ -42,5 +41,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

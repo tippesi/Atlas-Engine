@@ -1,5 +1,4 @@
-#ifndef AE_GPURAYTRACINGRENDERER_H
-#define AE_GPURAYTRACINGRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -115,5 +114,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

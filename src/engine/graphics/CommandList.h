@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSCOMMANDLIST_H
-#define AE_GRAPHICSCOMMANDLIST_H
+#pragma once
 
 #include "Common.h"
 #include "Queue.h"
@@ -259,5 +258,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

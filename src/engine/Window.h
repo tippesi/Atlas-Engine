@@ -1,5 +1,4 @@
-#ifndef WINDOW_H
-#define WINDOW_H
+#pragma once
 
 #include "System.h"
 #include "Viewport.h"
@@ -214,5 +213,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

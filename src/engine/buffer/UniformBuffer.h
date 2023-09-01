@@ -1,5 +1,4 @@
-#ifndef AE_UNIFORMBUFFER_H
-#define AE_UNIFORMBUFFER_H
+#pragma once
 
 #include "../System.h"
 
@@ -102,5 +101,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

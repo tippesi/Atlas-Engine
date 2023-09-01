@@ -1,5 +1,4 @@
-#ifndef AE_IMAGE_H
-#define AE_IMAGE_H
+#pragma once
 
 #include "../System.h"
 #include "../Filter.h"
@@ -854,5 +853,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

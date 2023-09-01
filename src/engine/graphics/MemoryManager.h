@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSMEMORYMANAGER_H
-#define AE_GRAPHICSMEMORYMANAGER_H
+#pragma once
 
 #include "Common.h"
 #include "RenderPass.h"
@@ -132,5 +131,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

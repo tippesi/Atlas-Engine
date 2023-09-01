@@ -1,5 +1,4 @@
-#ifndef AE_DATACOMPONENT_H
-#define AE_DATACOMPONENT_H
+#pragma once
 
 #include "../System.h"
 #include "../common/Packing.h"
@@ -422,5 +421,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

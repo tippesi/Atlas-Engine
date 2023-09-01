@@ -1,5 +1,4 @@
-#ifndef AE_VERTEXBUFFER_H
-#define AE_VERTEXBUFFER_H
+#pragma once
 
 #include "../System.h"
 #include "Buffer.h"
@@ -60,5 +59,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_DROPEVENT_H
-#define AE_DROPEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -50,6 +49,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

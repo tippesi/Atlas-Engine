@@ -1,5 +1,4 @@
-#ifndef AE_MESH_H
-#define AE_MESH_H
+#pragma once
 
 #include "../System.h"
 #include "../Material.h"
@@ -96,5 +95,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

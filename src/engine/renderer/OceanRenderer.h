@@ -1,5 +1,4 @@
-#ifndef AE_OCEANRENDERER_H
-#define AE_OCEANRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -80,6 +79,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

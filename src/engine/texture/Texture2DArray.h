@@ -1,5 +1,4 @@
-#ifndef AE_TEXTURE2DARRAY_H
-#define AE_TEXTURE2DARRAY_H
+#pragma once
 
 #include "../System.h"
 #include "Texture.h"
@@ -115,5 +114,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

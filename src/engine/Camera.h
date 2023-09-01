@@ -1,5 +1,4 @@
-#ifndef AE_CAMERA_H
-#define AE_CAMERA_H
+#pragma once
 
 #include "System.h"
 #include "volume/Frustum.h"
@@ -140,5 +139,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

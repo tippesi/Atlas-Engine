@@ -1,5 +1,4 @@
-#ifndef AE_RTSTRUCTURES_H
-#define AE_RTSTRUCTURES_H
+#pragma once
 
 #include <System.h>
 
@@ -102,5 +101,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

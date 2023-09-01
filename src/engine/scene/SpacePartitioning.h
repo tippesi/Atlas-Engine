@@ -1,5 +1,4 @@
-#ifndef AE_SPACEPARTITIONING_H
-#define AE_SPACEPARTITIONING_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderList.h"
@@ -80,6 +79,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

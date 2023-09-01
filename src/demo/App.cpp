@@ -494,7 +494,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::Text("Quality");
                 ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
-                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->shadowSampleCount, 1, 16);
+                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->occlusionSampleCount, 1, 16);
                 ImGui::Text("Shape");
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
                 ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);

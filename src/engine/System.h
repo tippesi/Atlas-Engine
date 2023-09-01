@@ -1,5 +1,4 @@
-#ifndef AE_SYSTEM_H
-#define AE_SYSTEM_H
+#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -64,5 +63,3 @@ namespace Atlas {
     typedef short float16;
 
 }
-
-#endif

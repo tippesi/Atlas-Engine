@@ -1,5 +1,4 @@
-#ifndef  AE_HALTONSEQUENCE_H
-#define AE_HALTONSEQUENCE_H
+#pragma once
 
 #include "../../System.h"
 
@@ -28,5 +27,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

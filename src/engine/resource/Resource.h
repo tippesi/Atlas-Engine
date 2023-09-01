@@ -1,5 +1,4 @@
-#ifndef AE_RESOURCE_H
-#define AE_RESOURCE_H
+#pragma once
 
 #include "System.h"
 #include "../common/Hash.h"
@@ -184,5 +183,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

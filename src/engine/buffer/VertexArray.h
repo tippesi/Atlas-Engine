@@ -1,5 +1,4 @@
-#ifndef AE_VERTEXARRAY_H
-#define AE_VERTEXARRAY_H
+#pragma once
 
 #include "../System.h"
 #include "IndexBuffer.h"
@@ -77,5 +76,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

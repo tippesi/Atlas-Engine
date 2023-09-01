@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSQUERYPOOL_H
-#define AE_GRAPHICSQUERYPOOL_H
+#pragma once
 
 #include "Common.h"
 
@@ -37,5 +36,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

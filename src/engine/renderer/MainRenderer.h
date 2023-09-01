@@ -1,5 +1,4 @@
-#ifndef AE_MAINRENDERER_H
-#define AE_MAINRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../graphics/GraphicsDevice.h"
@@ -245,5 +244,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

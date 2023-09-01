@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSSHADER_H
-#define AE_GRAPHICSSHADER_H
+#pragma once
 
 #include "Common.h"
 #include <vector>
@@ -141,5 +140,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

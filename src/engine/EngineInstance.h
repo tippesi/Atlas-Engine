@@ -1,5 +1,4 @@
-#ifndef AE_ENGINEINSTANCE_H
-#define AE_ENGINEINSTANCE_H
+#pragma once
 
 #include "Engine.h"
 
@@ -105,6 +104,3 @@ namespace Atlas {
     };
 
 }
-
-
-#endif

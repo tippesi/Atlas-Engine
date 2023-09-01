@@ -1,5 +1,4 @@
-#ifndef AE_INDEXBUFFER_H
-#define AE_INDEXBUFFER_H
+#pragma once
 
 #include "../System.h"
 #include "Buffer.h"
@@ -57,5 +56,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

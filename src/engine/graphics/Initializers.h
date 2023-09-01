@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSINITIALIZERS_H
-#define AE_GRAPHICSINITIALIZERS_H
+#pragma once
 
 #include <volk.h>
 
@@ -88,5 +87,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

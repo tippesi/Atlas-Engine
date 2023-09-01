@@ -1,5 +1,4 @@
-#ifndef AE_MOVABLEMESHACTOR_H
-#define AE_MOVABLEMESHACTOR_H
+#pragma once
 
 #include "MeshActor.h"
 
@@ -20,5 +19,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

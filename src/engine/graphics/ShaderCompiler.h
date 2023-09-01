@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSSHADERCOMPILER_H
-#define AE_GRAPHICSSHADERCOMPILER_H
+#pragma once
 
 #include "Common.h"
 #include "Shader.h"
@@ -26,5 +25,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

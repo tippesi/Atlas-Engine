@@ -1,5 +1,4 @@
-#ifndef AE_VOLUMETRICCLOUDRENDERER_H
-#define AE_VOLUMETRICCLOUDRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -103,5 +102,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

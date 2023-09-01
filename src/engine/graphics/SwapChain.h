@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSSWAPCHAIN_H
-#define AE_GRAPHICSSWAPCHAIN_H
+#pragma once
 
 #include "Common.h"
 #include "Surface.h"
@@ -95,6 +94,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_VIEWPORT_H
-#define AE_VIEWPORT_H
+#pragma once
 
 #include "System.h"
 #include "Camera.h"
@@ -58,5 +57,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

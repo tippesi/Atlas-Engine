@@ -1,5 +1,4 @@
-#ifndef AE_MODELLOADER_H
-#define AE_MODELLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
@@ -87,5 +86,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

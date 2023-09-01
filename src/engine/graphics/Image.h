@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSTEXTURE_H
-#define AE_GRAPHICSTEXTURE_H
+#pragma once
 
 #include "Common.h"
 
@@ -93,5 +92,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

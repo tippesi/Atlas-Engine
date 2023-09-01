@@ -1,5 +1,4 @@
-#ifndef AE_VULKANTEXTURE_H
-#define AE_VULKANTEXTURE_H
+#pragma once
 
 #include "../System.h"
 
@@ -158,5 +157,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

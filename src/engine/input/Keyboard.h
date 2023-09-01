@@ -1,5 +1,4 @@
-#ifndef AE_KEYBOARD_H
-#define AE_KEYBOARD_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -46,5 +45,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_MATERIAL_H
-#define AE_MATERIAL_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2D.h"
@@ -71,5 +70,3 @@ namespace Atlas {
 
 
 }
-
-#endif

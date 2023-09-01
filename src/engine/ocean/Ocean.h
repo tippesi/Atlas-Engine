@@ -1,5 +1,4 @@
-#ifndef AE_OCEAN_H
-#define AE_OCEAN_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -73,6 +72,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_ECSTYPEINDEX_H
-#define AE_ECSTYPEINDEX_H
+#pragma once
 
 #include <cstdint>
 
@@ -39,5 +38,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

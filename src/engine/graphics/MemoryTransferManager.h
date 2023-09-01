@@ -1,5 +1,4 @@
-#ifndef AE_MEMORYUPLOADMANAGER_H
-#define AE_MEMORYUPLOADMANAGER_H
+#pragma once
 
 #include "Common.h"
 #include "Queue.h"
@@ -57,5 +56,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

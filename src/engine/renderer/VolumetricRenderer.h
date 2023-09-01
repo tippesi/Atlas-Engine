@@ -1,5 +1,4 @@
-#ifndef AE_VOLUMETRICRENDERER_H
-#define AE_VOLUMETRICRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../Filter.h"
@@ -73,5 +72,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

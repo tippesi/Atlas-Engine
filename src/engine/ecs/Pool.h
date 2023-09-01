@@ -1,5 +1,4 @@
-#ifndef AE_ECSPOOL_H
-#define AE_ECSPOOL_H
+#pragma once
 
 #include "Storage.h"
 
@@ -60,5 +59,3 @@ namespace Atlas {
     }
 
 }
-
-#endif
