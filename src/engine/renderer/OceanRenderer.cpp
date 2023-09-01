@@ -63,7 +63,7 @@ namespace Atlas {
 
             Light lightUniform;
             lightUniform.direction = vec4(sun->direction, 0.0);
-            lightUniform.color = vec4(sun->color, 0.0);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 0.0);
             lightUniform.intensity = sun->intensity;
 
             if (sun->GetVolumetric()) {

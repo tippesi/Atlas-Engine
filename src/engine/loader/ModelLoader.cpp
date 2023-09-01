@@ -134,6 +134,8 @@ namespace Atlas {
             auto& tangents = meshData.tangents;
             auto& colors = meshData.colors;
 
+            indices.SetElementCount(indexCount);
+
             vertices.SetElementCount(vertexCount);
             texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
             normals.SetElementCount(vertexCount);
@@ -265,6 +267,7 @@ namespace Atlas {
             meshData.filename = filename;
 
             mesh->name = meshData.filename;
+            mesh->UpdateData();
 
             return mesh;
 
@@ -372,6 +375,8 @@ namespace Atlas {
                 auto& tangents = meshData.tangents;
                 auto& colors = meshData.colors;
 
+                indices.SetElementCount(indexCount);
+
                 vertices.SetElementCount(vertexCount);
                 texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
                 normals.SetElementCount(vertexCount);
@@ -454,6 +459,7 @@ namespace Atlas {
 
                 meshData.filename = std::string(assimpMesh->mName.C_Str());
                 mesh->name = meshData.filename;
+                mesh->UpdateData();
 
                 auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name, mesh);
                 meshMap[assimpMesh] = handle;

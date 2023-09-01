@@ -11,6 +11,8 @@
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
 
+#include "../common/ColorConverter.h"
+
 #include "helper/CommonStructures.h"
 
 namespace Atlas {

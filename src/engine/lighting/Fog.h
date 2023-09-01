@@ -13,7 +13,7 @@ namespace Atlas {
 
             bool enable = true;
 
-            vec3 color = vec3(0.5, 0.6, 0.7);
+            vec3 color = vec3(0.73, 0.79, 0.85);
 
             float density = 0.05f;
             float height = 0.0f;

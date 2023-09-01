@@ -4,6 +4,7 @@
 #include "../mesh/MeshData.h"
 #include "../volume/BVH.h"
 #include "../graphics/ASBuilder.h"
+#include "../common/ColorConverter.h"
 
 namespace Atlas {
 
@@ -140,7 +141,7 @@ namespace Atlas {
 
                     GPUMaterial gpuMaterial;
 
-                    gpuMaterial.baseColor = material.baseColor;
+                    gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material.baseColor);
                     gpuMaterial.emissiveColor = material.emissiveColor;
 
                     gpuMaterial.opacity = material.opacity;
@@ -580,7 +581,7 @@ namespace Atlas {
                     GPULight light;
                     light.P = vec4(P, 1.0f);
                     light.N = vec4(N, 0.0f);
-                    light.color = vec4(radiance, 0.0f);
+                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance), 0.0f);
                     light.data = vec4(cd, weight, area, 0.0f);
 
                     meshInfo.triangleLights.push_back(light);

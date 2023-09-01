@@ -45,7 +45,7 @@ namespace Atlas {
             auto& lightUniform = uniforms.light;
             lightUniform.location = vec4(0.0f);
             lightUniform.direction = vec4(direction, 0.0f);
-            lightUniform.color = vec4(light->color, 0.0f);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light->color), 0.0f);
             lightUniform.intensity = light->intensity;
             lightUniform.scatteringFactor = 1.0f;
             lightUniform.radius = 1.0f;

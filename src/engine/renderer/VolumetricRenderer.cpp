@@ -81,7 +81,7 @@ namespace Atlas {
                 uniforms.seed = Common::Random::SampleFastUniformFloat();
 
                 uniforms.light.direction = vec4(direction, 0.0);
-                uniforms.light.color = vec4(light->color, 0.0);
+                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light->color), 0.0);
                 uniforms.light.shadow.cascadeCount = shadow->componentCount;
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
@@ -108,7 +108,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 1.0f);
+                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
@@ -249,7 +249,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 1.0f);
+                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;

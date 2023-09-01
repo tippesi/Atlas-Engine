@@ -1,4 +1,5 @@
 #include "RayTracingHelper.h"
+#include "../../common/ColorConverter.h"
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
@@ -544,7 +545,7 @@ namespace Atlas {
                     GPULight gpuLight;
                     gpuLight.P = vec4(P, 1.0f);
                     gpuLight.N = vec4(N, 0.0f);
-                    gpuLight.color = vec4(radiance, 0.0f);
+                    gpuLight.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance), 0.0f);
                     gpuLight.data = vec4(cd, weight, area, 0.0f);
 
                     lights.push_back(gpuLight);

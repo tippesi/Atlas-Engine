@@ -872,9 +872,9 @@ namespace Atlas {
                 auto emissiveIntensity = glm::max(glm::max(material->emissiveColor.r,
                     material->emissiveColor.g), material->emissiveColor.b);
 
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->baseColor, 0.0f));
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
                 packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 0.0f));
 
                 packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, material->tiling));
 
@@ -928,7 +928,7 @@ namespace Atlas {
 
                 packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
                 packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(impostor->transmissiveColor, 1.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->transmissiveColor), 1.0f));
 
                 vec4 data0, data1, data2;
 

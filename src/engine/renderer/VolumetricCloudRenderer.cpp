@@ -72,6 +72,8 @@ namespace Atlas {
                 auto uniforms = GetUniformStructure(camera, scene);
                 volumetricUniformBuffer.SetData(&uniforms, 0);
 
+                integratePipelineConfig.ManageMacro("STOCHASTIC_OCCLUSION_SAMPLING", clouds->stochasticOcclusionSampling);
+
                 auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
@@ -323,7 +325,7 @@ namespace Atlas {
 
             if (sun) {
                 uniforms.light.direction = vec4(sun->direction, 0.0f);
-                uniforms.light.color = vec4(sun->color, 1.0f);
+                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 1.0f);
                 uniforms.light.intensity = sun->intensity;
             }
             else {

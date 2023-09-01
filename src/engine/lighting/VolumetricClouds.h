@@ -61,6 +61,7 @@ namespace Atlas {
             bool needsNoiseUpdate = true;
             bool enable = true;
             bool castShadow = true;
+            bool stochasticOcclusionSampling = true;
 
         };
 
