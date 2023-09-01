@@ -274,6 +274,13 @@ namespace Atlas {
         }
 
         template <class T>
+        void DataComponent<T>::SetElementCount(size_t elementCount) {
+
+            data.resize(elementCount);
+
+        }
+
+        template <class T>
         size_t DataComponent<T>::GetElementSize() {
 
             size_t size = 0;

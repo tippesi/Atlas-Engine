@@ -18,8 +18,6 @@ namespace Atlas {
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
-            Mesh::MeshData meshData;
-
             auto directoryPath = GetDirectoryPath(filename);
 
             AssetLoader::UnpackFile(filename);
@@ -96,6 +94,9 @@ namespace Atlas {
                     hasTangents = true;
             }
 
+            auto mesh = CreateRef<Mesh::Mesh>();
+            auto& meshData = mesh->data;
+
             if (vertexCount > 65535) {
                 meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
             }
@@ -125,13 +126,19 @@ namespace Atlas {
             uint32_t usedVertices = 0;
             uint32_t loadedVertices = 0;
 
-            std::vector<uint32_t> indices(indexCount);
+            auto& indices = meshData.indices;
 
-            std::vector<vec3> vertices(vertexCount);
-            std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
-            std::vector<vec4> normals(vertexCount);
-            std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
-            std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
+            auto& vertices = meshData.vertices;
+            auto& texCoords = meshData.texCoords;
+            auto& normals = meshData.normals;
+            auto& tangents = meshData.tangents;
+            auto& colors = meshData.colors;
+
+            vertices.SetElementCount(vertexCount);
+            texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+            normals.SetElementCount(vertexCount);
+            tangents.SetElementCount(hasTangents ? vertexCount : 0);
+            colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
             auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
@@ -255,38 +262,11 @@ namespace Atlas {
             materialImages.clear();
 
             meshData.aabb = Volume::AABB(min, max);
-
-            meshData.indices.Set(indices);
-            indices.clear();
-            indices.shrink_to_fit();
-
-            meshData.vertices.Set(vertices);
-            vertices.clear();
-            vertices.shrink_to_fit();
-
-            meshData.normals.Set(normals);
-            normals.clear();
-            normals.shrink_to_fit();
-
-            if (hasTexCoords) {
-                meshData.texCoords.Set(texCoords);
-                texCoords.clear();
-                texCoords.shrink_to_fit();
-            }
-            if (hasTangents) {
-                meshData.tangents.Set(tangents);
-                tangents.clear();
-                tangents.shrink_to_fit();
-            }
-            if (hasVertexColors) {
-                meshData.colors.Set(colors);
-                colors.clear();
-                colors.shrink_to_fit();
-            }
-
             meshData.filename = filename;
 
-            return CreateRef<Mesh::Mesh>(meshData);
+            mesh->name = meshData.filename;
+
+            return mesh;
 
         }
 
@@ -363,7 +343,8 @@ namespace Atlas {
                 bool hasVertexColors = false;
                 bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
 
-                Mesh::MeshData meshData;
+                auto mesh = CreateRef<Mesh::Mesh>();
+                auto& meshData = mesh->data;
 
                 hasTangents |= forceTangents;
                 if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
@@ -380,22 +361,22 @@ namespace Atlas {
 
                 hasVertexColors = assimpMesh->HasVertexColors(0);
 
-                meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-                meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
-                meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-                meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
-                meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
-
                 meshData.SetIndexCount(indexCount);
                 meshData.SetVertexCount(vertexCount);
 
-                std::vector<uint32_t> indices(indexCount);
+                auto& indices = meshData.indices;
 
-                std::vector<vec3> vertices(vertexCount);
-                std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
-                std::vector<vec4> normals(vertexCount);
-                std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
-                std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
+                auto& vertices = meshData.vertices;
+                auto& texCoords = meshData.texCoords;
+                auto& normals = meshData.normals;
+                auto& tangents = meshData.tangents;
+                auto& colors = meshData.colors;
+
+                vertices.SetElementCount(vertexCount);
+                texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+                normals.SetElementCount(vertexCount);
+                tangents.SetElementCount(hasTangents ? vertexCount : 0);
+                colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
                 meshData.materials = std::vector<Material>(1);
 
@@ -461,17 +442,6 @@ namespace Atlas {
 
                 meshData.aabb = Volume::AABB(min, max);
 
-                meshData.indices.Set(indices);
-                meshData.vertices.Set(vertices);
-                meshData.normals.Set(normals);
-
-                if (hasTexCoords)
-                    meshData.texCoords.Set(texCoords);
-                if (hasTangents)
-                    meshData.tangents.Set(tangents);
-                if (hasVertexColors)
-                    meshData.colors.Set(colors);
-
                 meshData.subData.push_back({
                     .indicesOffset = 0,
                     .indicesCount = indexCount,
@@ -483,8 +453,6 @@ namespace Atlas {
                 });
 
                 meshData.filename = std::string(assimpMesh->mName.C_Str());
-
-                auto mesh = CreateRef<Mesh::Mesh>(meshData);
                 mesh->name = meshData.filename;
 
                 auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name, mesh);
