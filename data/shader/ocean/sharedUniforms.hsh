@@ -2,7 +2,14 @@
 #include <../structures>
 
 layout (set = 3, binding = 11, std140) uniform UniformBuffer {
+    vec4 waterBodyColor;
+    vec4 deepWaterBodyColor;
+    vec4 scatterColor;
+
     vec4 translation;
+    vec4 terrainTranslation;
+
+    vec4 waterColorIntensity;
 
     float displacementScale;
     float choppyScale;
@@ -18,8 +25,6 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     float shoreWaveSpeed;
     float shoreWaveLength;
     float terrainSideLength;
-
-    vec4 terrainTranslation;
 
     float terrainHeightScale;
     int N;

@@ -14,6 +14,7 @@ namespace Atlas {
             Helper::GeometryHelper::GenerateGridVertexArray(vertexArray, 129, 1.0f / 128.0f, false);
 
             causticPipelineConfig = PipelineConfig("ocean/caustics.csh");
+            underWaterPipelineConfig = PipelineConfig("ocean/underwater.csh");
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
@@ -149,7 +150,7 @@ namespace Atlas {
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
                 commandList->BindImage(lightingImage, 3, 1);
 
-                commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
                 commandList->PushConstants("constants", &ocean->translation.y);
 
@@ -218,7 +219,13 @@ namespace Atlas {
                 vertexArray.Bind(commandList);
 
                 Uniforms uniforms = {
+                    .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
+                    .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
+                    .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
+
                     .translation = vec4(ocean->translation, 1.0f),
+                    
+                    .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
 
                     .displacementScale = ocean->displacementScale,
                     .choppyScale = ocean->choppynessScale,
@@ -309,6 +316,35 @@ namespace Atlas {
                     };
 
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                }
+
+                if (ocean->underwaterShader) {
+                    Graphics::Profiler::EndAndBeginQuery("Underwater");
+
+                    const int32_t groupSize = 8;
+                    auto res = ivec2(target->GetWidth(), target->GetHeight());
+
+                    ivec2 groupCount = res / groupSize;
+                    groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                    groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+
+                    auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
+
+                    commandList->BindPipeline(pipeline);
+
+                    auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
+                    auto stencilImage = target->lightingFrameBuffer->GetColorImage(2);
+                    auto depthImage = target->lightingFrameBuffer->GetDepthImage();
+
+                    commandList->BindImage(depthImage, nearestSampler, 3, 0);
+                    commandList->BindImage(stencilImage, nearestSampler, 3, 1);
+                    commandList->BindImage(lightingImage, 3, 2);
+
+                    commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                    commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 }
 
                 Graphics::Profiler::EndQuery();

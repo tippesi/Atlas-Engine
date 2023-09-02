@@ -1,14 +1,17 @@
 struct StencilFeatures {
     bool responsivePixel;
+    bool waterPixel;
 };
 
 uint EncodeStencilFeatures(StencilFeatures features) {
 
     const uint responsivePixel = (1 << 0);
+    const uint waterPixel = (1 << 1);
 
-    uint data = 0;
+    uint data = 0u;
 
-    data |= features.responsivePixel ? responsivePixel : 0;
+    data |= features.responsivePixel ? responsivePixel : 0u;
+    data |= features.waterPixel ? waterPixel : 0u;
 
     return data;
 
@@ -17,10 +20,12 @@ uint EncodeStencilFeatures(StencilFeatures features) {
 StencilFeatures DecodeStencilFeatures(uint data) {
 
     const uint responsivePixel = (1 << 0);
+    const uint waterPixel = (1 << 1);
 
     StencilFeatures features;
 
     features.responsivePixel = (data & responsivePixel) > 0u;
+    features.waterPixel = (data & waterPixel) > 0u;
 
     return features;
 

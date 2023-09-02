@@ -1,0 +1,55 @@
+#include <sharedUniforms.hsh>
+#include <shoreInteraction.hsh>
+
+layout(set = 3, binding = 0) uniform sampler2D displacementMap;
+layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
+
+const float shoreStartScaling = 15.0;
+const float shoreOffsetScaling = 5.0;
+const float minShoreScaling = 0.3;
+
+vec3 GetOceanDisplacement(vec3 position, out float perlinScale, 
+    out float shoreScale, out vec3 normalShoreWave) {
+
+    vec2 texCoord = position.xz / Uniforms.tiling;
+
+#ifdef TERRAIN
+    float waterDepth = shoreStartScaling;
+
+    vec2 terrainTex = (position.xz - vec2(Uniforms.terrainTranslation.xz))
+        / Uniforms.terrainSideLength;
+
+    if (terrainTex.x >= 0.0 && terrainTex.y >= 0.0
+        && terrainTex.x <= 1.0 && terrainTex.y <= 1.0) {
+        waterDepth = position.y - textureLod(terrainHeight, terrainTex, 0.0).r 
+            * Uniforms.terrainHeightScale + Uniforms.terrainTranslation.y;
+    }
+
+    shoreScale = clamp((waterDepth - shoreOffsetScaling) / 
+        (shoreStartScaling - shoreOffsetScaling), minShoreScaling, 1.0);
+#else
+    shoreScale = 1.0;
+#endif
+    
+    vec3 displacement = textureLod(displacementMap, texCoord, 0.0).grb;
+    displacement.y *= Uniforms.displacementScale * shoreScale;
+    displacement.x *= Uniforms.choppyScale * shoreScale;
+    displacement.z *= Uniforms.choppyScale * shoreScale;
+
+    float perlin = textureLod(perlinNoiseMap, texCoord * 0.125 * 0.5, 0.0).r;
+    perlinScale = sqr(clamp(perlin, 0.0, 1.0));
+
+    displacement = perlinScale * displacement;
+
+#ifdef TERRAIN
+    vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(position + vec3(0.1, 0.0, 0.0));
+    vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(position + vec3(0.0, 0.0, 0.1));
+    vec3 centerOffset = CalculateGerstner(position);
+
+    normalShoreWave = normalize(cross(dz - centerOffset, dx - centerOffset));
+    displacement += centerOffset;
+#endif
+
+    return displacement;
+
+}

@@ -8,6 +8,13 @@ namespace Atlas {
 
 		namespace ColorConverter {
 
+			static inline vec2 ConvertSRGBToLinear(vec2 color) {
+
+				const float gamma = 2.2f;
+				return glm::pow(color, vec2(gamma));
+
+			}
+
 			static inline vec3 ConvertSRGBToLinear(vec3 color) {
 
 				const float gamma = 2.2f;
@@ -19,6 +26,13 @@ namespace Atlas {
 
 				const float gamma = 2.2f;
 				return vec4(glm::pow(vec3(color), vec3(gamma)), color.a);
+
+			}
+
+			static inline vec2 ConvertLinearToSRGB(vec2 color) {
+
+				const float gamma = 1.0f / 2.2f;
+				return glm::pow(color, vec2(gamma));
 
 			}
 

@@ -21,7 +21,14 @@ namespace Atlas {
 
         private:
             struct alignas(16) Uniforms {
+                vec4 waterBodyColor;
+                vec4 deepWaterBodyColor;
+                vec4 scatterColor;
+
                 vec4 translation;
+                vec4 terrainTranslation;
+
+                vec4 waterColorIntensity;
 
                 float displacementScale;
                 float choppyScale;
@@ -37,8 +44,6 @@ namespace Atlas {
                 float shoreWaveSpeed;
                 float shoreWaveLength;
                 float terrainSideLength;
-
-                vec4 terrainTranslation;
 
                 float terrainHeightScale;
                 int32_t N;
@@ -61,6 +66,7 @@ namespace Atlas {
             PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool wireframe);
 
             PipelineConfig causticPipelineConfig;
+            PipelineConfig underWaterPipelineConfig;
 
             Buffer::VertexArray vertexArray;
 

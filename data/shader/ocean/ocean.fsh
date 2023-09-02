@@ -31,18 +31,12 @@ layout(location=2) in vec3 fModelCoord;
 #ifdef FOAM_TEXTURE
 layout(location=3) in vec3 fOriginalCoord;
 #endif
-layout(location=4) in vec2 fTexCoord;
 // layout(location=5) in float waterDepth;
 layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
 layout(location=8) in vec3 ndcLast;
 layout(location=9) in vec3 normalShoreWave;
 layout(location=10) in float perlinScale;
-
-const vec3 waterBodyColor = pow(vec3(0.1, 1.0, 0.7), vec3(2.2));
-const vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
-const vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
-const vec2 waterColorIntensity = pow(vec2(0.1, 0.3), vec2(2.2));
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;
@@ -65,6 +59,7 @@ void main() {
     
     // Retrieve precalculated normals and wave folding information
     //vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
+    vec2 fTexCoord = fModelCoord.xz / Uniforms.tiling;
     float fold = texture(normalMap, fTexCoord).a;
 
     vec2 gradientDisplacement = texture(normalMap, fTexCoord).rg;
@@ -141,7 +136,7 @@ void main() {
     scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
 
     /*
-    scatterFactor += shadowFactor * waterColorIntensity.y
+    scatterFactor += shadowFactor * Uniforms.waterColorIntensity.y
          * max(0.0, waveHeight) * max(0.0, nDotE) * 
          max(0.0, 1.0 + eyeDir.y) * dot(-light.direction, -eyeDir);
          */
@@ -159,8 +154,8 @@ void main() {
     vec3 reflectionColor = textureLod(skyEnvProbe, reflectionVec, 0).rgb;
 
     // Calculate water color
-    vec3 depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
-    float diffuseFactor = waterColorIntensity.x + waterColorIntensity.y * 
+    vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 10.0)));
+    float diffuseFactor = Uniforms.waterColorIntensity.x + Uniforms.waterColorIntensity.y * 
         max(0.0, nDotL) * shadowFactor;
     vec3 waterColor = diffuseFactor * light.intensity * light.color.rgb * depthFog;
     
@@ -186,31 +181,29 @@ void main() {
     // Mix relection and refraction and add sun spot
     color = mix(refractionColor, reflectionColor, fresnel);
     color += specularIntensity * fresnel * specularFactor * light.color.rgb;
-    color += scatterColor * scatterFactor;
+    color += Uniforms.scatterColor.rgb * scatterFactor;
+
+    vec3 foamShadowFactor = mix(vec3(0.1),
+        vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7);
 
     vec3 foamColor = vec3(1.0);
 #ifdef FOAM_TEXTURE
     foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) *
-        nDotL * light.intensity;
+        foamShadowFactor * light.intensity * light.color.rgb;
 #endif
-    color = mix(color, vec3(mix(scatterColor * 0.1, vec3(1.0), 
+    color = mix(color, vec3(mix(Uniforms.scatterColor.rgb * 0.1, vec3(1.0), 
         foamColor)), foam);
 
-    vec3 breakingColor = mix(vec3(0.1),
-        vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7) * light.intensity * light.color.rgb;
+    vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);
 
-    /*
-        if (dot(norm, -eyeDir) < 0.0) {
-        float waterViewDepth = max(0.0, -fPosition.z);
-        depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
-        color = mix(depthFog, textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb, min(1.0 , exp(-waterViewDepth / 2.0)));
-    }
-    */
+    if (dot(fNormal, -eyeDir) < 0.0) {
+        disturbance = (mat3(globalData.vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
 
-    //color = vec3(mod(fTexCoord, 1.0), 0.0);
-    //color = vec3(reflectionVec.y);
-    //color = vec3(perlinDisplacement);
+        refractionDisturbance = vec2(disturbance.x, -disturbance.y) * 0.1;
+        refractionDisturbance *= min(2.0, waterViewDepth);
+        color = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
+    }
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;
@@ -223,6 +216,7 @@ void main() {
 
     StencilFeatures features;
     features.responsivePixel = true;
+    features.waterPixel = true;
     stencil = EncodeStencilFeatures(features);
 
 }

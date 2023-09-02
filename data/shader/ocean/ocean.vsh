@@ -1,12 +1,11 @@
 #include <../common/utility.hsh>
 #include <../common/PI.hsh>
+
+#include <common.hsh>
 #include <sharedUniforms.hsh>
 #include <shoreInteraction.hsh>
 
 layout(location=0) in vec3 vPosition;
-
-layout(set = 3, binding = 0) uniform sampler2D displacementMap;
-layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
 
 layout(location=0) out vec4 fClipSpace;
 layout(location=1) out vec3 fPosition;
@@ -14,7 +13,6 @@ layout(location=2) out vec3 fModelCoord;
 #ifdef FOAM_TEXTURE
 layout(location=3) out vec3 fOriginalCoord;
 #endif
-layout(location=4) out vec2 fTexCoord;
 // layout(location=5) out float waterDepth;
 layout(location=6) out float shoreScaling;
 layout(location=7) out vec3 ndcCurrent;
@@ -23,10 +21,6 @@ layout(location=8) out vec3 ndcLast;
 layout(location=9) out vec3 normalShoreWave;
 #endif
 layout(location=10) out float perlinScale;
-
-const float shoreStartScaling = 15.0;
-const float shoreOffsetScaling = 5.0;
-const float minShoreScaling = 0.3;
 
 vec3 stitch(vec3 position) {
     
@@ -57,74 +51,22 @@ vec3 stitch(vec3 position) {
     
 }
 
-const float fadeoutDistance = 100.0;
-const float fadeoutFalloff = 0.2;
-
 void main() {
-    
-    float waterDepth = shoreStartScaling;
     
     fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
-    
-    bool hasTerrain = Uniforms.terrainSideLength > 0.0;
-
-    vec2 terrainTex = (vec2(fPosition.xz) - vec2(Uniforms.terrainTranslation.xz))
-        / Uniforms.terrainSideLength;
-        
-    float shoreDistance = 0.0;
-    vec2 shoreGradient = vec2(0.0);
-
-#ifdef TERRAIN
-    if (hasTerrain && terrainTex.x >= 0.0 && terrainTex.y >= 0.0
-        && terrainTex.x <= 1.0 && terrainTex.y <= 1.0) {
-        waterDepth = fPosition.y - textureLod(terrainHeight, terrainTex, 0.0).r 
-            * Uniforms.terrainHeightScale + Uniforms.terrainTranslation.y;
-        shoreDistance = textureLod(terrainHeight, terrainTex, 0.0).g;
-        shoreGradient = normalize(2.0 * textureLod(terrainHeight, terrainTex, 0.0).ba - 1.0);
-    }
-#endif
-    
-    float depthScaling = clamp((waterDepth - shoreOffsetScaling) / 
-        (shoreStartScaling - shoreOffsetScaling), minShoreScaling, 1.0);
-    shoreScaling = hasTerrain ? depthScaling : 1.0;
-    
-    vec2 vTexCoord = vec2(fPosition.x, fPosition.z) / Uniforms.tiling;
 
 #ifdef FOAM_TEXTURE
     fOriginalCoord = fPosition;
 #endif
 
-    vec3 displacement = textureLod(displacementMap, vTexCoord, 0.0).grb;
-    displacement.y *= Uniforms.displacementScale * shoreScaling;
-    displacement.x *= Uniforms.choppyScale * shoreScaling;
-    displacement.z *= Uniforms.choppyScale * shoreScaling;
-
-    float perlin = textureLod(perlinNoiseMap, vTexCoord * 0.125 * 0.5, 0.0).r;
-
-    vec3 octaveFadeout = vec3(400.0, 200.0, 100.0);
-
-    perlinScale = sqr(clamp(perlin, 0.0, 1.0));
-    displacement = perlinScale * displacement;
-
-    fPosition += displacement;
-
-#ifdef TERRAIN
-    vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(fPosition + vec3(0.1, 0.0, 0.0));
-    vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(fPosition + vec3(0.0, 0.0, 0.1));
-    vec3 centerOffset = CalculateGerstner(fPosition);
-
-    normalShoreWave = normalize(cross(dz - centerOffset, dx - centerOffset));
-    fPosition += centerOffset;
-#endif
+    fPosition += GetOceanDisplacement(fPosition, perlinScale, shoreScaling, normalShoreWave);
 
     fModelCoord = fPosition;
     
     fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
     fClipSpace = globalData.pMatrix * vec4(fPosition, 1.0);
-    
-    fTexCoord = vTexCoord;
 
     ndcCurrent = vec3(fClipSpace.xy, fClipSpace.w);
     // For moving objects we need the last matrix

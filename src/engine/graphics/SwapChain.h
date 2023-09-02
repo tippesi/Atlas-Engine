@@ -44,7 +44,7 @@ namespace Atlas {
             SwapChain(const SwapChainSupportDetails& supportDetails, VkSurfaceKHR surface,
                 GraphicsDevice* Device, int32_t desiredWidth, int32_t desiredHeight,
                 ColorSpace preferredColorSpace = SRGB_NONLINEAR,
-                VkPresentModeKHR desiredMode = VK_PRESENT_MODE_FIFO_KHR,
+                VkPresentModeKHR desiredMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
                 SwapChain* oldSwapchain = nullptr);
 
             ~SwapChain();

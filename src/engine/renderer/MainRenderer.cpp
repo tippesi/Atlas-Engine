@@ -295,15 +295,16 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
-            oceanRenderer.Render(viewport, target, camera, scene, commandList);
-
-            downscaleRenderer.Downscale(target, commandList);
+            // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
+            // downscaleRenderer.Downscale(target, commandList);
 
             {
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
 
                 volumetricRenderer.Render(viewport, target, camera, scene, commandList);
             }
+
+            oceanRenderer.Render(viewport, target, camera, scene, commandList);
 
             {
                 taaRenderer.Render(viewport, target, camera, scene, commandList);
