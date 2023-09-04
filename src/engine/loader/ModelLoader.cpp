@@ -525,7 +525,9 @@ namespace Atlas {
             material.name = std::string(name.C_Str());
 
             material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
-            material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
+
+            material.emissiveIntensity = glm::max(emissive.r, glm::max(emissive.g, emissive.b));
+            material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b) / material.emissiveIntensity;
 
             material.displacementScale = 0.01f;
             material.normalScale = 0.5f;

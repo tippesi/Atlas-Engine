@@ -562,15 +562,11 @@ void App::Render(float deltaTime) {
                         auto emissionPowerLabel = "Emission power##" + label;
                         auto transmissionColorLabel = "Transmission color##" + label;
 
-                        auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
-                            glm::max(material->emissiveColor.b, 1.0f)));
-                        material->emissiveColor /= emissionPower;
                         ImGui::Checkbox(twoSidedLabel.c_str(), &material->twoSided);
                         ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
                         ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
-                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &emissionPower, 1.0f, 10000.0f,
+                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &material->emissiveIntensity, 1.0f, 10000.0f,
                             "%.3f", ImGuiSliderFlags_Logarithmic);
-                        material->emissiveColor *= emissionPower;
 
                         auto roughnessLabel = "Roughness##" + label;
                         auto metallicLabel = "Metallic##" + label;

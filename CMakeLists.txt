@@ -10,8 +10,9 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-project(AtlasEngine VERSION 0.1.8)
 cmake_minimum_required(VERSION 3.7)
+
+project(AtlasEngine VERSION 0.1.10)
 
 # Only 64 bit is supported
 ###################################################################

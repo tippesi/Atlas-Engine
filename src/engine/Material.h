@@ -36,8 +36,10 @@ namespace Atlas {
         Ref<Texture::Texture2D> displacementMap = nullptr;
 
         vec3 baseColor = vec3(1.0f);
-        vec3 emissiveColor = vec3(0.0f);
         vec3 transmissiveColor = vec3(0.0f);
+
+        vec3 emissiveColor = vec3(0.0f);
+        float emissiveIntensity = 1.0f;
 
         float opacity = 1.0f;
 
