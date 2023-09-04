@@ -549,7 +549,7 @@ namespace Atlas {
                 auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
                 auto& material = materials[idx];
 
-                auto radiance = material.emissiveColor * material.emissiveIntensity;
+                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material.emissiveColor) * material.emissiveIntensity;
                 auto brightness = dot(radiance, vec3(0.3333f));
 
                 if (brightness > 0.0f) {
