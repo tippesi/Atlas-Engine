@@ -4,6 +4,7 @@
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
+#include <../common/normalencode.hsh>
 #include <../clouds/shadow.hsh>
 #include <../structures>
 
@@ -23,6 +24,7 @@ layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
 layout(set = 3, binding = 15) uniform sampler2D cloudMap;
+layout(set = 3, binding = 19) uniform sampler2D normalTexture;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
@@ -66,12 +68,14 @@ void main() {
 
     vec2 gradient = gradientDisplacement;
     float tileSize = Uniforms.tiling / float(Uniforms.N);
-    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
+    vec2 encodedNormal = textureLod(normalTexture, ndcCoord, 0).rg;
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
+    vec3 fNormal = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(encodedNormal), 0.0)));
+    //fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     float shadowFactor = CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 1.0);
@@ -134,6 +138,7 @@ void main() {
         0.0, -light.direction.z)), eyeDir)), 2.0);
     
     scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
+    scatterFactor = 0.0;
 
     /*
     scatterFactor += shadowFactor * Uniforms.waterColorIntensity.y
@@ -210,8 +215,6 @@ void main() {
     else {
         features.underWaterPixel = false;
     }
-    
-    //color = vec3(1.0);
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;

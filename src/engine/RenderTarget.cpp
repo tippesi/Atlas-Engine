@@ -27,6 +27,8 @@ namespace Atlas {
 
         oceanDepthTexture = Texture::Texture2D(width, height, VK_FORMAT_D32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+        oceanNormalTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {

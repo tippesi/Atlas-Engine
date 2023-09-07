@@ -276,6 +276,7 @@ namespace Atlas {
                 uniformBuffer.Bind(commandList, 3, 11);
 
                 ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
+                target->oceanNormalTexture.Bind(commandList, 3, 19);
 
                 auto renderList = ocean->GetRenderList();
 
@@ -464,6 +465,38 @@ namespace Atlas {
             }
 
             commandList->EndRenderPass();
+
+            Graphics::Profiler::EndAndBeginQuery("Calculate ocean normals");
+
+            {
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {target->oceanDepthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {target->oceanNormalTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
+                };
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
+                const int32_t groupSize = 8;
+                auto res = ivec2(target->GetWidth(), target->GetHeight());
+
+                ivec2 groupCount = res / groupSize;
+                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+
+                auto pipelineConfig = PipelineConfig("normalreconstruction.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+                commandList->BindPipeline(pipeline);
+
+                commandList->BindImage(target->oceanNormalTexture.image, 3, 0);
+                commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                commandList->ImageMemoryBarrier(target->oceanNormalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+            }
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();
