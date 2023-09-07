@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
+#include "../texture/Texture2DArray.h"
 #include "../pipeline/PipelineConfig.h"
 #include "../graphics/CommandList.h"
 
@@ -17,7 +18,7 @@ namespace Atlas {
         public:
             OceanSimulation() = default;
 
-            OceanSimulation(int32_t N, int32_t L);
+            OceanSimulation(int32_t N, int32_t L, int32_t C = 4);
 
             void Update(float deltaTime);
 
@@ -25,8 +26,8 @@ namespace Atlas {
 
             void Compute(Graphics::CommandList* commandList);
 
-            Texture::Texture2D displacementMap;
-            Texture::Texture2D normalMap;
+            Texture::Texture2DArray displacementMap;
+            Texture::Texture2DArray normalMap;
             Texture::Texture2D perlinNoiseMap;
 
             Texture::Texture2D twiddleIndices;
@@ -35,6 +36,7 @@ namespace Atlas {
 
             int32_t N;
             int32_t L;
+            int32_t C;
 
             float choppinessScale = 3.0f;
             float displacementScale = 4.0f;
@@ -86,10 +88,10 @@ namespace Atlas {
             Texture::Texture2D noise2;
             Texture::Texture2D noise3;
 
-            Texture::Texture2D h0K;
+            Texture::Texture2DArray h0K;
 
-            Texture::Texture2D hTD;
-            Texture::Texture2D hTDPingpong;
+            Texture::Texture2DArray hTD;
+            Texture::Texture2DArray hTDPingpong;
 
         };
 

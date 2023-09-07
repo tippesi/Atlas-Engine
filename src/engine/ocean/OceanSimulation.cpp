@@ -12,7 +12,7 @@ namespace Atlas {
 
     namespace Ocean {
 
-        OceanSimulation::OceanSimulation(int32_t N, int32_t L) : N(N), L(L) {
+        OceanSimulation::OceanSimulation(int32_t N, int32_t L, int32_t C) : N(N), L(L), C(C) {
 
             noise0 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
             noise1 = Texture::Texture2D(N, N, VK_FORMAT_R8_UNORM);
@@ -34,20 +34,20 @@ namespace Atlas {
             noise2.SetData(image2.GetData());
             noise3.SetData(image3.GetData());
 
-            displacementMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
+            displacementMap = Texture::Texture2DArray(N, N, C, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
-            normalMap = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
+            normalMap = Texture::Texture2DArray(N, N, C, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
             perlinNoiseMap = Texture::Texture2D(N * 2, N * 2, VK_FORMAT_R32G32B32A32_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
             displacementMapPrev = Texture::Texture2D(N, N, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear);
 
-            h0K = Texture::Texture2D(N, N, VK_FORMAT_R32G32_SFLOAT);
+            h0K = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32_SFLOAT);
 
             twiddleIndices = Texture::Texture2D((int32_t)log2((float)N), N, VK_FORMAT_R32G32_SFLOAT);
-            hTD = Texture::Texture2D(N, N, VK_FORMAT_R32G32B32A32_SFLOAT);
-            hTDPingpong = Texture::Texture2D(N, N, VK_FORMAT_R32G32B32A32_SFLOAT);
+            hTD = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32B32A32_SFLOAT);
+            hTDPingpong = Texture::Texture2DArray(N, N, C, VK_FORMAT_R32G32B32A32_SFLOAT);
 
             h0Config = PipelineConfig("ocean/h0.csh");
             htConfig = PipelineConfig("ocean/ht.csh");
@@ -79,13 +79,13 @@ namespace Atlas {
         void OceanSimulation::ComputeSpectrum(Graphics::CommandList* commandList) {
 
             struct alignas(16) PushConstants {
+                ivec4 L;
+                vec2 w = vec2(1.0f);
                 int N = 1;
-                int L = 1;
                 float A = 1.0f;
                 float windSpeed = 1.0f;
                 float windDependency = 1.0f;
                 float waveSurpression = 1.0f;
-                vec2 w = vec2(1.0f);
             };
 
             Graphics::Profiler::BeginQuery("Compute ocean spectrum");
@@ -93,14 +93,14 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(h0Config);
             commandList->BindPipeline(pipeline);
 
-            PushConstants constants {
+            PushConstants constants{
+                .L = ivec4(L, L * 2, L * 4, L * 8),
+                .w = windDirection,
                 .N = N,
-                .L = L,
                 .A = waveAmplitude,
                 .windSpeed = windSpeed,
                 .windDependency = windDependency,
                 .waveSurpression = waveSurpression,
-                .w = windDirection
             };
             commandList->PushConstants("constants", &constants);
 
@@ -114,7 +114,7 @@ namespace Atlas {
 
             commandList->ImageMemoryBarrier(h0K.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-            commandList->Dispatch(N / 16, N / 16, 1);
+            commandList->Dispatch(N / 16, N / 16, C);
 
             commandList->ImageMemoryBarrier(h0K.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
@@ -168,8 +168,8 @@ namespace Atlas {
 
             {
                 struct alignas(16) PushConstants {
+                    ivec4 L;
                     int N = 1;
-                    int L = 1;
                     float time = 1.0f;
                 };
 
@@ -179,8 +179,8 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 PushConstants constants = {
+                    .L = ivec4(L, L * 2, L * 4, L * 8),
                     .N = N,
-                    .L = L,
                     .time = simulationSpeed * time
                 };
                 commandList->PushConstants("constants", &constants);
@@ -197,7 +197,7 @@ namespace Atlas {
                 commandList->BindImage(hTD.image, 3, 0);
                 commandList->BindImage(h0K.image, 3, 1);
 
-                commandList->Dispatch(N / 16, N / 16, 1);
+                commandList->Dispatch(N / 16, N / 16, C);
 
                 Graphics::Profiler::EndQuery();
             }
@@ -263,7 +263,7 @@ namespace Atlas {
                     };
                     commandList->PushConstants("constants", &constants);
 
-                    commandList->Dispatch(N / 8, N / 8, 1);
+                    commandList->Dispatch(N / 8, N / 8, C);
 
                     pingpong = (pingpong + 1) % 2;
                 }
@@ -297,15 +297,15 @@ namespace Atlas {
                 commandList->BindImage(displacementMap.image, 3, 0);
                 commandList->BindImage(image, 3, 1);
 
-                commandList->Dispatch(N / 16, N / 16, 1);
+                commandList->Dispatch(N / 16, N / 16, C);
 
                 Graphics::Profiler::EndQuery();
             }
 
             {
                 struct alignas(16) PushConstants {
+                    ivec4 L;
                     int N = 1;
-                    int L = 1;
                     float choppyScale = 1.0f;
                     float displacementScale = 1.0f;
                     float tiling = 1.0f;
@@ -322,8 +322,8 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 PushConstants constants = {
+                    .L = ivec4(L, L * 2, L * 4, L * 8),
                     .N = N,
-                    .L = L,
                     .choppyScale = choppinessScale,
                     .displacementScale = displacementScale,
                     .tiling = tiling,
@@ -347,7 +347,7 @@ namespace Atlas {
                 commandList->BindImage(displacementMap.image, 3, 0);
                 commandList->BindImage(normalMap.image, 3, 1);
 
-                commandList->Dispatch(N / 16, N / 16, 1);
+                commandList->Dispatch(N / 16, N / 16, C);
 
                 Graphics::Profiler::EndQuery();
             }

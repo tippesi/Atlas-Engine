@@ -19,6 +19,9 @@ namespace Atlas {
             void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
+            void RenderDepthOnly(Viewport* viewport, RenderTarget* target, Camera* camera,
+                Scene::Scene* scene, Graphics::CommandList* commandList);
+
         private:
             struct alignas(16) Uniforms {
                 vec4 waterBodyColor;
@@ -63,7 +66,7 @@ namespace Atlas {
                 vec2 nodeLocation;
             };
 
-            PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool wireframe);
+            PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool depthOnly, bool wireframe);
 
             PipelineConfig causticPipelineConfig;
             PipelineConfig underWaterPipelineConfig;
@@ -74,6 +77,7 @@ namespace Atlas {
             Texture::Texture2D depthTexture;
 
             Buffer::UniformBuffer uniformBuffer;
+            Buffer::UniformBuffer depthUniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
             Buffer::UniformBuffer cloudShadowUniformBuffer;
 

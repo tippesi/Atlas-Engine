@@ -491,10 +491,12 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
                 ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
+                ImGui::Checkbox("Stochastic occlusion sampling##Clouds", &clouds->stochasticOcclusionSampling);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::Text("Quality");
                 ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
                 ImGui::SliderInt("Shadow sample count##Clouds", &clouds->occlusionSampleCount, 1, 16);
+                ImGui::SliderInt("Shadow sample fraction count##Clouds", &clouds->shadowSampleFraction, 1, 4);
                 ImGui::Text("Shape");
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
                 ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);

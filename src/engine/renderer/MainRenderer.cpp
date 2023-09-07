@@ -201,6 +201,8 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
+            oceanRenderer.RenderDepthOnly(viewport, target, camera, scene, commandList);
+
             auto targetData = target->GetData(FULL_RES);
 
             commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 2);

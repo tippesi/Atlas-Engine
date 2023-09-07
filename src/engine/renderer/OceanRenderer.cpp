@@ -17,6 +17,7 @@ namespace Atlas {
             underWaterPipelineConfig = PipelineConfig("ocean/underwater.csh");
 
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
+            depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
             cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
@@ -45,8 +46,6 @@ namespace Atlas {
 
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
-
-            ocean->simulation.Compute(commandList);
 
             auto sun = scene->sky.sun.get();
             if (!sun) {
@@ -206,7 +205,7 @@ namespace Atlas {
                 commandList->BeginRenderPass(target->lightingFrameBufferWithStencil->renderPass,
                     target->lightingFrameBufferWithStencil);
 
-                auto config = GeneratePipelineConfig(target, ocean->wireframe);
+                auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
@@ -328,6 +327,7 @@ namespace Atlas {
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
+                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain && scene->terrain->shoreLine.IsValid());
                     auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
 
                     commandList->BindPipeline(pipeline);
@@ -336,9 +336,9 @@ namespace Atlas {
                     auto stencilImage = target->lightingFrameBuffer->GetColorImage(2);
                     auto depthImage = target->lightingFrameBuffer->GetDepthImage();
 
-                    commandList->BindImage(depthImage, nearestSampler, 3, 0);
-                    commandList->BindImage(stencilImage, nearestSampler, 3, 1);
-                    commandList->BindImage(lightingImage, 3, 2);
+                    commandList->BindImage(depthImage, nearestSampler, 3, 16);
+                    commandList->BindImage(stencilImage, nearestSampler, 3, 17);
+                    commandList->BindImage(lightingImage, 3, 18);
 
                     commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
@@ -355,15 +355,130 @@ namespace Atlas {
 
         }
 
-        PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool wireframe) {
+        void OceanRenderer::RenderDepthOnly(Viewport* viewport, RenderTarget* target, Camera* camera,
+            Scene::Scene* scene, Graphics::CommandList* commandList) {
+
+            if (!scene->ocean || !scene->ocean->enable)
+                return;
+
+            Graphics::Profiler::BeginQuery("Ocean depth");
+
+            auto ocean = scene->ocean;
+            auto clouds = scene->sky.clouds;
+
+            ocean->simulation.Compute(commandList);
+
+            Graphics::Profiler::BeginQuery("Rendering");
+
+            commandList->BeginRenderPass(target->oceanDepthOnlyFrameBuffer->renderPass,
+                target->oceanDepthOnlyFrameBuffer);
+
+            auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
+            if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+
+            auto pipeline = PipelineManager::GetPipeline(config);
+
+            commandList->BindPipeline(pipeline);
+
+            vertexArray.Bind(commandList);
+
+            Uniforms uniforms = {
+                .waterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterBodyColor), 1.0f),
+                .deepWaterBodyColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->deepWaterBodyColor), 1.0f),
+                .scatterColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->scatterColor), 1.0f),
+
+                .translation = vec4(ocean->translation, 1.0f),
+
+                .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
+
+                .displacementScale = ocean->displacementScale,
+                .choppyScale = ocean->choppynessScale,
+                .tiling = ocean->tiling,
+                .hasRippleTexture = ocean->rippleTexture.IsValid() ? 1 : 0,
+
+                .shoreWaveDistanceOffset = ocean->shoreWaveDistanceOffset,
+                .shoreWaveDistanceScale = ocean->shoreWaveDistanceScale,
+                .shoreWaveAmplitude = ocean->shoreWaveAmplitude,
+                .shoreWaveSteepness = ocean->shoreWaveSteepness,
+
+                .shoreWavePower = ocean->shoreWavePower,
+                .shoreWaveSpeed = ocean->shoreWaveSpeed,
+                .shoreWaveLength = ocean->shoreWaveLength,
+                .terrainSideLength = -1.0f,
+                .N = ocean->simulation.N,
+            };
+
+            ocean->simulation.displacementMap.Bind(commandList, 3, 0);
+            ocean->simulation.normalMap.Bind(commandList, 3, 1);
+
+            ocean->foamTexture.Bind(commandList, 3, 2);
+
+            if (scene->sky.GetProbe()) {
+                scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
+            }
+
+            refractionTexture.Bind(commandList, 3, 4);
+            depthTexture.Bind(commandList, 3, 5);
+
+            if (scene->terrain) {
+                if (scene->terrain->shoreLine.IsValid()) {
+                    auto terrain = scene->terrain;
+
+                    uniforms.terrainTranslation = vec4(terrain->translation, 1.0f);
+                    uniforms.terrainSideLength = scene->terrain->sideLength;
+                    uniforms.terrainHeightScale = scene->terrain->heightScale;
+
+                    scene->terrain->shoreLine.Bind(commandList, 3, 9);
+
+                }
+            }
+
+            if (ocean->rippleTexture.IsValid()) {
+                ocean->rippleTexture.Bind(commandList, 3, 10);
+            }
+
+            depthUniformBuffer.SetData(&uniforms, 0);
+            depthUniformBuffer.Bind(commandList, 3, 11);
+
+            ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
+
+            auto renderList = ocean->GetRenderList();
+
+            for (auto node : renderList) {
+
+                PushConstants constants = {
+                    .nodeSideLength = node->sideLength,
+
+                    .leftLoD = node->leftLoDStitch,
+                    .topLoD = node->topLoDStitch,
+                    .rightLoD = node->rightLoDStitch,
+                    .bottomLoD = node->bottomLoDStitch,
+
+                    .nodeLocation = node->location,
+                };
+
+                commandList->PushConstants("constants", &constants);
+
+                commandList->DrawIndexed(vertexArray.GetIndexComponent().elementCount);
+
+            }
+
+            commandList->EndRenderPass();
+
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool depthOnly, bool wireframe) {
 
             const auto shaderConfig = ShaderConfig {
-                {"ocean/ocean.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                {"ocean/ocean.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+                {depthOnly ? "ocean/depth.vsh" : "ocean/ocean.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                {depthOnly ? "ocean/depth.fsh" : "ocean/ocean.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = target->lightingFrameBufferWithStencil,
+                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->lightingFrameBufferWithStencil,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

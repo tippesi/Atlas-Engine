@@ -1,5 +1,6 @@
 #define SHADOW_FILTER_3x3
 
+#include <common.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
@@ -14,7 +15,6 @@ layout (location = 0) out vec3 color;
 layout (location = 1) out vec2 velocity;
 layout (location = 2) out uint stencil;
 
-layout(set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform sampler2D foamTexture;
 layout (set = 3, binding = 3) uniform samplerCube skyEnvProbe;
 layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
@@ -22,7 +22,6 @@ layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
-layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
 layout(set = 3, binding = 15) uniform sampler2D cloudMap;
 
 layout(location=0) in vec4 fClipSpace;
@@ -60,11 +59,12 @@ void main() {
     // Retrieve precalculated normals and wave folding information
     //vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
     vec2 fTexCoord = fModelCoord.xz / Uniforms.tiling;
-    float fold = texture(normalMap, fTexCoord).a;
 
-    vec2 gradientDisplacement = texture(normalMap, fTexCoord).rg;
+    float fold;
+    vec2 gradientDisplacement;
+    GetOceanGradientAndFold(fTexCoord, fold, gradientDisplacement);
 
-    vec2 gradient = perlinScale * gradientDisplacement;
+    vec2 gradient = gradientDisplacement;
     float tileSize = Uniforms.tiling / float(Uniforms.N);
     vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
@@ -119,7 +119,7 @@ void main() {
     
     // Calculate reflection vector    
     vec3 reflectionVec = normalize(reflect(eyeDir, norm));
-    reflectionVec.y = max(0.0, reflectionVec.y);
+    //reflectionVec.y = max(0.0, reflectionVec.y);
     
     // Calculate sun spot
     float specularFactor = shadowFactor * fresnel * pow(max(dot(normalize(reflectionVec),
@@ -191,19 +191,27 @@ void main() {
     foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) *
         foamShadowFactor * light.intensity * light.color.rgb;
 #endif
-    color = mix(color, vec3(mix(Uniforms.scatterColor.rgb * 0.1, vec3(1.0), 
-        foamColor)), foam);
+    color = mix(color, foamColor, foam);
 
     vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);
 
-    if (dot(fNormal, -eyeDir) < 0.0) {
+    StencilFeatures features = CreateStencilFeatures();
+
+    if (!gl_FrontFacing) {
+        fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - saturate(dot(fNormal, eyeDir)), 5.0);
         disturbance = (mat3(globalData.vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
 
         refractionDisturbance = vec2(disturbance.x, -disturbance.y) * 0.1;
         refractionDisturbance *= min(2.0, waterViewDepth);
-        color = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
+        color = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb * (1.0 - fresnel);
+        features.underWaterPixel = true;
     }
+    else {
+        features.underWaterPixel = false;
+    }
+    
+    //color = vec3(1.0);
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;
@@ -214,7 +222,6 @@ void main() {
 
     velocity = (ndcL - ndcC) * 0.5;
 
-    StencilFeatures features;
     features.responsivePixel = true;
     features.waterPixel = true;
     stencil = EncodeStencilFeatures(features);

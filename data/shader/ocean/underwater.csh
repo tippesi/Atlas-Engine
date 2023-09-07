@@ -2,6 +2,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 
 #define SHADOW_FILTER_3x3
 
+#include <common.hsh>
 #include <sharedUniforms.hsh>
 
 #include <../structures>
@@ -11,10 +12,10 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
 
-layout(set = 3, binding = 0) uniform sampler2D depthTexture;
-layout(set = 3, binding = 1) uniform usampler2D stencilTexture;
+layout(set = 3, binding = 16) uniform sampler2D depthTexture;
+layout(set = 3, binding = 17) uniform usampler2D stencilTexture;
 layout(set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
-layout(set = 3, binding = 2, rgba16f) uniform image2D refractionImage;
+layout(set = 3, binding = 18, rgba16f) uniform image2D refractionImage;
 
 void main() {
 
@@ -35,12 +36,16 @@ void main() {
     float distanceToCamera = length(viewSpacePos);
 
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
-
+    
+    float perlinScale, shoreScaling;
+    vec3 normalShoreWave;
+    vec3 displacement = GetOceanDisplacement(pixelPos, perlinScale, shoreScaling, normalShoreWave);
+    
     vec3 viewVector = pixelPos - nearPos;
 
     float waterDepth = Uniforms.translation.y - pixelPos.y;
-    if ((viewVector.y < 0.0 && features.waterPixel == true) || 
-        (pixelPos.y > Uniforms.translation.y && features.waterPixel == false))
+    if (((pixelPos.y > Uniforms.translation.y + displacement.y) && !features.underWaterPixel) ||
+        (!features.underWaterPixel && features.waterPixel))
         return;
 
     vec3 refractionColor = imageLoad(refractionImage, pixel).rgb;
@@ -48,8 +53,11 @@ void main() {
     //vec3 refractionColor = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb;
 
     float NDotL = dot(-light.direction.xyz, vec3(0.0, 1.0, 0.0));
+    
+    viewVector = normalize(viewVector);
 
-    float waterViewDepth = -viewSpacePos.z;
+    float waterOffset = max(0.0, (nearPos.y - Uniforms.translation.y) / max(viewVector.y, 0.0001));
+    float waterViewDepth = distance(pixelPos, nearPos);
 
     // Calculate water color
     vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 20.0)));
