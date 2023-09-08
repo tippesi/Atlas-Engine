@@ -44,7 +44,7 @@ namespace Atlas {
 
             vec4 spectrumTilingFactors = vec4(1.0f, 3.0f, 6.0f, 9.0f);
             vec4 spectrumWeights = vec4(1.0f, 0.5f, 0.25f, 0.125f);
-            vec4 spectrumFadeoutDistances = vec4(100.0f, 200.0f, 400.0f, 1000.0f);
+            vec4 spectrumFadeoutDistances = vec4(200.0f, 400.0f, 1000.0f, 4000.0f);
 
             float waveAmplitude = 1.0f;
             float waveSurpression = 0.001f;

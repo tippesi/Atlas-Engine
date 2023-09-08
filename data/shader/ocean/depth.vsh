@@ -7,6 +7,8 @@
 
 layout(location=0) in vec3 vPosition;
 
+layout(location=0) out vec3 fNormal;
+
 vec3 stitch(vec3 position) {
     
     // Note: This only works because our grid has a constant size
@@ -43,6 +45,13 @@ void main() {
         + Uniforms.translation.xyz;
     
     float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
+
+    float fold;
+    vec2 gradient;
+    GetOceanGradientAndFold(fPosition.xz, distanceToCamera, fold, gradient);
+
+    float tileSize = Uniforms.tiling / float(Uniforms.N);
+    fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
 
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;

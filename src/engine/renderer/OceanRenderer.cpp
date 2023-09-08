@@ -326,6 +326,27 @@ namespace Atlas {
                 if (ocean->underwaterShader) {
                     Graphics::Profiler::EndAndBeginQuery("Underwater");
 
+                    auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+
+                    std::vector<Graphics::ImageBarrier> imageBarriers;
+                    std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+                    imageBarriers = {
+                        {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                        {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                    commandList->CopyImage(colorImage, refractionTexture.image);
+
+                    imageBarriers = {
+                        {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
                     const int32_t groupSize = 8;
                     auto res = ivec2(target->GetWidth(), target->GetHeight());
 
@@ -344,7 +365,8 @@ namespace Atlas {
 
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
                     commandList->BindImage(stencilImage, nearestSampler, 3, 17);
-                    commandList->BindImage(lightingImage, 3, 18);
+                    commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 18);
+                    commandList->BindImage(lightingImage, 3, 20);
 
                     commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
@@ -473,40 +495,6 @@ namespace Atlas {
             }
 
             commandList->EndRenderPass();
-
-            /*
-            Graphics::Profiler::EndAndBeginQuery("Calculate ocean normals");
-
-            {
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
-                    {target->oceanDepthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {target->oceanNormalTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
-                };
-
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-
-                const int32_t groupSize = 8;
-                auto res = ivec2(target->GetWidth(), target->GetHeight());
-
-                ivec2 groupCount = res / groupSize;
-                groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-                groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
-
-                auto pipelineConfig = PipelineConfig("normalreconstruction.csh");
-                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-
-                commandList->BindPipeline(pipeline);
-
-                commandList->BindImage(target->oceanNormalTexture.image, 3, 0);
-                commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 1);
-
-                commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                commandList->ImageMemoryBarrier(target->oceanNormalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-            }
-            */
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();

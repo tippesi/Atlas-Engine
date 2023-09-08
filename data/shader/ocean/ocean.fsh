@@ -71,7 +71,7 @@ void main() {
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
-    vec3 fNormal = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(encodedNormal), 0.0)));
+    vec3 fNormal = DecodeNormal(encodedNormal);
     fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     float shadowFactor = CalculateCascadedShadow(light.shadow,

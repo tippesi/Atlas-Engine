@@ -88,6 +88,14 @@ namespace Atlas {
             lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);          
         }
         {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
+                {.imageFormat = oceanNormalTexture.format}
+            };
+            for (auto &attachment: colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
             Graphics::RenderPassDepthAttachment depthAttachment = {
                 .imageFormat = oceanDepthTexture.format,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -96,6 +104,7 @@ namespace Atlas {
             };
 
             auto oceanRenderPassDesc = Graphics::RenderPassDesc {
+                .colorAttachments = {colorAttachments[0]},
                 .depthAttachment = depthAttachment
             };
             oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
@@ -357,9 +366,12 @@ namespace Atlas {
         lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
 
         auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
-              .renderPass = oceanRenderPass,
-              .depthAttachment = {oceanDepthTexture.image, 0, true},
-              .extent = {uint32_t(width), uint32_t(height)}
+            .renderPass = oceanRenderPass,
+            .colorAttachments = {
+                {oceanNormalTexture.image, 0, true},
+            },
+            .depthAttachment = {oceanDepthTexture.image, 0, true},
+            .extent = {uint32_t(width), uint32_t(height)}
         };
         oceanDepthOnlyFrameBuffer = graphicsDevice->CreateFrameBuffer(oceanDepthOnlyFrameBufferDesc);
 
