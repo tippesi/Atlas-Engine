@@ -41,10 +41,12 @@ void main() {
     vec3 fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
+    
+    float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
 
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;
-    fPosition += GetOceanDisplacement(fPosition, perlinScale, shoreScaling, normalShoreWave);
+    fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     
     fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
     vec4 fClipSpace = globalData.pMatrix * vec4(fPosition, 1.0);

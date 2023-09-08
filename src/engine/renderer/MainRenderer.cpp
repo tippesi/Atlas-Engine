@@ -117,6 +117,9 @@ namespace Atlas {
             if (scene->vegetation)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
 
+            if (scene->ocean && scene->ocean->enable)
+                scene->ocean->simulation.Compute(commandList);
+
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
                     FilterProbe(scene->sky.probe.get(), commandList);

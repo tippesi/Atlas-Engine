@@ -29,9 +29,7 @@ layout(set = 3, binding = 19) uniform sampler2D normalTexture;
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
 layout(location=2) in vec3 fModelCoord;
-#ifdef FOAM_TEXTURE
 layout(location=3) in vec3 fOriginalCoord;
-#endif
 // layout(location=5) in float waterDepth;
 layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
@@ -58,13 +56,12 @@ void main() {
 
     Light light = LightUniforms.light;
     
-    // Retrieve precalculated normals and wave folding information
-    //vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
-    vec2 fTexCoord = fModelCoord.xz / Uniforms.tiling;
+    vec2 fTexCoord = fOriginalCoord.xz / Uniforms.tiling;
 
     float fold;
     vec2 gradientDisplacement;
-    GetOceanGradientAndFold(fTexCoord, fold, gradientDisplacement);
+    GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz),
+        fold, gradientDisplacement);
 
     vec2 gradient = gradientDisplacement;
     float tileSize = Uniforms.tiling / float(Uniforms.N);
@@ -75,7 +72,7 @@ void main() {
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
     vec3 fNormal = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(encodedNormal), 0.0)));
-    //fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
+    fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     float shadowFactor = CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 1.0);
@@ -134,17 +131,15 @@ void main() {
     float scatterFactor = scatterIntensity * max(0.0, waveHeight
          * scatterCrestScale + scatterCrestOffset);
 
-    scatterFactor *= shadowFactor * pow(max(0.0, dot(normalize(vec3(-light.direction.x,
-        0.0, -light.direction.z)), eyeDir)), 2.0);
+    scatterFactor *= shadowFactor * pow(max(0.0, dot(-light.direction.xyz, eyeDir)), 8.0);
     
-    scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
-    scatterFactor = 0.0;
+    scatterFactor *= pow(clamp(1.0 - nDotL, 0.0, 1.1), 16.0);
 
     /*
     scatterFactor += shadowFactor * Uniforms.waterColorIntensity.y
          * max(0.0, waveHeight) * max(0.0, nDotE) * 
-         max(0.0, 1.0 + eyeDir.y) * dot(-light.direction, -eyeDir);
-         */
+         max(0.0, 1.0 + eyeDir.y) * dot(-light.direction.xyz, -eyeDir);
+    */
 
     // Calculate water depth based on the viewer (ray from camera to ground)
     float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
@@ -176,7 +171,7 @@ void main() {
 #endif
 
     // Calculate foam based on folding of wave and fade it out near shores
-    float foam = 0.0;
+    float foam = fold;
     foam += shoreInteraction.x;
     foam = min(foam, 1.0);
 
@@ -193,10 +188,9 @@ void main() {
 
     vec3 foamColor = vec3(1.0);
 #ifdef FOAM_TEXTURE
-    foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) *
-        foamShadowFactor * light.intensity * light.color.rgb;
+    foamColor = foamShadowFactor * light.intensity * light.color.rgb;
 #endif
-    color = mix(color, foamColor, foam);
+    color = mix(color, foamColor, foam * texture(foamTexture, fOriginalCoord.xz / 8.0).r);
 
     vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);

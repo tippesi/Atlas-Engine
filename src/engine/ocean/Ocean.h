@@ -42,10 +42,10 @@ namespace Atlas {
             vec3 waterBodyColor = vec3(0.1f, 1.0f, 0.7f);
             vec3 deepWaterBodyColor = vec3(0.1f, 0.15f, 0.5f);
             vec3 scatterColor = vec3(0.3f, 0.7f, 0.6f);
-            vec2 waterColorIntensity = vec2(0.1f, 0.3f);
+            vec2 waterColorIntensity = vec2(0.1f, 0.2f);
 
-            float displacementScale = 4.0f;
-            float choppynessScale = 3.0f;
+            float displacementScale = 0.11f;
+            float choppynessScale = 0.21f;
 
             float tiling = 64.0f;
 

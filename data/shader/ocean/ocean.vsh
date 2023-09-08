@@ -10,9 +10,7 @@ layout(location=0) in vec3 vPosition;
 layout(location=0) out vec4 fClipSpace;
 layout(location=1) out vec3 fPosition;
 layout(location=2) out vec3 fModelCoord;
-#ifdef FOAM_TEXTURE
 layout(location=3) out vec3 fOriginalCoord;
-#endif
 // layout(location=5) out float waterDepth;
 layout(location=6) out float shoreScaling;
 layout(location=7) out vec3 ndcCurrent;
@@ -57,12 +55,10 @@ void main() {
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
 
-#ifdef FOAM_TEXTURE
     fOriginalCoord = fPosition;
-#endif
-
-    fPosition += GetOceanDisplacement(fPosition, perlinScale, shoreScaling, normalShoreWave);
-
+    
+    float distanceToCamera = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
+    fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     fModelCoord = fPosition;
     
     fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));

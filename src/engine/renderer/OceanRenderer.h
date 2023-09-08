@@ -33,6 +33,10 @@ namespace Atlas {
 
                 vec4 waterColorIntensity;
 
+                vec4 spectrumTilingFactors;
+                vec4 spectrumWeights;
+                vec4 spectrumFadeoutDistances;
+
                 float displacementScale;
                 float choppyScale;
                 float tiling;
@@ -50,6 +54,7 @@ namespace Atlas {
 
                 float terrainHeightScale;
                 int32_t N;
+                int32_t spectrumCount;
             };
 
             struct alignas(16) PushConstants {

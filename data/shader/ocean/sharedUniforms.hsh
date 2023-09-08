@@ -11,6 +11,10 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
 
     vec4 waterColorIntensity;
 
+    vec4 spectrumTilingFactors;
+    vec4 spectrumWeights;
+    vec4 spectrumFadeoutDistances;
+
     float displacementScale;
     float choppyScale;
     float tiling;
@@ -28,6 +32,7 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
 
     float terrainHeightScale;
     int N;
+    int spectrumCount;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {

@@ -226,6 +226,10 @@ namespace Atlas {
                     
                     .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
 
+                    .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
+                    .spectrumWeights = ocean->simulation.spectrumWeights,
+                    .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
+
                     .displacementScale = ocean->displacementScale,
                     .choppyScale = ocean->choppynessScale,
                     .tiling = ocean->tiling,
@@ -241,6 +245,7 @@ namespace Atlas {
                     .shoreWaveLength = ocean->shoreWaveLength,
                     .terrainSideLength = -1.0f,
                     .N = ocean->simulation.N,
+                    .spectrumCount = ocean->simulation.C,
                 };
 
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
@@ -367,8 +372,6 @@ namespace Atlas {
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
 
-            ocean->simulation.Compute(commandList);
-
             Graphics::Profiler::BeginQuery("Rendering");
 
             commandList->BeginRenderPass(target->oceanDepthOnlyFrameBuffer->renderPass,
@@ -392,6 +395,10 @@ namespace Atlas {
 
                 .waterColorIntensity = vec4(Common::ColorConverter::ConvertSRGBToLinear(ocean->waterColorIntensity), 0.0f, 1.0f),
 
+                .spectrumTilingFactors = ocean->simulation.spectrumTilingFactors,
+                .spectrumWeights = ocean->simulation.spectrumWeights,
+                .spectrumFadeoutDistances = ocean->simulation.spectrumFadeoutDistances,
+
                 .displacementScale = ocean->displacementScale,
                 .choppyScale = ocean->choppynessScale,
                 .tiling = ocean->tiling,
@@ -407,6 +414,7 @@ namespace Atlas {
                 .shoreWaveLength = ocean->shoreWaveLength,
                 .terrainSideLength = -1.0f,
                 .N = ocean->simulation.N,
+                .spectrumCount = ocean->simulation.C,
             };
 
             ocean->simulation.displacementMap.Bind(commandList, 3, 0);
@@ -466,6 +474,7 @@ namespace Atlas {
 
             commandList->EndRenderPass();
 
+            /*
             Graphics::Profiler::EndAndBeginQuery("Calculate ocean normals");
 
             {
@@ -497,6 +506,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->oceanNormalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
+            */
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();

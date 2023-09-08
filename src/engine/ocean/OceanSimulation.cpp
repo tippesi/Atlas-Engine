@@ -305,6 +305,7 @@ namespace Atlas {
             {
                 struct alignas(16) PushConstants {
                     ivec4 L;
+                    vec4 tilingFactors;
                     int N = 1;
                     float choppyScale = 1.0f;
                     float displacementScale = 1.0f;
@@ -323,6 +324,7 @@ namespace Atlas {
 
                 PushConstants constants = {
                     .L = ivec4(L, L * 2, L * 4, L * 8),
+                    .tilingFactors = spectrumTilingFactors,
                     .N = N,
                     .choppyScale = choppinessScale,
                     .displacementScale = displacementScale,

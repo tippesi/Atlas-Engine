@@ -39,7 +39,7 @@ void main() {
     
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;
-    vec3 displacement = GetOceanDisplacement(pixelPos, perlinScale, shoreScaling, normalShoreWave);
+    vec3 displacement = GetOceanDisplacement(pixelPos, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     
     vec3 viewVector = pixelPos - nearPos;
 
