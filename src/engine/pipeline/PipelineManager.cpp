@@ -38,7 +38,10 @@ namespace Atlas {
                         if (lastModifiedMap.find(includePath) != lastModifiedMap.end())
                             continue;
 
-                        lastModifiedMap[includePath] = std::filesystem::last_write_time(includePath);
+                        std::error_code errorCode;
+                        auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
+                        if (!errorCode)
+                            lastModifiedMap[includePath] = lastModified;
                     }
                 }
             }
@@ -51,6 +54,18 @@ namespace Atlas {
                 variants->variants.clear();
             }
         }
+
+    }
+
+    void PipelineManager::EnableHotReload() {
+
+        hotReload = true;
+
+    }
+
+    void PipelineManager::DisableHotReload() {
+
+        hotReload = false;
 
     }
 

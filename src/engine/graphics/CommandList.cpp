@@ -920,6 +920,7 @@ namespace Atlas {
                         bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
@@ -948,6 +949,7 @@ namespace Atlas {
                         bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
@@ -978,6 +980,7 @@ namespace Atlas {
                         imageInfo.imageLayout = image->layout;
 
                         auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
@@ -1007,6 +1010,7 @@ namespace Atlas {
                         imageInfo.imageLayout = image->layout;
 
                         auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
@@ -1037,6 +1041,7 @@ namespace Atlas {
                         tlasInfo.pAccelerationStructures = &tlas->accelerationStructure;
 
                         auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;

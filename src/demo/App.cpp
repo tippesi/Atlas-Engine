@@ -43,6 +43,8 @@ void App::LoadContent() {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
+    
+    Atlas::PipelineManager::EnableHotReload();
 
     directionalLight = std::make_shared<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);

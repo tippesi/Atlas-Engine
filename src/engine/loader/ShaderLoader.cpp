@@ -33,12 +33,13 @@ namespace Atlas {
 
         }
 
-        bool ShaderLoader::CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime) {
+        bool ShaderLoader::CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime,
+            std::filesystem::file_time_type& pathLastModified) {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
 
-            auto pathLastModified = GetModifiedTime(Loader::AssetLoader::GetFullPath(path), fileTime);
+            pathLastModified = GetModifiedTime(Loader::AssetLoader::GetFullPath(path), fileTime);
             return pathLastModified > fileTime;
 
         }

@@ -131,6 +131,9 @@ namespace Atlas {
             GraphicsDevice* device = nullptr;
 
             std::vector<ShaderStageFile> shaderStageFiles;
+            std::vector<ShaderStageFile> historyShaderStageFiles;
+
+            std::filesystem::file_time_type lastReload = std::filesystem::file_time_type::min();
 
             std::mutex variantMutex;
             std::vector<Ref<ShaderVariant>> shaderVariants;

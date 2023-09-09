@@ -15,7 +15,8 @@ namespace Atlas {
         public:
             static Graphics::ShaderStageFile LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage);
 
-            static bool CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime);
+            static bool CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime,
+                std::filesystem::file_time_type& pathLastModified);
 
             static void SetSourceDirectory(const std::string& sourceDirectory);
 
