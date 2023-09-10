@@ -23,7 +23,7 @@ namespace Atlas {
             uint32_t indicesOffset;
             uint32_t indicesCount;
             
-            Material* material;
+            Ref<Material> material;
             int32_t materialIdx;
 
             Volume::AABB aabb;
@@ -97,7 +97,7 @@ namespace Atlas {
             DataComponent<vec4> tangents;
             DataComponent<vec4> colors;
 
-            std::vector<Material> materials;
+            std::vector<Ref<Material>> materials;
             std::vector<MeshSubData> subData;
 
             int32_t primitiveType = 0;

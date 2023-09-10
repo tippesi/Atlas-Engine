@@ -11,7 +11,6 @@ layout(location=0) out vec4 fClipSpace;
 layout(location=1) out vec3 fPosition;
 layout(location=2) out vec3 fModelCoord;
 layout(location=3) out vec3 fOriginalCoord;
-// layout(location=5) out float waterDepth;
 layout(location=6) out float shoreScaling;
 layout(location=7) out vec3 ndcCurrent;
 layout(location=8) out vec3 ndcLast;
@@ -56,7 +55,11 @@ void main() {
         + Uniforms.translation.xyz;
 
     fOriginalCoord = fPosition;
-    
+
+#ifndef TERRAIN
+    vec3 normalShoreWave;
+
+#endif
     float distanceToCamera = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     fModelCoord = fPosition;

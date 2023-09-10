@@ -174,19 +174,20 @@ namespace Atlas {
             }
 
             meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
-            meshData.materials = std::vector<Material>(scene->mNumMaterials);
 
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
-                auto& material = meshData.materials[i];
+                auto material = CreateRef<Material>();
+                meshData.materials.push_back(material);
+
                 auto& images = materialImages[i];
                 auto& subData = meshData.subData[i];
 
-                LoadMaterial(scene->mMaterials[i], images, material);
+                LoadMaterial(scene->mMaterials[i], images, *material);
 
-                material.vertexColors = hasVertexColors;
+                material->vertexColors = hasVertexColors;
 
-                subData.material = &material;
+                subData.material = material;
                 subData.materialIdx = i;
                 subData.indicesOffset = usedFaces * 3;
 
@@ -383,17 +384,17 @@ namespace Atlas {
                 tangents.SetElementCount(hasTangents ? vertexCount : 0);
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-                meshData.materials = std::vector<Material>(1);
+                auto material = CreateRef<Material>();
+                meshData.materials.push_back(material);
 
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
                 auto& images = materialImages[materialIdx];
-                auto& material = meshData.materials.front();
 
-                LoadMaterial(assimpMaterial, images, material);
+                LoadMaterial(assimpMaterial, images, *material);
 
-                material.vertexColors = hasVertexColors;
+                material->vertexColors = hasVertexColors;
 
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
@@ -451,7 +452,7 @@ namespace Atlas {
                     .indicesOffset = 0,
                     .indicesCount = indexCount,
 
-                    .material = &material,
+                    .material = material,
                     .materialIdx = 0,
 
                     .aabb = meshData.aabb

@@ -63,6 +63,10 @@ void main() {
     texCoord.x += sin(texCoord.y * 2.0 * PI * 5.0 + 5.0 * globalData.time) * 0.001 / depth;
     texCoord.y += cos(texCoord.x * 2.0 * PI * 2.0 + 2.0 * globalData.time) * 0.001 / depth;
 
+    depth = textureLod(depthTexture, texCoord, 0.0).r;
+    viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
+    pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
+
     vec3 refractionColor = textureLod(refractionTexture, texCoord, 0.0).rgb;
 
     float NDotL = dot(-light.direction.xyz, vec3(0.0, 1.0, 0.0));

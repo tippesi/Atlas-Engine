@@ -353,7 +353,7 @@ namespace Atlas {
             for (size_t i = 0; i < that.subData.size(); i++) {
                 materials[i] = that.materials[i];
                 subData[i] = that.subData[i];
-                subData[i].material = &materials[i];
+                subData[i].material = materials[i];
             }
 
         }
