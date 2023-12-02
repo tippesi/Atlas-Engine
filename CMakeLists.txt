@@ -10,7 +10,7 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
 
 project(AtlasEngine VERSION 0.1.10)
 
@@ -65,6 +65,7 @@ if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
+find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)

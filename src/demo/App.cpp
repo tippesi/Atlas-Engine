@@ -1141,7 +1141,7 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
-        for (auto& material : meshes.front()->data.materials) material.twoSided = false;
+        for (auto& material : meshes.front()->data.materials) material->twoSided = false;
 
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.0f), glm::ivec3(20));

@@ -3,7 +3,7 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 project(AtlasEngine)
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
 
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
@@ -40,7 +40,7 @@ if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
@@ -53,7 +53,7 @@ if(APPLE)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk volk::volk_headers SPIRV-Tools-opt
-            GPUOpen::VulkanMemoryAllocator
+            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
@@ -76,7 +76,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 endif()
 
