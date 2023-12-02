@@ -37,8 +37,8 @@ namespace Atlas {
             int32_t occlusionSampleCount = 5;
             int32_t shadowSampleFraction = 4;
 
-            float minHeight = 100.0f;
-            float maxHeight = 600.0f;
+            float minHeight = 1400.0f;
+            float maxHeight = 1700.0f;
             float distanceLimit = 8000.0f;
 
             float coverageScale = 0.25f;

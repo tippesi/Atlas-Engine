@@ -45,7 +45,7 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
       - name: Run scripts
@@ -111,7 +111,7 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
       - name: Run scripts
@@ -180,7 +180,7 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
       - name: Run scripts
@@ -204,3 +204,17 @@ jobs:
             -DATLAS_DEMO=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Upload artifact
+        if: ${{ matrix.build-type == 'Release' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Atlas Engine Demo MacOS ${{ matrix.build-type }}
+          path: |
+            data
+            README.md
+            LICENSE.md
+            THIRDPARTY.md
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/*.dylib*
+            !**/CMakeFiles

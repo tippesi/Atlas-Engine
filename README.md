@@ -8,7 +8,7 @@
 [code-quality-image]: https://app.codacy.com/project/badge/Grade/0b8608dc5cb349a38b8d64c7fbcbcda6
 [code-quality-url]: https://app.codacy.com/gh/tippesi/Atlas-Engine/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 
-![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with software raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
+![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
 ## Requirements

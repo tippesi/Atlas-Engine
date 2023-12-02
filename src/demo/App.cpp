@@ -68,8 +68,8 @@ void App::LoadContent() {
     scene->fog->scatteringAnisotropy = 0.0f;
 
     scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
-    scene->sky.clouds->minHeight = 100.0f;
-    scene->sky.clouds->maxHeight = 600.0f;
+    scene->sky.clouds->minHeight = 1400.0f;
+    scene->sky.clouds->maxHeight = 1700.0f;
     scene->sky.clouds->castShadow = false;
 
     scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
@@ -507,7 +507,7 @@ void App::Render(float deltaTime) {
                 }
                 ImGui::Separator();
                 ImGui::Text("Dimensions");
-                ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 1000.0f);
+                ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 2000.0f);
                 ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 4000.0f);
                 ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
                 ImGui::Separator();
