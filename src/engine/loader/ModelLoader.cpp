@@ -18,7 +18,7 @@ namespace Atlas {
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
-            LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
+            return LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
                 transform, maxTextureResolution);
 
         }
