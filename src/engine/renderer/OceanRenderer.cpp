@@ -392,7 +392,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Ocean depth");
 
             auto ocean = scene->ocean;
-            auto clouds = scene->sky.clouds;
 
             Graphics::Profiler::BeginQuery("Rendering");
 

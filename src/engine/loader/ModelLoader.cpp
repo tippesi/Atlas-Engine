@@ -18,6 +18,15 @@ namespace Atlas {
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
+            LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
+                transform, maxTextureResolution);
+
+        }
+
+        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+            Mesh::MeshMobility mobility, bool forceTangents,
+            mat4 transform, int32_t maxTextureResolution) {
+
             auto directoryPath = GetDirectoryPath(filename);
 
             AssetLoader::UnpackFile(filename);
@@ -95,6 +104,7 @@ namespace Atlas {
             }
 
             auto mesh = CreateRef<Mesh::Mesh>();
+            mesh->mobility = mobility;
             auto& meshData = mesh->data;
 
             if (vertexCount > 65535) {

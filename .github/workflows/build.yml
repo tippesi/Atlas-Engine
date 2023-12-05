@@ -12,7 +12,7 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE_DEBUG: Debug
   BUILD_TYPE_RELEASE: Release
-  USE_CACHE: false
+  USE_CACHE: true
 
 jobs:
   windows-build:

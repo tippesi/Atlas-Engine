@@ -803,13 +803,15 @@ bool App::LoadScene() {
  
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "metallicwall.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
+            false, transform, 2048
         );
         meshes.push_back(mesh);
 
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "chromesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
+            false, transform, 2048
         );
         meshes.push_back(mesh);
        
