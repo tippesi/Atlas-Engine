@@ -32,6 +32,7 @@ jobs:
         with: 
           committish: 8568364fbeb414db3fa5b5bfc436e57b4368c55f
 
+      # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
       - name: Prepare Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
@@ -84,7 +85,7 @@ jobs:
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:

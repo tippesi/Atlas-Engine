@@ -83,7 +83,7 @@ jobs:
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
