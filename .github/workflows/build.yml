@@ -6,7 +6,7 @@ on:
       use_cache:
         description: 'Use the cache of vcpkg and Vulkan SDK'
         required: false
-        default: true
+        default: 'true'
   push:
     branches:
       - '*'
