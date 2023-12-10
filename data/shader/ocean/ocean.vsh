@@ -57,6 +57,9 @@ void main() {
 
     fOriginalCoord = fPosition;
     
+#ifndef TERRAIN
+    vec3 normalShoreWave;
+#endif   
     float distanceToCamera = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     fModelCoord = fPosition;
