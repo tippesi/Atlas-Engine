@@ -40,7 +40,7 @@ if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
@@ -76,7 +76,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 endif()
 
