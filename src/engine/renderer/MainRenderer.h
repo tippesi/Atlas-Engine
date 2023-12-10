@@ -161,6 +161,8 @@ namespace Atlas {
                 vec4 cameraDirection;
                 vec4 cameraUp;
                 vec4 cameraRight;
+                vec4 planetCenter;
+                float planetRadius;
                 float time;
                 float deltaTime;
                 uint32_t frameCount;

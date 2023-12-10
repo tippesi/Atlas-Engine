@@ -1,7 +1,10 @@
 #include <../globals.hsh>
 #include <../structures>
+#include <../volumetric/fog.hsh>
 
 layout (set = 3, binding = 11, std140) uniform UniformBuffer {
+    Fog fog;
+
     vec4 waterBodyColor;
     vec4 deepWaterBodyColor;
     vec4 scatterColor;
@@ -33,6 +36,7 @@ layout (set = 3, binding = 11, std140) uniform UniformBuffer {
     float terrainHeightScale;
     int N;
     int spectrumCount;
+    float innerCloudRadius;
 } Uniforms;
 
 layout (set = 3, binding = 12, std140) uniform LightUniformBuffer {

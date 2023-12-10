@@ -235,7 +235,7 @@ namespace Atlas {
                     {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
-                    {target->historyVolumetricCloudsTexture.image, layout, access},
+                    {target->historyVolumetricCloudsTexture.image, layout, access}
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
@@ -257,6 +257,8 @@ namespace Atlas {
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
+                    {target->oceanStencilTexture.image, layout, access},
+                    {target->oceanDepthTexture.image, layout, access}
                 };
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -798,6 +800,8 @@ namespace Atlas {
                 .cameraDirection = vec4(camera->direction, 0.0f),
                 .cameraUp = vec4(camera->up, 0.0f),
                 .cameraRight = vec4(camera->right, 0.0f),
+                .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+                .planetRadius = scene->sky.planetRadius,
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
                 .frameCount = frameCount

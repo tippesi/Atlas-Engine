@@ -19,19 +19,12 @@ namespace Atlas {
                 Scene::Scene* scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) Fog {
-                float density;
-                float heightFalloff;
-                float height;
-                float scatteringAnisotropy;
-                vec4 color;
-            };
-
             struct alignas(16) VolumetricUniforms {
                 int sampleCount;
                 float intensity;
-                float seed;
                 int fogEnabled;
+                float oceanHeight;
+                vec4 planetCenterAndRadius;
                 Fog fog;
                 Light light;
                 CloudShadow cloudShadow;

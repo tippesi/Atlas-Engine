@@ -24,6 +24,8 @@ namespace Atlas {
 
         private:
             struct alignas(16) Uniforms {
+                Fog fog;
+
                 vec4 waterBodyColor;
                 vec4 deepWaterBodyColor;
                 vec4 scatterColor;
@@ -55,6 +57,7 @@ namespace Atlas {
                 float terrainHeightScale;
                 int32_t N;
                 int32_t spectrumCount;
+                float innerCloudRadius;
             };
 
             struct alignas(16) PushConstants {

@@ -1,0 +1,57 @@
+#include <fog.hsh>
+#include <../globals.hsh>
+
+#define RAYMARCHED_FOG
+
+vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
+
+    vec3 L = pos - origin;
+    float DT = dot(L, direction);
+    float r2 = radius * radius;
+
+    float ct2 = dot(L, L) - DT * DT;
+
+    if (ct2 > r2)
+    return vec2(-1.0);
+
+    float AT = sqrt(r2 - ct2);
+    float BT = AT;
+
+    float AO = DT - AT;
+    float BO = DT + BT;
+
+    float minDist = min(AO, BO);
+    float maxDist = max(AO, BO);
+
+    return vec2(minDist, maxDist);
+}
+
+vec3 ApplyVolumetrics(Fog fog, vec3 inputColor, vec4 volumetricFog, vec4 volumetricClouds,
+    vec3 worldViewDirection, vec3 planetCenter, float innerCloudRadius) {
+
+    vec2 intersectDists = IntersectSphere(globalData.cameraLocation.xyz, worldViewDirection,
+        planetCenter, innerCloudRadius);
+
+#ifdef RAYMARCHED_FOG
+    float fogExtinction = volumetricFog.a;
+#else
+    volumetricFog.rgb = fog.color.rgb;
+    float fogExtinction = 1.0;
+#endif
+
+#ifdef CLOUDS
+    float alpha = volumetricClouds.a;
+    fogExtinction = intersectDists.x < 0.0 ? fogExtinction : fogExtinction * alpha;
+    inputColor = alpha * inputColor;
+#endif
+
+    vec3 outputColor = fog.density > 0.0 ? inputColor * fogExtinction + volumetricFog.rgb : inputColor;
+
+#ifdef CLOUDS
+    fogExtinction = intersectDists.x < 0.0 ? fogExtinction : 1.0;
+    outputColor += volumetricClouds.rgb * fogExtinction;
+#endif
+
+    return outputColor;
+
+}

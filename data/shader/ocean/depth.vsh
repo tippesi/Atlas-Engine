@@ -7,7 +7,7 @@
 
 layout(location=0) in vec3 vPosition;
 
-layout(location=0) out vec3 fNormal;
+layout(location=1) out vec3 fPosition;
 
 vec3 stitch(vec3 position) {
     
@@ -40,25 +40,18 @@ vec3 stitch(vec3 position) {
 
 void main() {
     
-    vec3 fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
+    fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
     
     float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
 
-    float fold;
-    vec2 gradient;
-    GetOceanGradientAndFold(fPosition.xz, distanceToCamera, fold, gradient);
-
-    float tileSize = Uniforms.tiling / float(Uniforms.N);
-    fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
-
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     
-    fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
-    vec4 fClipSpace = globalData.pMatrix * vec4(fPosition, 1.0);
+    vec3 position = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
+    vec4 fClipSpace = globalData.pMatrix * vec4(position, 1.0);
     
     gl_Position = fClipSpace;
     

@@ -54,6 +54,14 @@ namespace Atlas {
             mat4 ipMatrix;
         };
 
+        struct alignas(16) Fog {
+            float density;
+            float heightFalloff;
+            float height;
+            float scatteringAnisotropy;
+            vec4 color;
+        };
+
     }
 
 }

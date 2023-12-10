@@ -6,6 +6,7 @@
 #include <../common/stencil.hsh>
 #include <../common/normalencode.hsh>
 #include <../clouds/shadow.hsh>
+#include <../volumetric/volumetric.hsh>
 #include <../structures>
 
 #include <shoreInteraction.hsh>
@@ -23,8 +24,8 @@ layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
-layout(set = 3, binding = 15) uniform sampler2D cloudMap;
-layout(set = 3, binding = 19) uniform sampler2D normalTexture;
+layout(set = 3, binding = 15) uniform sampler2D cloudShadowMap;
+layout(set = 3, binding = 16) uniform sampler2D volumetricCloudTexture;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
@@ -67,18 +68,16 @@ void main() {
     float tileSize = Uniforms.tiling / float(Uniforms.N);
     
     vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
-    vec2 encodedNormal = textureLod(normalTexture, ndcCoord, 0).rg;
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
-    vec3 fNormal = DecodeNormal(encodedNormal);
-    fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
+    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     float shadowFactor = CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 1.0);
 
 #ifdef CLOUD_SHADOWS
-    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudMap);
+    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudShadowMap);
     shadowFactor = min(shadowFactor, cloudShadowFactor);
 #endif
 
@@ -208,6 +207,13 @@ void main() {
     }
     else {
         features.underWaterPixel = false;
+        vec4 volumetricFog = textureLod(volumetricTexture, ndcCoord, 0.0);
+        vec4 volumetricClouds = vec4(0.0, 0.0, 0.0, 1.0);
+#ifdef CLOUDS
+        volumetricClouds = textureLod(volumetricCloudTexture, ndcCoord, 0.0);
+#endif
+        color = ApplyVolumetrics(Uniforms.fog, color, volumetricFog, volumetricClouds,
+            eyeDir, globalData.planetCenter.xyz, Uniforms.innerCloudRadius);
     }
 
     // Calculate velocity

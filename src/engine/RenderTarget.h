@@ -181,7 +181,7 @@ namespace Atlas {
         Texture::Texture2D sssTexture;
 
         Texture::Texture2D oceanDepthTexture;
-        Texture::Texture2D oceanNormalTexture;
+        Texture::Texture2D oceanStencilTexture;
 
         Texture::Texture2D volumetricTexture;
         Texture::Texture2D swapVolumetricTexture;

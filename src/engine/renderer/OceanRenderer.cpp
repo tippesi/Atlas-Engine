@@ -46,6 +46,7 @@ namespace Atlas {
 
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
+            auto fog = scene->fog;
 
             auto sun = scene->sky.sun.get();
             if (!sun) {
@@ -108,6 +109,8 @@ namespace Atlas {
 
             lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
+
+            bool cloudsEnabled = clouds && clouds->enable;
 
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
 
@@ -190,8 +193,8 @@ namespace Atlas {
                 commandList->CopyImage(depthImage, depthTexture.image);
 
                 imageBarriers = {
-                    {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {colorImage, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT},
+                    {depthImage, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
@@ -206,6 +209,7 @@ namespace Atlas {
                     target->lightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
+                if (cloudsEnabled) config.AddMacro("CLOUDS");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
@@ -257,6 +261,11 @@ namespace Atlas {
                     scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
                 }
 
+                if (cloudsEnabled) {
+                    target->volumetricCloudsTexture.Bind(commandList, 3, 16);
+                    uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
+                }
+
                 refractionTexture.Bind(commandList, 3, 4);
                 depthTexture.Bind(commandList, 3, 5);
 
@@ -273,6 +282,17 @@ namespace Atlas {
                     }
                 }
 
+                if (fog && fog->enable) {
+                    target->volumetricTexture.Bind(commandList, 3, 7);
+
+                    auto& fogUniform = uniforms.fog;
+                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
+                    fogUniform.density = fog->density;
+                    fogUniform.heightFalloff = fog->heightFalloff;
+                    fogUniform.height = fog->height;
+                    fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
+                }
+
                 if (ocean->rippleTexture.IsValid()) {
                     ocean->rippleTexture.Bind(commandList, 3, 10);
                 }
@@ -281,7 +301,6 @@ namespace Atlas {
                 uniformBuffer.Bind(commandList, 3, 11);
 
                 ocean->simulation.perlinNoiseMap.Bind(commandList, 3, 13);
-                target->oceanNormalTexture.Bind(commandList, 3, 19);
 
                 auto renderList = ocean->GetRenderList();
 
@@ -345,7 +364,7 @@ namespace Atlas {
                         {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     };
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                     const int32_t groupSize = 8;
                     auto res = ivec2(target->GetWidth(), target->GetHeight());
@@ -363,6 +382,7 @@ namespace Atlas {
                     auto stencilImage = target->lightingFrameBuffer->GetColorImage(2);
                     auto depthImage = target->lightingFrameBuffer->GetDepthImage();
 
+                    refractionTexture.Bind(commandList, 3, 4);
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
                     commandList->BindImage(stencilImage, nearestSampler, 3, 17);
                     commandList->BindImage(target->oceanDepthTexture.image, nearestSampler, 3, 18);

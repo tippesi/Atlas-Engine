@@ -16,9 +16,9 @@ namespace Atlas {
             volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
 
             horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
-                {"HORIZONTAL", "BLUR_RGB", "DEPTH_WEIGHT"});
+                {"HORIZONTAL", "BLUR_RGBA", "DEPTH_WEIGHT"});
             verticalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
-                {"VERTICAL", "BLUR_RGB", "DEPTH_WEIGHT"});
+                {"VERTICAL", "BLUR_RGBA", "DEPTH_WEIGHT"});
 
             resolvePipelineConfig = PipelineConfig("volumetric/volumetricResolve.csh");
 
@@ -78,7 +78,6 @@ namespace Atlas {
                 VolumetricUniforms uniforms;
                 uniforms.sampleCount = volumetric->sampleCount;
                 uniforms.intensity = volumetric->intensity * light->intensity;
-                uniforms.seed = Common::Random::SampleFastUniformFloat();
 
                 uniforms.light.direction = vec4(direction, 0.0);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light->color), 0.0);
@@ -101,6 +100,17 @@ namespace Atlas {
                     }
                 }
 
+                auto ocean = scene->ocean;
+                bool oceanEnabled = ocean && ocean->enable;
+
+                if (oceanEnabled) {
+                    // This is the full res depth buffer..
+                    uniforms.oceanHeight = ocean->translation.y;
+                    target->oceanDepthTexture.Bind(commandList, 3, 4);
+                    // Needs barrier
+                    target->oceanStencilTexture.Bind(commandList, 3, 5);
+                }
+
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
@@ -116,7 +126,15 @@ namespace Atlas {
                 }
 
                 auto clouds = scene->sky.clouds;
-                bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+                bool cloudsEnabled = clouds && clouds->enable;
+                bool cloudShadowsEnabled = cloudsEnabled && clouds->castShadow;
+
+                if (cloudsEnabled) {
+                    target->volumetricCloudsTexture.Bind(commandList, 3, 6);
+
+                    float cloudInnerRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.planetCenterAndRadius = vec4(scene->sky.planetCenter, cloudInnerRadius);
+                }
 
                 if (cloudShadowsEnabled) {
                     auto& cloudShadowUniform = uniforms.cloudShadow;
@@ -133,9 +151,11 @@ namespace Atlas {
                 }
 
                 volumetricUniformBuffer.SetData(&uniforms, 0);
-                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 4);
+                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
+                volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
                 auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
 
                 commandList->BindPipeline(volumetricPipeline);

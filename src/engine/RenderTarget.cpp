@@ -27,7 +27,7 @@ namespace Atlas {
 
         oceanDepthTexture = Texture::Texture2D(width, height, VK_FORMAT_D32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-        oceanNormalTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16_SFLOAT,
+        oceanStencilTexture = Texture::Texture2D(width, height, VK_FORMAT_R8_UINT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         {
@@ -89,7 +89,7 @@ namespace Atlas {
         }
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = oceanNormalTexture.format}
+                {.imageFormat = oceanStencilTexture.format}
             };
             for (auto &attachment: colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -368,7 +368,7 @@ namespace Atlas {
         auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
             .renderPass = oceanRenderPass,
             .colorAttachments = {
-                {oceanNormalTexture.image, 0, true},
+                {oceanStencilTexture.image, 0, true},
             },
             .depthAttachment = {oceanDepthTexture.image, 0, true},
             .extent = {uint32_t(width), uint32_t(height)}

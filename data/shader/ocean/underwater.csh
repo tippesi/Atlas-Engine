@@ -17,7 +17,6 @@ layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
 layout(set = 3, binding = 16) uniform sampler2D depthTexture;
 layout(set = 3, binding = 17) uniform usampler2D stencilTexture;
 layout(set = 3, binding = 18) uniform sampler2D oceanDepthTexture;
-layout(set = 3, binding = 19) uniform sampler2D oceanNormalTexture;
 layout(set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 20, rgba16f) uniform image2D outputImage;
 
@@ -34,8 +33,11 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(outputImage));
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
-
     float oceanDepth = textureLod(oceanDepthTexture, texCoord, 0.0).r;
+
+    if (depth == 1.0 && oceanDepth == 1.0)
+        return;
+
     vec3 viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 viewSpaceOceanPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
     vec3 pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
@@ -44,19 +46,34 @@ void main() {
 
     float distanceToCamera = length(viewSpacePos);
 
+    int pixelsUnderWater = 0;
+    int waterPixels = 0;
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel + ivec2(x, y), 0).r);
+
+            waterPixels += features.waterPixel ? 1 : 0;
+            pixelsUnderWater += features.underWaterPixel ? 1 : 0;
+        }
+    }
+
+    // Do majority vote, since pixel informtion gl_FrontFacing pixel information is inaccurate at a distance with shallow angle
+    bool underWaterPixel = float(pixelsUnderWater) > float(waterPixels) / 2.0 ? true : false;
+
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
-    
+
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;
     vec3 displacement = GetOceanDisplacement(nearPos, 0.0, perlinScale, shoreScaling, normalShoreWave);
-    
+
     vec3 viewVector = pixelPos - nearPos;
 
     float waterDepth = Uniforms.translation.y - nearPos.y + displacement.y;
     if (waterDepth < 0.0 && depth < oceanDepth && oceanDepth < 1.0 ||
         oceanDepth == 1.0 && pixelPos.y > Uniforms.translation.y ||
-        (!features.underWaterPixel && features.waterPixel))
+        (!underWaterPixel && features.waterPixel)) {
         return;
+    }
 
     texCoord = (texCoord + vec2(0.05)) * 0.9;
 
@@ -70,7 +87,7 @@ void main() {
     vec3 refractionColor = textureLod(refractionTexture, texCoord, 0.0).rgb;
 
     float NDotL = dot(-light.direction.xyz, vec3(0.0, 1.0, 0.0));
-    
+
     viewVector = normalize(viewVector);
 
     float waterOffset = max(0.0, (nearPos.y - Uniforms.translation.y) / max(viewVector.y, 0.0001));

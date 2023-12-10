@@ -8,6 +8,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../structures>
 #include <../common/ign.hsh>
 #include <../common/convert.hsh>
+#include <../common/stencil.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
 #include <../clouds/shadow.hsh>
@@ -18,18 +19,22 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricImage;
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 3) uniform sampler2D cloudMap;
+layout(set = 3, binding = 4) uniform sampler2D oceanDepthTexture;
+layout(set = 3, binding = 5) uniform usampler2D oceanStencilTexture;
+layout(set = 3, binding = 6) uniform sampler2D volumetricCloudTexture;
 
-layout(std140, set = 3, binding = 4) uniform UniformBuffer {
+layout(std140, set = 3, binding = 7) uniform UniformBuffer {
     int sampleCount;
     float intensity;
-    float seed;
     int fogEnabled;
+    float oceanHeight;
+    vec4 planetCenterAndRadius;
     Fog fog;
     Light light;
     CloudShadow cloudShadow;
 } uniforms;
 
-vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords);
+vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords);
 
 void main() {
 
@@ -43,47 +48,70 @@ void main() {
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    vec3 radiance = vec3(0.0);
-    radiance = ComputeVolumetric(pixelPos, texCoord);
-    imageStore(volumetricImage, pixel, vec4(radiance, 0.0));
+    vec3 endPos = pixelPos;
+
+    float startDepth = 0.0;
+#ifdef OCEAN
+    StencilFeatures features = DecodeStencilFeatures(textureLod(oceanStencilTexture, texCoord, 0.0).r);
+
+    float oceanDepth = textureLod(oceanDepthTexture, texCoord, 0.0).r;
+    vec3 oceanPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
+
+    // We could use stencil features here, but they are unrealiable. Next option is to just apply
+    // simpl fog to the refraction texture when under water
+    if (oceanDepth < depth) {
+        endPos = oceanPos;
+    }
+#endif
+
+    vec4 radiance = vec4(0.0);
+    radiance = ComputeVolumetric(endPos, startDepth, texCoord);
+    imageStore(volumetricImage, pixel, radiance);
 
 }
 
-vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
+vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 
     vec2 resolution = vec2(imageSize(volumetricImage));
     vec3 viewPosition = vec3(globalData.ivMatrix * vec4(fragPos, 1.0));
 
     // We compute this in view space
     vec3 rayVector = fragPos;
-    float rayLength = length(rayVector);
+    float rayLength = max(length(rayVector) - startDepth, 0.0);
     vec3 rayDirection = rayVector / rayLength;
     float stepLength = rayLength / float(uniforms.sampleCount);
     vec3 stepVector = rayDirection * stepLength;
  
     vec3 foginess = vec3(0.0);
+    float extinction = 1.0;
+    float extinctionWithClouds = 1.0;
     
-    texCoords = (0.5 * texCoords + 0.5) * resolution;
+    vec2 interleavedTexCoords = (0.5 * texCoords + 0.5) * resolution;
 
-    float noiseOffset = GetInterleavedGradientNoise(texCoords);
-    vec3 currentPosition = stepVector * noiseOffset;
+    float noiseOffset = GetInterleavedGradientNoise(interleavedTexCoords);
+    vec3 currentPosition = stepVector * (noiseOffset + startDepth);
 
     int cascadeIndex = 0;
     int lastCascadeIndex = 0;
     mat4 cascadeMatrix = uniforms.light.shadow.cascades[0].cascadeSpace;
 
+#ifdef CLOUDS
+    bool receivedCloudExtinction = false;
+    float cloudExtinction = min(textureLod(volumetricCloudTexture, texCoords, 0.0).a, 1.0);
+#endif
+
     for (int i = 0; i < uniforms.sampleCount; i++) {
         
-        float distance = -currentPosition.z;
-        
+        float dist = -currentPosition.z;
+
         int cascadeIndex = 0;
-        
-        cascadeIndex = distance >= uniforms.light.shadow.cascades[0].distance ? 1 : cascadeIndex;
-        cascadeIndex = distance >= uniforms.light.shadow.cascades[1].distance ? 2 : cascadeIndex;
-        cascadeIndex = distance >= uniforms.light.shadow.cascades[2].distance ? 3 : cascadeIndex;
-        cascadeIndex = distance >= uniforms.light.shadow.cascades[3].distance ? 4 : cascadeIndex;
-        cascadeIndex = distance >= uniforms.light.shadow.cascades[4].distance ? 5 : cascadeIndex;
-        
+
+        cascadeIndex = dist >= uniforms.light.shadow.cascades[0].distance ? 1 : cascadeIndex;
+        cascadeIndex = dist >= uniforms.light.shadow.cascades[1].distance ? 2 : cascadeIndex;
+        cascadeIndex = dist >= uniforms.light.shadow.cascades[2].distance ? 3 : cascadeIndex;
+        cascadeIndex = dist >= uniforms.light.shadow.cascades[3].distance ? 4 : cascadeIndex;
+        cascadeIndex = dist >= uniforms.light.shadow.cascades[4].distance ? 5 : cascadeIndex;
+
         cascadeIndex = min(uniforms.light.shadow.cascadeCount - 1, cascadeIndex);
 
         if (lastCascadeIndex != cascadeIndex) {
@@ -96,7 +124,7 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
         }
 
         lastCascadeIndex = cascadeIndex;
-        
+
         vec4 cascadeSpace = cascadeMatrix * vec4(currentPosition, 1.0);
         cascadeSpace.xyz /= cascadeSpace.w;
 
@@ -104,28 +132,61 @@ vec3 ComputeVolumetric(vec3 fragPos, vec2 texCoords) {
 
 #ifdef AE_TEXTURE_SHADOW_LOD
         // This fixes issues that can occur at cascade borders
-        float shadowValue = textureLod(cascadeMaps, 
+        float shadowValue = textureLod(cascadeMaps,
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 0);
 #else
-        float shadowValue = texture(cascadeMaps, 
+        float shadowValue = texture(cascadeMaps,
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
 #endif
+
+        //shadowValue = distance > uniforms.light.shadow.distance ? 1.0 : shadowValue;
+        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
+
+#ifdef CLOUDS
+        vec3 planetCenter = uniforms.planetCenterAndRadius.xyz;
+        float cloudInnerRadius = uniforms.planetCenterAndRadius.w;
+
+        float distToPlanetCenter = distance(worldPosition, planetCenter);
+#endif
+
 #ifdef CLOUD_SHADOWS
         float cloudShadowValue = CalculateCloudShadow(currentPosition, uniforms.cloudShadow, cloudMap);
+        cloudShadowValue = distToPlanetCenter < cloudInnerRadius ? cloudShadowValue : 1.0;
         shadowValue = min(shadowValue, cloudShadowValue);
 #endif
-        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
-        
-        float fogAmount = uniforms.fogEnabled > 0 ? (1.0 - saturate(ComputeVolumetricFog(uniforms.fog, viewPosition, worldPosition))) : 1.0;
+
         float NdotL = dot(rayDirection, uniforms.light.direction.xyz);
 
-        float scattering = uniforms.fogEnabled > 0 ? uniforms.fog.scatteringAnisotropy : 0.0;
-        foginess += shadowValue * fogAmount * ComputeScattering(scattering, NdotL) * uniforms.light.color.rgb;
+        float density = uniforms.fog.density * GetVolumetricFogDensity(uniforms.fog, viewPosition, worldPosition);
+
+        float clampedExtinction = max(density, 0.0000001);
+        float stepExtinction = exp(-density * stepLength);
+
+        float phaseFunction = uniforms.fogEnabled > 0 ?
+            ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL) : 1.0;
+        vec3 stepScattering = density * (shadowValue * phaseFunction * uniforms.light.color.rgb + uniforms.fog.color.rgb);
+
+        vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
+#ifdef CLOUDS
+        foginess += luminanceIntegral * extinctionWithClouds;
+
+        if (distToPlanetCenter > cloudInnerRadius && !receivedCloudExtinction) {
+            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction * cloudExtinction : 1.0;
+            receivedCloudExtinction = true;
+        }
+        else {
+            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction : 1.0;
+        }
+#else
+        foginess += luminanceIntegral * extinction;
+#endif
+
+        extinction *= uniforms.fogEnabled > 0 ? stepExtinction : 1.0;
 
         currentPosition += stepVector;
 
     }
 
-    return foginess / float(uniforms.sampleCount) * uniforms.intensity;
+    return vec4(foginess * uniforms.intensity, extinction);
 
 }

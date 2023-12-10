@@ -9,7 +9,7 @@ layout (local_size_x = 256, local_size_y = 1) in;
 layout (local_size_x = 1, local_size_y = 256) in;
 #endif
 
-#ifdef BLUR_RGB
+#if defined(BLUR_RGB) || defined(BLUR_RGBA)
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
 #else
 layout(set = 3, binding = 0, r16f) writeonly uniform image2D outputImage;
@@ -33,8 +33,10 @@ layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
 const float normalPhi = 32.0;
 const float depthPhi = 0.5;
 
-#ifdef BLUR_RGB
+#if defined(BLUR_RGB)
 shared vec3 inputs[320];
+#elif defined(BLUR_RGBA)
+shared vec4 inputs[320];
 #else
 shared float inputs[320];
 #endif
@@ -67,8 +69,10 @@ void LoadGroupSharedData() {
 #else
         localOffset.y += int(i);
 #endif 
-#ifdef BLUR_RGB
+#if defined(BLUR_RGB)
         vec3 localInput = texelFetch(inputTexture, localOffset, 0).rgb;
+#elif defined(BLUR_RGBA)
+        vec4 localInput = texelFetch(inputTexture, localOffset, 0);
 #else
         float localInput = texelFetch(inputTexture, localOffset, 0).r;
 #endif
@@ -101,8 +105,10 @@ void main() {
     // E.g. this is the x component for horizontal blurring
     sharedDataOffset += max3(ivec3(gl_LocalInvocationID));
 
-#ifdef BLUR_RGB
+#if defined(BLUR_RGB)
     vec3 center, result;
+#elif defined(BLUR_RGBA)
+    vec4 center, result;
 #else
     float center, result;
 #endif
@@ -161,8 +167,10 @@ void main() {
 
     ivec2 pixel = offset + ivec2(gl_LocalInvocationID);
 
-#ifdef BLUR_RGB
+#if defined(BLUR_RGB)
     imageStore(outputImage, pixel, vec4(result / totalWeight, 0.0));
+#elif defined(BLUR_RGBA)
+    imageStore(outputImage, pixel, vec4(result / totalWeight));
 #else
     imageStore(outputImage, pixel, vec4(result / totalWeight));
 #endif

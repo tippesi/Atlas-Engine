@@ -24,6 +24,14 @@ float ComputeVolumetricFog(Fog fog, vec3 viewPos, vec3 worldPos) {
     return exp(-fog.density * fogIntegration);
 }
 
+float GetVolumetricFogDensity(Fog fog, vec3 viewPos, vec3 worldPos) {
+
+    viewPos.y -= fog.height;
+
+    return exp(-fog.heightFalloff * viewPos.y);;
+
+}
+
 // Henyey-Greenstein phase function https://www.astro.umd.edu/~jph/HG_note.pdf
 float ComputeScattering(float scatteringAnisotropy, float lightDotView) {
     // Range [-1;1]

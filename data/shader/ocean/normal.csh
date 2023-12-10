@@ -32,7 +32,7 @@ void main() {
 
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     
-    vec2 fCoord = vec2(coord);
+    vec2 fCoord = vec2(coord) + vec2(0.5);
     float fN = float(PushConstants.N);
     
     float tilingFactor = PushConstants.tilingFactor[coord.z];
