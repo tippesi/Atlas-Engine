@@ -1,5 +1,4 @@
-#ifndef AE_MOUSEMOTIONEVENT_H
-#define AE_MOUSEMOTIONEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -54,5 +53,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

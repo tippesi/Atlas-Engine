@@ -40,7 +40,7 @@ namespace Atlas {
 #ifdef AE_BUILDTYPE_RELEASE
         Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", false);
 #else
-        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", true);
+        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", false);
 #endif
         // Initialize window surface
         DefaultWindow->CreateSurface();

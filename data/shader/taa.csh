@@ -343,7 +343,7 @@ void main() {
 
     ivec2 velocityPixel = clamp(pixel + offset, ivec2(0), ivec2(PushConstants.resolution) - ivec2(1));
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
-    vec2 lastVelocity = texelFetch(lastVelocityTexture, velocityPixel, 0).rg;
+    vec2 lastVelocity = texelFetch(lastVelocityTexture, pixel, 0).rg;
 
     float velocityBlend = saturate(600.0 * max(length(velocity), length(lastVelocity)));
 

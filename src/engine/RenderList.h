@@ -1,5 +1,4 @@
-#ifndef AE_RENDERLIST_H
-#define AE_RENDERLIST_H
+#pragma once
 
 #include "System.h"
 #include "actor/MeshActor.h"
@@ -71,5 +70,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

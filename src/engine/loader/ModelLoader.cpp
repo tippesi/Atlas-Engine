@@ -18,7 +18,14 @@ namespace Atlas {
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
 
-            Mesh::MeshData meshData;
+            return LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
+                transform, maxTextureResolution);
+
+        }
+
+        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+            Mesh::MeshMobility mobility, bool forceTangents,
+            mat4 transform, int32_t maxTextureResolution) {
 
             auto directoryPath = GetDirectoryPath(filename);
 
@@ -96,6 +103,10 @@ namespace Atlas {
                     hasTangents = true;
             }
 
+            auto mesh = CreateRef<Mesh::Mesh>();
+            mesh->mobility = mobility;
+            auto& meshData = mesh->data;
+
             if (vertexCount > 65535) {
                 meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
             }
@@ -104,9 +115,9 @@ namespace Atlas {
             }
 
             meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-            meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
+            meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-            meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
+            meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
             meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
 
             meshData.SetIndexCount(indexCount);
@@ -125,13 +136,21 @@ namespace Atlas {
             uint32_t usedVertices = 0;
             uint32_t loadedVertices = 0;
 
-            std::vector<uint32_t> indices(indexCount);
+            auto& indices = meshData.indices;
 
-            std::vector<vec3> vertices(vertexCount);
-            std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
-            std::vector<vec4> normals(vertexCount);
-            std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
-            std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
+            auto& vertices = meshData.vertices;
+            auto& texCoords = meshData.texCoords;
+            auto& normals = meshData.normals;
+            auto& tangents = meshData.tangents;
+            auto& colors = meshData.colors;
+
+            indices.SetElementCount(indexCount);
+
+            vertices.SetElementCount(vertexCount);
+            texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+            normals.SetElementCount(vertexCount);
+            tangents.SetElementCount(hasTangents ? vertexCount : 0);
+            colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
             auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
@@ -165,19 +184,20 @@ namespace Atlas {
             }
 
             meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
-            meshData.materials = std::vector<Material>(scene->mNumMaterials);
 
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
-                auto& material = meshData.materials[i];
+                auto material = CreateRef<Material>();
+                meshData.materials.push_back(material);
+
                 auto& images = materialImages[i];
                 auto& subData = meshData.subData[i];
 
-                LoadMaterial(scene->mMaterials[i], images, material);
+                LoadMaterial(scene->mMaterials[i], images, *material);
 
-                material.vertexColors = hasVertexColors;
+                material->vertexColors = hasVertexColors;
 
-                subData.material = &material;
+                subData.material = material;
                 subData.materialIdx = i;
                 subData.indicesOffset = usedFaces * 3;
 
@@ -255,38 +275,12 @@ namespace Atlas {
             materialImages.clear();
 
             meshData.aabb = Volume::AABB(min, max);
-
-            meshData.indices.Set(indices);
-            indices.clear();
-            indices.shrink_to_fit();
-
-            meshData.vertices.Set(vertices);
-            vertices.clear();
-            vertices.shrink_to_fit();
-
-            meshData.normals.Set(normals);
-            normals.clear();
-            normals.shrink_to_fit();
-
-            if (hasTexCoords) {
-                meshData.texCoords.Set(texCoords);
-                texCoords.clear();
-                texCoords.shrink_to_fit();
-            }
-            if (hasTangents) {
-                meshData.tangents.Set(tangents);
-                tangents.clear();
-                tangents.shrink_to_fit();
-            }
-            if (hasVertexColors) {
-                meshData.colors.Set(colors);
-                colors.clear();
-                colors.shrink_to_fit();
-            }
-
             meshData.filename = filename;
 
-            return CreateRef<Mesh::Mesh>(meshData);
+            mesh->name = meshData.filename;
+            mesh->UpdateData();
+
+            return mesh;
 
         }
 
@@ -363,7 +357,8 @@ namespace Atlas {
                 bool hasVertexColors = false;
                 bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
 
-                Mesh::MeshData meshData;
+                auto mesh = CreateRef<Mesh::Mesh>();
+                auto& meshData = mesh->data;
 
                 hasTangents |= forceTangents;
                 if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
@@ -380,34 +375,36 @@ namespace Atlas {
 
                 hasVertexColors = assimpMesh->HasVertexColors(0);
 
-                meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-                meshData.normals.SetType(Mesh::ComponentFormat::PackedFloat);
-                meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-                meshData.tangents.SetType(Mesh::ComponentFormat::PackedFloat);
-                meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
-
                 meshData.SetIndexCount(indexCount);
                 meshData.SetVertexCount(vertexCount);
 
-                std::vector<uint32_t> indices(indexCount);
+                auto& indices = meshData.indices;
 
-                std::vector<vec3> vertices(vertexCount);
-                std::vector<vec2> texCoords(hasTexCoords ? vertexCount : 0);
-                std::vector<vec4> normals(vertexCount);
-                std::vector<vec4> tangents(hasTangents ? vertexCount : 0);
-                std::vector<vec4> colors(hasVertexColors ? vertexCount : 0);
+                auto& vertices = meshData.vertices;
+                auto& texCoords = meshData.texCoords;
+                auto& normals = meshData.normals;
+                auto& tangents = meshData.tangents;
+                auto& colors = meshData.colors;
 
-                meshData.materials = std::vector<Material>(1);
+                indices.SetElementCount(indexCount);
+
+                vertices.SetElementCount(vertexCount);
+                texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+                normals.SetElementCount(vertexCount);
+                tangents.SetElementCount(hasTangents ? vertexCount : 0);
+                colors.SetElementCount(hasVertexColors ? vertexCount : 0);
+
+                auto material = CreateRef<Material>();
+                meshData.materials.push_back(material);
 
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
                 auto& images = materialImages[materialIdx];
-                auto& material = meshData.materials.front();
 
-                LoadMaterial(assimpMaterial, images, material);
+                LoadMaterial(assimpMaterial, images, *material);
 
-                material.vertexColors = hasVertexColors;
+                material->vertexColors = hasVertexColors;
 
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
@@ -461,31 +458,19 @@ namespace Atlas {
 
                 meshData.aabb = Volume::AABB(min, max);
 
-                meshData.indices.Set(indices);
-                meshData.vertices.Set(vertices);
-                meshData.normals.Set(normals);
-
-                if (hasTexCoords)
-                    meshData.texCoords.Set(texCoords);
-                if (hasTangents)
-                    meshData.tangents.Set(tangents);
-                if (hasVertexColors)
-                    meshData.colors.Set(colors);
-
                 meshData.subData.push_back({
                     .indicesOffset = 0,
                     .indicesCount = indexCount,
 
-                    .material = &material,
+                    .material = material,
                     .materialIdx = 0,
 
                     .aabb = meshData.aabb
                 });
 
                 meshData.filename = std::string(assimpMesh->mName.C_Str());
-
-                auto mesh = CreateRef<Mesh::Mesh>(meshData);
                 mesh->name = meshData.filename;
+                mesh->UpdateData();
 
                 auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name, mesh);
                 meshMap[assimpMesh] = handle;
@@ -551,7 +536,9 @@ namespace Atlas {
             material.name = std::string(name.C_Str());
 
             material.baseColor = vec3(diffuse.r, diffuse.g, diffuse.b);
-            material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b);
+
+            material.emissiveIntensity = glm::max(glm::max(emissive.r, glm::max(emissive.g, emissive.b)), 1.0f);
+            material.emissiveColor = vec3(emissive.r, emissive.g, emissive.b) / material.emissiveIntensity;
 
             material.displacementScale = 0.01f;
             material.normalScale = 0.5f;

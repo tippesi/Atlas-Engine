@@ -1,5 +1,4 @@
-#ifndef AE_RTRRENDERER_H
-#define AE_RTRRENDERER_H
+#pragma once
 
 #include "../System.h"
 
@@ -57,5 +56,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_ECSSUBSET_H
-#define AE_ECSSUBSET_H
+#pragma once
 
 #include "Pool.h"
 
@@ -150,5 +149,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

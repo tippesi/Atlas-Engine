@@ -1,5 +1,4 @@
-#ifndef AE_MODELLOADER_H
-#define AE_MODELLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
@@ -20,6 +19,10 @@ namespace Atlas {
             static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
                 bool forceTangents = false, mat4 transform = mat4(1.0f),
                 int32_t maxTextureResolution = 4096);
+
+            static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
+                Mesh::MeshMobility mobility, bool forceTangents = false,
+                mat4 transform = mat4(1.0f), int32_t maxTextureResolution = 4096);
 
             static Ref<Scene::Scene> LoadScene(const std::string& filename,
                 bool forceTangents = false, mat4 transform = mat4(1.0f),
@@ -87,5 +90,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

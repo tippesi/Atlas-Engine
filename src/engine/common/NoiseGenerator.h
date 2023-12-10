@@ -1,5 +1,4 @@
-#ifndef AE_NOISEGENERATOR_H
-#define AE_NOISEGENERATOR_H
+#pragma once
 
 #include "../System.h"
 #include "../texture/Texture2D.h"
@@ -83,5 +82,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

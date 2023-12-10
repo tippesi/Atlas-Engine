@@ -1,4 +1,5 @@
 #include "RayTracingHelper.h"
+#include "../../common/ColorConverter.h"
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
@@ -517,7 +518,7 @@ namespace Atlas {
 
                 for (auto light : lightSources) {
 
-                    auto radiance = light->color * light->intensity;
+                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light->color) * light->intensity;
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);

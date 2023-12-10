@@ -1,5 +1,4 @@
-#ifndef AE_FILMGRAIN_H
-#define AE_FILMGRAIN_H
+#pragma once
 
 #include "../System.h"
 
@@ -22,6 +21,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

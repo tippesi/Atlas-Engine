@@ -117,6 +117,9 @@ namespace Atlas {
             if (scene->vegetation)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
 
+            if (scene->ocean && scene->ocean->enable)
+                scene->ocean->simulation.Compute(commandList);
+
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
                     FilterProbe(scene->sky.probe.get(), commandList);
@@ -201,6 +204,8 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
+            oceanRenderer.RenderDepthOnly(viewport, target, camera, scene, commandList);
+
             auto targetData = target->GetData(FULL_RES);
 
             commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 2);
@@ -230,7 +235,7 @@ namespace Atlas {
                     {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
-                    {target->historyVolumetricCloudsTexture.image, layout, access},
+                    {target->historyVolumetricCloudsTexture.image, layout, access}
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
@@ -252,6 +257,8 @@ namespace Atlas {
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
+                    {target->oceanStencilTexture.image, layout, access},
+                    {target->oceanDepthTexture.image, layout, access}
                 };
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -295,15 +302,16 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
-            oceanRenderer.Render(viewport, target, camera, scene, commandList);
-
-            downscaleRenderer.Downscale(target, commandList);
+            // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
+            // downscaleRenderer.Downscale(target, commandList);
 
             {
                 volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
 
                 volumetricRenderer.Render(viewport, target, camera, scene, commandList);
             }
+
+            oceanRenderer.Render(viewport, target, camera, scene, commandList);
 
             {
                 taaRenderer.Render(viewport, target, camera, scene, commandList);
@@ -792,6 +800,8 @@ namespace Atlas {
                 .cameraDirection = vec4(camera->direction, 0.0f),
                 .cameraUp = vec4(camera->up, 0.0f),
                 .cameraRight = vec4(camera->right, 0.0f),
+                .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+                .planetRadius = scene->sky.planetRadius,
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
                 .frameCount = frameCount
@@ -835,7 +845,7 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
 
             for (auto& mesh : meshes) {
-                if (!mesh->impostor) continue;
+                if (!mesh.IsLoaded() || !mesh->impostor) continue;
 
                 auto impostor = mesh->impostor;
                 Mesh::Impostor::ImpostorInfo impostorInfo = {
@@ -869,14 +879,11 @@ namespace Atlas {
             for (auto material : sceneMaterials) {
                 PackedMaterial packed;
 
-                auto emissiveIntensity = glm::max(glm::max(material->emissiveColor.r,
-                    material->emissiveColor.g), material->emissiveColor.b);
+                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
+                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor), 0.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 0.0f));
 
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->baseColor, 0.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->emissiveColor / emissiveIntensity, 0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(material->transmissiveColor, 0.0f));
-
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(emissiveIntensity, material->tiling));
+                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(material->emissiveIntensity, material->tiling));
 
                 vec4 data0, data1, data2;
 
@@ -928,7 +935,7 @@ namespace Atlas {
 
                 packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
                 packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(impostor->transmissiveColor, 1.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->transmissiveColor), 1.0f));
 
                 vec4 data0, data1, data2;
 

@@ -43,6 +43,8 @@ void App::LoadContent() {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
+    
+    Atlas::PipelineManager::EnableHotReload();
 
     directionalLight = std::make_shared<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
@@ -66,8 +68,8 @@ void App::LoadContent() {
     scene->fog->scatteringAnisotropy = 0.0f;
 
     scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
-    scene->sky.clouds->minHeight = 100.0f;
-    scene->sky.clouds->maxHeight = 600.0f;
+    scene->sky.clouds->minHeight = 1400.0f;
+    scene->sky.clouds->maxHeight = 1700.0f;
     scene->sky.clouds->castShadow = false;
 
     scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
@@ -491,10 +493,12 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Enable##Clouds", &clouds->enable);
                 ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
+                ImGui::Checkbox("Stochastic occlusion sampling##Clouds", &clouds->stochasticOcclusionSampling);
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 ImGui::Text("Quality");
                 ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
-                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->shadowSampleCount, 1, 16);
+                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->occlusionSampleCount, 1, 16);
+                ImGui::SliderInt("Shadow sample fraction count##Clouds", &clouds->shadowSampleFraction, 1, 4);
                 ImGui::Text("Shape");
                 ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
                 ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);
@@ -503,7 +507,7 @@ void App::Render(float deltaTime) {
                 }
                 ImGui::Separator();
                 ImGui::Text("Dimensions");
-                ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 1000.0f);
+                ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 2000.0f);
                 ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 4000.0f);
                 ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
                 ImGui::Separator();
@@ -562,15 +566,11 @@ void App::Render(float deltaTime) {
                         auto emissionPowerLabel = "Emission power##" + label;
                         auto transmissionColorLabel = "Transmission color##" + label;
 
-                        auto emissionPower = glm::max(material->emissiveColor.r, glm::max(material->emissiveColor.g,
-                            glm::max(material->emissiveColor.b, 1.0f)));
-                        material->emissiveColor /= emissionPower;
                         ImGui::Checkbox(twoSidedLabel.c_str(), &material->twoSided);
                         ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
                         ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
-                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &emissionPower, 1.0f, 10000.0f,
+                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &material->emissiveIntensity, 1.0f, 10000.0f,
                             "%.3f", ImGuiSliderFlags_Logarithmic);
-                        material->emissiveColor *= emissionPower;
 
                         auto roughnessLabel = "Roughness##" + label;
                         auto metallicLabel = "Metallic##" + label;
@@ -777,7 +777,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -796,20 +796,22 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
  
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
-            "metallicwall.gltf", ModelLoader::LoadMesh, false, transform, 2048
+        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+            "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
+            false, transform, 2048
         );
         meshes.push_back(mesh);
 
         transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
-            "chromesphere.gltf", ModelLoader::LoadMesh, false, transform, 2048
+        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+            "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
+            false, transform, 2048
         );
         meshes.push_back(mesh);
        
@@ -830,7 +832,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(.015f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -850,7 +852,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -870,7 +872,7 @@ bool App::LoadScene() {
     else if (sceneSelection == MEDIEVAL) {
         meshes.reserve(1);
 
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "medieval/scene.fbx", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
         meshes.push_back(mesh);
@@ -892,7 +894,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto transform = glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -911,7 +913,7 @@ bool App::LoadScene() {
     else if (sceneSelection == SUBWAY) {
         meshes.reserve(1);
 
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "subway/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
         );
         meshes.push_back(mesh);
@@ -931,7 +933,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto transform = glm::scale(glm::vec3(8.0f));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "material demo/materials.obj", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -974,19 +976,19 @@ bool App::LoadScene() {
         meshes.reserve(4);
 
         auto transform = glm::mat4(glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)));
-        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoaderAsync(
+        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
         );
         meshes.push_back(mesh);
@@ -1141,7 +1143,7 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
-        for (auto& material : meshes.front()->data.materials) material.twoSided = false;
+        for (auto& material : meshes.front()->data.materials) material->twoSided = false;
 
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.0f), glm::ivec3(20));

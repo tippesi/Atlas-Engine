@@ -1,5 +1,4 @@
-#ifndef AE_SCENE_H
-#define AE_SCENE_H
+#pragma once
 
 #include "../System.h"
 #include "../actor/MeshActor.h"
@@ -153,5 +152,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_MATERIAL_H
-#define AE_MATERIAL_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2D.h"
@@ -37,8 +36,10 @@ namespace Atlas {
         Ref<Texture::Texture2D> displacementMap = nullptr;
 
         vec3 baseColor = vec3(1.0f);
-        vec3 emissiveColor = vec3(0.0f);
         vec3 transmissiveColor = vec3(0.0f);
+
+        vec3 emissiveColor = vec3(0.0f);
+        float emissiveIntensity = 1.0f;
 
         float opacity = 1.0f;
 
@@ -71,5 +72,3 @@ namespace Atlas {
 
 
 }
-
-#endif

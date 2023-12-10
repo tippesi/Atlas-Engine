@@ -1,5 +1,4 @@
-#ifndef AE_AUDIODEVICEEVENT_H
-#define AE_AUDIODEVICEEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -39,5 +38,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

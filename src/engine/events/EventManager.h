@@ -1,5 +1,4 @@
-#ifndef AE_EVENTHANDLER_H
-#define AE_EVENTHANDLER_H
+#pragma once
 
 #define AE_BUTTON_RELEASED 0
 #define AE_BUTTON_PRESSED 1
@@ -69,5 +68,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

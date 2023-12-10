@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSRENDERPASS_H
-#define AE_GRAPHICSRENDERPASS_H
+#pragma once
 
 #include "Common.h"
 #include "Image.h"
@@ -95,5 +94,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSCOMMANDLIST_H
-#define AE_GRAPHICSCOMMANDLIST_H
+#pragma once
 
 #include "Common.h"
 #include "Queue.h"
@@ -77,6 +76,8 @@ namespace Atlas {
             void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
 
             void BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding);
+
+            void BindVertexBuffers(std::vector<Ref<Buffer>>& buffers, uint32_t bindingOffset, uint32_t bindingCount);
 
             void BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding);
 
@@ -257,5 +258,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

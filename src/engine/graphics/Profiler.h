@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSPROFILER_H
-#define AE_GRAPHICSPROFILER_H
+#pragma once
 
 #include "Common.h"
 #include "CommandList.h"
@@ -188,5 +187,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_RESOURCE_H
-#define AE_RESOURCE_H
+#pragma once
 
 #include "System.h"
 #include "../common/Hash.h"
@@ -90,7 +89,7 @@ namespace Atlas {
             data = nullptr;
         }
 
-        size_t ID = 0;
+        Hash ID = 0;
 
         ResourceOrigin origin = System;
 
@@ -184,5 +183,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

@@ -10,8 +10,9 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-project(AtlasEngine VERSION 0.1.8)
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
+
+project(AtlasEngine VERSION 0.1.10)
 
 # Only 64 bit is supported
 ###################################################################
@@ -64,9 +65,10 @@ if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
+find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
 find_package(volk CONFIG REQUIRED)
-find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)

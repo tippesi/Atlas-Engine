@@ -1,5 +1,4 @@
-#ifndef AE_GBUFFERDOWNSCALERENDERER_H
-#define AE_GBUFFERDOWNSCALERENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -32,5 +31,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

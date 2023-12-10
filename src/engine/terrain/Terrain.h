@@ -1,5 +1,4 @@
-#ifndef AE_TERRAIN_H
-#define AE_TERRAIN_H
+#pragma once
 
 #include "../System.h"
 #include "TerrainNode.h"
@@ -196,5 +195,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

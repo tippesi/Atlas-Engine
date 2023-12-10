@@ -163,29 +163,33 @@ namespace Atlas {
         Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
 
             auto shadow = light->GetShadow();
-            if (lightMap.contains(light)) {
-                return lightMap[light];
-            }
-            else {
-                Graphics::RenderPassDepthAttachment attachment = {
-                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
-                                   shadow->maps.format,
-                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                };
-                Graphics::RenderPassDesc renderPassDesc = {
-                    .depthAttachment = { attachment }
-                };
-                auto renderPass = device->CreateRenderPass(renderPassDesc);
 
-                Graphics::FrameBufferDesc frameBufferDesc = {
-                    .renderPass = renderPass,
-                    .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
-                    .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
-                };
-                return device->CreateFrameBuffer(frameBufferDesc);
+            if (lightMap.contains(light)) {
+                auto frameBuffer = lightMap[light];
+                if (frameBuffer->extent.width == shadow->resolution ||
+                    frameBuffer->extent.height == shadow->resolution) {
+                    return frameBuffer;
+                }
             }
+
+            Graphics::RenderPassDepthAttachment attachment = {
+                .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
+                               shadow->maps.format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+            Graphics::RenderPassDesc renderPassDesc = {
+                .depthAttachment = { attachment }
+            };
+            auto renderPass = device->CreateRenderPass(renderPassDesc);
+
+            Graphics::FrameBufferDesc frameBufferDesc = {
+                .renderPass = renderPass,
+                .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
+            };
+            return device->CreateFrameBuffer(frameBufferDesc);
 
         }
 
@@ -203,7 +207,7 @@ namespace Atlas {
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
-            if (!material->twoSided && mesh->cullBackFaces) {
+            if (material->twoSided || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 

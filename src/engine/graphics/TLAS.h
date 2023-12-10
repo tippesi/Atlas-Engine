@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSTLAS_H
-#define AE_GRAPHICSTLAS_H
+#pragma once
 
 #include "Common.h"
 #include "Buffer.h"
@@ -42,5 +41,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

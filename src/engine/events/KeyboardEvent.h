@@ -1,5 +1,4 @@
-#ifndef AE_KEYBOARDEVENT_H
-#define AE_KEYBOARDEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -61,6 +60,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

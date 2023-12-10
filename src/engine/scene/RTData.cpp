@@ -4,6 +4,7 @@
 #include "../mesh/MeshData.h"
 #include "../volume/BVH.h"
 #include "../graphics/ASBuilder.h"
+#include "../common/ColorConverter.h"
 
 namespace Atlas {
 
@@ -133,61 +134,62 @@ namespace Atlas {
                     continue;
 
                 for (auto& material : mesh->data.materials) {
-                    if (!materialAccess.contains(&material))
+                    if (!materialAccess.contains(material.get()))
                         continue;
 
-                    auto materialIdx = materialAccess[&material];
+                    auto materialIdx = materialAccess[material.get()];
 
                     GPUMaterial gpuMaterial;
 
-                    gpuMaterial.baseColor = material.baseColor;
-                    gpuMaterial.emissiveColor = material.emissiveColor;
+                    gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                    gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                        * material->emissiveIntensity;
 
-                    gpuMaterial.opacity = material.opacity;
+                    gpuMaterial.opacity = material->opacity;
 
-                    gpuMaterial.roughness = material.roughness;
-                    gpuMaterial.metalness = material.metalness;
-                    gpuMaterial.ao = material.ao;
+                    gpuMaterial.roughness = material->roughness;
+                    gpuMaterial.metalness = material->metalness;
+                    gpuMaterial.ao = material->ao;
 
-                    gpuMaterial.reflectance = material.reflectance;
+                    gpuMaterial.reflectance = material->reflectance;
 
-                    gpuMaterial.normalScale = material.normalScale;
+                    gpuMaterial.normalScale = material->normalScale;
 
                     gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
-                    gpuMaterial.twoSided = material.twoSided ? 1 : 0;
+                    gpuMaterial.twoSided = material->twoSided ? 1 : 0;
 
-                    if (material.HasBaseColorMap()) {
-                        auto& slices = baseColorTextureAtlas.slices[material.baseColorMap.get()];
+                    if (material->HasBaseColorMap()) {
+                        auto& slices = baseColorTextureAtlas.slices[material->baseColorMap.get()];
 
                         gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
                     }
 
-                    if (material.HasOpacityMap()) {
-                        auto& slices = opacityTextureAtlas.slices[material.opacityMap.get()];
+                    if (material->HasOpacityMap()) {
+                        auto& slices = opacityTextureAtlas.slices[material->opacityMap.get()];
 
                         gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
                     }
 
-                    if (material.HasNormalMap()) {
-                        auto& slices = normalTextureAtlas.slices[material.normalMap.get()];
+                    if (material->HasNormalMap()) {
+                        auto& slices = normalTextureAtlas.slices[material->normalMap.get()];
 
                         gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
                     }
 
-                    if (material.HasRoughnessMap()) {
-                        auto& slices = roughnessTextureAtlas.slices[material.roughnessMap.get()];
+                    if (material->HasRoughnessMap()) {
+                        auto& slices = roughnessTextureAtlas.slices[material->roughnessMap.get()];
 
                         gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
                     }
 
-                    if (material.HasMetalnessMap()) {
-                        auto& slices = metalnessTextureAtlas.slices[material.metalnessMap.get()];
+                    if (material->HasMetalnessMap()) {
+                        auto& slices = metalnessTextureAtlas.slices[material->metalnessMap.get()];
 
                         gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
                     }
 
-                    if (material.HasAoMap()) {
-                        auto& slices = aoTextureAtlas.slices[material.aoMap.get()];
+                    if (material->HasAoMap()) {
+                        auto& slices = aoTextureAtlas.slices[material->aoMap.get()];
 
                         gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
                     }
@@ -217,21 +219,21 @@ namespace Atlas {
                     continue;
 
                 for (auto& material : mesh->data.materials) {
-                    if (!materialAccess.contains(&material))
+                    if (!materialAccess.contains(material.get()))
                         continue;
 
-                    if (material.HasBaseColorMap())
-                        baseColorTextures.push_back(material.baseColorMap);
-                    if (material.HasOpacityMap())
-                        opacityTextures.push_back(material.opacityMap);
-                    if (material.HasNormalMap())
-                        normalTextures.push_back(material.normalMap);
-                    if (material.HasRoughnessMap())
-                        roughnessTextures.push_back(material.roughnessMap);
-                    if (material.HasMetalnessMap())
-                        metalnessTextures.push_back(material.metalnessMap);
-                    if (material.HasAoMap())
-                        aoTextures.push_back(material.aoMap);
+                    if (material->HasBaseColorMap())
+                        baseColorTextures.push_back(material->baseColorMap);
+                    if (material->HasOpacityMap())
+                        opacityTextures.push_back(material->opacityMap);
+                    if (material->HasNormalMap())
+                        normalTextures.push_back(material->normalMap);
+                    if (material->HasRoughnessMap())
+                        roughnessTextures.push_back(material->roughnessMap);
+                    if (material->HasMetalnessMap())
+                        metalnessTextures.push_back(material->metalnessMap);
+                    if (material->HasAoMap())
+                        aoTextures.push_back(material->aoMap);
                 }
             }
 
@@ -347,7 +349,7 @@ namespace Atlas {
                 }
 
                 for (auto& material : mesh->data.materials) {
-                    materialAccess[&material] = materialCount++;
+                    materialAccess[material.get()] = materialCount++;
                 }
 
                 MeshInfo meshInfo = {
@@ -414,7 +416,7 @@ namespace Atlas {
                 }
 
                 for (auto& material : mesh->data.materials) {
-                    materialAccess[&material] = materialCount++;
+                    materialAccess[material.get()] = materialCount++;
                 }
 
                 std::vector<Graphics::ASGeometryRegion> geometryRegions;
@@ -547,7 +549,8 @@ namespace Atlas {
                 auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
                 auto& material = materials[idx];
 
-                auto radiance = material.emissiveColor;
+                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                    * material->emissiveIntensity;
                 auto brightness = dot(radiance, vec3(0.3333f));
 
                 if (brightness > 0.0f) {
@@ -580,7 +583,7 @@ namespace Atlas {
                     GPULight light;
                     light.P = vec4(P, 1.0f);
                     light.N = vec4(N, 0.0f);
-                    light.color = vec4(radiance, 0.0f);
+                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance), 0.0f);
                     light.data = vec4(cd, weight, area, 0.0f);
 
                     meshInfo.triangleLights.push_back(light);

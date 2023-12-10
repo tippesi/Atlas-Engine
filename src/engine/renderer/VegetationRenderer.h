@@ -1,5 +1,4 @@
-#ifndef AE_VEGETATIONRENDERER_H
-#define AE_VEGETATIONRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -32,5 +31,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

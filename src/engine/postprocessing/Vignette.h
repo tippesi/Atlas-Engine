@@ -1,5 +1,4 @@
-#ifndef AE_VIGNETTE_H
-#define AE_VIGNETTE_H
+#pragma once
 
 #include "../System.h"
 
@@ -33,5 +32,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

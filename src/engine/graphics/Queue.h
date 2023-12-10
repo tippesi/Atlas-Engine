@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICQUEUE_H
-#define AE_GRAPHICQUEUE_H
+#pragma once
 
 #include "Common.h"
 
@@ -108,5 +107,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

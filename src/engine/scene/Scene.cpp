@@ -117,7 +117,7 @@ namespace Atlas {
                 if (!mesh.IsLoaded())
                     continue;
                 for (auto& material : mesh->data.materials) {
-                    materials.push_back(&material);
+                    materials.push_back(material.get());
                 }
             }
 

@@ -1,5 +1,4 @@
-#ifndef AE_RENDERTARGET_H
-#define AE_RENDERTARGET_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2D.h"
@@ -168,6 +167,9 @@ namespace Atlas {
         Ref<Graphics::FrameBuffer> lightingFrameBuffer;
         Ref<Graphics::FrameBuffer> lightingFrameBufferWithStencil;
 
+        Ref<Graphics::RenderPass> oceanRenderPass;
+        Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;
+
         Texture::Texture2D postProcessTexture;
 
         Texture::Texture2D aoTexture;
@@ -177,6 +179,9 @@ namespace Atlas {
         Texture::Texture2D historyAoLengthTexture;
 
         Texture::Texture2D sssTexture;
+
+        Texture::Texture2D oceanDepthTexture;
+        Texture::Texture2D oceanStencilTexture;
 
         Texture::Texture2D volumetricTexture;
         Texture::Texture2D swapVolumetricTexture;
@@ -217,6 +222,3 @@ namespace Atlas {
     };
 
 }
-
-
-#endif

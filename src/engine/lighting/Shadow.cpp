@@ -49,6 +49,23 @@ namespace Atlas {
 
         }
 
+        void Shadow::SetResolution(int32_t resolution) {
+
+            this->resolution = resolution;
+
+            if (useCubemap) {
+                cubemap  = Texture::Cubemap(resolution, resolution, VK_FORMAT_D16_UNORM,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            }
+            else {
+                maps = Texture::Texture2DArray(resolution, resolution, componentCount, VK_FORMAT_D16_UNORM,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            }
+
+            Update();
+
+        }
+
         void Shadow::Update() {
 
             update = true;

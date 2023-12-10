@@ -1,5 +1,4 @@
-#ifndef AE_REFLECTION_H
-#define AE_REFLECTION_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderTarget.h"
@@ -37,6 +36,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

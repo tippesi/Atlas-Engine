@@ -1,5 +1,4 @@
-#ifndef AE_SCENENODE_H
-#define AE_SCENENODE_H
+#pragma once
 
 #include "../System.h"
 #include "../actor/MovableMeshActor.h"
@@ -202,5 +201,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

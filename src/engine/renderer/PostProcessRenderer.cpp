@@ -140,7 +140,7 @@ namespace Atlas {
                 uniforms.vignetteOffset = vignette.offset;
                 uniforms.vignettePower = vignette.power;
                 uniforms.vignetteStrength = vignette.strength;
-                uniforms.vignetteColor = vec4(vignette.color, 0.0f);
+                uniforms.vignetteColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(vignette.color), 0.0f);
             }
 
             if (filmGrain.enable) {

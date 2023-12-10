@@ -1,5 +1,4 @@
-#ifndef AE_SKYBOXRENDERER_H
-#define AE_SKYBOXRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -29,5 +28,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

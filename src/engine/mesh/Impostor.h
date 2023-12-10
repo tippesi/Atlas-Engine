@@ -1,5 +1,4 @@
-#ifndef AE_IMPOSTOR_H
-#define AE_IMPOSTOR_H
+#pragma once
 
 #include "../System.h"
 #include "../volume/AABB.h"
@@ -72,5 +71,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

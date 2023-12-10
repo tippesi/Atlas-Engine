@@ -1,5 +1,4 @@
-#ifndef AE_DECALRENDERER_H
-#define AE_DECALRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -45,5 +44,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

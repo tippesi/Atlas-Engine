@@ -18,8 +18,8 @@ namespace Atlas {
 
             vertices = DataComponent<vec3>(ComponentFormat::Float);
             texCoords = DataComponent<vec2>(ComponentFormat::HalfFloat);
-            normals = DataComponent<vec4>(ComponentFormat::PackedFloat);
-            tangents = DataComponent<vec4>(ComponentFormat::PackedFloat);
+            normals = DataComponent<vec4>(ComponentFormat::PackedNormal);
+            tangents = DataComponent<vec4>(ComponentFormat::PackedNormal);
             colors = DataComponent<vec4>(ComponentFormat::PackedColor);
 
         }
@@ -353,7 +353,7 @@ namespace Atlas {
             for (size_t i = 0; i < that.subData.size(); i++) {
                 materials[i] = that.materials[i];
                 subData[i] = that.subData[i];
-                subData[i].material = &materials[i];
+                subData[i].material = materials[i];
             }
 
         }

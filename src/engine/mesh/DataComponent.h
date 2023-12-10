@@ -1,5 +1,4 @@
-#ifndef AE_DATACOMPONENT_H
-#define AE_DATACOMPONENT_H
+#pragma once
 
 #include "../System.h"
 #include "../common/Packing.h"
@@ -21,7 +20,7 @@ namespace Atlas {
             UnsignedShort = 1,
             Float = 2,
             HalfFloat = 3,
-            PackedFloat = 4,
+            PackedNormal = 4,
             PackedColor = 5
         };
 
@@ -45,8 +44,9 @@ namespace Atlas {
             /**
              * Constructs a DataComponent object.
              * @param format The type of the component S should be converted into. See {@link DataComponent.h} for more.
+             * @param elementCount The amount of elements the data component should hold
              */
-            DataComponent(ComponentFormat format);
+            DataComponent(ComponentFormat format, size_t elementCount = 0);
 
             /**
              * Resets the type of the component.
@@ -69,9 +69,16 @@ namespace Atlas {
             VkFormat GetFormat() const;
 
             /**
+             * Pushes back a single element and increases the size by one
+             * @param value
+             */
+            void PushBack(const T& value);
+
+            /**
              * Sets the data for the component and converts it into data of component type.
              * @param values An vector of values of type S.
              * @note The length of the should be exactly the same as the size set by {@link SetSize}.
+             * This also adjusts the element count to the size of the values vector
              */
             void Set(std::vector<T>& values);
 
@@ -89,10 +96,22 @@ namespace Atlas {
             size_t GetStride();
 
             /**
+             *
+             * @param elementCount
+             */
+            void SetElementCount(size_t elementCount);
+
+            /**
              * Returns the size of one converted element.
              * @return The size in bytes
              */
             size_t GetElementSize();
+
+            /**
+             *
+             * @return
+             */
+            size_t GetElementCount() const;
 
             /**
              * Converts the data and returns a byte array.
@@ -123,6 +142,32 @@ namespace Atlas {
              */
             bool ContainsData();
 
+            /**
+             *
+             * @param idx
+             * @return
+             */
+            T& operator[](size_t idx);
+
+            /**
+             *
+             * @param idx
+             * @return
+             */
+            const T& operator[](std::size_t idx) const;
+
+            /**
+             *
+             * @return
+             */
+            typename std::vector<T>::const_iterator begin() const;
+
+            /**
+             *
+             * @return
+             */
+            typename std::vector<T>::const_iterator end() const;
+
         private:
             void ConvertData();
 
@@ -134,8 +179,9 @@ namespace Atlas {
         };
 
         template <class T>
-        DataComponent<T>::DataComponent(ComponentFormat format) : format(format) {
+        DataComponent<T>::DataComponent(ComponentFormat format, size_t elementCount) : format(format) {
 
+            data.resize(elementCount);
 
         }
 
@@ -187,11 +233,22 @@ namespace Atlas {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
-                    case ComponentFormat::PackedFloat: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
+                    case ComponentFormat::PackedNormal: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                     case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
                     default: assert(0 && "Invalid combination of formats"); 
                 }
             }
+
+            assert(0 && "Invalid combination of formats");
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+
+        }
+
+        template <class T>
+        void DataComponent<T>::PushBack(const T& value) {
+
+            this->data.push_back(value);
+
         }
 
         template <class T>
@@ -217,6 +274,13 @@ namespace Atlas {
         }
 
         template <class T>
+        void DataComponent<T>::SetElementCount(size_t elementCount) {
+
+            data.resize(elementCount);
+
+        }
+
+        template <class T>
         size_t DataComponent<T>::GetElementSize() {
 
             size_t size = 0;
@@ -225,11 +289,18 @@ namespace Atlas {
                 case ComponentFormat::UnsignedShort: size = sizeof(uint16_t) * GetStride(); break;
                 case ComponentFormat::Float: size = sizeof(float) * GetStride(); break;
                 case ComponentFormat::HalfFloat: size = sizeof(float16) * GetStride(); break;
-                case ComponentFormat::PackedFloat: size = sizeof(uint32_t); break;
+                case ComponentFormat::PackedNormal: size = sizeof(uint32_t); break;
                 case ComponentFormat::PackedColor: size = sizeof(uint32_t); break;
             }
 
             return size;
+
+        }
+
+        template <class T>
+        size_t DataComponent<T>::GetElementCount() const {
+
+            return data.size();
 
         }
 
@@ -307,7 +378,7 @@ namespace Atlas {
                     std::memcpy(converted.data(), convertedData.data(), sizeInBytes);
                 }
             }
-            else if (format == ComponentFormat::PackedFloat) {
+            else if (format == ComponentFormat::PackedNormal) {
                 if constexpr(std::is_same_v<T, vec4>) {
                     std::vector<uint32_t> convertedData(data.size());
                     std::transform(data.begin(), data.end(), convertedData.begin(),
@@ -326,8 +397,34 @@ namespace Atlas {
 
         }
 
+        template<class T>
+        T& DataComponent<T>::operator[](size_t idx) {
+
+            return data[idx];
+
+        }
+
+        template<class T>
+        const T& DataComponent<T>::operator[](std::size_t idx) const {
+
+            return data[idx];
+
+        }
+
+        template<class T>
+        typename std::vector<T>::const_iterator DataComponent<T>::begin() const {
+
+            return data.begin();
+
+        }
+
+        template<class T>
+        typename std::vector<T>::const_iterator DataComponent<T>::end() const {
+
+            return data.end();
+
+        }
+
     }
 
 }
-
-#endif

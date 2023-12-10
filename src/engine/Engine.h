@@ -1,5 +1,4 @@
-#ifndef AE_ENGINE_H
-#define AE_ENGINE_H
+#pragma once
 
 #include "System.h"
 #include "Window.h"
@@ -64,5 +63,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

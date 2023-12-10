@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSFRAMEBUFFER_H
-#define AE_GRAPHICSFRAMEBUFFER_H
+#pragma once
 
 #include "Common.h"
 #include "RenderPass.h"
@@ -73,6 +72,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

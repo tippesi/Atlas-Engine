@@ -89,62 +89,64 @@ namespace Atlas {
             // so delete all of the memoryManager content before cleaning the rest
             memoryManager->DestroyAllImmediate();
 
-            for (auto& tlasRef : tlases) {
+            // We assume everything else is terminated by now, so this is the only thread still alive
+            // In that case we don't lock all the mutexes
+            for (auto& tlasRef : tlases.data) {
                 assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
                 tlasRef.reset();
             }
 
-            for (auto& blasRef : blases) {
+            for (auto& blasRef : blases.data) {
                 assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
                 blasRef.reset();
             }
 
-            for (auto& pipelineRef : pipelines) {
+            for (auto& pipelineRef : pipelines.data) {
                 assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
             }
 
-            for (auto& frameBufferRef : frameBuffers) {
+            for (auto& frameBufferRef : frameBuffers.data) {
                 assert(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
                 frameBufferRef.reset();
             }
 
-            for (auto& renderPassRef : renderPasses) {
+            for (auto& renderPassRef : renderPasses.data) {
                 assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
                 renderPassRef.reset();
             }
 
-            for (auto& shaderRef : shaders) {
+            for (auto& shaderRef : shaders.data) {
                 assert(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
                 shaderRef.reset();
             }
 
-            for (auto& bufferRef : buffers) {
+            for (auto& bufferRef : buffers.data) {
                 assert(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
                 bufferRef.reset();
             }
 
-            for (auto& multiBufferRef : multiBuffers) {
+            for (auto& multiBufferRef : multiBuffers.data) {
                 assert(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
                 multiBufferRef.reset();
             }
 
-            for (auto& imageRef : images) {
+            for (auto& imageRef : images.data) {
                 assert(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
                 imageRef.reset();
             }
 
-            for (auto& samplerRef : samplers) {
+            for (auto& samplerRef : samplers.data) {
                 assert(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
                 samplerRef.reset();
             }
 
-            for (auto& poolRef : descriptorPools) {
+            for (auto& poolRef : descriptorPools.data) {
                 assert(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
-            for (auto& poolRef : queryPools) {
+            for (auto& poolRef : queryPools.data) {
                 assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
@@ -199,7 +201,8 @@ namespace Atlas {
 
             auto renderPass = std::make_shared<RenderPass>(this, desc);
 
-            renderPasses.push_back(renderPass);
+            std::lock_guard<std::mutex> guard(renderPasses.mutex);
+            renderPasses.data.push_back(renderPass);
 
             return renderPass;
 
@@ -209,7 +212,8 @@ namespace Atlas {
 
             auto frameBuffer = std::make_shared<FrameBuffer>(this, desc);
 
-            frameBuffers.push_back(frameBuffer);
+            std::lock_guard<std::mutex> guard(frameBuffers.mutex);
+            frameBuffers.data.push_back(frameBuffer);
 
             return frameBuffer;
 
@@ -219,7 +223,8 @@ namespace Atlas {
 
             auto shader = std::make_shared<Shader>(this, desc);
 
-            shaders.push_back(shader);
+            std::lock_guard<std::mutex> guard(shaders.mutex);
+            shaders.data.push_back(shader);
 
             return shader;
 
@@ -229,7 +234,8 @@ namespace Atlas {
 
             auto pipeline = std::make_shared<Pipeline>(this, desc);
 
-            pipelines.push_back(pipeline);
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
 
             return pipeline;
 
@@ -239,7 +245,8 @@ namespace Atlas {
 
             auto pipeline = std::make_shared<Pipeline>(this, desc);
 
-            pipelines.push_back(pipeline);
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
 
             return pipeline;
 
@@ -249,7 +256,8 @@ namespace Atlas {
 
             auto buffer = std::make_shared<Buffer>(this, desc);
 
-            buffers.push_back(buffer);
+            std::lock_guard<std::mutex> guard(buffers.mutex);
+            buffers.data.push_back(buffer);
 
             return buffer;
 
@@ -259,7 +267,8 @@ namespace Atlas {
 
             auto multiBuffer = std::make_shared<MultiBuffer>(this, desc);
 
-            multiBuffers.push_back(multiBuffer);
+            std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+            multiBuffers.data.push_back(multiBuffer);
 
             return multiBuffer;
 
@@ -269,7 +278,8 @@ namespace Atlas {
 
             auto image = std::make_shared<Image>(this, desc);
 
-            images.push_back(image);
+            std::lock_guard<std::mutex> guard(images.mutex);
+            images.data.push_back(image);
 
             return image;
 
@@ -279,7 +289,8 @@ namespace Atlas {
 
             auto sampler = std::make_shared<Sampler>(this, desc);
 
-            samplers.push_back(sampler);
+            std::lock_guard<std::mutex> guard(samplers.mutex);
+            samplers.data.push_back(sampler);
 
             return sampler;
 
@@ -289,7 +300,8 @@ namespace Atlas {
 
             auto pool = std::make_shared<DescriptorPool>(this);
 
-            descriptorPools.push_back(pool);
+            std::lock_guard<std::mutex> guard(descriptorPools.mutex);
+            descriptorPools.data.push_back(pool);
 
             return pool;
 
@@ -299,7 +311,8 @@ namespace Atlas {
 
             auto pool = std::make_shared<QueryPool>(this, desc);
 
-            queryPools.push_back(pool);
+            std::lock_guard<std::mutex> guard(queryPools.mutex);
+            queryPools.data.push_back(pool);
 
             return pool;
 
@@ -309,7 +322,8 @@ namespace Atlas {
 
             auto blas = std::make_shared<BLAS>(this, desc);
 
-            blases.push_back(blas);
+            std::lock_guard<std::mutex> guard(blases.mutex);
+            blases.data.push_back(blas);
 
             return blas;
 
@@ -319,7 +333,8 @@ namespace Atlas {
 
             auto tlas = std::make_shared<TLAS>(this, desc);
 
-            tlases.push_back(tlas);
+            std::lock_guard<std::mutex> guard(tlases.mutex);
+            tlases.data.push_back(tlas);
 
             return tlas;
 
@@ -482,8 +497,12 @@ namespace Atlas {
 
             // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
-            for (auto& multiBuffer : multiBuffers) {
-                multiBuffer->UpdateFrameIndex(frameIndex);
+
+            {
+                std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+                for (auto& multiBuffer : multiBuffers.data) {
+                    multiBuffer->UpdateFrameIndex(frameIndex);
+                }
             }
 
             auto nextFrame = GetFrameData();
@@ -1020,115 +1039,18 @@ namespace Atlas {
 
         void GraphicsDevice::DestroyUnusedGraphicObjects() {
 
-            for (size_t i = 0; i < renderPasses.size(); i++) {
-                auto& renderPassRef = renderPasses[i];
-                if (renderPassRef.use_count() == 1) {
-                    renderPassRef.swap(renderPasses.back());
-                    memoryManager->DestroyAllocation(renderPasses.back());
-                    renderPasses.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < pipelines.size(); i++) {
-                auto& pipelineRef = pipelines[i];
-                if (pipelineRef.use_count() == 1) {
-                    pipelineRef.swap(pipelines.back());
-                    memoryManager->DestroyAllocation(pipelines.back());
-                    pipelines.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < shaders.size(); i++) {
-                auto& shaderRef = shaders[i];
-                if (shaderRef.use_count() == 1) {
-                    shaderRef.swap(shaders.back());
-                    memoryManager->DestroyAllocation(shaders.back());
-                    shaders.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < buffers.size(); i++) {
-                auto& bufferRef = buffers[i];
-                if (bufferRef.use_count() == 1) {
-                    bufferRef.swap(buffers.back());
-                    memoryManager->DestroyAllocation(buffers.back());
-                    buffers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < multiBuffers.size(); i++) {
-                auto& multiBufferRef = multiBuffers[i];
-                if (multiBufferRef.use_count() == 1) {
-                    multiBufferRef.swap(multiBuffers.back());
-                    memoryManager->DestroyAllocation(multiBuffers.back());
-                    multiBuffers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < images.size(); i++) {
-                auto& imageRef = images[i];
-                if (imageRef.use_count() == 1) {
-                    imageRef.swap(images.back());
-                    memoryManager->DestroyAllocation(images.back());
-                    images.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < samplers.size(); i++) {
-                auto& samplerRef = samplers[i];
-                if (samplerRef.use_count() == 1) {
-                    samplerRef.swap(samplers.back());
-                    memoryManager->DestroyAllocation(samplers.back());
-                    samplers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < descriptorPools.size(); i++) {
-                auto& poolRef = descriptorPools[i];
-                if (poolRef.use_count() == 1) {
-                    poolRef.swap(descriptorPools.back());
-                    memoryManager->DestroyAllocation(descriptorPools.back());
-                    descriptorPools.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < queryPools.size(); i++) {
-                auto& poolRef = queryPools[i];
-                if (poolRef.use_count() == 1) {
-                    poolRef.swap(queryPools.back());
-                    memoryManager->DestroyAllocation(queryPools.back());
-                    queryPools.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < blases.size(); i++) {
-                auto& blasRef = blases[i];
-                if (blasRef.use_count() == 1) {
-                    blasRef.swap(blases.back());
-                    memoryManager->DestroyAllocation(blases.back());
-                    blases.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < tlases.size(); i++) {
-                auto& tlasRef = tlases[i];
-                if (tlasRef.use_count() == 1) {
-                    tlasRef.swap(tlases.back());
-                    memoryManager->DestroyAllocation(tlases.back());
-                    tlases.pop_back();
-                    i--;
-                }
-            }
+            DeleteOutdatedResources<RenderPass>(renderPasses);
+            DeleteOutdatedResources<FrameBuffer>(frameBuffers);
+            DeleteOutdatedResources<Shader>(shaders);
+            DeleteOutdatedResources<Pipeline>(pipelines);
+            DeleteOutdatedResources<Buffer>(buffers);
+            DeleteOutdatedResources<MultiBuffer>(multiBuffers);
+            DeleteOutdatedResources<Image>(images);
+            DeleteOutdatedResources<Sampler>(samplers);
+            DeleteOutdatedResources<DescriptorPool>(descriptorPools);
+            DeleteOutdatedResources<QueryPool>(queryPools);
+            DeleteOutdatedResources<BLAS>(blases);
+            DeleteOutdatedResources<TLAS>(tlases);
 
         }
 

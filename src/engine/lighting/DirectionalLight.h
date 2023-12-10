@@ -1,5 +1,4 @@
-#ifndef AE_DIRECTIONALLIGHT_H
-#define AE_DIRECTIONALLIGHT_H
+#pragma once
 
 #include "../System.h"
 #include "Light.h"
@@ -45,5 +44,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

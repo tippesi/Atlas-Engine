@@ -1,5 +1,4 @@
-#ifndef AE_RANDOM_H
-#define AE_RANDOM_H
+#pragma once
 
 #include <random>
 
@@ -30,5 +29,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

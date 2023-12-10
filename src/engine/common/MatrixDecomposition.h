@@ -1,5 +1,4 @@
-#ifndef AE_MATRIXDECOMPOSITION_H
-#define AE_MATRIXDECOMPOSITION_H
+#pragma once
 
 #include "../System.h"
 
@@ -27,7 +26,3 @@ namespace Atlas {
     }
 
 }
-
-
-
-#endif

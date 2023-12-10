@@ -1,5 +1,4 @@
-#ifndef AE_GEOMETRYHELPER_H
-#define AE_GEOMETRYHELPER_H
+#pragma once
 
 #include "../../System.h"
 #include "buffer/VertexArray.h"
@@ -38,5 +37,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

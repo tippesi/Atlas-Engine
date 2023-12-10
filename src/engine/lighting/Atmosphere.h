@@ -1,5 +1,4 @@
-#ifndef AE_ATMOSPHERE_H
-#define AE_ATMOSPHERE_H
+#pragma once
 
 #include "../System.h"
 
@@ -22,6 +21,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

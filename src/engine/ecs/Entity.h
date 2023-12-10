@@ -1,5 +1,4 @@
-#ifndef AE_ECSENTITY_H
-#define AE_ECSENTITY_H
+#pragma once
 
 #include <cstdint>
 
@@ -35,5 +34,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

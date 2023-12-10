@@ -37,6 +37,12 @@ namespace Atlas {
             buffer->SetData(data, offset * Graphics::Buffer::GetAlignedSize(elementSize), elementSize);
 
         }
+    
+        void UniformBuffer::SetData(void *data, size_t offset, size_t length) {
+            
+            buffer->SetData(data, offset, length);
+            
+        }
 
         Ref<Graphics::MultiBuffer> UniformBuffer::Get() {
 

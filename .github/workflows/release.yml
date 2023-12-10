@@ -31,7 +31,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with:
-          committish: 93895b28ea7bc8cda10f156c5d336f3fc070f8b1
+          committish: 8568364fbeb414db3fa5b5bfc436e57b4368c55f
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -46,8 +46,8 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: false
 
       - name: Run scripts
         shell: pwsh
@@ -83,7 +83,7 @@ jobs:
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -99,7 +99,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with:
-          committish: 93895b28ea7bc8cda10f156c5d336f3fc070f8b1
+          committish: 8568364fbeb414db3fa5b5bfc436e57b4368c55f
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -111,8 +111,8 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: false
 
       - name: Run scripts
         shell: bash

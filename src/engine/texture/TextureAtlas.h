@@ -1,5 +1,4 @@
-#ifndef AE_TEXTUREATLAS_H
-#define AE_TEXTUREATLAS_H
+#pragma once
 
 #include "../System.h"
 #include "Texture2D.h"
@@ -89,5 +88,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

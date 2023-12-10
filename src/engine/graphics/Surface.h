@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSSURFACE_H
-#define AE_GRAPHICSSURFACE_H
+#pragma once
 
 #include <volk.h>
 #include <SDL.h>
@@ -31,5 +30,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

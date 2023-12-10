@@ -1,5 +1,4 @@
-#ifndef AE_SSS_H
-#define AE_SSS_H
+#pragma once
 
 #include "../System.h"
 
@@ -23,5 +22,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

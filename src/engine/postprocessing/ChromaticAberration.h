@@ -1,5 +1,4 @@
-#ifndef AE_CHROMATICABBERATION_H
-#define AE_CHROMATICABBERATION_H
+#pragma once
 
 #include "../System.h"
 
@@ -28,6 +27,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

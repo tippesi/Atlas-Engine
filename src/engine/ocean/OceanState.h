@@ -1,5 +1,4 @@
-#ifndef AE_OCEANSTATE_H
-#define AE_OCEANSTATE_H
+#pragma once
 
 #include "../System.h"
 
@@ -16,6 +15,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

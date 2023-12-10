@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSDESCRIPTOR_H
-#define AE_GRAPHICSDESCRIPTOR_H
+#pragma once
 
 #include "Common.h"
 
@@ -49,5 +48,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

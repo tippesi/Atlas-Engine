@@ -1,5 +1,4 @@
-#ifndef AE_FONT_H
-#define AE_FONT_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2DArray.h"
@@ -113,5 +112,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

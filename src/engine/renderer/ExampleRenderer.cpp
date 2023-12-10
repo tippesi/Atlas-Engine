@@ -116,7 +116,7 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoader(
+                auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
                     "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
                 );
 

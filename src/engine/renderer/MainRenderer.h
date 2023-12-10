@@ -1,5 +1,4 @@
-#ifndef AE_MAINRENDERER_H
-#define AE_MAINRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../graphics/GraphicsDevice.h"
@@ -162,6 +161,8 @@ namespace Atlas {
                 vec4 cameraDirection;
                 vec4 cameraUp;
                 vec4 cameraRight;
+                vec4 planetCenter;
+                float planetRadius;
                 float time;
                 float deltaTime;
                 uint32_t frameCount;
@@ -245,5 +246,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

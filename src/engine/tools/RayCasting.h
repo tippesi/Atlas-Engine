@@ -1,5 +1,4 @@
-#ifndef AE_RAYCASTING_H
-#define AE_RAYCASTING_H
+#pragma once
 
 #include "../System.h"
 #include "../Viewport.h"
@@ -50,5 +49,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

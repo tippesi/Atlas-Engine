@@ -79,7 +79,7 @@ namespace Atlas {
 
         Ref<ShaderVariant> Shader::GetVariant(std::vector<std::string> macros) {
 
-            std::sort(macros.begin(), macros.end());;
+            std::sort(macros.begin(), macros.end());
 
             {
                 std::lock_guard lock(variantMutex);
@@ -90,6 +90,20 @@ namespace Atlas {
             }
 
             auto variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
+
+            // Rollback in case there is a history and shader variant didn't compile
+            if (!variant->isComplete && historyShaderStageFiles.size()) {
+                Log::Warning("Rolling back shader due to compilation failure");
+
+                {
+                    std::lock_guard lock(variantMutex);
+                    shaderStageFiles = historyShaderStageFiles;
+                    historyShaderStageFiles.clear();
+                    shaderVariants.clear();
+                }
+
+                variant = std::make_shared<ShaderVariant>(device, shaderStageFiles, macros);
+            }
 
             // In the meanwhile another process could have created this variant, check again
             {
@@ -108,21 +122,34 @@ namespace Atlas {
 
             std::lock_guard lock(variantMutex);
 
+            std::filesystem::file_time_type maxLastModified = lastReload;
+
             bool reload = false;
             for (auto& shaderStage : shaderStageFiles) {
-                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename, shaderStage.lastModified)) {
+                std::filesystem::file_time_type lastModified;
+                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename,
+                    shaderStage.lastModified, lastModified)) {
+                    maxLastModified = std::max(maxLastModified, lastModified);
                     reload = true;
                 }
 
                 for (auto& includePath : shaderStage.includes) {
-                    auto lastModified = lastModifiedMap.find(includePath);
+                    auto lastModifiedIt = lastModifiedMap.find(includePath);
 
-                    if (lastModified == lastModifiedMap.end()) continue;
+                    if (lastModifiedIt == lastModifiedMap.end()) continue;
 
-                    if (lastModified->second > shaderStage.lastModified)
+                    if (lastModifiedIt->second > shaderStage.lastModified)
                         reload = true;
+
+                    maxLastModified = std::max(maxLastModified, lastModifiedIt->second);
                 }
             }
+
+            // This avoids consecutive reloads after a rollback
+            if (maxLastModified <= lastReload)
+                reload = false;
+            else
+                lastReload = maxLastModified;
 
             std::vector<ShaderStageFile> newShaderStageFiles;
             if (reload) {
@@ -131,6 +158,7 @@ namespace Atlas {
                         Loader::ShaderLoader::LoadFile(shaderStage.filename, shaderStage.shaderStage));
                 }
                 // Reload means clearing all existing data
+                historyShaderStageFiles = shaderStageFiles;
                 shaderStageFiles = newShaderStageFiles;
                 shaderVariants.clear();
             }

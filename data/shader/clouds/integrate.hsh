@@ -63,7 +63,7 @@ void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, ou
 
 vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
 
-    const int lightSampleCount = cloudUniforms.shadowSampleCount;
+    const int lightSampleCount = cloudUniforms.occlusionSampleCount;
 
     vec3 rayDirection = -normalize(cloudUniforms.light.direction.xyz);
 
@@ -72,9 +72,12 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
 
     float rayLength = (outDist - inDist) * 0.5;
 
+#ifdef STOCHASTIC_OCCLUSION_SAMPLING
     // Dither secondary rays
     float noiseOffset = noiseVector[ditherIdx % 4];
-    noiseOffset = 0.5;
+#else
+    float noiseOffset = 0.5;
+#endif
 
     vec4 extinctionAccumulation = vec4(0.0);
     for (int i = 0; i < lightSampleCount; i++) {
@@ -184,7 +187,7 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
 
                 float lightDotView = dot(normalize(cloudUniforms.light.direction.xyz), normalize(rayDirection));
                 vec3 lightColor = cloudUniforms.light.color.rgb * cloudUniforms.light.intensity;
-                vec4 lightExtinction =  GetExtinctionToLight(rayPos, noiseIdx++, noiseVector);
+                vec4 lightExtinction =  GetExtinctionToLight(rayPos, 1, noiseVector);
 
                 float phaseFunction = DualPhaseFunction(cloudUniforms.eccentricityFirstPhase,
                     cloudUniforms.eccentricitySecondPhase, cloudUniforms.phaseAlpha, lightDotView);

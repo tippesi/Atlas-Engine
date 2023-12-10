@@ -1,6 +1,4 @@
-
-#ifndef AE_GRAPHICINSTANCE_H
-#define AE_GRAPHICINSTANCE_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -88,5 +86,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

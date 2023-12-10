@@ -1,5 +1,4 @@
-#ifndef AE_AUDIOSTREAM_H
-#define AE_AUDIOSTREAM_H
+#pragma once
 
 #include "../System.h"
 
@@ -63,5 +62,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

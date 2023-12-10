@@ -1,5 +1,4 @@
-#ifndef AE_ASSETLOADER_H
-#define AE_ASSETLOADER_H
+#pragma once
 
 #include "../System.h"
 
@@ -149,5 +148,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

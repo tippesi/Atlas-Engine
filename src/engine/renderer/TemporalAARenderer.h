@@ -1,5 +1,4 @@
-#ifndef AE_TEMPORALAARENDERER_H
-#define AE_TEMPORALAARENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -34,5 +33,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_IMGUIWRAPPER_H
-#define AE_IMGUIWRAPPER_H
+#pragma once
 
 // ImguiExtension includes
 #include <imgui.h>
@@ -55,5 +54,3 @@ private:
     std::unordered_map<VkImageView, VkDescriptorSet> imageViewToDescriptorSetMap;
 
 };
-
-#endif

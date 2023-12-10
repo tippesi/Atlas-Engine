@@ -1,5 +1,4 @@
-#ifndef AE_CONTROLLERBUTTONEVENT_H
-#define AE_CONTROLLERBUTTONEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -58,5 +57,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

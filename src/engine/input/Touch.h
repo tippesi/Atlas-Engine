@@ -1,5 +1,4 @@
-#ifndef AE_TOUCH_H
-#define AE_TOUCH_H
+#pragma once
 
 #include "../System.h"
 #include "../events/EventManager.h"
@@ -55,5 +54,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,8 +1,8 @@
-#ifndef AE_RESOURCEMANAGER_H
-#define AE_RESOURCEMANAGER_H
+#pragma once
 
 #include "System.h"
 #include "Resource.h"
+#include "Log.h"
 #include "events/EventManager.h"
 
 #include <type_traits>
@@ -16,15 +16,30 @@ namespace Atlas {
     class ResourceManager {
 
     public:
-        template<typename ...Args>
-        static ResourceHandle<T> GetResource(const std::string& path, Args&&... args) {
+        static ResourceHandle<T> GetResource(const std::string& path) {
 
-            return GetResource(path, System, std::forward<Args>(args)...);
+            CheckInitialization();
+
+            std::lock_guard lock(mutex);
+            if (resources.contains(path)) {
+                auto& resource = resources[path];
+                resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
+                return ResourceHandle<T>(resource);
+            }
+
+            return ResourceHandle<T>();
 
         }
 
         template<typename ...Args>
-        static ResourceHandle<T> GetResource(const std::string& path, ResourceOrigin origin, Args&&... args) {
+        static ResourceHandle<T> GetOrLoadResource(const std::string& path, Args&&... args) {
+
+            return GetOrLoadResource(path, System, std::forward<Args>(args)...);
+
+        }
+
+        template<typename ...Args>
+        static ResourceHandle<T> GetOrLoadResource(const std::string& path, ResourceOrigin origin, Args&&... args) {
 
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
                           std::is_constructible<T, Args...>(),
@@ -44,31 +59,31 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
+        static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path,
             Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            return GetResourceWithLoader(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoader(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(const std::string& path, ResourceOrigin origin,
+        static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path, ResourceOrigin origin,
             Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            return GetResourceWithLoader(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoader(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(const std::string& path,
+        static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args&&... args) {
 
-            return GetResourceWithLoader(path, System, loaderFunction, std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoader(path, System, loaderFunction, std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoader(const std::string& path, ResourceOrigin origin,
+        static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path, ResourceOrigin origin,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args&&... args) {
 
             CheckInitialization();
@@ -85,14 +100,14 @@ namespace Atlas {
         }
 
         template<typename ...Args>
-        static ResourceHandle<T> GetResourceAsync(const std::string& path, Args&&... args) {
+        static ResourceHandle<T> GetOrLoadResourceAsync(const std::string& path, Args&&... args) {
 
-            return GetResourceAsync(path, System, std::forward<Args>(args)...);
+            return GetOrLoadResourceAsync(path, System, std::forward<Args>(args)...);
 
         }
 
         template<typename ...Args>
-        static ResourceHandle<T> GetResourceAsync(const std::string& path, ResourceOrigin origin, Args&&... args) {
+        static ResourceHandle<T> GetOrLoadResourceAsync(const std::string& path, ResourceOrigin origin, Args&&... args) {
 
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
                 std::is_constructible<T, Args...>(),
@@ -114,23 +129,23 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
+        static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
             Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            return GetResourceWithLoaderAsync(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoaderAsync(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
+        static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
             Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
 
-            return GetResourceWithLoaderAsync(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
+            return GetOrLoadResourceWithLoaderAsync(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path,
+        static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
             return GetResourceWithLoaderAsync(path, System, loaderFunction, std::forward<Args>(args)...);
@@ -138,7 +153,7 @@ namespace Atlas {
         }
 
         template<class ...Args>
-        static ResourceHandle<T> GetResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
+        static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
             std::function<Ref<T>(const std::string&, Args...)> loaderFunction, Args... args) {
 
             CheckInitialization();
@@ -367,5 +382,3 @@ namespace Atlas {
     std::atomic_int ResourceManager<T>::subscriberCount = 0;
 
 }
-
-#endif

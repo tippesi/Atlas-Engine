@@ -1,5 +1,4 @@
-#ifndef AE_IMAGELOADER_H
-#define AE_IMAGELOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../common/Image.h"
@@ -218,5 +217,3 @@ namespace Atlas {
     }
 
 }
-
-#endif
