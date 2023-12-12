@@ -43,16 +43,28 @@ namespace Atlas {
             auto width = renderTarget->GetWidth();
             auto height = renderTarget->GetHeight();
 
+            auto rayCount = realTime ? 2 * width * height * realTimeSamplesPerFrame : 2 * width * height;
+
             if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
                 glm::distance(camera->rotation, cameraRotation) > 1e-3f ||
-                helper.GetRayBuffer()->GetElementCount() != 2 * width * height) {
+                helper.GetRayBuffer()->GetElementCount() != rayCount) {
                 cameraLocation = camera->GetLocation();
                 cameraRotation = camera->rotation;
 
                 sampleCount = 0;
                 imageOffset = ivec2(0);
-                helper.SetRayBufferSize(width * height);
+                // Helper automatically double buffers, no need for 2 * rayCount
+                helper.SetRayBufferSize(rayCount / 2);
             }
+
+            if (realTime) {
+                imageSubdivisions = ivec2(1);
+                sampleCount = 0;
+                frameCount++;
+            }
+
+            rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
+            rayHitPipelineConfig.ManageMacro("REALTIME", realTime);
 
             // Check if the scene has changed. A change might happen when an actor has been updated,
             // new actors have been added or old actors have been removed. If this happens we update
@@ -68,6 +80,8 @@ namespace Atlas {
                 rayHitUniformBuffer.SetSize(bounces + 1);
             }
 
+            auto samplesPerFrame = realTime ? realTimeSamplesPerFrame : 1;
+
             for (int32_t i = 0; i <= bounces; i++) {
                 RayHitUniforms uniforms;
                 uniforms.maxBounces = bounces;
@@ -80,29 +94,57 @@ namespace Atlas {
 
                 uniforms.exposure = camera->exposure;
 
+                uniforms.samplesPerFrame = samplesPerFrame;
+                uniforms.maxRadiance = maxRadiance;
+
                 rayHitUniformBuffer.SetData(&uniforms, i);
             }
 
-            // Bind texture only for writing
             commandList->ImageMemoryBarrier(renderTarget->texture.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_WRITE_BIT);
-            commandList->BindImage(renderTarget->texture.image, 3, 1);
-            if (sampleCount % 2 == 0) {
-                commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT);
-                commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
-                commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
+            commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+            // Bind texture only for writing
+            if (!realTime) {
+                commandList->BindImage(renderTarget->texture.image, 3, 1);
+                if (sampleCount % 2) {
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_READ_BIT);
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_WRITE_BIT);
+                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
+                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
+                }
+                else {
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_WRITE_BIT);
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_READ_BIT);
+                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
+                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 2);
+                }
             }
             else {
-                commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT);
-                commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
-                commandList->BindImage(renderTarget->accumTexture1.image, 3, 2);
+                commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
+                if (frameCount % 2 == 0) {
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, 
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_WRITE_BIT);
+                    renderTarget->accumTexture0.Bind(commandList, 3, 2);
+                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
+                }
+                else {
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_WRITE_BIT);
+                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
+                    renderTarget->accumTexture1.Bind(commandList, 3, 2);
+                }
             }
+            
 
             auto tileResolution = resolution / imageSubdivisions;
             auto groupCount = tileResolution / 8;
@@ -113,7 +155,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Ray generation");
 
             helper.DispatchRayGen(commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
-                ivec3(groupCount.x, groupCount.y, 1), false,
+                ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
                 [=]() {
                     auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
 
@@ -122,7 +164,7 @@ namespace Atlas {
                     uniforms.right = vec4(corners[5] - corners[4], 1.0f);
                     uniforms.bottom = vec4(corners[6] - corners[4], 1.0f);
 
-                    uniforms.sampleCount = sampleCount;
+                    uniforms.sampleCount = realTime ? frameCount : sampleCount;
                     uniforms.pixelOffset = ivec2(renderTarget->GetWidth(),
                         renderTarget->GetHeight()) / imageSubdivisions * imageOffset;
 
@@ -137,6 +179,9 @@ namespace Atlas {
             
             for (int32_t i = 0; i <= bounces; i++) {
 
+                commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
                 Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
                 helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
@@ -148,6 +193,45 @@ namespace Atlas {
             }
 
             Graphics::Profiler::EndQuery();
+
+            if (realTime) {
+
+                commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT);
+                commandList->BindImage(renderTarget->texture.image, 3, 0);
+
+                struct alignas(16) PushConstants {
+                    float temporalWeight;
+                    float historyClipMax;
+                    float currentClipFactor;
+                    float exposure;
+                    int samplesPerFrame;
+                    float maxRadiance;
+                };
+
+                Graphics::Profiler::BeginQuery("Temporal");
+
+                PushConstants constants = {
+                    .exposure = camera->exposure,
+                    .samplesPerFrame = realTimeSamplesPerFrame,
+                    .maxRadiance = maxRadiance
+                };
+                commandList->PushConstants("constants", &constants);
+
+                auto pipelineConfig = PipelineConfig("pathtracer/temporal.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                groupCount = resolution / 16;
+
+                groupCount.x += ((groupCount.x * 16 == resolution.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
+
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                Graphics::Profiler::EndQuery();
+
+            }
 
             imageOffset.x++;
 

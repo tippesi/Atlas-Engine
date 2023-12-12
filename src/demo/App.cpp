@@ -152,7 +152,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = false;
+    static bool pathTrace = true;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
@@ -285,10 +285,6 @@ void App::Render(float deltaTime) {
                 }
             }
 
-            ImGui::Checkbox("Pathtrace", &pathTrace);
-
-            if (pathTrace) ImGui::SliderInt("Pathtrace bounces", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
-
             if (ImGui::CollapsingHeader("General")) {
                 static bool fullscreenMode = false;
                 static bool vsyncMode = false;
@@ -346,7 +342,13 @@ void App::Render(float deltaTime) {
                 }
 
             }
-
+            if (ImGui::CollapsingHeader("Pathtracing")) {
+                ImGui::Checkbox("Enable##Pathtrace", &pathTrace);
+                ImGui::SliderInt("Bounces##Pathtrace", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
+                ImGui::Text("Realtime");
+                ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
+                ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);                
+            }
             if (ImGui::CollapsingHeader("DDGI")) {
                 ImGui::Text("Probe count: %s", vecToString(volume->probeCount).c_str());
                 ImGui::Text("Cell size: %s", vecToString(volume->cellSize).c_str());
@@ -427,7 +429,27 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Volumetric");
                 ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
-                ImGui::SliderFloat("Bias##Shadow", &light->GetShadow()->bias, 0.0f, 2.0f);
+                auto shadow = light->GetShadow();
+                const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
+                int currentItem = 0;
+                if (shadow->resolution == 512) currentItem = 0;
+                if (shadow->resolution == 1024) currentItem = 1;
+                if (shadow->resolution == 2048) currentItem = 2;
+                if (shadow->resolution == 4096) currentItem = 3;
+                if (shadow->resolution == 8192) currentItem = 4;
+                auto prevItem = currentItem;
+                ImGui::Combo("Resolution##Shadow", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
+
+                if (currentItem != prevItem) {
+                    switch (currentItem) {
+                    case 0: shadow->SetResolution(512); break;
+                    case 1: shadow->SetResolution(1024); break;
+                    case 2: shadow->SetResolution(2048); break;
+                    case 3: shadow->SetResolution(4096); break;
+                    case 4: shadow->SetResolution(8192); break;
+                    }
+                }
+                ImGui::SliderFloat("Bias##Shadow", &shadow->bias, 0.0f, 2.0f);
             }
             if (ImGui::CollapsingHeader("Screen-space shadows (preview)")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
@@ -594,6 +616,9 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Use F11 to hide/unhide the UI");
             }
             if (ImGui::CollapsingHeader("Profiler")) {
+                bool enabled = Atlas::Graphics::Profiler::enable;
+                ImGui::Checkbox("Enable##Profiler", &enabled);
+                Atlas::Graphics::Profiler::enable = enabled;
 
                 const char* items[] = { "Chronologically", "Max time", "Min time" };
                 static int item = 0;

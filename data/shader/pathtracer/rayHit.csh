@@ -14,7 +14,11 @@
 
 layout (local_size_x = 32) in;
 
+#ifdef REALTIME
+layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
+#else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
+#endif
 
 /*
 Except for image variables qualified with the format qualifiers r32f, r32i, and r32ui, 
@@ -31,11 +35,13 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int bounceCount;
     float seed;
     float exposure;
+    int samplesPerFrame;
+    float maxRadiance;
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
 
-void EvaluateBounce(inout Ray ray, inout RayPayload payload);
+Surface EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
 float CheckVisibility(Surface surface, float lightDistance);
@@ -53,15 +59,16 @@ void main() {
         if (Uniforms.bounceCount > 0)
             payload = ReadRayPayload();
         
-        ivec2 pixel = Unflatten2D(ray.ID, Uniforms.resolution);
+        ivec2 pixel = Unflatten2D(ray.ID / Uniforms.samplesPerFrame, Uniforms.resolution);
         
-        EvaluateBounce(ray, payload);
+        Surface surface = EvaluateBounce(ray, payload);
         
         vec4 accumColor = vec4(0.0);
 
         float energy = dot(payload.throughput, vec3(1.0));
         
-        if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {            
+        if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
+#ifndef REALTIME
             if (Uniforms.sampleCount > 0)
                 accumColor = imageLoad(inAccumImage, pixel);
             
@@ -74,6 +81,16 @@ void main() {
 
             imageStore(outputImage, pixel,
                 vec4(pow(color, vec3(gamma)), 1.0));
+#else
+            uint maxValuePerSample = 0xFFFFFFFF / uint(Uniforms.samplesPerFrame);
+
+            vec3 normalizedRadiance = clamp(payload.radiance / Uniforms.maxRadiance, vec3(0.0), vec3(1.0));
+            uvec3 quantizedRadiance = clamp(uvec3(normalizedRadiance * float(maxValuePerSample)), uvec3(0u), uvec3(maxValuePerSample));
+
+            imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
+            imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
+            imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
+#endif
         }
         else {
             WriteRay(ray, payload);
@@ -82,7 +99,9 @@ void main() {
 
 }
 
-void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
+Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
+    
+    Surface surface;
     
     // If we didn't find a triangle along the ray,
     // we add the contribution of the environment map
@@ -91,12 +110,12 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb * 
             payload.throughput, vec3(10.0));
         payload.throughput = vec3(0.0);
-        return;    
+        return surface;    
     }
     
     // Unpack the compressed triangle and extract surface parameters
     Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-    Surface surface = GetSurfaceParameters(tri, ray, true, 0);
+    surface = GetSurfaceParameters(tri, ray, true, 0);
 
     // If we hit an emissive surface we need to terminate the ray
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
@@ -124,7 +143,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 
     payload.radiance += radiance;
     EvaluateIndirectLight(surface, ray, payload);
-    return;
+    return surface;
 
 }
 

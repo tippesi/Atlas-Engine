@@ -21,6 +21,8 @@ namespace Atlas {
                 texture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+                frameAccumTexture = Texture::Texture2DArray(width, height, 3, VK_FORMAT_R32_UINT);
+
                 accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
                 accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
             }
@@ -39,6 +41,8 @@ namespace Atlas {
             int32_t GetHeight() const { return height; }
 
             Texture::Texture2D texture;
+
+            Texture::Texture2DArray frameAccumTexture;
 
             Texture::Texture2D accumTexture0;
             Texture::Texture2D accumTexture1;
@@ -75,6 +79,11 @@ namespace Atlas {
             int32_t bvhDepth = 0;
             int32_t lightCount = 512;
 
+            bool realTime = true;
+            int32_t realTimeSamplesPerFrame = 1;
+
+            float maxRadiance = 65535.0f;
+
         private:
             struct alignas(16) RayGenUniforms {
                 vec4 origin;
@@ -93,6 +102,8 @@ namespace Atlas {
                 int32_t bounceCount;
                 float seed;
                 float exposure;
+                int32_t samplesPerFrame;
+                float maxRadiance;
             };
 
             Helper::RayTracingHelper helper;
@@ -108,6 +119,8 @@ namespace Atlas {
 
             Buffer::UniformBuffer rayGenUniformBuffer;
             Buffer::UniformBuffer rayHitUniformBuffer;
+
+            size_t frameCount = 0;
 
         };
 

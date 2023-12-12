@@ -18,14 +18,14 @@ namespace Atlas {
         size_t Profiler::frameIdx = -1;
 
 #ifndef AE_OS_MACOS
-        bool Profiler::activate = true;
+        std::atomic_bool Profiler::enable = true;
 #else
-        bool Profiler::activate = false;
+        std::atomic_bool Profiler::enable = false;
 #endif
 
         void Profiler::BeginFrame() {
 
-            if (!activate) return;
+            if (!enable) return;
 
             threadContextCount = 0;
             threadContexts.clear();
@@ -78,7 +78,7 @@ namespace Atlas {
 
         void Profiler::BeginThread(const std::string &name, CommandList *commandList) {
 
-            if (!activate) return;
+            if (!enable) return;
 
             // We don't expect to have more than 2000 profiler queries
             auto queryPoolDesc = QueryPoolDesc {
@@ -108,7 +108,7 @@ namespace Atlas {
 
         void Profiler::EndThread() {
 
-            if (!activate) return;
+            if (!enable) return;
 
             std::lock_guard lock(unevaluatedThreadContextsMutex);
 
@@ -121,7 +121,7 @@ namespace Atlas {
 
         void Profiler::SetCommandList(CommandList *commandList) {
 
-            if (!activate) return;
+            if (!enable) return;
 
             auto& context = GetThreadContext();
             context.commandList = commandList;
@@ -130,7 +130,7 @@ namespace Atlas {
 
         void Profiler::BeginQuery(const std::string& name) {
 
-            if (!activate) return;
+            if (!enable) return;
 
             assert(name.length() > 0 && "Query names shouldn't be empty");
 
@@ -155,7 +155,7 @@ namespace Atlas {
 
         void Profiler::EndQuery() {
 
-            if (!activate) return;
+            if (!enable) return;
 
             auto& context = GetThreadContext();
 
@@ -183,7 +183,7 @@ namespace Atlas {
 
         void Profiler::EndAndBeginQuery(const std::string& name) {
 
-            if (!activate) return;
+            if (!enable) return;
 
             EndQuery();
             BeginQuery(name);
