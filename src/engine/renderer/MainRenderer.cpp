@@ -334,6 +334,12 @@ namespace Atlas {
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
+            auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+            jitter.x /= (float)target->GetWidth();
+            jitter.y /= (float)target->GetHeight();
+
+            camera->Jitter(jitter * 0.999f);
+
             commandList->BeginCommands();
 
             Graphics::Profiler::BeginThread("Path tracing", commandList);
@@ -341,21 +347,24 @@ namespace Atlas {
 
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
 
-            auto globalUniforms = GlobalUniforms {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix,
-                .ivMatrix = camera->invViewMatrix,
-                .ipMatrix = camera->invProjectionMatrix,
-                .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
-                .jitterLast = camera->GetLastJitter(),
-                .jitterCurrent = camera->GetJitter(),
-                .cameraLocation = vec4(camera->location, 0.0f),
-                .cameraDirection = vec4(camera->direction, 0.0f),
-                .cameraUp = vec4(camera->up, 0.0f),
-                .cameraRight = vec4(camera->right, 0.0f),
-                .time = Clock::Get(),
-                .deltaTime = Clock::GetDelta()
+            auto globalUniforms = GlobalUniforms{
+                 .vMatrix = camera->viewMatrix,
+                 .pMatrix = camera->projectionMatrix,
+                 .ivMatrix = camera->invViewMatrix,
+                 .ipMatrix = camera->invProjectionMatrix,
+                 .pvMatrixLast = camera->GetLastJitteredMatrix(),
+                 .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
+                 .jitterLast = camera->GetLastJitter(),
+                 .jitterCurrent = camera->GetJitter(),
+                 .cameraLocation = vec4(camera->location, 0.0f),
+                 .cameraDirection = vec4(camera->direction, 0.0f),
+                 .cameraUp = vec4(camera->up, 0.0f),
+                 .cameraRight = vec4(camera->right, 0.0f),
+                 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+                 .planetRadius = scene->sky.planetRadius,
+                 .time = Clock::Get(),
+                 .deltaTime = Clock::GetDelta(),
+                 .frameCount = frameCount
             };
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));

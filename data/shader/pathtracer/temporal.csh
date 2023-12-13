@@ -11,14 +11,9 @@ layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (set = 3, binding = 0, rgba8) writeonly uniform image2D resolveImage;
 layout (set = 3, binding = 1, r32ui) readonly uniform uimage2DArray frameAccumImage;
-
-/*
-Except for image variables qualified with the format qualifiers r32f, r32i, and r32ui, 
-image variables must specify either memory qualifier readonly or the memory qualifier writeonly.
-Reading and writing simultaneously to other formats is not supported on OpenGL ES
-*/
 layout (set = 3, binding = 2) uniform sampler2D inAccumImage;
 layout (set = 3, binding = 3, rgba32f) writeonly uniform image2D outAccumImage;
+layout (set = 3, binding = 4) uniform sampler2D velocityTexture;
 
 layout(push_constant) uniform constants {
     float temporalWeight;
@@ -28,6 +23,9 @@ layout(push_constant) uniform constants {
     int samplesPerFrame;
     float maxRadiance;
 } pushConstants;
+
+vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
+vec2 resolution = vec2(imageSize(resolveImage));
 
 void main() {
 
@@ -44,16 +42,33 @@ void main() {
     uint maxValuePerSample = 0xFFFFFFFF / uint(pushConstants.samplesPerFrame);
     vec3 currentRadiance = vec3(vec3(frameAccumData) / float(maxValuePerSample))  / float(pushConstants.samplesPerFrame) * pushConstants.maxRadiance;
 
-    vec3 historyRadiance = texelFetch(inAccumImage, pixel, 0).rgb;
+    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
 
-    vec3 resolve = mix(currentRadiance, historyRadiance, 0.95);
+    vec2 historyUV = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    vec2 historyPixel = vec2(pixel) + velocity * resolution;
+
+    vec4 history = textureLod(inAccumImage, historyUV, 0);
+    vec3 historyRadiance = history.rgb;
+    float historyLength = history.a;
+
+    float factor = 0.95;
+    factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
+         || historyUV.y > 1.0) ? 0.0 : factor;
+
+    if (factor < 0.1) {
+        historyLength = 0.0;
+    }
+
+    factor = min(factor, historyLength / (historyLength + 1.0));
+
+    vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
     const float gamma = 1.0 / 2.2;
     vec3 color = resolve * pushConstants.exposure;
     color = vec3(1.0) - exp(-color);
     color = pow(color, vec3(gamma));
 
-    imageStore(outAccumImage, pixel, vec4(resolve, 0.0));
+    imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
     imageStore(resolveImage, pixel, vec4(color, 0.0));
 
 }

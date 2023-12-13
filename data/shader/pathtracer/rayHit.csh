@@ -16,6 +16,7 @@ layout (local_size_x = 32) in;
 
 #ifdef REALTIME
 layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
+layout (set = 3, binding = 5, rg16f) writeonly uniform image2D velocityImage;
 #else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
 #endif
@@ -66,6 +67,23 @@ void main() {
         vec4 accumColor = vec4(0.0);
 
         float energy = dot(payload.throughput, vec3(1.0));
+
+#ifdef REALTIME
+        // Write out material information and velocity into a g-buffer
+        if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
+            vec4 projPositionCurrent = globalData.pMatrix * globalData.vMatrix * vec4(surface.P, 1.0);
+            vec4 projPositionLast = globalData.pvMatrixLast * vec4(surface.P, 1.0);
+
+            vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
+            vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
+
+            ndcCurrent -= globalData.jitterCurrent;
+            ndcLast -= globalData.jitterLast;
+
+            vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
+            imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
+        }
+#endif
         
         if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
 #ifndef REALTIME
@@ -90,6 +108,8 @@ void main() {
             imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
             imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
             imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
+
+            
 #endif
         }
         else {

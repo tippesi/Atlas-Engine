@@ -143,8 +143,8 @@ namespace Atlas {
                     commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
                     renderTarget->accumTexture1.Bind(commandList, 3, 2);
                 }
-            }
-            
+                commandList->BindImage(renderTarget->velocityTexture.image, 3, 5);
+            }            
 
             auto tileResolution = resolution / imageSubdivisions;
             auto groupCount = tileResolution / 8;
@@ -198,7 +198,11 @@ namespace Atlas {
 
                 commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT);
+                commandList->ImageTransition(renderTarget->velocityTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
                 commandList->BindImage(renderTarget->texture.image, 3, 0);
+                renderTarget->velocityTexture.Bind(commandList, 3, 4);
 
                 struct alignas(16) PushConstants {
                     float temporalWeight;

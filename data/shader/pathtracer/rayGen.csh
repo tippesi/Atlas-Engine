@@ -32,9 +32,13 @@ void main() {
         // Apply a subpixel jitter to get supersampling
         float jitterX = random(vec2(float(Uniforms.sampleCount), 0.0));
         float jitterY = random(vec2(float(Uniforms.sampleCount), 1.0));
-
+#ifndef REALTIME
         vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
+#else
+        vec2 coord = globalData.jitterCurrent * 0.5 + (vec2(pixel) + vec2(0.5)) / 
+            vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
+#endif
         
         Ray ray;
         

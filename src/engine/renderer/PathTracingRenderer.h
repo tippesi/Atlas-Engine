@@ -23,8 +23,12 @@ namespace Atlas {
 
                 frameAccumTexture = Texture::Texture2DArray(width, height, 3, VK_FORMAT_R32_UINT);
 
-                accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
-                accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT);
+                velocityTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16_SFLOAT);
+
+                accumTexture0 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                accumTexture1 = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
             void Resize(int32_t width, int32_t height) {
@@ -43,6 +47,8 @@ namespace Atlas {
             Texture::Texture2D texture;
 
             Texture::Texture2DArray frameAccumTexture;
+
+            Texture::Texture2D velocityTexture;
 
             Texture::Texture2D accumTexture0;
             Texture::Texture2D accumTexture1;
