@@ -100,16 +100,21 @@ void main() {
             imageStore(outputImage, pixel,
                 vec4(pow(color, vec3(gamma)), 1.0));
 #else
-            uint maxValuePerSample = 0xFFFFFFFF / uint(Uniforms.samplesPerFrame);
+            if (Uniforms.samplesPerFrame == 1) {
+                imageStore(frameAccumImage, ivec3(pixel, 0), uvec4(floatBitsToUint(payload.radiance.r)));
+                imageStore(frameAccumImage, ivec3(pixel, 1), uvec4(floatBitsToUint(payload.radiance.g)));
+                imageStore(frameAccumImage, ivec3(pixel, 2), uvec4(floatBitsToUint(payload.radiance.b)));
+            }
+            else {
+                uint maxValuePerSample = 0xFFFFFFFF / uint(Uniforms.samplesPerFrame);
 
-            vec3 normalizedRadiance = clamp(payload.radiance / Uniforms.maxRadiance, vec3(0.0), vec3(1.0));
-            uvec3 quantizedRadiance = clamp(uvec3(normalizedRadiance * float(maxValuePerSample)), uvec3(0u), uvec3(maxValuePerSample));
+                vec3 normalizedRadiance = clamp(payload.radiance / Uniforms.maxRadiance, vec3(0.0), vec3(1.0));
+                uvec3 quantizedRadiance = clamp(uvec3(normalizedRadiance * float(maxValuePerSample)), uvec3(0u), uvec3(maxValuePerSample));
 
-            imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
-            imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
-            imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
-
-            
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
+            }
 #endif
         }
         else {
@@ -155,7 +160,7 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // will be heavily biased or not there entirely. Better lobe
     // selection etc. helps
     if (Uniforms.bounceCount > 0) {
-        const float radianceLimit = 25.0;
+        const float radianceLimit = 10.0;
         float radianceMax = max(max(radiance.r, 
             max(radiance.g, radiance.b)), radianceLimit);
         radiance *= radianceLimit / radianceMax;
@@ -268,7 +273,7 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
     // Russain roulette, terminate rays with a chance of one percent
     float probability = clamp(max(payload.throughput.r,
-        max(payload.throughput.g, payload.throughput.b)), 0.01, 0.99);
+        max(payload.throughput.g, payload.throughput.b)), 0.1, 0.99);
 
     if (random(raySeed, curSeed) > probability) {
         payload.throughput = vec3(0.0);

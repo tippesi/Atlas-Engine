@@ -81,6 +81,10 @@ namespace Atlas {
             }
 
             auto samplesPerFrame = realTime ? realTimeSamplesPerFrame : 1;
+#ifdef AE_OS_MACOS
+            // MoltenVK and Metal don't seem to support atomic add, so limit to 1 sample per frame
+            samplesPerFrame = 1;
+#endif
 
             for (int32_t i = 0; i <= bounces; i++) {
                 RayHitUniforms uniforms;
@@ -180,6 +184,8 @@ namespace Atlas {
             for (int32_t i = 0; i <= bounces; i++) {
 
                 commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageMemoryBarrier(renderTarget->velocityTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
                 Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));

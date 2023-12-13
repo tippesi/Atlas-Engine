@@ -34,13 +34,24 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
-    uvec3 frameAccumData;
-    frameAccumData.r = imageLoad(frameAccumImage, ivec3(pixel, 0)).r;
-    frameAccumData.g = imageLoad(frameAccumImage, ivec3(pixel, 1)).r;
-    frameAccumData.b = imageLoad(frameAccumImage, ivec3(pixel, 2)).r;
+    vec3 currentRadiance;
 
-    uint maxValuePerSample = 0xFFFFFFFF / uint(pushConstants.samplesPerFrame);
-    vec3 currentRadiance = vec3(vec3(frameAccumData) / float(maxValuePerSample))  / float(pushConstants.samplesPerFrame) * pushConstants.maxRadiance;
+    if (pushConstants.samplesPerFrame == 1) {
+        currentRadiance.r = uintBitsToFloat(imageLoad(frameAccumImage, ivec3(pixel, 0)).r);
+        currentRadiance.g = uintBitsToFloat(imageLoad(frameAccumImage, ivec3(pixel, 1)).r);
+        currentRadiance.b = uintBitsToFloat(imageLoad(frameAccumImage, ivec3(pixel, 2)).r);
+    }
+    else {
+        uvec3 frameAccumData;
+        frameAccumData.r = imageLoad(frameAccumImage, ivec3(pixel, 0)).r;
+        frameAccumData.g = imageLoad(frameAccumImage, ivec3(pixel, 1)).r;
+        frameAccumData.b = imageLoad(frameAccumImage, ivec3(pixel, 2)).r;
+
+        uint maxValuePerSample = 0xFFFFFFFF / uint(pushConstants.samplesPerFrame);
+        vec3 currentRadiance = vec3(vec3(frameAccumData) / float(maxValuePerSample))  /
+            float(pushConstants.samplesPerFrame) * pushConstants.maxRadiance;
+    }
+
 
     vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
 
