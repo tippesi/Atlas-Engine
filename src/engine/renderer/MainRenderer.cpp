@@ -372,6 +372,16 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
+            if (scene->sky.probe) {
+                if (scene->sky.probe->update) {
+                    FilterProbe(scene->sky.probe.get(), commandList);
+                }
+            }
+            else if (scene->sky.atmosphere) {
+                atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
+                FilterProbe(&scene->sky.atmosphere->probe, commandList);
+            }
+
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
 
             Graphics::Profiler::BeginQuery("Post processing");
