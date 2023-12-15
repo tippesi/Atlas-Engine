@@ -157,6 +157,7 @@ namespace Atlas {
 
                     gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
                     gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                    gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                     if (material->HasBaseColorMap()) {
                         auto& slices = baseColorTextureAtlas.slices[material->baseColorMap.get()];

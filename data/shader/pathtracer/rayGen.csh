@@ -36,7 +36,7 @@ void main() {
         vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
 #else
-        vec2 coord = globalData.jitterCurrent * 0.5 + (vec2(pixel) + vec2(0.5)) / 
+        vec2 coord = globalData.jitterCurrent * 0.25 + (vec2(pixel) + vec2(0.5)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
 #endif
         

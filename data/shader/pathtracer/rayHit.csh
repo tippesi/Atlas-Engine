@@ -17,6 +17,10 @@ layout (local_size_x = 32) in;
 #ifdef REALTIME
 layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
 layout (set = 3, binding = 5, rg16f) writeonly uniform image2D velocityImage;
+layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthImage;
+layout (set = 3, binding = 7, rg16f) writeonly uniform image2D normalImage;
+layout (set = 3, binding = 8, r16ui) writeonly uniform uimage2D materialIdxImage;
+layout (set = 3, binding = 9, rgba8) writeonly uniform image2D albedoImage;
 #else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
 #endif
@@ -71,17 +75,20 @@ void main() {
 #ifdef REALTIME
         // Write out material information and velocity into a g-buffer
         if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
-            vec4 projPositionCurrent = globalData.pMatrix * globalData.vMatrix * vec4(surface.P, 1.0);
+            vec4 viewSpacePos = globalData.vMatrix * vec4(surface.P, 1.0);
+            vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
             vec4 projPositionLast = globalData.pvMatrixLast * vec4(surface.P, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
 
-            ndcCurrent -= globalData.jitterCurrent;
-            ndcLast -= globalData.jitterLast;
+            //ndcCurrent -= globalData.jitterCurrent;
+            //ndcLast -= globalData.jitterLast;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
+
+            imageStore(depthImage, pixel, vec4(viewSpacePos.z, 0.0, 0.0, 0.0));
         }
 #endif
         

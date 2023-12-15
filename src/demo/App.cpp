@@ -10,8 +10,8 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 
 void App::LoadContent() {
 
-    renderTarget = Atlas::RenderTarget(1920, 1080);
-    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
+    renderTarget = Atlas::RenderTarget(2, 2);
+    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1280, 720);
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
@@ -269,7 +269,7 @@ void App::Render(float deltaTime) {
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
                                         "New Sponza", "Bistro", "Medieval", "Pica Pica",
-                                        "Subway", "Materials", "Forest"};
+                                        "Subway", "Materials", "Forest", "Emerald square"};
                 int currentItem = static_cast<int>(sceneSelection);
                 ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -327,7 +327,7 @@ void App::Render(float deltaTime) {
                 }
 
                 const char* items[] = { "1280x720", "1920x1080", "2560x1440", "3840x2160" };
-                static int resolution = 1;
+                static int resolution = 0;
                 int currentItem = resolution;
                 ImGui::Combo("Resolution##Rendering", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -343,8 +343,10 @@ void App::Render(float deltaTime) {
 
             }
             if (ImGui::CollapsingHeader("Pathtracing")) {
+                bool pathTraceEnabled = pathTrace;
                 ImGui::Checkbox("Enable##Pathtrace", &pathTrace);
                 ImGui::SliderInt("Bounces##Pathtrace", &mainRenderer->pathTracingRenderer.bounces, 0, 100);
+                ImGui::Checkbox("Sample emissives##Pathtrace", &mainRenderer->pathTracingRenderer.sampleEmissives);
                 ImGui::Text("Realtime");
                 ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
                 ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);                
@@ -776,6 +778,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
         case SUBWAY: return Atlas::Loader::AssetLoader::FileExists("subway/scene.gltf");
         case MATERIALS: return Atlas::Loader::AssetLoader::FileExists("material demo/materials.obj");
         case FOREST: return Atlas::Loader::AssetLoader::FileExists("forest/forest.gltf");
+        case EMERALDSQUARE: return Atlas::Loader::AssetLoader::FileExists("emeraldsquare/square.gltf");
         case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/main/NewSponza_Main_Blender_glTF.gltf") &&
                                Atlas::Loader::AssetLoader::FileExists("newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
                                Atlas::Loader::AssetLoader::FileExists("newsponza/curtains/NewSponza_Curtains_glTF.gltf") &&
@@ -997,6 +1000,23 @@ bool App::LoadScene() {
 
         scene->fog->enable = false;
     }
+    else if (sceneSelection == EMERALDSQUARE) {
+        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
+        otherScene->Update(&camera, 1.0f);
+
+        CopyActors(otherScene);
+
+        // Other scene related settings apart from the mesh
+        directionalLight->intensity = 10.0f;
+        directionalLight->GetVolumetric()->intensity = 0.08f;
+
+        // Setup camera
+        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.exposure = 1.0f;
+
+        scene->fog->enable = false;
+    }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
 
@@ -1032,7 +1052,7 @@ bool App::LoadScene() {
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
-    if (sceneSelection != FOREST) {
+    if (sceneSelection != FOREST && sceneSelection != EMERALDSQUARE) {
         auto meshCount = 0;
         for (auto &mesh: meshes) {
             if (meshCount == 10) {
@@ -1102,6 +1122,10 @@ void App::CheckLoadScene() {
         for (auto& mesh : meshes) {
             mesh->data.colors.Clear();
         }
+    }
+    else if (sceneSelection == PICAPICA) {
+        for (auto& material : meshes.front()->data.materials)
+            material->vertexColors = false;
     }
 
     static std::future<void> future;
@@ -1190,6 +1214,11 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(32, 32);
     }
     else if (sceneSelection == NEWSPONZA) {
+        scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
+            sceneAABB.Scale(1.05f), glm::ivec3(20));
+        scene->irradianceVolume->SetRayCount(128, 32);
+    }
+    else if (sceneSelection == EMERALDSQUARE) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.05f), glm::ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);

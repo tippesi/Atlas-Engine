@@ -59,6 +59,7 @@ namespace Atlas {
 
         int32_t invertUVs;
         int32_t twoSided;
+        int32_t useVertexColors;
 
         GPUTexture baseColorTexture;
         GPUTexture opacityTexture;

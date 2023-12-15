@@ -69,7 +69,7 @@ namespace Atlas {
             // Check if the scene has changed. A change might happen when an actor has been updated,
             // new actors have been added or old actors have been removed. If this happens we update
             // the data structures.
-            helper.SetScene(scene, 1, true);
+            helper.SetScene(scene, 1, sampleEmissives);
             helper.UpdateLights();
 
             ivec2 resolution = ivec2(width, height);
@@ -109,45 +109,31 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-            // Bind texture only for writing
             if (!realTime) {
                 commandList->BindImage(renderTarget->texture.image, 3, 1);
-                if (sampleCount % 2) {
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_READ_BIT);
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_WRITE_BIT);
-                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 2);
-                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
-                }
-                else {
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_WRITE_BIT);
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_READ_BIT);
-                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
-                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 2);
-                }
+
+                commandList->ImageMemoryBarrier(renderTarget->radianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageMemoryBarrier(renderTarget->historyRadianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT);
+                commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
+                commandList->BindImage(renderTarget->historyRadianceTexture.image, 3, 2);
             }
             else {
                 commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
-                if (frameCount % 2 == 0) {
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, 
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_WRITE_BIT);
-                    renderTarget->accumTexture0.Bind(commandList, 3, 2);
-                    commandList->BindImage(renderTarget->accumTexture1.image, 3, 3);
-                }
-                else {
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture0.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_WRITE_BIT);
-                    commandList->ImageMemoryBarrier(renderTarget->accumTexture1.image,
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                    commandList->BindImage(renderTarget->accumTexture0.image, 3, 3);
-                    renderTarget->accumTexture1.Bind(commandList, 3, 2);
-                }
+
+                commandList->ImageMemoryBarrier(renderTarget->radianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT);
+                commandList->ImageMemoryBarrier(renderTarget->historyRadianceTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
+                renderTarget->historyRadianceTexture.Bind(commandList, 3, 2);
+
                 commandList->BindImage(renderTarget->velocityTexture.image, 3, 5);
+                commandList->BindImage(renderTarget->depthTexture.image, 3, 6);
+                commandList->BindImage(renderTarget->normalTexture.image, 3, 7);
+                commandList->BindImage(renderTarget->materialIdxTexture.image, 3, 8);
+                commandList->BindImage(renderTarget->albedoTexture.image, 3, 9);
             }            
 
             auto tileResolution = resolution / imageSubdivisions;
@@ -208,7 +194,14 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
                 commandList->BindImage(renderTarget->texture.image, 3, 0);
+
                 renderTarget->velocityTexture.Bind(commandList, 3, 4);
+                renderTarget->depthTexture.Bind(commandList, 3, 5);
+                renderTarget->normalTexture.Bind(commandList, 3, 6);
+                renderTarget->materialIdxTexture.Bind(commandList, 3, 7);
+                renderTarget->historyDepthTexture.Bind(commandList, 3, 9);
+                renderTarget->historyNormalTexture.Bind(commandList, 3, 10);
+                renderTarget->historyMaterialIdxTexture.Bind(commandList, 3, 11);
 
                 struct alignas(16) PushConstants {
                     float temporalWeight;
@@ -222,6 +215,8 @@ namespace Atlas {
                 Graphics::Profiler::BeginQuery("Temporal");
 
                 PushConstants constants = {
+                    .historyClipMax = 1.0f,
+                    .currentClipFactor = 2.0f,
                     .exposure = camera->exposure,
                     .samplesPerFrame = realTimeSamplesPerFrame,
                     .maxRadiance = maxRadiance
@@ -253,6 +248,8 @@ namespace Atlas {
             if (imageOffset.y == imageSubdivisions.y) {
                 imageOffset.y = 0;
                 sampleCount++;
+
+                renderTarget->Swap();
             }
 
             commandList->ImageTransition(renderTarget->texture.image,

@@ -149,96 +149,6 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
-vec4 SampleCatmullRom(vec2 uv) {
-
-    // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
-    // Credit: Jorge Jimenez (SIGGRAPH 2016)
-    // Ignores the 4 corners of the 4x4 grid
-    // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
-    vec2 position = uv * resolution;
-
-    vec2 center = floor(position - 0.5) + 0.5;
-    vec2 f = position - center;
-    vec2 f2 = f * f;
-    vec2 f3 = f2 * f;
-
-    vec2 w0 = f2 - 0.5 * (f3 + f);
-    vec2 w1 = 1.5 * f3 - 2.5 * f2 + 1.0;
-    vec2 w3 = 0.5 * (f3 - f2);
-    vec2 w2 = 1.0 - w0 - w1 - w3;
-
-    vec2 w12 = w1 + w2;
-
-    vec2 tc0 = (center - 1.0) * invResolution;
-    vec2 tc12 = (center + w2 / w12) * invResolution;
-    vec2 tc3 = (center + 2.0) * invResolution;
-
-    vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0));
-    vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv2 = clamp(vec2(tc12.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv3 = clamp(vec2(tc3.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv4 = clamp(vec2(tc12.x, tc3.y), vec2(0.0), vec2(1.0));
-
-    float weight0 = w12.x * w0.y;
-    float weight1 = w0.x * w12.y;
-    float weight2 = w12.x * w12.y;
-    float weight3 = w3.x * w12.y;
-    float weight4 = w12.x * w3.y;
-
-    vec4 sample0 = texture(historyTexture, uv0) * weight0;
-    vec4 sample1 = texture(historyTexture, uv1) * weight1;
-    vec4 sample2 = texture(historyTexture, uv2) * weight2;
-    vec4 sample3 = texture(historyTexture, uv3) * weight3;
-    vec4 sample4 = texture(historyTexture, uv4) * weight4;
-
-    float totalWeight = weight0 + weight1 + 
-        weight2 + weight3 + weight4;
-
-    vec4 totalSample = sample0 + sample1 +
-        sample2 + sample3 + sample4;
-
-    return totalSample / totalWeight;    
-
-}
-
-void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
-
-    vec3 m1 = vec3(0.0);
-    vec3 m2 = vec3(0.0);
-    // This could be varied using the temporal variance estimation
-    // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
-    // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = kernelRadius;
-    ivec2 pixel = ivec2(gl_GlobalInvocationID);
-
-    float depth = texelFetch(depthTexture, pixel, 0).r;
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-
-    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-
-    float totalWeight = 0.0;
-
-    for (int i = -radius; i <= radius; i++) {
-        for (int j = -radius; j <= radius; j++) {
-            int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
-
-            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
-            float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
-
-            float depthPhi = max(1.0, abs(0.025 * linearDepth));
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
-        
-            m1 += sampleRadiance * weight;
-            m2 += sampleRadiance * sampleRadiance * weight;
-
-            totalWeight += weight;
-        }
-    }
-
-    mean = m1 / totalWeight;
-    std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
-}
-
 bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
     
     history = vec4(0.0);
@@ -284,11 +194,135 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         return true;
     }
 
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        float confidence = 1.0;
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+        vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.1) {
+            totalWeight += 1.0;
+            history += texelFetch(historyTexture, offsetPixel, 0);
+            historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0);
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        history /= totalWeight;
+        historyMoments /= totalWeight;
+        return true;
+    }
+
     history = vec4(0.0);
     historyMoments = vec4(0.0);
 
     return false;
 
+}
+
+void SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
+
+    // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
+    // Credit: Jorge Jimenez (SIGGRAPH 2016)
+    // Ignores the 4 corners of the 4x4 grid
+    // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
+    vec2 position = uv * resolution;
+
+    vec2 center = floor(position - 0.5) + 0.5;
+    vec2 f = position - center;
+    vec2 f2 = f * f;
+    vec2 f3 = f2 * f;
+
+    vec2 w0 = f2 - 0.5 * (f3 + f);
+    vec2 w1 = 1.5 * f3 - 2.5 * f2 + 1.0;
+    vec2 w3 = 0.5 * (f3 - f2);
+    vec2 w2 = 1.0 - w0 - w1 - w3;
+
+    vec2 w12 = w1 + w2;
+
+    vec2 tc0 = (center - 1.0) * invResolution;
+    vec2 tc12 = (center + w2 / w12) * invResolution;
+    vec2 tc3 = (center + 2.0) * invResolution;
+
+    vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+    vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+    vec2 uv2 = clamp(vec2(tc12.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+    vec2 uv3 = clamp(vec2(tc3.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+    vec2 uv4 = clamp(vec2(tc12.x, tc3.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+
+    float weight0 = w12.x * w0.y;
+    float weight1 = w0.x * w12.y;
+    float weight2 = w12.x * w12.y;
+    float weight3 = w3.x * w12.y;
+    float weight4 = w12.x * w3.y;
+    
+    vec4 sample0, sample1, sample2, sample3, sample4;
+    vec4 moments0, moments1, moments2, moments3, moments4;
+
+    SampleHistory(pixel, uv0, sample0, moments0);
+    SampleHistory(pixel, uv1, sample1, moments1);
+    SampleHistory(pixel, uv2, sample2, moments2);
+    SampleHistory(pixel, uv3, sample3, moments3);
+    SampleHistory(pixel, uv4, sample4, moments4);
+
+    sample0 *= weight0;
+    sample1 *= weight1;
+    sample2 *= weight2;
+    sample3 *= weight3;
+    sample4 *= weight4;
+
+    float totalWeight = weight0 + weight1 + 
+        weight2 + weight3 + weight4;
+
+    history = sample0 + sample1 +
+        sample2 + sample3 + sample4;
+
+}
+
+void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
+
+    vec3 m1 = vec3(0.0);
+    vec3 m2 = vec3(0.0);
+    // This could be varied using the temporal variance estimation
+    // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
+    // These are similiar to video compression artifacts, the spatial filter mostly clears them up
+    const int radius = kernelRadius;
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+
+    float totalWeight = 0.0;
+
+    for (int i = -radius; i <= radius; i++) {
+        for (int j = -radius; j <= radius; j++) {
+            int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
+
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
+            float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
+
+            float depthPhi = max(1.0, abs(0.025 * linearDepth));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
+        
+            m1 += sampleRadiance * weight;
+            m2 += sampleRadiance * sampleRadiance * weight;
+
+            totalWeight += weight;
+        }
+    }
+
+    mean = m1 / totalWeight;
+    std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
 }
 
 void main() {
@@ -313,6 +347,8 @@ void main() {
     vec4 history;
     vec4 historyMoments;
     valid = SampleHistory(pixel, historyPixel, history, historyMoments);
+
+    SampleCatmullRom(pixel, uv, history);
 
     vec3 historyColor = history.rgb;
     vec3 currentColor = texelFetch(currentTexture, pixel, 0).rgb;
@@ -364,6 +400,6 @@ void main() {
     variance = roughness <= 0.02 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));
+    imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

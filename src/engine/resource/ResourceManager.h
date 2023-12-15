@@ -180,6 +180,8 @@ namespace Atlas {
 
         static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource, bool& alreadyExisted) {
 
+            CheckInitialization();
+
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(path)) {

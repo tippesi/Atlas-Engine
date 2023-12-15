@@ -39,7 +39,8 @@ private:
         PICAPICA,
         SUBWAY,
         MATERIALS,
-        FOREST
+        FOREST,
+        EMERALDSQUARE
     };
 
     void DisplayLoadingScreen(float deltaTime);
@@ -53,7 +54,7 @@ private:
 
     void CopyActors(Ref<Atlas::Scene::Scene> otherScene);
 
-    SceneSelection sceneSelection = SPONZA;
+    SceneSelection sceneSelection = EMERALDSQUARE;
 
     Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
     Atlas::RenderTarget renderTarget;

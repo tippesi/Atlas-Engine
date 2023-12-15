@@ -124,6 +124,7 @@ struct RaytraceMaterial {
     
     int invertUVs;
     int twoSided;
+    int useVertexColors;
     
     Texture baseColorTexture;
     Texture opacityTexture;

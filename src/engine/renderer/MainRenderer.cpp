@@ -332,13 +332,15 @@ namespace Atlas {
         void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
             Scene::Scene *scene, Texture::Texture2D *texture) {
 
+            static vec2 lastJitter = vec2(0.0f);
+
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
             auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
             jitter.x /= (float)target->GetWidth();
             jitter.y /= (float)target->GetHeight();
 
-            camera->Jitter(jitter * 0.999f);
+            camera->Jitter(jitter * 0.0f);
 
             commandList->BeginCommands();
 
@@ -354,8 +356,8 @@ namespace Atlas {
                  .ipMatrix = camera->invProjectionMatrix,
                  .pvMatrixLast = camera->GetLastJitteredMatrix(),
                  .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
-                 .jitterLast = camera->GetLastJitter(),
-                 .jitterCurrent = camera->GetJitter(),
+                 .jitterLast = lastJitter,
+                 .jitterCurrent = jitter,
                  .cameraLocation = vec4(camera->location, 0.0f),
                  .cameraDirection = vec4(camera->direction, 0.0f),
                  .cameraUp = vec4(camera->up, 0.0f),
@@ -366,6 +368,8 @@ namespace Atlas {
                  .deltaTime = Clock::GetDelta(),
                  .frameCount = frameCount
             };
+
+            lastJitter = jitter;
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
