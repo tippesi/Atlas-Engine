@@ -8,7 +8,7 @@
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Buffer.h"
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "Sampler.h"
 #include "QueryPool.h"
 

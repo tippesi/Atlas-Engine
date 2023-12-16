@@ -6,7 +6,7 @@
 
 // Atlas engine includes
 #include <Window.h>
-#include <graphics/Descriptor.h>
+#include <graphics/DescriptorPool.h>
 
 class ImguiWrapper {
 

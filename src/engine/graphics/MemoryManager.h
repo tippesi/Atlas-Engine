@@ -7,7 +7,7 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "Framebuffer.h"
 #include "BLAS.h"

@@ -46,7 +46,7 @@ void App::LoadContent() {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLight = std::make_shared<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
+    directionalLight = Atlas::CreateRef<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
     directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
@@ -55,29 +55,29 @@ void App::LoadContent() {
 
     scene->sky.sun = directionalLight;
 
-    scene->ao = std::make_shared<Atlas::Lighting::AO>(16);
+    scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
     scene->ao->rt = true;
-    scene->reflection = std::make_shared<Atlas::Lighting::Reflection>(1);
+    scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
     scene->reflection->useShadowMap = true;
 
-    scene->fog = std::make_shared<Atlas::Lighting::Fog>();
+    scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
     scene->fog->enable = true;
     scene->fog->density = 0.0002f;
     scene->fog->heightFalloff = 0.0284f;
     scene->fog->height = 0.0f;
 
-    scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
+    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 1400.0f;
     scene->sky.clouds->maxHeight = 1700.0f;
     scene->sky.clouds->castShadow = false;
 
-    scene->sky.atmosphere = std::make_shared<Atlas::Lighting::Atmosphere>();
+    scene->sky.atmosphere = Atlas::CreateRef<Atlas::Lighting::Atmosphere>();
 
     scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
     scene->postProcessing.sharpen.enable = true;
     scene->postProcessing.sharpen.factor = 0.15f;
 
-    scene->sss = std::make_shared<Atlas::Lighting::SSS>();
+    scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
     LoadScene();
 
@@ -151,7 +151,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = true;
+    static bool pathTrace = false;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
@@ -722,7 +722,6 @@ void App::Render(float deltaTime) {
         Atlas::Clock::ResetAverage();
         firstFrame = false;
     }
-
 
 }
 

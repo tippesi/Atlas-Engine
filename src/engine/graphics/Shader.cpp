@@ -37,6 +37,10 @@ namespace Atlas {
                 glslCode.append("#define AE_HARDWARE_RAYTRACING\n");
             }
 
+            if (device->support.bindless) {
+                glslCode.append("#define AE_BINDLESS\n");
+            }
+
             // Extensions have to come first
             for (auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
@@ -275,6 +279,7 @@ namespace Atlas {
                 auto idx = binding.layoutBinding.binding;
                 sets[binding.set].bindings[idx] = binding;
                 sets[binding.set].layoutBindings[layoutIdx] = binding.layoutBinding;
+                sets[binding.set].bindless |= binding.bindless;
 
             }
 
@@ -283,8 +288,21 @@ namespace Atlas {
                 setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
                 setInfo.pNext = nullptr;
                 setInfo.bindingCount = sets[i].bindingCount;
-                setInfo.flags = 0;
+                setInfo.flags = sets[i].bindless ? VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT : 0;
                 setInfo.pBindings = sets[i].bindingCount ? sets[i].layoutBindings : VK_NULL_HANDLE;
+
+                VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | 
+                    VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | 
+                    VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                VkDescriptorSetLayoutBindingFlagsCreateInfo extendedInfo = {};
+                extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+                extendedInfo.bindingCount = 1;
+                extendedInfo.pBindingFlags = &bindlessFlags;
+                // Only include if there is actually something bindless
+                if (sets[i].bindless) {
+                    
+                }
+                setInfo.pNext = &extendedInfo;
 
                 VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &sets[i].layout))
             }
@@ -372,6 +390,8 @@ namespace Atlas {
                     binding.size = descriptorBinding->block.size;
                     binding.arrayElement = 0;
                     binding.valid = true;
+                    binding.bindless = descriptorBinding->array.dims_count == 1 &&
+                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
 
                     assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 

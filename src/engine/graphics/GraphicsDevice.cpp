@@ -895,10 +895,13 @@ namespace Atlas {
             features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             features12 = {};
             features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            indexingFeatures = {};
+            indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
             // Point to the next features
             features.pNext = &features11;
             features11.pNext = &features12;
+            features12.pNext = &indexingFeatures;
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
@@ -968,6 +971,10 @@ namespace Atlas {
 
             if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
                 support.shaderPrintf = true;
+            }
+
+            if (indexingFeatures.descriptorBindingPartiallyBound && indexingFeatures.runtimeDescriptorArray) {
+                support.bindless = true;
             }
 
 #ifdef AE_OS_MACOS

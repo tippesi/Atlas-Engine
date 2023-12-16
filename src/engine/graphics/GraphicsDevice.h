@@ -10,7 +10,7 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "BLAS.h"
 #include "TLAS.h"
@@ -33,6 +33,7 @@ namespace Atlas {
         struct DeviceSupport {
             bool hardwareRayTracing = false;
             bool shaderPrintf = false;
+            bool bindless = false;
         };
 
         struct CommandListSubmission {
@@ -156,6 +157,7 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
 
             DeviceSupport support;
 

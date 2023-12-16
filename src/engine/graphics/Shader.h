@@ -56,6 +56,7 @@ namespace Atlas {
             VkDescriptorSetLayoutBinding layoutBinding = {};
 
             bool valid = false;
+            bool bindless = false;
         };
 
         struct ShaderDescriptorSet {
@@ -64,6 +65,8 @@ namespace Atlas {
 
             VkDescriptorSetLayout layout = {};
             VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
+
+            bool bindless = false;
         };
 
         struct ShaderVertexInput {

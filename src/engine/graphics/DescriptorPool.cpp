@@ -1,4 +1,4 @@
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "GraphicsDevice.h"
 
 namespace Atlas {
@@ -77,7 +77,7 @@ namespace Atlas {
 
         void DescriptorPool::ResetAllocationCounters() {
 
-            for (auto& [layout, allocations] : layoutAllocationsMap) {
+            for (auto& [_, allocations] : layoutAllocationsMap) {
                 allocations.counter = 0;
             }
 
