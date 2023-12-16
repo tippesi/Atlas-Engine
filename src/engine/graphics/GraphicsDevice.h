@@ -157,7 +157,6 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
-            VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
 
             DeviceSupport support;
 

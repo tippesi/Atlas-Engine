@@ -54,6 +54,7 @@ namespace Atlas {
             uint32_t size = 0;
             uint32_t arrayElement = 0;
             VkDescriptorSetLayoutBinding layoutBinding = {};
+            VkDescriptorBindingFlags layoutBindingFlags = 0;
 
             bool valid = false;
             bool bindless = false;
@@ -65,6 +66,7 @@ namespace Atlas {
 
             VkDescriptorSetLayout layout = {};
             VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
+            VkDescriptorBindingFlags layoutBindingFlags[BINDINGS_PER_DESCRIPTOR_SET];
 
             bool bindless = false;
         };

@@ -31,7 +31,8 @@ namespace Atlas {
                 VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-                VK_KHR_RAY_QUERY_EXTENSION_NAME
+                VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
@@ -895,13 +896,10 @@ namespace Atlas {
             features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             features12 = {};
             features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-            indexingFeatures = {};
-            indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
             // Point to the next features
             features.pNext = &features11;
             features11.pNext = &features12;
-            features12.pNext = &indexingFeatures;
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
@@ -973,7 +971,8 @@ namespace Atlas {
                 support.shaderPrintf = true;
             }
 
-            if (indexingFeatures.descriptorBindingPartiallyBound && indexingFeatures.runtimeDescriptorArray) {
+            if (availableExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+                features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
                 support.bindless = true;
             }
 
@@ -988,6 +987,8 @@ namespace Atlas {
             featureBuilder.Append(portabilityFeatures);
 #endif
             featureBuilder.Append(features);
+            featureBuilder.Append(features11);
+            featureBuilder.Append(features12);
 
             VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
 

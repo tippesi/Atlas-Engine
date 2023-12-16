@@ -47,6 +47,16 @@ namespace Atlas {
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &layout;
 
+            /*
+            uint32_t maxBinding = 1;
+
+            VkDescriptorSetVariableDescriptorCountAllocateInfo countInfo = {};
+            countInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+            countInfo.descriptorSetCount = 1;
+            countInfo.pDescriptorCounts = &maxBinding;
+            allocInfo.pNext = &countInfo;
+            */
+
             VkDescriptorSet set;
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
             // Handle the pool out of memory error by allocating a new pool
@@ -102,7 +112,7 @@ namespace Atlas {
 
             VkDescriptorPoolCreateInfo poolInfo = {};
             poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            poolInfo.flags = 0;
+            poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
             poolInfo.maxSets = uint32_t(sizes.size()) * DESCRIPTOR_POOL_SIZE;
             poolInfo.poolSizeCount = uint32_t(sizes.size());
             poolInfo.pPoolSizes = sizes.data();
