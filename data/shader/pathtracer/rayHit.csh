@@ -89,6 +89,7 @@ void main() {
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
             imageStore(depthImage, pixel, vec4(viewSpacePos.z, 0.0, 0.0, 0.0));
+            imageStore(materialIdxImage, pixel, uvec4(surface.material.ID, 0.0, 0.0, 0.0));
         }
 #endif
         

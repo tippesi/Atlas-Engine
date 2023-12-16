@@ -10,8 +10,8 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 
 void App::LoadContent() {
 
-    renderTarget = Atlas::RenderTarget(2, 2);
-    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1280, 720);
+    renderTarget = Atlas::RenderTarget(1920, 1080);
+    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
@@ -65,7 +65,6 @@ void App::LoadContent() {
     scene->fog->density = 0.0002f;
     scene->fog->heightFalloff = 0.0284f;
     scene->fog->height = 0.0f;
-    scene->fog->scatteringAnisotropy = 0.0f;
 
     scene->sky.clouds = std::make_shared<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 1400.0f;
@@ -327,7 +326,7 @@ void App::Render(float deltaTime) {
                 }
 
                 const char* items[] = { "1280x720", "1920x1080", "2560x1440", "3840x2160" };
-                static int resolution = 0;
+                static int resolution = 1;
                 int currentItem = resolution;
                 ImGui::Combo("Resolution##Rendering", &currentItem, items, IM_ARRAYSIZE(items));
 

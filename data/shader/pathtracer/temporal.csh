@@ -167,6 +167,27 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
+float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx) {
+
+    float confidence = 1.0;
+
+    /*
+    vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
+    confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+    */
+
+    uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
+    confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+    float depthPhi = max(1.0, abs(0.25 * linearDepth));
+    float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
+    float historyLinearDepth = historyDepth;
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+    return confidence > 0.1 ? 1.0 : 0.0;
+
+}
+
 bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
     
     history = vec4(0.0);
@@ -178,7 +199,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
-    //uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     //vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
@@ -187,22 +208,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
-        float confidence = 1.0;
 
-        /*
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
-
-        vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
-        */
-
-        float depthPhi = max(1.0, abs(0.25 * linearDepth));
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = historyDepth;
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-
-        if (confidence > 0.1) {
+        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx) > 0.0) {
             totalWeight += weights[i];
             history += texelFetch(inAccumImage, offsetPixel, 0) * weights[i];
             //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -217,15 +224,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
-        float confidence = 1.0;
 
-        float depthPhi = max(1.0, abs(0.25 * linearDepth));
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = historyDepth;
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
-
-
-        if (confidence > 0.1) {
+        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx) > 0.0) {
             totalWeight += 1.0;
             history += texelFetch(inAccumImage, offsetPixel, 0);
             //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -237,7 +237,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         //historyMoments /= totalWeight;
         return true;
     }
-    
 
     history = vec4(0.0);
     historyMoments = vec4(0.0);
@@ -246,12 +245,27 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
 }
 
-void SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history, out vec4 historyMoments) {
+vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, uint materialIdx) {
+
+    pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
+
+    weight *= IsHistoryPixelValid(pixel, linearDepth, materialIdx);
+
+    return texelFetch(inAccumImage, pixel, 0) * weight;
+
+}
+
+bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
 
     // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
     // Credit: Jorge Jimenez (SIGGRAPH 2016)
     // Ignores the 4 corners of the 4x4 grid
     // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
+    
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    //vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+
     vec2 position = uv * resolution;
 
     vec2 center = floor(position - 0.5) + 0.5;
@@ -264,47 +278,37 @@ void SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history, out vec4 historyMo
     vec2 w3 = 0.5 * (f3 - f2);
     vec2 w2 = 1.0 - w0 - w1 - w3;
 
-    vec2 w12 = w1 + w2;
+    ivec2 uv0 = ivec2(center - 1.0);
+    ivec2 uv1 = ivec2(center);
+    ivec2 uv2 = ivec2(center + 1.0);
+    ivec2 uv3 = ivec2(center + 2.0);
 
-    vec2 tc0 = (center - 1.0) * invResolution;
-    vec2 tc12 = (center + w2 / w12) * invResolution;
-    vec2 tc3 = (center + 2.0) * invResolution;
+    ivec2 uvs[4] = { uv0, uv1, uv2, uv3 };
+    vec2 weights[4] = { w0, w1, w2, w3 };
 
-    vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
-    vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
-    vec2 uv2 = clamp(vec2(tc12.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
-    vec2 uv3 = clamp(vec2(tc3.x, tc12.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
-    vec2 uv4 = clamp(vec2(tc12.x, tc3.y), vec2(0.0), vec2(1.0)) * resolution - vec2(0.5);
+    history = vec4(0.0);
 
-    float weight0 = w12.x * w0.y;
-    float weight1 = w0.x * w12.y;
-    float weight2 = w12.x * w12.y;
-    float weight3 = w3.x * w12.y;
-    float weight4 = w12.x * w3.y;
+    float totalWeight = 0.0;
+
+    for (int x = 0; x <= 3; x++) {
+        for (int y = 0; y <= 3; y++) {
+
+            float weight = weights[x].x * weights[y].y;
+            ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
+
+            history += GetCatmullRomSample(uv, weight, depth, materialIdx);
+            totalWeight += weight;
+
+        }
+    }
     
-    vec4 sample0, sample1, sample2, sample3, sample4;
-    vec4 moments0, moments1, moments2, moments3, moments4;
-
-    SampleHistory(pixel, uv0, sample0, moments0);
-    SampleHistory(pixel, uv1, sample1, moments1);
-    SampleHistory(pixel, uv2, sample2, moments2);
-    SampleHistory(pixel, uv3, sample3, moments3);
-    SampleHistory(pixel, uv4, sample4, moments4);
-
-    sample0 *= weight0;
-    sample1 *= weight1;
-    sample2 *= weight2;
-    sample3 *= weight3;
-    sample4 *= weight4;
-
-    float totalWeight = weight0 + weight1 + 
-        weight2 + weight3 + weight4;
-
-    history = sample0 + sample1 +
-        sample2 + sample3 + sample4;
-
-    history /= totalWeight;
-
+    if (totalWeight > 0.01) {
+        history /= totalWeight;
+        return true;
+    }
+   
+    return false;
+    
 }
 
 void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
@@ -359,7 +363,7 @@ void main() {
 
     vec3 currentRadiance = FetchTexel(pixel);
 
-    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
+    vec2 velocity = texelFetch(velocityTexture, pixel + offset, 0).rg;
 
     vec2 historyUV = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
@@ -369,11 +373,10 @@ void main() {
     vec4 historyMoments;
     valid = SampleHistory(pixel, historyPixel, history, historyMoments);
     float historyLength = history.a;
-
-    SampleCatmullRom(pixel, historyUV, history, historyMoments);
-
     vec3 historyRadiance = history.rgb;
-    
+
+    bool success = SampleCatmullRom(pixel, historyUV, history);
+    historyRadiance = success ? history.rgb : historyRadiance;  
 
     vec3 historyNeighbourhoodMin = mean - std;
     vec3 historyNeighbourhoodMax = mean + std;

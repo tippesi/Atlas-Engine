@@ -9,6 +9,8 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
     Material mat;
     rayMat = materials[tri.materialIndex];
 
+    mat.ID = uint(tri.materialIndex);
+
     mat.baseColor = vec3(rayMat.baseR, rayMat.baseG, rayMat.baseB);
     mat.emissiveColor = vec3(rayMat.emissR, rayMat.emissG, rayMat.emissB);
     mat.transmissiveColor = vec3(0.0);
