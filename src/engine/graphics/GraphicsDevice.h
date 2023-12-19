@@ -10,6 +10,7 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
+#include "DescriptorSetLayout.h"
 #include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "BLAS.h"
@@ -115,6 +116,8 @@ namespace Atlas {
             Ref<Image> CreateImage(ImageDesc desc);
 
             Ref<Sampler> CreateSampler(SamplerDesc desc);
+
+            Ref<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc);
 
             Ref<DescriptorPool> CreateDescriptorPool();
 
@@ -264,6 +267,7 @@ namespace Atlas {
             Resources<MultiBuffer> multiBuffers;
             Resources<Image> images;
             Resources<Sampler> samplers;
+            Resources<DescriptorSetLayout> descriptorSetLayouts;
             Resources<DescriptorPool> descriptorPools;
             Resources<QueryPool> queryPools;
             Resources<BLAS> blases;

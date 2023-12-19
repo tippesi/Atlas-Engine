@@ -376,28 +376,34 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-            if (scene->sky.probe) {
-                if (scene->sky.probe->update) {
-                    FilterProbe(scene->sky.probe.get(), commandList);
-                }
-            }
-            else if (scene->sky.atmosphere) {
+            // No probe filtering required
+            if (scene->sky.atmosphere) {
                 atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
-                FilterProbe(&scene->sky.atmosphere->probe, commandList);
             }
 
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
 
-            Graphics::Profiler::BeginQuery("Post processing");
+            if (pathTracingRenderer.realTime) {
+                taaRenderer.Render(viewport, target, camera, scene, commandList);
 
-            commandList->BeginRenderPass(device->swapChain, true);
+                postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+            }
+            else {
+                Graphics::Profiler::BeginQuery("Post processing");
+
+                if (device->swapChain->isComplete) {
+                    commandList->BeginRenderPass(device->swapChain, true);
+
+                    textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
+                        0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
+
+                    commandList->EndRenderPass();
+                }
+
+                Graphics::Profiler::EndQuery();
+            }
             
-            textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
-            commandList->EndRenderPass();
-
-            Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
 
             commandList->EndCommands();

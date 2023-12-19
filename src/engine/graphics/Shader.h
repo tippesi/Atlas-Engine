@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "DescriptorSetLayout.h"
+
 #include <vector>
 #include <string>
 #include <mutex>
@@ -53,22 +55,17 @@ namespace Atlas {
             uint32_t set = 0;
             uint32_t size = 0;
             uint32_t arrayElement = 0;
-            VkDescriptorSetLayoutBinding layoutBinding = {};
-            VkDescriptorBindingFlags layoutBindingFlags = 0;
+           
+            DescriptorSetBinding binding;
 
             bool valid = false;
-            bool bindless = false;
         };
 
         struct ShaderDescriptorSet {
             ShaderDescriptorBinding bindings[BINDINGS_PER_DESCRIPTOR_SET];
             uint32_t bindingCount = 0;
 
-            VkDescriptorSetLayout layout = {};
-            VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorBindingFlags layoutBindingFlags[BINDINGS_PER_DESCRIPTOR_SET];
-
-            bool bindless = false;
+            Ref<DescriptorSetLayout> layout;
         };
 
         struct ShaderVertexInput {

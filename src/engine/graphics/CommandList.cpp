@@ -884,7 +884,7 @@ namespace Atlas {
                     // This probably is an old binding, which isn't used by this shader
                     if (!binding.valid) continue;
                     // Check that the descriptor types match up
-                    const auto descriptorType = binding.layoutBinding.descriptorType;
+                    const auto descriptorType = binding.binding.descriptorType;
                     if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
                         descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
                         continue;
@@ -908,7 +908,7 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        auto descriptorType = binding.layoutBinding.descriptorType;
+                        auto descriptorType = binding.binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
                             descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
 
@@ -938,7 +938,7 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        auto descriptorType = binding.layoutBinding.descriptorType;
+                        auto descriptorType = binding.binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) continue;
 
                         auto buffer = descriptorBindingData.buffers[i][j];
@@ -968,7 +968,7 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                             continue;
 
@@ -998,7 +998,7 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
                             continue;
 
@@ -1028,7 +1028,7 @@ namespace Atlas {
                         // This probably is an old binding, which isn't used by this shader
                         if (!binding.valid) continue;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
                             continue;
 

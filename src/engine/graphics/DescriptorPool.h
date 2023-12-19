@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "DescriptorSet.h"
 
 #include <vector>
 #include <unordered_map>
@@ -23,9 +24,9 @@ namespace Atlas {
 
             void ResetAllocationCounters();
 
-            VkDescriptorSet GetCachedSet(VkDescriptorSetLayout layout);
+            VkDescriptorSet GetCachedSet(Ref<DescriptorSetLayout>& layout);
 
-            VkDescriptorSet Allocate(VkDescriptorSetLayout layout);
+            VkDescriptorSet Allocate(Ref<DescriptorSetLayout>& layout);
 
             VkDescriptorPool GetNativePool();
 
@@ -39,7 +40,7 @@ namespace Atlas {
 
             GraphicsDevice* device;
             std::vector<VkDescriptorPool> pools;
-            std::unordered_map<VkDescriptorSetLayout, LayoutAllocations> layoutAllocationsMap;
+            std::unordered_map<Ref<DescriptorSetLayout>, LayoutAllocations> layoutAllocationsMap;
 
             uint32_t poolIdx = 0;
 

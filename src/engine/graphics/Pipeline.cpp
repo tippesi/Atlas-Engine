@@ -149,7 +149,7 @@ namespace Atlas {
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 // We need to check if there are any bindings at all
                 //if (!shader->sets[i].bindingCount) continue;
-                descriptorSetLayouts.push_back(shader->sets[i].layout);
+                descriptorSetLayouts.push_back(shader->sets[i].layout->layout);
             }
 
             if (descriptorSetLayouts.size() > 0) {

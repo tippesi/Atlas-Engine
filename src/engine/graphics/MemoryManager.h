@@ -7,6 +7,7 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
+#include "DescriptorSetLayout.h"
 #include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "Framebuffer.h"
@@ -71,6 +72,8 @@ namespace Atlas {
 
             void DestroyAllocation(Ref<Sampler>& allocation);
 
+            void DestroyAllocation(Ref<DescriptorSetLayout>& allocation);
+
             void DestroyAllocation(Ref<DescriptorPool>& allocation);
 
             void DestroyAllocation(Ref<QueryPool>& allocation);
@@ -121,6 +124,7 @@ namespace Atlas {
             std::deque<DeleteResource<MultiBuffer>> deleteMultiBufferAllocations;
             std::deque<DeleteResource<Image>> deleteImageAllocations;
             std::deque<DeleteResource<Sampler>> deleteSamplerAllocations;
+            std::deque<DeleteResource<DescriptorSetLayout>> deleteDescriptorSetLayoutAllocations;
             std::deque<DeleteResource<DescriptorPool>> deleteDescriptorPoolAllocations;
             std::deque<DeleteResource<QueryPool>> deleteQueryPoolAllocations;
             std::deque<DeleteResource<BLAS>> deleteBLASAllocations;

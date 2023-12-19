@@ -368,7 +368,7 @@ void main() {
         historyColor, currentColor);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    historyColor = mix(historyColor, currentColor, adjClipBlend);
+    //historyColor = mix(historyColor, currentColor, adjClipBlend);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     Material material = UnpackMaterial(materialIdx);
@@ -376,7 +376,8 @@ void main() {
     float roughness = material.roughness;
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
-    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, pushConstants.temporalWeight);
+    float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
+    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, temporalWeight);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 

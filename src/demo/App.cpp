@@ -3,12 +3,22 @@
 #include <chrono>
 #include <thread>
 
+#include <graphics/DescriptorSet.h>
+
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
     .shaderDirectory = "shader"
 };
 
 void App::LoadContent() {
+
+    Atlas::Graphics::DescriptorSetLayoutDesc layoutDesc = {
+        .bindings = {
+            { .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER  },
+            { .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER  },
+        },
+        .bindingCount = 2,
+    };
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
@@ -1124,6 +1134,11 @@ void App::CheckLoadScene() {
     else if (sceneSelection == PICAPICA) {
         for (auto& material : meshes.front()->data.materials)
             material->vertexColors = false;
+    }
+    else if (sceneSelection == EMERALDSQUARE) {
+        for (auto& mesh : meshes)
+            for (auto& material : mesh->data.materials)
+                material->metalness = 0.0f;
     }
 
     static std::future<void> future;

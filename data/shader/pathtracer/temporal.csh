@@ -302,13 +302,13 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.01) {
+    if (totalWeight > 0.25) {
         history /= totalWeight;
-        return true;
-    }
    
+    return true;
+    }
+
     return false;
-    
 }
 
 void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
@@ -363,7 +363,7 @@ void main() {
 
     vec3 currentRadiance = FetchTexel(pixel);
 
-    vec2 velocity = texelFetch(velocityTexture, pixel + offset, 0).rg;
+    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
 
     vec2 historyUV = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
@@ -376,7 +376,7 @@ void main() {
     vec3 historyRadiance = history.rgb;
 
     bool success = SampleCatmullRom(pixel, historyUV, history);
-    historyRadiance = success ? history.rgb : historyRadiance;  
+    historyRadiance = success && valid ? history.rgb : historyRadiance;  
 
     vec3 historyNeighbourhoodMin = mean - std;
     vec3 historyNeighbourhoodMax = mean + std;
@@ -389,7 +389,7 @@ void main() {
         historyRadiance, currentRadiance);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax * 0.2);
     currentRadiance = clamp(currentRadiance, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
+    //historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
 
     float factor = 0.95;
     factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
@@ -403,12 +403,7 @@ void main() {
 
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
-    const float gamma = 1.0 / 2.2;
-    vec3 color = resolve * pushConstants.exposure;
-    color = vec3(1.0) - exp(-color);
-    color = pow(color, vec3(gamma));
-
     imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
-    imageStore(resolveImage, pixel, vec4(color, 0.0));
+    //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), 0.0));
 
 }

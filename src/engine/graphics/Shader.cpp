@@ -259,7 +259,7 @@ namespace Atlas {
                     for (uint32_t i = 0; i < set.bindingCount; i++) {
                         auto& binding = set.bindings[i];
                         if (bindings.contains(binding.hash)) {
-                            bindings[binding.hash].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
+                            bindings[binding.hash].binding.stageFlags |= shaderModule.shaderStageFlag;
                         }
                         else {
                             bindings[binding.hash] = binding;
@@ -272,34 +272,21 @@ namespace Atlas {
                 pushConstantRanges.push_back(range);
             }
 
+            DescriptorSetLayoutDesc layoutDesc[DESCRIPTOR_SET_COUNT];
             for (auto& [key, binding] : bindings) {
 
                 auto layoutIdx = sets[binding.set].bindingCount++;
 
-                auto idx = binding.layoutBinding.binding;
+                auto idx = binding.binding.bindingIdx;
                 sets[binding.set].bindings[idx] = binding;
-                sets[binding.set].layoutBindings[layoutIdx] = binding.layoutBinding;
-                sets[binding.set].layoutBindingFlags[layoutIdx] = binding.layoutBindingFlags;
-                sets[binding.set].bindless |= binding.bindless;
 
+                layoutDesc[binding.set].bindings[layoutIdx] = binding.binding;
             }
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                VkDescriptorSetLayoutCreateInfo setInfo = {};
-                setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                setInfo.pNext = nullptr;
-                setInfo.bindingCount = sets[i].bindingCount;
-                setInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-                setInfo.pBindings = sets[i].bindingCount ? sets[i].layoutBindings : VK_NULL_HANDLE;
+                layoutDesc[i].bindingCount = sets[i].bindingCount;
 
-                VkDescriptorSetLayoutBindingFlagsCreateInfo extendedInfo = {};
-                extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-                extendedInfo.bindingCount = sets[i].bindingCount;
-                extendedInfo.pBindingFlags = sets[i].bindingCount ? sets[i].layoutBindingFlags : VK_NULL_HANDLE;
-                // Only include if there is actually something bindless
-                setInfo.pNext = &extendedInfo;
-
-                VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &sets[i].layout))
+                sets[i].layout = device->CreateDescriptorSetLayout(layoutDesc[i]);
             }
 
             isComplete = true;
@@ -309,10 +296,6 @@ namespace Atlas {
         ShaderVariant::~ShaderVariant() {
 
             if (!isComplete) return;
-
-            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                vkDestroyDescriptorSetLayout(device->device, sets[i].layout, nullptr);
-            }
 
             for (auto module : modules) {
                 vkDestroyShaderModule(device->device, module, nullptr);
@@ -385,37 +368,22 @@ namespace Atlas {
                     binding.size = descriptorBinding->block.size;
                     binding.arrayElement = 0;
                     binding.valid = true;
-                    binding.bindless = descriptorBinding->array.dims_count == 1 &&
-                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
 
                     assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 
-                    binding.layoutBinding.binding = descriptorBinding->binding;
-                    binding.layoutBinding.descriptorCount = descriptorBinding->count;
-                    binding.layoutBinding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
-                    binding.layoutBinding.stageFlags = shaderModule.shaderStageFlag;
+                    binding.binding.bindingIdx = descriptorBinding->binding;
+                    binding.binding.descriptorCount = descriptorBinding->count;
+                    binding.binding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
+                    binding.binding.stageFlags = shaderModule.shaderStageFlag;
+                    binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
+                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
 
-                    binding.layoutBinding.descriptorType =
-                        binding.layoutBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.layoutBinding.descriptorType;
-
-                    VkDescriptorBindingFlags bindingFlags = 0;
-
-                    // These are not allowed to be bindless
-                    if (binding.layoutBinding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC &&
-                        binding.layoutBinding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-                        bindingFlags |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-
-                        if (binding.bindless) {
-                            //bindingFlags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
-                        }
-                    }
-
-                    binding.layoutBindingFlags = bindingFlags;
+                    binding.binding.descriptorType =
+                        binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.binding.descriptorType;
 
                     HashCombine(binding.hash, binding.set);
-                    HashCombine(binding.hash, binding.layoutBinding.binding);
+                    HashCombine(binding.hash, binding.binding.bindingIdx);
 
                     bindGroup.bindings[i] = binding;
                     bindGroup.bindingCount++;

@@ -19,7 +19,7 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::GetCachedSet(VkDescriptorSetLayout layout) {
+        VkDescriptorSet DescriptorPool::GetCachedSet(Ref<DescriptorSetLayout>& layout) {
 
             // This approach might lead to memory issues. Need to release
             // the cached descriptors at some point
@@ -38,14 +38,14 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::Allocate(VkDescriptorSetLayout layout) {
+        VkDescriptorSet DescriptorPool::Allocate(Ref<DescriptorSetLayout>& layout) {
 
             VkDescriptorSetAllocateInfo allocInfo = {};
             allocInfo.pNext = nullptr;
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             allocInfo.descriptorPool = pools[poolIdx];
             allocInfo.descriptorSetCount = 1;
-            allocInfo.pSetLayouts = &layout;
+            allocInfo.pSetLayouts = &layout->layout;
 
             /*
             uint32_t maxBinding = 1;

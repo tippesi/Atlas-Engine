@@ -6,6 +6,9 @@
 #include "../graphics/ASBuilder.h"
 #include "../common/ColorConverter.h"
 
+#include <unordered_map>
+#include <set>
+
 namespace Atlas {
 
     namespace Scene {
@@ -208,12 +211,12 @@ namespace Atlas {
 
             auto meshes = scene->GetMeshes();
 
-            std::vector<Ref<Texture::Texture2D>> baseColorTextures;
-            std::vector<Ref<Texture::Texture2D>> opacityTextures;
-            std::vector<Ref<Texture::Texture2D>> normalTextures;
-            std::vector<Ref<Texture::Texture2D>> roughnessTextures;
-            std::vector<Ref<Texture::Texture2D>> metalnessTextures;
-            std::vector<Ref<Texture::Texture2D>> aoTextures;
+            std::set<Ref<Texture::Texture2D>> baseColorTextures;
+            std::set<Ref<Texture::Texture2D>> opacityTextures;
+            std::set<Ref<Texture::Texture2D>> normalTextures;
+            std::set<Ref<Texture::Texture2D>> roughnessTextures;
+            std::set<Ref<Texture::Texture2D>> metalnessTextures;
+            std::set<Ref<Texture::Texture2D>> aoTextures;
 
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
@@ -224,17 +227,17 @@ namespace Atlas {
                         continue;
 
                     if (material->HasBaseColorMap())
-                        baseColorTextures.push_back(material->baseColorMap);
+                        baseColorTextures.emplace(material->baseColorMap);
                     if (material->HasOpacityMap())
-                        opacityTextures.push_back(material->opacityMap);
+                        opacityTextures.emplace(material->opacityMap);
                     if (material->HasNormalMap())
-                        normalTextures.push_back(material->normalMap);
+                        normalTextures.emplace(material->normalMap);
                     if (material->HasRoughnessMap())
-                        roughnessTextures.push_back(material->roughnessMap);
+                        roughnessTextures.emplace(material->roughnessMap);
                     if (material->HasMetalnessMap())
-                        metalnessTextures.push_back(material->metalnessMap);
+                        metalnessTextures.emplace(material->metalnessMap);
                     if (material->HasAoMap())
-                        aoTextures.push_back(material->aoMap);
+                        aoTextures.emplace(material->aoMap);
                 }
             }
 

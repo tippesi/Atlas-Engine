@@ -147,6 +147,11 @@ namespace Atlas {
                 poolRef.reset();
             }
 
+            for (auto& descLayoutRef : descriptorSetLayouts.data) {
+                assert(descLayoutRef.use_count() == 1 && "Descriptor layout wasn't deallocated or allocated wrongly");
+                descLayoutRef.reset();
+            }
+
             for (auto& poolRef : queryPools.data) {
                 assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
@@ -294,6 +299,17 @@ namespace Atlas {
             samplers.data.push_back(sampler);
 
             return sampler;
+
+        }
+
+        Ref<DescriptorSetLayout> GraphicsDevice::CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc) {
+
+            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+
+            std::lock_guard<std::mutex> guard(descriptorSetLayouts.mutex);
+            descriptorSetLayouts.data.push_back(layout);
+
+            return layout;
 
         }
 
@@ -1055,6 +1071,7 @@ namespace Atlas {
             DeleteOutdatedResources<MultiBuffer>(multiBuffers);
             DeleteOutdatedResources<Image>(images);
             DeleteOutdatedResources<Sampler>(samplers);
+            DeleteOutdatedResources<DescriptorSetLayout>(descriptorSetLayouts);
             DeleteOutdatedResources<DescriptorPool>(descriptorPools);
             DeleteOutdatedResources<QueryPool>(queryPools);
             DeleteOutdatedResources<BLAS>(blases);

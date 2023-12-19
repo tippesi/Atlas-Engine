@@ -93,13 +93,15 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
 
     float minWeight = 1.0;
 
+    referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
 
-        float depth = depths[sharedMemoryOffset];
+        float depth = ConvertDepthToViewSpaceDepth(depths[sharedMemoryOffset]);
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        float depthWeight = min(exp(-depthDiff), 1.0);
         minWeight = min(minWeight, depthWeight);
 
         invocationDepths[i] = depth;

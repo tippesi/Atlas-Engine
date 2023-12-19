@@ -26,6 +26,7 @@ namespace Atlas {
                 albedoTexture = Texture::Texture2D(width, height, VK_FORMAT_R8G8B8A8_UNORM);
 
                 velocityTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16_SFLOAT);
+                historyVelocityTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16_SFLOAT);
 
                 depthTexture = Texture::Texture2D(width, height, VK_FORMAT_R32_SFLOAT);
                 historyDepthTexture = Texture::Texture2D(width, height, VK_FORMAT_R32_SFLOAT);
@@ -40,6 +41,11 @@ namespace Atlas {
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
                 historyRadianceTexture = Texture::Texture2D(width, height, VK_FORMAT_R32G32B32A32_SFLOAT,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+                postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                historyPostProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
             void Resize(int32_t width, int32_t height) {
@@ -51,7 +57,9 @@ namespace Atlas {
                 frameAccumTexture.Resize(width, height, 3);
 
                 albedoTexture.Resize(width, height);
+
                 velocityTexture.Resize(width, height);
+                historyVelocityTexture.Resize(width, height);
 
                 depthTexture.Resize(width, height);
                 historyDepthTexture.Resize(width, height);
@@ -64,14 +72,19 @@ namespace Atlas {
 
                 radianceTexture.Resize(width, height);
                 historyRadianceTexture.Resize(width, height);
+
+                postProcessTexture.Resize(width, height);
+                historyPostProcessTexture.Resize(width, height);
             }
 
             void Swap() {
 
                 std::swap(radianceTexture, historyRadianceTexture);
+                std::swap(velocityTexture, historyVelocityTexture);
                 std::swap(depthTexture, historyDepthTexture);
                 std::swap(normalTexture, historyNormalTexture);
                 std::swap(materialIdxTexture, historyMaterialIdxTexture);
+                std::swap(postProcessTexture, historyPostProcessTexture);
 
             }
 
@@ -88,12 +101,16 @@ namespace Atlas {
             Texture::Texture2D normalTexture;
             Texture::Texture2D materialIdxTexture;
 
+            Texture::Texture2D historyVelocityTexture;
             Texture::Texture2D historyDepthTexture;
             Texture::Texture2D historyNormalTexture;
             Texture::Texture2D historyMaterialIdxTexture;
 
             Texture::Texture2D radianceTexture;
             Texture::Texture2D historyRadianceTexture;
+
+            Texture::Texture2D postProcessTexture;
+            Texture::Texture2D historyPostProcessTexture;
 
             int32_t sampleCount = 0;
 

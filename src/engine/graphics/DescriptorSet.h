@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "DescriptorSetLayout.h"
 
 #include <vector>
 #include <unordered_map>
@@ -11,19 +12,6 @@ namespace Atlas {
 
         class GraphicsDevice;
         class MemoryManager;
-
-        enum class DescriptorSetBindingType {
-
-        };
-
-        struct DescriptorSetBinding {
-            uint32_t bindingIdx;
-
-        };
-
-        class DescriptorSetLayout {
-
-        };
 
         /**
         * Should allow to be specified by hand (e.g. to allow efficient bindless sets)
@@ -49,6 +37,9 @@ namespace Atlas {
             void WriteTLAS();
 
             void PushWrites();
+
+            bool bindless = false;
+            bool updateAfterBind = false;
 
         private:
             VkDescriptorSet set;
