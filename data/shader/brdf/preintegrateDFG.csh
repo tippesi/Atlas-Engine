@@ -5,7 +5,7 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
-layout (set = 0, binding = 0, rgba16f) writeonly uniform image2D textureOut;
+layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 
 const uint sampleCount = 4096u;
 

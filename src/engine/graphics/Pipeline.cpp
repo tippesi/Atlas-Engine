@@ -148,7 +148,7 @@ namespace Atlas {
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 // We need to check if there are any bindings at all
-                //if (!shader->sets[i].bindingCount) continue;
+                //if (!shader->sets[i].) continue;
                 descriptorSetLayouts.push_back(shader->sets[i].layout->layout);
             }
 

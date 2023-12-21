@@ -9,8 +9,9 @@ namespace Atlas {
 		DescriptorSetLayout::DescriptorSetLayout(GraphicsDevice* device, const DescriptorSetLayoutDesc& desc) :
             device(device) {
 
-            std::vector<VkDescriptorSetLayoutBinding> layoutBindings(desc.bindingCount);
-            std::vector<VkDescriptorBindingFlags> layoutBindingFlags(desc.bindingCount);
+            bindings.resize(desc.bindingCount);
+            layoutBindings.resize(desc.bindingCount);
+            layoutBindingFlags.resize(desc.bindingCount);
 
             bool bindlessAllowed = true;
             bool bindlessNeeded = false;
@@ -26,6 +27,7 @@ namespace Atlas {
                     (layoutBinding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                 bindlessNeeded |= desc.bindings[i].bindless;
 
+                bindings[i] = desc.bindings[i];
                 layoutBindings[i] = layoutBinding;
             }
 
@@ -68,6 +70,51 @@ namespace Atlas {
             vkDestroyDescriptorSetLayout(device->device, layout, nullptr);
 
 		}
+
+        bool DescriptorSetLayout::IsCompatible(const Ref<DescriptorSetLayout>& that) const {
+
+            if (that->layoutBindings.size() > layoutBindings.size())
+                return false;
+
+            for (size_t i = 0; i < that->layoutBindings.size(); i++) {
+
+                bool found = false;
+                auto& otherBinding = that->layoutBindings[i];
+
+                for (size_t j = 0; j < layoutBindings.size(); j++) {
+                    auto& binding = layoutBindings[j];
+                    // Only check identical bindings
+                    if (binding.binding != otherBinding.binding)
+                        continue;
+
+                    if (binding.descriptorCount != otherBinding.descriptorCount ||
+                        binding.stageFlags != otherBinding.stageFlags)
+                        return false;
+
+                    // All shaders automatically use dynamic uniform buffers, so 
+                    // potentially revert this change here
+                    auto otherDescriptorType = otherBinding.descriptorType;
+                    if (otherDescriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+                        otherDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+                    auto thisDescriptorType = binding.descriptorType;
+                    if (thisDescriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+                        thisDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+                    if (otherDescriptorType != thisDescriptorType)
+                        return false;
+
+                    found = true;
+                }
+
+                if (!found)
+                    return false;
+
+            }
+
+            return true;
+
+        }
 
 	}
 

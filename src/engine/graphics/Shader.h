@@ -53,8 +53,6 @@ namespace Atlas {
             size_t hash = 0;
 
             uint32_t set = 0;
-            uint32_t size = 0;
-            uint32_t arrayElement = 0;
            
             DescriptorSetBinding binding;
 
@@ -83,6 +81,8 @@ namespace Atlas {
             ~ShaderVariant();
 
             PushConstantRange* GetPushConstantRange(const std::string& name);
+
+            bool TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set);
 
             std::vector<VkShaderModule> modules;
             std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;

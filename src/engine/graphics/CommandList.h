@@ -184,13 +184,13 @@ namespace Atlas {
 
         private:
             struct DescriptorBindingData {
-                Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                std::pair<Buffer*, uint32_t> dynamicBuffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+                Ref<DescriptorSetLayout> layouts[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
 
                 DescriptorBindingData() {
@@ -204,8 +204,7 @@ namespace Atlas {
                 void Reset() {
                     for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                            buffers[i][j] = nullptr;
-                            dynamicBuffers[i][j] = { nullptr, 0u };
+                            buffers[i][j] = { nullptr, 0u };
                             images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
                             tlases[i][j] = nullptr;
@@ -217,8 +216,7 @@ namespace Atlas {
 
                 void Reset(uint32_t set) {
                     for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        buffers[set][j] = nullptr;
-                        dynamicBuffers[set][j] = { nullptr, 0u };
+                        buffers[set][j] = { nullptr, 0u };
                         images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
                         tlases[set][j] = nullptr;

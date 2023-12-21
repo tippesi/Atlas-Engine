@@ -11,6 +11,7 @@ namespace Atlas {
 
         class GraphicsDevice;
         class MemoryManager;
+        class ShaderVariant;
 
         struct DescriptorSetBinding {
             uint32_t bindingIdx = 0;
@@ -18,6 +19,9 @@ namespace Atlas {
 
             uint32_t descriptorCount = 1;
             VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL;
+
+            uint64_t size = VK_WHOLE_SIZE;
+            uint32_t arrayElement = 0;
 
             bool bindless = false;
         };
@@ -29,10 +33,14 @@ namespace Atlas {
 
         class DescriptorSetLayout {
 
+            friend ShaderVariant;
+
         public:
             DescriptorSetLayout(GraphicsDevice* device, const DescriptorSetLayoutDesc& desc);
 
             ~DescriptorSetLayout();
+
+            bool IsCompatible(const Ref<DescriptorSetLayout>& that) const;
 
             VkDescriptorSetLayout layout = {};
 
@@ -40,6 +48,11 @@ namespace Atlas {
 
         private:
             GraphicsDevice* device;
+
+            std::vector<DescriptorSetBinding> bindings;
+
+            std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+            std::vector<VkDescriptorBindingFlags> layoutBindingFlags;
 
         };
 

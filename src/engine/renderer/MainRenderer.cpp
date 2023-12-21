@@ -22,6 +22,8 @@ namespace Atlas {
 
             this->device = device;
 
+            CreateGlobalDescriptorSetLayout();
+
             Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
             Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
 
@@ -814,6 +816,31 @@ namespace Atlas {
 
         }
 
+        void MainRenderer::CreateGlobalDescriptorSetLayout() {
+
+            auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
+                .bindings = {
+                    {
+                        .bindingIdx = 0,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    },
+                    {
+                        .bindingIdx = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                    },
+                    {
+                        .bindingIdx = 2,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    },
+                },
+                .bindingCount = 3
+            };
+
+            globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
+
+            PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);
+        }
+
         void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
 
             auto globalUniforms = GlobalUniforms {
@@ -1059,7 +1086,7 @@ namespace Atlas {
 
             uint32_t groupCount = res / 8;
 
-            commandList->BindImage(dfgPreintegrationTexture.image, 0, 0);
+            commandList->BindImage(dfgPreintegrationTexture.image, 3, 0);
             commandList->Dispatch(groupCount, groupCount, 1);
 
             barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

@@ -315,6 +315,33 @@ namespace Atlas {
 
         }
 
+        bool ShaderVariant::TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+
+            if (set >= DESCRIPTOR_SET_COUNT ||
+                !layout->IsCompatible(sets[set].layout))
+                return false;
+
+            sets[set].layout = layout;
+            sets[set].bindingCount = uint32_t(layout->bindings.size());
+
+            for (size_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
+                sets[set].bindings[i].valid = false;
+            }
+            
+            for (size_t i = 0; i < layout->layoutBindings.size(); i++) {
+                auto& binding = layout->bindings[i];
+
+                auto idx = binding.bindingIdx;
+                sets[set].bindings[idx].binding = binding;
+                sets[set].bindings[idx].valid = true;
+            }
+
+            return true;
+
+        }
+
         void ShaderVariant::GenerateReflectionData(ShaderModule &shaderModule, const std::vector<uint32_t>& spirvBinary) {
 
             SpvReflectShaderModule module;
@@ -365,8 +392,7 @@ namespace Atlas {
 
                     binding.name.assign(descriptorBinding->name);
                     binding.set = descriptorBinding->set;
-                    binding.size = descriptorBinding->block.size;
-                    binding.arrayElement = 0;
+                    
                     binding.valid = true;
 
                     assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
@@ -374,7 +400,9 @@ namespace Atlas {
                     binding.binding.bindingIdx = descriptorBinding->binding;
                     binding.binding.descriptorCount = descriptorBinding->count;
                     binding.binding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
-                    binding.binding.stageFlags = shaderModule.shaderStageFlag;
+                    binding.binding.size = descriptorBinding->block.size;
+                    binding.binding.arrayElement = 0;
+                    binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
                     binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
                         descriptorBinding->array.dims[0] == 1 && device->support.bindless;
 

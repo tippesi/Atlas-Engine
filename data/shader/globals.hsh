@@ -21,4 +21,6 @@ layout(std140, set = 0, binding = 0) uniform GlobalBuffer {
 
 layout(set = 0, binding = 1) uniform sampler2D dfgTexture;
 
-layout(set = 0, binding = 2) uniform sampler2D bindlessTextures[];
+// Binding 2 is taken by materials buffer in common/material.hsh
+
+layout(set = 0, binding = 3) uniform sampler2D bindlessTextures[];

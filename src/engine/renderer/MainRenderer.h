@@ -193,6 +193,8 @@ namespace Atlas {
                 int32_t volumeEnabled;
             };
 
+            void CreateGlobalDescriptorSetLayout();
+
             void SetUniforms(Scene::Scene* scene, Camera* camera);
 
             void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
@@ -209,6 +211,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> globalUniformBuffer;
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
+            Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
 
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray cubeVertexArray;
