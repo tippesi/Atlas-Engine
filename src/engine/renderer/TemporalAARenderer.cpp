@@ -21,6 +21,8 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("TAA");
 
+            pipelineConfig.ManageMacro("PATHTRACE", false);
+
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -74,6 +76,8 @@ namespace Atlas {
 
         void TemporalAARenderer::Render(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
+
+            pipelineConfig.ManageMacro("PATHTRACE", true);
 
             auto output = &target->postProcessTexture;
             auto history = &target->historyPostProcessTexture;            

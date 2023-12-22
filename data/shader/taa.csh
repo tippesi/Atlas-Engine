@@ -12,7 +12,10 @@ layout(set = 3, binding = 2) uniform sampler2D currentTexture;
 layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
 layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
+
+#ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
+#endif
 
 layout(push_constant) uniform constants {
     vec2 resolution;
@@ -393,8 +396,10 @@ void main() {
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 
+#ifndef PATHTRACE
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
+#endif    
 
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

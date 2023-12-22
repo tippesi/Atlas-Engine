@@ -102,31 +102,42 @@ namespace Atlas {
                 uniforms.maxRadiance = maxRadiance;
 
                 rayHitUniformBuffer.SetData(&uniforms, i);
-            }
+            }            
 
-            commandList->ImageMemoryBarrier(renderTarget->texture.image, VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_WRITE_BIT);
-            commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            std::vector<Graphics::ImageBarrier> imageBarriers;
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+            imageBarriers.push_back({ renderTarget->texture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+            imageBarriers.push_back({ renderTarget->radianceTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+            imageBarriers.push_back({ renderTarget->historyRadianceTexture.image,
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT });
 
             if (!realTime) {
                 commandList->BindImage(renderTarget->texture.image, 3, 1);
-
-                commandList->ImageMemoryBarrier(renderTarget->radianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(renderTarget->historyRadianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT);
                 commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
                 commandList->BindImage(renderTarget->historyRadianceTexture.image, 3, 2);
             }
             else {
-                commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
+                imageBarriers.push_back({ renderTarget->frameAccumTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->radianceTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->velocityTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->depthTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->normalTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->materialIdxTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
+                imageBarriers.push_back({ renderTarget->albedoTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
 
-                commandList->ImageMemoryBarrier(renderTarget->radianceTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT);
-                commandList->ImageMemoryBarrier(renderTarget->historyRadianceTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                commandList->BindImage(renderTarget->frameAccumTexture.image, 3, 1);
                 commandList->BindImage(renderTarget->radianceTexture.image, 3, 3);
+
                 renderTarget->historyRadianceTexture.Bind(commandList, 3, 2);
 
                 commandList->BindImage(renderTarget->velocityTexture.image, 3, 5);
@@ -134,7 +145,9 @@ namespace Atlas {
                 commandList->BindImage(renderTarget->normalTexture.image, 3, 7);
                 commandList->BindImage(renderTarget->materialIdxTexture.image, 3, 8);
                 commandList->BindImage(renderTarget->albedoTexture.image, 3, 9);
-            }            
+            }
+
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
             auto tileResolution = resolution / imageSubdivisions;
             auto groupCount = tileResolution / 8;
@@ -188,10 +201,28 @@ namespace Atlas {
 
             if (realTime) {
 
-                commandList->ImageMemoryBarrier(renderTarget->frameAccumTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT);
-                commandList->ImageTransition(renderTarget->velocityTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                imageBarriers.clear();
+
+                imageBarriers.push_back({ renderTarget->frameAccumTexture.image,
+                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->velocityTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->depthTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->normalTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->materialIdxTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->albedoTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->historyDepthTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->historyNormalTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+                imageBarriers.push_back({ renderTarget->historyMaterialIdxTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindImage(renderTarget->texture.image, 3, 0);
 
@@ -249,7 +280,9 @@ namespace Atlas {
                 imageOffset.y = 0;
                 sampleCount++;
 
-                renderTarget->Swap();
+                // We don't want to swap already here when rendering in realtime
+                if (!realTime)
+                    renderTarget->Swap();
             }
 
             commandList->ImageTransition(renderTarget->texture.image,

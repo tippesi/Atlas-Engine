@@ -400,6 +400,8 @@ namespace Atlas {
                 taaRenderer.Render(viewport, target, camera, scene, commandList);
 
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+
+                target->Swap();
             }
             else {
                 Graphics::Profiler::BeginQuery("Post processing");

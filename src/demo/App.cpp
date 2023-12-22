@@ -3,22 +3,12 @@
 #include <chrono>
 #include <thread>
 
-#include <graphics/DescriptorSet.h>
-
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
     .shaderDirectory = "shader"
 };
 
 void App::LoadContent() {
-
-    Atlas::Graphics::DescriptorSetLayoutDesc layoutDesc = {
-        .bindings = {
-            { .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER  },
-            { .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER  },
-        },
-        .bindingCount = 2,
-    };
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
@@ -161,7 +151,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = false;
+    static bool pathTrace = true;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;

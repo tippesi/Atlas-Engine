@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "DescriptorSet.h"
+#include "DescriptorSetLayout.h"
 
 #include <vector>
 #include <unordered_map>
