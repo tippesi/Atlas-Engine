@@ -61,12 +61,12 @@ namespace Atlas {
         int32_t twoSided;
         int32_t useVertexColors;
 
-        GPUTexture baseColorTexture;
-        GPUTexture opacityTexture;
-        GPUTexture normalTexture;
-        GPUTexture roughnessTexture;
-        GPUTexture metalnessTexture;
-        GPUTexture aoTexture;
+        int32_t baseColorTexture = -1;
+        int32_t opacityTexture = -1;
+        int32_t normalTexture = -1;
+        int32_t roughnessTexture = -1;
+        int32_t metalnessTexture = -1;
+        int32_t aoTexture = -1;
     };
 
     struct GPUAABB {

@@ -28,7 +28,9 @@ namespace Atlas {
 
         class Scene : public SceneNode, public SpacePartitioning {
 
+            friend class RTData;
             friend class Renderer::Helper::RayTracingHelper;
+            friend class Renderer::MainRenderer;
 
         public:
             /**
@@ -141,6 +143,7 @@ namespace Atlas {
 
         private:
             std::unordered_map<size_t, RegisteredMesh> rootMeshMap;
+            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
 
             RTData rtData;
 

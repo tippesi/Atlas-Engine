@@ -320,8 +320,9 @@ namespace Atlas {
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
 
             if (set >= DESCRIPTOR_SET_COUNT ||
-                !layout->IsCompatible(sets[set].layout))
+                !layout->IsCompatible(sets[set].layout)) {
                 return false;
+            }
 
             sets[set].layout = layout;
             sets[set].bindingCount = uint32_t(layout->bindings.size());

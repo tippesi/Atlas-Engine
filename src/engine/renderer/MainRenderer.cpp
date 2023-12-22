@@ -101,10 +101,15 @@ namespace Atlas {
 
             PrepareMaterials(scene, materials, materialMap);
 
+            std::vector<Ref<Graphics::Image>> images;
+            std::vector<Ref<Graphics::Sampler>> samplers;
+            PrepareBindlessData(scene, images, samplers);
+
             SetUniforms(scene, camera);
 
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
+            commandList->BindImages(images, samplers, 0, 3);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -375,6 +380,12 @@ namespace Atlas {
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
+
+            std::vector<Ref<Graphics::Image>> images;
+            std::vector<Ref<Graphics::Sampler>> samplers;
+            PrepareBindlessData(scene, images, samplers);
+
+            commandList->BindImages(images, samplers, 0, 3);
 
             Graphics::Profiler::EndQuery();
 
@@ -832,13 +843,20 @@ namespace Atlas {
                         .bindingIdx = 2,
                         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                     },
+                    {
+                        .bindingIdx = 3,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .descriptorCount = 16000,
+                        .bindless = true
+                    },
                 },
-                .bindingCount = 3
+                .bindingCount = 4
             };
 
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 
             PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);
+
         }
 
         void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
@@ -899,7 +917,6 @@ namespace Atlas {
             }
 
             auto meshes = scene->GetMeshes();
-
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded() || !mesh->impostor) continue;
 
@@ -1023,6 +1040,45 @@ namespace Atlas {
                 materialMap[impostor.get()] =  idx++;
             }
 
+
+        }
+
+        void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+            std::vector<Ref<Graphics::Sampler>>& samplers) {
+
+            std::set<Ref<Texture::Texture2D>> textures;
+
+            auto meshes = scene->GetMeshes();
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded()) continue;
+
+                for (auto& material : mesh->data.materials) {
+                    if (material->HasBaseColorMap())
+                        textures.insert(material->baseColorMap);
+                    if (material->HasOpacityMap())
+                        textures.insert(material->opacityMap);
+                    if (material->HasNormalMap())
+                        textures.insert(material->normalMap);
+                    if (material->HasRoughnessMap())
+                        textures.insert(material->roughnessMap);
+                    if (material->HasMetalnessMap())
+                        textures.insert(material->metalnessMap);
+                    if (material->HasAoMap())
+                        textures.insert(material->aoMap);
+                }
+            }
+
+            uint32_t idx = 0;
+            for (auto& texture : textures) {
+
+                scene->textureToBindlessIdx[texture] = idx;
+
+                images.push_back(texture->image);
+                samplers.push_back(texture->sampler);
+
+                idx++;
+
+            }
 
         }
 

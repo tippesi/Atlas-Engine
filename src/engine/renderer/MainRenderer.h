@@ -200,6 +200,9 @@ namespace Atlas {
             void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
+            void PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+                std::vector<Ref<Graphics::Sampler>>& samplers);
+
             void FillRenderList(Scene::Scene* scene, Camera* camera);
 
             void PreintegrateBRDF();

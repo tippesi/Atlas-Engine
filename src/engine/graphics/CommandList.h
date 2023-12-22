@@ -91,6 +91,8 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
+            void BindImages(const std::vector<Ref<Image>>& image, const std::vector<Ref<Sampler>>& sampler, uint32_t set, uint32_t binding);
+
             void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
 
             void ResetBindings();
@@ -187,11 +189,17 @@ namespace Atlas {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<std::vector<Image*>, std::vector<Sampler*>> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
                 Ref<DescriptorSetLayout> layouts[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
+
+                std::vector<VkWriteDescriptorSet> setWrites;
+                std::vector<VkDescriptorBufferInfo> bufferInfos;
+                std::vector<VkDescriptorImageInfo> imageInfos;
+                std::vector<VkWriteDescriptorSetAccelerationStructureKHR> tlasInfos;
 
                 DescriptorBindingData() {
                     Reset();
@@ -199,6 +207,11 @@ namespace Atlas {
                         sets[i] = nullptr;
                         changed[i] = true;
                     }
+
+                    setWrites.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
+                    bufferInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
+                    imageInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
+                    tlasInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
                 }
 
                 void Reset() {

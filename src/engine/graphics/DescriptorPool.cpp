@@ -7,7 +7,8 @@ namespace Atlas {
 
         DescriptorPool::DescriptorPool(GraphicsDevice* device) : device(device) {
 
-            pools.push_back(InitPool());
+            DescriptorSetSize size = {};
+            pools.push_back(InitPool(size));
 
         }
 
@@ -47,15 +48,19 @@ namespace Atlas {
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &layout->layout;
 
-            /*
-            uint32_t maxBinding = 1;
-
             VkDescriptorSetVariableDescriptorCountAllocateInfo countInfo = {};
-            countInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
-            countInfo.descriptorSetCount = 1;
-            countInfo.pDescriptorCounts = &maxBinding;
-            allocInfo.pNext = &countInfo;
-            */
+            std::vector<uint32_t> bindlessDescriptorCount;
+            if (layout->bindless) {
+                for (auto& binding : layout->bindings) {
+                    if (!binding.bindless) continue;
+                    bindlessDescriptorCount.push_back(binding.descriptorCount);
+                }
+
+                countInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+                countInfo.descriptorSetCount = uint32_t(bindlessDescriptorCount.size());
+                countInfo.pDescriptorCounts = bindlessDescriptorCount.data();
+                allocInfo.pNext = &countInfo;
+            }
 
             VkDescriptorSet set;
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
@@ -63,7 +68,7 @@ namespace Atlas {
             if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
                 poolIdx++;
                 if (poolIdx == pools.size()) {
-                    pools.push_back(InitPool());
+                    pools.push_back(InitPool(layout->size));
                 }
                 allocInfo.descriptorPool = pools[poolIdx];
                 VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
@@ -99,15 +104,17 @@ namespace Atlas {
 
         }
 
-        VkDescriptorPool DescriptorPool::InitPool() {
+        VkDescriptorPool DescriptorPool::InitPool(DescriptorSetSize& size) {
 
             std::vector<VkDescriptorPoolSize> sizes = {
-                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_SAMPLER,                DESCRIPTOR_POOL_SIZE },
+                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, std::max(DESCRIPTOR_POOL_SIZE, size.dynamicUniformBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         std::max(DESCRIPTOR_POOL_SIZE, size.uniformBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, std::max(DESCRIPTOR_POOL_SIZE, size.combinedImageSamplerCount) },
+                    { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          std::max(DESCRIPTOR_POOL_SIZE, size.sampledImageCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, std::max(DESCRIPTOR_POOL_SIZE, size.dynamicStorageBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         std::max(DESCRIPTOR_POOL_SIZE, size.storageBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          std::max(DESCRIPTOR_POOL_SIZE, size.storageImageCount) },
+                    { VK_DESCRIPTOR_TYPE_SAMPLER,                std::max(DESCRIPTOR_POOL_SIZE, size.samplerCount) },
                 };
 
             VkDescriptorPoolCreateInfo poolInfo = {};

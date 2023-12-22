@@ -118,16 +118,13 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials,
-            bool updateTextures) {
+        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures) {
 
             std::lock_guard lock(mutex);
 
             auto actors = scene->GetMeshActors();
 
             int32_t materialCount = 0;
-
-            if (updateTextures)  UpdateTextures();
 
             auto meshes = scene->GetMeshes();
             materials.resize(materialAccess.size());
@@ -163,39 +160,27 @@ namespace Atlas {
                     gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                     if (material->HasBaseColorMap()) {
-                        auto& slices = baseColorTextureAtlas.slices[material->baseColorMap.get()];
-
-                        gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap];
                     }
 
                     if (material->HasOpacityMap()) {
-                        auto& slices = opacityTextureAtlas.slices[material->opacityMap.get()];
-
-                        gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap];
                     }
 
                     if (material->HasNormalMap()) {
-                        auto& slices = normalTextureAtlas.slices[material->normalMap.get()];
-
-                        gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap];
                     }
 
                     if (material->HasRoughnessMap()) {
-                        auto& slices = roughnessTextureAtlas.slices[material->roughnessMap.get()];
-
-                        gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap];
                     }
 
                     if (material->HasMetalnessMap()) {
-                        auto& slices = metalnessTextureAtlas.slices[material->metalnessMap.get()];
-
-                        gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap];
                     }
 
                     if (material->HasAoMap()) {
-                        auto& slices = aoTextureAtlas.slices[material->aoMap.get()];
-
-                        gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
+                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap];
                     }
 
                     materials[materialIdx] = gpuMaterial;

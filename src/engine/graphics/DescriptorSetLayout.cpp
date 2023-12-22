@@ -23,6 +23,26 @@ namespace Atlas {
                 layoutBinding.descriptorType = desc.bindings[i].descriptorType;
                 layoutBinding.stageFlags = desc.bindings[i].stageFlags;
 
+                switch (layoutBinding.descriptorType) {
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: 
+                    size.dynamicUniformBufferCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: 
+                    size.uniformBufferCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: 
+                    size.dynamicStorageBufferCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: 
+                    size.storageBufferCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: 
+                    size.combinedImageSamplerCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: 
+                    size.sampledImageCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: 
+                    size.storageImageCount += layoutBinding.descriptorCount; break;
+                case VK_DESCRIPTOR_TYPE_SAMPLER: 
+                    size.samplerCount += layoutBinding.descriptorCount; break;
+                default: break;
+                }
+
                 bindlessAllowed &= (layoutBinding.descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
                     (layoutBinding.descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                 bindlessNeeded |= desc.bindings[i].bindless;
@@ -41,6 +61,8 @@ namespace Atlas {
 
             VkDescriptorSetLayoutBindingFlagsCreateInfo extendedInfo = {};
             if (bindlessAllowed && bindlessNeeded) {
+                bindless = true;
+
                 for (uint32_t i = 0; i < desc.bindingCount; i++) {
                     VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
                         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
@@ -79,15 +101,15 @@ namespace Atlas {
             for (size_t i = 0; i < that->layoutBindings.size(); i++) {
 
                 bool found = false;
-                auto& otherBinding = that->layoutBindings[i];
+                auto& otherBinding = that->bindings[i];
 
                 for (size_t j = 0; j < layoutBindings.size(); j++) {
-                    auto& binding = layoutBindings[j];
+                    auto& binding = bindings[j];
                     // Only check identical bindings
-                    if (binding.binding != otherBinding.binding)
+                    if (binding.bindingIdx != otherBinding.bindingIdx)
                         continue;
 
-                    if (binding.descriptorCount != otherBinding.descriptorCount ||
+                    if ((binding.descriptorCount != otherBinding.descriptorCount && !binding.bindless) ||
                         binding.stageFlags != otherBinding.stageFlags)
                         return false;
 

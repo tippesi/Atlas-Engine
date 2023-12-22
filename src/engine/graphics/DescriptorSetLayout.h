@@ -10,8 +10,8 @@ namespace Atlas {
     namespace Graphics {
 
         class GraphicsDevice;
-        class MemoryManager;
         class ShaderVariant;
+        class DescriptorPool;
 
         struct DescriptorSetBinding {
             uint32_t bindingIdx = 0;
@@ -31,9 +31,21 @@ namespace Atlas {
             uint32_t bindingCount = 0;
         };
 
+        struct DescriptorSetSize {
+            uint32_t dynamicUniformBufferCount = 0;
+            uint32_t uniformBufferCount = 0;
+            uint32_t dynamicStorageBufferCount = 0;
+            uint32_t storageBufferCount = 0;
+            uint32_t combinedImageSamplerCount = 0;
+            uint32_t sampledImageCount = 0;
+            uint32_t storageImageCount = 0;
+            uint32_t samplerCount = 0;
+        };
+
         class DescriptorSetLayout {
 
             friend ShaderVariant;
+            friend DescriptorPool;
 
         public:
             DescriptorSetLayout(GraphicsDevice* device, const DescriptorSetLayoutDesc& desc);
@@ -45,9 +57,12 @@ namespace Atlas {
             VkDescriptorSetLayout layout = {};
 
             bool isComplete = false;
+            bool bindless = false;
 
         private:
             GraphicsDevice* device;
+
+            DescriptorSetSize size = {};
 
             std::vector<DescriptorSetBinding> bindings;
 

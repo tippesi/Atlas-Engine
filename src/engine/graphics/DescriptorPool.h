@@ -36,7 +36,7 @@ namespace Atlas {
                 size_t counter = 0;
             };
 
-            VkDescriptorPool InitPool();
+            VkDescriptorPool InitPool(DescriptorSetSize& size);
 
             GraphicsDevice* device;
             std::vector<VkDescriptorPool> pools;

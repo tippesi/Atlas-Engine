@@ -126,12 +126,12 @@ struct RaytraceMaterial {
     int twoSided;
     int useVertexColors;
     
-    Texture baseColorTexture;
-    Texture opacityTexture;
-    Texture normalTexture;
-    Texture roughnessTexture;
-    Texture metalnessTexture;
-    Texture aoTexture;
+    int baseColorTexture;
+    int opacityTexture;
+    int normalTexture;
+    int roughnessTexture;
+    int metalnessTexture;
+    int aoTexture;
 
 };
 
