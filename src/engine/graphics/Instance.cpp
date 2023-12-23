@@ -1,12 +1,48 @@
 #include "Instance.h"
+#include "StructureChainBuilder.h"
 #include "../Log.h"
 
 #include <volk.h>
 #include <set>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_macos.h>
 
 namespace Atlas {
 
     namespace Graphics {
+
+#ifdef AE_OS_MACOS
+        // This should become available with the next SDK release
+        #define VK_EXT_layer_settings 1
+        #define VK_EXT_LAYER_SETTINGS_SPEC_VERSION 2
+        #define VK_EXT_LAYER_SETTINGS_EXTENSION_NAME "VK_EXT_layer_settings"
+
+        typedef enum VkLayerSettingTypeEXT {
+            VK_LAYER_SETTING_TYPE_BOOL32_EXT = 0,
+            VK_LAYER_SETTING_TYPE_INT32_EXT = 1,
+            VK_LAYER_SETTING_TYPE_INT64_EXT = 2,
+            VK_LAYER_SETTING_TYPE_UINT32_EXT = 3,
+            VK_LAYER_SETTING_TYPE_UINT64_EXT = 4,
+            VK_LAYER_SETTING_TYPE_FLOAT32_EXT = 5,
+            VK_LAYER_SETTING_TYPE_FLOAT64_EXT = 6,
+            VK_LAYER_SETTING_TYPE_STRING_EXT = 7,
+            VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT = 0x7FFFFFFF
+        } VkLayerSettingTypeEXT;
+        typedef struct VkLayerSettingEXT {
+            const char*              pLayerName;
+            const char*              pSettingName;
+            VkLayerSettingTypeEXT    type;
+            uint32_t                 valueCount;
+            const void*              pValues;
+        } VkLayerSettingEXT;
+
+        typedef struct VkLayerSettingsCreateInfoEXT {
+            VkStructureType             sType;
+            const void*                 pNext;
+            uint32_t                    settingCount;
+            const VkLayerSettingEXT*    pSettings;
+        } VkLayerSettingsCreateInfoEXT;
+#endif
 
         Instance* Instance::DefaultInstance = nullptr;
 
@@ -14,6 +50,11 @@ namespace Atlas {
             name(instanceName), validationLayersEnabled(enableValidationLayers) {
 
             VK_CHECK(volkInitialize());
+
+#ifdef AE_OS_MACOS
+            //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
+            //putenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS=1");
+#endif
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -28,6 +69,7 @@ namespace Atlas {
             auto requiredExtensions = extensionNames;
 #ifdef AE_OS_MACOS
             requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            //requiredExtensions.emplace_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
 #endif
 
             const std::vector<const char*> validationLayers = {
@@ -56,18 +98,20 @@ namespace Atlas {
             VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
             VkValidationFeaturesEXT validationFeatures = {};
 
+            StructureChainBuilder structureChainBuilder(createInfo);
+
             if (enableValidationLayers) {
                 createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
-                createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+                structureChainBuilder.Append(debugCreateInfo);
 
 #ifdef AE_BUILDTYPE_DEBUG
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
                 validationFeatures.enabledValidationFeatureCount = 1;
                 validationFeatures.pEnabledValidationFeatures = enables;
 
-                debugCreateInfo.pNext = &validationFeatures;
+                structureChainBuilder.Append(validationFeatures);
 #endif
             }
             else {

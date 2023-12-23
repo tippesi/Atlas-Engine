@@ -51,10 +51,6 @@ namespace Atlas {
 
             BuildPhysicalDeviceFeatures(physicalDevice);
 
-#ifdef AE_OS_MACOS
-            setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-#endif
-
             // Uses the physical device structures generated above
             CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
 
@@ -929,7 +925,11 @@ namespace Atlas {
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+            deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
 
+            propertiesBuilder.Append(deviceProperties11);
+            propertiesBuilder.Append(deviceProperties12);
             propertiesBuilder.Append(rayTracingPipelineProperties);
             propertiesBuilder.Append(accelerationStructureProperties);
 

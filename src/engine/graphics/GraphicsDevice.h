@@ -154,6 +154,8 @@ namespace Atlas {
             VkDevice device;
 
             VkPhysicalDeviceProperties2 deviceProperties = {};
+            VkPhysicalDeviceVulkan11Properties deviceProperties11 = {};
+            VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
 

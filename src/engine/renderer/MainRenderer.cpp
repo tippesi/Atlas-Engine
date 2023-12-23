@@ -109,7 +109,8 @@ namespace Atlas {
 
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-            commandList->BindImages(images, samplers, 0, 3);
+            commandList->BindSampler(globalSampler, 0, 3);
+            commandList->BindSampledImages(images, 0, 4);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -385,7 +386,8 @@ namespace Atlas {
             std::vector<Ref<Graphics::Sampler>> samplers;
             PrepareBindlessData(scene, images, samplers);
 
-            commandList->BindImages(images, samplers, 0, 3);
+            commandList->BindSampler(globalSampler, 0, 3);
+            commandList->BindSampledImages(images, 0, 4);
 
             Graphics::Profiler::EndQuery();
 
@@ -831,6 +833,14 @@ namespace Atlas {
 
         void MainRenderer::CreateGlobalDescriptorSetLayout() {
 
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .maxLod = 12,
+                .anisotropicFiltering = true
+            };
+
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {
                     {
@@ -847,14 +857,18 @@ namespace Atlas {
                     },
                     {
                         .bindingIdx = 3,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+                        .descriptorCount = 1
+                    },
+                    {
+                        .bindingIdx = 4,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .descriptorCount = 16000,
                         .bindless = true
-                    },
+                    }
                 },
-                .bindingCount = 4
+                .bindingCount = 5
             };
-
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 
             PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);

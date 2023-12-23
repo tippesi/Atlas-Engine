@@ -1,12 +1,9 @@
-#extension GL_EXT_nonuniform_qualifier : require
-
 #include <common.hsh>
 #include <texture.hsh>
 #include <buffers.hsh>
 #include <intersections.hsh>
 
 #include <../brdf/surface.hsh>
-#include <../globals.hsh>
 
 Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
     Material mat;
@@ -25,7 +22,7 @@ Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
     mat.ao = rayMat.ao;
 
     mat.reflectance = rayMat.reflectance;
-    
+
     mat.normalScale = rayMat.normalScale;
     mat.displacementScale = 0.0;
 
@@ -69,15 +66,15 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     float s = barrycentric.x;
     float t = barrycentric.y;
     float r = 1.0 - s - t;
-        
+
     // Interpolate normal by using barrycentric coordinates
     vec3 position = ray.origin + dist * ray.direction;
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
     vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
-        
+
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
-    
+
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
     vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
@@ -86,24 +83,24 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     triangleNormal *= flipNormal ? -1.0 : 1.0;
 
     vec3 geometryNormal = triangleNormal;
-    
+
     int level = textureLevel;
     // mat.opacity *= vertexColor.a;
     mat.baseColor *= rayMat.useVertexColors > 0 ? vertexColor.rgb : vec3(1.0);
-    mat.baseColor *= rayMat.baseColorTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.baseColorTexture)], texCoord, float(level)).rgb : vec3(1.0);
-    mat.opacity *= rayMat.opacityTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.opacityTexture)], texCoord, float(level)).r : 1.0;
-    
-    mat.roughness *= rayMat.roughnessTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.roughnessTexture)], texCoord, float(level)).r : 1.0;
-    mat.metalness *= rayMat.metalnessTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.metalnessTexture)], texCoord, float(level)).r : 1.0;
-    mat.ao *= rayMat.aoTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.aoTexture)], texCoord, float(level)).r : 1.0;
-    
+    mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, float(level), texCoord);
+    mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, float(level), texCoord);
+
+    mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, float(level), texCoord);
+    mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, float(level), texCoord);
+    mat.ao *= SampleAoBilinear(rayMat.aoTexture, float(level), texCoord);
+
     // Account for changing texture coord direction
     vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
     mat3 TBN = mat3(tri.t, bitangent, normal);
-    
+
     // Sample normal map
     if (rayMat.normalTexture >= 0 && useNormalMaps) {
-        vec3 texNormal = 2.0 * textureLod(bindlessTextures[nonuniformEXT(rayMat.normalTexture)], texCoord, float(level)).rgb - 1.0;
+        vec3 texNormal = 2.0 * SampleNormalBilinear(rayMat.normalTexture, float(level), texCoord) - 1.0;
         texNormal = TBN * texNormal;
         // Make sure we don't divide by zero
         // The normalize function crashes the program in case of vec3(0.0)
@@ -112,7 +109,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     }
 
     normal = dot(normal, triangleNormal) < 0.0 ? -normal : normal;
-    
+
     surface.P = position;
     surface.V = -ray.direction;
     surface.N = normalize(normal);
@@ -121,7 +118,7 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
     surface.geometryNormal = geometryNormal;
 
     surface.F0 = mix(vec3(0.04), surface.material.baseColor,
-        surface.material.metalness);
+    surface.material.metalness);
     surface.F90 = 1.0;
 
     return surface;
@@ -141,9 +138,9 @@ float GetOpacity(Triangle tri, vec2 barrycentric, int textureLevel) {
     RaytraceMaterial rayMat = materials[tri.materialIndex];
 
     float vertexAlpha = r * tri.color0.a + s * tri.color1.a + t * tri.color2.a;
-    vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;        
+    vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
-    return (rayMat.opacityTexture >= 0 ? textureLod(bindlessTextures[nonuniformEXT(rayMat.opacityTexture)], texCoord, float(textureLevel)).r : 1.0)
-        * rayMat.opacity;
+    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord)
+    * rayMat.opacity;
 }

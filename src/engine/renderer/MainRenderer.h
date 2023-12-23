@@ -215,6 +215,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
+            Ref<Graphics::Sampler> globalSampler;
 
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray cubeVertexArray;

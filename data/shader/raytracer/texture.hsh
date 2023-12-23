@@ -1,23 +1,63 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <structures.hsh>
+#include <../globals.hsh>
 #include <../common/sample.hsh>
 
 layout (set = 2, binding = 6) uniform samplerCube environmentMap;
 
-vec2 GetTexCoord(vec2 texCoord, TextureLevel level, vec2 size) {
-    
-    return (vec2(mod(texCoord.x, float(level.width) - 0.5),
-        mod(texCoord.y, float(level.height) - 0.5)) + 
-        vec2(level.x, level.y)) / size;
-        
+vec3 SampleBaseColorBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return vec3(1.0);
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).rgb;
+
 }
 
-TextureLevel GetTextureLevel(Texture texture, int level) {
-    if (level == 0) return texture.level0;
-    else if (level == 1) return texture.level1;
-    else if (level == 2) return texture.level2;
-    else if (level == 3) return texture.level3;
-    else if (level == 4) return texture.level4;
-    else return texture.level4;
+float SampleOpacityBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return 1.0;
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
+}
+
+vec3 SampleNormalBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return vec3(1.0);
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).rgb;
+
+}
+
+float SampleRoughnessBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return 1.0;
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
+}
+
+float SampleMetalnessBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return 1.0;
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
+}
+
+float SampleAoBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return 1.0;
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
 }
 
 vec4 SampleEnvironmentMap(vec3 v) {

@@ -91,7 +91,9 @@ namespace Atlas {
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
-            void BindImages(const std::vector<Ref<Image>>& image, const std::vector<Ref<Sampler>>& sampler, uint32_t set, uint32_t binding);
+            void BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding);
+
+            void BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
 
@@ -189,7 +191,8 @@ namespace Atlas {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                std::pair<std::vector<Image*>, std::vector<Sampler*>> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::vector<Image*> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                Sampler* samplers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
                 VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
@@ -220,6 +223,8 @@ namespace Atlas {
                             buffers[i][j] = { nullptr, 0u };
                             images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
+                            sampledImagesArray[i][j] = {};
+                            samplers[i][j] = nullptr;
                             tlases[i][j] = nullptr;
                         }
                         sets[i] = nullptr;
@@ -232,6 +237,8 @@ namespace Atlas {
                         buffers[set][j] = { nullptr, 0u };
                         images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
+                        sampledImagesArray[set][j] = {};
+                        samplers[set][j] = nullptr;
                         tlases[set][j] = nullptr;
                     }
                     sets[set] = nullptr;

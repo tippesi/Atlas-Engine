@@ -426,6 +426,7 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -447,6 +448,7 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -466,6 +468,7 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
         }
@@ -486,6 +489,7 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
@@ -504,6 +508,7 @@ namespace Atlas {
             descriptorBindingData.buffers[set][binding] = {nullptr, 0};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -521,28 +526,44 @@ namespace Atlas {
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.buffers[set][binding] = {nullptr, 0};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
 
-        void CommandList::BindImages(const std::vector<Ref<Image>>& images, const std::vector<Ref<Sampler>>& samplers, uint32_t set, uint32_t binding) {
+        void CommandList::BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding) {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(images.size() == samplers.size() && "Sampler and images vectors have to be of equal size");
 
             std::vector<Image*> imagesPtr;
             for (auto& image : images) imagesPtr.push_back(image.get());
 
-            std::vector<Sampler*> samplersPtr;
-            for (auto& sampler : samplers) samplersPtr.push_back(sampler.get());
-
             // We don't do any checks here if the same things were bound already
-            descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr, samplersPtr };
+            descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.buffers[set][binding] = { nullptr, 0 };
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
+            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            if (descriptorBindingData.samplers[set][binding] == sampler.get())
+                return;
+
+            descriptorBindingData.samplers[set][binding] = sampler.get();
+            descriptorBindingData.buffers[set][binding] = {nullptr, 0u};
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
@@ -561,6 +582,7 @@ namespace Atlas {
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
+            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -1006,6 +1028,37 @@ namespace Atlas {
                         setWrite.pImageInfo = &imageInfo;
                     }
 
+                    // SAMPLERS
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.samplers[i][j]) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER)
+                            continue;
+
+                        auto sampler = descriptorBindingData.samplers[i][j];
+
+                        auto& imageInfo = imageInfos[bindingCounter];
+                        imageInfo.sampler = sampler->sampler;
+                        imageInfo.imageView = VK_NULL_HANDLE;
+                        imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                        setWrite.pNext = &imageInfo;
+                    }
+
                     // TOP-LEVEL ACCELERATION STRUCTURES
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.tlases[i][j]) continue;
@@ -1040,8 +1093,7 @@ namespace Atlas {
 
                     // SAMPLED IMAGE ARRAYS
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.sampledImagesArray[i][j].first.size() ||
-                            !descriptorBindingData.sampledImagesArray[i][j].second.size()) continue;
+                        if (!descriptorBindingData.sampledImagesArray[i][j].size()) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!shaderBinding.valid) continue;
@@ -1049,25 +1101,19 @@ namespace Atlas {
                         const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
                         const auto descriptorType = binding.descriptorType;
-                        if (descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                             continue;
 
-                        if (descriptorBindingData.sampledImagesArray[i][j].first.size() !=
-                            descriptorBindingData.sampledImagesArray[i][j].second.size())
-                            continue;
-
-                        auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].first.size());
+                        auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].size());
                         if (size_t(bindingCounter + sampledImageArraySize) > setWrites.size()) {
                             setWrites.resize(bindingCounter + sampledImageArraySize);
                             imageInfos.resize(bindingCounter + sampledImageArraySize);
                         }
 
                         for (uint32_t k = 0; k < sampledImageArraySize; k++) {
-                            auto image = descriptorBindingData.sampledImagesArray[i][j].first[k];
-                            auto sampler = descriptorBindingData.sampledImagesArray[i][j].second[k];
+                            auto image = descriptorBindingData.sampledImagesArray[i][j][k];
 
                             auto& imageInfo = imageInfos[bindingCounter];
-                            imageInfo.sampler = sampler->sampler;
                             imageInfo.imageView = image->view;
                             imageInfo.imageLayout = image->layout;
 
@@ -1079,7 +1125,7 @@ namespace Atlas {
                             setWrite.dstArrayElement = k;
                             setWrite.dstSet = descriptorBindingData.sets[i];
                             setWrite.descriptorCount = 1;
-                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                             setWrite.pImageInfo = &imageInfo;
                         }
                     }

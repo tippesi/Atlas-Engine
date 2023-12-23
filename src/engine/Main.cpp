@@ -24,6 +24,11 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
+#ifdef AE_OS_MACOS
+    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
+    setenv("MVK_DEBUG", "0", 1);
+#endif
+
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
