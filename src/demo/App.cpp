@@ -13,6 +13,9 @@ void App::LoadContent() {
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
+    mainRenderer->pathTracingRenderer.realTime = false;
+    mainRenderer->pathTracingRenderer.sampleEmissives = true;
+
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
 
@@ -1137,7 +1140,7 @@ void App::CheckLoadScene() {
         auto sceneMeshes = scene->GetMeshes();
 
         for (auto& mesh : sceneMeshes) {
-            mesh->data.BuildBVH();
+            mesh->BuildBVH();
         }
         scene->BuildRTStructures();
     };

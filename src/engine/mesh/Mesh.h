@@ -54,6 +54,11 @@ namespace Atlas {
              */
             void UpdateVertexArray();
 
+            /**
+             * Builds up BVH and fills raytracing related buffers
+             */
+            void BuildBVH();
+
             std::string name = "";
 
             MeshData data;
@@ -68,6 +73,10 @@ namespace Atlas {
             Buffer::VertexBuffer texCoordBuffer;
             Buffer::VertexBuffer tangentBuffer;
             Buffer::VertexBuffer colorBuffer;
+
+            Buffer::Buffer blasNodeBuffer;
+            Buffer::Buffer triangleBuffer;
+            Buffer::Buffer bvhTriangleBuffer;
 
             Ref<Graphics::BLAS> blas = nullptr;
 

@@ -423,6 +423,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
@@ -445,6 +446,33 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
+            descriptorBindingData.buffersArray[set][binding] = {};
+            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
+            descriptorBindingData.sampledImagesArray[set][binding] = {};
+            descriptorBindingData.images[set][binding] = { nullptr, 0u };
+            descriptorBindingData.samplers[set][binding] = nullptr;
+            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindBuffers(const std::vector<Ref<Buffer>> &buffers, uint32_t set, uint32_t binding) {
+
+            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            std::vector<Buffer*> buffersPtr;
+            for (auto& buffer : buffers) {
+                assert(buffer->size > 0 && "Invalid buffer size");
+                assert(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
+                       "Only storage buffers support array bindings");
+
+                buffersPtr.push_back(buffer.get());
+            }
+
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
+            descriptorBindingData.buffers[set][binding] = { nullptr, 0 };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
@@ -465,6 +493,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
@@ -486,6 +515,7 @@ namespace Atlas {
                 descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
@@ -506,6 +536,7 @@ namespace Atlas {
 
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
             descriptorBindingData.buffers[set][binding] = {nullptr, 0};
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
             descriptorBindingData.samplers[set][binding] = nullptr;
@@ -525,6 +556,7 @@ namespace Atlas {
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
             descriptorBindingData.buffers[set][binding] = {nullptr, 0};
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
@@ -544,6 +576,7 @@ namespace Atlas {
             descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.buffers[set][binding] = { nullptr, 0 };
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.tlases[set][binding] = nullptr;
@@ -561,6 +594,7 @@ namespace Atlas {
 
             descriptorBindingData.samplers[set][binding] = sampler.get();
             descriptorBindingData.buffers[set][binding] = {nullptr, 0u};
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
@@ -579,6 +613,7 @@ namespace Atlas {
 
             descriptorBindingData.tlases[set][binding] = tlas.get();
             descriptorBindingData.buffers[set][binding] = {nullptr, 0u};
+            descriptorBindingData.buffersArray[set][binding] = {};
             descriptorBindingData.images[set][binding] = { nullptr, 0u };
             descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.sampledImagesArray[set][binding] = {};
@@ -1056,7 +1091,7 @@ namespace Atlas {
                         setWrite.dstSet = descriptorBindingData.sets[i];
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                        setWrite.pNext = &imageInfo;
+                        setWrite.pImageInfo = &imageInfo;
                     }
 
                     // TOP-LEVEL ACCELERATION STRUCTURES
@@ -1114,6 +1149,7 @@ namespace Atlas {
                             auto image = descriptorBindingData.sampledImagesArray[i][j][k];
 
                             auto& imageInfo = imageInfos[bindingCounter];
+                            imageInfo.sampler = VK_NULL_HANDLE;
                             imageInfo.imageView = image->view;
                             imageInfo.imageLayout = image->layout;
 
@@ -1127,6 +1163,46 @@ namespace Atlas {
                             setWrite.descriptorCount = 1;
                             setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                             setWrite.pImageInfo = &imageInfo;
+                        }
+                    }
+
+                    // BUFFER ARRAYS
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.buffersArray[i][j].size()) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+                            continue;
+
+                        auto bufferArraySize = uint32_t(descriptorBindingData.buffersArray[i][j].size());
+                        if (size_t(bindingCounter + bufferArraySize) > setWrites.size()) {
+                            setWrites.resize(bindingCounter + bufferArraySize);
+                            bufferInfos.resize(bindingCounter + bufferArraySize);
+                        }
+
+                        for (uint32_t k = 0; k < bufferArraySize; k++) {
+                            auto buffer = descriptorBindingData.buffersArray[i][j][k];
+
+                            auto& bufferInfo = bufferInfos[bindingCounter];
+                            bufferInfo.offset = 0;
+                            bufferInfo.buffer = buffer->buffer;
+                            bufferInfo.range = VK_WHOLE_SIZE;
+
+                            auto& setWrite = setWrites[bindingCounter++];
+                            setWrite = {};
+                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                            setWrite.pNext = nullptr;
+                            setWrite.dstBinding = j;
+                            setWrite.dstArrayElement = k;
+                            setWrite.dstSet = descriptorBindingData.sets[i];
+                            setWrite.descriptorCount = 1;
+                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                            setWrite.pBufferInfo = &bufferInfo;
                         }
                     }
 

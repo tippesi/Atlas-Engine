@@ -68,7 +68,7 @@ namespace Atlas {
                         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
                     if (desc.bindings[i].bindless) {
-                        bindingFlags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+                        //bindingFlags |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
                     }
 
                     layoutBindingFlags[i] = bindingFlags;

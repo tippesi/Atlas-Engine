@@ -83,6 +83,8 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<Buffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
+            void BindBuffers(const std::vector<Ref<Buffer>>& buffers, uint32_t set, uint32_t binding);
+
             void BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
             void BindBufferOffset(const Ref<MultiBuffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
@@ -189,6 +191,7 @@ namespace Atlas {
         private:
             struct DescriptorBindingData {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::vector<Buffer*> buffersArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::vector<Image*> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
@@ -224,6 +227,7 @@ namespace Atlas {
                             images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
                             sampledImagesArray[i][j] = {};
+                            buffersArray[i][j] = {};
                             samplers[i][j] = nullptr;
                             tlases[i][j] = nullptr;
                         }
@@ -238,6 +242,7 @@ namespace Atlas {
                         images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
                         sampledImagesArray[set][j] = {};
+                        buffersArray[set][j] = {};
                         samplers[set][j] = nullptr;
                         tlases[set][j] = nullptr;
                     }

@@ -201,7 +201,8 @@ namespace Atlas {
                 std::unordered_map<void*, uint16_t>& materialMap);
 
             void PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
-                std::vector<Ref<Graphics::Sampler>>& samplers);
+                std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
+                std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers);
 
             void FillRenderList(Scene::Scene* scene, Camera* camera);
 

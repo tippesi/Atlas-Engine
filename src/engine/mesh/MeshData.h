@@ -32,6 +32,7 @@ namespace Atlas {
 
         class MeshData {
 
+            friend class Mesh;
             friend class Scene::RTData;
 
         public:
@@ -113,7 +114,7 @@ namespace Atlas {
             int32_t vertexCount = 0;
 
             std::vector<GPUTriangle> gpuTriangles;
-            std::vector<BVHTriangle> gpuBvhTriangles;
+            std::vector<GPUBVHTriangle> gpuBvhTriangles;
             std::vector<GPUBVHNode> gpuBvhNodes;
 
         };

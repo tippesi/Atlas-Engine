@@ -119,36 +119,6 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    if (rtData.baseColorTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
-                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
-                    if (rtData.opacityTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
-                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
-                    if (rtData.normalTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
-                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
-                    if (rtData.roughnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
-                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
-                    if (rtData.metalnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
-                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
-                    if (rtData.aoTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
-                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);
@@ -272,36 +242,6 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    if (rtData.baseColorTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
-                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
-                    if (rtData.opacityTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
-                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
-                    if (rtData.normalTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
-                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
-                    if (rtData.roughnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
-                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
-                    if (rtData.metalnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
-                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
-                    if (rtData.aoTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
-                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);

@@ -78,6 +78,30 @@ namespace Atlas {
 
         }
 
+        void Mesh::BuildBVH() {
+
+            data.BuildBVH();
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            bool hardwareRayTracing = device->support.hardwareRayTracing;
+
+            if (!hardwareRayTracing) {
+                blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
+                triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
+                bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHTriangle));
+
+                blasNodeBuffer.SetSize(data.gpuBvhNodes.size());
+                blasNodeBuffer.SetData(data.gpuBvhNodes.data(), 0, data.gpuBvhNodes.size());
+
+                triangleBuffer.SetSize(data.gpuTriangles.size());
+                triangleBuffer.SetData(data.gpuTriangles.data(), 0, data.gpuTriangles.size());
+
+                bvhTriangleBuffer.SetSize(data.gpuBvhTriangles.size());
+                bvhTriangleBuffer.SetData(data.gpuBvhTriangles.data(), 0, data.gpuBvhTriangles.size());
+            }
+
+        }
+
     }
 
 }

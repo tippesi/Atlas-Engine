@@ -15,7 +15,7 @@ namespace Atlas {
         vec4 d2;
     };
 
-    struct BVHTriangle {
+    struct GPUBVHTriangle {
         vec4 v0;
         vec4 v1;
         vec4 v2;
@@ -77,8 +77,8 @@ namespace Atlas {
     struct GPUBVHInstance {
         mat3x4 inverseMatrix;
 
-        int32_t blasOffset;
-        int32_t triangleOffset;
+        int32_t meshOffset;
+        int32_t materialOffset;
 
         int32_t padding0;
         int32_t padding1;

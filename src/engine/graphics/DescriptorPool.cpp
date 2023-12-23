@@ -48,6 +48,7 @@ namespace Atlas {
             allocInfo.descriptorSetCount = 1;
             allocInfo.pSetLayouts = &layout->layout;
 
+            /*
             VkDescriptorSetVariableDescriptorCountAllocateInfo countInfo = {};
             std::vector<uint32_t> bindlessDescriptorCount;
             if (layout->bindless) {
@@ -61,6 +62,7 @@ namespace Atlas {
                 countInfo.pDescriptorCounts = bindlessDescriptorCount.data();
                 allocInfo.pNext = &countInfo;
             }
+            */
 
             VkDescriptorSet set;
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);

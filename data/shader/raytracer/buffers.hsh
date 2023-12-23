@@ -1,5 +1,7 @@
 #include <structures.hsh>
 
+#define MESH_COUNT 1024
+
 layout(std430, set = 2, binding = 13) buffer ReadAtomic {
     uint readAtomic[];
 };
@@ -31,3 +33,23 @@ layout(std430, set = 2, binding = 18) buffer RayBinOffsets {
 layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };
+
+layout (std430, set = 0, binding = 5) buffer Triangles {
+    PackedTriangle data[];
+} triangles[MESH_COUNT];
+
+layout (std430, set = 0, binding = 6) buffer BVHTriangles {
+    PackedBVHTriangle data[];
+}bvhTriangles[MESH_COUNT];
+
+#ifndef AE_HARDWARE_RAYTRACING
+
+layout(std430, set = 0, binding = 4) buffer BlasNodes {
+    PackedBVHNode data[];
+}blasNodes[MESH_COUNT];
+
+layout(std430, set = 2, binding = 22) buffer TlasNodes {
+    PackedBVHNode tlasNodes[];
+};
+
+#endif

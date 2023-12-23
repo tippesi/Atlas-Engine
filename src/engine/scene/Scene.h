@@ -144,6 +144,7 @@ namespace Atlas {
         private:
             std::unordered_map<size_t, RegisteredMesh> rootMeshMap;
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
+            std::unordered_map<Ref<Graphics::Buffer>, uint32_t> bufferToBindlessIdx;
 
             RTData rtData;
 

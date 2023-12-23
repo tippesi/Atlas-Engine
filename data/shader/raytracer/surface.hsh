@@ -1,3 +1,5 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <common.hsh>
 #include <texture.hsh>
 #include <buffers.hsh>
@@ -5,9 +7,21 @@
 
 #include <../brdf/surface.hsh>
 
-Material GetTriangleMaterial(Triangle tri, out RaytraceMaterial rayMat) {
+Instance GetInstance(Ray ray) {
+
+    return bvhInstances[0];
+
+}
+
+Triangle GetTriangle(Ray ray, Instance instance) {
+
+    return UnpackTriangle(triangles[nonuniformEXT(0)].data[ray.hitID]);
+
+}
+
+Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMaterial rayMat) {
     Material mat;
-    rayMat = materials[tri.materialIndex];
+    rayMat = materials[tri.materialIndex + materialOffset];
 
     mat.ID = uint(tri.materialIndex);
 
@@ -46,14 +60,14 @@ void TransformTriangle(inout Triangle tri, Instance instance) {
 
 }
 
-Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool backfaceHit, int textureLevel) {
+Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
+    bool useNormalMaps, out bool backfaceHit, int textureLevel) {
+
+    TransformTriangle(tri, instance);
 
     Surface surface;
     RaytraceMaterial rayMat;
-    Material mat = GetTriangleMaterial(tri, rayMat);
-
-    Instance instance = bvhInstances[ray.hitInstanceID];
-    TransformTriangle(tri, instance);
+    Material mat = GetTriangleMaterial(tri, instance.materialOffset, rayMat);
 
     // The ray doesn't provide us with the barrycentric coordinates
     // so we intersect again.
@@ -125,22 +139,22 @@ Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, out bool
 
 }
 
-Surface GetSurfaceParameters(Triangle tri, Ray ray, bool useNormalMaps, int textureLevel) {
+Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray, bool useNormalMaps, int textureLevel) {
     bool normalFlipped;
-    return GetSurfaceParameters(tri, ray, useNormalMaps, normalFlipped, textureLevel);
+    return GetSurfaceParameters(instance, tri, ray, useNormalMaps, normalFlipped, textureLevel);
 }
 
-float GetOpacity(Triangle tri, vec2 barrycentric, int textureLevel) {
+float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textureLevel) {
     float s = barrycentric.x;
     float t = barrycentric.y;
     float r = 1.0 - s - t;
 
-    RaytraceMaterial rayMat = materials[tri.materialIndex];
+    RaytraceMaterial rayMat = materials[tri.materialIndex + materialOffset];
 
     float vertexAlpha = r * tri.color0.a + s * tri.color1.a + t * tri.color2.a;
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
     return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord)
-    * rayMat.opacity;
+        * rayMat.opacity;
 }

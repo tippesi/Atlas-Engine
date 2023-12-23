@@ -46,7 +46,7 @@ namespace Atlas {
                 Ref<Graphics::BLAS> blas = nullptr;
 
                 int32_t offset = 0;
-                int32_t triangleOffset = 0;
+                int32_t materialOffset = 0;
 
                 std::vector<GPULight> triangleLights;
                 std::vector<uint32_t> instanceIndices;
@@ -54,10 +54,6 @@ namespace Atlas {
             };
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures);
-
-            GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
-
-            GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
 
             void BuildForSoftwareRayTracing();
 
@@ -85,16 +81,8 @@ namespace Atlas {
             Buffer::Buffer blasNodeBuffer;
             Buffer::Buffer geometryTriangleOffsetBuffer;
 
-            Texture::TextureAtlas baseColorTextureAtlas;
-            Texture::TextureAtlas opacityTextureAtlas;
-            Texture::TextureAtlas normalTextureAtlas;
-            Texture::TextureAtlas roughnessTextureAtlas;
-            Texture::TextureAtlas metalnessTextureAtlas;
-            Texture::TextureAtlas aoTextureAtlas;
-
             std::vector<GPULight> triangleLights;
 
-            std::unordered_map<Material*, int32_t> materialAccess;
             std::unordered_map<size_t, MeshInfo> meshInfos;
 
             bool hardwareRayTracing = false;

@@ -293,7 +293,7 @@ namespace Atlas {
                 gpuTriangles.push_back(gpuTriangle);
 
                 if (!hardwareRayTracing) {
-                    BVHTriangle gpuBvhTriangle;
+                    GPUBVHTriangle gpuBvhTriangle;
                     gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
                     gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float &>(triangle.materialIdx));
                     gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);

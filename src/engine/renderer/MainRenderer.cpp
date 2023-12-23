@@ -102,15 +102,18 @@ namespace Atlas {
             PrepareMaterials(scene, materials, materialMap);
 
             std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Sampler>> samplers;
-            PrepareBindlessData(scene, images, samplers);
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
             SetUniforms(scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 0, 0);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
             commandList->BindSampler(globalSampler, 0, 3);
-            commandList->BindSampledImages(images, 0, 4);
+            commandList->BindBuffers(blasBuffers, 0, 4);
+            commandList->BindBuffers(triangleBuffers, 0, 5);
+            commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
+            commandList->BindSampledImages(images, 0, 7);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -383,11 +386,16 @@ namespace Atlas {
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
 
             std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Sampler>> samplers;
-            PrepareBindlessData(scene, images, samplers);
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
+            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
             commandList->BindSampler(globalSampler, 0, 3);
-            commandList->BindSampledImages(images, 0, 4);
+            commandList->BindBuffers(blasBuffers, 0, 4);
+            commandList->BindBuffers(triangleBuffers, 0, 5);
+            commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
+            commandList->BindSampledImages(images, 0, 7);
 
             Graphics::Profiler::EndQuery();
 
@@ -840,34 +848,40 @@ namespace Atlas {
                 .maxLod = 12,
                 .anisotropicFiltering = true
             };
+            globalSampler = device->CreateSampler(samplerDesc);
 
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {
                     {
-                        .bindingIdx = 0,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                     },
                     {
-                        .bindingIdx = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                     },
                     {
-                        .bindingIdx = 2,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                     },
                     {
-                        .bindingIdx = 3,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-                        .descriptorCount = 1
+                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER
                     },
                     {
-                        .bindingIdx = 4,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                        .descriptorCount = 16000,
-                        .bindless = true
+                        .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 1024, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 5, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 1024, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 6, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 1024, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 7, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .descriptorCount = 16000, .bindless = true
                     }
                 },
-                .bindingCount = 5
+                .bindingCount = 8
             };
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 
@@ -1060,9 +1074,16 @@ namespace Atlas {
         }
 
         void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
-            std::vector<Ref<Graphics::Sampler>>& samplers) {
+            std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
+            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers) {
 
             std::set<Ref<Texture::Texture2D>> textures;
+
+            uint32_t textureIdx = 0;
+            uint32_t bufferIdx = 0;
+
+            scene->textureToBindlessIdx.clear();
+            scene->bufferToBindlessIdx.clear();
 
             auto meshes = scene->GetMeshes();
             for (auto& mesh : meshes) {
@@ -1082,17 +1103,28 @@ namespace Atlas {
                     if (material->HasAoMap())
                         textures.insert(material->aoMap);
                 }
+
+                // Not all meshes might have a bvh
+                if (!mesh->blasNodeBuffer.GetSize())
+                    continue;
+
+                auto blasBuffer = mesh->blasNodeBuffer.Get();
+                auto triangleBuffer = mesh->triangleBuffer.Get();
+                auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
+
+                blasBuffers.push_back(blasBuffer);
+                triangleBuffers.push_back(triangleBuffer);
+                bvhTriangleBuffers.push_back(bvhTriangleBuffer);
+
+                scene->bufferToBindlessIdx[blasBuffer] = bufferIdx++;
+
             }
 
-            uint32_t idx = 0;
             for (auto& texture : textures) {
 
-                scene->textureToBindlessIdx[texture] = idx;
+                scene->textureToBindlessIdx[texture] = textureIdx++;
 
                 images.push_back(texture->image);
-                samplers.push_back(texture->sampler);
-
-                idx++;
 
             }
 

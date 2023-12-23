@@ -168,9 +168,11 @@ vec3 EvaluateHit(inout Ray ray) {
     }
     
     // Unpack the compressed triangle and extract surface parameters
-    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-    bool backfaceHit;    
-    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, uniforms.textureLevel);
+    Instance instance = GetInstance(ray);
+    Triangle tri = GetTriangle(ray, instance);
+
+    bool backfaceHit;
+    surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
     
     radiance += surface.material.emissiveColor;
 

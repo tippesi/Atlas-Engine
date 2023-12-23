@@ -167,11 +167,31 @@ struct LightSample {
 struct Instance {
     mat3x4 inverseMatrix;
 
-    int blasOffset;
-    int triangleOffset;
+    int meshOffset;
+    int materialOffset;
     
     int padding0;
     int padding1;
+};
+
+struct PackedBVHNode {
+    vec4 data0;
+    vec4 data1;
+    vec4 data2;
+    vec4 data3;
+};
+
+struct BVHNode {
+    AABB leftAABB;
+    AABB rightAABB;
+    int leftPtr;
+    int rightPtr;
+};
+
+struct PackedBVHTriangle {
+    vec4 v0;
+    vec4 v1;
+    vec4 v2;
 };
 
 layout(push_constant) uniform constants {
