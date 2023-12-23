@@ -172,7 +172,7 @@ vec3 EvaluateHit(inout Ray ray) {
     Triangle tri = GetTriangle(ray, instance);
 
     bool backfaceHit;
-    surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
+    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
     
     radiance += surface.material.emissiveColor;
 

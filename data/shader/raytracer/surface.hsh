@@ -9,13 +9,13 @@
 
 Instance GetInstance(Ray ray) {
 
-    return bvhInstances[0];
+    return bvhInstances[ray.hitInstanceID];
 
 }
 
 Triangle GetTriangle(Ray ray, Instance instance) {
 
-    return UnpackTriangle(triangles[nonuniformEXT(0)].data[ray.hitID]);
+    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[ray.hitID]);
 
 }
 

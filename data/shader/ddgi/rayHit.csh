@@ -74,7 +74,7 @@ vec3 EvaluateHit(inout Ray ray) {
     Triangle tri = GetTriangle(ray, instance);
 
     bool backfaceHit;
-    surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, 4);
+    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, 4);
 
     // Indicates backface hit
     if (backfaceHit) {

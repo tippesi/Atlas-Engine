@@ -389,7 +389,7 @@ namespace Atlas {
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
             PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
             commandList->BindSampler(globalSampler, 0, 3);
             commandList->BindBuffers(blasBuffers, 0, 4);
