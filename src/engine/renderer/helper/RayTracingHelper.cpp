@@ -126,7 +126,6 @@ namespace Atlas {
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
                     rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
                     lightBuffer.Bind(commandList, 2, 11);
 
@@ -135,8 +134,6 @@ namespace Atlas {
                         rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
-                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
                         rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }
@@ -249,7 +246,6 @@ namespace Atlas {
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
                     rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.triangleBuffer.Bind(commandList, 2, 8);
                     rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
                     lightBuffer.Bind(commandList, 2, 11);
 
@@ -258,8 +254,6 @@ namespace Atlas {
                         rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
-                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
                         rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }

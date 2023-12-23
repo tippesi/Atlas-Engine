@@ -107,9 +107,9 @@ namespace Atlas {
 
             SetUniforms(scene, camera);
 
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-            commandList->BindSampler(globalSampler, 0, 3);
+            commandList->BindBuffer(globalUniformBuffer, 1, 11);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
+            commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(blasBuffers, 0, 4);
             commandList->BindBuffers(triangleBuffers, 0, 5);
             commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
@@ -123,7 +123,7 @@ namespace Atlas {
                 .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
-            commandList->BindBuffer(materialBuffer, 0, 2);
+            commandList->BindBuffer(materialBuffer, 1, 14);
 
             if (scene->vegetation)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
@@ -389,9 +389,9 @@ namespace Atlas {
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
             PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-            commandList->BindSampler(globalSampler, 0, 3);
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 11);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
+            commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(blasBuffers, 0, 4);
             commandList->BindBuffers(triangleBuffers, 0, 5);
             commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
@@ -844,26 +844,14 @@ namespace Atlas {
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_LINEAR,
                 .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
                 .maxLod = 12,
-                .anisotropicFiltering = true
+                .anisotropicFiltering = false
             };
             globalSampler = device->CreateSampler(samplerDesc);
 
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {
-                    {
-                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    },
-                    {
-                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-                    },
-                    {
-                        .bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                    },
-                    {
-                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER
-                    },
                     {
                         .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                         .descriptorCount = 1024, .bindless = true
@@ -881,7 +869,7 @@ namespace Atlas {
                         .descriptorCount = 16000, .bindless = true
                     }
                 },
-                .bindingCount = 8
+                .bindingCount = 4
             };
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 

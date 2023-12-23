@@ -73,12 +73,9 @@ namespace Atlas {
             Ref<Graphics::TLAS> tlas;
             std::vector<Ref<Graphics::BLAS>> blases;
 
-            Buffer::Buffer triangleBuffer;
-            Buffer::Buffer bvhTriangleBuffer;
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
-            Buffer::Buffer blasNodeBuffer;
             Buffer::Buffer geometryTriangleOffsetBuffer;
 
             std::vector<GPULight> triangleLights;

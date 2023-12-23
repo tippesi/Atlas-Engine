@@ -19,9 +19,6 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
-            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHTriangle));
-            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
             geometryTriangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
 
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
@@ -221,60 +218,11 @@ namespace Atlas {
                 if (!mesh->data.gpuTriangles.size())
                     continue;
 
-                auto triangleOffset = int32_t(gpuTriangles.size());
-                auto nodeOffset = int32_t(gpuBvhNodes.size());
-
-                for (size_t i = 0; i < mesh->data.gpuBvhNodes.size(); i++) {
-                    auto gpuBvhNode = mesh->data.gpuBvhNodes[i];
-
-                    auto leftPtr = gpuBvhNode.leftPtr;
-                    auto rightPtr = gpuBvhNode.rightPtr;
-
-                    gpuBvhNode.leftPtr = leftPtr < 0 ? ~((~leftPtr) + triangleOffset) : leftPtr + nodeOffset;
-                    gpuBvhNode.rightPtr = rightPtr < 0 ? ~((~rightPtr) + triangleOffset) : rightPtr + nodeOffset;
-
-                    gpuBvhNodes.push_back(gpuBvhNode);
-                }
-
-                // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data.gpuTriangles[i];
-                    auto gpuBvhTriangle = mesh->data.gpuBvhTriangles[i];
-
-                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
-                    auto materialIdx = localMaterialIdx + materialCount;
-
-                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
-                    gpuBvhTriangle.v1.w = reinterpret_cast<float&>(materialIdx);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                    gpuBvhTriangles.push_back(gpuBvhTriangle);
-                }
-
-                auto bufferOffset = scene->bufferToBindlessIdx[mesh->blasNodeBuffer.Get()];
-
-                MeshInfo meshInfo = {
-                    .offset = int32_t(bufferOffset),
-                    .materialOffset = triangleOffset
-                };
-                meshInfos[mesh.GetID()] = meshInfo;
+                meshInfos[mesh.GetID()] = MeshInfo {};
 
                 BuildTriangleLightsForMesh(mesh);
 
             }
-
-            if (!gpuTriangles.size())
-                return;
-
-            // Upload triangles
-            triangleBuffer.SetSize(gpuTriangles.size());
-            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
-
-            bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
-            bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
-
-            blasNodeBuffer.SetSize(gpuBvhNodes.size());
-            blasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
         }
 
@@ -283,7 +231,6 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             std::vector<uint32_t> triangleOffsets;
-            std::vector<GPUTriangle> gpuTriangles;
 
             Graphics::ASBuilder asBuilder;
 
@@ -299,21 +246,6 @@ namespace Atlas {
                 // Not all meshes might have a bvh
                 if (!mesh->data.gpuTriangles.size())
                     continue;
-
-                auto triangleOffset = int32_t(gpuTriangles.size());
-                auto offset = int32_t(triangleOffsets.size());
-
-                // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data.gpuTriangles[i];
-
-                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
-                    auto materialIdx = localMaterialIdx + materialCount;
-
-                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                }
 
                 std::vector<Graphics::ASGeometryRegion> geometryRegions;
                 for (auto& subData : mesh->data.subData) {
@@ -333,26 +265,19 @@ namespace Atlas {
                 MeshInfo meshInfo = {
                     .blas = blases.back(),
 
-                    .offset = offset,
-                    .materialOffset = triangleOffset
+                    .offset = 0,
+                    .materialOffset = 0
                 };
                 meshInfos[mesh.GetID()] = meshInfo;
 
                 for (auto& subData : mesh->data.subData) {
-                    auto totalTriangleOffset = triangleOffset + subData.indicesOffset / 3;
-                    triangleOffsets.push_back(totalTriangleOffset);
+                    auto triangleOffset = subData.indicesOffset / 3;
+                    triangleOffsets.push_back(triangleOffset);
                 }
 
                 BuildTriangleLightsForMesh(mesh);
 
             }
-
-            if (!gpuTriangles.size())
-                return;
-
-            // Upload triangles
-            triangleBuffer.SetSize(gpuTriangles.size());
-            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
 
             geometryTriangleOffsetBuffer.SetSize(triangleOffsets.size());
             geometryTriangleOffsetBuffer.SetData(triangleOffsets.data(), 0, triangleOffsets.size());
