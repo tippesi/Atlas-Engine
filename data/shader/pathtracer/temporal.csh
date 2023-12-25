@@ -404,6 +404,6 @@ void main() {
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
     imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
-    //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), 0.0));
+    //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), historyLength + 1.0));
 
 }

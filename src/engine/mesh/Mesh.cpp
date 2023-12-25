@@ -80,6 +80,10 @@ namespace Atlas {
 
         void Mesh::BuildBVH() {
 
+            assert(data.indexCount > 0 && "There is no data in this mesh");
+
+            if (data.indexCount == 0) return;
+
             data.BuildBVH();
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;

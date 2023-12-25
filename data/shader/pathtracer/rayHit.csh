@@ -97,10 +97,10 @@ void main() {
 #ifndef REALTIME
             if (Uniforms.sampleCount > 0)
                 accumColor = imageLoad(inAccumImage, pixel);
-            
-            accumColor += vec4(payload.radiance, 1.0);            
+
+            accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
-            
+
             vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);

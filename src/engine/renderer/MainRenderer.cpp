@@ -407,8 +407,6 @@ namespace Atlas {
                 taaRenderer.Render(viewport, target, camera, scene, commandList);
 
                 postProcessRenderer.Render(viewport, target, camera, scene, commandList);
-
-                target->Swap();
             }
             else {
                 Graphics::Profiler::BeginQuery("Post processing");
@@ -1066,54 +1064,29 @@ namespace Atlas {
             std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
             std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers) {
 
-            std::set<Ref<Texture::Texture2D>> textures;
+            blasBuffers.resize(scene->meshIdToBindlessIdx.size());
+            triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
+            bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
 
-            uint32_t textureIdx = 0;
-            uint32_t bufferIdx = 0;
+            for (auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
+                if (!scene->rootMeshMap.contains(meshId)) continue;
 
-            scene->textureToBindlessIdx.clear();
-            scene->bufferToBindlessIdx.clear();
-
-            auto meshes = scene->GetMeshes();
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
-
-                for (auto& material : mesh->data.materials) {
-                    if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap);
-                    if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap);
-                    if (material->HasNormalMap())
-                        textures.insert(material->normalMap);
-                    if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap);
-                    if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap);
-                    if (material->HasAoMap())
-                        textures.insert(material->aoMap);
-                }
-
-                // Not all meshes might have a bvh
-                if (!mesh->blasNodeBuffer.GetSize())
-                    continue;
+                auto& mesh = scene->rootMeshMap[meshId].mesh;
 
                 auto blasBuffer = mesh->blasNodeBuffer.Get();
                 auto triangleBuffer = mesh->triangleBuffer.Get();
                 auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
 
-                blasBuffers.push_back(blasBuffer);
-                triangleBuffers.push_back(triangleBuffer);
-                bvhTriangleBuffers.push_back(bvhTriangleBuffer);
-
-                scene->bufferToBindlessIdx[blasBuffer] = bufferIdx++;
-
+                blasBuffers[idx] = blasBuffer;
+                triangleBuffers[idx] = triangleBuffer;
+                bvhTriangleBuffers[idx] = bvhTriangleBuffer;
             }
 
-            for (auto& texture : textures) {
+            images.resize(scene->textureToBindlessIdx.size());
 
-                scene->textureToBindlessIdx[texture] = textureIdx++;
+            for (auto& [texture, idx] : scene->textureToBindlessIdx) {
 
-                images.push_back(texture->image);
+                images[idx] = texture->image;
 
             }
 

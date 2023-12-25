@@ -36,7 +36,8 @@ namespace Atlas {
         void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
             ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            if (!scene->IsRtDataValid()) return;
+            if (!scene->IsRtDataValid())
+                return;
 
             Graphics::Profiler::BeginQuery("Path tracing");
 
@@ -61,6 +62,7 @@ namespace Atlas {
                 imageSubdivisions = ivec2(1);
                 sampleCount = 0;
                 frameCount++;
+                renderTarget->Swap();
             }
 
             rayGenPipelineConfig.ManageMacro("REALTIME", realTime);

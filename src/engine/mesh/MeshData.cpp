@@ -324,6 +324,12 @@ namespace Atlas {
 
         }
 
+        bool MeshData::IsBVHBuilt() {
+
+            return gpuBvhTriangles.size() > 0;
+
+        }
+
         void MeshData::DeepCopy(const MeshData& that) {
 
             filename = that.filename;

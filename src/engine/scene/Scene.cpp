@@ -54,11 +54,11 @@ namespace Atlas {
 
             hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
 
+            UpdateBindlessIndexMaps();
+
             // Make sure this is changed just once at the start of a frame
             rtDataValid = rtData.IsValid();
-            if (rtDataValid) {
-                rtData.Update(true);
-            }
+            rtData.Update(false);
 
         }
 
@@ -158,6 +158,51 @@ namespace Atlas {
         bool Scene::IsRtDataValid() {
 
             return rtDataValid;
+
+        }
+
+        void Scene::UpdateBindlessIndexMaps() {
+
+            std::set<Ref<Texture::Texture2D>> textures;
+
+            uint32_t textureIdx = 0;
+            uint32_t bufferIdx = 0;
+
+            textureToBindlessIdx.clear();
+            meshIdToBindlessIdx.clear();
+
+            auto meshes = GetMeshes();
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded()) continue;
+
+                for (auto &material: mesh->data.materials) {
+                    if (material->HasBaseColorMap())
+                        textures.insert(material->baseColorMap);
+                    if (material->HasOpacityMap())
+                        textures.insert(material->opacityMap);
+                    if (material->HasNormalMap())
+                        textures.insert(material->normalMap);
+                    if (material->HasRoughnessMap())
+                        textures.insert(material->roughnessMap);
+                    if (material->HasMetalnessMap())
+                        textures.insert(material->metalnessMap);
+                    if (material->HasAoMap())
+                        textures.insert(material->aoMap);
+                }
+
+                // Not all meshes might have a bvh
+                if (!mesh->blasNodeBuffer.GetSize())
+                    continue;
+
+                meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
+
+            }
+
+            for (auto& texture : textures) {
+
+                textureToBindlessIdx[texture] = textureIdx++;
+
+            }
 
         }
 

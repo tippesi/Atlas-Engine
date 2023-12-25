@@ -44,6 +44,8 @@ namespace Atlas {
     };
 
     struct GPUMaterial {
+        int32_t ID;
+
         vec3 baseColor;
         vec3 emissiveColor;
 

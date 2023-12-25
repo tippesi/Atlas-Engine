@@ -88,6 +88,12 @@ namespace Atlas {
              */
             void BuildBVH();
 
+            /**
+             *
+             * @return
+             */
+            bool IsBVHBuilt();
+
             std::string filename;
 
             DataComponent<uint32_t> indices;

@@ -46,7 +46,7 @@ namespace Atlas {
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.offset = int32_t(scene->bufferToBindlessIdx[mesh->blasNodeBuffer.Get()]);
+                meshInfo.offset = int32_t(scene->meshIdToBindlessIdx[mesh.GetID()]);
             }
 
             std::vector<GPUBVHInstance> gpuBvhInstances;
@@ -126,8 +126,16 @@ namespace Atlas {
                 auto& meshInfo = meshInfos[mesh.GetID()];
                 meshInfo.materialOffset = int32_t(materials.size());
 
+                int32_t meshMaterialID = 0;
+
                 for (auto& material : mesh->data.materials) {
                     GPUMaterial gpuMaterial;
+
+                    size_t hash = mesh.GetID();
+                    HashCombine(hash, meshMaterialID++);
+
+                    // Only is persistent when no materials are reorderd in mesh
+                    gpuMaterial.ID = int32_t(hash % 0x80000000);
 
                     gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
                     gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
@@ -191,7 +199,7 @@ namespace Atlas {
 
         bool RTData::IsValid() {
 
-            return isValid;
+            return materialBuffer.GetSize() > 0 && tlasNodeBuffer.GetSize() > 0;
 
         }
 

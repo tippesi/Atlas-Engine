@@ -103,6 +103,8 @@ struct Texture {
 };
 
 struct RaytraceMaterial {
+
+    int ID;
         
     float baseR;
     float baseG;
