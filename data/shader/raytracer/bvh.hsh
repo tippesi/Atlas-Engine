@@ -40,7 +40,10 @@ BVHNode UnpackNode(PackedBVHNode compressed) {
     return node;
 }
 
+// Use local stack if there isn't much register pressure
+#ifndef LOCAL_STACK
 shared int stack[STACK_SIZE][32];
+#endif
 
 void CheckLeafClosest(inout Ray ray, int meshPtr, int nodePtr, float tmin, float tmax) {
         
@@ -205,6 +208,11 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     if (isnan3(ray.direction))
         return;
 
+#ifdef LOCAL_STACK
+    int stack[STACK_SIZE][1];
+    threadID = 0;
+#endif
+
     uint tlasIndex = TLAS_INVALID;
     
     while (stackPtr != 0u) {
@@ -286,6 +294,11 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
 
     if (isnan3(ray.direction))
         return;
+
+#ifdef LOCAL_STACK
+    int stack[STACK_SIZE][1];
+    threadID = 0;
+#endif
 
     uint tlasIndex = TLAS_INVALID;
     
@@ -369,6 +382,11 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
     vec3 originalRayOrigin = ray.origin;
     vec3 originalRayDirection = ray.direction;
 
+#ifdef LOCAL_STACK
+    int stack[STACK_SIZE][1];
+    threadID = 0;
+#endif
+
     uint tlasIndex = TLAS_INVALID;
 
     while (stackPtr != 0u && !hit) {
@@ -448,6 +466,11 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
 
     vec3 originalRayOrigin = ray.origin;
     vec3 originalRayDirection = ray.direction;
+
+#ifdef LOCAL_STACK
+    int stack[STACK_SIZE][1];
+    threadID = 0;
+#endif
 
     uint tlasIndex = TLAS_INVALID;
 

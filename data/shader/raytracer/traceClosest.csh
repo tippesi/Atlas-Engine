@@ -1,3 +1,5 @@
+#define LOCAL_STACK
+
 #include <buffers.hsh>
 #include <bvh.hsh>
 #include <common.hsh>

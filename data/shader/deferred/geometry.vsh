@@ -25,11 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
-layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
+layout(std430, set = 1, binding = 1) buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
 
-layout(std430, set = 1, binding = 1) buffer LastMatrices {
+layout(std430, set = 1, binding = 2) buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 
@@ -71,27 +71,27 @@ void main() {
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
 #endif
     
-    mat4 mvMatrix = globalData.vMatrix * mMatrix;
+    mat4 mvMatrix = globalData[0].vMatrix * mMatrix;
 
     vec3 position = vPosition;
     vec3 lastPosition = vPosition;
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(vPosition, globalData.time - globalData.deltaTime, mMatrix[3].xyz);
+        position = WindAnimation(vPosition, globalData[0].time, mMatrix[3].xyz);
+        lastPosition = WindAnimation(vPosition, globalData[0].time - globalData[0].deltaTime, mMatrix[3].xyz);
 
     }
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
     positionVS = positionToCamera.xyz;
 
-    gl_Position = globalData.pMatrix * positionToCamera;
+    gl_Position = globalData[0].pMatrix * positionToCamera;
 
     // Needed for velocity buffer calculation 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
     // For moving objects we need the last frames matrix
-    vec4 last = globalData.pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
+    vec4 last = globalData[0].pvMatrixLast * mMatrixLast * vec4(lastPosition, 1.0);
     ndcLastVS = vec3(last.xy, last.w);
 
     // Only after ndc calculation apply the clip correction

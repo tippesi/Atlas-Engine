@@ -48,8 +48,8 @@ void main() {
 
 vec4 ComputeVolumetricClouds(vec3 fragPos, float depth) {
 
-    vec3 rayDirection = normalize(vec3(globalData.ivMatrix * vec4(fragPos, 0.0)));
-    vec3 rayOrigin = globalData.cameraLocation.xyz;
+    vec3 rayDirection = normalize(vec3(globalData[0].ivMatrix * vec4(fragPos, 0.0)));
+    vec3 rayOrigin = globalData[0].cameraLocation.xyz;
 
     float inDist, outDist;
     CalculateRayLength(rayOrigin, rayDirection, inDist, outDist);

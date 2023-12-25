@@ -7,7 +7,7 @@ void main() {
     /*
     StencilFeatures features = CreateStencilFeatures();
 
-    vec3 viewDir = normalize(fPosition - globalData.cameraLocation.xyz);
+    vec3 viewDir = normalize(fPosition - globalData[0].cameraLocation.xyz);
     bool frontFacing = dot(normalize(fNormal), viewDir) < 0.0 ? true : false;
 
     if (!gl_FrontFacing && !frontFacing) {

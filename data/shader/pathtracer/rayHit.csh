@@ -75,15 +75,15 @@ void main() {
 #ifdef REALTIME
         // Write out material information and velocity into a g-buffer
         if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
-            vec4 viewSpacePos = globalData.vMatrix * vec4(surface.P, 1.0);
-            vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData.pvMatrixLast * vec4(surface.P, 1.0);
+            vec4 viewSpacePos = globalData[0].vMatrix * vec4(surface.P, 1.0);
+            vec4 projPositionCurrent = globalData[0].pMatrix * viewSpacePos;
+            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(surface.P, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
 
-            //ndcCurrent -= globalData.jitterCurrent;
-            //ndcLast -= globalData.jitterLast;
+            //ndcCurrent -= globalData[0].jitterCurrent;
+            //ndcLast -= globalData[0].jitterLast;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));

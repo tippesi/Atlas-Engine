@@ -85,7 +85,7 @@ void main() {
 	vec3 geometryNormal = 2.0 * texture(normalMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).rgb - 1.0;
 #endif
 
-    geometryNormal = normalize(vec3(globalData.vMatrix * vec4(geometryNormal, 0.0)));
+    geometryNormal = normalize(vec3(globalData[0].vMatrix * vec4(geometryNormal, 0.0)));
     // We want the normal always two face the camera for two sided materials
     geometryNormal *= -dot(geometryNormal, positionVS);
     geometryNormal = normalize(geometryNormal);
@@ -109,8 +109,8 @@ void main() {
 	vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
 	vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-	ndcL -= globalData.jitterLast;
-	ndcC -= globalData.jitterCurrent;
+	ndcL -= globalData[0].jitterLast;
+	ndcC -= globalData[0].jitterCurrent;
 
 	velocityFS = (ndcL - ndcC) * 0.5;
 
@@ -128,7 +128,7 @@ void main() {
 #else
     float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).r;
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * -globalData.cameraDirection.xyz;
+    vec3 modelPosition = modelPositionVS + depthOffset * -globalData[0].cameraDirection.xyz;
     vec4 modelPositionFS = instanceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;

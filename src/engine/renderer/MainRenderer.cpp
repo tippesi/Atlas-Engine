@@ -107,13 +107,13 @@ namespace Atlas {
 
             SetUniforms(scene, camera);
 
-            commandList->BindBuffer(globalUniformBuffer, 1, 11);
+            commandList->BindBuffer(globalUniformBuffer, 0, 0);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(blasBuffers, 0, 4);
             commandList->BindBuffers(triangleBuffers, 0, 5);
             commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
-            commandList->BindSampledImages(images, 0, 7);
+            commandList->BindSampledImages(images, 0, 1);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -143,9 +143,9 @@ namespace Atlas {
             }
 
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
-            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
-            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
-            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 2);
+            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 1);
+            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 2);
+            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 3);
 
             if (scene->irradianceVolume) {
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
@@ -159,9 +159,9 @@ namespace Atlas {
 
             if (scene->sky.GetProbe()) {
                 commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 10);
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
             }
 
             volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
@@ -219,12 +219,12 @@ namespace Atlas {
 
             auto targetData = target->GetData(FULL_RES);
 
-            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 2);
-            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 3);
-            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 4);
-            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 5);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 6);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
+            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
+            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
+            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
 
             if (!target->HasHistory()) {
                 auto rtData = target->GetHistoryData(HALF_RES);
@@ -358,8 +358,6 @@ namespace Atlas {
             Graphics::Profiler::BeginThread("Path tracing", commandList);
             Graphics::Profiler::BeginQuery("Buffer operations");
 
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-
             auto globalUniforms = GlobalUniforms{
                  .vMatrix = camera->viewMatrix,
                  .pMatrix = camera->projectionMatrix,
@@ -383,19 +381,18 @@ namespace Atlas {
             lastJitter = jitter;
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
             PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 11);
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(blasBuffers, 0, 4);
             commandList->BindBuffers(triangleBuffers, 0, 5);
             commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
-            commandList->BindSampledImages(images, 0, 7);
+            commandList->BindSampledImages(images, 0, 1);
 
             Graphics::Profiler::EndQuery();
 
@@ -844,14 +841,22 @@ namespace Atlas {
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_LINEAR,
                 .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
                 .maxLod = 12,
-                .anisotropicFiltering = false
+                .anisotropicFiltering = true
             };
             globalSampler = device->CreateSampler(samplerDesc);
 
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {
+                    {
+                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .descriptorCount = 1024, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .descriptorCount = 1024, .bindless = true
+                    },
                     {
                         .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                         .descriptorCount = 1024, .bindless = true
@@ -863,13 +868,9 @@ namespace Atlas {
                     {
                         .bindingIdx = 6, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                         .descriptorCount = 1024, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 7, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                        .descriptorCount = 16000, .bindless = true
                     }
                 },
-                .bindingCount = 4
+                .bindingCount = 5
             };
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 

@@ -23,7 +23,7 @@ layout(push_constant) uniform constants {
 
 // https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
 float GetInterleavedGradientNoise(vec2 screenPos) {
-    uint frame = globalData.frameCount % 64u;
+    uint frame = globalData[0].frameCount % 64u;
     float x = float(screenPos.x) + 5.588238 * float(frame);
     float y = float(screenPos.y) + 5.588238 * float(frame);
 
@@ -41,7 +41,7 @@ float EdgeFadeOut(vec2 screenPos, float fadeDist) {
 
 vec2 PosToUV(vec3 pos) {
 
-    vec4 clipSpace = globalData.pMatrix * vec4(pos, 1.0);
+    vec4 clipSpace = globalData[0].pMatrix * vec4(pos, 1.0);
     clipSpace.xyz /= clipSpace.w;
     return clipSpace.xy * 0.5 + 0.5;
 
@@ -91,7 +91,7 @@ void main() {
         // Step the ray
         rayPos += rayDir * stepLength;
         
-        vec4 offset = globalData.pMatrix * vec4(rayPos, 1.0);
+        vec4 offset = globalData[0].pMatrix * vec4(rayPos, 1.0);
         offset.xyz /= offset.w;
         vec2 uvPos = offset.xy * 0.5 + 0.5;
 

@@ -2,7 +2,7 @@
 
 // https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
 float GetInterleavedGradientNoise(vec2 screenPos) {
-    uint frame = globalData.frameCount % 64u;
+    uint frame = globalData[0].frameCount % 64u;
     float x = float(screenPos.x) + 5.588238 * float(frame);
     float y = float(screenPos.y) + 5.588238 * float(frame);
 

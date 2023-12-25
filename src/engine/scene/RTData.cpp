@@ -51,10 +51,18 @@ namespace Atlas {
         void RTData::Update(bool updateTriangleLights) {
 
             auto actors = scene->GetMeshActors();
-
             if (!actors.size()) return;
 
-            UpdateMaterials();
+            auto meshes = scene->GetMeshes();
+            for (auto& mesh : meshes ) {
+                if (meshInfos.contains(mesh.GetID())) {
+                    auto &meshInfo = meshInfos[mesh.GetID()];
+                    meshInfo.offset = int32_t(scene->bufferToBindlessIdx[mesh->blasNodeBuffer.Get()]);
+                }
+                else {
+                    // Do something here to add new meshes
+                }
+            }
 
             std::vector<GPUBVHInstance> gpuBvhInstances;
             std::vector<Volume::AABB> actorAABBs;
@@ -64,6 +72,8 @@ namespace Atlas {
                 meshInfo.matrices.clear();
             }
 
+            UpdateMaterials();
+
             for (auto& actor : actors) {
                 if (!actor->mesh.IsLoaded())
                     continue;
@@ -72,8 +82,7 @@ namespace Atlas {
                     continue;
 
                 actorAABBs.push_back(actor->aabb);
-                auto& meshInfo = meshInfos[actor->mesh.GetID()];
-                meshInfo.offset = int32_t(scene->bufferToBindlessIdx[actor->mesh->blasNodeBuffer.Get()]);
+                auto &meshInfo = meshInfos[actor->mesh.GetID()];
 
                 auto inverseMatrix = mat3x4(glm::transpose(actor->inverseGlobalMatrix));
 

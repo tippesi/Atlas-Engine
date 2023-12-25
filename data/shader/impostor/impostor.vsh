@@ -78,7 +78,7 @@ void main() {
     texCoordVS = 0.5 * vPosition + 0.5;
 	
 	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
-	vec3 dir = normalize(globalData.cameraLocation.xyz - pos);
+	vec3 dir = normalize(globalData[0].cameraLocation.xyz - pos);
 
     float frames = float(uniforms.views);
 
@@ -140,23 +140,23 @@ void main() {
 	right = viewPlane.right;
 #endif
 	
-	// up = globalData.cameraUp;
-	// right = globalData.cameraRight;
+	// up = globalData[0].cameraUp;
+	// right = globalData[0].cameraRight;
 
 	vec4 modelPosition = vec4((normalize(up.xyz) * position.y
         + normalize(right.xyz) * position.x) + uniforms.center.xyz, 1.0);
-	positionVS = vec3(globalData.vMatrix * mMatrix * modelPosition);
+	positionVS = vec3(globalData[0].vMatrix * mMatrix * modelPosition);
 
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceMatrix = globalData.pMatrix * globalData.vMatrix * mMatrix;
+	instanceMatrix = globalData[0].pMatrix * globalData[0].vMatrix * mMatrix;
 	modelPositionVS = modelPosition.xyz;
 #endif
 
-    gl_Position =  globalData.pMatrix * vec4(positionVS, 1.0);
+    gl_Position =  globalData[0].pMatrix * vec4(positionVS, 1.0);
 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-    vec4 last = globalData.pvMatrixLast * mMatrix * modelPosition;
+    vec4 last = globalData[0].pvMatrixLast * mMatrix * modelPosition;
 	ndcLastVS = vec3(last.xy, last.w);
 
 }

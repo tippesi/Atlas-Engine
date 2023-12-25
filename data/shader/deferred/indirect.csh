@@ -142,10 +142,10 @@ void main() {
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
         Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-        vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
-        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
-        vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
-        vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
+        vec3 worldView = normalize(vec3(globalData[0].ivMatrix * vec4(surface.P, 0.0)));
+        vec3 worldPosition = vec3(globalData[0].ivMatrix * vec4(surface.P, 1.0));
+        vec3 worldNormal = normalize(vec3(globalData[0].ivMatrix * vec4(surface.N, 0.0)));
+        vec3 geometryWorldNormal = normalize(vec3(globalData[0].ivMatrix * vec4(geometryNormal, 0.0)));
 
         // Indirect diffuse BRDF
 #ifdef DDGI
@@ -161,7 +161,7 @@ void main() {
 #endif
 
         // Indirect specular BRDF
-        vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
+        vec3 R = normalize(mat3(globalData[0].ivMatrix) * reflect(-surface.V, surface.N));
         float mipLevel = surface.material.roughness * float(Uniforms.specularProbeMipLevels - 1);
         vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
         // We multiply by local sky visibility because the reflection probe only includes the sky
