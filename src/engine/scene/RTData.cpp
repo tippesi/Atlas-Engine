@@ -30,24 +30,6 @@ namespace Atlas {
 
         }
 
-        void RTData::Build() {
-
-            isValid = false;
-
-            if (hardwareRayTracing) {
-                BuildForHardwareRayTracing();
-            }
-            else {
-                BuildForSoftwareRayTracing();
-            }
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, true);
-
-            isValid = true;
-
-        }
-
         void RTData::Update(bool updateTriangleLights) {
 
             auto actors = scene->GetMeshActors();
@@ -55,13 +37,16 @@ namespace Atlas {
 
             auto meshes = scene->GetMeshes();
             for (auto& mesh : meshes ) {
-                if (meshInfos.contains(mesh.GetID())) {
-                    auto &meshInfo = meshInfos[mesh.GetID()];
-                    meshInfo.offset = int32_t(scene->bufferToBindlessIdx[mesh->blasNodeBuffer.Get()]);
+                if (!mesh.IsLoaded() || mesh->data.gpuTriangles.size() == 0)
+                    continue;
+
+                if (!meshInfos.contains(mesh.GetID())) {
+                    meshInfos[mesh.GetID()] = {};
+                    BuildTriangleLightsForMesh(mesh);
                 }
-                else {
-                    // Do something here to add new meshes
-                }
+
+                auto &meshInfo = meshInfos[mesh.GetID()];
+                meshInfo.offset = int32_t(scene->bufferToBindlessIdx[mesh->blasNodeBuffer.Get()]);
             }
 
             std::vector<GPUBVHInstance> gpuBvhInstances;
@@ -107,9 +92,6 @@ namespace Atlas {
                 gpuBvhInstances = UpdateForSoftwareRayTracing(gpuBvhInstances, actorAABBs);
             }
 
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, false);
-
             if (updateTriangleLights)
                 UpdateTriangleLights();
 
@@ -118,14 +100,14 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateMaterials(bool updateTextures) {
+        void RTData::UpdateMaterials() {
 
             std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, updateTextures);
+            UpdateMaterials(materials);
 
         }
 
-        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures) {
+        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials) {
 
             std::lock_guard lock(mutex);
 
@@ -193,6 +175,9 @@ namespace Atlas {
                 }
             }
 
+            if (!materials.size())
+                return;
+
             materialBuffer.SetSize(materials.size());
             materialBuffer.SetData(materials.data(), 0, materials.size());
 
@@ -200,7 +185,7 @@ namespace Atlas {
 
         void RTData::Clear() {
 
-            isValid = false;
+            meshInfos.clear();
 
         }
 
@@ -212,13 +197,8 @@ namespace Atlas {
 
         void RTData::BuildForSoftwareRayTracing() {
 
-            std::vector<GPUTriangle> gpuTriangles;
-            std::vector<GPUBVHTriangle> gpuBvhTriangles;
-            std::vector<GPUBVHNode> gpuBvhNodes;
-
             auto meshes = scene->GetMeshes();
 
-            int32_t materialCount = 0;
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;

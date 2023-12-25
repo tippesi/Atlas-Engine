@@ -29,13 +29,9 @@ namespace Atlas {
 
             RTData(Scene* scene);
 
-            void Build();
-
             void Update(bool updateTriangleLights);
 
-            void UpdateMaterials(bool updateTextures = false);
-
-            void UpdateTextures();
+            void UpdateMaterials();
 
             bool IsValid();
 
@@ -53,7 +49,7 @@ namespace Atlas {
                 std::vector<mat4x3> matrices;
             };
 
-            void UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures);
+            void UpdateMaterials(std::vector<GPUMaterial>& materials);
 
             void BuildForSoftwareRayTracing();
 
@@ -84,7 +80,7 @@ namespace Atlas {
 
             bool hardwareRayTracing = false;
 
-            std::atomic_bool isValid = false;
+            std::atomic_bool isValid = true;
             std::mutex mutex;
 
         };

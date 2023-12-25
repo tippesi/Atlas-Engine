@@ -1139,7 +1139,6 @@ void App::CheckLoadScene() {
         for (auto& mesh : sceneMeshes) {
             mesh->BuildBVH();
         }
-        scene->BuildRTStructures();
     };
 
     if (!future.valid()) {

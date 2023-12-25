@@ -125,12 +125,6 @@ namespace Atlas {
 
         }
 
-        void Scene::BuildRTStructures() {
-
-            rtData.Build();
-
-        }
-
         void Scene::ClearRTStructures() {
 
             rtData.Clear();

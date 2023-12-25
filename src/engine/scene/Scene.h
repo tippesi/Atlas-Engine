@@ -95,12 +95,6 @@ namespace Atlas {
             std::vector<Material*> GetMaterials();
 
             /**
-             * Builds the BVH and texture atlases.
-             * @note The scene needs to be updated first.
-             */
-            void BuildRTStructures();
-
-            /**
              *
              */
             void ClearRTStructures();

@@ -249,7 +249,7 @@ namespace Atlas {
                     .historyClipMax = 1.0f,
                     .currentClipFactor = 2.0f,
                     .exposure = camera->exposure,
-                    .samplesPerFrame = realTimeSamplesPerFrame,
+                    .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance
                 };
                 commandList->PushConstants("constants", &constants);
