@@ -78,13 +78,13 @@ namespace Atlas {
 
         }
 
-        void Mesh::BuildBVH() {
+        void Mesh::BuildBVH(bool parallelBuild) {
 
             assert(data.indexCount > 0 && "There is no data in this mesh");
 
             if (data.indexCount == 0) return;
 
-            data.BuildBVH();
+            data.BuildBVH(parallelBuild);
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;

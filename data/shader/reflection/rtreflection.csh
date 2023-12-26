@@ -119,7 +119,6 @@ void main() {
                     continue;
                 }
 
-                ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
                 ray.hitID = -1;
@@ -232,7 +231,6 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

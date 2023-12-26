@@ -67,7 +67,7 @@ void main() {
         ivec2 pixel = Unflatten2D(ray.ID / Uniforms.samplesPerFrame, Uniforms.resolution);
         
         Surface surface = EvaluateBounce(ray, payload);
-        
+
         vec4 accumColor = vec4(0.0);
 
         float energy = dot(payload.throughput, vec3(1.0));
@@ -277,7 +277,6 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
     }
     
     ray.direction = normalize(brdfSample.L);
-    ray.inverseDirection = 1.0 / ray.direction;
     payload.throughput *= mat.ao;
 
     // Russain roulette, terminate rays with a chance of one percent
@@ -304,7 +303,6 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

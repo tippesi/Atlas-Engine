@@ -88,7 +88,6 @@ void main() {
                 BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec);
 
                 ray.direction = brdfSample.L;
-                ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
                 ray.hitID = -1;

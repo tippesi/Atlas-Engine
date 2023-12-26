@@ -86,7 +86,7 @@ namespace Atlas {
             /**
              * Builds a blas from the data
              */
-            void BuildBVH();
+            void BuildBVH(bool parallelBuild);
 
             /**
              *

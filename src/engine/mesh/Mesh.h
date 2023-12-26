@@ -57,7 +57,7 @@ namespace Atlas {
             /**
              * Builds up BVH and fills raytracing related buffers
              */
-            void BuildBVH();
+            void BuildBVH(bool parallelBuild = true);
 
             std::string name = "";
 

@@ -134,7 +134,6 @@ bool CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
     }
     else {

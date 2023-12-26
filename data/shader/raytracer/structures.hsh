@@ -21,14 +21,12 @@ struct Ray {
     
     vec3 origin;
     vec3 direction;
-    vec3 inverseDirection;
 
     int hitID;
     float hitDistance;
     int hitInstanceID;
 
     int currentInstanceID;
-
 };
 
 struct RayPayload {
@@ -77,6 +75,7 @@ struct Triangle {
     
     int materialIndex;
     bool endOfNode;
+    float opacity;
     
 };
 
