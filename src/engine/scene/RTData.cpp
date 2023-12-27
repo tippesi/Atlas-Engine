@@ -305,7 +305,9 @@ namespace Atlas {
             // Order after the BVH build to fit the node indices
             std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
             for (size_t i = 0; i < bvh.refs.size(); i++) {
+                auto& ref = bvh.refs[i];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
+                orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : -1;
             }
 
             tlasNodeBuffer.SetSize(gpuBvhNodes.size());

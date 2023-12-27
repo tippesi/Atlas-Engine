@@ -26,13 +26,13 @@ BVHNode UnpackNode(PackedBVHNode compressed) {
     BVHNode node;
 
     node.leftAABB.min = vec3(compressed.data0.x,
-        compressed.data0.y, compressed.data0.z);
+    compressed.data0.y, compressed.data0.z);
     node.leftAABB.max = vec3(compressed.data0.w,
-        compressed.data1.x, compressed.data1.y);
+    compressed.data1.x, compressed.data1.y);
     node.rightAABB.min = vec3(compressed.data1.z,
-        compressed.data1.w, compressed.data2.x);
+    compressed.data1.w, compressed.data2.x);
     node.rightAABB.max = vec3(compressed.data2.y,
-        compressed.data2.z, compressed.data2.w);
+    compressed.data2.z, compressed.data2.w);
 
     node.leftPtr = floatBitsToInt(compressed.data3.x);
     node.rightPtr = floatBitsToInt(compressed.data3.y);
@@ -46,22 +46,22 @@ shared int stack[STACK_SIZE][32];
 #endif
 
 void CheckLeafClosest(inout Ray ray, int meshPtr, int nodePtr, float tmin, float tmax) {
-        
+
     int triPtr = ~nodePtr;
     bool endOfNode = false;
-    
+
     vec3 sol, v0, v1, v2, n;
-    
+
     while (!endOfNode) {
         v0 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v0.xyz;
         v1 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v1.xyz;
         v2 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v2.xyz;
         endOfNode = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v0.w > 0.0;
         float d = 0.0;
-#ifdef BACKFACE_CULLING
+        #ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
         d = dot(n, ray.direction);
-#endif
+        #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
             if (sol.x < ray.hitDistance) {
@@ -72,29 +72,29 @@ void CheckLeafClosest(inout Ray ray, int meshPtr, int nodePtr, float tmin, float
         }
         triPtr++;
     }
-    
+
 }
 
 bool CheckLeaf(inout Ray ray, int meshPtr, int nodePtr, float tmin, float tmax) {
-        
+
     int triPtr = ~nodePtr;
     bool endOfNode = false;
-    
+
     vec3 sol, v0, v1, v2, n;
     bool hit = false;
-    
+
     while (!endOfNode && !hit) {
         v0 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v0.xyz;
         v1 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v1.xyz;
         v2 = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v2.xyz;
         endOfNode = bvhTriangles[nonuniformEXT(meshPtr)].data[triPtr].v0.w > 0.0;
         float d = 0.0;
-#ifdef BACKFACE_CULLING
+        #ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
         d = dot(n, ray.direction);
-#endif
+        #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
-        if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {            
+        if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
             hit = true;
             ray.hitDistance = sol.x;
             ray.hitID = triPtr;
@@ -104,17 +104,17 @@ bool CheckLeaf(inout Ray ray, int meshPtr, int nodePtr, float tmin, float tmax) 
     }
 
     return hit;
-    
+
 }
 
 void CheckLeafClosestTransparency(inout Ray ray, int meshPtr, int materialOffset,
-    int nodePtr, float tmin, float tmax) {
+int nodePtr, float tmin, float tmax) {
 
     int triPtr = ~nodePtr;
     bool endOfNode = false;
-    
-    vec3 sol, v0, v1, v2, n;    
-    
+
+    vec3 sol, v0, v1, v2, n;
+
     while (!endOfNode) {
         Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]);
         v0 = tri.v0.xyz;
@@ -122,10 +122,10 @@ void CheckLeafClosestTransparency(inout Ray ray, int meshPtr, int materialOffset
         v2 = tri.v2.xyz;
         endOfNode = tri.endOfNode;
         float d = 0.0;
-#ifdef BACKFACE_CULLING
+        #ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
         d = dot(n, ray.direction);
-#endif
+        #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0 && sol.x < ray.hitDistance) {
             float opacity = tri.opacity < 0.0 ? GetOpacity(tri, sol.yz, materialOffset, 0) : tri.opacity;
@@ -141,13 +141,13 @@ void CheckLeafClosestTransparency(inout Ray ray, int meshPtr, int materialOffset
 }
 
 float CheckLeafTransparency(inout Ray ray, int meshPtr, int materialOffset, int nodePtr,
-    float tmin, float tmax, float transparency) {
+float tmin, float tmax, float transparency) {
 
     int triPtr = ~nodePtr;
     bool endOfNode = false;
-    
+
     vec3 sol, v0, v1, v2, n;
-    
+
     while (!endOfNode) {
         Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshPtr)].data[triPtr]);
         v0 = tri.v0.xyz;
@@ -155,10 +155,10 @@ float CheckLeafTransparency(inout Ray ray, int meshPtr, int materialOffset, int 
         v2 = tri.v2.xyz;
         endOfNode = tri.endOfNode;
         float d = 0.0;
-#ifdef BACKFACE_CULLING
+        #ifdef BACKFACE_CULLING
         n = cross(v0 - v1, v0 - v2);
         d = dot(n, ray.direction);
-#endif
+        #endif
         bool intersect = IntersectTriangle(ray, v0, v1, v2, sol);
         if (intersect && sol.x > tmin && sol.x < tmax && d <= 0.0) {
             ray.hitDistance = sol.x;
@@ -173,9 +173,7 @@ float CheckLeafTransparency(inout Ray ray, int meshPtr, int materialOffset, int 
 
 }
 
-void CheckInstance(inout Ray ray, inout int meshPtr, inout int materialOffset, inout int nodePtr) {
-
-    int instancePtr = ~nodePtr;
+void CheckInstance(inout Ray ray, inout int meshPtr, inout int materialOffset, inout int instancePtr) {
 
     Instance instance = bvhInstances[instancePtr];
 
@@ -187,12 +185,12 @@ void CheckInstance(inout Ray ray, inout int meshPtr, inout int materialOffset, i
 
     meshPtr = instance.meshOffset;
     materialOffset = instance.materialOffset;
-    nodePtr = 0;
+    instancePtr = instance.nextInstance;
 
 }
 
 void HitClosest(inout Ray ray, float tMin, float tMax) {
-    
+
     uint stackPtr = 1u;
     int nodePtr = 0;
     int meshPtr = 0;
@@ -205,79 +203,81 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     if (isnan3(ray.direction))
-        return;
+    return;
 
-#ifdef LOCAL_STACK
+    #ifdef LOCAL_STACK
     int stack[STACK_SIZE][1];
     threadID = 0;
-#endif
+    #endif
 
     uint tlasIndex = TLAS_INVALID;
-    
+
     while (stackPtr != 0u) {
-        if (stackPtr < tlasIndex) {
-            if (tlasIndex != TLAS_INVALID) {
-                ray.origin = originalRayOrigin;
-                ray.direction = originalRayDirection;
-            }
-            tlasIndex = TLAS_INVALID;
-            if (nodePtr < 0) {
-                tlasIndex = stackPtr;
+        while(stackPtr != 0u && nodePtr >= 0) {
+            BVHNode node = UnpackNode(tlasNodes[nodePtr]);
 
-                CheckInstance(ray, meshPtr, materialOffset, nodePtr);
-            }
-            else {
-                BVHNode node = UnpackNode(tlasNodes[nodePtr]);
+            float hitL = 0.0, hitR = 0.0;
+            bool intersectL = IntersectAABB(ray,
+            node.leftAABB, tMin, ray.hitDistance, hitL);
+            bool intersectR = IntersectAABB(ray,
+            node.rightAABB, tMin, ray.hitDistance, hitR);
 
-                float hitL = 0.0, hitR = 0.0;
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+            bool noIntersection = !intersectL && !intersectR;
+            nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+            nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
 
-                bool noIntersection = !intersectL && !intersectR;
-                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
-                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
-
-                if (intersectR && intersectL) {
-                    int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
-                    stack[stackPtr++][threadID] = stackIdx;
-                }
+            if (intersectR && intersectL) {
+                int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+                stack[stackPtr++][threadID] = stackIdx;
             }
         }
-        else {
-            if(nodePtr < 0) {
-                CheckLeafClosest(ray, meshPtr, nodePtr, tMin, ray.hitDistance);
-                nodePtr = stack[--stackPtr][threadID];
-            }
-            else {
-                BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
 
-                float hitL = 0.0, hitR = 0.0;
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+        tlasIndex = stackPtr;
+        int instancPtr = ~nodePtr;
 
-                bool noIntersection = !intersectL && !intersectR;
-                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
-                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+        while (stackPtr != 0u && stackPtr >= tlasIndex) {
+            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+            nodePtr = 0;
 
-                if (intersectR && intersectL) {
-                    int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
-                    stack[stackPtr++][threadID] = stackIdx;
+            while (stackPtr >= tlasIndex) {
+                if (nodePtr < 0) {
+                    CheckLeafClosest(ray, meshPtr, nodePtr, tMin, ray.hitDistance);
+                    nodePtr = stack[--stackPtr][threadID];
+                }
+                else {
+                    BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
+
+                    float hitL = 0.0, hitR = 0.0;
+                    bool intersectL = IntersectAABB(ray,
+                    node.leftAABB, tMin, ray.hitDistance, hitL);
+                    bool intersectR = IntersectAABB(ray,
+                    node.rightAABB, tMin, ray.hitDistance, hitR);
+
+                    bool noIntersection = !intersectL && !intersectR;
+                    nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+                    nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+
+                    if (intersectR && intersectL) {
+                        int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+                        stack[stackPtr++][threadID] = stackIdx;
+                    }
                 }
             }
+
+            ray.origin = originalRayOrigin;
+            ray.direction = originalRayDirection;
+
+            if (instancPtr >= 0) stackPtr++;
         }
+
+        tlasIndex = TLAS_INVALID;
+
     }
 
-    ray.origin = originalRayOrigin;
-    ray.direction = originalRayDirection;
-        
 }
 
 void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
-    
+
     uint stackPtr = 1u;
     int nodePtr = 0;
     int meshPtr = 0;
@@ -290,82 +290,83 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     if (isnan3(ray.direction))
-        return;
+    return;
 
-#ifdef LOCAL_STACK
+    #ifdef LOCAL_STACK
     int stack[STACK_SIZE][1];
     threadID = 0;
-#endif
+    #endif
 
     uint tlasIndex = TLAS_INVALID;
-    
+
     while (stackPtr != 0u) {
-        if (stackPtr < tlasIndex) {
-            if (tlasIndex != TLAS_INVALID) {
-                ray.origin = originalRayOrigin;
-                ray.direction = originalRayDirection;
-            }
-            tlasIndex = TLAS_INVALID;
-            if (nodePtr < 0) {
-                tlasIndex = stackPtr;
+        while(stackPtr != 0u && nodePtr >= 0) {
+            BVHNode node = UnpackNode(tlasNodes[nodePtr]);
 
-                CheckInstance(ray, meshPtr, materialOffset, nodePtr);
-            }
-            else {
-                BVHNode node = UnpackNode(tlasNodes[nodePtr]);
+            float hitL = 0.0, hitR = 0.0;
+            bool intersectL = IntersectAABB(ray,
+            node.leftAABB, tMin, ray.hitDistance, hitL);
+            bool intersectR = IntersectAABB(ray,
+            node.rightAABB, tMin, ray.hitDistance, hitR);
 
-                float hitL = 0.0, hitR = 0.0;
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+            bool noIntersection = !intersectL && !intersectR;
+            nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+            nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
 
-                bool noIntersection = !intersectL && !intersectR;
-                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
-                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
-
-                if (intersectR && intersectL) {
-                    int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
-                    stack[stackPtr++][threadID] = stackIdx;
-                }
+            if (intersectR && intersectL) {
+                int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+                stack[stackPtr++][threadID] = stackIdx;
             }
         }
-        else {
-            if(nodePtr < 0) {
-                CheckLeafClosestTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, ray.hitDistance);
-                nodePtr = stack[--stackPtr][threadID];
-            }
-            else {
-                BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
 
-                float hitL = 0.0, hitR = 0.0;
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, ray.hitDistance, hitL);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, ray.hitDistance, hitR);
+        tlasIndex = stackPtr;
+        int instancPtr = ~nodePtr;
 
-                bool noIntersection = !intersectL && !intersectR;
-                nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
-                nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+        while (stackPtr != 0u && stackPtr >= tlasIndex) {
+            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+            nodePtr = 0;
 
-                if (intersectR && intersectL) {
-                    int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
-                    stack[stackPtr++][threadID] = stackIdx;
+            while (stackPtr >= tlasIndex) {
+                if (nodePtr < 0) {
+                    CheckLeafClosestTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, ray.hitDistance);
+                    nodePtr = stack[--stackPtr][threadID];
+                }
+                else {
+                    BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
+
+                    float hitL = 0.0, hitR = 0.0;
+                    bool intersectL = IntersectAABB(ray,
+                    node.leftAABB, tMin, ray.hitDistance, hitL);
+                    bool intersectR = IntersectAABB(ray,
+                    node.rightAABB, tMin, ray.hitDistance, hitR);
+
+                    bool noIntersection = !intersectL && !intersectR;
+                    nodePtr = hitL <= hitR ? node.leftPtr : node.rightPtr;
+                    nodePtr = noIntersection ? stack[--stackPtr][threadID] : nodePtr;
+
+                    if (intersectR && intersectL) {
+                        int stackIdx = hitL <= hitR ? node.rightPtr : node.leftPtr;
+                        stack[stackPtr++][threadID] = stackIdx;
+                    }
                 }
             }
+
+            ray.origin = originalRayOrigin;
+            ray.direction = originalRayDirection;
+
+            //if (instancPtr >= 0) stackPtr++;
         }
+
+        tlasIndex = TLAS_INVALID;
+
     }
-
-    ray.origin = originalRayOrigin;
-    ray.direction = originalRayDirection;
-        
 }
 
 bool HitAny(inout Ray ray, float tMin, float tMax) {
 
     if (isnan3(ray.direction))
-        return false;
-    
+    return false;
+
     bool hit = false;
 
     uint stackPtr = 1u;
@@ -377,78 +378,78 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
     vec3 originalRayOrigin = ray.origin;
     vec3 originalRayDirection = ray.direction;
 
-#ifdef LOCAL_STACK
+    #ifdef LOCAL_STACK
     int stack[STACK_SIZE][1];
     threadID = 0;
-#endif
+    #endif
 
     uint tlasIndex = TLAS_INVALID;
 
     while (stackPtr != 0u && !hit) {
-        if (stackPtr < tlasIndex) {
-            if (tlasIndex != TLAS_INVALID) {
-                ray.origin = originalRayOrigin;
-                ray.direction = originalRayDirection;
-            }
-            tlasIndex = TLAS_INVALID;
-            if (nodePtr < 0) {
-                tlasIndex = stackPtr;
+        while(stackPtr != 0u && nodePtr >= 0) {
+            BVHNode node = UnpackNode(tlasNodes[nodePtr]);
 
-                CheckInstance(ray, meshPtr, materialOffset, nodePtr);
-            }
-            else {
-                BVHNode node = UnpackNode(tlasNodes[nodePtr]);
+            bool intersectL = IntersectAABB(ray,
+            node.leftAABB, tMin, tMax);
+            bool intersectR = IntersectAABB(ray,
+            node.rightAABB, tMin, tMax);
 
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, tMax);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, tMax);
+            nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+            nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
-                nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
-
-                if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
-                }
+            if (intersectR && intersectL) {
+                stack[stackPtr++][threadID] = node.leftPtr;
             }
         }
-        else {
-            if(nodePtr < 0) {
-                if (CheckLeaf(ray, meshPtr, nodePtr, tMin, tMax)) {
-                    hit = true;
+
+        tlasIndex = stackPtr;
+        int instancPtr = ~nodePtr;
+
+        while (stackPtr != 0u && (stackPtr >= tlasIndex || instancPtr >= 0)) {
+            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+            nodePtr = 0;
+
+            while (stackPtr >= tlasIndex && !hit) {
+                if (nodePtr < 0) {
+                    if (CheckLeaf(ray, meshPtr, nodePtr, tMin, tMax)) {
+                        hit = true;
+                    }
+                    nodePtr = stack[--stackPtr][threadID];
                 }
-                nodePtr = stack[--stackPtr][threadID];
-            }
-            else {
-                BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
+                else {
+                    BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
 
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, tMax);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, tMax);
+                    bool intersectL = IntersectAABB(ray,
+                    node.leftAABB, tMin, tMax);
+                    bool intersectR = IntersectAABB(ray,
+                    node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
-                nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
+                    nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                    nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
-                if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    if (intersectR && intersectL) {
+                        stack[stackPtr++][threadID] = node.leftPtr;
+                    }
                 }
             }
+
+            ray.origin = originalRayOrigin;
+            ray.direction = originalRayDirection;
         }
+
+        tlasIndex = TLAS_INVALID;
+
     }
 
-    ray.origin = originalRayOrigin;
-    ray.direction = originalRayDirection;
-
     return hit;
-        
+
 }
 
 float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
 
     if (isnan3(ray.direction))
-        return 1.0;
-    
+    return 1.0;
+
     float transparency = 1.0;
 
     uint stackPtr = 1u;
@@ -460,69 +461,71 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
     vec3 originalRayOrigin = ray.origin;
     vec3 originalRayDirection = ray.direction;
 
-#ifdef LOCAL_STACK
+    #ifdef LOCAL_STACK
     int stack[STACK_SIZE][1];
     threadID = 0;
-#endif
+    #endif
 
     uint tlasIndex = TLAS_INVALID;
 
     while (stackPtr != 0u && transparency > 0.0) {
-        if (stackPtr < tlasIndex) {
-            if (tlasIndex != TLAS_INVALID) {
-                ray.origin = originalRayOrigin;
-                ray.direction = originalRayDirection;
-            }
-            tlasIndex = TLAS_INVALID;
-            if (nodePtr < 0) {
-                tlasIndex = stackPtr;
+        while(stackPtr != 0u && nodePtr >= 0) {
+            BVHNode node = UnpackNode(tlasNodes[nodePtr]);
 
-                CheckInstance(ray, meshPtr, materialOffset, nodePtr);
-            }
-            else {
-                BVHNode node = UnpackNode(tlasNodes[nodePtr]);
+            bool intersectL = IntersectAABB(ray,
+            node.leftAABB, tMin, tMax);
+            bool intersectR = IntersectAABB(ray,
+            node.rightAABB, tMin, tMax);
 
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, tMax);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, tMax);
+            nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+            nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
-                nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
-
-                if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
-                }
+            if (intersectR && intersectL) {
+                stack[stackPtr++][threadID] = node.leftPtr;
             }
         }
-        else {
-            if(nodePtr < 0) {
-                transparency *= CheckLeafTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, tMax, transparency);
-                if (transparency < 0.000001) {
-                    transparency = 0.0;
+
+        tlasIndex = stackPtr;
+        int instancPtr = ~nodePtr;
+
+        while (stackPtr != 0u && stackPtr >= tlasIndex) {
+            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+            nodePtr = 0;
+
+            while (stackPtr >= tlasIndex && transparency > 0.0) {
+                if (nodePtr < 0) {
+                    transparency *= CheckLeafTransparency(ray, meshPtr, materialOffset, nodePtr, tMin, tMax, transparency);
+                    if (transparency < 0.001) {
+                        transparency = 0.0;
+                    }
+                    nodePtr = stack[--stackPtr][threadID];
                 }
-                nodePtr = stack[--stackPtr][threadID];
-            }
-            else {
-                BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
+                else {
+                    BVHNode node = UnpackNode(blasNodes[nonuniformEXT(meshPtr)].data[nodePtr]);
 
-                bool intersectL = IntersectAABB(ray,
-                node.leftAABB, tMin, tMax);
-                bool intersectR = IntersectAABB(ray,
-                node.rightAABB, tMin, tMax);
+                    bool intersectL = IntersectAABB(ray,
+                    node.leftAABB, tMin, tMax);
+                    bool intersectR = IntersectAABB(ray,
+                    node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
-                nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
+                    nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                    nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
-                if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    if (intersectR && intersectL) {
+                        stack[stackPtr++][threadID] = node.leftPtr;
+                    }
                 }
             }
+
+            ray.origin = originalRayOrigin;
+            ray.direction = originalRayDirection;
+
+            //if (instancPtr >= 0) stackPtr++;
         }
+
+        tlasIndex = TLAS_INVALID;
+
     }
-
-    ray.origin = originalRayOrigin;
-    ray.direction = originalRayDirection;
 
     return transparency;
 
@@ -535,8 +538,8 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF, 
-        ray.origin, tMin, ray.direction, tMax);
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF,
+    ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
     while(rayQueryProceedEXT(rayQuery)) {
@@ -559,12 +562,12 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
 }
 
 bool HitAny(inout Ray ray, float tMin, float tMax) {
-    
+
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
-        ray.origin, tMin, ray.direction, tMax);
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF,
+    ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
     while(rayQueryProceedEXT(rayQuery)) {
@@ -588,8 +591,8 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF, 
-        ray.origin, tMin, ray.direction, tMax);
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF,
+    ray.origin, tMin, ray.direction, tMax);
 
     // Start traversal: return false if traversal is complete
     bool proceed = true;
@@ -611,7 +614,7 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
             }
 
         }
-        
+
     }
 
     if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
@@ -628,19 +631,19 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
 }
 
 float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
-    
+
     float transparency = 1.0;
 
     ray.hitDistance = tMax;
 
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, 
-        ray.origin, tMin, ray.direction, tMax);
+    rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF,
+    ray.origin, tMin, ray.direction, tMax);
 
     while(rayQueryProceedEXT(rayQuery)) {
 
         if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
-           int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+            int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
             int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false) + geometryOffset;
 
             int triangleOffset = int(geometryTriangleOffsets[idx]);
@@ -657,7 +660,7 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
             }
 
         }
-        
+
     }
 
     if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {

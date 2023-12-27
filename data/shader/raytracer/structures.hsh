@@ -171,7 +171,7 @@ struct Instance {
     int meshOffset;
     int materialOffset;
     
-    int padding0;
+    int nextInstance;
     int padding1;
 };
 

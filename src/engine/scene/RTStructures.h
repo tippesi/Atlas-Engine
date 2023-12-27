@@ -82,7 +82,7 @@ namespace Atlas {
         int32_t meshOffset;
         int32_t materialOffset;
 
-        int32_t padding0;
+        int32_t nextInstance;
         int32_t padding1;
     };
 
