@@ -421,14 +421,10 @@ namespace Atlas {
             if (descriptorBindingData.buffers[set][binding].first == buffer.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -444,14 +440,10 @@ namespace Atlas {
             if (descriptorBindingData.buffers[set][binding].first == buffer.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -460,6 +452,7 @@ namespace Atlas {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            assert(buffers.size() > 0 && "No buffers in buffer array");
 
             std::vector<Buffer*> buffersPtr;
             for (auto& buffer : buffers) {
@@ -470,14 +463,10 @@ namespace Atlas {
                 buffersPtr.push_back(buffer.get());
             }
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
-            descriptorBindingData.buffers[set][binding] = { nullptr, 0 };
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -491,14 +480,10 @@ namespace Atlas {
             if (descriptorBindingData.buffers[set][binding].first == buffer->GetCurrent())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
         }
 
@@ -510,17 +495,13 @@ namespace Atlas {
             assert(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                    "Only uniform buffers support dynamic bindings");
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Only indicate a change of the buffer has changed, not just the offset
             descriptorBindingData.changed[set] |=
                 descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
 
         }
 
@@ -534,13 +515,9 @@ namespace Atlas {
                 descriptorBindingData.images[set][binding].second == mipLevel)
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
-            descriptorBindingData.buffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -554,12 +531,9 @@ namespace Atlas {
                 descriptorBindingData.sampledImages[set][binding].second == sampler.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
-            descriptorBindingData.buffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -572,14 +546,10 @@ namespace Atlas {
             std::vector<Image*> imagesPtr;
             for (auto& image : images) imagesPtr.push_back(image.get());
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             // We don't do any checks here if the same things were bound already
             descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.buffers[set][binding] = { nullptr, 0 };
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.samplers[set][binding] = nullptr;
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -592,13 +562,9 @@ namespace Atlas {
             if (descriptorBindingData.samplers[set][binding] == sampler.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.samplers[set][binding] = sampler.get();
-            descriptorBindingData.buffers[set][binding] = {nullptr, 0u};
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -611,13 +577,9 @@ namespace Atlas {
             if (descriptorBindingData.tlases[set][binding] == tlas.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.tlases[set][binding] = tlas.get();
-            descriptorBindingData.buffers[set][binding] = {nullptr, 0u};
-            descriptorBindingData.buffersArray[set][binding] = {};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.sampledImagesArray[set][binding] = {};
-            descriptorBindingData.samplers[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
@@ -960,6 +922,8 @@ namespace Atlas {
                 // We could run into issue
                 if (descriptorBindingData.changed[i] && shader->sets[i].bindingCount > 0) {
                     uint32_t bindingCounter = 0;
+                    uint32_t imageInfoCounter = 0;
+                    uint32_t bufferInfoCounter = 0;
                     descriptorBindingData.changed[i] = false;
 
                     descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
@@ -981,7 +945,7 @@ namespace Atlas {
 
                         auto [buffer, _] = descriptorBindingData.buffers[i][j];
 
-                        auto& bufferInfo = bufferInfos[bindingCounter];
+                        auto& bufferInfo = bufferInfos[bufferInfoCounter++];
                         bufferInfo.offset = 0;
                         bufferInfo.buffer = buffer->buffer;
                         bufferInfo.range = binding.size ? std::min(binding.size, uint64_t(buffer->size)) : VK_WHOLE_SIZE;
@@ -1014,7 +978,7 @@ namespace Atlas {
 
                         auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
 
-                        auto& imageInfo = imageInfos[bindingCounter];
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = sampler->sampler;
                         imageInfo.imageView = image->view;
                         imageInfo.imageLayout = image->layout;
@@ -1046,7 +1010,7 @@ namespace Atlas {
 
                         auto [image, mipLevel] = descriptorBindingData.images[i][j];
 
-                        auto& imageInfo = imageInfos[bindingCounter];
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = VK_NULL_HANDLE;
                         imageInfo.imageView = mipLevel == 0 ? image->view : image->mipMapViews[mipLevel];
                         imageInfo.imageLayout = image->layout;
@@ -1078,7 +1042,7 @@ namespace Atlas {
 
                         auto sampler = descriptorBindingData.samplers[i][j];
 
-                        auto& imageInfo = imageInfos[bindingCounter];
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = sampler->sampler;
                         imageInfo.imageView = VK_NULL_HANDLE;
                         imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1140,29 +1104,31 @@ namespace Atlas {
                             continue;
 
                         auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].size());
-                        if (size_t(bindingCounter + sampledImageArraySize) > setWrites.size()) {
-                            setWrites.resize(bindingCounter + sampledImageArraySize);
-                            imageInfos.resize(bindingCounter + sampledImageArraySize);
-                        }
+                        assert(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
+                            "Too much data written into buffer infos for descriptor set update");
+
+                        if (size_t(imageInfoCounter + sampledImageArraySize) >= imageInfos.size() ||
+                            sampledImageArraySize == 0)
+                            continue;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = 0;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = sampledImageArraySize;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                        setWrite.pImageInfo = &imageInfos[imageInfoCounter];
 
                         for (uint32_t k = 0; k < sampledImageArraySize; k++) {
                             auto image = descriptorBindingData.sampledImagesArray[i][j][k];
 
-                            auto& imageInfo = imageInfos[bindingCounter];
+                            auto& imageInfo = imageInfos[imageInfoCounter++];
                             imageInfo.sampler = VK_NULL_HANDLE;
                             imageInfo.imageView = image->view;
                             imageInfo.imageLayout = image->layout;
-
-                            auto& setWrite = setWrites[bindingCounter++];
-                            setWrite = {};
-                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                            setWrite.pNext = nullptr;
-                            setWrite.dstBinding = j;
-                            setWrite.dstArrayElement = k;
-                            setWrite.dstSet = descriptorBindingData.sets[i];
-                            setWrite.descriptorCount = 1;
-                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                            setWrite.pImageInfo = &imageInfo;
                         }
                     }
 
@@ -1180,29 +1146,31 @@ namespace Atlas {
                             continue;
 
                         auto bufferArraySize = uint32_t(descriptorBindingData.buffersArray[i][j].size());
-                        if (size_t(bindingCounter + bufferArraySize) > setWrites.size()) {
-                            setWrites.resize(bindingCounter + bufferArraySize);
-                            bufferInfos.resize(bindingCounter + bufferArraySize);
-                        }
+                        assert(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
+                            "Too much data written into buffer infos for descriptor set update");
+
+                        if (size_t(bufferInfoCounter + bufferArraySize) >= bufferInfos.size() ||
+                            bufferArraySize == 0)
+                            continue;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = 0;
+                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.descriptorCount = bufferArraySize;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                        setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
 
                         for (uint32_t k = 0; k < bufferArraySize; k++) {
                             auto buffer = descriptorBindingData.buffersArray[i][j][k];
 
-                            auto& bufferInfo = bufferInfos[bindingCounter];
+                            auto& bufferInfo = bufferInfos[bufferInfoCounter++];
                             bufferInfo.offset = 0;
                             bufferInfo.buffer = buffer->buffer;
                             bufferInfo.range = VK_WHOLE_SIZE;
-
-                            auto& setWrite = setWrites[bindingCounter++];
-                            setWrite = {};
-                            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                            setWrite.pNext = nullptr;
-                            setWrite.dstBinding = j;
-                            setWrite.dstArrayElement = k;
-                            setWrite.dstSet = descriptorBindingData.sets[i];
-                            setWrite.descriptorCount = 1;
-                            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                            setWrite.pBufferInfo = &bufferInfo;
                         }
                     }
 

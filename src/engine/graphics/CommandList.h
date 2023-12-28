@@ -214,10 +214,10 @@ namespace Atlas {
                         changed[i] = true;
                     }
 
-                    setWrites.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
-                    bufferInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
-                    imageInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
-                    tlasInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 20);
+                    setWrites.resize(BINDINGS_PER_DESCRIPTOR_SET);
+                    tlasInfos.resize(BINDINGS_PER_DESCRIPTOR_SET);
+                    bufferInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 1024);
+                    imageInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 1024);
                 }
 
                 void Reset() {
@@ -249,6 +249,17 @@ namespace Atlas {
                     sets[set] = nullptr;
                     changed[set] = true;
                 }
+
+                void ResetBinding(uint32_t set, uint32_t binding) {
+                    buffers[set][binding] = { nullptr, 0u };
+                    images[set][binding] = { nullptr, 0u };
+                    sampledImages[set][binding] = { nullptr, nullptr };
+                    sampledImagesArray[set][binding] = {};
+                    buffersArray[set][binding] = {};
+                    samplers[set][binding] = nullptr;
+                    tlases[set][binding] = nullptr;
+                }
+
             }descriptorBindingData;
 
             struct Semaphore {

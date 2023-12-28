@@ -1,6 +1,6 @@
 #include <structures.hsh>
 
-#define MESH_COUNT 1024
+#define MESH_COUNT 8192
 
 layout(std430, set = 2, binding = 13) buffer ReadAtomic {
     uint readAtomic[];

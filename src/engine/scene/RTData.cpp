@@ -22,7 +22,7 @@ namespace Atlas {
             geometryTriangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
 
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
-                Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit;
+               Buffer::BufferUsageBits::MultiBufferedBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
@@ -37,7 +37,7 @@ namespace Atlas {
 
             auto meshes = scene->GetMeshes();
             for (auto& mesh : meshes ) {
-                if (!mesh.IsLoaded() || mesh->data.gpuTriangles.size() == 0)
+                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -60,7 +60,7 @@ namespace Atlas {
             UpdateMaterials();
 
             for (auto& actor : actors) {
-                if (!actor->mesh.IsLoaded())
+                if (!actor->mesh.IsLoaded() || !actor->mesh->IsBVHBuilt())
                     continue;
 
                 if (!meshInfos.contains(actor->mesh.GetID()))
@@ -117,10 +117,7 @@ namespace Atlas {
             materials.clear();
 
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                if (!meshInfos.contains(mesh.GetID()))
+                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
                     continue;
 
                 auto& meshInfo = meshInfos[mesh.GetID()];
@@ -307,7 +304,7 @@ namespace Atlas {
             for (size_t i = 0; i < bvh.refs.size(); i++) {
                 auto& ref = bvh.refs[i];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
-                orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : -1;
+                orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
 
             tlasNodeBuffer.SetSize(gpuBvhNodes.size());

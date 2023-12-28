@@ -104,6 +104,14 @@ namespace Atlas {
                 bvhTriangleBuffer.SetData(data.gpuBvhTriangles.data(), 0, data.gpuBvhTriangles.size());
             }
 
+            isBvhBuilt = true;
+
+        }
+
+        bool Mesh::IsBVHBuilt() const {
+
+            return isBvhBuilt;
+
         }
 
     }

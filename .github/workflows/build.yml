@@ -26,7 +26,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Checkout swiftshader repo
+        uses: actions/checkout@v4
+        with:
+          repository: google/swiftshader
+          path: swiftshader
 
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
@@ -60,6 +66,17 @@ jobs:
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Remove-Item –path vcpkg_installed –recurse
+
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build/
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "cl"
+          cxx: "cl"
+          configure-options: -G Ninja
+          parallel: 16
+          build-type: Release
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -98,7 +115,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
+        with:
+          repository: google/swiftshader
+          path: swiftshader
 
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
@@ -129,6 +152,17 @@ jobs:
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
+
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build/
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "cl"
+          cxx: "cl"
+          configure-options: -G Ninja
+          parallel: 16
+          build-type: Release
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -170,6 +204,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Checkout tools repo
+        uses: actions/checkout@v4
+        with:
+          repository: google/swiftshader
+          path: swiftshader
+
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
@@ -198,6 +238,17 @@ jobs:
           brew install pkg-config
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
           rm -r vcpkg_installed
+
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build/
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "cl"
+          cxx: "cl"
+          configure-options: -G Ninja
+          parallel: 16
+          build-type: Release
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake

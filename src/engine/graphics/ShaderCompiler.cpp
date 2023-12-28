@@ -38,7 +38,7 @@ namespace Atlas {
 
             EShLanguage stage = FindLanguage(shaderFile.shaderStage);
             glslang::TShader shader(stage);
-
+            
             if (device->support.hardwareRayTracing) {
                 // Mac struggles with Spv 1.4, so use only when necessary
                 shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
@@ -53,6 +53,7 @@ namespace Atlas {
             auto glslCode = shaderFile.GetGlslCode(macros);
             const char* shaderStrings[] = { glslCode.data() };
             shader.setStrings(shaderStrings, 1);
+            shader.getIntermediate()->addSourceText(glslCode.data(), glslCode.size());
 
             if (!shader.parse(&Resources, 100, false, messages)) {
                 LogError(shaderFile, macros, shader);

@@ -59,6 +59,9 @@ namespace Atlas {
              */
             void BuildBVH(bool parallelBuild = true);
 
+
+            bool IsBVHBuilt() const;
+
             std::string name = "";
 
             MeshData data;
@@ -97,6 +100,8 @@ namespace Atlas {
 
         private:
             bool isLoaded = false;
+
+            std::atomic_bool isBvhBuilt = false;
 
         };
 

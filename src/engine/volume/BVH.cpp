@@ -361,7 +361,7 @@ namespace Atlas {
         void BVHBuilder::Build(std::vector<Ref>& refs, bool parallelBuild) {
 
             // Create leaf node
-            if (refs.size() <= 4) {
+            if (refs.size() == 1) {
                 CreateLeaf(refs);
                 return;
             }

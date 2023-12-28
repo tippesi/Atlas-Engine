@@ -173,14 +173,14 @@ float tmin, float tmax, float transparency) {
 
 }
 
-void CheckInstance(inout Ray ray, inout int meshPtr, inout int materialOffset, inout int instancePtr) {
+void CheckInstance(inout Ray ray, inout int meshPtr, inout int materialOffset, inout int instancePtr, vec3 originalRayOrigin, vec3 originalRayDirection) {
 
     Instance instance = bvhInstances[instancePtr];
 
     // We don't normalize the direction in case there is a scale in the
     // matrix. In that case the normalization leads to wrong scales in closest hit distance
-    ray.origin = vec4(ray.origin, 1.0) * instance.inverseMatrix;
-    ray.direction = vec4(ray.direction, 0.0) * instance.inverseMatrix;
+    ray.origin = vec4(originalRayOrigin, 1.0) * instance.inverseMatrix;
+    ray.direction = vec4(originalRayDirection, 0.0) * instance.inverseMatrix;
     ray.currentInstanceID = instancePtr;
 
     meshPtr = instance.meshOffset;
@@ -233,10 +233,10 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
         }
 
         tlasIndex = stackPtr;
-        int instancPtr = ~nodePtr;
+        int instancePtr = ~nodePtr;
 
-        while (stackPtr != 0u && stackPtr >= tlasIndex) {
-            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+        while (stackPtr != 0u && instancePtr >= 0) {
+            CheckInstance(ray, meshPtr, materialOffset, instancePtr, originalRayOrigin, originalRayDirection);
             nodePtr = 0;
 
             while (stackPtr >= tlasIndex) {
@@ -264,15 +264,15 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
                 }
             }
 
-            ray.origin = originalRayOrigin;
-            ray.direction = originalRayDirection;
-
-            if (instancPtr >= 0) stackPtr++;
+            if (instancePtr >= 0) stackPtr++;
         }
 
         tlasIndex = TLAS_INVALID;
 
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
 
 }
 
@@ -320,10 +320,10 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
         }
 
         tlasIndex = stackPtr;
-        int instancPtr = ~nodePtr;
+        int instancePtr = ~nodePtr;
 
-        while (stackPtr != 0u && stackPtr >= tlasIndex) {
-            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+        while (stackPtr != 0u && instancePtr >= 0) {
+            CheckInstance(ray, meshPtr, materialOffset, instancePtr, originalRayOrigin, originalRayDirection);
             nodePtr = 0;
 
             while (stackPtr >= tlasIndex) {
@@ -351,15 +351,16 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
                 }
             }
 
-            ray.origin = originalRayOrigin;
-            ray.direction = originalRayDirection;
-
-            //if (instancPtr >= 0) stackPtr++;
+            if (instancePtr >= 0) stackPtr++;
         }
 
         tlasIndex = TLAS_INVALID;
 
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
+
 }
 
 bool HitAny(inout Ray ray, float tMin, float tMax) {
@@ -403,10 +404,10 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
         }
 
         tlasIndex = stackPtr;
-        int instancPtr = ~nodePtr;
+        int instancePtr = ~nodePtr;
 
-        while (stackPtr != 0u && (stackPtr >= tlasIndex || instancPtr >= 0)) {
-            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+        while (stackPtr != 0u && instancePtr >= 0 && !hit) {
+            CheckInstance(ray, meshPtr, materialOffset, instancePtr, originalRayOrigin, originalRayDirection);
             nodePtr = 0;
 
             while (stackPtr >= tlasIndex && !hit) {
@@ -433,13 +434,15 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
                 }
             }
 
-            ray.origin = originalRayOrigin;
-            ray.direction = originalRayDirection;
+            if (instancePtr >= 0) stackPtr++;
         }
 
         tlasIndex = TLAS_INVALID;
 
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
 
     return hit;
 
@@ -486,10 +489,10 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
         }
 
         tlasIndex = stackPtr;
-        int instancPtr = ~nodePtr;
+        int instancePtr = ~nodePtr;
 
-        while (stackPtr != 0u && stackPtr >= tlasIndex) {
-            CheckInstance(ray, meshPtr, materialOffset, instancPtr);
+        while (stackPtr != 0u && instancePtr >= 0 && transparency > 0.0) {
+            CheckInstance(ray, meshPtr, materialOffset, instancePtr, originalRayOrigin, originalRayDirection);
             nodePtr = 0;
 
             while (stackPtr >= tlasIndex && transparency > 0.0) {
@@ -517,15 +520,15 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
                 }
             }
 
-            ray.origin = originalRayOrigin;
-            ray.direction = originalRayDirection;
-
-            //if (instancPtr >= 0) stackPtr++;
+            if (instancePtr >= 0) stackPtr++;
         }
 
         tlasIndex = TLAS_INVALID;
 
     }
+
+    ray.origin = originalRayOrigin;
+    ray.direction = originalRayDirection;
 
     return transparency;
 

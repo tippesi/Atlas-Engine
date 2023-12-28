@@ -853,19 +853,19 @@ namespace Atlas {
                     },
                     {
                         .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                        .descriptorCount = 1024, .bindless = true
+                        .descriptorCount = 16384, .bindless = true
                     },
                     {
                         .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 1024, .bindless = true
+                        .descriptorCount = 8192, .bindless = true
                     },
                     {
                         .bindingIdx = 5, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 1024, .bindless = true
+                        .descriptorCount = 8192, .bindless = true
                     },
                     {
                         .bindingIdx = 6, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 1024, .bindless = true
+                        .descriptorCount = 8192, .bindless = true
                     }
                 },
                 .bindingCount = 5

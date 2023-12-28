@@ -100,6 +100,9 @@ namespace Atlas {
              */
             template<typename T> std::vector<T> GetData(int32_t depth = 0);
 
+            /**
+             *
+             */
             void GenerateMipmap();
 
             /**
