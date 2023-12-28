@@ -66,9 +66,6 @@ jobs:
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Remove-Item –path vcpkg_installed –recurse
-          cd ${{ github.workspace }}/swiftshader/build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
-          cmake --build .
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
@@ -77,7 +74,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "cl"
           cxx: "cl"
-          configure-options:  -G Ninja
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
 
@@ -163,7 +160,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "gcc"
           cxx: "g++"
-          configure-options:  -G Ninja
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
 
@@ -249,7 +246,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "clang"
           cxx: "clang++"
-          configure-options:  -G Ninja
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
 
