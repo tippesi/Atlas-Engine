@@ -167,14 +167,12 @@ float ClipBoundingBox(vec3 boxMin, vec3 boxMax, vec3 history, vec3 current) {
 
 }
 
-float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx) {
+float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3 normal) {
 
     float confidence = 1.0;
 
-    /*
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
     confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
-    */
 
     uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
@@ -200,7 +198,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-    //vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
+    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = depth;
@@ -209,7 +207,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     for (int i = 0; i < 4; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
 
-        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx) > 0.0) {
+        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx, normal) > 0.0) {
             totalWeight += weights[i];
             history += texelFetch(inAccumImage, offsetPixel, 0) * weights[i];
             //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -225,7 +223,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
 
-        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx) > 0.0) {
+        if (IsHistoryPixelValid(offsetPixel, linearDepth, materialIdx, normal) > 0.0) {
             totalWeight += 1.0;
             history += texelFetch(inAccumImage, offsetPixel, 0);
             //historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -245,11 +243,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
 }
 
-vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, uint materialIdx) {
+vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, uint materialIdx, vec3 normal) {
 
     pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
 
-    weight *= IsHistoryPixelValid(pixel, linearDepth, materialIdx);
+    weight *= IsHistoryPixelValid(pixel, linearDepth, materialIdx, normal);
 
     return texelFetch(inAccumImage, pixel, 0) * weight;
 
@@ -263,7 +261,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
     
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-    //vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
+    vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     vec2 position = uv * resolution;
@@ -296,13 +294,13 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
             float weight = weights[x].x * weights[y].y;
             ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
 
-            history += GetCatmullRomSample(uv, weight, depth, materialIdx);
+            history += GetCatmullRomSample(uv, weight, depth, materialIdx, normal);
             totalWeight += weight;
 
         }
     }
     
-    if (totalWeight > 0.25) {
+    if (totalWeight > 0.5) {
         history /= totalWeight;
    
     return true;

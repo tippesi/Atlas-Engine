@@ -326,12 +326,16 @@ namespace Atlas {
             data.clear();
             converted.clear();
 
+            data.shrink_to_fit();
+            converted.shrink_to_fit();
+
         }
 
         template <class T>
         void DataComponent<T>::ClearConverted() {
 
             converted.clear();
+            converted.shrink_to_fit();
 
         }
 

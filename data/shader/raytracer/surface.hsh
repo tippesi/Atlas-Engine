@@ -99,7 +99,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     vec3 geometryNormal = triangleNormal;
 
     int level = textureLevel;
-    // mat.opacity *= vertexColor.a;
+    //mat.opacity *= vertexColor.a;
     mat.baseColor *= rayMat.useVertexColors > 0 ? vertexColor.rgb : vec3(1.0);
     mat.baseColor *= SampleBaseColorBilinear(rayMat.baseColorTexture, float(level), texCoord);
     mat.opacity *= SampleOpacityBilinear(rayMat.opacityTexture, float(level), texCoord);

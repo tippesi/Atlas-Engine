@@ -4,6 +4,7 @@
 
 #include <../common/random.hsh>
 #include <../common/utility.hsh>
+#include <../common/normalencode.hsh>
 #include <../common/flatten.hsh>
 #include <../common/PI.hsh>
 
@@ -75,21 +76,21 @@ void main() {
 #ifdef REALTIME
         // Write out material information and velocity into a g-buffer
         if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
-            vec4 viewSpacePos = globalData[0].vMatrix * vec4(surface.P, 1.0);
+            vec3 pos = ray.hitID >= 0 ? surface.P : ray.origin + ray.direction * ray.hitDistance;
+
+            vec4 viewSpacePos = globalData[0].vMatrix * vec4(pos, 1.0);
             vec4 projPositionCurrent = globalData[0].pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(surface.P, 1.0);
+            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(pos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
-
-            //ndcCurrent -= globalData[0].jitterCurrent;
-            //ndcLast -= globalData[0].jitterLast;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
             imageStore(depthImage, pixel, vec4(viewSpacePos.z, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(surface.material.ID, 0.0, 0.0, 0.0));
+            imageStore(normalImage, pixel, vec4(EncodeNormal(surface.geometryNormal), 0.0, 0.0));
         }
 #endif
         
