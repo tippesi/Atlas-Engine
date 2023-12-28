@@ -141,12 +141,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
+          df -h
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
           df -h
           cd ${{ github.workspace }}/swiftshader/build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake ..
           cmake --build . --parallel -DCMAKE_BUILD_TYPE=Release
 
       - name: Build swiftshader
@@ -232,11 +233,12 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
+          df -h
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
           rm -r vcpkg_installed
           df -h
           cd ${{ github.workspace }}/swiftshader/build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake ..
           cmake --build . --parallel -DCMAKE_BUILD_TYPE=Release
 
       - name: Build swiftshader
