@@ -70,6 +70,17 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE=Release
           cmake --build .
 
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "cl"
+          cxx: "cl"
+          configure-options:  -G Ninja
+          parallel: 16
+          build-type: MinSizeRel
+
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
         with:
@@ -141,25 +152,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
-          df -h
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
-          df -h
-          cd ${{ github.workspace }}/swiftshader/build
-          cmake ..  -DCMAKE_BUILD_TYPE=Release
-          cmake --build .
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
         with:
-          build-dir: ${{ github.workspace }}/swiftshader/build/
+          build-dir: ${{ github.workspace }}/swiftshader/build
           source-dir: ${{ github.workspace }}/swiftshader
-          cc: "cl"
-          cxx: "cl"
-          configure-options: -G Ninja
+          cc: "gcc"
+          cxx: "g++"
+          configure-options:  -G Ninja
           parallel: 16
-          build-type: Release
+          build-type: MinSizeRel
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -233,24 +239,19 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
-          df -h
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
           rm -r vcpkg_installed
-          df -h
-          cd ${{ github.workspace }}/swiftshader/build
-          cmake ..  -DCMAKE_BUILD_TYPE=Release
-          cmake --build .
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
         with:
-          build-dir: ${{ github.workspace }}/swiftshader/build/
+          build-dir: ${{ github.workspace }}/swiftshader/build
           source-dir: ${{ github.workspace }}/swiftshader
-          cc: "cl"
-          cxx: "cl"
-          configure-options: -G Ninja
+          cc: "clang"
+          cxx: "clang++"
+          configure-options:  -G Ninja
           parallel: 16
-          build-type: Release
+          build-type: MinSizeRel
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
