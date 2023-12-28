@@ -28,8 +28,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Windows
+          key: ${{ runner.os }}
+
       - name: Checkout swiftshader repository
         uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           repository: google/swiftshader
           path: swiftshader
@@ -69,6 +77,7 @@ jobs:
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           build-dir: ${{ github.workspace }}/swiftshader/build
           source-dir: ${{ github.workspace }}/swiftshader
@@ -77,6 +86,13 @@ jobs:
           configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Windows
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}    
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -94,9 +110,8 @@ jobs:
         shell: pwsh
         # Add additional scripting steps here
         run: |
-          cd ${{ github.workspace }}
           $env:VK_ICD_FILENAMES = '${{ github.workspace }}/swiftshader/build/Windows/vk_swiftshader_icd.json'
-          cd build/${{ matrix.build-type }}
+          cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           .\AtlasEngineDemo.exe
 
       - name: Upload artifact
@@ -126,8 +141,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Linux
+          key: ${{ runner.os }}
+
       - name: Checkout swiftshader repository
         uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           repository: google/swiftshader
           path: swiftshader
@@ -164,6 +187,7 @@ jobs:
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           build-dir: ${{ github.workspace }}/swiftshader/build
           source-dir: ${{ github.workspace }}/swiftshader
@@ -172,6 +196,13 @@ jobs:
           configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Linux
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}    
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -193,7 +224,7 @@ jobs:
           cd ${{ github.workspace }}/swiftshader
           find .
           export VK_ICD_FILENAMES = "${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json"
-          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           ./AtlasEngineDemo
 
       - name: Upload artifact
@@ -223,8 +254,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Darwin
+          key: ${{ runner.os }}
+
       - name: Checkout swiftshader repository
         uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           repository: google/swiftshader
           path: swiftshader
@@ -260,6 +299,7 @@ jobs:
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
         with:
           build-dir: ${{ github.workspace }}/swiftshader/build
           source-dir: ${{ github.workspace }}/swiftshader
@@ -268,6 +308,13 @@ jobs:
           configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
           parallel: 16
           build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Darwin
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}
 
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
@@ -287,9 +334,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}/swiftshader
-          find .
-          export VK_ICD_FILENAMES = "${{ github.workspace }}/swiftshader/build/OSX/vk_swiftshader_icd.json"
-          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          export VK_ICD_FILENAMES = "${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json"
+          cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           ./AtlasEngineDemo
 
       - name: Upload artifact
