@@ -452,7 +452,8 @@ namespace Atlas {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffers.size() > 0 && "No buffers in buffer array");
+            
+            if (!buffers.size()) return;
 
             std::vector<Buffer*> buffersPtr;
             for (auto& buffer : buffers) {
@@ -542,6 +543,8 @@ namespace Atlas {
 
             assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            if (!images.size()) return;
 
             std::vector<Image*> imagesPtr;
             for (auto& image : images) imagesPtr.push_back(image.get());

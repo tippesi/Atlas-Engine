@@ -5,10 +5,6 @@
 #extension GL_EXT_ray_query : enable
 
 layout(set = 2, binding = 23) uniform accelerationStructureEXT topLevelAS;
-
-layout(std430, set = 2, binding = 22) buffer GeometryTriangleOffsets {
-    uint geometryTriangleOffsets[];
-};
 #endif
 
 #include <common.hsh>
@@ -556,10 +552,10 @@ void HitClosest(inout Ray ray, float tMin, float tMax) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
 
-        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
-        int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true) + geometryOffset;
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
 
-        int triangleOffset = int(geometryTriangleOffsets[idx]);
+        int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
     }
 }
@@ -603,16 +599,19 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
 
         if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
             int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
-            int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false) + geometryOffset;
+            int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
 
-            int triangleOffset = int(geometryTriangleOffsets[idx]);
+            int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
             int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
+
+            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+            int materialOffset = bvhInstances[hitInstanceID].materialOffset;
 
             vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
 
-            Triangle tri = UnpackTriangle(triangles[hitID]);
+            Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[hitID]);
 
-            if (GetOpacity(tri, barrycentric, 0) > 0.0) {
+            if (GetOpacity(tri, barrycentric, materialOffset, 0) > 0.0) {
                 rayQueryConfirmIntersectionEXT(rayQuery);
             }
 
@@ -624,10 +623,10 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
 
-        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
-        int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true) + geometryOffset;
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
 
-        int triangleOffset = int(geometryTriangleOffsets[idx]);
+        int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
     }
 
@@ -647,15 +646,18 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
 
         if (rayQueryGetIntersectionTypeEXT(rayQuery, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
             int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
-            int idx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false) + geometryOffset;
+            int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
 
-            int triangleOffset = int(geometryTriangleOffsets[idx]);
+            int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
             int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
+
+            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+            int materialOffset = bvhInstances[hitInstanceID].materialOffset;
 
             vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
 
-            Triangle tri = UnpackTriangle(triangles[hitID]);
-            transparency *= (1.0 - GetOpacity(tri, barrycentric, 0));
+            Triangle tri = UnpackTriangle(triangles[nonuniformEXT(meshIdx)].data[hitID]);
+            transparency *= (1.0 - GetOpacity(tri, barrycentric, materialOffset, 0));
 
             if (transparency < 0.001) {
                 rayQueryTerminateEXT(rayQuery);

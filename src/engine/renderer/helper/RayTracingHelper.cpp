@@ -131,7 +131,6 @@ namespace Atlas {
 
                     if (rtData.hardwareRayTracing) {
                         commandList->BindTLAS(rtData.tlas, 2, 23);
-                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
                         rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
@@ -251,7 +250,6 @@ namespace Atlas {
 
                     if (rtData.hardwareRayTracing) {
                         commandList->BindTLAS(rtData.tlas, 2, 23);
-                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
                     }
                     else {
                         rtData.tlasNodeBuffer.Bind(commandList, 2, 22);

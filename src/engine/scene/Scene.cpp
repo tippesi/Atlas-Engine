@@ -191,7 +191,7 @@ namespace Atlas {
                 }
 
                 // Not all meshes might have a bvh
-                if (!mesh->blasNodeBuffer.GetSize())
+                if (!mesh->IsBVHBuilt())
                     continue;
 
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;

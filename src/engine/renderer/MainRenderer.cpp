@@ -102,18 +102,25 @@ namespace Atlas {
             PrepareMaterials(scene, materials, materialMap);
 
             std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
 
             SetUniforms(scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 0, 3);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindBuffers(blasBuffers, 0, 0);
             commandList->BindBuffers(triangleBuffers, 0, 1);
-            commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
-            commandList->BindSampledImages(images, 0, 4);
+            if (images.size())
+                commandList->BindSampledImages(images, 0, 4);
+
+            if (device->support.hardwareRayTracing) {
+                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+            }
+            else {
+                commandList->BindBuffers(blasBuffers, 0, 0);
+                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            }
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -383,16 +390,22 @@ namespace Atlas {
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
             std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 3);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindBuffers(blasBuffers, 0, 0);
             commandList->BindBuffers(triangleBuffers, 0, 1);
-            commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
             commandList->BindSampledImages(images, 0, 4);
+
+            if (device->support.hardwareRayTracing) {
+                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+            }
+            else {
+                commandList->BindBuffers(blasBuffers, 0, 0);
+                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            }
 
             Graphics::Profiler::EndQuery();
 
@@ -1062,11 +1075,12 @@ namespace Atlas {
 
         void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
             std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
-            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers) {
+            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
 
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
             bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
+            triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
 
             for (auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
                 if (!scene->rootMeshMap.contains(meshId)) continue;
@@ -1076,10 +1090,12 @@ namespace Atlas {
                 auto blasBuffer = mesh->blasNodeBuffer.Get();
                 auto triangleBuffer = mesh->triangleBuffer.Get();
                 auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
+                auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
 
                 blasBuffers[idx] = blasBuffer;
                 triangleBuffers[idx] = triangleBuffer;
                 bvhTriangleBuffers[idx] = bvhTriangleBuffer;
+                triangleOffsetBuffers[idx] = triangleOffsetBuffer;
             }
 
             images.resize(scene->textureToBindlessIdx.size());

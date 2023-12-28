@@ -19,10 +19,8 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            geometryTriangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
-
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
-               Buffer::BufferUsageBits::MultiBufferedBit;
+               Buffer::BufferUsageBits::MultiBufferedBit | Buffer::BufferUsageBits::HostAccessBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
@@ -196,87 +194,7 @@ namespace Atlas {
 
         bool RTData::IsValid() {
 
-            return materialBuffer.GetSize() > 0 && tlasNodeBuffer.GetSize() > 0;
-
-        }
-
-        void RTData::BuildForSoftwareRayTracing() {
-
-            auto meshes = scene->GetMeshes();
-
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                // Not all meshes might have a bvh
-                if (!mesh->data.gpuTriangles.size())
-                    continue;
-
-                meshInfos[mesh.GetID()] = MeshInfo {};
-
-                BuildTriangleLightsForMesh(mesh);
-
-            }
-
-        }
-
-        void RTData::BuildForHardwareRayTracing() {
-
-            auto device = Graphics::GraphicsDevice::DefaultDevice;
-
-            std::vector<uint32_t> triangleOffsets;
-
-            Graphics::ASBuilder asBuilder;
-
-            auto meshes = scene->GetMeshes();
-
-            blases.clear();
-
-            int32_t materialCount = 0;
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                // Not all meshes might have a bvh
-                if (!mesh->data.gpuTriangles.size())
-                    continue;
-
-                std::vector<Graphics::ASGeometryRegion> geometryRegions;
-                for (auto& subData : mesh->data.subData) {
-                    geometryRegions.emplace_back(Graphics::ASGeometryRegion{
-                        .indexCount = subData.indicesCount,
-                        .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
-                        });
-                }
-
-                auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(mesh->vertexBuffer.buffer, mesh->indexBuffer.buffer,
-                    mesh->vertexBuffer.elementCount, mesh->vertexBuffer.elementSize,
-                    mesh->indexBuffer.elementSize, geometryRegions);
-
-                blases.push_back(device->CreateBLAS(blasDesc));
-
-                MeshInfo meshInfo = {
-                    .blas = blases.back(),
-
-                    .offset = 0,
-                    .materialOffset = 0
-                };
-                meshInfos[mesh.GetID()] = meshInfo;
-
-                for (auto& subData : mesh->data.subData) {
-                    auto triangleOffset = subData.indicesOffset / 3;
-                    triangleOffsets.push_back(triangleOffset);
-                }
-
-                BuildTriangleLightsForMesh(mesh);
-
-            }
-
-            geometryTriangleOffsetBuffer.SetSize(triangleOffsets.size());
-            geometryTriangleOffsetBuffer.SetData(triangleOffsets.data(), 0, triangleOffsets.size());
-
-            asBuilder.BuildBLAS(blases);
+            return materialBuffer.GetSize() > 0;
 
         }
 
@@ -320,13 +238,32 @@ namespace Atlas {
 
             Graphics::ASBuilder asBuilder;
 
+            auto meshes = scene->GetMeshes();
+
+            blases.clear();
+
+            int32_t meshCount = 0;
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
+                    continue;
+
+                if (mesh->needsBvhRefresh) {
+                    blases.push_back(mesh->blas);
+                    mesh->needsBvhRefresh = false;
+                }
+
+                auto& meshInfo = meshInfos[mesh.GetID()];
+                meshInfo.blas = mesh->blas;
+                meshInfo.idx = meshCount++;
+            }
+
+            if (blases.size())
+                asBuilder.BuildBLAS(blases);
+
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
             for (auto actor : actors) {
-                if (!actor->mesh.IsLoaded())
-                    continue;
-
-                if (!meshInfos.contains(actor->mesh.GetID()))
+                if (!actor->mesh.IsLoaded() || !actor->mesh->IsBVHBuilt())
                     continue;
 
                 auto& meshInfo = meshInfos[actor->mesh.GetID()];

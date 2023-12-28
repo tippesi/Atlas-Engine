@@ -38,11 +38,11 @@ layout (std430, set = 0, binding = 1) buffer Triangles {
     PackedTriangle data[];
 } triangles[MESH_COUNT];
 
+#ifndef AE_HARDWARE_RAYTRACING
+
 layout (std430, set = 0, binding = 2) buffer BVHTriangles {
     PackedBVHTriangle data[];
 }bvhTriangles[MESH_COUNT];
-
-#ifndef AE_HARDWARE_RAYTRACING
 
 layout(std430, set = 0, binding = 0) buffer BlasNodes {
     PackedBVHNode data[];
@@ -51,5 +51,11 @@ layout(std430, set = 0, binding = 0) buffer BlasNodes {
 layout(std430, set = 2, binding = 22) buffer TlasNodes {
     PackedBVHNode tlasNodes[];
 };
+
+#else
+
+layout(std430, set = 0, binding = 2) buffer GeometryTriangleOffsets {
+    uint data[];
+}geometryTriangleOffsets[MESH_COUNT];
 
 #endif

@@ -13,6 +13,8 @@
 
 namespace Atlas {
 
+    class Scene::RTData;
+
     namespace Mesh {
 
         enum class MeshMobility {
@@ -27,7 +29,11 @@ namespace Atlas {
             HostAccessBit = (1 << 1),
         } MeshUsageBits;
 
+        
+
         class Mesh {
+
+            friend Scene::RTData;
 
         public:
             Mesh() = default;
@@ -80,6 +86,7 @@ namespace Atlas {
             Buffer::Buffer blasNodeBuffer;
             Buffer::Buffer triangleBuffer;
             Buffer::Buffer bvhTriangleBuffer;
+            Buffer::Buffer triangleOffsetBuffer;
 
             Ref<Graphics::BLAS> blas = nullptr;
 
@@ -102,6 +109,7 @@ namespace Atlas {
             bool isLoaded = false;
 
             std::atomic_bool isBvhBuilt = false;
+            std::atomic_bool needsBvhRefresh = false;
 
         };
 

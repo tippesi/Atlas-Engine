@@ -44,16 +44,14 @@ namespace Atlas {
                 int32_t offset = 0;
                 int32_t materialOffset = 0;
 
+                int32_t idx = 0;
+
                 std::vector<GPULight> triangleLights;
                 std::vector<uint32_t> instanceIndices;
                 std::vector<mat4x3> matrices;
             };
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials);
-
-            void BuildForSoftwareRayTracing();
-
-            void BuildForHardwareRayTracing();
 
             std::vector<GPUBVHInstance> UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<Volume::AABB>& actorAABBs);
@@ -72,7 +70,6 @@ namespace Atlas {
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
-            Buffer::Buffer geometryTriangleOffsetBuffer;
 
             std::vector<GPULight> triangleLights;
 
