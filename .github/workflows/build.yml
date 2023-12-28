@@ -63,20 +63,12 @@ jobs:
         # Add additional scripting steps here
         run: |
           Get-ChildItem -Recurse D:/a/Atlas-Engine/Atlas-Engine/VULKAN_SDK
+          cd ${{ github.workspace }}/swiftshader/build
+          cmake ..
+          cmake --build . --parallel
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Remove-Item –path vcpkg_installed –recurse
-
-      - name: Build swiftshader
-        uses: ashutoshvarma/action-cmake-build@master
-        with:
-          build-dir: ${{ github.workspace }}/swiftshader/build/
-          source-dir: ${{ github.workspace }}/swiftshader
-          cc: "cl"
-          cxx: "cl"
-          configure-options: -G Ninja
-          parallel: 16
-          build-type: Release
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -117,7 +109,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout tools repo
+      - name: Checkout swiftshader repo
         uses: actions/checkout@v4
         with:
           repository: google/swiftshader
@@ -149,6 +141,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgl1-mesa-dev
+          cd ${{ github.workspace }}/swiftshader/build
+          cmake ..
+          cmake --build . --parallel
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
@@ -204,7 +199,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Checkout tools repo
+      - name: Checkout swiftshader repo
         uses: actions/checkout@v4
         with:
           repository: google/swiftshader
@@ -236,6 +231,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
+          cd ${{ github.workspace }}/swiftshader/build
+          cmake ..
+          cmake --build . --parallel
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
           rm -r vcpkg_installed
 
