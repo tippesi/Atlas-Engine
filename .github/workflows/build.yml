@@ -68,7 +68,7 @@ jobs:
           Remove-Item –path vcpkg_installed –recurse
           cd ${{ github.workspace }}/swiftshader/build
           cmake .. -DCMAKE_BUILD_TYPE=Release
-          cmake --build . --parallel
+          cmake --build .
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -148,7 +148,7 @@ jobs:
           df -h
           cd ${{ github.workspace }}/swiftshader/build
           cmake ..  -DCMAKE_BUILD_TYPE=Release
-          cmake --build . --parallel
+          cmake --build .
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
@@ -239,7 +239,7 @@ jobs:
           df -h
           cd ${{ github.workspace }}/swiftshader/build
           cmake ..  -DCMAKE_BUILD_TYPE=Release
-          cmake --build . --parallel
+          cmake --build .
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
