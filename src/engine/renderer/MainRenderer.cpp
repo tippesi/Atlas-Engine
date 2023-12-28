@@ -107,13 +107,13 @@ namespace Atlas {
 
             SetUniforms(scene, camera);
 
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            commandList->BindBuffer(globalUniformBuffer, 0, 3);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindBuffers(blasBuffers, 0, 4);
-            commandList->BindBuffers(triangleBuffers, 0, 5);
-            commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
-            commandList->BindSampledImages(images, 0, 1);
+            commandList->BindBuffers(blasBuffers, 0, 0);
+            commandList->BindBuffers(triangleBuffers, 0, 1);
+            commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            commandList->BindSampledImages(images, 0, 4);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -386,13 +386,13 @@ namespace Atlas {
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers;
             PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers);
 
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 3);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindBuffers(blasBuffers, 0, 4);
-            commandList->BindBuffers(triangleBuffers, 0, 5);
-            commandList->BindBuffers(bvhTriangleBuffers, 0, 6);
-            commandList->BindSampledImages(images, 0, 1);
+            commandList->BindBuffers(blasBuffers, 0, 0);
+            commandList->BindBuffers(triangleBuffers, 0, 1);
+            commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            commandList->BindSampledImages(images, 0, 4);
 
             Graphics::Profiler::EndQuery();
 
@@ -848,24 +848,24 @@ namespace Atlas {
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {
                     {
-                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .descriptorCount = 1024, .bindless = true
+                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
                     },
                     {
-                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .descriptorCount = 16384, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 5, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 6, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
                     }
                 },
                 .bindingCount = 5

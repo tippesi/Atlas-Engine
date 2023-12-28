@@ -34,17 +34,17 @@ layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };
 
-layout (std430, set = 0, binding = 5) buffer Triangles {
+layout (std430, set = 0, binding = 1) buffer Triangles {
     PackedTriangle data[];
 } triangles[MESH_COUNT];
 
-layout (std430, set = 0, binding = 6) buffer BVHTriangles {
+layout (std430, set = 0, binding = 2) buffer BVHTriangles {
     PackedBVHTriangle data[];
 }bvhTriangles[MESH_COUNT];
 
 #ifndef AE_HARDWARE_RAYTRACING
 
-layout(std430, set = 0, binding = 4) buffer BlasNodes {
+layout(std430, set = 0, binding = 0) buffer BlasNodes {
     PackedBVHNode data[];
 }blasNodes[MESH_COUNT];
 

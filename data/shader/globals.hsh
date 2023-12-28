@@ -1,4 +1,4 @@
-layout(set = 0, binding = 0, std140) uniform GlobalBuffer {
+layout(set = 0, binding = 3, std140) uniform GlobalBuffer {
     vec4 frustumPlanes[6];
     mat4 vMatrix;
     mat4 pMatrix;
@@ -17,9 +17,9 @@ layout(set = 0, binding = 0, std140) uniform GlobalBuffer {
     float time;
     float deltaTime;
     uint frameCount;
-} globalData[1024];
+} globalData[8192];
 
-layout(set = 0, binding = 1) uniform texture2D bindlessTextures[16384];
+layout(set = 0, binding = 4) uniform texture2D bindlessTextures[16384];
 
 layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
 
