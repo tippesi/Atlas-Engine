@@ -13,7 +13,9 @@
 
 namespace Atlas {
 
-    class Scene::RTData;
+    namespace Scene {
+        class RTData;
+    }
 
     namespace Mesh {
 

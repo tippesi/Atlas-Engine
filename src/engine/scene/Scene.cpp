@@ -195,7 +195,6 @@ namespace Atlas {
                     continue;
 
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-
             }
 
             for (auto& texture : textures) {

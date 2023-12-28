@@ -35,7 +35,7 @@ layout(push_constant) uniform constants {
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 7;
+const int kernelRadius = 5;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;

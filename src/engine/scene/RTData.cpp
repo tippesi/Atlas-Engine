@@ -34,8 +34,9 @@ namespace Atlas {
             if (!actors.size()) return;
 
             auto meshes = scene->GetMeshes();
-            for (auto& mesh : meshes ) {
-                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || 
+                    !scene->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -58,9 +59,6 @@ namespace Atlas {
             UpdateMaterials();
 
             for (auto& actor : actors) {
-                if (!actor->mesh.IsLoaded() || !actor->mesh->IsBVHBuilt())
-                    continue;
-
                 if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
@@ -115,7 +113,7 @@ namespace Atlas {
             materials.clear();
 
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
+                if (!meshInfos.contains(mesh.GetID()))
                     continue;
 
                 auto& meshInfo = meshInfos[mesh.GetID()];
@@ -244,7 +242,7 @@ namespace Atlas {
 
             int32_t meshCount = 0;
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt())
+                if (!meshInfos.contains(mesh.GetID()))
                     continue;
 
                 if (mesh->needsBvhRefresh) {
@@ -263,7 +261,7 @@ namespace Atlas {
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
             for (auto actor : actors) {
-                if (!actor->mesh.IsLoaded() || !actor->mesh->IsBVHBuilt())
+                if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
                 auto& meshInfo = meshInfos[actor->mesh.GetID()];
