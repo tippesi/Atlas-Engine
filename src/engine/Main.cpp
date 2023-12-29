@@ -9,6 +9,7 @@
 
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
+#include <Windows.h>
 #endif
 
 int main(int argc, char* argv[]) {
@@ -27,6 +28,10 @@ int main(int argc, char* argv[]) {
 #ifdef AE_OS_MACOS
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
     setenv("MVK_DEBUG", "0", 1);
+#endif
+
+#ifdef AE_OS_WINDOWS
+    SetEnvironmentVariable("VK_ICD_FILENAMES", "D:\\a\\Atlas-Engine\\Atlas-Engine\\swiftshader\\build\\Windows\\vk_swiftshader_icd.json");
 #endif
 
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);

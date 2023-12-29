@@ -21,10 +21,7 @@ namespace Atlas {
             instance = Instance::DefaultInstance;
 
             std::vector<const char*> requiredExtensions = {
-                    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-#ifdef AE_OS_MACOS
-                    , "VK_KHR_portability_subset"
-#endif
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             };
 
             std::vector<const char*> optionalExtensions = {
@@ -37,6 +34,9 @@ namespace Atlas {
 #endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+#endif
+#ifdef AE_OS_MACOS
+                , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
 
@@ -165,14 +165,11 @@ namespace Atlas {
         SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, ColorSpace preferredColorSpace) {
 
             auto nativeSurface = surface->GetNativeSurface();
-            auto nativeWindow = surface->GetNativeWindow();
 
             auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
 
-            int32_t width = 1920, height = 1080;
-#ifndef AE_HEADLESS
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
-#endif
+            int32_t width, height;
+            surface->GetExtent(width, height);
 
             windowWidth = width;
             windowHeight = height;
@@ -1028,12 +1025,8 @@ namespace Atlas {
 
         bool GraphicsDevice::CheckForWindowResize() {
 
-            auto nativeWindow = surface->GetNativeWindow();
-
-            int32_t width = 1920, height = 1080;
-#ifndef AE_HEADLESS
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
-#endif
+            int32_t width, height;
+            surface->GetExtent(width, height);
 
             if (width != windowWidth || height != windowHeight) {
                 windowWidth = width;

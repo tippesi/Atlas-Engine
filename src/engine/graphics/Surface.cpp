@@ -21,6 +21,9 @@ namespace Atlas {
         Surface::Surface(Instance* instance, bool& success) :
             instance(instance), window(nullptr) {
 
+            width = 1920;
+            height = 1080;
+
             auto nativeInstance = instance->GetNativeInstance();
 
             VkHeadlessSurfaceCreateInfoEXT createInfo = {};
@@ -47,9 +50,22 @@ namespace Atlas {
 
         }
 
-        SDL_Window *Surface::GetNativeWindow() const {
+        void Surface::SetExtent(int32_t width, int32_t height) {
 
-            return window;
+            this->width = width;
+            this->height = height;
+
+        }
+
+        void Surface::GetExtent(int32_t& width, int32_t& height) {
+
+            if ((this->width < 0 || this->height < 0) && window != nullptr) {
+                SDL_GL_GetDrawableSize(window, &width, &height);
+            }
+            else if (window == nullptr) {
+                width = this->width;
+                height = this->height;
+            }
 
         }
 
