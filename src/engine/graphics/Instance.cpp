@@ -13,24 +13,20 @@ namespace Atlas {
 
         Instance* Instance::DefaultInstance = nullptr;
 
-        Instance::Instance(const std::string& instanceName, bool enableValidationLayers) :
-            name(instanceName), validationLayersEnabled(enableValidationLayers) {
+        Instance::Instance(const InstanceDesc& desc) :  name(desc.instanceName), 
+            validationLayersEnabled(desc.enableValidationLayers), validationLayerSeverity(desc.validationLayerSeverity) {
 
             VK_CHECK(volkInitialize());
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            appInfo.pApplicationName = instanceName.c_str();
+            appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
             LoadSupportedLayersAndExtensions();
-
-            for (auto& name : extensionNames) {
-                Log::Message(name);
-            }
 
             auto requiredExtensions = extensionNames;
 #ifdef AE_HEADLESS
@@ -44,7 +40,7 @@ namespace Atlas {
                     "VK_LAYER_KHRONOS_validation",
             };
 
-            if (enableValidationLayers && !CheckValidationLayerSupport(validationLayers)) {
+            if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
                 return;
             }
 
@@ -70,18 +66,18 @@ namespace Atlas {
 
             StructureChainBuilder structureChainBuilder(createInfo);
 
-            if (enableValidationLayers) {
+            if (validationLayersEnabled) {
                 createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
                 structureChainBuilder.Append(debugCreateInfo);
 
-#ifdef AE_BUILDTYPE_DEBUG
+#ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
                 validationFeatures.enabledValidationFeatureCount = 1;
                 validationFeatures.pEnabledValidationFeatures = enables;
 
-                structureChainBuilder.Append(validationFeatures);
+                structureChainBuilder.Append(validationFeatures);                
 #endif
             }
             else {
@@ -226,12 +222,19 @@ namespace Atlas {
 
         VkDebugUtilsMessengerCreateInfoEXT Instance::GetDebugMessengerCreateInfo() {
 
+            int32_t allowedSeverity = static_cast<int32_t>(validationLayerSeverity);
+
             VkDebugUtilsMessengerCreateInfoEXT createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            if (allowedSeverity >= 1) {
+                createInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+            }
+            if (allowedSeverity >= 0) {
+                createInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+            }
+
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
@@ -248,10 +251,6 @@ namespace Atlas {
                 void *pUserData) {
 
             int32_t logType = Log::Type::TYPE_MESSAGE, logSeverity = Log::Severity::SEVERITY_LOW;
-
-            // Filter notifications
-            //if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-            //    return VK_FALSE;
 
             std::string output = "Vulkan debug log:\n";
             output.append(pCallbackData->pMessage);
@@ -279,6 +278,13 @@ namespace Atlas {
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: output.append("Verbose");
                     logSeverity = Log::Severity::SEVERITY_LOW; break;
                 default: break;
+            }
+
+            // Ignore errors, might happen if the device just provides 4 possible descriptor set locations
+            // (This layer uses it's own descriptor set and engine uses 4 already)
+            if (pCallbackData->sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT && logType == Log::Severity::SEVERITY_HIGH) {
+                logType = Log::Type::TYPE_WARNING;
+                logSeverity = Log::Severity::SEVERITY_MEDIUM;
             }
 
             switch (logType) {

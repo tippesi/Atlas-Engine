@@ -18,6 +18,13 @@ namespace Atlas {
 
     namespace Graphics {
 
+        struct InstanceDesc {
+            std::string instanceName;
+
+            bool enableValidationLayers = false;
+            Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
+        };
+
         class Instance {
 
             friend GraphicsDevice;
@@ -26,7 +33,7 @@ namespace Atlas {
             friend Extensions;
 
         public:
-            explicit Instance(const std::string& instanceName, bool enableValidationLayers = false);
+            explicit Instance(const InstanceDesc& desc);
 
             Instance(const Instance& that) = delete;
 
@@ -76,6 +83,8 @@ namespace Atlas {
 
             GraphicsDevice* graphicsDevice;
             std::vector<Surface*> surfaces;
+
+            Log::Severity validationLayerSeverity;
 
         private:
             static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
