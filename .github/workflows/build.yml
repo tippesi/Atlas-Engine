@@ -51,12 +51,11 @@ jobs:
           cache: ${{ env.USE_CACHE }}
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader, Vulkan-ValidationLayers
-          vulkan-use-cache: false
+          version: 1.3.204.0
+          cache: true
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -186,13 +185,12 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader, Vulkan-ValidationLayers
-          vulkan-use-cache: false
-
+          version: 1.3.204.0
+          cache: true
+          
       - name: Run scripts
         shell: bash
         # Add additional scripting steps here
@@ -313,12 +311,11 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader, Vulkan-ValidationLayers
-          vulkan-use-cache: false
+          version: 1.3.204.0
+          cache: true
 
       - name: Run scripts
         shell: bash
