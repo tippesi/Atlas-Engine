@@ -125,12 +125,13 @@ jobs:
         # Add additional scripting steps here
         run: |
           Copy-Item -Path "${{ github.workspace }}\swiftshader\build\Windows\*.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
+          Copy-Item -Path "${{ github.workspace }}\VULKAN_SDK\Bin\VkLayer_khronos_validation.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
           .\AtlasEngineTests.exe
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/bin/${{ matrix.build-type }}/vk_swiftshader_icd.json
-          VK_ADD_LAYER_PATH: ${{ github.workspace }}\VULKAN_SDK\Bin
-          VK_LOADER_LAYERS_ENABLE: VK_LAYER_KHRONOS_validation
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}\VULKAN_SDK\Bin\
+          VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
@@ -259,9 +260,9 @@ jobs:
           ./AtlasEngineTests
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json
-          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/vulkan/layers:${{ github.workspace }}/VULKAN_SDK/etc/vulkan/explicit_layer.d
-          LD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib
-          VK_LOADER_LAYERS_ENABLE: VK_LAYER_KHRONOS_validation
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/vulkan/layers/:${{ github.workspace }}/VULKAN_SDK/etc/vulkan/explicit_layer.d/
+          LD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
+          VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
@@ -389,9 +390,9 @@ jobs:
           ./AtlasEngineTests
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json   
-          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/share/vulkan/explicit_layers.d
-          DYLD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib
-          VK_LOADER_LAYERS_ENABLE: VK_LAYER_KHRONOS_validation
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/share/vulkan/explicit_layers.d/
+          DYLD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
+          VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
