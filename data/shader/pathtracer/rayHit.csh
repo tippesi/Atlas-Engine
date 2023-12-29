@@ -150,12 +150,7 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // Unpack the compressed triangle and extract surface parameters
     Instance instance = GetInstance(ray);
     Triangle tri = GetTriangle(ray, instance);
-    
-#ifdef REALTIME
-    surface = GetSurfaceParameters(instance, tri, ray, true, 4);
-#else
     surface = GetSurfaceParameters(instance, tri, ray, true, 0);
-#endif
 
     // If we hit an emissive surface we need to terminate the ray
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&

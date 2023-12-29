@@ -11,50 +11,12 @@ namespace Atlas {
 
     namespace Graphics {
 
-#ifdef AE_OS_MACOS
-        // This should become available with the next SDK release
-        #define VK_EXT_layer_settings 1
-        #define VK_EXT_LAYER_SETTINGS_SPEC_VERSION 2
-        #define VK_EXT_LAYER_SETTINGS_EXTENSION_NAME "VK_EXT_layer_settings"
-
-        typedef enum VkLayerSettingTypeEXT {
-            VK_LAYER_SETTING_TYPE_BOOL32_EXT = 0,
-            VK_LAYER_SETTING_TYPE_INT32_EXT = 1,
-            VK_LAYER_SETTING_TYPE_INT64_EXT = 2,
-            VK_LAYER_SETTING_TYPE_UINT32_EXT = 3,
-            VK_LAYER_SETTING_TYPE_UINT64_EXT = 4,
-            VK_LAYER_SETTING_TYPE_FLOAT32_EXT = 5,
-            VK_LAYER_SETTING_TYPE_FLOAT64_EXT = 6,
-            VK_LAYER_SETTING_TYPE_STRING_EXT = 7,
-            VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT = 0x7FFFFFFF
-        } VkLayerSettingTypeEXT;
-        typedef struct VkLayerSettingEXT {
-            const char*              pLayerName;
-            const char*              pSettingName;
-            VkLayerSettingTypeEXT    type;
-            uint32_t                 valueCount;
-            const void*              pValues;
-        } VkLayerSettingEXT;
-
-        typedef struct VkLayerSettingsCreateInfoEXT {
-            VkStructureType             sType;
-            const void*                 pNext;
-            uint32_t                    settingCount;
-            const VkLayerSettingEXT*    pSettings;
-        } VkLayerSettingsCreateInfoEXT;
-#endif
-
         Instance* Instance::DefaultInstance = nullptr;
 
-        Instance::Instance(const std::string &instanceName, bool enableValidationLayers) :
+        Instance::Instance(const std::string& instanceName, bool enableValidationLayers) :
             name(instanceName), validationLayersEnabled(enableValidationLayers) {
 
             VK_CHECK(volkInitialize());
-
-#ifdef AE_OS_MACOS
-            //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-            //putenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS=1");
-#endif
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -67,13 +29,15 @@ namespace Atlas {
             LoadSupportedLayersAndExtensions();
 
             auto requiredExtensions = extensionNames;
-#ifdef AE_OS_MACOS
-            requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-            //requiredExtensions.emplace_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
+#ifdef AE_HEADLESS
+            assert(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
+            requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 #endif
 
+            CheckExtensionSupport(requiredExtensions);
+
             const std::vector<const char*> validationLayers = {
-                    "VK_LAYER_KHRONOS_validation"
+                    "VK_LAYER_KHRONOS_validation",
             };
 
             if (enableValidationLayers && !CheckValidationLayerSupport(validationLayers)) {
@@ -85,7 +49,9 @@ namespace Atlas {
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
 #ifdef AE_OS_MACOS
-            createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+                createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+            }
 #endif
 
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
@@ -118,7 +84,7 @@ namespace Atlas {
                 createInfo.enabledLayerCount = 0;
             }
 
-            VK_CHECK(vkCreateInstance(&createInfo, nullptr, &instance));
+            VK_CHECK_MESSAGE(vkCreateInstance(&createInfo, nullptr, &instance), "Error creating instance");
 
             volkLoadInstance(instance);
 
@@ -168,6 +134,20 @@ namespace Atlas {
 
         }
 
+        Surface* Instance::CreateHeadlessSurface() {
+
+            bool success = false;
+            auto surface = new Surface(this, success);
+            if (!success) {
+                return nullptr;
+            }
+
+            surfaces.push_back(surface);
+
+            return surface;
+
+        }
+
         void Instance::LoadSupportedLayersAndExtensions() {
 
             unsigned int extensionCount = 0;
@@ -182,6 +162,7 @@ namespace Atlas {
                     std::string(extensionProperty.extensionName) == "VK_LUNARG_direct_driver_loading")
                     continue;
                 extensionNames.push_back(extensionProperty.extensionName);
+                supportedExtensions.insert(extensionProperty.extensionName);
             }
 
             unsigned int layerCount = 0;
@@ -197,13 +178,30 @@ namespace Atlas {
 
         bool Instance::CheckExtensionSupport(const std::vector<const char*>& extensionNames) {
 
-            return CheckRequiredVector(this->extensionNames, extensionNames);
+            std::vector<std::string> availableElements(this->extensionNames.begin(), this->extensionNames.end());
+            std::set<std::string> requiredElements(extensionNames.begin(), extensionNames.end());
+
+            for (const auto& element : availableElements) {
+                requiredElements.erase(element);
+            }
+
+            assert(requiredElements.empty() && "Not all required instance extensions were found");
+
+            return requiredElements.empty();
 
         }
 
         bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames) {
 
-            return CheckRequiredVector(this->layerNames, validationLayerNames);
+            std::vector<std::string> availableElements(this->layerNames.begin(), this->layerNames.end());
+            std::set<std::string> requiredElements(validationLayerNames.begin(), validationLayerNames.end());
+
+            for (const auto& element : availableElements) {
+                requiredElements.erase(element);
+            }
+            assert(requiredElements.empty() && "Not all required validation layers were found");
+
+            return requiredElements.empty();
 
         }
 
@@ -236,21 +234,6 @@ namespace Atlas {
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
-
-        }
-
-        bool Instance::CheckRequiredVector(const std::vector<const char *> &available,
-                                           const std::vector<const char *> &required) {
-
-            std::vector<std::string> availableElements(available.begin(), available.end());
-            std::set<std::string> requiredElements(required.begin(), required.end());
-
-            for (const auto& element : availableElements) {
-                requiredElements.erase(element);
-            }
-            assert(requiredElements.empty() && "Not all required elements were found");
-
-            return requiredElements.empty();
 
         }
 

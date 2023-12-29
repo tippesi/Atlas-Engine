@@ -215,10 +215,10 @@ namespace Atlas {
                 createInfo.codeSize = spirvBinary.size() * sizeof(uint32_t);
                 createInfo.pCode = spirvBinary.data();
 
-                bool success = vkCreateShaderModule(device->device, &createInfo,
-                    nullptr, &modules[i]) == VK_SUCCESS;
-                assert(success && "Error creating shader module");
-                if (!success) {
+                auto result = vkCreateShaderModule(device->device, &createInfo,
+                    nullptr, &modules[i]);
+                VK_CHECK_MESSAGE(result, "Error creating shader module");
+                if (result != VK_SUCCESS) {
                     auto stream = Loader::AssetLoader::WriteFile("dump.txt", std::ios::out | std::ios::binary);
                     stream.write(reinterpret_cast<char*>(spirvBinary.data()), spirvBinary.size() * sizeof(uint32_t));
                     stream.close();

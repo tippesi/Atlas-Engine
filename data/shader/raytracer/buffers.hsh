@@ -1,6 +1,10 @@
 #include <structures.hsh>
 
+#ifdef AE_BINDLESS
 #define MESH_COUNT 8192
+#else
+#define MESH_COUNT 1
+#endif
 
 layout(std430, set = 2, binding = 13) buffer ReadAtomic {
     uint readAtomic[];

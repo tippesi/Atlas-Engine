@@ -31,8 +31,10 @@ namespace Atlas {
                 VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-                VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
+                VK_KHR_RAY_QUERY_EXTENSION_NAME
+#ifdef AE_BINDLESS
+                , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
+#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
@@ -41,11 +43,11 @@ namespace Atlas {
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
 
-            GetPhysicalDeviceProperties(physicalDevice);
+            auto availableOptionalExtension = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
+            requiredExtensions.insert(requiredExtensions.end(), availableOptionalExtension.begin(),
+                availableOptionalExtension.end());
 
-            auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
-            requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
-                optionalExtensionOverlap.end());
+            GetPhysicalDeviceProperties(physicalDevice);            
 
             auto queueCreateInfos = CreateQueueInfos();
 
@@ -167,8 +169,10 @@ namespace Atlas {
 
             auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
 
-            int32_t width, height;
+            int32_t width = 1920, height = 1080;
+#ifndef AE_HEADLESS
             SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+#endif
 
             windowWidth = width;
             windowHeight = height;
@@ -889,6 +893,8 @@ namespace Atlas {
             std::vector<const char*> extensionOverlap;
             for (const auto extensionName : extensionNames) {
                 for (const auto& extension : availableExtensions) {
+                    supportedExtensions.insert(extension.extensionName);
+
                     if (std::string(extension.extensionName) == std::string(extensionName)) {
                         extensionOverlap.push_back(extensionName);
                     }
@@ -920,6 +926,7 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
@@ -930,8 +937,11 @@ namespace Atlas {
 
             propertiesBuilder.Append(deviceProperties11);
             propertiesBuilder.Append(deviceProperties12);
-            propertiesBuilder.Append(rayTracingPipelineProperties);
-            propertiesBuilder.Append(accelerationStructureProperties);
+
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+                propertiesBuilder.Append(rayTracingPipelineProperties);
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
+                propertiesBuilder.Append(accelerationStructureProperties);
 
             vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
@@ -949,12 +959,6 @@ namespace Atlas {
             createInfo.enabledExtensionCount = uint32_t(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
-            std::set<std::string> availableExtensions;
-
-            for (auto extensionName : extensions) {
-                availableExtensions.insert(extensionName);
-            }
-
             StructureChainBuilder featureBuilder(createInfo);
 
             VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature = {};
@@ -967,10 +971,10 @@ namespace Atlas {
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
             // Check for ray tracing extension support
-            if (availableExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
@@ -983,14 +987,16 @@ namespace Atlas {
                 support.hardwareRayTracing = true;
             }
 
-            if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
                 support.shaderPrintf = true;
             }
 
-            if (availableExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+#ifdef AE_BINDLESS
+            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
                 features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
                 support.bindless = true;
             }
+#endif
 
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
@@ -1006,7 +1012,7 @@ namespace Atlas {
             featureBuilder.Append(features11);
             featureBuilder.Append(features12);
 
-            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
+            VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 
         }
 
@@ -1014,8 +1020,10 @@ namespace Atlas {
 
             auto nativeWindow = surface->GetNativeWindow();
 
-            int32_t width, height;
+            int32_t width = 1920, height = 1080;
+#ifndef AE_HEADLESS
             SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+#endif
 
             if (width != windowWidth || height != windowHeight) {
                 windowWidth = width;

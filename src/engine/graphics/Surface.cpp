@@ -18,6 +18,22 @@ namespace Atlas {
 
         }
 
+        Surface::Surface(Instance* instance, bool& success) :
+            instance(instance), window(nullptr) {
+
+            auto nativeInstance = instance->GetNativeInstance();
+
+            VkHeadlessSurfaceCreateInfoEXT createInfo = {};
+            createInfo.sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT;
+            createInfo.flags = 0;
+
+            auto result = vkCreateHeadlessSurfaceEXT(nativeInstance, &createInfo, nullptr, &surface);
+            VK_CHECK_MESSAGE(result, "Error creating headless surface");
+
+            success = result == VK_SUCCESS;
+
+        }
+
         Surface::~Surface() {
 
             auto nativeInstance = instance->GetNativeInstance();

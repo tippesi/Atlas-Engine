@@ -23,6 +23,7 @@
 #include <optional>
 #include <vector>
 #include <mutex>
+#include <set>
 
 namespace Atlas {
 
@@ -283,6 +284,9 @@ namespace Atlas {
 
             int32_t windowWidth = 0;
             int32_t windowHeight = 0;
+
+            std::set<std::string> supportedExtensions;
+
         };
 
     }

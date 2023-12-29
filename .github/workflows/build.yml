@@ -103,7 +103,7 @@ jobs:
           cc: "cl"
           cxx: "cl"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -216,7 +216,7 @@ jobs:
           cc: "gcc"
           cxx: "g++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -330,7 +330,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 

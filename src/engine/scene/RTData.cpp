@@ -192,7 +192,9 @@ namespace Atlas {
 
         bool RTData::IsValid() {
 
-            return materialBuffer.GetSize() > 0;
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            return materialBuffer.GetSize() > 0 && device->support.bindless;
 
         }
 

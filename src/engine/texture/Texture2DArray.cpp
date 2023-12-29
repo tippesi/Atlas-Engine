@@ -65,7 +65,7 @@ namespace Atlas {
 
         }
 
-        void Texture2DArray::SaveToPNG(std::string filename, int32_t depth) {
+        void Texture2DArray::SaveToPNG(const std::string& filename, int32_t depth) {
 
 
 

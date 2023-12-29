@@ -136,6 +136,14 @@ find_path(GLM_INCLUDE_DIRS "glm/common.hpp")
 find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
 find_path(VULKAN_HEADERS_INCLUDE_DIRS "vk_video/vulkan_video_codec_h264std.h")
 
+if (ATLAS_HEADLESS)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
+endif()
+
+if (ATLAS_BINDLESS)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
+endif()
+
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 

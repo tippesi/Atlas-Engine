@@ -82,14 +82,15 @@ namespace Atlas {
 
         void Mesh::BuildBVH(bool parallelBuild) {
 
-            assert(data.indexCount > 0 && "There is no data in this mesh");
-
-            if (data.indexCount == 0) return;
-
-            data.BuildBVH(parallelBuild);
-
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
+            bool bindless = device->support.bindless;
+
+            assert(data.indexCount > 0 && "There is no data in this mesh");
+
+            if (data.indexCount == 0 || !bindless) return;
+
+            data.BuildBVH(parallelBuild);
 
             triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
             triangleBuffer.SetSize(data.gpuTriangles.size());

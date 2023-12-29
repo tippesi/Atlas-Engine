@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
@@ -39,6 +40,8 @@ namespace Atlas {
 
             Surface* CreateSurface(SDL_Window* window);
 
+            Surface* CreateHeadlessSurface();
+
             bool isComplete = false;
 
             static Instance* DefaultInstance;
@@ -58,8 +61,6 @@ namespace Atlas {
 
             VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();
 
-            bool CheckRequiredVector(const std::vector<const char*>& available, const std::vector<const char*>& required);
-
             const std::string name;
             bool validationLayersEnabled;
 
@@ -67,6 +68,8 @@ namespace Atlas {
             std::vector<const char*> layerNames;
             std::vector<VkExtensionProperties> extensionProperties;
             std::vector<const char*> extensionNames;
+
+            std::set<std::string> supportedExtensions;
 
             VkInstance instance;
             VkDebugUtilsMessengerEXT debugMessenger;

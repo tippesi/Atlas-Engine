@@ -25,6 +25,16 @@
                 }                                                                   \
             }
 
+#define VK_CHECK_MESSAGE(x,y) {                                                     \
+                VkResult err = x;                                                   \
+                if (err)                                                            \
+                {                                                                   \
+                    Atlas::Log::Error("Detected Vulkan error: " +                   \
+                        Atlas::Graphics::VkResultToString(err));                    \
+                    assert(err == VK_SUCCESS && y);                                 \
+                }                                                                   \
+            }
+
 namespace Atlas {
 
     namespace Graphics {

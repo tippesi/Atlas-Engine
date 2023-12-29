@@ -13,6 +13,8 @@ namespace Atlas {
         public:
             Surface(Instance* instance, SDL_Window* window, bool& success);
 
+            Surface(Instance* instance, bool& success);
+
             ~Surface();
 
             VkSurfaceKHR GetNativeSurface() const;

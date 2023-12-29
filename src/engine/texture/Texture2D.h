@@ -70,7 +70,7 @@ namespace Atlas {
 
             /**
              * Saves the texture to a the supported format.
-             * @param filename The name of the file
+             * @param filename The name of the file (without a file type, which is automatically selectecd)
              * @note Only uint8_t, uint16_t and float are supported typenames.
              */
             template<typename T>
@@ -89,22 +89,22 @@ namespace Atlas {
             auto image = CreateRef<Common::Image<T>>(width, height, channels);
 
             if constexpr (std::is_same_v<T, uint8_t>) {
-                image.fileFormat = Common::ImageFormat::PNG;
+                image->fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
-                image.fileFormat = Common::ImageFormat::PGM;
+                image->fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
             }
             else if constexpr (std::is_same_v<T, float>) {
-                image.fileFormat = Common::ImageFormat::HDR;
+                image->fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
             }
 
-            image.SetData(GetData<T>());
+            image->SetData(GetData<T>());
 
             if (flipHorizontally)
-                image.FlipHorizontally();
+                image->FlipHorizontally();
 
             Loader::ImageLoader::SaveImage(image, filename);
 

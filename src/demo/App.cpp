@@ -161,10 +161,12 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
+#ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
     if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
         return;
     }
+#endif
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
@@ -706,6 +708,12 @@ void App::Render(float deltaTime) {
         }
 
         ImGui::Render();
+
+#ifdef AE_HEADLESS
+        Atlas::Log::Message("Frame rendererd");
+        renderTarget.hdrTexture.Save<float>("prepost");
+        renderTarget.postProcessTexture.Save<uint8_t>("result");
+#endif
 
         if (!recreateSwapchain) {
             imguiWrapper.Render();

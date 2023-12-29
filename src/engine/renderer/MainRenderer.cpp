@@ -849,6 +849,9 @@ namespace Atlas {
 
         void MainRenderer::CreateGlobalDescriptorSetLayout() {
 
+            if (!device->support.bindless)
+                return;
+
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_LINEAR,
                 .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -1076,6 +1079,9 @@ namespace Atlas {
         void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
             std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
             std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
+
+            if (!device->support.bindless)
+                return;
 
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
