@@ -187,9 +187,14 @@ namespace Atlas {
                 std::vector<QueueFamily> families;
 
                 bool IsComplete() {
+#ifndef AE_HEADLESS
                     return queueFamilies[QueueType::GraphicsQueue].has_value() &&
                         queueFamilies[QueueType::PresentationQueue].has_value() &&
                         queueFamilies[QueueType::TransferQueue].has_value();
+#else
+                    return queueFamilies[QueueType::GraphicsQueue].has_value() &&
+                        queueFamilies[QueueType::TransferQueue].has_value();
+#endif
                 }
             }; 
 
