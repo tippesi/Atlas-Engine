@@ -30,7 +30,7 @@ namespace Atlas {
 
             auto requiredExtensions = extensionNames;
 #ifdef AE_HEADLESS
-            assert(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
+            AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
             requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 #endif
 
@@ -185,7 +185,7 @@ namespace Atlas {
                 requiredElements.erase(element);
             }
 
-            assert(requiredElements.empty() && "Not all required instance extensions were found");
+            AE_ASSERT(requiredElements.empty() && "Not all required instance extensions were found");
 
             return requiredElements.empty();
 
@@ -199,7 +199,7 @@ namespace Atlas {
             for (const auto& element : availableElements) {
                 requiredElements.erase(element);
             }
-            assert(requiredElements.empty() && "Not all required validation layers were found");
+            AE_ASSERT(requiredElements.empty() && "Not all required validation layers were found");
 
             return requiredElements.empty();
 

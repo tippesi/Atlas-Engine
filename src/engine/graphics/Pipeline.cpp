@@ -12,10 +12,10 @@ namespace Atlas {
             bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader),
             frameBuffer(desc.frameBuffer), device(device) {
 
-            assert(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
+            AE_ASSERT(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
             if (desc.shader->isCompute) return;
 
-            assert((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
+            AE_ASSERT((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
 
             GeneratePipelineLayoutFromShader();
 
@@ -96,7 +96,7 @@ namespace Atlas {
         Pipeline::Pipeline(GraphicsDevice* device, const ComputePipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), device(device) {
 
-            assert(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
+            AE_ASSERT(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
             if (!desc.shader->isCompute) return;
 
             GeneratePipelineLayoutFromShader();
@@ -166,7 +166,7 @@ namespace Atlas {
             std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
             std::vector<VkVertexInputAttributeDescription>& attributeDescriptions) {
 
-            assert(descVertexInputState.vertexBindingDescriptionCount ==
+            AE_ASSERT(descVertexInputState.vertexBindingDescriptionCount ==
                 descVertexInputState.vertexAttributeDescriptionCount && "Expected bindings and attributes \
                 to have the same amount of elements");
 
@@ -182,7 +182,7 @@ namespace Atlas {
                         break;
                     }
                 }
-                assert(found && "Vertex input was not specified in the pipeline desc");
+                AE_ASSERT(found && "Vertex input was not specified in the pipeline desc");
             }
 
             return Graphics::Initializers::InitPipelineVertexInputStateCreateInfo(

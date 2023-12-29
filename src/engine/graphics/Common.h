@@ -21,7 +21,7 @@
                 {                                                                   \
                     Atlas::Log::Error("Detected Vulkan error: " +                   \
                         Atlas::Graphics::VkResultToString(err));                    \
-                    assert(err == VK_SUCCESS);                                      \
+                    AE_ASSERT(err == VK_SUCCESS);                                      \
                 }                                                                   \
             }
 
@@ -31,7 +31,7 @@
                 {                                                                   \
                     Atlas::Log::Error("Detected Vulkan error: " +                   \
                         Atlas::Graphics::VkResultToString(err));                    \
-                    assert(err == VK_SUCCESS && y);                                 \
+                    AE_ASSERT(err == VK_SUCCESS && y);                                 \
                 }                                                                   \
             }
 

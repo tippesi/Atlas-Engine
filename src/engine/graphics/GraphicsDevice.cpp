@@ -91,67 +91,67 @@ namespace Atlas {
             // We assume everything else is terminated by now, so this is the only thread still alive
             // In that case we don't lock all the mutexes
             for (auto& tlasRef : tlases.data) {
-                assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
+                AE_ASSERT(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
                 tlasRef.reset();
             }
 
             for (auto& blasRef : blases.data) {
-                assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
+                AE_ASSERT(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
                 blasRef.reset();
             }
 
             for (auto& pipelineRef : pipelines.data) {
-                assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
+                AE_ASSERT(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
             }
 
             for (auto& frameBufferRef : frameBuffers.data) {
-                assert(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
                 frameBufferRef.reset();
             }
 
             for (auto& renderPassRef : renderPasses.data) {
-                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
+                AE_ASSERT(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
                 renderPassRef.reset();
             }
 
             for (auto& shaderRef : shaders.data) {
-                assert(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
+                AE_ASSERT(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
                 shaderRef.reset();
             }
 
             for (auto& bufferRef : buffers.data) {
-                assert(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
                 bufferRef.reset();
             }
 
             for (auto& multiBufferRef : multiBuffers.data) {
-                assert(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
                 multiBufferRef.reset();
             }
 
             for (auto& imageRef : images.data) {
-                assert(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
+                AE_ASSERT(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
                 imageRef.reset();
             }
 
             for (auto& samplerRef : samplers.data) {
-                assert(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
+                AE_ASSERT(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
                 samplerRef.reset();
             }
 
             for (auto& poolRef : descriptorPools.data) {
-                assert(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
+                AE_ASSERT(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
             for (auto& descLayoutRef : descriptorSetLayouts.data) {
-                assert(descLayoutRef.use_count() == 1 && "Descriptor layout wasn't deallocated or allocated wrongly");
+                AE_ASSERT(descLayoutRef.use_count() == 1 && "Descriptor layout wasn't deallocated or allocated wrongly");
                 descLayoutRef.reset();
             }
 
             for (auto& poolRef : queryPools.data) {
-                assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
+                AE_ASSERT(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
@@ -381,10 +381,10 @@ namespace Atlas {
 
         void GraphicsDevice::SubmitCommandList(CommandList *cmd, VkPipelineStageFlags waitStage, ExecutionOrder order) {
 
-            assert(!cmd->frameIndependent && "Submitted command list is frame independent."
+            AE_ASSERT(!cmd->frameIndependent && "Submitted command list is frame independent."
                 && "Please use the flush method instead");
 
-            assert(swapChain->isComplete && "Swap chain should be complete."
+            AE_ASSERT(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
 
             auto frame = GetFrameData();
@@ -407,7 +407,7 @@ namespace Atlas {
 
         void GraphicsDevice::FlushCommandList(CommandList *cmd) {
 
-            assert(cmd->frameIndependent && "Flushed command list is not frame independent."
+            AE_ASSERT(cmd->frameIndependent && "Flushed command list is not frame independent."
                    && "Please use the submit method instead");
 
             VkSubmitInfo submit = {};
@@ -463,7 +463,7 @@ namespace Atlas {
                 allListSubmitted &= commandList->isSubmitted;
             }
 
-            assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
+            AE_ASSERT(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
             auto presenterQueue = SubmitAllCommandLists();
@@ -656,7 +656,7 @@ namespace Atlas {
             }
 
             auto foundSuitableDevice = candidates.rbegin()->first > 0;
-            assert(foundSuitableDevice && "No suitable device found");
+            AE_ASSERT(foundSuitableDevice && "No suitable device found");
             // Check if the best candidate is suitable at all
             if (foundSuitableDevice) {
                 physicalDevice = candidates.rbegin()->second;
@@ -668,13 +668,13 @@ namespace Atlas {
             {
                 FindQueueFamilies(physicalDevice, surface);
                 auto completeIndices = queueFamilyIndices.IsComplete();
-                assert(completeIndices && "No valid queue family found");
+                AE_ASSERT(completeIndices && "No valid queue family found");
                 if (!completeIndices) {
                     return false;
                 }
 
                 auto extensionsSupported = CheckDeviceExtensionSupport(physicalDevice, requiredExtensions);
-                assert(extensionsSupported && "Some required extensions are not supported");
+                AE_ASSERT(extensionsSupported && "Some required extensions are not supported");
                 if (!extensionsSupported) {
                     return false;
                 }

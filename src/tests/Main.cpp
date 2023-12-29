@@ -10,6 +10,7 @@
 
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
+#include <Windows.h>
 #endif
 
 // The fixture for testing class Foo.
@@ -45,57 +46,52 @@ protected:
 
 TEST(EngineEndToEndTest, DemoTest) {
 
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
-    setenv("MVK_DEBUG", "0", 1);
-#endif
+    ASSERT_NO_FATAL_FAILURE({
+        Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
-    Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
+        auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
-    auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
+        if (!graphicsInstance->isComplete) {
+            Atlas::Engine::Shutdown();
+        }
 
-    if (!graphicsInstance->isComplete) {
+        auto engineInstance = Atlas::EngineInstance::GetInstance();
+        if (!engineInstance) {
+            Atlas::Engine::Shutdown();
+        }
+
+        auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
+
+        bool quit = false;
+
+        Atlas::Events::EventManager::QuitEventDelegate.Subscribe(
+            [&quit]() {
+                quit = true;
+            });
+
+        engineInstance->LoadContent();
+
+        while (!quit) {
+
+            Atlas::Engine::Update();
+
+            auto deltaTime = Atlas::Clock::GetDelta();
+
+            engineInstance->Update();
+
+            engineInstance->Update(deltaTime);
+            engineInstance->Render(deltaTime);
+
+            graphicsDevice->CompleteFrame();
+
+        }
+
+        engineInstance->UnloadContent();
+        delete engineInstance;
+
         Atlas::Engine::Shutdown();
-        ASSERT_ANY_THROW(true) << "Couldn't initialize graphics instance";
-    }
-
-    auto engineInstance = Atlas::EngineInstance::GetInstance();
-    if (!engineInstance) {
-        Atlas::Engine::Shutdown();
-        ASSERT_ANY_THROW(true) << "Couldn't initialize engine instance";
-    }
-
-    auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
-
-    bool quit = false;
-
-    Atlas::Events::EventManager::QuitEventDelegate.Subscribe(
-        [&quit]() {
-            quit = true;
+        delete graphicsInstance;
         });
-
-    engineInstance->LoadContent();
-
-    while (!quit) {
-
-        Atlas::Engine::Update();
-
-        auto deltaTime = Atlas::Clock::GetDelta();
-
-        engineInstance->Update();
-
-        engineInstance->Update(deltaTime);
-        engineInstance->Render(deltaTime);
-
-        graphicsDevice->CompleteFrame();
-
-    }
-
-    engineInstance->UnloadContent();
-    delete engineInstance;
-
-    Atlas::Engine::Shutdown();
-    delete graphicsInstance;
 
 }
 

@@ -280,7 +280,7 @@ namespace Atlas {
 
         void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             VkViewport viewport = {};
@@ -297,7 +297,7 @@ namespace Atlas {
 
         void CommandList::SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             VkRect2D scissor = {};
@@ -361,7 +361,7 @@ namespace Atlas {
 
         void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
@@ -374,9 +374,9 @@ namespace Atlas {
 
         void CommandList::BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             vkCmdBindIndexBuffer(commandBuffer, buffer->buffer, 0, type);
 
@@ -384,9 +384,9 @@ namespace Atlas {
 
         void CommandList::BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(commandBuffer, binding, 1, &buffer->buffer, &offset);
@@ -396,14 +396,14 @@ namespace Atlas {
         void CommandList::BindVertexBuffers(std::vector<Ref<Buffer>> &buffers, uint32_t bindingOffset,
             uint32_t bindingCount) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             std::vector<VkDeviceSize> offsets;
             std::vector<VkBuffer> bindBuffers;
             for (const auto& buffer : buffers) {
                 if (!buffer->buffer) return;
-                assert(buffer->size > 0 && "Invalid buffer size");
+                AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
                 bindBuffers.push_back(buffer->buffer);
                 offsets.push_back(0);
             }
@@ -414,9 +414,9 @@ namespace Atlas {
 
         void CommandList::BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             if (descriptorBindingData.buffers[set][binding].first == buffer.get())
                 return;
@@ -431,10 +431,10 @@ namespace Atlas {
 
         void CommandList::BindBufferOffset(const Ref<Buffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
-            assert(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                 "Only uniform buffers support dynamic bindings");
 
             if (descriptorBindingData.buffers[set][binding].first == buffer.get())
@@ -450,15 +450,15 @@ namespace Atlas {
 
         void CommandList::BindBuffers(const std::vector<Ref<Buffer>> &buffers, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
             
             if (!buffers.size()) return;
 
             std::vector<Buffer*> buffersPtr;
             for (auto& buffer : buffers) {
-                assert(buffer->size > 0 && "Invalid buffer size");
-                assert(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
+                AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+                AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
                        "Only storage buffers support array bindings");
 
                 buffersPtr.push_back(buffer.get());
@@ -474,9 +474,9 @@ namespace Atlas {
 
         void CommandList::BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             if (descriptorBindingData.buffers[set][binding].first == buffer->GetCurrent())
                 return;
@@ -490,10 +490,10 @@ namespace Atlas {
 
         void CommandList::BindBufferOffset(const Ref<MultiBuffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
-            assert(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                    "Only uniform buffers support dynamic bindings");
 
             descriptorBindingData.ResetBinding(set, binding);
@@ -508,9 +508,9 @@ namespace Atlas {
 
         void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(mipLevel < image->mipLevels && "Invalid mip level selected");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(mipLevel < image->mipLevels && "Invalid mip level selected");
 
             if (descriptorBindingData.images[set][binding].first == image.get() &&
                 descriptorBindingData.images[set][binding].second == mipLevel)
@@ -525,8 +525,8 @@ namespace Atlas {
 
         void CommandList::BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (descriptorBindingData.sampledImages[set][binding].first == image.get() &&
                 descriptorBindingData.sampledImages[set][binding].second == sampler.get())
@@ -541,8 +541,8 @@ namespace Atlas {
 
         void CommandList::BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (!images.size()) return;
 
@@ -559,8 +559,8 @@ namespace Atlas {
 
         void CommandList::BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (descriptorBindingData.samplers[set][binding] == sampler.get())
                 return;
@@ -574,8 +574,8 @@ namespace Atlas {
 
         void CommandList::BindTLAS(const Ref<Atlas::Graphics::TLAS> &tlas, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (descriptorBindingData.tlases[set][binding] == tlas.get())
                 return;
@@ -728,10 +728,10 @@ namespace Atlas {
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
-            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(indexCount && instanceCount && "Index or instance count should not be zero");
+            AE_ASSERT(indexCount && instanceCount && "Index or instance count should not be zero");
 
             BindDescriptorSets();
 
@@ -742,8 +742,8 @@ namespace Atlas {
         void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
             uint32_t drawCount, uint32_t stride) {
 
-            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             BindDescriptorSets();
@@ -755,9 +755,9 @@ namespace Atlas {
         void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
             uint32_t firstInstance) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(vertexCount && instanceCount && "Index or instance count should not be zero");
+            AE_ASSERT(vertexCount && instanceCount && "Index or instance count should not be zero");
 
             BindDescriptorSets();
 
@@ -767,10 +767,10 @@ namespace Atlas {
 
         void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 
-            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
+            AE_ASSERT(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
 
             BindDescriptorSets();
 
@@ -780,8 +780,8 @@ namespace Atlas {
 
         void CommandList::DispatchIndirect(const Ref<Buffer> &buffer, uint32_t offset) {
 
-            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             BindDescriptorSets();
@@ -1107,7 +1107,7 @@ namespace Atlas {
                             continue;
 
                         auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].size());
-                        assert(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
+                        AE_ASSERT(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
                             "Too much data written into buffer infos for descriptor set update");
 
                         if (size_t(imageInfoCounter + sampledImageArraySize) >= imageInfos.size() ||
@@ -1149,7 +1149,7 @@ namespace Atlas {
                             continue;
 
                         auto bufferArraySize = uint32_t(descriptorBindingData.buffersArray[i][j].size());
-                        assert(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
+                        AE_ASSERT(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
                             "Too much data written into buffer infos for descriptor set update");
 
                         if (size_t(bufferInfoCounter + bufferArraySize) >= bufferInfos.size() ||
@@ -1208,7 +1208,7 @@ namespace Atlas {
                 extent = frameBufferInUse->extent;
             }
             else {
-                assert(0 && "No valid render pass found");
+                AE_ASSERT(0 && "No valid render pass found");
             }
 
             return extent;
@@ -1222,7 +1222,7 @@ namespace Atlas {
                     return semaphore.semaphore;
             }
 
-            assert(0 && "Queue not found in available semaphores");
+            AE_ASSERT(0 && "Queue not found in available semaphores");
 
             return semaphores.front().semaphore;
 

@@ -126,6 +126,7 @@ jobs:
         run: |
           Copy-Item -Path "${{ github.workspace }}\swiftshader\build\Windows\*.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          set VK_LAYER_PATH="$Env:VULKAN_SDK\Bin"
           .\AtlasEngineTests.exe
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/bin/${{ matrix.build-type }}/vk_swiftshader_icd.json
@@ -252,6 +253,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          export VK_LAYER_PATH=$VULKAN_SDK/lib/vulkan/layers
+          export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$VULKAN_SDK/lib/vulkan/layers
           ./AtlasEngineTests
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json
@@ -377,6 +380,8 @@ jobs:
         # Add additional scripting steps here
         run: |
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layers.d
+          export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib
           ./AtlasEngineTests
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json   

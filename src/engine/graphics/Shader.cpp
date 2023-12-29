@@ -206,7 +206,7 @@ namespace Atlas {
                 bool isCompiled = false;
                 auto spirvBinary = ShaderCompiler::Compile(stage, macros, isCompiled);
 
-                assert(isCompiled && "Shader compilation was unsuccessful");
+                AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
@@ -317,7 +317,7 @@ namespace Atlas {
 
         bool ShaderVariant::TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
 
             if (set >= DESCRIPTOR_SET_COUNT ||
                 !layout->IsCompatible(sets[set].layout)) {
@@ -348,15 +348,15 @@ namespace Atlas {
             SpvReflectShaderModule module;
             SpvReflectResult result = spvReflectCreateShaderModule(spirvBinary.size() * sizeof(uint32_t),
                 spirvBinary.data(), &module);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
 
             uint32_t pushConstantCount = 0;
             result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, nullptr);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
 
             std::vector<SpvReflectBlockVariable*> pushConstants(pushConstantCount);
             result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, pushConstants.data());
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
 
             for (auto pushConstant : pushConstants) {
                 PushConstantRange range;
@@ -375,16 +375,16 @@ namespace Atlas {
 
             uint32_t descSetCount = 0;
             result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, nullptr);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
             std::vector<SpvReflectDescriptorSet*> descSets(descSetCount);
             result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, descSets.data());
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
             for (auto descriptorSet : descSets) {
                 ShaderDescriptorSet bindGroup;
 
-                assert(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
+                AE_ASSERT(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
 
                 for(uint32_t i = 0; i < descriptorSet->binding_count; i++) {
                     auto descriptorBinding = descriptorSet->bindings[i];
@@ -396,7 +396,7 @@ namespace Atlas {
                     
                     binding.valid = true;
 
-                    assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
+                    AE_ASSERT(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 
                     binding.binding.bindingIdx = descriptorBinding->binding;
                     binding.binding.descriptorCount = descriptorBinding->count;
@@ -424,11 +424,11 @@ namespace Atlas {
             if (shaderModule.shaderStageFlag == VK_SHADER_STAGE_VERTEX_BIT) {
                 uint32_t inputVariableCount = 0;
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, nullptr);
-                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+                AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
                 std::vector<SpvReflectInterfaceVariable *> inputVariables(inputVariableCount);
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, inputVariables.data());
-                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+                AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
                 for (auto inputVariable: inputVariables) {
                     // Reject all build in variables

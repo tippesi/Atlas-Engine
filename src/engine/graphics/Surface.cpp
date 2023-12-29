@@ -14,7 +14,7 @@ namespace Atlas {
 
             auto nativeInstance = instance->GetNativeInstance();
             success = SDL_Vulkan_CreateSurface(window, nativeInstance, &surface);
-            assert(success && "Error creating surface for window");
+            AE_ASSERT(success && "Error creating surface for window");
 
         }
 

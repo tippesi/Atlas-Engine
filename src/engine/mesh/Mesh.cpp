@@ -86,7 +86,7 @@ namespace Atlas {
             bool hardwareRayTracing = device->support.hardwareRayTracing;
             bool bindless = device->support.bindless;
 
-            assert(data.indexCount > 0 && "There is no data in this mesh");
+            AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
             if (data.indexCount == 0 || !bindless) return;
 

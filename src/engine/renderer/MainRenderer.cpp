@@ -1098,7 +1098,7 @@ namespace Atlas {
                 auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
                 auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
 
-                assert(triangleBuffer != nullptr);
+                AE_ASSERT(triangleBuffer != nullptr);
 
                 blasBuffers[idx] = blasBuffer;
                 triangleBuffers[idx] = triangleBuffer;

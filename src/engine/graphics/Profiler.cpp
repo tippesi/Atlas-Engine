@@ -97,7 +97,7 @@ namespace Atlas {
             };
 
             auto idx = threadContextCount.fetch_add(1);
-            assert(idx < PROFILER_MAX_THREADS && "Too many threads for this frame");
+            AE_ASSERT(idx < PROFILER_MAX_THREADS && "Too many threads for this frame");
 
             threadContexts[idx] = context;
 
@@ -132,11 +132,11 @@ namespace Atlas {
 
             if (!enable) return;
 
-            assert(name.length() > 0 && "Query names shouldn't be empty");
+            AE_ASSERT(name.length() > 0 && "Query names shouldn't be empty");
 
             auto& context = GetThreadContext();
 
-            assert(context.commandList && "A command list must be set before \
+            AE_ASSERT(context.commandList && "A command list must be set before \
                 the first BeginQuery() call in the current thread");
 
             Query query;
@@ -159,7 +159,7 @@ namespace Atlas {
 
             auto& context = GetThreadContext();
 
-            assert(context.stack.size() && "Stack was empty. Maybe called EndQuery too many \
+            AE_ASSERT(context.stack.size() && "Stack was empty. Maybe called EndQuery too many \
                 times or code misses a BeginQuery.");
 
             auto query = context.stack.back();
@@ -317,7 +317,7 @@ namespace Atlas {
                     return threadId == context.id && context.isValid;
                 });
 
-            assert(it != threadContexts.end() && "Thread context not found. Missing a \
+            AE_ASSERT(it != threadContexts.end() && "Thread context not found. Missing a \
                 BeginThread() call somewhere");
 
             return *it;

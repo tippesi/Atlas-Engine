@@ -105,7 +105,7 @@ namespace Atlas {
                     auto &allocation = deleteAllocations.front();
 
                     // This should never happen
-                    assert(allocation.resource.use_count() == 1 && "Resource allocation is not uniquely owned");
+                    AE_ASSERT(allocation.resource.use_count() == 1 && "Resource allocation is not uniquely owned");
                     allocation.resource.reset();
 
                     deleteAllocations.pop_front();
