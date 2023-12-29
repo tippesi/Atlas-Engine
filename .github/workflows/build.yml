@@ -13,6 +13,7 @@ env:
   BUILD_TYPE_DEBUG: Debug
   BUILD_TYPE_RELEASE: Release
   USE_CACHE: true
+  RUN_TESTS: true
 
 jobs:
   windows-build:
@@ -108,9 +109,10 @@ jobs:
 
       - name: Run tests
         shell: pwsh
+        if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          $env:VK_ICD_FILENAMES = '${{ github.workspace }}/swiftshader/build/Windows/vk_swiftshader_icd.json'
+          $env:VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Windows/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           .\AtlasEngineDemo.exe
 
@@ -219,12 +221,12 @@ jobs:
 
       - name: Run tests
         shell: bash
+        if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          cd ${{ github.workspace }}/swiftshader
-          find .
-          export VK_ICD_FILENAMES = "${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json"
+          export VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
+          find .
           ./AtlasEngineDemo
 
       - name: Upload artifact
@@ -331,11 +333,12 @@ jobs:
 
       - name: Run tests
         shell: bash
+        if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          cd ${{ github.workspace }}/swiftshader
-          export VK_ICD_FILENAMES = "${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json"
+          export VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
+          find .
           ./AtlasEngineDemo
 
       - name: Upload artifact
