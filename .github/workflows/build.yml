@@ -112,7 +112,6 @@ jobs:
         if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          $env:VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Windows/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           .\AtlasEngineDemo.exe
 
@@ -224,9 +223,7 @@ jobs:
         if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          export VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
-          find .
           ./AtlasEngineDemo
 
       - name: Upload artifact
@@ -336,7 +333,6 @@ jobs:
         if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          export VK_ICD_FILENAMES="${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json"
           cd ${{ github.workspace }}/bin/${{ matrix.build-type }}
           find .
           ./AtlasEngineDemo
