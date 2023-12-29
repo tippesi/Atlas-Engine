@@ -973,7 +973,7 @@ namespace Atlas {
 
             VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeature = {};
             rtPipelineFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-            
+
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
@@ -986,7 +986,7 @@ namespace Atlas {
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
-               
+
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
@@ -1007,13 +1007,16 @@ namespace Atlas {
 
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-            // This is hacked since I can't get it to work otherwise
-            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
-            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
-            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
 
-            // This feature struct is the last one in the pNext chain for now
-            featureBuilder.Append(portabilityFeatures);
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+                // This is hacked since I can't get it to work otherwise
+                // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
+                portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
+                portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+
+                // This feature struct is the last one in the pNext chain for now
+                featureBuilder.Append(portabilityFeatures);
+            }
 #endif
             featureBuilder.Append(features);
             featureBuilder.Append(features11);

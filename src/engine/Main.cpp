@@ -25,14 +25,12 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
     setenv("MVK_DEBUG", "0", 1);
 #endif
 
-#ifdef AE_OS_WINDOWS
-    SetEnvironmentVariable("VK_ICD_FILENAMES", "D:\\a\\Atlas-Engine\\Atlas-Engine\\swiftshader\\build\\Windows\\vk_swiftshader_icd.json");
-#endif
+    // SetEnvironmentVariable("VK_ICD_FILENAMES", "");
 
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
