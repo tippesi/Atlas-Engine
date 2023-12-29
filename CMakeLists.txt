@@ -30,6 +30,7 @@ option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
 option(ATLAS_BINDLESS "Activate support for running the engine with bindless resources turned on" ON)
+option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" ON)
 
 if (ATLAS_DEMO)
     set (ATLAS_IMGUI ON)
@@ -55,6 +56,7 @@ endif()
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
+set (TESTS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
 # Add dependencies ################################################################################
@@ -75,6 +77,10 @@ find_package(glslang CONFIG REQUIRED)
 find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)
 
+if (ATLAS_TESTS)
+find_package(GTest CONFIG REQUIRED)
+endif()
+
 add_subdirectory(${ATLAS_LOCATION})
 
 if (ATLAS_IMGUI)
@@ -83,4 +89,8 @@ endif()
 
 if (ATLAS_DEMO)
     add_subdirectory(${DEMO_LOCATION})
+endif()
+
+if (ATLAS_TESTS)
+    add_subdirectory(${TESTS_LOCATION})
 endif()

@@ -31,7 +31,8 @@
             "features": []
         },
         "spirv-reflect",
-        "spirv-tools"
+        "spirv-tools",
+        "gtest"
     ],
     "overrides": [
             { "name": "glm", "version": "0.9.8.0" },
