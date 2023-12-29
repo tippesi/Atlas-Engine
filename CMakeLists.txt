@@ -35,6 +35,9 @@ option(ATLAS_TESTS "Activate support for running the engine with bindless resour
 if (ATLAS_DEMO)
     set (ATLAS_IMGUI ON)
 endif()
+if (ATLAS_TESTS)
+    set (ATLAS_IMGUI ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
