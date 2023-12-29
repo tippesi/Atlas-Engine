@@ -693,10 +693,14 @@ namespace Atlas {
 
             int32_t score = 0;
 
+            
+
             VkPhysicalDeviceProperties physicalDeviceProperties;
             VkPhysicalDeviceFeatures physicalDeviceFeatures;
             vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
             vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
+
+            Log::Message("Rate device " + std::string(physicalDeviceProperties.deviceName));
 
             // This property has to outweigh any other
             if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -710,24 +714,30 @@ namespace Atlas {
             {
                 FindQueueFamilies(device, surface);
                 if (!queueFamilyIndices.IsComplete()) {
+                    Log::Message("Family indices incomplete");
                     return 0;
                 }
 
                 // Need to check extensions before checking the swap chain details
                 auto extensionsSupported = CheckDeviceExtensionSupport(device, requiredExtensions);
                 if (!extensionsSupported) {
+                    Log::Message("Extensions not supported");
                     return 0;
                 }
 
                 auto swapchainSupportDetails = SwapChainSupportDetails(device, surface);
                 if (!swapchainSupportDetails.IsAdequate()) {
+                    Log::Message("Swapchain inadequate");
                     return 0;
                 }
 
                 if (!physicalDeviceFeatures.samplerAnisotropy) {
+                    Log::Message("Anisotropy not supported");
                     return 0;
                 }
             }
+
+            Log::Message("Score is " + std::to_string(score));
 
             return score;
 

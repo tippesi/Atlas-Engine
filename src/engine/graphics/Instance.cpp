@@ -28,6 +28,10 @@ namespace Atlas {
 
             LoadSupportedLayersAndExtensions();
 
+            for (auto& name : extensionNames) {
+                Log::Message(name);
+            }
+
             auto requiredExtensions = extensionNames;
 #ifdef AE_HEADLESS
             assert(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
