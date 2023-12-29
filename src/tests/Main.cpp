@@ -47,11 +47,12 @@ protected:
 TEST(EngineEndToEndTest, DemoTest) {
 
     ASSERT_NO_FATAL_FAILURE({
-#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+#ifdef AE_OS_MACOS
         Atlas::Log::Warning(getenv("VK_LOADER_LAYERS_ENABLE"));
         Atlas::Log::Warning(getenv("DYLD_LIBRARY_PATH"));
         Atlas::Log::Warning(getenv("VK_ADD_LAYER_PATH"));
-#else
+#endif
+#ifdef AE_OS_WINDOWS
         int32_t sizeLoaderLayersEnable;
         int32_t sizeAddLayerPath;
         std::string loaderLayersEnable;
