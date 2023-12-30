@@ -1,6 +1,7 @@
 #include "ShaderCompiler.h"
 #include "GraphicsDevice.h"
 #include "Log.h"
+#include "loader/AssetLoader.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <spirv-tools/optimizer.hpp>
@@ -14,6 +15,9 @@ namespace Atlas {
         void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
             glslang::TShader& shader);
 
+        std::unordered_map<size_t, ShaderCompiler::SpvCacheEntry> ShaderCompiler::cache;
+        const std::string ShaderCompiler::cachePath = ".cache/";
+
         void ShaderCompiler::Init() {
 
             glslang::InitializeProcess();
@@ -24,10 +28,29 @@ namespace Atlas {
 
             glslang::FinalizeProcess();
 
+            for (auto& [_, entry] : cache) {
+                if (!entry.wasModified) continue;
+
+                auto fileStream = Loader::AssetLoader::WriteFile(entry.fileName, std::ios::out | std::ios::binary);
+                if (fileStream.is_open()) {
+                    fileStream.write(reinterpret_cast<char*>(entry.spirvBinary.data()),
+                        entry.spirvBinary.size() * sizeof(uint32_t));
+
+                    fileStream.close();
+                }
+            }
+
         }
 
         std::vector<uint32_t> ShaderCompiler::Compile(const ShaderStageFile& shaderFile,
-            const std::vector<std::string>& macros, bool& success) {
+            const std::vector<std::string>& macros, bool useCache, bool& success) {
+
+            if (useCache) {
+                auto cacheHit = TryFindCacheEntry(shaderFile, macros, success);
+                if (success) {
+                    return cacheHit.spirvBinary;
+                }
+            }
 
             auto device = GraphicsDevice::DefaultDevice;
 
@@ -80,10 +103,81 @@ namespace Atlas {
 
             std::vector<uint32_t> optimizedBinary;
             if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {
+                AddCacheEntry(shaderFile, macros, optimizedBinary);
                 return optimizedBinary;
             }
 
+            AddCacheEntry(shaderFile, macros, optimizedBinary);
             return spirvBinary;
+
+        }
+
+        ShaderCompiler::SpvCacheEntry ShaderCompiler::TryFindCacheEntry(
+            const ShaderStageFile& shaderFile, const std::vector<std::string>& macros, bool& success) {
+
+            auto hash = CalculateHash(shaderFile, macros);
+
+            success = true;
+
+            SpvCacheEntry entry;
+            if (cache.contains(hash)) {
+                entry = cache[hash];                
+            }
+            else {
+                auto path = cachePath + std::to_string(hash);
+                if (Loader::AssetLoader::FileExists(path)) {
+                    entry.fileName = path;
+                    entry.lastModified = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
+
+                    auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
+                    if (fileStream.is_open()) {
+                        auto content = Loader::AssetLoader::GetFileContent(fileStream);
+                        fileStream.close();
+
+                        // Quick and dirty memcpy
+                        entry.spirvBinary.resize(content.size() / sizeof(uint32_t));
+                        std::memcpy(entry.spirvBinary.data(), content.data(), content.size());
+                    }
+                    else {
+                        success = false;
+                    }
+                }
+                else {
+                    success = false;
+                }
+            }
+
+            success &= shaderFile.lastModified <= entry.lastModified;
+            return entry;
+
+        }
+
+        void ShaderCompiler::AddCacheEntry(const ShaderStageFile& shaderFile,
+            const std::vector<std::string>& macros, std::vector<uint32_t> binary) {
+
+            auto hash = CalculateHash(shaderFile, macros);
+
+            SpvCacheEntry entry {
+                .fileName = cachePath + std::to_string(hash),
+
+                .lastModified = shaderFile.lastModified,
+                .spirvBinary = binary,
+
+                .wasModified = true
+            };
+            cache[hash] = entry;
+
+        }
+
+        Hash ShaderCompiler::CalculateHash(const ShaderStageFile& shaderFile,
+            const std::vector<std::string>& macros) {
+
+            Hash hash = 0;
+            HashCombine(hash, shaderFile.filename);
+            for (auto& macro : macros)
+                HashCombine(hash, macro);
+
+            return hash;
 
         }
 

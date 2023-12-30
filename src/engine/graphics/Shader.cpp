@@ -204,7 +204,7 @@ namespace Atlas {
                 auto& stage = stages[i];
 
                 bool isCompiled = false;
-                auto spirvBinary = ShaderCompiler::Compile(stage, macros, isCompiled);
+                auto spirvBinary = ShaderCompiler::Compile(stage, macros, true, isCompiled);
 
                 AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
                 if (!isCompiled) return;
@@ -219,9 +219,7 @@ namespace Atlas {
                     nullptr, &modules[i]);
                 VK_CHECK_MESSAGE(result, "Error creating shader module");
                 if (result != VK_SUCCESS) {
-                    auto stream = Loader::AssetLoader::WriteFile("dump.txt", std::ios::out | std::ios::binary);
-                    stream.write(reinterpret_cast<char*>(spirvBinary.data()), spirvBinary.size() * sizeof(uint32_t));
-                    stream.close();
+                    
                     return;
                 }
 

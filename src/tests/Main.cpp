@@ -30,6 +30,8 @@ protected:
     void TearDown() override {
         delete engineInstance;
 
+        Atlas::PipelineManager::Clear();
+
         graphicsDevice->ForceMemoryCleanup();
     }
 

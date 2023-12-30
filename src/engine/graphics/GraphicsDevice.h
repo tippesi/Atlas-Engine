@@ -146,6 +146,12 @@ namespace Atlas {
 
             void ForceMemoryCleanup();
 
+            template <class T>
+            struct Resources {
+                std::vector<Ref<T>> data;
+                std::mutex mutex;
+            };
+
             Instance* instance = nullptr;
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
@@ -165,6 +171,20 @@ namespace Atlas {
             VkPhysicalDeviceVulkan12Features features12 = {};
 
             DeviceSupport support;
+
+            Resources<RenderPass> renderPasses;
+            Resources<FrameBuffer> frameBuffers;
+            Resources<Shader> shaders;
+            Resources<Pipeline> pipelines;
+            Resources<Buffer> buffers;
+            Resources<MultiBuffer> multiBuffers;
+            Resources<Image> images;
+            Resources<Sampler> samplers;
+            Resources<DescriptorSetLayout> descriptorSetLayouts;
+            Resources<DescriptorPool> descriptorPools;
+            Resources<QueryPool> queryPools;
+            Resources<BLAS> blases;
+            Resources<TLAS> tlases;
 
             bool isComplete = false;
 
@@ -197,12 +217,6 @@ namespace Atlas {
 #endif
                 }
             }; 
-
-            template <class T>
-            struct Resources {
-                std::vector<Ref<T>> data;
-                std::mutex mutex;
-            };
 
             QueueRef SubmitAllCommandLists();
 
@@ -266,20 +280,6 @@ namespace Atlas {
             }
 
             QueueFamilyIndices queueFamilyIndices;
-
-            Resources<RenderPass> renderPasses;
-            Resources<FrameBuffer> frameBuffers;
-            Resources<Shader> shaders;
-            Resources<Pipeline> pipelines;
-            Resources<Buffer> buffers;
-            Resources<MultiBuffer> multiBuffers;
-            Resources<Image> images;
-            Resources<Sampler> samplers;
-            Resources<DescriptorSetLayout> descriptorSetLayouts;
-            Resources<DescriptorPool> descriptorPools;
-            Resources<QueryPool> queryPools;
-            Resources<BLAS> blases;
-            Resources<TLAS> tlases;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;

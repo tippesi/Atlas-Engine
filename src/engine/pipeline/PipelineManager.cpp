@@ -25,6 +25,12 @@ namespace Atlas {
 
     void PipelineManager::Shutdown() {
 
+        Clear();
+
+    }
+
+    void PipelineManager::Clear() {
+
         for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
             globalDescriptorSetLayoutOverrides[i] = nullptr;
         }

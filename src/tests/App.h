@@ -17,7 +17,7 @@ struct AppConfiguration {
     bool sss = true;
     bool fog = true;
     bool taa = true;
-    bool sharpen = true;
+    bool sharpen = false;
 };
 
 class App : public Atlas::EngineInstance {
