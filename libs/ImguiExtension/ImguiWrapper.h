@@ -53,4 +53,6 @@ private:
 
     std::unordered_map<VkImageView, VkDescriptorSet> imageViewToDescriptorSetMap;
 
+    bool initialized = false;
+
 };

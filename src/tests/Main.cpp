@@ -3,6 +3,7 @@
 #include "EngineInstance.h"
 #include "graphics/Instance.h"
 #include "common/Path.h"
+#include "App.h"
 
 #if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
 #include <zconf.h>
@@ -13,67 +14,54 @@
 #include <Windows.h>
 #endif
 
+extern Atlas::EngineInstance* GetEngineInstance();
+
 // The fixture for testing class Foo.
-class EngineEndToEndTest : public testing::Test {
+class EngineEndToEndTest : public testing::TestWithParam<AppConfiguration> {
 protected:
-    // You can remove any or all of the following functions if their bodies would
-    // be empty.
-
-    EngineEndToEndTest() {
-        // You can do set-up work for each test here.
-    }
-
-    ~EngineEndToEndTest() override {
-        // You can do clean-up work that doesn't throw exceptions here.
-    }
-
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-
     void SetUp() override {
-        // Code here will be called immediately after the constructor (right
-        // before each test).
+        graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
+        graphicsDevice = Atlas::Graphics::GraphicsDevice::DefaultDevice;
+
+        engineInstance = GetEngineInstance();
+        ASSERT_NE(engineInstance, nullptr);
     }
 
     void TearDown() override {
-        // Code here will be called immediately after each test (right
-        // before the destructor).
+        delete engineInstance;
+
+        graphicsDevice->ForceMemoryCleanup();
     }
 
+    Atlas::Graphics::Instance* graphicsInstance;
+    Atlas::Graphics::GraphicsDevice* graphicsDevice;
+    Atlas::EngineInstance* engineInstance;
+
 public:
-    // Class members declared here can be used by all tests in the test suite
-    // for Foo.
-    int test = 0;
-
-};
-
-TEST(EngineEndToEndTest, DemoTest) {
-
-    ASSERT_NO_FATAL_FAILURE({
-
+    static void SetUpTestSuite()  {
         Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
         auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
+        ASSERT_EQ(graphicsInstance->isComplete, true);
+    }
 
-        if (!graphicsInstance->isComplete) {
-            Atlas::Engine::Shutdown();
-        }
+    static void TearDownTestSuite() {
+        Atlas::Engine::Shutdown();
+        delete Atlas::Graphics::Instance::DefaultInstance;
+    }
 
-        auto engineInstance = Atlas::EngineInstance::GetInstance();
-        if (!engineInstance) {
-            Atlas::Engine::Shutdown();
-        }
+};
 
-        auto graphicsDevice = graphicsInstance->GetGraphicsDevice();
+TEST_P(EngineEndToEndTest, DemoTest) {
+    ASSERT_NO_FATAL_FAILURE({
 
         bool quit = false;
-
         Atlas::Events::EventManager::QuitEventDelegate.Subscribe(
             [&quit]() {
                 quit = true;
             });
 
-        engineInstance->LoadContent();
+        ((App*)engineInstance)->LoadContent(GetParam());
 
         while (!quit) {
 
@@ -91,15 +79,22 @@ TEST(EngineEndToEndTest, DemoTest) {
         }
 
         engineInstance->UnloadContent();
-        delete engineInstance;
 
-        Atlas::Engine::Shutdown();
-        delete graphicsInstance;
         });
-
 }
+
+auto testingValues = testing::Values(
+    AppConfiguration { .sss = false },
+    AppConfiguration { .clouds = false },
+    AppConfiguration { .fog = false },
+    AppConfiguration { .taa = false },
+    AppConfiguration { .sharpen = false }
+    );
+
+INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
+
     return RUN_ALL_TESTS();
 }

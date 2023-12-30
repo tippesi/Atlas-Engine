@@ -12,6 +12,8 @@
 #include <Windows.h>
 #endif
 
+extern Atlas::EngineInstance* GetEngineInstance();
+
 int main(int argc, char* argv[]) {
 
     // Automatically change working directory to load
@@ -42,7 +44,9 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    auto engineInstance = Atlas::EngineInstance::GetInstance();
+    // Only then create engine instance. This makes sure that the engine instance already
+    // has access to all graphics functionality and all other functionality on construction
+    auto engineInstance = GetEngineInstance();
     if (!engineInstance) {
         Atlas::Log::Warning("Shutdown of application");
         Atlas::Engine::Shutdown();

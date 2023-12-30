@@ -127,7 +127,6 @@ jobs:
           Copy-Item -Path "${{ github.workspace }}\swiftshader\build\Windows\*.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
           Copy-Item -Path "${{ github.workspace }}\VULKAN_SDK\Bin\VkLayer_khronos_validation.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
-          Get-ChildItem -Recurse .
           set VK_LOADER_LAYERS_ENABLE=*validation
           set VK_ADD_LAYER_PATH=${{ github.workspace }}\VULKAN_SDK\Bin\
           .\AtlasEngineTests.exe
@@ -257,8 +256,6 @@ jobs:
         if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          cd ${{ github.workspace }}/VULKAN_SDK/
-          find .
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
           ./AtlasEngineTests
         env: 
@@ -387,8 +384,6 @@ jobs:
         if: ${{ env.RUN_TESTS }} == true
         # Add additional scripting steps here
         run: |
-          cd ${{ github.workspace }}/VULKAN_SDK/
-          find .
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
           ./AtlasEngineTests
         env: 

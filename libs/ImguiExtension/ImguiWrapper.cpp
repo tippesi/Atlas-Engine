@@ -63,6 +63,8 @@ void ImguiWrapper::Unload() {
     // Unsubscribe from all events
     ImGui_ImplVulkan_Shutdown();
 
+    initialized = false;
+
 }
 
 void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
@@ -120,8 +122,6 @@ void ImguiWrapper::Render(bool clearSwapChain) {
 }
 
 void ImguiWrapper::RecreateImGuiResources() {
-
-    static bool initialized = false;
 
     if (initialized) {
         ImGui_ImplVulkan_Shutdown();

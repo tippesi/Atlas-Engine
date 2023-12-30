@@ -12,6 +12,14 @@
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
+struct AppConfiguration {
+    bool clouds = true;
+    bool sss = true;
+    bool fog = true;
+    bool taa = true;
+    bool sharpen = true;
+};
+
 class App : public Atlas::EngineInstance {
 
     template<class T>
@@ -20,13 +28,17 @@ class App : public Atlas::EngineInstance {
 public:
     App() : EngineInstance("Atlas Engine Demo", 1920, 1080, WINDOW_FLAGS) {}
 
-    virtual void LoadContent() final;
+    virtual void LoadContent() final {};
+
+    virtual void LoadContent(AppConfiguration config) final;
 
     virtual void UnloadContent() final;
 
     virtual void Update(float deltaTime) final;
 
     virtual void Render(float deltaTime) final;
+
+
 
 private:
     void DisplayLoadingScreen(float deltaTime);

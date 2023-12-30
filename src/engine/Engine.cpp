@@ -31,10 +31,10 @@ namespace Atlas {
 
         Graphics::ShaderCompiler::Init();
 
-        // First need to get a window to retrieve the title
+#ifndef AE_HEADLESS
         DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
-            AE_WINDOWPOSITION_UNDEFINED, 100, 100,
-            SDL_WINDOW_VULKAN | AE_WINDOW_HIDDEN, false);
+            AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
+#endif
 
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
@@ -48,11 +48,15 @@ namespace Atlas {
         };
 
         Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);
-
+        Graphics::Surface* surface;
         // Initialize window surface
-        DefaultWindow->CreateSurface();
+#ifndef AE_HEADLESS
+        surface = Graphics::Instance::DefaultInstance->CreateSurface(DefaultWindow->GetSDLWindow());
+#else
+        surface = Graphics::Instance::DefaultInstance->CreateHeadlessSurface();
+#endif
         // Initialize device
-        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(DefaultWindow->surface);
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
         Graphics::Extensions::Process();
@@ -66,12 +70,6 @@ namespace Atlas {
 
         Clock::Update();
 
-        // Only then create engine instance. This makes sure that the engine instance already
-        // has access to all graphics functionality and all other functionality on construction
-        auto engineInstance = GetEngineInstance();
-        EngineInstance::instance = engineInstance;
-
-
     }
 
     void Engine::Shutdown() {
@@ -80,6 +78,10 @@ namespace Atlas {
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
         Texture::Texture::Shutdown();
+
+#ifndef AE_HEADLESS
+        delete Engine::DefaultWindow;
+#endif
 
 #ifdef AE_NO_APP
         SDL_Quit();

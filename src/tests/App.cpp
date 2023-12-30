@@ -9,7 +9,7 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .validationLayerSeverity = Log::SEVERITY_MEDIUM,
 };
 
-void App::LoadContent() {
+void App::LoadContent(AppConfiguration config) {
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
@@ -48,7 +48,8 @@ void App::LoadContent() {
     Atlas::PipelineManager::EnableHotReload();
 
     directionalLight = Atlas::CreateRef<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
+    directionalLight->intensity = 100.0f;
     directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
@@ -57,28 +58,38 @@ void App::LoadContent() {
     scene->sky.sun = directionalLight;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
-    scene->ao->rt = true;
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
     scene->reflection->useShadowMap = true;
 
-    scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
-    scene->fog->enable = true;
-    scene->fog->density = 0.0002f;
-    scene->fog->heightFalloff = 0.0284f;
-    scene->fog->height = 0.0f;
+    if (config.fog) {
+        scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
+        scene->fog->enable = true;
+        scene->fog->density = 0.0068f;
+        scene->fog->heightFalloff = 0.0284f;
+        scene->fog->height = 0.0f;
+    }
 
-    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
-    scene->sky.clouds->minHeight = 1400.0f;
-    scene->sky.clouds->maxHeight = 1700.0f;
-    scene->sky.clouds->castShadow = false;
+    if (config.clouds) {
+        scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
+        scene->sky.clouds->minHeight = 1400.0f;
+        scene->sky.clouds->maxHeight = 1700.0f;
+        scene->sky.clouds->castShadow = false;
+    }
 
     scene->sky.atmosphere = Atlas::CreateRef<Atlas::Lighting::Atmosphere>();
 
-    scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
-    scene->postProcessing.sharpen.enable = true;
-    scene->postProcessing.sharpen.factor = 0.15f;
+    if (config.taa) {
+        scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
+    }
 
-    scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+    if (config.sharpen) {
+        scene->postProcessing.sharpen.enable = true;
+        scene->postProcessing.sharpen.factor = 0.15f;
+    }
+
+    if (config.sss) {
+        scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+    }
 
     LoadScene();
 
@@ -172,10 +183,6 @@ void App::Render(float deltaTime) {
 
     imguiWrapper.Render();
 
-    Atlas::Log::Message("Frame rendererd " + std::to_string(frameCount));
-    renderTarget.hdrTexture.Save<float>("prepost");
-    renderTarget.postProcessTexture.Save<uint8_t>("result");
-
 }
 
 void App::DisplayLoadingScreen(float deltaTime) {
@@ -223,13 +230,6 @@ bool App::LoadScene() {
     bool successful = false;
     loadingComplete = false;
 
-    Atlas::Texture::Cubemap sky;
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
-
-    scene->sky.probe = nullptr;
-    scene->sky.clouds->enable = true;
-    scene->sss->enable = true;
-
     using namespace Atlas::Loader;
 
     meshes.reserve(3);
@@ -252,18 +252,6 @@ bool App::LoadScene() {
         false, transform, 2048
     );
     meshes.push_back(mesh);
-
-    // Other scene related settings apart from the mesh
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-    directionalLight->intensity = 100.0f;
-    directionalLight->GetVolumetric()->intensity = 0.28f;
-
-    // Setup camera
-    camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
-    camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
-    camera.exposure = 0.125f;
-
-    scene->fog->enable = true;
 
     auto meshCount = 0;
     for (auto& mesh : meshes) {
