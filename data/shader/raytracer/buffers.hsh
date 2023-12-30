@@ -38,6 +38,10 @@ layout(std430, set = 2, binding = 21) buffer Instances {
     Instance bvhInstances[];
 };
 
+layout(std430, set = 2, binding = 27) buffer InstanceLastMatrices {
+    mat3x4 instanceLastMatrices[];
+};
+
 layout (std430, set = 0, binding = 1) buffer Triangles {
     PackedTriangle data[];
 } triangles[MESH_COUNT];

@@ -70,6 +70,7 @@ namespace Atlas {
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
+            Buffer::Buffer lastMatricesBuffer;
 
             std::vector<GPULight> triangleLights;
 

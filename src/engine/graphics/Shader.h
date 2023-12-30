@@ -23,6 +23,8 @@ namespace Atlas {
 
             const std::string GetGlslCode(const std::vector<std::string>& macros) const;
 
+            const std::vector<std::string> GetEnvironmentMacros() const;
+
             struct Extension {
                 std::string extension;
                 std::vector<std::string> ifdefs;

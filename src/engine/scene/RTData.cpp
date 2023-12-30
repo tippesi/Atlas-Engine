@@ -25,6 +25,7 @@ namespace Atlas {
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
+            lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
 
         }
 
@@ -50,6 +51,7 @@ namespace Atlas {
 
             std::vector<GPUBVHInstance> gpuBvhInstances;
             std::vector<Volume::AABB> actorAABBs;
+            std::vector<mat3x4> lastMatrices;
 
             for (auto& [_, meshInfo] : meshInfos) {
                 meshInfo.instanceIndices.clear();
@@ -76,6 +78,7 @@ namespace Atlas {
                 meshInfo.matrices.push_back(actor->globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
+                lastMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
             }
 
             if (!gpuBvhInstances.size())
@@ -91,8 +94,13 @@ namespace Atlas {
             if (updateTriangleLights)
                 UpdateTriangleLights();
 
-            bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+            if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
+                bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+                lastMatricesBuffer.SetSize(lastMatrices.size());
+            }
+           
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
+            lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
 
         }
 
@@ -128,7 +136,7 @@ namespace Atlas {
                     HashCombine(hash, meshMaterialID++);
 
                     // Only is persistent when no materials are reorderd in mesh
-                    gpuMaterial.ID = int32_t(hash % 0x80000000);
+                    gpuMaterial.ID = int32_t(hash % 65535);
 
                     gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
                     gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
@@ -225,7 +233,10 @@ namespace Atlas {
                 orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
 
-            tlasNodeBuffer.SetSize(gpuBvhNodes.size());
+            if (tlasNodeBuffer.GetElementCount() < gpuBvhNodes.size()) {
+                tlasNodeBuffer.SetSize(gpuBvhNodes.size());
+            }
+
             tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
             return orderedGpuBvhInstances;

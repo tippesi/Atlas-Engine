@@ -172,7 +172,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+    confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
     uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
@@ -354,6 +354,8 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
+        uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+
     ivec2 offset = FindNearest3x3(pixel);
 
     vec3 mean, std;
@@ -361,7 +363,7 @@ void main() {
 
     vec3 currentRadiance = FetchTexel(pixel);
 
-    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
+    vec2 velocity = texelFetch(velocityTexture, pixel + offset, 0).rg;
 
     vec2 historyUV = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
@@ -397,11 +399,13 @@ void main() {
         historyLength = 0.0;
     }
 
+    factor = 0.0;
     factor = min(factor, historyLength / (historyLength + 1.0));
 
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
     imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
     //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), historyLength + 1.0));
+    //imageStore(outAccumImage, pixel, vec4(vec3(historyLength / 10.0), historyLength + 1.0));
 
 }

@@ -20,25 +20,13 @@ namespace Atlas {
 
         const std::string ShaderStageFile::GetGlslCode(const std::vector<std::string>& macros) const {
 
-            auto device = GraphicsDevice::DefaultDevice;
-
             std::string glslCode = "";
             glslCode.append("#version 460\n\n");
 
-            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
-                glslCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
-            }
+            auto envMacros = GetEnvironmentMacros();
 
-            if (device->support.shaderPrintf) {
-                glslCode.append("#define AE_SHADER_PRINTF\n");
-            }
-
-            if (device->support.hardwareRayTracing) {
-                glslCode.append("#define AE_HARDWARE_RAYTRACING\n");
-            }
-
-            if (device->support.bindless) {
-                glslCode.append("#define AE_BINDLESS\n");
+            for (auto& macro : envMacros) {
+                glslCode.append("#define " + macro + "\n");
             }
 
             // Extensions have to come first
@@ -58,6 +46,31 @@ namespace Atlas {
             glslCode.erase(std::remove(glslCode.begin(), glslCode.end(), '\r'), glslCode.end());
 
             return glslCode;
+
+        }
+
+        const std::vector<std::string> ShaderStageFile::GetEnvironmentMacros() const {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            std::vector<std::string> macros;
+
+            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
+                macros.push_back("AE_TEXTURE_SHADOW_LOD");
+            }
+            if (device->support.shaderPrintf) {
+                macros.push_back("AE_SHADER_PRINTF");
+            }
+
+            if (device->support.hardwareRayTracing) {
+                macros.push_back("AE_HARDWARE_RAYTRACING");
+            }
+
+            if (device->support.bindless) {
+                macros.push_back("AE_BINDLESS");
+            }
+
+            return macros;
 
         }
 

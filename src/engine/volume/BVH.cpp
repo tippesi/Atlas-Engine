@@ -275,7 +275,7 @@ namespace Atlas {
 
             const size_t refCount = 2;
             // Create leaf node
-            if (refs.size() <= refCount || depth >= 32) {
+            if ((refs.size() <= refCount || depth >= 32) && depth > 0) {
                 CreateLeaf(refs);
                 return;
             }
@@ -302,8 +302,14 @@ namespace Atlas {
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                CreateLeaf(refs);
-                return;
+                // In the rare case there was not enough improvements with just a few triangles
+                if (depth == 0) {
+                    split = PerformMedianSplit(refs, rightRefs, leftRefs);
+                }
+                else {
+                    CreateLeaf(refs);
+                    return;
+                }
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
@@ -832,6 +838,34 @@ namespace Atlas {
                     leftRefs.push_back(ref);
                 }
                 else {
+                    split.rightAABB.Grow(ref.aabb);
+                    rightRefs.push_back(ref);
+                }
+            }
+
+            // Use this as a fallback, otherwise we might get endless recursions
+            if (!leftRefs.size() || !rightRefs.size()) {
+                split = Split();
+
+                leftRefs.clear();
+                rightRefs.clear();
+
+                std::sort(refs.begin(), refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                    auto center0 = ref0.aabb.max[axis] - ref0.aabb.min[axis];
+                    auto center1 = ref1.aabb.max[axis] - ref1.aabb.min[axis];
+                    return center0 < center1;
+                    });
+
+                auto splitIdx = uint32_t(refs.size() / 2);
+
+                for (uint32_t i = 0; i < splitIdx; i++) {
+                    const auto& ref = refs[i];
+                    split.leftAABB.Grow(ref.aabb);
+                    leftRefs.push_back(ref);
+                }
+
+                for (uint32_t i = splitIdx; i < uint32_t(refs.size()); i++) {
+                    const auto& ref = refs[i];
                     split.rightAABB.Grow(ref.aabb);
                     rightRefs.push_back(ref);
                 }

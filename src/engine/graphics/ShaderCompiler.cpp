@@ -172,9 +172,13 @@ namespace Atlas {
         Hash ShaderCompiler::CalculateHash(const ShaderStageFile& shaderFile,
             const std::vector<std::string>& macros) {
 
+            auto envMacros = shaderFile.GetEnvironmentMacros();
+
             Hash hash = 0;
             HashCombine(hash, shaderFile.filename);
             for (auto& macro : macros)
+                HashCombine(hash, macro);
+            for (auto& macro : envMacros)
                 HashCombine(hash, macro);
 
             return hash;

@@ -76,11 +76,17 @@ void main() {
 #ifdef REALTIME
         // Write out material information and velocity into a g-buffer
         if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
+            Instance instance = bvhInstances[ray.hitInstanceID];
+            mat4 lastMatrix = mat4(transpose(instanceLastMatrices[ray.hitInstanceID]));
+
             vec3 pos = ray.hitID >= 0 ? surface.P : ray.origin + ray.direction * ray.hitDistance;
+
+            // As a reminder: The current inverse matrix is also transposed
+            vec3 lastPos = vec3(lastMatrix * vec4(vec4(pos, 1.0) * instance.inverseMatrix, 1.0));
 
             vec4 viewSpacePos = globalData[0].vMatrix * vec4(pos, 1.0);
             vec4 projPositionCurrent = globalData[0].pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(pos, 1.0);
+            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(lastPos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;

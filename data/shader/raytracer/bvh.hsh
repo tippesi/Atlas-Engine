@@ -604,7 +604,7 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
             int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
             int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
 
-            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
             int materialOffset = bvhInstances[hitInstanceID].materialOffset;
 
             vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
@@ -623,8 +623,8 @@ void HitClosestTransparency(inout Ray ray, float tMin, float tMax) {
         ray.hitDistance = rayQueryGetIntersectionTEXT(rayQuery, true);
         ray.hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
 
-        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
-        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, false);
+        int geometryOffset = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
+        int meshIdx = rayQueryGetIntersectionInstanceCustomIndexEXT(rayQuery, true);
 
         int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
         ray.hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true) + triangleOffset;
@@ -651,7 +651,7 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
             int triangleOffset = int(geometryTriangleOffsets[nonuniformEXT(meshIdx)].data[geometryOffset]);
             int hitID = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false) + triangleOffset;
 
-            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+            int hitInstanceID = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
             int materialOffset = bvhInstances[hitInstanceID].materialOffset;
 
             vec2 barrycentric = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);

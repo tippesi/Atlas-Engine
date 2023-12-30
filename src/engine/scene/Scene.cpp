@@ -58,7 +58,7 @@ namespace Atlas {
 
             // Make sure this is changed just once at the start of a frame
             rtDataValid = rtData.IsValid();
-            rtData.Update(false);
+            rtData.Update(true);
 
         }
 
