@@ -49,24 +49,6 @@ public:
 
 TEST(EngineEndToEndTest, DemoTest) {
 
-#ifdef AE_OS_MACOS
-    Atlas::Log::Warning(getenv("VK_LOADER_LAYERS_ENABLE"));
-    Atlas::Log::Warning(getenv("DYLD_LIBRARY_PATH"));
-    Atlas::Log::Warning(getenv("VK_ADD_LAYER_PATH"));
-#endif
-#ifdef AE_OS_WINDOWS
-    int32_t sizeLoaderLayersEnable;
-    int32_t sizeAddLayerPath;
-    std::string loaderLayersEnable;
-    std::string addLayerPath;
-    loaderLayersEnable.resize(1024);
-    addLayerPath.resize(1024);
-    GetEnvironmentVariable("VK_LOADER_LAYERS_ENABLE", loaderLayersEnable.data(), sizeLoaderLayersEnable);
-    GetEnvironmentVariable("VK_ADD_LAYER_PATH", addLayerPath.data(), sizeAddLayerPath);
-    Atlas::Log::Warning(loaderLayersEnable);
-    Atlas::Log::Warning(addLayerPath);
-#endif
-
     ASSERT_NO_FATAL_FAILURE({
 
         Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);

@@ -88,20 +88,35 @@ namespace Atlas {
 
             auto image = CreateRef<Common::Image<T>>(width, height, channels);
 
+            std::vector<T> data;
+
             if constexpr (std::is_same_v<T, uint8_t>) {
                 image->fileFormat = Common::ImageFormat::PNG;
                 filename += ".png";
+                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, uint16_t>) {
                 image->fileFormat = Common::ImageFormat::PGM;
                 filename += ".pgm";
+                data = GetData<T>();
             }
             else if constexpr (std::is_same_v<T, float>) {
                 image->fileFormat = Common::ImageFormat::HDR;
                 filename += ".hdr";
+                // We have a lot of 16bit float textures, need some care
+                if (this->image->bitDepth < 32) {
+                    auto texData = GetData<float16>();
+                    std::transform(texData.begin(), texData.end(), std::back_inserter(data),
+                        [](float16 x) {
+                            return glm::detail::toFloat32(x);
+                        });
+                }
+                else {
+                    data = GetData<T>();
+                }
             }
 
-            image->SetData(GetData<T>());
+            image->SetData(data);
 
             if (flipHorizontally)
                 image->FlipHorizontally();

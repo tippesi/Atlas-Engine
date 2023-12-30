@@ -197,7 +197,6 @@ namespace Atlas {
             std::set<std::string> requiredElements(validationLayerNames.begin(), validationLayerNames.end());
 
             for (const auto& element : availableElements) {
-                Log::Warning(element);
                 requiredElements.erase(element);
             }
             AE_ASSERT(requiredElements.empty() && "Not all required validation layers were found");

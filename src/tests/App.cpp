@@ -5,7 +5,8 @@
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../../data",
-    .shaderDirectory = "shader"
+    .shaderDirectory = "shader",
+    .validationLayerSeverity = Log::SEVERITY_MEDIUM,
 };
 
 void App::LoadContent() {
@@ -172,6 +173,8 @@ void App::Render(float deltaTime) {
     imguiWrapper.Render();
 
     Atlas::Log::Message("Frame rendererd " + std::to_string(frameCount));
+    renderTarget.hdrTexture.Save<float>("prepost");
+    renderTarget.postProcessTexture.Save<uint8_t>("result");
 
 }
 
