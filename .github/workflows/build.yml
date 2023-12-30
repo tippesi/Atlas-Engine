@@ -131,7 +131,7 @@ jobs:
           .\AtlasEngineTests.exe
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/bin/${{ matrix.build-type }}/vk_swiftshader_icd.json
-          VK_ADD_LAYER_PATH: ${{ github.workspace }}\VULKAN_SDK\Bin\
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}\VULKAN_SDK\Bin\;${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
           VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact

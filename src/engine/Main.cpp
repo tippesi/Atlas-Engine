@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     setenv("MVK_DEBUG", "0", 1);
 #endif
 
-    SetEnvironmentVariable("VK_ICD_FILENAMES", "C:\\Users\\tippe\\Documents\\Repos\\swiftshader\\build\\Windows\\vk_swiftshader_icd.json");
+    // SetEnvironmentVariable("VK_ICD_FILENAMES", "C:\\Users\\tippe\\Documents\\Repos\\swiftshader\\build\\Windows\\vk_swiftshader_icd.json");
 
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
