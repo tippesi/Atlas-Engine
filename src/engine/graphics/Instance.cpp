@@ -41,7 +41,8 @@ namespace Atlas {
             };
 
             if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
-                return;
+                Log::Warning("Required validation layers were not found. Disabling validation layers");
+                validationLayersEnabled = false;
             }
 
             VkInstanceCreateInfo createInfo{};
@@ -199,7 +200,6 @@ namespace Atlas {
             for (const auto& element : availableElements) {
                 requiredElements.erase(element);
             }
-            AE_ASSERT(requiredElements.empty() && "Not all required validation layers were found");
 
             return requiredElements.empty();
 
