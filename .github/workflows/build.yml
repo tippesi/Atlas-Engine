@@ -129,7 +129,7 @@ jobs:
           cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
           Get-ChildItem -Recurse .
           set VK_LOADER_LAYERS_ENABLE=*validation
-          set VK_ADD_LAYER_PATH=${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          set VK_ADD_LAYER_PATH=${{ github.workspace }}\VULKAN_SDK\Bin\
           .\AtlasEngineTests.exe
         env: 
           VK_ICD_FILENAMES: ${{ github.workspace }}/bin/${{ matrix.build-type }}/vk_swiftshader_icd.json
