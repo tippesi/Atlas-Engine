@@ -101,8 +101,9 @@ TEST(EngineEndToEndTest, DemoTest) {
 
 int main(int argc, char** argv) {
 #ifdef AO_OS_WINDOWS
-    SetEnvironmentVariable("VK_LOADER_LAYERS_ENABLE", "*validation");
-    SetEnvironmentVariable("VK_ADD_LAYER_PATH", "D:/a/Atlas-Engine/Atlas-Engine/VULKAN_SDK/Bin");
+    SetEnvironmentVariable("VK_LOADER_LAYERS_ENABLE", "VkLayer_khronos_validation");
+    SetEnvironmentVariable("VK_ADD_LAYER_PATH", "D:\\a\\Atlas-Engine\\Atlas-Engine\\VULKAN_SDK\\Bin");
+    SetEnvironmentVariable("VK_LAYER_PATH", "D:\\a\\Atlas-Engine\\Atlas-Engine\\VULKAN_SDK\\Bin");
 #endif
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
