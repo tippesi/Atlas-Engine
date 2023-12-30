@@ -35,9 +35,9 @@ protected:
         graphicsDevice->ForceMemoryCleanup();
     }
 
-    Atlas::Graphics::Instance* graphicsInstance;
-    Atlas::Graphics::GraphicsDevice* graphicsDevice;
-    Atlas::EngineInstance* engineInstance;
+    Atlas::Graphics::Instance* graphicsInstance = nullptr;
+    Atlas::Graphics::GraphicsDevice* graphicsDevice = nullptr;
+    Atlas::EngineInstance* engineInstance = nullptr;
 
 public:
     static void SetUpTestSuite()  {
@@ -63,7 +63,7 @@ TEST_P(EngineEndToEndTest, DemoTest) {
                 quit = true;
             });
 
-        ((App*)engineInstance)->LoadContent(GetParam());
+        dynamic_cast<App*>(engineInstance)->LoadContent(GetParam());
 
         while (!quit) {
 

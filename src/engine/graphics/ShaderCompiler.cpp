@@ -153,7 +153,7 @@ namespace Atlas {
         }
 
         void ShaderCompiler::AddCacheEntry(const ShaderStageFile& shaderFile,
-            const std::vector<std::string>& macros, std::vector<uint32_t> binary) {
+            const std::vector<std::string>& macros, const std::vector<uint32_t>& binary) {
 
             auto hash = CalculateHash(shaderFile, macros);
 
