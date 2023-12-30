@@ -395,11 +395,11 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
                 bool intersectR = IntersectAABB(ray,
                 node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                nodePtr = intersectL ? node.leftPtr : node.rightPtr;
                 nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
                 if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    stack[stackPtr++][threadID] = node.rightPtr;
                 }
             }
         }
@@ -418,11 +418,11 @@ bool HitAny(inout Ray ray, float tMin, float tMax) {
                 bool intersectR = IntersectAABB(ray,
                 node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                nodePtr = intersectL ? node.leftPtr : node.rightPtr;
                 nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
                 if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    stack[stackPtr++][threadID] = node.rightPtr;
                 }
             }
         }
@@ -476,11 +476,11 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
                 bool intersectR = IntersectAABB(ray,
                     node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                nodePtr = intersectL ? node.leftPtr : node.rightPtr;
                 nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
                 if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    stack[stackPtr++][threadID] = node.rightPtr;
                 }
             }
         }
@@ -500,11 +500,11 @@ float HitAnyTransparency(inout Ray ray, float tMin, float tMax) {
                 bool intersectR = IntersectAABB(ray,
                 node.rightAABB, tMin, tMax);
 
-                nodePtr = intersectR ? node.rightPtr : node.leftPtr;
+                nodePtr = intersectL ? node.leftPtr : node.rightPtr;
                 nodePtr = !intersectR && !intersectL ? stack[--stackPtr][threadID] : nodePtr;
 
                 if (intersectR && intersectL) {
-                    stack[stackPtr++][threadID] = node.leftPtr;
+                    stack[stackPtr++][threadID] = node.rightPtr;
                 }
             }
         }

@@ -444,6 +444,10 @@ namespace Atlas {
                 const auto nodeIdx = nodes.size();
                 nodes.push_back(BVHNode());
 
+                // Reorder such that shadow rays hit large surface are first
+                if (leftChild->aabb.GetSurfaceArea() < rightChild->aabb.GetSurfaceArea())
+                    std::swap(leftChild, rightChild);
+
                 // Flatten recursively
                 if (leftChild) {
                     auto leaf = leftChild->refs.size() > 0;
