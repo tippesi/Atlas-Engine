@@ -398,8 +398,7 @@ void main() {
     if (factor < 0.1 || !valid) {
         historyLength = 0.0;
     }
-
-    factor = 0.0;
+    
     factor = min(factor, historyLength / (historyLength + 1.0));
 
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);

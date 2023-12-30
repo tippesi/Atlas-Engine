@@ -350,6 +350,9 @@ namespace Atlas {
         void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
             Scene::Scene *scene, Texture::Texture2D *texture) {
 
+            if (!scene->IsRtDataValid())
+                return;
+
             static vec2 lastJitter = vec2(0.0f);
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);

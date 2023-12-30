@@ -282,7 +282,8 @@ namespace Atlas {
 
             // Ignore errors, might happen if the device just provides 4 possible descriptor set locations
             // (This layer uses it's own descriptor set and engine uses 4 already)
-            if (std::string(pCallbackData->pMessageIdName) == "UNASSIGNED-DEBUG-PRINTF") {
+            if (pCallbackData->pMessageIdName != nullptr &&
+                std::string(pCallbackData->pMessageIdName) == "UNASSIGNED-DEBUG-PRINTF") {
                 logType = Log::Type::TYPE_WARNING;
                 logSeverity = Log::Severity::SEVERITY_MEDIUM;
             }
