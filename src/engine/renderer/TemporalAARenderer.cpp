@@ -35,12 +35,12 @@ namespace Atlas {
 
             auto targetData = target->GetData(FULL_RES);
 
-            const auto const lastHistory = target->GetLastHistory();
-            const auto const history = target->GetHistory();
-            const auto const lastVelocity = target->GetLastVelocity();
-            const auto const velocity = target->GetVelocity();
-            const auto const depth = targetData->depthTexture;
-            const auto const stencil = targetData->stencilTexture;
+            const auto lastHistory = target->GetLastHistory();
+            const auto history = target->GetHistory();
+            const auto lastVelocity = target->GetLastVelocity();
+            auto const velocity = target->GetVelocity();
+            const auto depth = targetData->depthTexture;
+            const auto stencil = targetData->stencilTexture;
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -79,11 +79,11 @@ namespace Atlas {
 
             pipelineConfig.ManageMacro("PATHTRACE", true);
 
-            const auto const output = &target->postProcessTexture;
-            const auto const history = &target->historyPostProcessTexture;
-            const auto const lastVelocity = &target->historyVelocityTexture;
-            const auto const velocity = &target->velocityTexture;
-            const auto const depth = &target->depthTexture;
+            const auto output = &target->postProcessTexture;
+            const auto history = &target->historyPostProcessTexture;
+            const auto lastVelocity = &target->historyVelocityTexture;
+            auto const velocity = &target->velocityTexture;
+            auto const depth = &target->depthTexture;
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
