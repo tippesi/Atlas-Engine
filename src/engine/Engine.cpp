@@ -59,6 +59,10 @@ namespace Atlas {
         Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
 
+#ifndef AE_HEADLESS
+        delete Engine::DefaultWindow;
+#endif
+
         Graphics::Extensions::Process();
 
         // Do the setup for all the classes that need static setup
@@ -78,10 +82,6 @@ namespace Atlas {
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
         Texture::Texture::Shutdown();
-
-#ifndef AE_HEADLESS
-        delete Engine::DefaultWindow;
-#endif
 
 #ifdef AE_NO_APP
         SDL_Quit();
