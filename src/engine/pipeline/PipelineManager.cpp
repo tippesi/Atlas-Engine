@@ -110,7 +110,7 @@ namespace Atlas {
                 
                 std::unordered_map<size_t, Ref<Graphics::Pipeline>> validPipelines;
 
-                std::lock_guard lock(variants->variantsMutex);
+                std::lock_guard innerLock(variants->variantsMutex);
 
                 for (auto& [pipelineHash, pipeline] : variants->pipelines) {
 

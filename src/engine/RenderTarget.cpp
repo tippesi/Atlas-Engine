@@ -135,6 +135,8 @@ namespace Atlas {
         hdrTexture.Resize(width, height);
         postProcessTexture.Resize(width, height);
         sssTexture.Resize(width, height);
+        oceanDepthTexture.Resize(width, height);
+        oceanStencilTexture.Resize(width, height);
 
         SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
