@@ -27,10 +27,13 @@ const float minVelocityBlend = 0.05;
 const float maxVelocityBlend = 0.5;
 
 #define TAA_YCOCG
-//#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
 //#define TAA_DENOISE
+
+#ifdef PATHTRACE
+#define TAA_CLIP
+#endif
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -365,10 +368,12 @@ void main() {
     float range = 1.4;
     float localAntiFlicker = mix(0.6, 5.0, 1.0 - velocityBlend);
 
+#ifndef PATHTRACE
 #ifdef TAA_DENOISE
     range += localAntiFlicker;
 #else
     range += mix(0.0, localAntiFlicker, historyContrast);
+#endif
 #endif
 
     localNeighbourhoodMin = average - range * (average - localNeighbourhoodMin);
@@ -384,7 +389,11 @@ void main() {
     historyColor = clamp(historyColor, localNeighbourhoodMin, localNeighbourhoodMax);
 #endif
 
+#ifndef PATHTRACE
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
+#else
+    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
+#endif
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 

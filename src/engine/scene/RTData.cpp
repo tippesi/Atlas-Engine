@@ -307,6 +307,7 @@ namespace Atlas {
             auto& materials = mesh->data.materials;
 
             auto& meshInfo = meshInfos[mesh.GetID()];
+            meshInfo.triangleLights.clear();
 
             // Triangle lights
             for (size_t i = 0; i < gpuTriangles.size(); i++) {

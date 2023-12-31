@@ -103,6 +103,8 @@ namespace Atlas {
                 uniforms.samplesPerFrame = samplesPerFrame;
                 uniforms.maxRadiance = maxRadiance;
 
+                uniforms.frameCount = frameCount;
+
                 rayHitUniformBuffer.SetData(&uniforms, i);
             }            
 
@@ -237,9 +239,9 @@ namespace Atlas {
                 renderTarget->historyMaterialIdxTexture.Bind(commandList, 3, 11);
 
                 struct alignas(16) PushConstants {
-                    float temporalWeight;
                     float historyClipMax;
                     float currentClipFactor;
+                    float maxHistoryLength;
                     float exposure;
                     int samplesPerFrame;
                     float maxRadiance;
@@ -248,8 +250,9 @@ namespace Atlas {
                 Graphics::Profiler::BeginQuery("Temporal");
 
                 PushConstants constants = {
-                    .historyClipMax = 1.0f,
-                    .currentClipFactor = 2.0f,
+                    .historyClipMax = historyClipMax,
+                    .currentClipFactor = currentClipFactor,
+                    .maxHistoryLength = float(historyLengthMax),
                     .exposure = camera->exposure,
                     .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance

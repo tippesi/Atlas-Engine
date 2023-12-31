@@ -147,6 +147,10 @@ namespace Atlas {
             bool realTime = true;
             int32_t realTimeSamplesPerFrame = 4;
 
+            int32_t historyLengthMax = 32;
+            float historyClipMax = 0.1f;
+            float currentClipFactor = 2.0f;
+
             float maxRadiance = 65535.0f;
 
             bool sampleEmissives = false;
@@ -171,6 +175,7 @@ namespace Atlas {
                 float exposure;
                 int32_t samplesPerFrame;
                 float maxRadiance;
+                int32_t frameCount;
             };
 
             Helper::RayTracingHelper helper;

@@ -135,7 +135,7 @@ void App::Update(float deltaTime) {
 
         actors[1].SetMatrix(matrix);
 
-        float height = (sinf(Atlas::Clock::Get() / 1.0f) + 1.0f) * 20.0f;
+        float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
         matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
 
         actors[2].SetMatrix(matrix);
@@ -351,6 +351,10 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Realtime");
                 ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
                 ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);                
+                ImGui::Text("Realtime denoiser");
+                ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
+                ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
+                ImGui::SliderFloat("Max history clip##Pathtrace", &mainRenderer->pathTracingRenderer.historyClipMax, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("DDGI")) {
                 ImGui::Text("Probe count: %s", vecToString(volume->probeCount).c_str());

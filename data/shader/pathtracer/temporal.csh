@@ -24,9 +24,9 @@ layout(set = 3, binding = 10) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 11) uniform usampler2D historyMaterialIdxTexture;
 
 layout(push_constant) uniform constants {
-    float temporalWeight;
     float historyClipMax;
     float currentClipFactor;
+    float maxHistoryLength;
     float exposure;
     int samplesPerFrame;
     float maxRadiance;
@@ -363,7 +363,7 @@ void main() {
 
     vec3 currentRadiance = FetchTexel(pixel);
 
-    vec2 velocity = texelFetch(velocityTexture, pixel + offset, 0).rg;
+    vec2 velocity = texelFetch(velocityTexture, pixel, 0).rg;
 
     vec2 historyUV = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
@@ -387,11 +387,12 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     float clipBlend = ClipBoundingBox(historyNeighbourhoodMin, historyNeighbourhoodMax,
         historyRadiance, currentRadiance);
-    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax * 0.2);
+    float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentRadiance = clamp(currentRadiance, currentNeighbourhoodMin, currentNeighbourhoodMax);
     //historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
 
-    float factor = 0.95;
+    float temporalWeight = (pushConstants.maxHistoryLength - 1.0) / pushConstants.maxHistoryLength;
+    float factor = mix(0.0, temporalWeight, 1.0 - adjClipBlend);
     factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
          || historyUV.y > 1.0) ? 0.0 : factor;
 
