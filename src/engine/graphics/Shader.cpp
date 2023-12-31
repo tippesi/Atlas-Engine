@@ -25,12 +25,12 @@ namespace Atlas {
 
             auto envMacros = GetEnvironmentMacros();
 
-            for (auto& macro : envMacros) {
+            for (const auto& macro : envMacros) {
                 glslCode.append("#define " + macro + "\n");
             }
 
             // Extensions have to come first
-            for (auto& extension : extensions) {
+            for (const auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
                     glslCode += ifdef + "\n";
                 glslCode += extension.extension + "\n";
@@ -38,7 +38,7 @@ namespace Atlas {
                     glslCode += "#endif\n";
             }
 
-            for (auto& macro : macros) {
+            for (const auto& macro : macros) {
                 glslCode.append("#define " + macro + "\n");
             }
 
@@ -343,7 +343,7 @@ namespace Atlas {
             }
             
             for (size_t i = 0; i < layout->layoutBindings.size(); i++) {
-                auto& binding = layout->bindings[i];
+                const auto& binding = layout->bindings[i];
 
                 auto idx = binding.bindingIdx;
                 sets[set].bindings[idx].binding = binding;

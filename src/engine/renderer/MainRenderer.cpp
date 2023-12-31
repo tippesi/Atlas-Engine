@@ -1091,10 +1091,10 @@ namespace Atlas {
             bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
 
-            for (auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
+            for (const auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
                 if (!scene->rootMeshMap.contains(meshId)) continue;
 
-                auto& mesh = scene->rootMeshMap[meshId].mesh;
+                const auto& mesh = scene->rootMeshMap[meshId].mesh;
 
                 auto blasBuffer = mesh->blasNodeBuffer.Get();
                 auto triangleBuffer = mesh->triangleBuffer.Get();
@@ -1111,7 +1111,7 @@ namespace Atlas {
 
             images.resize(scene->textureToBindlessIdx.size());
 
-            for (auto& [texture, idx] : scene->textureToBindlessIdx) {
+            for (const auto& [texture, idx] : scene->textureToBindlessIdx) {
 
                 images[idx] = texture->image;
 

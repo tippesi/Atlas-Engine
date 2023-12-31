@@ -101,9 +101,9 @@ namespace Atlas {
 
         }
 
-        void TemporalAARenderer::Render(Texture::Texture2D* outputTexture, Texture::Texture2D* currentTexture, Texture::Texture2D* historyTexture,
-            Texture::Texture2D* velocityTexture, Texture::Texture2D* historyVelocityTexture, Texture::Texture2D* depthTexture,
-            Texture::Texture2D* stencilTexture, PushConstants& constants, Graphics::CommandList* commandList) {
+        void TemporalAARenderer::Render(const Texture::Texture2D* outputTexture, const Texture::Texture2D* currentTexture, const Texture::Texture2D* historyTexture,
+            const Texture::Texture2D* velocityTexture, const Texture::Texture2D* historyVelocityTexture, const Texture::Texture2D* depthTexture,
+            const Texture::Texture2D* stencilTexture, PushConstants& constants, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("TAA");
 

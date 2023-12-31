@@ -24,9 +24,9 @@ namespace Atlas {
 
             void ResetAllocationCounters();
 
-            VkDescriptorSet GetCachedSet(Ref<DescriptorSetLayout>& layout);
+            VkDescriptorSet GetCachedSet(const Ref<DescriptorSetLayout>& layout);
 
-            VkDescriptorSet Allocate(Ref<DescriptorSetLayout>& layout);
+            VkDescriptorSet Allocate(const Ref<DescriptorSetLayout>& layout);
 
             VkDescriptorPool GetNativePool();
 

@@ -64,7 +64,7 @@ namespace Atlas {
 
         // Do check for hot reload only once per frame
         for (auto& [hash, variants] : shaderToVariantsMap) {
-            std::lock_guard lock(variants->variantsMutex);
+            std::lock_guard innerLock(variants->variantsMutex);
 
             if (hotReload && variants->shader->Reload(lastModifiedMap)) {
                 // Clear variants on hot reload

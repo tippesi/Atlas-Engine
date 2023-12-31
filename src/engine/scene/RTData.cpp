@@ -31,6 +31,10 @@ namespace Atlas {
 
         void RTData::Update(bool updateTriangleLights) {
 
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            if (!device->swapChain->isComplete) return;
+
             auto actors = scene->GetMeshActors();
             if (!actors.size()) return;
 
@@ -228,7 +232,7 @@ namespace Atlas {
             // Order after the BVH build to fit the node indices
             std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
             for (size_t i = 0; i < bvh.refs.size(); i++) {
-                auto& ref = bvh.refs[i];
+                const auto& ref = bvh.refs[i];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
@@ -315,8 +319,7 @@ namespace Atlas {
                 auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
                 auto& material = materials[idx];
 
-                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
-                    * material->emissiveIntensity;
+                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor);
                 auto brightness = dot(radiance, vec3(0.3333f));
 
                 if (brightness > 0.0f) {
@@ -349,7 +352,7 @@ namespace Atlas {
                     GPULight light;
                     light.P = vec4(P, 1.0f);
                     light.N = vec4(N, 0.0f);
-                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance), 0.0f);
+                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance) * material->emissiveIntensity, 0.0f);
                     light.data = vec4(cd, weight, area, 0.0f);
 
                     meshInfo.triangleLights.push_back(light);

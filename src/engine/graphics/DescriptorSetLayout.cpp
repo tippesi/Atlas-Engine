@@ -101,10 +101,10 @@ namespace Atlas {
             for (size_t i = 0; i < that->layoutBindings.size(); i++) {
 
                 bool found = false;
-                auto& otherBinding = that->bindings[i];
+                const auto& otherBinding = that->bindings[i];
 
                 for (size_t j = 0; j < layoutBindings.size(); j++) {
-                    auto& binding = bindings[j];
+                    const auto& binding = bindings[j];
                     // Only check identical bindings
                     if (binding.bindingIdx != otherBinding.bindingIdx)
                         continue;

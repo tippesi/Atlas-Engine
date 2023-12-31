@@ -1140,12 +1140,12 @@ void App::CheckLoadScene() {
         }
     }
     else if (sceneSelection == PICAPICA) {
-        for (auto& material : meshes.front()->data.materials)
+        for (const auto& material : meshes.front()->data.materials)
             material->vertexColors = false;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        for (auto& mesh : meshes)
-            for (auto& material : mesh->data.materials)
+        for (const auto& mesh : meshes)
+            for (const auto& material : mesh->data.materials)
                 material->metalness = 0.0f;
     }
 
@@ -1154,7 +1154,7 @@ void App::CheckLoadScene() {
     auto buildRTStructure = [&]() {
         auto sceneMeshes = scene->GetMeshes();
 
-        for (auto& mesh : sceneMeshes) {
+        for (const auto& mesh : sceneMeshes) {
             mesh->BuildBVH();
         }
     };

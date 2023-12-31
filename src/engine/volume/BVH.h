@@ -120,9 +120,9 @@ namespace Atlas {
         public:
             BVH() = default;
 
-            BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data, bool parallelBuild = true);
+            BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild = true);
 
-            BVH(std::vector<AABB>& aabbs, bool parallelBuild = true);
+            BVH(const std::vector<AABB>& aabbs, bool parallelBuild = true);
 
             bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
                 glm::vec3& intersection);

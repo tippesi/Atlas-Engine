@@ -17,7 +17,7 @@ namespace Atlas {
         uint32_t BVHBuilder::spatialSplitCount = 0;
         float BVHBuilder::totalSurfaceArea = 0.0f;
 
-        BVH::BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data, bool parallelBuild) {
+        BVH::BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
             Log::Message("Started BVH build");
 
@@ -72,7 +72,7 @@ namespace Atlas {
 
         }
 
-        BVH::BVH(std::vector<AABB>& aabbs, bool parallelBuild) {
+        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {
 
             refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {

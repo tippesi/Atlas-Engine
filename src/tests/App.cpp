@@ -234,27 +234,27 @@ bool App::LoadScene() {
 
     meshes.reserve(3);
     glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
-    auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+    auto sponzaMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
         "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
     );
-    meshes.push_back(mesh);
+    meshes.push_back(sponzaMesh);
 
     transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
-    mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+    auto wallMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
         "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
         false, transform, 2048
     );
-    meshes.push_back(mesh);
+    meshes.push_back(wallMesh);
 
     transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
-    mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+    auto sphereMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
         "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
         false, transform, 2048
     );
-    meshes.push_back(mesh);
+    meshes.push_back(sphereMesh);
 
     auto meshCount = 0;
-    for (auto& mesh : meshes) {
+    for (const auto& mesh : meshes) {
         if (meshCount == 10) {
             meshCount++;
             continue;
@@ -329,11 +329,11 @@ void App::CheckLoadScene() {
         glm::vec3(-std::numeric_limits<float>::max()));
 
     auto sceneActors = scene->GetMeshActors();
-    for (auto& actor : sceneActors) {
+    for (const auto& actor : sceneActors) {
         sceneAABB.Grow(actor->aabb);
     }
 
-    for (auto& mesh : meshes) {
+    for (const auto& mesh : meshes) {
         mesh->invertUVs = true;
         mesh->cullBackFaces = true;
     }
