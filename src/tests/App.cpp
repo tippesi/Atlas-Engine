@@ -11,6 +11,8 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 
 void App::LoadContent(AppConfiguration config) {
 
+    this->config = config;
+
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
@@ -168,6 +170,13 @@ void App::Render(float deltaTime) {
     }
 
     frameCount++;
+
+    if (config.resize && frameCount == 2) {
+        SetResolution(2560, 1440);
+    }
+    if (config.recreateSwapchain && frameCount == 2) {
+        Atlas::Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
+    }
 
     if (pathTrace) {
         viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());

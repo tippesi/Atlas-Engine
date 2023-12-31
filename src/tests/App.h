@@ -18,6 +18,8 @@ struct AppConfiguration {
     bool fog = true;
     bool taa = true;
     bool sharpen = false;
+    bool resize = false;
+    bool recreateSwapchain = false;
 };
 
 class App : public Atlas::EngineInstance {
@@ -90,5 +92,7 @@ private:
     int32_t frameCount = 0;
 
     ImguiWrapper imguiWrapper;
+
+    AppConfiguration config;
 
 };
