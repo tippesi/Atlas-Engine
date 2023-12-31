@@ -27,6 +27,7 @@ void App::LoadContent() {
 
     mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
     keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
+    controllerHandler = Atlas::Input::ControllerHandler(&camera, 1.5f, 5.0f, 10.0f, 5000.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -113,8 +114,13 @@ void App::Update(float deltaTime) {
         mouseHandler.lock = false;
     }
 
-    mouseHandler.Update(&camera, deltaTime);
-    keyboardHandler.Update(&camera, deltaTime);
+    if (controllerHandler.IsControllerAvailable()) {
+        controllerHandler.Update(&camera, deltaTime);
+    }
+    else {
+        mouseHandler.Update(&camera, deltaTime);
+        keyboardHandler.Update(&camera, deltaTime);
+    }    
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());

@@ -74,6 +74,7 @@ private:
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+    Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
 
