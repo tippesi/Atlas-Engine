@@ -123,7 +123,7 @@ namespace Atlas {
                 blas = device->CreateBLAS(blasDesc);
 
                 std::vector<uint32_t> triangleOffsets;
-                for (auto& subData : data.subData) {
+                for (const auto& subData : data.subData) {
                     auto triangleOffset = subData.indicesOffset / 3;
                     triangleOffsets.push_back(triangleOffset);
                 }

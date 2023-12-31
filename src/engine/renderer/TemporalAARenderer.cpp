@@ -35,12 +35,12 @@ namespace Atlas {
 
             auto targetData = target->GetData(FULL_RES);
 
-            auto lastHistory = target->GetLastHistory();
-            auto history = target->GetHistory();
-            auto lastVelocity = target->GetLastVelocity();
-            auto velocity = target->GetVelocity();
-            auto depth = targetData->depthTexture;
-            auto stencil = targetData->stencilTexture;
+            const auto lastHistory = target->GetLastHistory();
+            const auto history = target->GetHistory();
+            const auto lastVelocity = target->GetLastVelocity();
+            const auto velocity = target->GetVelocity();
+            const auto depth = targetData->depthTexture;
+            const auto stencil = targetData->stencilTexture;
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -79,11 +79,11 @@ namespace Atlas {
 
             pipelineConfig.ManageMacro("PATHTRACE", true);
 
-            auto output = &target->postProcessTexture;
-            auto history = &target->historyPostProcessTexture;            
-            auto lastVelocity = &target->historyVelocityTexture;
-            auto velocity = &target->velocityTexture;
-            auto depth = &target->depthTexture;
+            const auto output = &target->postProcessTexture;
+            const auto history = &target->historyPostProcessTexture;
+            const auto lastVelocity = &target->historyVelocityTexture;
+            const auto velocity = &target->velocityTexture;
+            const auto depth = &target->depthTexture;
 
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;

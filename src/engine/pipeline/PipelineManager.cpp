@@ -46,7 +46,7 @@ namespace Atlas {
         std::unordered_map<std::string, std::filesystem::file_time_type> lastModifiedMap;
         if (hotReload) {
             for (auto& [_, variants] : shaderToVariantsMap) {
-                std::lock_guard lock(variants->variantsMutex);
+                std::lock_guard innerLock(variants->variantsMutex);
 
                 for (auto& stageFile : variants->shader->shaderStageFiles) {
                     for (auto& includePath : stageFile.includes) {

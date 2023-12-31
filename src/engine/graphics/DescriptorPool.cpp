@@ -106,7 +106,7 @@ namespace Atlas {
 
         }
 
-        VkDescriptorPool DescriptorPool::InitPool(DescriptorSetSize& size) {
+        VkDescriptorPool DescriptorPool::InitPool(const DescriptorSetSize& size) {
 
             std::vector<VkDescriptorPoolSize> sizes = {
                     { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, std::max(DESCRIPTOR_POOL_SIZE, size.dynamicUniformBufferCount) },
