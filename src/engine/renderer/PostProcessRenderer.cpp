@@ -219,6 +219,7 @@ namespace Atlas {
                 .exposure = camera->exposure,
                 .whitePoint = postProcessing.whitePoint,
                 .saturation = postProcessing.saturation,
+                .contrast = postProcessing.contrast
             };
 
             if (chromaticAberration.enable) {

@@ -92,7 +92,9 @@ auto testingValues = testing::Values(
     AppConfiguration { .taa = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .recreateSwapchain = true },
-    AppConfiguration { .resize = true }
+    AppConfiguration { .resize = true },
+    AppConfiguration { .exampleRenderer = true },
+    AppConfiguration{ .minimizeWindow = true }
     );
 
 INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);

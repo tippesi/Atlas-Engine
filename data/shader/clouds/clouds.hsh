@@ -54,9 +54,9 @@ const float multiscatterEccentricityAttenuation = 0.5;
 
 const float epsilon = 0.001;
 const float logEpsilon = -log(epsilon);
-const vec3 windDirection = vec3(0.4, -0.4, 0.4);
-const vec3 windDirectionDetail = normalize(vec3(0.1, -0.0, 0.1));
-const vec2 windDirectionCoverage = vec2(0.4, 0.4);
+const vec3 windDirection = vec3(0.4, -2.8, 0.4);
+const vec3 windDirectionDetail = normalize(vec3(0.1, -0.8, 0.1));
+const vec2 windDirectionCoverage = vec2(0.2, 0.2);
 const float windSpeed = 0.001;
 
 vec3 cloudPlanetCenter = cloudUniforms.planetCenter.xyz;

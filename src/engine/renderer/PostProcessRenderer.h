@@ -26,6 +26,7 @@ namespace Atlas {
                 float exposure;
                 float whitePoint;
                 float saturation;
+                float contrast;
                 float filmGrainStrength;
                 int32_t bloomPasses;
                 float aberrationStrength;

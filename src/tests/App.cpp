@@ -93,6 +93,10 @@ void App::LoadContent(AppConfiguration config) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
     }
 
+    if (config.exampleRenderer) {
+        exampleRenderer.Init(graphicsDevice);
+    }
+
     LoadScene();
 
     ImGui::CreateContext();
@@ -147,7 +151,7 @@ void App::Update(float deltaTime) {
 
     CheckLoadScene();
 
-    if (frameCount > FRAME_DATA_COUNT) {
+    if (frameCount > FRAME_DATA_COUNT + 1) {
         Exit();
     }
 
@@ -158,10 +162,12 @@ void App::Render(float deltaTime) {
     static bool pathTrace = false;
 
 #ifndef AE_HEADLESS
+    /*
     auto windowFlags = window.GetFlags();
     if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
         return;
     }
+    */
 #endif
 
     if (!loadingComplete) {
@@ -177,8 +183,17 @@ void App::Render(float deltaTime) {
     if (config.recreateSwapchain && frameCount == 2) {
         Atlas::Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
     }
+    if (config.minimizeWindow && frameCount == 2) {
+        window.Minimize();
+    }
+    if (config.minimizeWindow && frameCount == 3) {
+        window.Maximize();
+    }
 
-    if (pathTrace) {
+    if (config.exampleRenderer) {
+        exampleRenderer.Render(&camera);
+    }
+    else if (pathTrace) {
         viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
         mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, scene.get());
     }

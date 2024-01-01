@@ -9,6 +9,7 @@
 #include <ImguiExtension/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>
+#include <renderer/ExampleRenderer.h>
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
@@ -20,6 +21,8 @@ struct AppConfiguration {
     bool sharpen = false;
     bool resize = false;
     bool recreateSwapchain = false;
+    bool minimizeWindow = false;
+    bool exampleRenderer = false;
 };
 
 class App : public Atlas::EngineInstance {
@@ -71,6 +74,8 @@ private:
     Atlas::Input::KeyboardHandler keyboardHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
+
+    Atlas::Renderer::ExampleRenderer exampleRenderer;
 
     bool renderUI = true;
     bool renderEnvProbe = true;

@@ -40,7 +40,8 @@ private:
         SUBWAY,
         MATERIALS,
         FOREST,
-        EMERALDSQUARE
+        EMERALDSQUARE,
+        FLYINGWORLD
     };
 
     void DisplayLoadingScreen(float deltaTime);

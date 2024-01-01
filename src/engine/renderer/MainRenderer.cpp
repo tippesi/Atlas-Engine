@@ -73,6 +73,9 @@ namespace Atlas {
         void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
             Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
 
+            if (!device->swapChain->isComplete) 
+                return;
+
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
             commandList->BeginCommands();
@@ -350,7 +353,7 @@ namespace Atlas {
         void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
             Scene::Scene *scene, Texture::Texture2D *texture) {
 
-            if (!scene->IsRtDataValid())
+            if (!scene->IsRtDataValid() || !device->swapChain->isComplete)
                 return;
 
             static vec2 lastJitter = vec2(0.0f);

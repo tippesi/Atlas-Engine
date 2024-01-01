@@ -142,7 +142,7 @@ namespace Atlas {
 
             int32_t bounces = 10;
             int32_t bvhDepth = 0;
-            int32_t lightCount = 128;
+            int32_t lightCount = 512;
 
             bool realTime = true;
             int32_t realTimeSamplesPerFrame = 4;

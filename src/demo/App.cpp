@@ -67,11 +67,6 @@ void App::LoadContent() {
     scene->fog->heightFalloff = 0.0284f;
     scene->fog->height = 0.0f;
 
-    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
-    scene->sky.clouds->minHeight = 1400.0f;
-    scene->sky.clouds->maxHeight = 1700.0f;
-    scene->sky.clouds->castShadow = false;
-
     scene->sky.atmosphere = Atlas::CreateRef<Atlas::Lighting::Atmosphere>();
 
     scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
@@ -276,7 +271,8 @@ void App::Render(float deltaTime) {
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
                                         "New Sponza", "Bistro", "Medieval", "Pica Pica",
-                                        "Subway", "Materials", "Forest", "Emerald square"};
+                                        "Subway", "Materials", "Forest", "Emerald square",
+                                        "Flying world"};
                 int currentItem = static_cast<int>(sceneSelection);
                 ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -578,6 +574,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Image effects");
                 ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
                 ImGui::SliderFloat("Saturation##Postprocessing", &postProcessing.saturation, 0.0f, 2.0f);
+                ImGui::SliderFloat("Contrast##Postprocessing", &postProcessing.contrast, 0.0f, 2.0f);
                 ImGui::SliderFloat("White point##Postprocessing", &postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
                 ImGui::Separator();
                 ImGui::Text("Chromatic aberration");
@@ -795,6 +792,7 @@ bool App::IsSceneAvailable(SceneSelection selection) {
         case MATERIALS: return Atlas::Loader::AssetLoader::FileExists("material demo/materials.obj");
         case FOREST: return Atlas::Loader::AssetLoader::FileExists("forest/forest.gltf");
         case EMERALDSQUARE: return Atlas::Loader::AssetLoader::FileExists("emeraldsquare/square.gltf");
+        case FLYINGWORLD: return Atlas::Loader::AssetLoader::FileExists("flying world/scene.gltf");
         case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/main/NewSponza_Main_Blender_glTF.gltf") &&
                                Atlas::Loader::AssetLoader::FileExists("newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
                                Atlas::Loader::AssetLoader::FileExists("newsponza/curtains/NewSponza_Curtains_glTF.gltf") &&
@@ -810,6 +808,11 @@ bool App::LoadScene() {
 
     Atlas::Texture::Cubemap sky;
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
+
+    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
+    scene->sky.clouds->minHeight = 1400.0f;
+    scene->sky.clouds->maxHeight = 1700.0f;
+    scene->sky.clouds->castShadow = false;
 
     scene->sky.probe = nullptr;
     scene->sky.clouds->enable = true;
@@ -1033,6 +1036,32 @@ bool App::LoadScene() {
 
         scene->fog->enable = false;
     }
+    else if (sceneSelection == FLYINGWORLD) {
+        meshes.reserve(1);
+
+        auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+            "flying world/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(0.01f), 2048
+        );
+        meshes.push_back(mesh);
+
+        // Metalness is set to 0.9f
+        //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
+
+        // Other scene related settings apart from the mesh
+        directionalLight->intensity = 50.0f;
+        directionalLight->GetVolumetric()->intensity = 0.08f;
+
+        // Setup camera
+        camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
+        camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+
+        scene->sky.clouds->minHeight = 700.0f;
+        scene->sky.clouds->maxHeight = 1000.0f;
+        scene->sky.clouds->densityMultiplier = 0.65f;
+        scene->sky.clouds->heightStretch = 1.0f;
+
+        scene->fog->enable = true;
+    }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
 
@@ -1239,6 +1268,11 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == EMERALDSQUARE) {
+        scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
+            sceneAABB.Scale(1.05f), glm::ivec3(20));
+        scene->irradianceVolume->SetRayCount(128, 32);
+    }
+    else if (sceneSelection == FLYINGWORLD) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.05f), glm::ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
