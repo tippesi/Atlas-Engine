@@ -117,6 +117,16 @@ namespace Atlas {
         ivec2 GetRelativeResolution(RenderResolution resolution);
 
         /*
+         * Sets the render resolution for screen space global illumination
+         */
+        void SetGIResolution(RenderResolution resolution);
+
+        /*
+         * Gets the render resolution for screen space global illumination
+         */
+        RenderResolution GetGIResolution();
+
+        /*
          * Sets the render resolution for screen space ambient occlusion
          */
         void SetAOResolution(RenderResolution resolution);
@@ -172,6 +182,10 @@ namespace Atlas {
 
         Texture::Texture2D postProcessTexture;
 
+        Texture::Texture2D giTexture;
+        Texture::Texture2D swapGiTexture;
+        Texture::Texture2D historyGiTexture;
+
         Texture::Texture2D aoTexture;
         Texture::Texture2D swapAoTexture;
         Texture::Texture2D historyAoTexture;
@@ -212,6 +226,7 @@ namespace Atlas {
         int32_t width = 0;
         int32_t height = 0;
 
+        RenderResolution giResolution;
         RenderResolution aoResolution;
         RenderResolution volumetricResolution;
         RenderResolution reflectionResolution;

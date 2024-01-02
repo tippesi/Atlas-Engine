@@ -112,6 +112,7 @@ namespace Atlas {
 
         CreateFrameBuffers();
 
+        SetGIResolution(HALF_RES);
         SetAOResolution(HALF_RES);
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
@@ -189,6 +190,26 @@ namespace Atlas {
         }
 
         return ivec2(width / factor, height / factor);
+
+    }
+
+    void RenderTarget::SetGIResolution(RenderResolution resolution) {
+
+        auto res = GetRelativeResolution(resolution);
+        giResolution = resolution;
+
+        giTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        swapGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+    }
+
+    RenderResolution RenderTarget::GetGIResolution() {
+
+        return giResolution;
 
     }
 

@@ -76,7 +76,6 @@ namespace Atlas {
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
             auto materialIdxTexture = downsampledRT->materialIdxTexture;
-            auto randomTexture = &scene->ao->noiseTexture;
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;

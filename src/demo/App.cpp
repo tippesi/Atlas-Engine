@@ -75,6 +75,8 @@ void App::LoadContent() {
 
     scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
+    scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+
     LoadScene();
 
     ImGui::CreateContext();
@@ -157,6 +159,7 @@ void App::Render(float deltaTime) {
     static bool debugReflection = false;
     static bool debugClouds = false;
     static bool debugSSS = false;
+    static bool debugSSGI = false;
     static bool debugMotion = false;
     static bool slowMode = false;
 
@@ -183,7 +186,7 @@ void App::Render(float deltaTime) {
     else {
         mainRenderer->RenderScene(&viewport, &renderTarget, &camera, scene.get());
 
-        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugMotion;
+        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugMotion;
 
         if (debug) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
@@ -204,6 +207,10 @@ void App::Render(float deltaTime) {
             }
             else if (debugSSS) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
+                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+            }
+            else if (debugSSGI) {
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.giTexture,
                     0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
             }
             else if (debugMotion) {
@@ -233,6 +240,7 @@ void App::Render(float deltaTime) {
         const auto& reflection = scene->reflection;
         const auto& clouds = scene->sky.clouds;
         const auto& sss = scene->sss;
+        const auto& ssgi = scene->ssgi;
         auto& postProcessing = scene->postProcessing;
 
         bool openSceneNotFoundPopup = false;
@@ -466,6 +474,14 @@ void App::Render(float deltaTime) {
                 ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
                 ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
                 ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            }
+            if (ImGui::CollapsingHeader("SSGI")) {
+                ImGui::Checkbox("Debug##SSGI", &debugSSGI);
+                ImGui::Checkbox("Enable ambient occlusion##SSGI", &ssgi->enable);
+                ImGui::Checkbox("Enable raytracing (preview)##SSGI", &ssgi->rt);
+                ImGui::Checkbox("Opacity check##SSGI", &ssgi->opacityCheck);
+                ImGui::SliderFloat("Radius##SSGI", &ssgi->radius, 0.0f, 10.0f);
+                //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);

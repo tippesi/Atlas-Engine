@@ -51,6 +51,7 @@ namespace Atlas {
             terrainShadowRenderer.Init(device);
             downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
+            giRenderer.Init(device);
             aoRenderer.Init(device);
             rtrRenderer.Init(device);
             sssRenderer.Init(device);
@@ -309,6 +310,11 @@ namespace Atlas {
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
                 directLightRenderer.Render(viewport, target, camera, scene, commandList);
+
+                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                giRenderer.Render(viewport, target, camera, scene, commandList);
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);

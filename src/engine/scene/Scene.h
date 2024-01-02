@@ -11,6 +11,7 @@
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
+#include "../lighting/SSGI.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -133,6 +134,7 @@ namespace Atlas {
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
+            Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
         private:

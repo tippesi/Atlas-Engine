@@ -12,9 +12,10 @@ layout (local_size_x = 8, local_size_y = 8) in;
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
 layout(set = 3, binding = 1) uniform sampler2D aoTexture;
 layout(set = 3, binding = 2) uniform sampler2D reflectionTexture;
-layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
+layout(set = 3, binding = 3) uniform sampler2D giTexture;
+layout(set = 3, binding = 4) uniform sampler2D lowResDepthTexture;
 
-layout(set = 3, binding = 4) uniform UniformBuffer {
+layout(set = 3, binding = 5) uniform UniformBuffer {
     int aoEnabled;
     int aoDownsampled2x;
     int reflectionEnabled;
@@ -26,6 +27,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
 shared float depths[36];
 shared float aos[36];
 shared vec3 reflections[36];
+shared vec4 gi[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
@@ -40,8 +42,15 @@ void LoadGroupSharedData() {
         offset += workGroupOffset;
         offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
         depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
+#ifdef AO
         aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
+#endif
+#ifdef REFLECTION
         reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
+#endif
+#ifdef SSGI
+        gi[gl_LocalInvocationIndex] = texelFetch(giTexture, offset, 0);
+#endif
     }
 
     barrier();
@@ -117,6 +126,33 @@ vec3 UpsampleReflection2x(float referenceDepth, vec2 texCoords) {
 
     vec3 bilinearReflection = textureLod(reflectionTexture, texCoords, 0).rgb;
     return mix(reflections[offset], bilinearReflection, minWeight);
+
+}
+
+vec4 UpsampleGi2x(float referenceDepth, vec2 texCoords) {
+
+    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+
+    float invocationDepths[9];
+
+    float minWeight = 1.0;
+
+    for (uint i = 0; i < 9; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+        float depth = depths[sharedMemoryOffset];
+
+        float depthDiff = abs(referenceDepth - depth);
+        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        minWeight = min(minWeight, depthWeight);
+
+        invocationDepths[i] = depth;
+    }
+
+    int idx = NearestDepth(referenceDepth, invocationDepths);
+    int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
+
+    vec4 bilinearGi = textureLod(giTexture, texCoords, 0);
+    return mix(gi[offset], bilinearGi, minWeight);
 
 }
 
