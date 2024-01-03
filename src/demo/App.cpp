@@ -477,10 +477,11 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ImGui::Checkbox("Enable ambient occlusion##SSGI", &ssgi->enable);
-                ImGui::Checkbox("Enable raytracing (preview)##SSGI", &ssgi->rt);
-                ImGui::Checkbox("Opacity check##SSGI", &ssgi->opacityCheck);
+                ImGui::Checkbox("Enable##SSGI", &ssgi->enable);
+                ImGui::SliderInt("Ray count##SSGI", &ssgi->rayCount, 1, 8);
+                ImGui::SliderInt("Sample count##SSGI", &ssgi->sampleCount, 1, 16);
                 ImGui::SliderFloat("Radius##SSGI", &ssgi->radius, 0.0f, 10.0f);
+                ImGui::SliderFloat("Irradiance limit##SSGI", &ssgi->irradianceLimit, 0.0f, 10.0f);
                 //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {

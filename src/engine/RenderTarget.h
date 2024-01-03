@@ -185,6 +185,8 @@ namespace Atlas {
         Texture::Texture2D giTexture;
         Texture::Texture2D swapGiTexture;
         Texture::Texture2D historyGiTexture;
+        Texture::Texture2D giLengthTexture;
+        Texture::Texture2D historyGiLengthTexture;
 
         Texture::Texture2D aoTexture;
         Texture::Texture2D swapAoTexture;

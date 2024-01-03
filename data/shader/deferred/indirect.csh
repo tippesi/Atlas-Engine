@@ -194,6 +194,11 @@ void main() {
 #else
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
+
+#endif
+#ifdef SSGI
+        vec4 ssgi = UpsampleGi2x(depth, texCoord);
+        indirectDiffuse += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
 #endif
 
         // Indirect specular BRDF
@@ -222,12 +227,15 @@ void main() {
 #ifdef AO
         float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ?
             UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-        indirect *= pow(occlusionFactor, Uniforms.aoStrength);
+#ifdef SSGI
+        occlusionFactor = ssgi.a;
+#endif
+        indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
 #endif
 
     }
 
     vec3 direct = imageLoad(image, pixel).rgb;
-    imageStore(image, pixel, vec4(direct + indirect, 0.0));
+    imageStore(image, pixel, vec4(vec3(direct + indirect), 0.0));
 
 }

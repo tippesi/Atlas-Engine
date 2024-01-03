@@ -205,6 +205,11 @@ namespace Atlas {
         historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+        giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
     }
 
     RenderResolution RenderTarget::GetGIResolution() {

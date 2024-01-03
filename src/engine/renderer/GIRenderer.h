@@ -29,6 +29,7 @@ namespace Atlas {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float radius;
+                uint32_t rayCount;
                 uint32_t sampleCount;
             };
 

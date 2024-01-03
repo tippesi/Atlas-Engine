@@ -9,6 +9,7 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D resolveImage;
+layout(set = 3, binding = 1, r16f) writeonly uniform image2D historyLengthImage;
 
 layout(set = 3, binding = 2) uniform sampler2D currentTexture;
 layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
@@ -31,7 +32,8 @@ const int kernelRadius = 4;
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
 
-shared vec4 sharedGiDepth[sharedDataSize];
+shared vec4 sharedGiAo[sharedDataSize];
+shared float sharedDepth[sharedDataSize];
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -52,9 +54,9 @@ const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-vec3 FetchTexel(ivec2 texel) {
+vec4 FetchTexel(ivec2 texel) {
     
-    vec3 value = max(texelFetch(currentTexture, texel, 0).rgb, 0);
+    vec4 value = max(texelFetch(currentTexture, texel, 0), 0);
     return value;
 
 }
@@ -70,8 +72,8 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedGiDepth[i].rgb = FetchTexel(texel);
-        sharedGiDepth[i].g = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+        sharedGiAo[i] = FetchTexel(texel);
+        sharedDepth[i] = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
     }
 
     barrier();
@@ -87,13 +89,19 @@ int GetSharedMemoryIndex(ivec2 pixelOffset) {
 
 vec3 FetchCurrentGi(int sharedMemoryIdx) {
 
-    return sharedGiDepth[sharedMemoryIdx].rgb;
+    return sharedGiAo[sharedMemoryIdx].rgb;
+
+}
+
+float FetchCurrentAo(int sharedMemoryIdx) {
+
+    return sharedGiAo[sharedMemoryIdx].a;
 
 }
 
 float FetchDepth(int sharedMemoryIdx) {
 
-    return sharedGiDepth[sharedMemoryIdx].g;
+    return sharedDepth[sharedMemoryIdx].r;
 
 }
 
@@ -135,7 +143,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleGi = FetchCurrentAo(sharedMemoryIdx);
+            vec3 sampleGi = FetchCurrentGi(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
@@ -153,11 +161,11 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
 }
 
-bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec3 history, out float historyLength) {
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float historyLength) {
 
     bool valid = true;
     
-    history = vec3(0.0);
+    history = vec4(0.0);
     historyLength = 0.0;
 
     float totalWeight = 0.0;
@@ -190,7 +198,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec3 history, out float h
 
         if (confidence > 0.1) {
             totalWeight += weights[i];
-            history += texelFetch(historyTexture, offsetPixel, 0).rgb * weights[i];
+            history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
             historyLength += texelFetch(historyLengthTexture, offsetPixel, 0).r * weights[i];
         }
     }
@@ -202,7 +210,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec3 history, out float h
     }
     else {
         valid = false;
-        history = vec3(0.0);
+        history = vec4(0.0);
         historyLength = 0.0;
     }
 
@@ -222,12 +230,13 @@ void main() {
     vec3 mean, std;
     ComputeVarianceMinMax(mean, std);
 
-    const float historyClipFactor = .3;
+    const float historyClipFactor = 1.0;
     vec3 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec3 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    vec3 currentNeighbourhoodMin = mean - std;
-    vec3 currentNeighbourhoodMax = mean + std;
+    const float currentClipFactor = 8.0;
+    vec3 currentNeighbourhoodMin = mean - currentClipFactor * std;
+    vec3 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
     ivec2 velocityPixel = pixel;
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -236,16 +245,16 @@ void main() {
     vec2 historyPixel = vec2(pixel) + velocity * resolution;
 
     bool valid = true;
-    vec3 history;
+    vec4 history;
     float historyLength;
     valid = SampleHistory(pixel, historyPixel, history, historyLength);
 
-    vec3 historyValue = history;
-    vec3 currentValue = texelFetch(currentTexture, pixel, 0).rgb;
+    vec4 historyValue = history;
+    vec4 currentValue = texelFetch(currentTexture, pixel, 0);
 
     // In case of clipping we might also reject the sample. TODO: Investigate
-    currentValue = clamp(currentValue, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
+    currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin, currentNeighbourhoodMax);
+    //historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
@@ -257,8 +266,9 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
-    vec3 resolve = mix(currentValue, historyValue, factor);
+    vec4 resolve = mix(currentValue, historyValue, factor);
 
-    imageStore(resolveImage, pixel, vec4(resolve, historyLength + 1.0));
+    imageStore(resolveImage, pixel, vec4(resolve));
+    imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));
 
 }
