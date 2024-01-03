@@ -42,7 +42,7 @@ namespace Atlas {
 #ifdef AE_BUILDTYPE_RELEASE
             .enableValidationLayers = false,
 #else
-            .enableValidationLayers = true,
+            .enableValidationLayers = false,
 #endif
             .validationLayerSeverity = config.validationLayerSeverity
         };

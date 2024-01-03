@@ -89,6 +89,8 @@ namespace Atlas {
             impostor->normalTexture.GenerateMipmap();
             impostor->depthTexture.GenerateMipmap();
 
+            
+
             return impostor;
 
         }

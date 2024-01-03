@@ -478,9 +478,11 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
                 ImGui::Checkbox("Enable##SSGI", &ssgi->enable);
+                ImGui::Checkbox("Enable ambient occlusion##SSGI", &ssgi->enableAo);
                 ImGui::SliderInt("Ray count##SSGI", &ssgi->rayCount, 1, 8);
                 ImGui::SliderInt("Sample count##SSGI", &ssgi->sampleCount, 1, 16);
                 ImGui::SliderFloat("Radius##SSGI", &ssgi->radius, 0.0f, 10.0f);
+                ImGui::SliderFloat("Ao strength##SSGI", &ssgi->aoStrength, 0.0f, 10.0f);
                 ImGui::SliderFloat("Irradiance limit##SSGI", &ssgi->irradianceLimit, 0.0f, 10.0f);
                 //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }

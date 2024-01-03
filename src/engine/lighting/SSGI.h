@@ -12,7 +12,7 @@ namespace Atlas {
             SSGI() = default;
 
             bool enable = true;
-            bool ao = true;
+            bool enableAo = true;
 
             float radius = 1.0f;
             
@@ -20,6 +20,7 @@ namespace Atlas {
             int32_t sampleCount = 8;
 
             float irradianceLimit = 5.0f;
+            float aoStrength = 1.0f;
 
             bool rt = false;
             bool opacityCheck = false;

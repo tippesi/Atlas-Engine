@@ -126,6 +126,9 @@ void main() {
                     offset.xyz /= offset.w;
                     vec2 uvPos = offset.xy * 0.5 + 0.5;
 
+                    if (uvPos.x < 0.0 || uvPos.x > 1.0 || uvPos.y < 0.0 || uvPos.y > 1.0)
+                        continue;
+
                     ivec2 stepPixel = ivec2(uvPos * vec2(resolution));
                     float stepDepth = texelFetch(depthTexture, stepPixel, 0).r;
 
