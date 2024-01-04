@@ -117,7 +117,9 @@ void main() {
                 float stepSize = rayLength / float(uniforms.sampleCount);
 
                 ray.direction = brdfSample.L;
-                ray.origin = worldPos + ray.direction * blueNoiseVec.z * stepSize;
+                ray.origin = worldPos + surface.N * 0.1 + ray.direction * blueNoiseVec.z * stepSize;
+
+                bool hit = false;
                 for (uint i = 0; i < uniforms.sampleCount; i++) {
 
                     vec3 rayPos = vec3(globalData[0].vMatrix * vec4(ray.origin + float(i) * ray.direction * stepSize, 1.0));
@@ -139,25 +141,29 @@ void main() {
                     vec3 worldNorm = normalize(vec3(globalData[0].ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
 
                     if (depthDelta > 0.0 && depthDelta < rayLength) {
-                        if (dot(worldNorm, -ray.direction) > 0.0) {
-                            vec3 rayIrradiance = textureLod(directLightTexture, uvPos, 0).rgb / brdfSample.pdf;
-                            float irradianceMax = max(max(max(rayIrradiance.r,
-                                max(rayIrradiance.g, rayIrradiance.b)), uniforms.radianceLimit), 0.01);
-                            rayIrradiance *= (uniforms.radianceLimit / irradianceMax);
+                        float NdotL = dot(worldNorm, -ray.direction);
+                        if (NdotL >= 0.0) {
+                            vec3 rayIrradiance = textureLod(directLightTexture, uvPos, 0).rgb;
                             irradiance += rayIrradiance;
                         }
-                        hits += 1.0;
+                        hit = true;
 
                         break;
                     }
 
                 }
+
+                hits += hit ? 1.0 : 0.0;
             }
 
             irradiance /= float(uniforms.rayCount);
+
+            float irradianceMax = max(max(max(irradiance.r,
+                max(irradiance.g, irradiance.b)), uniforms.radianceLimit), 0.01);
+            irradiance *= (uniforms.radianceLimit / irradianceMax);
         }
 
-        float ao = 1.0 - (hits / float(uniforms.rayCount));
+        float ao = max(1.0 - (hits / float(uniforms.rayCount)), 0.0);
 
         imageStore(giImage, pixel, vec4(irradiance, ao));
     }

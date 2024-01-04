@@ -117,12 +117,18 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     // Check for visibilty. This is important to get an
     // estimate of the solid angle of the light from point P
     // on the surface.
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
 #ifdef USE_SHADOW_MAP
-    radiance *= CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
-        surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        float shadowFactor = CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
+            surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        radiance *= shadowFactor;
 #else
-    radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
 #endif
+    }
+    else {
+        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+    }
     
     return reflectance * radiance * surface.NdotL / lightPdf;
 

@@ -92,7 +92,7 @@ namespace Atlas {
                 UpdateForHardwareRayTracing(actors);
             }
             else {
-                gpuBvhInstances = UpdateForSoftwareRayTracing(gpuBvhInstances, actorAABBs);
+                UpdateForSoftwareRayTracing(gpuBvhInstances, lastMatrices, actorAABBs);
             }
 
             if (updateTriangleLights)
@@ -210,8 +210,8 @@ namespace Atlas {
 
         }
 
-        std::vector<GPUBVHInstance> RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-            std::vector<Volume::AABB>& actorAABBs) {
+        void RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+            std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs) {
 
             auto bvh = Volume::BVH(actorAABBs);
 
@@ -231,8 +231,10 @@ namespace Atlas {
 
             // Order after the BVH build to fit the node indices
             std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
+            std::vector<mat3x4> orderedLastMatrices(bvh.refs.size());
             for (size_t i = 0; i < bvh.refs.size(); i++) {
                 const auto& ref = bvh.refs[i];
+                orderedLastMatrices[i] = lastMatrices[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
@@ -243,7 +245,8 @@ namespace Atlas {
 
             tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
-            return orderedGpuBvhInstances;
+            gpuBvhInstances = orderedGpuBvhInstances;
+            lastMatrices = orderedLastMatrices;
 
         }
 

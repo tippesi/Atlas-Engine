@@ -11,8 +11,8 @@ namespace Atlas {
 
             this->device = device;
 
-            const int32_t filterSize = 6;
-            blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+            const int32_t filterSize = 3;
+            blurFilter.CalculateBoxFilter(filterSize);
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
@@ -60,7 +60,7 @@ namespace Atlas {
 
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = downsampledRT->normalTexture;
+            auto normalTexture = downsampledRT->geometryNormalTexture;
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
@@ -69,7 +69,7 @@ namespace Atlas {
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
-            auto historyNormalTexture = downsampledHistoryRT->normalTexture;
+            auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -161,9 +161,9 @@ namespace Atlas {
                 std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
-                ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
-                groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
+                ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);

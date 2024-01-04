@@ -6,7 +6,7 @@
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D resolveImage;
 layout(set = 3, binding = 1, r16f) writeonly uniform image2D historyLengthImage;
@@ -27,7 +27,7 @@ layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 4;
+const int kernelRadius = 1;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -204,17 +204,42 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     }
 
     if (totalWeight > 0.0) {
-        valid = true;
         history /= totalWeight;
         historyLength /= totalWeight;
-    }
-    else {
-        valid = false;
-        history = vec4(0.0);
-        historyLength = 0.0;
+        return true;
     }
 
-    return valid;
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        float confidence = 1.0;
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
+
+        vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
+        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.1) {
+            totalWeight += 1.0;
+            history += texelFetch(historyTexture, offsetPixel, 0);
+            historyLength += texelFetch(historyLengthTexture, offsetPixel, 0).r;
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        history /= totalWeight;
+        historyLength /= totalWeight;
+        return true;
+    }
+
+    history = vec4(0.0);
+    historyLength = 0.0;
+
+    return false;
 
 }
 
@@ -234,7 +259,7 @@ void main() {
     vec3 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec3 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    const float currentClipFactor = 8.0;
+    const float currentClipFactor = 4.0;
     vec3 currentNeighbourhoodMin = mean - currentClipFactor * std;
     vec3 currentNeighbourhoodMax = mean + currentClipFactor * std;
 

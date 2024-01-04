@@ -139,6 +139,7 @@ namespace Atlas {
         oceanDepthTexture.Resize(width, height);
         oceanStencilTexture.Resize(width, height);
 
+        SetGIResolution(giResolution);
         SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);

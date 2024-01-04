@@ -53,8 +53,8 @@ namespace Atlas {
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials);
 
-            std::vector<GPUBVHInstance> UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-                std::vector<Volume::AABB>& actorAABBs);
+            void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
             void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
 

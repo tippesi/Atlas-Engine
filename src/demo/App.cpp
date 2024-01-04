@@ -188,7 +188,7 @@ void App::Render(float deltaTime) {
 
         auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugMotion;
 
-        if (debug) {
+        if (debug && graphicsDevice->swapChain->isComplete) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
             commandList->BeginCommands();
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
@@ -1207,8 +1207,10 @@ void App::CheckLoadScene() {
         }
     };
 
+    buildRTStructure();
+    /*
     if (!future.valid()) {
-        future = std::async(std::launch::async, buildRTStructure);
+        //future = std::async(std::launch::, buildRTStructure);
         return;
     }
     else {
@@ -1217,6 +1219,7 @@ void App::CheckLoadScene() {
         }
         future.get();
     }
+    */
 
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
