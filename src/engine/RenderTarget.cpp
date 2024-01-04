@@ -93,13 +93,13 @@ namespace Atlas {
             };
             for (auto &attachment: colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
             Graphics::RenderPassDepthAttachment depthAttachment = {
                 .imageFormat = oceanDepthTexture.format,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
 
