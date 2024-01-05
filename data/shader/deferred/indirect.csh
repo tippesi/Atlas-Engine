@@ -41,7 +41,7 @@ void LoadGroupSharedData() {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
         offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
-        depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
+        depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 #ifdef AO
         aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
 #endif
@@ -110,12 +110,14 @@ vec3 UpsampleReflection2x(float referenceDepth, vec2 texCoords) {
 
     float minWeight = 1.0;
 
+    referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
         minWeight = min(minWeight, depthWeight);
 
         invocationDepths[i] = depth;
@@ -137,12 +139,14 @@ vec4 UpsampleGi2x(float referenceDepth, vec2 texCoords) {
 
     float minWeight = 1.0;
 
+    referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 32.0), 1.0);
+        float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
         minWeight = min(minWeight, depthWeight);
 
         invocationDepths[i] = depth;
@@ -196,10 +200,6 @@ void main() {
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
 
 #endif
-#ifdef SSGI
-        vec4 ssgi = UpsampleGi2x(depth, texCoord);
-        indirectDiffuse += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
-#endif
 
         // Indirect specular BRDF
         vec3 R = normalize(mat3(globalData[0].ivMatrix) * reflect(-surface.V, surface.N));
@@ -228,9 +228,13 @@ void main() {
         float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ?
             UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
 #ifdef SSGI
+        vec4 ssgi = UpsampleGi2x(depth, texCoord);
         occlusionFactor = ssgi.a;
 #endif
         indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
+#ifdef SSGI
+        indirect += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
+#endif
 #endif
 
     }
