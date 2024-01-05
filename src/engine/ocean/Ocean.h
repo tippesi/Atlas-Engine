@@ -44,8 +44,8 @@ namespace Atlas {
             vec3 scatterColor = vec3(0.3f, 0.7f, 0.6f);
             vec2 waterColorIntensity = vec2(0.1f, 0.2f);
 
-            float displacementScale = 0.11f;
-            float choppynessScale = 0.21f;
+            float displacementScale = 0.011f;
+            float choppynessScale = 0.021f;
 
             float tiling = 64.0f;
 

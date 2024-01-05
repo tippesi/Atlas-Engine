@@ -20,6 +20,9 @@ struct AppConfiguration {
     bool taa = true;
     bool sharpen = false;
     bool ssgi = true;
+    bool ddgi = true;
+    bool reflection = true;
+    bool ocean = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;

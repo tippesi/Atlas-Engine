@@ -91,6 +91,11 @@ auto testingValues = testing::Values(
     AppConfiguration { .fog = false },
     AppConfiguration { .taa = false },
     AppConfiguration { .ssgi = false },
+    AppConfiguration { .ocean = false },
+#ifdef AE_BINDLESS
+    AppConfiguration { .ddgi = false },
+    AppConfiguration { .reflection = false },
+#endif
     AppConfiguration { .sharpen = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },
@@ -101,6 +106,11 @@ auto testingValues = testing::Values(
 INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);
 
 int main(int argc, char** argv) {
+
+#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
+#endif
+
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

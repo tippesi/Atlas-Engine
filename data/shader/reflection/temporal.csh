@@ -160,7 +160,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
-    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
@@ -171,17 +170,14 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
-
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
 
-        if (confidence > 0.1) {
+        if (confidence > 0.2) {
             totalWeight += weights[i];
             history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -198,17 +194,14 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
         float confidence = 1.0;
 
-        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
-        confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
-
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
 
-        if (confidence > 0.1) {
+        if (confidence > 0.2) {
             totalWeight += 1.0;
             history += texelFetch(historyTexture, offsetPixel, 0);
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0);

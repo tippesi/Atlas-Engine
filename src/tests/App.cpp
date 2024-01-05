@@ -60,10 +60,22 @@ void App::LoadContent(AppConfiguration config) {
     scene->sky.sun = directionalLight;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
-    scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
-    scene->reflection->useShadowMap = true;
 
-    scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+    if (config.reflection) {
+        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
+        scene->reflection->useShadowMap = true;
+    }
+
+    if (config.ddgi) {
+        scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
+            Atlas::Volume::AABB(glm::vec3(-100.0f), glm::vec3(100.0f)), glm::ivec3(20));
+        scene->irradianceVolume->SetRayCount(128, 32);
+        scene->irradianceVolume->strength = 1.5f;
+    }
+
+    if (config.ssgi) {
+        scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+    }
 
     if (config.fog) {
         scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
@@ -93,6 +105,11 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.sss) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+    }
+
+    if (config.ocean) {
+        scene->ocean = Atlas::CreateRef<Atlas::Ocean::Ocean>(9, 4096.0f,
+            glm::vec3(0.0f, 5.0f, 0.0f), 512, 86);
     }
 
     if (config.exampleRenderer) {
@@ -364,15 +381,7 @@ void App::CheckLoadScene() {
         mesh->cullBackFaces = true;
     }
 
-    scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-        sceneAABB.Scale(0.9f), glm::ivec3(20));
-    scene->irradianceVolume->SetRayCount(128, 32);
-    scene->irradianceVolume->strength = 1.5f;
-    scene->irradianceVolume->useShadowMap = true;
-
     Atlas::Clock::ResetAverage();
-
-    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
 
     loadingComplete = true;
 
