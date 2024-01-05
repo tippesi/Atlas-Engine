@@ -20,7 +20,7 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::GetCachedSet(const Ref<DescriptorSetLayout>& layout) {
+        Ref<DescriptorSet> DescriptorPool::GetCachedSet(const Ref<DescriptorSetLayout>& layout) {
 
             // This approach might lead to memory issues. Need to release
             // the cached descriptors at some point
@@ -39,7 +39,7 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::Allocate(const Ref<DescriptorSetLayout>& layout) {
+        Ref<DescriptorSet> DescriptorPool::Allocate(const Ref<DescriptorSetLayout>& layout) {
 
             VkDescriptorSetAllocateInfo allocInfo = {};
             allocInfo.pNext = nullptr;
@@ -64,8 +64,8 @@ namespace Atlas {
             }
             */
 
-            VkDescriptorSet set;
-            auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
+            Ref<DescriptorSet> set = CreateRef<DescriptorSet>();
+            auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set->set);
             // Handle the pool out of memory error by allocating a new pool
             if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
                 poolIdx++;
@@ -73,7 +73,7 @@ namespace Atlas {
                     pools.push_back(InitPool(layout->size));
                 }
                 allocInfo.descriptorPool = pools[poolIdx];
-                VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
+                VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set->set))
             } else {
                 VK_CHECK(result);
             }

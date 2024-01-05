@@ -60,6 +60,17 @@ namespace Atlas {
             auto vertexInputInfo = GenerateVertexInputStateInfoFromShader(desc.vertexInputInfo,
                 bindingDescriptions, attributeDescriptions);
 
+            auto assemblyInputInfo = desc.assemblyInputInfo;
+#ifdef AE_OS_MACOS
+            // Need to disable it for other LIST topologies as well, but they are not in use right now
+            if (assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_LINE_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_POINT_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                assemblyInputInfo.primitiveRestartEnable = VK_TRUE;
+            }
+#endif
+
             VkGraphicsPipelineCreateInfo pipelineInfo = {};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
@@ -67,7 +78,7 @@ namespace Atlas {
             pipelineInfo.stageCount = uint32_t(desc.shader->stageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->stageCreateInfos.data();
             pipelineInfo.pVertexInputState = &vertexInputInfo;
-            pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;
+            pipelineInfo.pInputAssemblyState = &assemblyInputInfo;
             pipelineInfo.pDepthStencilState = &desc.depthStencilInputInfo;
             pipelineInfo.pViewportState = &viewportState;
             pipelineInfo.pRasterizationState = &desc.rasterizer;

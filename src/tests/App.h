@@ -19,6 +19,7 @@ struct AppConfiguration {
     bool fog = true;
     bool taa = true;
     bool sharpen = false;
+    bool ssgi = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;

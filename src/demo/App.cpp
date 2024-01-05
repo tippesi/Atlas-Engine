@@ -1073,6 +1073,7 @@ bool App::LoadScene() {
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
+        camera.exposure = 1.0f;
 
         scene->sky.clouds->minHeight = 700.0f;
         scene->sky.clouds->maxHeight = 1000.0f;
@@ -1207,10 +1208,8 @@ void App::CheckLoadScene() {
         }
     };
 
-    buildRTStructure();
-    /*
     if (!future.valid()) {
-        //future = std::async(std::launch::, buildRTStructure);
+        future = std::async(std::launch::async, buildRTStructure);
         return;
     }
     else {
@@ -1219,7 +1218,6 @@ void App::CheckLoadScene() {
         }
         future.get();
     }
-    */
 
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
@@ -1303,8 +1301,6 @@ void App::CheckLoadScene() {
     scene->irradianceVolume->useShadowMap = true;
 
     Atlas::Clock::ResetAverage();
-
-    auto device = Atlas::Graphics::GraphicsDevice::DefaultDevice;
 
     loadingComplete = true;
 

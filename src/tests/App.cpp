@@ -63,6 +63,8 @@ void App::LoadContent(AppConfiguration config) {
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
     scene->reflection->useShadowMap = true;
 
+    scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+
     if (config.fog) {
         scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
         scene->fog->enable = true;

@@ -13,6 +13,13 @@ namespace Atlas {
         class GraphicsDevice;
         class MemoryManager;
 
+        struct DescriptorSet {
+            VkDescriptorSet set;
+
+            uint32_t sampledImageArraySize[BINDINGS_PER_DESCRIPTOR_SET] = {};
+            uint32_t bufferArraySize[BINDINGS_PER_DESCRIPTOR_SET] = {};
+        };
+
         class DescriptorPool {
 
         public:
@@ -24,15 +31,15 @@ namespace Atlas {
 
             void ResetAllocationCounters();
 
-            VkDescriptorSet GetCachedSet(const Ref<DescriptorSetLayout>& layout);
+            Ref<DescriptorSet> GetCachedSet(const Ref<DescriptorSetLayout>& layout);
 
-            VkDescriptorSet Allocate(const Ref<DescriptorSetLayout>& layout);
+            Ref<DescriptorSet> Allocate(const Ref<DescriptorSetLayout>& layout);
 
             VkDescriptorPool GetNativePool();
 
         private:
             struct LayoutAllocations {
-                std::vector<VkDescriptorSet> sets;
+                std::vector<Ref<DescriptorSet>> sets;
                 size_t counter = 0;
             };
 

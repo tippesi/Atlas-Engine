@@ -43,8 +43,6 @@ namespace Atlas {
         void GIRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
             Scene::Scene* scene, Graphics::CommandList* commandList) {
 
-            static int32_t frameCount = 0;
-
             auto ssgi = scene->ssgi;
             if (!ssgi || !ssgi->enable) return;
 
@@ -124,6 +122,8 @@ namespace Atlas {
 
             }
             else {
+                static int32_t frameCount = 0;
+
                 Graphics::Profiler::BeginQuery("Main pass");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
@@ -244,13 +244,13 @@ namespace Atlas {
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
 
                 for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-                    imageBarriers = {
+
+                    std::vector<Graphics::ImageBarrier> imageBarriers = {
                         {target->giTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->swapGiTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };

@@ -206,7 +206,7 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-            return materialBuffer.GetSize() > 0 && device->support.bindless;
+            return materialBuffer.GetSize() > 0 && device->support.bindless && !meshInfos.empty();
 
         }
 

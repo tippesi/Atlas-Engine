@@ -90,6 +90,7 @@ auto testingValues = testing::Values(
     AppConfiguration { .clouds = false },
     AppConfiguration { .fog = false },
     AppConfiguration { .taa = false },
+    AppConfiguration { .ssgi = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },

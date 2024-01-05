@@ -57,8 +57,8 @@ namespace Atlas {
             UpdateBindlessIndexMaps();
 
             // Make sure this is changed just once at the start of a frame
-            rtDataValid = rtData.IsValid();
             rtData.Update(true);
+            rtDataValid = rtData.IsValid();
 
         }
 
@@ -127,6 +127,7 @@ namespace Atlas {
 
         void Scene::ClearRTStructures() {
 
+            rtDataValid = false;
             rtData.Clear();
 
         }

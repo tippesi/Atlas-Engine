@@ -33,6 +33,8 @@ namespace Atlas {
 
             descriptorPool = new DescriptorPool(device);
 
+            CreatePlaceholders(device);
+
             isComplete = true;
 
         }
@@ -68,6 +70,9 @@ namespace Atlas {
             cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo))
+
+            // This is only effective for the first time it's called
+            ChangePlaceholderLayouts();
 
         }
 
@@ -959,7 +964,7 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = descriptorType;
                         setWrite.pBufferInfo = &bufferInfo;
@@ -992,7 +997,7 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
@@ -1024,7 +1029,7 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                         setWrite.pImageInfo = &imageInfo;
@@ -1055,7 +1060,7 @@ namespace Atlas {
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
@@ -1087,7 +1092,7 @@ namespace Atlas {
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                         setWrite.pNext = &tlasInfo;
@@ -1095,7 +1100,9 @@ namespace Atlas {
 
                     // SAMPLED IMAGE ARRAYS
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.sampledImagesArray[i][j].size()) continue;
+                        auto descriptorArraySize = descriptorBindingData.sets[i]->sampledImageArraySize[j];
+
+                        if (descriptorBindingData.sampledImagesArray[i][j].empty() && !descriptorArraySize) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!shaderBinding.valid) continue;
@@ -1110,8 +1117,8 @@ namespace Atlas {
                         AE_ASSERT(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
                             "Too much data written into buffer infos for descriptor set update");
 
-                        if (size_t(imageInfoCounter + sampledImageArraySize) >= imageInfos.size() ||
-                            sampledImageArraySize == 0)
+                        if (size_t(imageInfoCounter) + sampledImageArraySize >= imageInfos.size() ||
+                            (sampledImageArraySize == 0 && descriptorArraySize == 0))
                             continue;
 
                         auto& setWrite = setWrites[bindingCounter++];
@@ -1120,8 +1127,8 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = 0;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
-                        setWrite.descriptorCount = sampledImageArraySize;
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                        setWrite.descriptorCount = std::max(sampledImageArraySize, descriptorArraySize);
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                         setWrite.pImageInfo = &imageInfos[imageInfoCounter];
 
@@ -1133,11 +1140,26 @@ namespace Atlas {
                             imageInfo.imageView = image->view;
                             imageInfo.imageLayout = image->layout;
                         }
+
+                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // lead to crashes since resource in descriptor set are deleted already
+                        if (sampledImageArraySize < descriptorBindingData.sets[i]->sampledImageArraySize[j]) {
+                            for (uint32_t k = sampledImageArraySize; k < descriptorArraySize; k++) {
+                                auto& imageInfo = imageInfos[imageInfoCounter++];
+                                imageInfo.sampler = VK_NULL_HANDLE;
+                                imageInfo.imageView = placeholderImage->view;
+                                imageInfo.imageLayout = placeholderImage->layout;
+                            }
+                        }
+
+                        descriptorBindingData.sets[i]->sampledImageArraySize[j] = sampledImageArraySize;
                     }
 
                     // BUFFER ARRAYS
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.buffersArray[i][j].size()) continue;
+                        auto descriptorArraySize = descriptorBindingData.sets[i]->bufferArraySize[j];
+
+                        if (descriptorBindingData.buffersArray[i][j].empty() && !descriptorArraySize) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
                         if (!shaderBinding.valid) continue;
@@ -1152,8 +1174,8 @@ namespace Atlas {
                         AE_ASSERT(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
                             "Too much data written into buffer infos for descriptor set update");
 
-                        if (size_t(bufferInfoCounter + bufferArraySize) >= bufferInfos.size() ||
-                            bufferArraySize == 0)
+                        if (size_t(bufferInfoCounter) + bufferArraySize >= bufferInfos.size() ||
+                            (bufferArraySize == 0 && descriptorArraySize == 0))
                             continue;
 
                         auto& setWrite = setWrites[bindingCounter++];
@@ -1162,8 +1184,8 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = 0;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
-                        setWrite.descriptorCount = bufferArraySize;
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                        setWrite.descriptorCount = std::max(bufferArraySize, descriptorArraySize);;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                         setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
 
@@ -1175,6 +1197,19 @@ namespace Atlas {
                             bufferInfo.buffer = buffer->buffer;
                             bufferInfo.range = VK_WHOLE_SIZE;
                         }
+
+                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // lead to crashes since resource in descriptor set are deleted already
+                        if (bufferArraySize < descriptorBindingData.sets[i]->bufferArraySize[j]) {
+                            for (uint32_t k = bufferArraySize; k < descriptorArraySize; k++) {
+                                auto& bufferInfo = bufferInfos[bufferInfoCounter++];
+                                bufferInfo.offset = 0;
+                                bufferInfo.buffer = placeholderBuffer->buffer;
+                                bufferInfo.range = VK_WHOLE_SIZE;
+                            }
+                        }
+
+                        descriptorBindingData.sets[i]->bufferArraySize[j] = bufferArraySize;
                     }
 
                     vkUpdateDescriptorSets(device, bindingCounter, setWrites.data(), 0, nullptr);
@@ -1183,7 +1218,7 @@ namespace Atlas {
 
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
-                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i],
+                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i]->set,
                         dynamicOffsetCounter, dynamicOffsets);
                 }
             }
@@ -1236,6 +1271,33 @@ namespace Atlas {
                 resultSemaphores.push_back(semaphore.semaphore);
 
             return resultSemaphores;
+
+        }
+
+        void CommandList::CreatePlaceholders(GraphicsDevice* device) {
+
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .size = sizeof(int)
+            };
+            placeholderBuffer =  device->CreateBuffer(bufferDesc);
+
+            auto imageDesc = Graphics::ImageDesc {
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                .width = 1,
+                .height = 1,
+                .format = VK_FORMAT_R8G8B8A8_UNORM,
+            };
+            placeholderImage = device->CreateImage(imageDesc);
+
+        }
+
+        void CommandList::ChangePlaceholderLayouts() {
+
+            // Only ever do this once after command list creation
+            if (placeholderImage->layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                ImageTransition(placeholderImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
 
         }
 

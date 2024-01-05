@@ -198,7 +198,7 @@ namespace Atlas {
                 Sampler* samplers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
-                VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+                Ref<DescriptorSet> sets[DESCRIPTOR_SET_COUNT];
                 Ref<DescriptorSetLayout> layouts[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
 
@@ -277,9 +277,16 @@ namespace Atlas {
 
             const std::vector<VkSemaphore> GetSemaphores() const;
 
+            void CreatePlaceholders(GraphicsDevice* device);
+
+            void ChangePlaceholderLayouts();
+
             VkDevice device;
             MemoryManager* memoryManager = nullptr;
             DescriptorPool* descriptorPool = nullptr;
+
+            Ref<Buffer> placeholderBuffer = nullptr;
+            Ref<Image> placeholderImage = nullptr;
 
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;
