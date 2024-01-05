@@ -67,12 +67,12 @@ void main() {
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+        ivec2 pixelOffset = offsets[offsetIdx];
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
-        vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
+        vec2 recontructTexCoord = (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution));
+        vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
         vec3 worldPos = vec3(globalData[0].ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData[0].ivMatrix * vec4(viewPos, 0.0));
         vec3 worldNorm = normalize(vec3(globalData[0].ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
@@ -143,7 +143,7 @@ void main() {
                     if (depthDelta > 0.0 && depthDelta < rayLength) {
                         float NdotL = dot(worldNorm, -ray.direction);
                         if (NdotL >= 0.0) {
-                            vec3 rayIrradiance = textureLod(directLightTexture, uvPos, 0).rgb;
+                            vec3 rayIrradiance = texelFetch(directLightTexture, stepPixel * 2 + pixelOffset, 0).rgb;
                             irradiance += rayIrradiance;
                         }
                         hit = true;
