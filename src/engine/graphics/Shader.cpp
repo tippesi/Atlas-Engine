@@ -212,7 +212,7 @@ namespace Atlas {
             uint32_t allStageFlags = 0;
 
             std::vector<ShaderModule> shaderModules(stages.size());
-            modules.resize(stages.size());
+            modules.resize(stages.size(), VK_NULL_HANDLE);
             for (size_t i = 0; i < stages.size(); i++) {
                 auto& stage = stages[i];
 
@@ -231,8 +231,7 @@ namespace Atlas {
                 auto result = vkCreateShaderModule(device->device, &createInfo,
                     nullptr, &modules[i]);
                 VK_CHECK_MESSAGE(result, "Error creating shader module");
-                if (result != VK_SUCCESS) {
-                    
+                if (result != VK_SUCCESS) {                    
                     return;
                 }
 
@@ -306,9 +305,9 @@ namespace Atlas {
 
         ShaderVariant::~ShaderVariant() {
 
-            if (!isComplete) return;
-
             for (auto module : modules) {
+                if (module == VK_NULL_HANDLE) continue;
+
                 vkDestroyShaderModule(device->device, module, nullptr);
             }
 
