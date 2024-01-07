@@ -11,6 +11,7 @@
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
+#include "../lighting/SSGI.h"
 #include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
 #include "../Decal.h"
@@ -28,7 +29,9 @@ namespace Atlas {
 
         class Scene : public SceneNode, public SpacePartitioning {
 
+            friend class RTData;
             friend class Renderer::Helper::RayTracingHelper;
+            friend class Renderer::MainRenderer;
 
         public:
             /**
@@ -93,12 +96,6 @@ namespace Atlas {
             std::vector<Material*> GetMaterials();
 
             /**
-             * Builds the BVH and texture atlases.
-             * @note The scene needs to be updated first.
-             */
-            void BuildRTStructures();
-
-            /**
              *
              */
             void ClearRTStructures();
@@ -137,10 +134,15 @@ namespace Atlas {
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
+            Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
         private:
+            void UpdateBindlessIndexMaps();
+
             std::unordered_map<size_t, RegisteredMesh> rootMeshMap;
+            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
+            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
             RTData rtData;
 

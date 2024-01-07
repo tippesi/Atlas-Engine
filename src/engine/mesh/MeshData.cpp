@@ -116,7 +116,7 @@ namespace Atlas {
 
         }
 
-        void MeshData::BuildBVH() {
+        void MeshData::BuildBVH(bool parallelBuild) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             bool hardwareRayTracing = device->support.hardwareRayTracing;
@@ -139,6 +139,7 @@ namespace Atlas {
                 vec4 color2;
 
                 int32_t materialIdx;
+                float opacity;
             };
 
             uint32_t triangleCount = 0;
@@ -193,6 +194,7 @@ namespace Atlas {
                     }
 
                     triangles[k].materialIdx = sub.materialIdx;
+                    triangles[k].opacity = sub.material->HasOpacityMap() ? -1.0f : sub.material->opacity;
 
                     auto min = glm::min(glm::min(triangles[k].v0,
                         triangles[k].v1), triangles[k].v2);
@@ -215,7 +217,7 @@ namespace Atlas {
             Volume::BVH bvh;
             if (!hardwareRayTracing) {
                 // Generate BVH
-                bvh = Volume::BVH(aabbs, bvhTriangles);
+                bvh = Volume::BVH(aabbs, bvhTriangles, parallelBuild);
 
                 bvhTriangles.clear();
                 bvhTriangles.shrink_to_fit();
@@ -288,15 +290,15 @@ namespace Atlas {
                 gpuTriangle.v2 = vec4(triangle.v2, cn2);
                 gpuTriangle.d0 = vec4(cuv0, cuv1, cuv2, reinterpret_cast<float&>(triangle.materialIdx));
                 gpuTriangle.d1 = vec4(ct, cbt, bvhTriangle.endOfNode ? 1.0f : -1.0f, 0.0f);
-                gpuTriangle.d2 = vec4(cc0, cc1, cc2, 0.0f);
+                gpuTriangle.d2 = vec4(cc0, cc1, cc2, triangle.opacity);
 
                 gpuTriangles.push_back(gpuTriangle);
 
                 if (!hardwareRayTracing) {
-                    BVHTriangle gpuBvhTriangle;
+                    GPUBVHTriangle gpuBvhTriangle;
                     gpuBvhTriangle.v0 = vec4(triangle.v0, bvhTriangle.endOfNode ? 1.0f : -1.0f);
                     gpuBvhTriangle.v1 = vec4(triangle.v1, reinterpret_cast<float &>(triangle.materialIdx));
-                    gpuBvhTriangle.v2 = vec4(triangle.v2, 0.0f);
+                    gpuBvhTriangle.v2 = vec4(triangle.v2, triangle.opacity);
 
                     gpuBvhTriangles.push_back(gpuBvhTriangle);
                 }
@@ -321,6 +323,12 @@ namespace Atlas {
                     gpuBvhNodes[i].rightAABB.max = nodes[i].rightAABB.max;
                 }
             }
+
+        }
+
+        bool MeshData::IsBVHBuilt() {
+
+            return gpuBvhTriangles.size() > 0;
 
         }
 

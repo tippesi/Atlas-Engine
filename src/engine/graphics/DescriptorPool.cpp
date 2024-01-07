@@ -1,4 +1,4 @@
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "GraphicsDevice.h"
 
 namespace Atlas {
@@ -7,7 +7,8 @@ namespace Atlas {
 
         DescriptorPool::DescriptorPool(GraphicsDevice* device) : device(device) {
 
-            pools.push_back(InitPool());
+            DescriptorSetSize size = {};
+            pools.push_back(InitPool(size));
 
         }
 
@@ -19,7 +20,7 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::GetCachedSet(VkDescriptorSetLayout layout) {
+        Ref<DescriptorSet> DescriptorPool::GetCachedSet(const Ref<DescriptorSetLayout>& layout) {
 
             // This approach might lead to memory issues. Need to release
             // the cached descriptors at some point
@@ -38,25 +39,41 @@ namespace Atlas {
 
         }
 
-        VkDescriptorSet DescriptorPool::Allocate(VkDescriptorSetLayout layout) {
+        Ref<DescriptorSet> DescriptorPool::Allocate(const Ref<DescriptorSetLayout>& layout) {
 
             VkDescriptorSetAllocateInfo allocInfo = {};
             allocInfo.pNext = nullptr;
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             allocInfo.descriptorPool = pools[poolIdx];
             allocInfo.descriptorSetCount = 1;
-            allocInfo.pSetLayouts = &layout;
+            allocInfo.pSetLayouts = &layout->layout;
 
-            VkDescriptorSet set;
-            auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set);
+            /*
+            VkDescriptorSetVariableDescriptorCountAllocateInfo countInfo = {};
+            std::vector<uint32_t> bindlessDescriptorCount;
+            if (layout->bindless) {
+                for (auto& binding : layout->bindings) {
+                    if (!binding.bindless) continue;
+                    bindlessDescriptorCount.push_back(binding.descriptorCount);
+                }
+
+                countInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+                countInfo.descriptorSetCount = uint32_t(bindlessDescriptorCount.size());
+                countInfo.pDescriptorCounts = bindlessDescriptorCount.data();
+                allocInfo.pNext = &countInfo;
+            }
+            */
+
+            Ref<DescriptorSet> set = CreateRef<DescriptorSet>();
+            auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set->set);
             // Handle the pool out of memory error by allocating a new pool
             if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
                 poolIdx++;
                 if (poolIdx == pools.size()) {
-                    pools.push_back(InitPool());
+                    pools.push_back(InitPool(layout->size));
                 }
                 allocInfo.descriptorPool = pools[poolIdx];
-                VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set))
+                VK_CHECK(vkAllocateDescriptorSets(device->device, &allocInfo, &set->set))
             } else {
                 VK_CHECK(result);
             }
@@ -77,7 +94,7 @@ namespace Atlas {
 
         void DescriptorPool::ResetAllocationCounters() {
 
-            for (auto& [layout, allocations] : layoutAllocationsMap) {
+            for (auto& [_, allocations] : layoutAllocationsMap) {
                 allocations.counter = 0;
             }
 
@@ -89,20 +106,22 @@ namespace Atlas {
 
         }
 
-        VkDescriptorPool DescriptorPool::InitPool() {
+        VkDescriptorPool DescriptorPool::InitPool(const DescriptorSetSize& size) {
 
             std::vector<VkDescriptorPoolSize> sizes = {
-                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          DESCRIPTOR_POOL_SIZE },
-                    { VK_DESCRIPTOR_TYPE_SAMPLER,                DESCRIPTOR_POOL_SIZE },
+                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, std::max(DESCRIPTOR_POOL_SIZE, size.dynamicUniformBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         std::max(DESCRIPTOR_POOL_SIZE, size.uniformBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, std::max(DESCRIPTOR_POOL_SIZE, size.combinedImageSamplerCount) },
+                    { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          std::max(DESCRIPTOR_POOL_SIZE, size.sampledImageCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, std::max(DESCRIPTOR_POOL_SIZE, size.dynamicStorageBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         std::max(DESCRIPTOR_POOL_SIZE, size.storageBufferCount) },
+                    { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          std::max(DESCRIPTOR_POOL_SIZE, size.storageImageCount) },
+                    { VK_DESCRIPTOR_TYPE_SAMPLER,                std::max(DESCRIPTOR_POOL_SIZE, size.samplerCount) },
                 };
 
             VkDescriptorPoolCreateInfo poolInfo = {};
             poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            poolInfo.flags = 0;
+            poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
             poolInfo.maxSets = uint32_t(sizes.size()) * DESCRIPTOR_POOL_SIZE;
             poolInfo.poolSizeCount = uint32_t(sizes.size());
             poolInfo.pPoolSizes = sizes.data();

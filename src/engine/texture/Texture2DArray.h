@@ -107,7 +107,7 @@ namespace Atlas {
              * @param filename The name of the file
              * @param layer
              */
-            void SaveToPNG(std::string filename, int32_t layer);
+            void SaveToPNG(const std::string& filename, int32_t layer);
 
         };
 

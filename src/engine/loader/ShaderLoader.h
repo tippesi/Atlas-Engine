@@ -32,9 +32,6 @@ namespace Atlas {
             static std::vector<std::string> ExtractExtensions(std::vector<std::string> codeLines,
                 std::vector<Graphics::ShaderStageFile::Extension>& extensions);
 
-            static std::filesystem::file_time_type GetModifiedTime(const std::string& path, 
-                const std::filesystem::file_time_type defaultTime);
-
             static std::string sourceDirectory;
 
         };

@@ -30,6 +30,8 @@
 
 #endif
 
+#define AE_ASSERT assert
+
 // SDL
 #ifdef AE_NO_APP
 #define SDL_MAIN_HANDLED

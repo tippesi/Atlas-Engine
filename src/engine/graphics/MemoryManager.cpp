@@ -99,6 +99,13 @@ namespace Atlas {
 
         }
 
+        void MemoryManager::DestroyAllocation(Ref<DescriptorSetLayout>& allocation) {
+
+            deleteDescriptorSetLayoutAllocations
+                .emplace_back(DeleteResource<DescriptorSetLayout> { allocation, frameIndex + framesToDeletion });
+
+        }
+
         void MemoryManager::DestroyAllocation(Ref<DescriptorPool>& allocation) {
 
             deleteDescriptorPoolAllocations
@@ -170,6 +177,7 @@ namespace Atlas {
             DeleteAllocations(deleteImageAllocations);
             DeleteAllocations(deleteSamplerAllocations);
             DeleteAllocations(deleteDescriptorPoolAllocations);
+            DeleteAllocations(deleteDescriptorSetLayoutAllocations);
             DeleteAllocations(deleteQueryPoolAllocations);
 
         }

@@ -80,7 +80,7 @@ void ImportanceSampleGGXVNDF(vec2 Xi, vec3 N, vec3 V, float roughness,
 }
 
 void ImportanceSampleCosDir(vec3 N, vec2 rand, out vec3 L,
-out float NdotL, out float pdf) {
+    out float NdotL, out float pdf) {
 
     float theta = sqrt(rand.x);
     float phi = 2.0 * PI * rand.y;

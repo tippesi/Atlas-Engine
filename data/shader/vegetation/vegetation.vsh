@@ -49,24 +49,24 @@ void main() {
     Instance instance = instanceData[gl_InstanceIndex];
     texCoordVS = pushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
     
-    mat4 mvMatrix = globalData.vMatrix;
+    mat4 mvMatrix = globalData[0].vMatrix;
 
     vec3 position = instance.position.xyz + vPosition;
 
-    position = instance.position.xyz + WindAnimation(vPosition, globalData.time, instance.position.xyz);
-    vec3 lastPosition = instance.position.xyz + WindAnimation(vPosition, globalData.time - globalData.deltaTime, instance.position.xyz);
+    position = instance.position.xyz + WindAnimation(vPosition, globalData[0].time, instance.position.xyz);
+    vec3 lastPosition = instance.position.xyz + WindAnimation(vPosition, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 #ifdef NORMAL_MAP
     positionVS = positionToCamera.xyz;
 #endif
     
-    gl_Position = globalData.pMatrix * positionToCamera;
+    gl_Position = globalData[0].pMatrix * positionToCamera;
 
     // Needed for velocity buffer calculation 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
     // For moving objects we need the last frames matrix
-    vec4 last = globalData.pvMatrixLast * vec4(lastPosition, 1.0);
+    vec4 last = globalData[0].pvMatrixLast * vec4(lastPosition, 1.0);
     ndcLastVS = vec3(last.xy, last.w);
     
     normalVS = mat3(mvMatrix) * vNormal;

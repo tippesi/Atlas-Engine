@@ -183,6 +183,10 @@ namespace Atlas {
                 threads[i].join();
             }
 
+            for (auto& images : materialImages) {
+                ImagesToTexture(images);
+            }
+
             meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
@@ -341,6 +345,10 @@ namespace Atlas {
 
             for (uint32_t i = 0; i < threadCount; i++) {
                 threads[i].join();
+            }
+
+            for (auto& images : materialImages) {
+                ImagesToTexture(images);
             }
 
             std::map<aiMesh*, ResourceHandle<Mesh::Mesh>> meshMap;
@@ -557,29 +565,29 @@ namespace Atlas {
                 assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.metalness);
                 assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
             }
-            
+
             if (images.baseColorImage && images.baseColorImage->HasData()) {
-                material.baseColorMap = std::make_shared<Texture::Texture2D>(images.baseColorImage);
+                material.baseColorMap = images.baseColorTexture;
                 material.baseColorMapPath = images.baseColorImage->fileName;
             }
             if (images.opacityImage && images.opacityImage->HasData()) {
-                material.opacityMap = std::make_shared<Texture::Texture2D>(images.opacityImage);
+                material.opacityMap = images.opacityTexture;
                 material.opacityMapPath = images.opacityImage->fileName;
             }
             if (images.roughnessImage && images.roughnessImage->HasData()) {
-                material.roughnessMap = std::make_shared<Texture::Texture2D>(images.roughnessImage);
+                material.roughnessMap = images.roughnessTexture;
                 material.roughnessMapPath = images.roughnessImage->fileName;
             }
             if (images.metallicImage && images.metallicImage->HasData()) {
-                material.metalnessMap = std::make_shared<Texture::Texture2D>(images.metallicImage);
+                material.metalnessMap = images.metallicTexture;
                 material.metalnessMapPath = images.metallicImage->fileName;
             }
             if (images.normalImage && images.normalImage->HasData()) {
-                material.normalMap = std::make_shared<Texture::Texture2D>(images.normalImage);
+                material.normalMap = images.normalTexture;
                 material.normalMapPath = images.normalImage->fileName;
             }
             if (images.displacementImage && images.displacementImage->HasData()) {
-                material.displacementMap = std::make_shared<Texture::Texture2D>(images.displacementImage);
+                material.displacementMap = images.displacementTexture;
                 material.displacementMapPath = images.displacementImage->fileName;
             }
             
@@ -687,6 +695,29 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 images.displacementImage = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
             }
+        }
+
+        void ModelLoader::ImagesToTexture(MaterialImages& images) {
+
+            if (images.baseColorImage && images.baseColorImage->HasData()) {
+                images.baseColorTexture = std::make_shared<Texture::Texture2D>(images.baseColorImage);;
+            }
+            if (images.opacityImage && images.opacityImage->HasData()) {
+                images.opacityTexture = std::make_shared<Texture::Texture2D>(images.opacityImage);
+            }
+            if (images.roughnessImage && images.roughnessImage->HasData()) {
+                images.roughnessTexture = std::make_shared<Texture::Texture2D>(images.roughnessImage);
+            }
+            if (images.metallicImage && images.metallicImage->HasData()) {
+                images.metallicTexture = std::make_shared<Texture::Texture2D>(images.metallicImage);
+            }
+            if (images.normalImage && images.normalImage->HasData()) {
+                images.normalTexture = std::make_shared<Texture::Texture2D>(images.normalImage);
+            }
+            if (images.displacementImage && images.displacementImage->HasData()) {
+                images.displacementTexture = std::make_shared<Texture::Texture2D>(images.displacementImage);
+            }
+
         }
 
         std::string ModelLoader::GetDirectoryPath(std::string filename) {

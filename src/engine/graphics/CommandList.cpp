@@ -33,6 +33,8 @@ namespace Atlas {
 
             descriptorPool = new DescriptorPool(device);
 
+            CreatePlaceholders(device);
+
             isComplete = true;
 
         }
@@ -68,6 +70,9 @@ namespace Atlas {
             cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
             VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo))
+
+            // This is only effective for the first time it's called
+            ChangePlaceholderLayouts();
 
         }
 
@@ -246,6 +251,25 @@ namespace Atlas {
 
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
+            // Reset previous descriptor data such that a new descriptor
+            // set must be provided to the new pipeline only if descriptor set changes
+            if (pipelineInUse != nullptr) {
+                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                    bool changed = (descriptorBindingData.layouts[i].get() != pipeline->shader->sets[i].layout.get()
+                        && pipeline->shader->sets[i].bindingCount > 0);
+                    descriptorBindingData.changed[i] |= changed;
+
+                    if (pipeline->shader->sets[i].bindingCount > 0) {
+                        descriptorBindingData.layouts[i] = pipeline->shader->sets[i].layout;
+                    }
+                }                
+            }
+            else {
+                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++)
+                    descriptorBindingData.changed[i] = true;
+            }
+            
+
             pipelineInUse = pipeline;
 
             vkCmdBindPipeline(commandBuffer, pipeline->bindPoint, pipeline->pipeline);
@@ -257,16 +281,11 @@ namespace Atlas {
                 SetScissor(0, 0, extent.width, extent.height);
             }
 
-            // Reset previous descriptor data such that a new descriptor
-            // set must be provided to the new pipeline
-            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++)
-                descriptorBindingData.changed[i] = true;
-
         }
 
         void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             VkViewport viewport = {};
@@ -283,7 +302,7 @@ namespace Atlas {
 
         void CommandList::SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             VkRect2D scissor = {};
@@ -347,7 +366,7 @@ namespace Atlas {
 
         void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
@@ -360,9 +379,9 @@ namespace Atlas {
 
         void CommandList::BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             vkCmdBindIndexBuffer(commandBuffer, buffer->buffer, 0, type);
 
@@ -370,9 +389,9 @@ namespace Atlas {
 
         void CommandList::BindVertexBuffer(const Ref<Buffer>& buffer, uint32_t binding) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse || !buffer->buffer) return;
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
             VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(commandBuffer, binding, 1, &buffer->buffer, &offset);
@@ -382,14 +401,14 @@ namespace Atlas {
         void CommandList::BindVertexBuffers(std::vector<Ref<Buffer>> &buffers, uint32_t bindingOffset,
             uint32_t bindingCount) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             std::vector<VkDeviceSize> offsets;
             std::vector<VkBuffer> bindBuffers;
             for (const auto& buffer : buffers) {
                 if (!buffer->buffer) return;
-                assert(buffer->size > 0 && "Invalid buffer size");
+                AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
                 bindBuffers.push_back(buffer->buffer);
                 offsets.push_back(0);
             }
@@ -400,161 +419,175 @@ namespace Atlas {
 
         void CommandList::BindBuffer(const Ref<Buffer>& buffer, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
-            // Only uniform buffers support dynamic binding for now
-            if (buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
-                if (descriptorBindingData.dynamicBuffers[set][binding].first == buffer.get())
-                    return;
+            if (descriptorBindingData.buffers[set][binding].first == buffer.get())
+                return;
 
-                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-                descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), 0};
-                descriptorBindingData.buffers[set][binding] = nullptr;
-                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = { nullptr, 0u };
-                descriptorBindingData.tlases[set][binding] = nullptr;
-                descriptorBindingData.changed[set] = true;
-            }
-            else {
-                if (descriptorBindingData.buffers[set][binding] == buffer.get())
-                    return;
+            descriptorBindingData.ResetBinding(set, binding);
 
-                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-                descriptorBindingData.buffers[set][binding] = buffer.get();
-                descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = { nullptr, 0u };
-                descriptorBindingData.tlases[set][binding] = nullptr;
-                descriptorBindingData.changed[set] = true;
-            }
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
+            descriptorBindingData.changed[set] = true;
 
         }
 
         void CommandList::BindBufferOffset(const Ref<Buffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
-            assert(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                 "Only uniform buffers support dynamic bindings");
 
-            // Only indicate a change of the buffer has changed, not just the offset
-            descriptorBindingData.changed[set] |=
-                descriptorBindingData.dynamicBuffers[set][binding].first != buffer.get();
+            if (descriptorBindingData.buffers[set][binding].first == buffer.get())
+                return;
+
+            descriptorBindingData.ResetBinding(set, binding);
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-            descriptorBindingData.dynamicBuffers[set][binding] = {buffer.get(), uint32_t(offset)};
-            descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindBuffers(const std::vector<Ref<Buffer>> &buffers, uint32_t set, uint32_t binding) {
+
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            
+            if (!buffers.size()) return;
+
+            std::vector<Buffer*> buffersPtr;
+            for (auto& buffer : buffers) {
+                AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+                AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT &&
+                       "Only storage buffers support array bindings");
+
+                buffersPtr.push_back(buffer.get());
+            }
+
+            descriptorBindingData.ResetBinding(set, binding);
+
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
+            descriptorBindingData.changed[set] = true;
 
         }
 
         void CommandList::BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
 
-            // Only uniform buffers support dynamic binding for now
-            if (buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
-                if (descriptorBindingData.dynamicBuffers[set][binding].first == buffer->GetCurrent())
-                    return;
+            if (descriptorBindingData.buffers[set][binding].first == buffer->GetCurrent())
+                return;
 
-                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-                descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), 0};
-                descriptorBindingData.buffers[set][binding] = nullptr;
-                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = { nullptr, 0u };
-                descriptorBindingData.tlases[set][binding] = nullptr;
-                descriptorBindingData.changed[set] = true;
-            }
-            else {
-                if (descriptorBindingData.buffers[set][binding] == buffer->GetCurrent())
-                    return;
+            descriptorBindingData.ResetBinding(set, binding);
 
-                // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-                descriptorBindingData.buffers[set][binding] = buffer->GetCurrent();
-                descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-                descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-                descriptorBindingData.images[set][binding] = { nullptr, 0u };
-                descriptorBindingData.tlases[set][binding] = nullptr;
-                descriptorBindingData.changed[set] = true;
-            }
+            // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
+            descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
+            descriptorBindingData.changed[set] = true;
         }
 
         void CommandList::BindBufferOffset(const Ref<MultiBuffer> &buffer, size_t offset, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(buffer->size > 0 && "Invalid buffer size");
-            assert(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
+            AE_ASSERT(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                    "Only uniform buffers support dynamic bindings");
+
+            descriptorBindingData.ResetBinding(set, binding);
 
             // Only indicate a change of the buffer has changed, not just the offset
             descriptorBindingData.changed[set] |=
-                descriptorBindingData.dynamicBuffers[set][binding].first != buffer->GetCurrent();
+                descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
-            descriptorBindingData.dynamicBuffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
-            descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.sampledImages[set][binding] = {nullptr, nullptr};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
 
         }
 
         void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            assert(mipLevel < image->mipLevels && "Invalid mip level selected");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(mipLevel < image->mipLevels && "Invalid mip level selected");
 
             if (descriptorBindingData.images[set][binding].first == image.get() &&
                 descriptorBindingData.images[set][binding].second == mipLevel)
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
-            descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
-            descriptorBindingData.tlases[set][binding] = nullptr;
             descriptorBindingData.changed[set] = true;
 
         }
 
         void CommandList::BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (descriptorBindingData.sampledImages[set][binding].first == image.get() &&
                 descriptorBindingData.sampledImages[set][binding].second == sampler.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
-            descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.tlases[set][binding] = nullptr;
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding) {
+
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            if (!images.size()) return;
+
+            std::vector<Image*> imagesPtr;
+            for (auto& image : images) imagesPtr.push_back(image.get());
+
+            descriptorBindingData.ResetBinding(set, binding);
+
+            // We don't do any checks here if the same things were bound already
+            descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
+            descriptorBindingData.changed[set] = true;
+
+        }
+
+        void CommandList::BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding) {
+
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+
+            if (descriptorBindingData.samplers[set][binding] == sampler.get())
+                return;
+
+            descriptorBindingData.ResetBinding(set, binding);
+
+            descriptorBindingData.samplers[set][binding] = sampler.get();
             descriptorBindingData.changed[set] = true;
 
         }
 
         void CommandList::BindTLAS(const Ref<Atlas::Graphics::TLAS> &tlas, uint32_t set, uint32_t binding) {
 
-            assert(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
-            assert(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
+            AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
 
             if (descriptorBindingData.tlases[set][binding] == tlas.get())
                 return;
 
+            descriptorBindingData.ResetBinding(set, binding);
+
             descriptorBindingData.tlases[set][binding] = tlas.get();
-            descriptorBindingData.buffers[set][binding] = nullptr;
-            descriptorBindingData.dynamicBuffers[set][binding] = {nullptr, 0u};
-            descriptorBindingData.images[set][binding] = { nullptr, 0u };
-            descriptorBindingData.sampledImages[set][binding] = { nullptr, nullptr };
             descriptorBindingData.changed[set] = true;
 
         }
@@ -700,10 +733,10 @@ namespace Atlas {
         void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
             int32_t vertexOffset, uint32_t firstInstance) {
 
-            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(indexCount && instanceCount && "Index or instance count should not be zero");
+            AE_ASSERT(indexCount && instanceCount && "Index or instance count should not be zero");
 
             BindDescriptorSets();
 
@@ -714,8 +747,8 @@ namespace Atlas {
         void CommandList::DrawIndexedIndirect(const Ref<Graphics::Buffer> &buffer, size_t offset,
             uint32_t drawCount, uint32_t stride) {
 
-            assert((swapChainInUse || renderPassInUse) && "No render pass is in use");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT((swapChainInUse || renderPassInUse) && "No render pass is in use");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             BindDescriptorSets();
@@ -727,9 +760,9 @@ namespace Atlas {
         void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
             uint32_t firstInstance) {
 
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(vertexCount && instanceCount && "Index or instance count should not be zero");
+            AE_ASSERT(vertexCount && instanceCount && "Index or instance count should not be zero");
 
             BindDescriptorSets();
 
@@ -739,10 +772,10 @@ namespace Atlas {
 
         void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 
-            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
-            assert(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
+            AE_ASSERT(groupCountX && groupCountY && groupCountZ && "Group counts have to be larger equal to one");
 
             BindDescriptorSets();
 
@@ -752,8 +785,8 @@ namespace Atlas {
 
         void CommandList::DispatchIndirect(const Ref<Buffer> &buffer, uint32_t offset) {
 
-            assert(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
-            assert(pipelineInUse && "No pipeline is bound");
+            AE_ASSERT(!swapChainInUse && !renderPassInUse && "No render pass should be in use for compute commands");
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
             BindDescriptorSets();
@@ -864,10 +897,10 @@ namespace Atlas {
 
         void CommandList::BindDescriptorSets() {
 
-            VkWriteDescriptorSet setWrites[BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorBufferInfo bufferInfos[BINDINGS_PER_DESCRIPTOR_SET];
-            VkDescriptorImageInfo imageInfos[BINDINGS_PER_DESCRIPTOR_SET];
-            VkWriteDescriptorSetAccelerationStructureKHR tlasInfos[BINDINGS_PER_DESCRIPTOR_SET];
+            auto& setWrites = descriptorBindingData.setWrites;
+            auto& bufferInfos = descriptorBindingData.bufferInfos;
+            auto& imageInfos = descriptorBindingData.imageInfos;
+            auto& tlasInfos = descriptorBindingData.tlasInfos;
 
             uint32_t dynamicOffsets[BINDINGS_PER_DESCRIPTOR_SET];
 
@@ -879,17 +912,17 @@ namespace Atlas {
                 // We need to collect the dynamic offsets everytime we bind a descriptor set
                 // This also means if just the offset changed, we don't need to update the set
                 for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                    if (!descriptorBindingData.dynamicBuffers[i][j].first) continue;
+                    if (!descriptorBindingData.buffers[i][j].first) continue;
                     const auto& binding = shader->sets[i].bindings[j];
                     // This probably is an old binding, which isn't used by this shader
                     if (!binding.valid) continue;
                     // Check that the descriptor types match up
-                    const auto descriptorType = binding.layoutBinding.descriptorType;
+                    const auto descriptorType = binding.binding.descriptorType;
                     if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
                         descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
                         continue;
 
-                    auto [_, offset] = descriptorBindingData.dynamicBuffers[i][j];
+                    auto [_, offset] = descriptorBindingData.buffers[i][j];
 
                     dynamicOffsets[dynamicOffsetCounter++] = offset;
                 }
@@ -897,56 +930,33 @@ namespace Atlas {
                 // We could run into issue
                 if (descriptorBindingData.changed[i] && shader->sets[i].bindingCount > 0) {
                     uint32_t bindingCounter = 0;
+                    uint32_t imageInfoCounter = 0;
+                    uint32_t bufferInfoCounter = 0;
                     descriptorBindingData.changed[i] = false;
 
                     descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
 
-                    // DYNAMIC BUFFER
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.dynamicBuffers[i][j].first) continue;
-                        const auto& binding = shader->sets[i].bindings[j];
-                        // This probably is an old binding, which isn't used by this shader
-                        if (!binding.valid) continue;
-                        // Check that the descriptor types match up
-                        auto descriptorType = binding.layoutBinding.descriptorType;
-                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
-                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
-
-                        auto [buffer, offset] = descriptorBindingData.dynamicBuffers[i][j];
-
-                        auto& bufferInfo = bufferInfos[bindingCounter];
-                        bufferInfo.offset = 0;
-                        bufferInfo.buffer = buffer->buffer;
-                        bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
-
-                        auto& setWrite = setWrites[bindingCounter++];
-                        setWrite = {};
-                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                        setWrite.pNext = nullptr;
-                        setWrite.dstBinding = j;
-                        setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
-                        setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = descriptorType;
-                        setWrite.pBufferInfo = &bufferInfo;
-                    }
-
                     // BUFFER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        if (!descriptorBindingData.buffers[i][j]) continue;
-                        const auto& binding = shader->sets[i].bindings[j];
+                        if (!descriptorBindingData.buffers[i][j].first) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        if (!binding.valid) continue;
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
-                        auto descriptorType = binding.layoutBinding.descriptorType;
-                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) continue;
+                        auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) continue;
 
-                        auto buffer = descriptorBindingData.buffers[i][j];
+                        auto [buffer, _] = descriptorBindingData.buffers[i][j];
 
-                        auto& bufferInfo = bufferInfos[bindingCounter];
+                        auto& bufferInfo = bufferInfos[bufferInfoCounter++];
                         bufferInfo.offset = 0;
                         bufferInfo.buffer = buffer->buffer;
-                        bufferInfo.range = binding.size ? std::min(binding.size, uint32_t(buffer->size)) : VK_WHOLE_SIZE;
+                        bufferInfo.range = binding.size ? std::min(binding.size, uint64_t(buffer->size)) : VK_WHOLE_SIZE;
 
                         auto& setWrite = setWrites[bindingCounter++];
                         setWrite = {};
@@ -954,7 +964,7 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = descriptorType;
                         setWrite.pBufferInfo = &bufferInfo;
@@ -964,17 +974,19 @@ namespace Atlas {
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.sampledImages[i][j].first ||
                             !descriptorBindingData.sampledImages[i][j].second) continue;
-                        const auto& binding = shader->sets[i].bindings[j];
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        if (!binding.valid) continue;
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                             continue;
 
                         auto [image, sampler] = descriptorBindingData.sampledImages[i][j];
 
-                        auto& imageInfo = imageInfos[bindingCounter];
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = sampler->sampler;
                         imageInfo.imageView = image->view;
                         imageInfo.imageLayout = image->layout;
@@ -985,7 +997,7 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
@@ -994,17 +1006,19 @@ namespace Atlas {
                     // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.images[i][j].first) continue;
-                        const auto& binding = shader->sets[i].bindings[j];
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        if (!binding.valid) continue;
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
                             continue;
 
                         auto [image, mipLevel] = descriptorBindingData.images[i][j];
 
-                        auto& imageInfo = imageInfos[bindingCounter];
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = VK_NULL_HANDLE;
                         imageInfo.imageView = mipLevel == 0 ? image->view : image->mipMapViews[mipLevel];
                         imageInfo.imageLayout = image->layout;
@@ -1015,20 +1029,53 @@ namespace Atlas {
                         setWrite.pNext = nullptr;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                        setWrite.pImageInfo = &imageInfo;
+                    }
+
+                    // SAMPLERS
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        if (!descriptorBindingData.samplers[i][j]) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER)
+                            continue;
+
+                        auto sampler = descriptorBindingData.samplers[i][j];
+
+                        auto& imageInfo = imageInfos[imageInfoCounter++];
+                        imageInfo.sampler = sampler->sampler;
+                        imageInfo.imageView = VK_NULL_HANDLE;
+                        imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = binding.arrayElement;
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                        setWrite.descriptorCount = 1;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                         setWrite.pImageInfo = &imageInfo;
                     }
 
                     // TOP-LEVEL ACCELERATION STRUCTURES
                     for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         if (!descriptorBindingData.tlases[i][j]) continue;
-                        const auto& binding = shader->sets[i].bindings[j];
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
-                        if (!binding.valid) continue;
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
-                        const auto descriptorType = binding.layoutBinding.descriptorType;
+                        const auto descriptorType = binding.descriptorType;
                         if (descriptorType != VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
                             continue;
 
@@ -1045,19 +1092,133 @@ namespace Atlas {
                         setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                         setWrite.dstBinding = j;
                         setWrite.dstArrayElement = binding.arrayElement;
-                        setWrite.dstSet = descriptorBindingData.sets[i];
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
                         setWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                         setWrite.pNext = &tlasInfo;
                     }
 
-                    vkUpdateDescriptorSets(device, bindingCounter, setWrites, 0, nullptr);
+                    // SAMPLED IMAGE ARRAYS
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        auto descriptorArraySize = descriptorBindingData.sets[i]->sampledImageArraySize[j];
+
+                        if (descriptorBindingData.sampledImagesArray[i][j].empty() && !descriptorArraySize) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                            continue;
+
+                        auto sampledImageArraySize = uint32_t(descriptorBindingData.sampledImagesArray[i][j].size());
+                        AE_ASSERT(size_t(imageInfoCounter + sampledImageArraySize) < imageInfos.size() &&
+                            "Too much data written into buffer infos for descriptor set update");
+
+                        if (size_t(imageInfoCounter) + sampledImageArraySize >= imageInfos.size() ||
+                            (sampledImageArraySize == 0 && descriptorArraySize == 0))
+                            continue;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = 0;
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                        setWrite.descriptorCount = std::max(sampledImageArraySize, descriptorArraySize);
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                        setWrite.pImageInfo = &imageInfos[imageInfoCounter];
+
+                        for (uint32_t k = 0; k < sampledImageArraySize; k++) {
+                            auto image = descriptorBindingData.sampledImagesArray[i][j][k];
+
+                            auto& imageInfo = imageInfos[imageInfoCounter++];
+                            imageInfo.sampler = VK_NULL_HANDLE;
+                            imageInfo.imageView = image->view;
+                            imageInfo.imageLayout = image->layout;
+                        }
+
+                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // lead to crashes since resource in descriptor set are deleted already
+                        if (sampledImageArraySize < descriptorBindingData.sets[i]->sampledImageArraySize[j]) {
+                            for (uint32_t k = sampledImageArraySize; k < descriptorArraySize; k++) {
+                                auto& imageInfo = imageInfos[imageInfoCounter++];
+                                imageInfo.sampler = VK_NULL_HANDLE;
+                                imageInfo.imageView = placeholderImage->view;
+                                imageInfo.imageLayout = placeholderImage->layout;
+                            }
+                        }
+
+                        descriptorBindingData.sets[i]->sampledImageArraySize[j] = sampledImageArraySize;
+                    }
+
+                    // BUFFER ARRAYS
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                        auto descriptorArraySize = descriptorBindingData.sets[i]->bufferArraySize[j];
+
+                        if (descriptorBindingData.buffersArray[i][j].empty() && !descriptorArraySize) continue;
+                        const auto& shaderBinding = shader->sets[i].bindings[j];
+                        // This probably is an old binding, which isn't used by this shader
+                        if (!shaderBinding.valid) continue;
+
+                        const auto& binding = shaderBinding.binding;
+                        // Check that the descriptor types match up
+                        const auto descriptorType = binding.descriptorType;
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+                            continue;
+
+                        auto bufferArraySize = uint32_t(descriptorBindingData.buffersArray[i][j].size());
+                        AE_ASSERT(size_t(bufferInfoCounter + bufferArraySize) < bufferInfos.size() &&
+                            "Too much data written into buffer infos for descriptor set update");
+
+                        if (size_t(bufferInfoCounter) + bufferArraySize >= bufferInfos.size() ||
+                            (bufferArraySize == 0 && descriptorArraySize == 0))
+                            continue;
+
+                        auto& setWrite = setWrites[bindingCounter++];
+                        setWrite = {};
+                        setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                        setWrite.pNext = nullptr;
+                        setWrite.dstBinding = j;
+                        setWrite.dstArrayElement = 0;
+                        setWrite.dstSet = descriptorBindingData.sets[i]->set;
+                        setWrite.descriptorCount = std::max(bufferArraySize, descriptorArraySize);;
+                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                        setWrite.pBufferInfo = &bufferInfos[bufferInfoCounter];
+
+                        for (uint32_t k = 0; k < bufferArraySize; k++) {
+                            auto buffer = descriptorBindingData.buffersArray[i][j][k];
+
+                            auto& bufferInfo = bufferInfos[bufferInfoCounter++];
+                            bufferInfo.offset = 0;
+                            bufferInfo.buffer = buffer->buffer;
+                            bufferInfo.range = VK_WHOLE_SIZE;
+                        }
+
+                        // We need to overwrite old descriptor binding data. If we don't it might
+                        // lead to crashes since resource in descriptor set are deleted already
+                        if (bufferArraySize < descriptorBindingData.sets[i]->bufferArraySize[j]) {
+                            for (uint32_t k = bufferArraySize; k < descriptorArraySize; k++) {
+                                auto& bufferInfo = bufferInfos[bufferInfoCounter++];
+                                bufferInfo.offset = 0;
+                                bufferInfo.buffer = placeholderBuffer->buffer;
+                                bufferInfo.range = VK_WHOLE_SIZE;
+                            }
+                        }
+
+                        descriptorBindingData.sets[i]->bufferArraySize[j] = bufferArraySize;
+                    }
+
+                    vkUpdateDescriptorSets(device, bindingCounter, setWrites.data(), 0, nullptr);
 
                 }
 
                 if (descriptorBindingData.sets[i] != nullptr && shader->sets[i].bindingCount > 0) {
                     vkCmdBindDescriptorSets(commandBuffer, pipelineInUse->bindPoint,
-                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i],
+                        pipelineInUse->layout, i, 1, &descriptorBindingData.sets[i]->set,
                         dynamicOffsetCounter, dynamicOffsets);
                 }
             }
@@ -1082,7 +1243,7 @@ namespace Atlas {
                 extent = frameBufferInUse->extent;
             }
             else {
-                assert(0 && "No valid render pass found");
+                AE_ASSERT(0 && "No valid render pass found");
             }
 
             return extent;
@@ -1096,7 +1257,7 @@ namespace Atlas {
                     return semaphore.semaphore;
             }
 
-            assert(0 && "Queue not found in available semaphores");
+            AE_ASSERT(0 && "Queue not found in available semaphores");
 
             return semaphores.front().semaphore;
 
@@ -1110,6 +1271,33 @@ namespace Atlas {
                 resultSemaphores.push_back(semaphore.semaphore);
 
             return resultSemaphores;
+
+        }
+
+        void CommandList::CreatePlaceholders(GraphicsDevice* device) {
+
+            auto bufferDesc = Graphics::BufferDesc {
+                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                .size = sizeof(int)
+            };
+            placeholderBuffer =  device->CreateBuffer(bufferDesc);
+
+            auto imageDesc = Graphics::ImageDesc {
+                .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                .width = 1,
+                .height = 1,
+                .format = VK_FORMAT_R8G8B8A8_UNORM,
+            };
+            placeholderImage = device->CreateImage(imageDesc);
+
+        }
+
+        void CommandList::ChangePlaceholderLayouts() {
+
+            // Only ever do this once after command list creation
+            if (placeholderImage->layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                ImageTransition(placeholderImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
 
         }
 

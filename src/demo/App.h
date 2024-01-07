@@ -39,7 +39,9 @@ private:
         PICAPICA,
         SUBWAY,
         MATERIALS,
-        FOREST
+        FOREST,
+        EMERALDSQUARE,
+        FLYINGWORLD
     };
 
     void DisplayLoadingScreen(float deltaTime);
@@ -73,6 +75,7 @@ private:
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+    Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
 

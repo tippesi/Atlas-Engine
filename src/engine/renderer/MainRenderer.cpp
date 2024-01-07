@@ -22,6 +22,8 @@ namespace Atlas {
 
             this->device = device;
 
+            CreateGlobalDescriptorSetLayout();
+
             Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
             Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
 
@@ -49,6 +51,7 @@ namespace Atlas {
             terrainShadowRenderer.Init(device);
             downscaleRenderer.Init(device);
             ddgiRenderer.Init(device);
+            giRenderer.Init(device);
             aoRenderer.Init(device);
             rtrRenderer.Init(device);
             sssRenderer.Init(device);
@@ -70,6 +73,9 @@ namespace Atlas {
 
         void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
             Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
+
+            if (!device->swapChain->isComplete) 
+                return;
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
@@ -99,10 +105,26 @@ namespace Atlas {
 
             PrepareMaterials(scene, materials, materialMap);
 
+            std::vector<Ref<Graphics::Image>> images;
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+
             SetUniforms(scene, camera);
 
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-            commandList->BindBuffer(globalUniformBuffer, 0, 0);
+            commandList->BindBuffer(globalUniformBuffer, 0, 3);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
+            commandList->BindSampler(globalSampler, 1, 13);
+            commandList->BindBuffers(triangleBuffers, 0, 1);
+            if (images.size())
+                commandList->BindSampledImages(images, 0, 4);
+
+            if (device->support.hardwareRayTracing) {
+                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+            }
+            else {
+                commandList->BindBuffers(blasBuffers, 0, 0);
+                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            }
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -112,7 +134,7 @@ namespace Atlas {
                 .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
             };
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
-            commandList->BindBuffer(materialBuffer, 0, 2);
+            commandList->BindBuffer(materialBuffer, 1, 14);
 
             if (scene->vegetation)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
@@ -132,9 +154,9 @@ namespace Atlas {
             }
 
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
-            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 0);
-            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 1);
-            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 2);
+            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 1);
+            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 2);
+            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 3);
 
             if (scene->irradianceVolume) {
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
@@ -148,9 +170,9 @@ namespace Atlas {
 
             if (scene->sky.GetProbe()) {
                 commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 9);
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 10);
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 10);
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
             }
 
             volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
@@ -208,12 +230,12 @@ namespace Atlas {
 
             auto targetData = target->GetData(FULL_RES);
 
-            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 2);
-            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 3);
-            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 4);
-            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 5);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 6);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
+            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
+            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
+            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
 
             if (!target->HasHistory()) {
                 auto rtData = target->GetHistoryData(HALF_RES);
@@ -292,6 +314,11 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
+                giRenderer.Render(viewport, target, camera, scene, commandList);
+
+                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
                 indirectLightRenderer.Render(viewport, target, camera, scene, commandList);
 
                 Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
@@ -332,49 +359,96 @@ namespace Atlas {
         void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
             Scene::Scene *scene, Texture::Texture2D *texture) {
 
+            if (!scene->IsRtDataValid() || !device->swapChain->isComplete)
+                return;
+
+            static vec2 lastJitter = vec2(0.0f);
+
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
+
+            auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+            jitter.x /= (float)target->GetWidth();
+            jitter.y /= (float)target->GetHeight();
+
+            camera->Jitter(jitter * 0.0f);
 
             commandList->BeginCommands();
 
             Graphics::Profiler::BeginThread("Path tracing", commandList);
             Graphics::Profiler::BeginQuery("Buffer operations");
 
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 0, 1);
-
-            auto globalUniforms = GlobalUniforms {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix,
-                .ivMatrix = camera->invViewMatrix,
-                .ipMatrix = camera->invProjectionMatrix,
-                .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
-                .jitterLast = camera->GetLastJitter(),
-                .jitterCurrent = camera->GetJitter(),
-                .cameraLocation = vec4(camera->location, 0.0f),
-                .cameraDirection = vec4(camera->direction, 0.0f),
-                .cameraUp = vec4(camera->up, 0.0f),
-                .cameraRight = vec4(camera->right, 0.0f),
-                .time = Clock::Get(),
-                .deltaTime = Clock::GetDelta()
+            auto globalUniforms = GlobalUniforms{
+                 .vMatrix = camera->viewMatrix,
+                 .pMatrix = camera->projectionMatrix,
+                 .ivMatrix = camera->invViewMatrix,
+                 .ipMatrix = camera->invProjectionMatrix,
+                 .pvMatrixLast = camera->GetLastJitteredMatrix(),
+                 .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
+                 .jitterLast = lastJitter,
+                 .jitterCurrent = jitter,
+                 .cameraLocation = vec4(camera->location, 0.0f),
+                 .cameraDirection = vec4(camera->direction, 0.0f),
+                 .cameraUp = vec4(camera->up, 0.0f),
+                 .cameraRight = vec4(camera->right, 0.0f),
+                 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+                 .planetRadius = scene->sky.planetRadius,
+                 .time = Clock::Get(),
+                 .deltaTime = Clock::GetDelta(),
+                 .frameCount = frameCount
             };
 
+            lastJitter = jitter;
+
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 0);
+
+            std::vector<Ref<Graphics::Image>> images;
+            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
+            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 3);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
+            commandList->BindSampler(globalSampler, 1, 13);
+            commandList->BindBuffers(triangleBuffers, 0, 1);
+            commandList->BindSampledImages(images, 0, 4);
+
+            if (device->support.hardwareRayTracing) {
+                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+            }
+            else {
+                commandList->BindBuffers(blasBuffers, 0, 0);
+                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            }
 
             Graphics::Profiler::EndQuery();
+
+            // No probe filtering required
+            if (scene->sky.atmosphere) {
+                atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
+            }
 
             pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
 
-            Graphics::Profiler::BeginQuery("Post processing");
+            if (pathTracingRenderer.realTime) {
+                taaRenderer.Render(viewport, target, camera, scene, commandList);
 
-            commandList->BeginRenderPass(device->swapChain, true);
+                postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+            }
+            else {
+                Graphics::Profiler::BeginQuery("Post processing");
+
+                if (device->swapChain->isComplete) {
+                    commandList->BeginRenderPass(device->swapChain, true);
+
+                    textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
+                        0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
+
+                    commandList->EndRenderPass();
+                }
+
+                Graphics::Profiler::EndQuery();
+            }
             
-            textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
-            commandList->EndRenderPass();
-
-            Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
 
             commandList->EndCommands();
@@ -785,6 +859,51 @@ namespace Atlas {
 
         }
 
+        void MainRenderer::CreateGlobalDescriptorSetLayout() {
+
+            if (!device->support.bindless)
+                return;
+
+            auto samplerDesc = Graphics::SamplerDesc {
+                .filter = VK_FILTER_LINEAR,
+                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .maxLod = 12,
+                .anisotropicFiltering = true
+            };
+            globalSampler = device->CreateSampler(samplerDesc);
+
+            auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
+                .bindings = {
+                    {
+                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .descriptorCount = 8192, .bindless = true
+                    },
+                    {
+                        .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .descriptorCount = 16384, .bindless = true
+                    }
+                },
+                .bindingCount = 5
+            };
+            globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
+
+            PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);
+
+        }
+
         void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
 
             auto globalUniforms = GlobalUniforms {
@@ -843,7 +962,6 @@ namespace Atlas {
             }
 
             auto meshes = scene->GetMeshes();
-
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded() || !mesh->impostor) continue;
 
@@ -970,6 +1088,46 @@ namespace Atlas {
 
         }
 
+        void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+            std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
+            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
+
+            if (!device->support.bindless)
+                return;
+
+            blasBuffers.resize(scene->meshIdToBindlessIdx.size());
+            triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
+            bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
+            triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
+
+            for (const auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
+                if (!scene->rootMeshMap.contains(meshId)) continue;
+
+                const auto& mesh = scene->rootMeshMap[meshId].mesh;
+
+                auto blasBuffer = mesh->blasNodeBuffer.Get();
+                auto triangleBuffer = mesh->triangleBuffer.Get();
+                auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
+                auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
+
+                AE_ASSERT(triangleBuffer != nullptr);
+
+                blasBuffers[idx] = blasBuffer;
+                triangleBuffers[idx] = triangleBuffer;
+                bvhTriangleBuffers[idx] = bvhTriangleBuffer;
+                triangleOffsetBuffers[idx] = triangleOffsetBuffer;
+            }
+
+            images.resize(scene->textureToBindlessIdx.size());
+
+            for (const auto& [texture, idx] : scene->textureToBindlessIdx) {
+
+                images[idx] = texture->image;
+
+            }
+
+        }
+
         void MainRenderer::FillRenderList(Scene::Scene *scene, Atlas::Camera *camera) {
 
             renderList.NewFrame();
@@ -1030,7 +1188,7 @@ namespace Atlas {
 
             uint32_t groupCount = res / 8;
 
-            commandList->BindImage(dfgPreintegrationTexture.image, 0, 0);
+            commandList->BindImage(dfgPreintegrationTexture.image, 3, 0);
             commandList->Dispatch(groupCount, groupCount, 1);
 
             barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

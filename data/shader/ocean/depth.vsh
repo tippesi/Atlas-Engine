@@ -44,14 +44,14 @@ void main() {
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
     
-    float distanceToCamera = distance(fPosition.xyz, globalData.cameraLocation.xyz);
+    float distanceToCamera = distance(fPosition.xyz, globalData[0].cameraLocation.xyz);
 
     float perlinScale, shoreScaling;
     vec3 normalShoreWave;
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     
-    vec3 position = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
-    vec4 fClipSpace = globalData.pMatrix * vec4(position, 1.0);
+    vec3 position = vec3(globalData[0].vMatrix * vec4(fPosition, 1.0));
+    vec4 fClipSpace = globalData[0].pMatrix * vec4(position, 1.0);
     
     gl_Position = fClipSpace;
     

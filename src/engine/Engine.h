@@ -29,6 +29,11 @@ namespace Atlas {
          * @note This path must be relative to the asset directory
          */
         std::string shaderDirectory = "shader";
+
+        /**
+         * Configures which messages of the validation layers to log
+         */
+        Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
     };
 
     class Engine {

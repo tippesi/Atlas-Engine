@@ -1,8 +1,11 @@
 #include "Instance.h"
+#include "StructureChainBuilder.h"
 #include "../Log.h"
 
 #include <volk.h>
 #include <set>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_macos.h>
 
 namespace Atlas {
 
@@ -10,14 +13,14 @@ namespace Atlas {
 
         Instance* Instance::DefaultInstance = nullptr;
 
-        Instance::Instance(const std::string &instanceName, bool enableValidationLayers) :
-            name(instanceName), validationLayersEnabled(enableValidationLayers) {
+        Instance::Instance(const InstanceDesc& desc) :  name(desc.instanceName), 
+            validationLayersEnabled(desc.enableValidationLayers), validationLayerSeverity(desc.validationLayerSeverity) {
 
             VK_CHECK(volkInitialize());
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            appInfo.pApplicationName = instanceName.c_str();
+            appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -26,16 +29,20 @@ namespace Atlas {
             LoadSupportedLayersAndExtensions();
 
             auto requiredExtensions = extensionNames;
-#ifdef AE_OS_MACOS
-            requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#ifdef AE_HEADLESS
+            AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
+            requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 #endif
 
+            CheckExtensionSupport(requiredExtensions);
+
             const std::vector<const char*> validationLayers = {
-                    "VK_LAYER_KHRONOS_validation"
+                    "VK_LAYER_KHRONOS_validation",
             };
 
-            if (enableValidationLayers && !CheckValidationLayerSupport(validationLayers)) {
-                return;
+            if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
+                Log::Warning("Required validation layers were not found. Disabling validation layers");
+                validationLayersEnabled = false;
             }
 
             VkInstanceCreateInfo createInfo{};
@@ -43,7 +50,9 @@ namespace Atlas {
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
 #ifdef AE_OS_MACOS
-            createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+                createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+            }
 #endif
 
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
@@ -56,25 +65,27 @@ namespace Atlas {
             VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
             VkValidationFeaturesEXT validationFeatures = {};
 
-            if (enableValidationLayers) {
+            StructureChainBuilder structureChainBuilder(createInfo);
+
+            if (validationLayersEnabled) {
                 createInfo.enabledLayerCount = uint32_t(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
 
-                createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+                structureChainBuilder.Append(debugCreateInfo);
 
-#ifdef AE_BUILDTYPE_DEBUG
+#ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
                 validationFeatures.enabledValidationFeatureCount = 1;
                 validationFeatures.pEnabledValidationFeatures = enables;
 
-                debugCreateInfo.pNext = &validationFeatures;
+                structureChainBuilder.Append(validationFeatures);                
 #endif
             }
             else {
                 createInfo.enabledLayerCount = 0;
             }
 
-            VK_CHECK(vkCreateInstance(&createInfo, nullptr, &instance));
+            VK_CHECK_MESSAGE(vkCreateInstance(&createInfo, nullptr, &instance), "Error creating instance");
 
             volkLoadInstance(instance);
 
@@ -124,6 +135,20 @@ namespace Atlas {
 
         }
 
+        Surface* Instance::CreateHeadlessSurface() {
+
+            bool success = false;
+            auto surface = new Surface(this, success);
+            if (!success) {
+                return nullptr;
+            }
+
+            surfaces.push_back(surface);
+
+            return surface;
+
+        }
+
         void Instance::LoadSupportedLayersAndExtensions() {
 
             unsigned int extensionCount = 0;
@@ -138,6 +163,7 @@ namespace Atlas {
                     std::string(extensionProperty.extensionName) == "VK_LUNARG_direct_driver_loading")
                     continue;
                 extensionNames.push_back(extensionProperty.extensionName);
+                supportedExtensions.insert(extensionProperty.extensionName);
             }
 
             unsigned int layerCount = 0;
@@ -153,13 +179,29 @@ namespace Atlas {
 
         bool Instance::CheckExtensionSupport(const std::vector<const char*>& extensionNames) {
 
-            return CheckRequiredVector(this->extensionNames, extensionNames);
+            std::vector<std::string> availableElements(this->extensionNames.begin(), this->extensionNames.end());
+            std::set<std::string> requiredElements(extensionNames.begin(), extensionNames.end());
+
+            for (const auto& element : availableElements) {
+                requiredElements.erase(element);
+            }
+
+            AE_ASSERT(requiredElements.empty() && "Not all required instance extensions were found");
+
+            return requiredElements.empty();
 
         }
 
         bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayerNames) {
 
-            return CheckRequiredVector(this->layerNames, validationLayerNames);
+            std::vector<std::string> availableElements(this->layerNames.begin(), this->layerNames.end());
+            std::set<std::string> requiredElements(validationLayerNames.begin(), validationLayerNames.end());
+
+            for (const auto& element : availableElements) {
+                requiredElements.erase(element);
+            }
+
+            return requiredElements.empty();
 
         }
 
@@ -180,33 +222,25 @@ namespace Atlas {
 
         VkDebugUtilsMessengerCreateInfoEXT Instance::GetDebugMessengerCreateInfo() {
 
+            int32_t allowedSeverity = static_cast<int32_t>(validationLayerSeverity);
+
             VkDebugUtilsMessengerCreateInfoEXT createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            if (allowedSeverity <= 1) {
+                createInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+            }
+            if (allowedSeverity <= 0) {
+                createInfo.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+            }
+
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
-
-        }
-
-        bool Instance::CheckRequiredVector(const std::vector<const char *> &available,
-                                           const std::vector<const char *> &required) {
-
-            std::vector<std::string> availableElements(available.begin(), available.end());
-            std::set<std::string> requiredElements(required.begin(), required.end());
-
-            for (const auto& element : availableElements) {
-                requiredElements.erase(element);
-            }
-            assert(requiredElements.empty() && "Not all required elements were found");
-
-            return requiredElements.empty();
 
         }
 
@@ -217,10 +251,6 @@ namespace Atlas {
                 void *pUserData) {
 
             int32_t logType = Log::Type::TYPE_MESSAGE, logSeverity = Log::Severity::SEVERITY_LOW;
-
-            // Filter notifications
-            //if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-            //    return VK_FALSE;
 
             std::string output = "Vulkan debug log:\n";
             output.append(pCallbackData->pMessage);
@@ -248,6 +278,14 @@ namespace Atlas {
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: output.append("Verbose");
                     logSeverity = Log::Severity::SEVERITY_LOW; break;
                 default: break;
+            }
+
+            // Ignore errors, might happen if the device just provides 4 possible descriptor set locations
+            // (This layer uses it's own descriptor set and engine uses 4 already)
+            if (pCallbackData->pMessageIdName != nullptr &&
+                std::string(pCallbackData->pMessageIdName) == "UNASSIGNED-DEBUG-PRINTF") {
+                logType = Log::Type::TYPE_WARNING;
+                logSeverity = Log::Severity::SEVERITY_MEDIUM;
             }
 
             switch (logType) {

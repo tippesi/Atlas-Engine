@@ -4,6 +4,7 @@
 
 #include <../common/random.hsh>
 #include <../common/utility.hsh>
+#include <../common/normalencode.hsh>
 #include <../common/flatten.hsh>
 #include <../common/PI.hsh>
 
@@ -14,7 +15,16 @@
 
 layout (local_size_x = 32) in;
 
+#ifdef REALTIME
+layout (set = 3, binding = 1, r32ui) uniform uimage2DArray frameAccumImage;
+layout (set = 3, binding = 5, rg16f) writeonly uniform image2D velocityImage;
+layout (set = 3, binding = 6, r32f) writeonly uniform image2D depthImage;
+layout (set = 3, binding = 7, rg16f) writeonly uniform image2D normalImage;
+layout (set = 3, binding = 8, r16ui) writeonly uniform uimage2D materialIdxImage;
+layout (set = 3, binding = 9, rgba8) writeonly uniform image2D albedoImage;
+#else
 layout (set = 3, binding = 1, rgba8) writeonly uniform image2D outputImage;
+#endif
 
 /*
 Except for image variables qualified with the format qualifiers r32f, r32i, and r32ui, 
@@ -31,11 +41,13 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     int bounceCount;
     float seed;
     float exposure;
+    int samplesPerFrame;
+    float maxRadiance;
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
 
-void EvaluateBounce(inout Ray ray, inout RayPayload payload);
+Surface EvaluateBounce(inout Ray ray, inout RayPayload payload);
 vec3 EvaluateDirectLight(inout Surface surface);
 void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayload payload);
 float CheckVisibility(Surface surface, float lightDistance);
@@ -53,27 +65,72 @@ void main() {
         if (Uniforms.bounceCount > 0)
             payload = ReadRayPayload();
         
-        ivec2 pixel = Unflatten2D(ray.ID, Uniforms.resolution);
+        ivec2 pixel = Unflatten2D(ray.ID / Uniforms.samplesPerFrame, Uniforms.resolution);
         
-        EvaluateBounce(ray, payload);
-        
+        Surface surface = EvaluateBounce(ray, payload);
+
         vec4 accumColor = vec4(0.0);
 
         float energy = dot(payload.throughput, vec3(1.0));
+
+#ifdef REALTIME
+        // Write out material information and velocity into a g-buffer
+        if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
+            Instance instance = bvhInstances[ray.hitInstanceID];
+            mat4 lastMatrix = mat4(transpose(instanceLastMatrices[ray.hitInstanceID]));
+
+            vec3 pos = ray.hitID >= 0 ? surface.P : ray.origin + ray.direction * ray.hitDistance;
+
+            // As a reminder: The current inverse matrix is also transposed
+            vec3 lastPos = vec3(lastMatrix * vec4(vec4(pos, 1.0) * instance.inverseMatrix, 1.0));
+
+            vec4 viewSpacePos = globalData[0].vMatrix * vec4(pos, 1.0);
+            vec4 projPositionCurrent = globalData[0].pMatrix * viewSpacePos;
+            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(lastPos, 1.0);
+
+            vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
+            vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
+
+            vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
+            imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
+
+            imageStore(depthImage, pixel, vec4(viewSpacePos.z, 0.0, 0.0, 0.0));
+            imageStore(materialIdxImage, pixel, uvec4(surface.material.ID, 0.0, 0.0, 0.0));
+            imageStore(normalImage, pixel, vec4(EncodeNormal(surface.geometryNormal), 0.0, 0.0));
+        }
+#endif
         
-        if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {            
+        if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
+#ifndef REALTIME
             if (Uniforms.sampleCount > 0)
                 accumColor = imageLoad(inAccumImage, pixel);
-            
-            accumColor += vec4(payload.radiance, 1.0);            
+
+            accumColor += vec4(payload.radiance, 1.0);
             imageStore(outAccumImage, pixel, accumColor);
-            
+
             vec3 color = accumColor.rgb * Uniforms.exposure / float(Uniforms.sampleCount + 1);
             color = vec3(1.0) - exp(-color);
             //color = color / (vec3(1.0) + color);
 
             imageStore(outputImage, pixel,
                 vec4(pow(color, vec3(gamma)), 1.0));
+#else
+            if (Uniforms.samplesPerFrame == 1) {
+                imageStore(frameAccumImage, ivec3(pixel, 0), uvec4(floatBitsToUint(payload.radiance.r)));
+                imageStore(frameAccumImage, ivec3(pixel, 1), uvec4(floatBitsToUint(payload.radiance.g)));
+                imageStore(frameAccumImage, ivec3(pixel, 2), uvec4(floatBitsToUint(payload.radiance.b)));
+            }
+            else {
+                uint maxValuePerSample = 0xFFFFFFFF / uint(Uniforms.samplesPerFrame);
+
+                vec3 normalizedRadiance = clamp(payload.radiance / Uniforms.maxRadiance, vec3(0.0), vec3(1.0));
+                uvec3 quantizedRadiance = clamp(uvec3(normalizedRadiance * float(maxValuePerSample)), uvec3(0u), uvec3(maxValuePerSample));
+
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
+                imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
+            }
+#endif
         }
         else {
             WriteRay(ray, payload);
@@ -82,7 +139,9 @@ void main() {
 
 }
 
-void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
+Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
+    
+    Surface surface;
     
     // If we didn't find a triangle along the ray,
     // we add the contribution of the environment map
@@ -91,12 +150,13 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb * 
             payload.throughput, vec3(10.0));
         payload.throughput = vec3(0.0);
-        return;    
+        return surface;    
     }
     
     // Unpack the compressed triangle and extract surface parameters
-    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-    Surface surface = GetSurfaceParameters(tri, ray, true, 0);
+    Instance instance = GetInstance(ray);
+    Triangle tri = GetTriangle(ray, instance);
+    surface = GetSurfaceParameters(instance, tri, ray, true, 0);
 
     // If we hit an emissive surface we need to terminate the ray
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
@@ -116,7 +176,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // will be heavily biased or not there entirely. Better lobe
     // selection etc. helps
     if (Uniforms.bounceCount > 0) {
-        const float radianceLimit = 25.0;
+        const float radianceLimit = 10.0;
         float radianceMax = max(max(radiance.r, 
             max(radiance.g, radiance.b)), radianceLimit);
         radiance *= radianceLimit / radianceMax;
@@ -124,7 +184,7 @@ void EvaluateBounce(inout Ray ray, inout RayPayload payload) {
 
     payload.radiance += radiance;
     EvaluateIndirectLight(surface, ray, payload);
-    return;
+    return surface;
 
 }
 
@@ -224,12 +284,11 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
     }
     
     ray.direction = normalize(brdfSample.L);
-    ray.inverseDirection = 1.0 / ray.direction;
     payload.throughput *= mat.ao;
 
     // Russain roulette, terminate rays with a chance of one percent
     float probability = clamp(max(payload.throughput.r,
-        max(payload.throughput.g, payload.throughput.b)), 0.01, 0.99);
+        max(payload.throughput.g, payload.throughput.b)), 0.1, 0.99);
 
     if (random(raySeed, curSeed) > probability) {
         payload.throughput = vec3(0.0);
@@ -251,7 +310,6 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

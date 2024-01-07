@@ -13,6 +13,10 @@
 
 namespace Atlas {
 
+    namespace Scene {
+        class RTData;
+    }
+
     namespace Mesh {
 
         enum class MeshMobility {
@@ -27,7 +31,11 @@ namespace Atlas {
             HostAccessBit = (1 << 1),
         } MeshUsageBits;
 
+        
+
         class Mesh {
+
+            friend Scene::RTData;
 
         public:
             Mesh() = default;
@@ -54,6 +62,14 @@ namespace Atlas {
              */
             void UpdateVertexArray();
 
+            /**
+             * Builds up BVH and fills raytracing related buffers
+             */
+            void BuildBVH(bool parallelBuild = true);
+
+
+            bool IsBVHBuilt() const;
+
             std::string name = "";
 
             MeshData data;
@@ -68,6 +84,11 @@ namespace Atlas {
             Buffer::VertexBuffer texCoordBuffer;
             Buffer::VertexBuffer tangentBuffer;
             Buffer::VertexBuffer colorBuffer;
+
+            Buffer::Buffer blasNodeBuffer;
+            Buffer::Buffer triangleBuffer;
+            Buffer::Buffer bvhTriangleBuffer;
+            Buffer::Buffer triangleOffsetBuffer;
 
             Ref<Graphics::BLAS> blas = nullptr;
 
@@ -88,6 +109,9 @@ namespace Atlas {
 
         private:
             bool isLoaded = false;
+
+            std::atomic_bool isBvhBuilt = false;
+            std::atomic_bool needsBvhRefresh = false;
 
         };
 

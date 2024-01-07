@@ -62,24 +62,24 @@ namespace Atlas {
                 auto& rpColorAttachment = rpColorAttachments[i];
                 auto& colorAttachment = colorAttachments[i];
 
-                assert(rpColorAttachment.isValid == colorAttachment.isValid && "Framebuffer color attachment \
+                AE_ASSERT(rpColorAttachment.isValid == colorAttachment.isValid && "Framebuffer color attachment \
                     to render pass color attachment mismatch");
                 if (!rpColorAttachment.isValid) continue;
 
-                assert(rpColorAttachment.imageFormat == colorAttachment.image->format && "Image format doesn't \
+                AE_ASSERT(rpColorAttachment.imageFormat == colorAttachment.image->format && "Image format doesn't \
                     match the format of the attachment in the render pass");
                 // Check if we want to write to this attachment
                 if (colorAttachment.isValid) {
-                    assert(colorAttachment.layer < colorAttachment.image->layers &&
+                    AE_ASSERT(colorAttachment.layer < colorAttachment.image->layers &&
                         "Image doesn't contain this layer");
                     imageViews.push_back(colorAttachment.image->attachmentViews[colorAttachment.layer]);
                 }
             }
 
-            assert(rpDepthAttachment.isValid == depthAttachment.isValid && "Framebuffer depth attachment \
+            AE_ASSERT(rpDepthAttachment.isValid == depthAttachment.isValid && "Framebuffer depth attachment \
                     to render pass depth attachment mismatch");
             if (depthAttachment.isValid) {
-                assert(depthAttachment.layer < depthAttachment.image->layers &&
+                AE_ASSERT(depthAttachment.layer < depthAttachment.image->layers &&
                        "Image doesn't contain this layer");
                 imageViews.push_back(depthAttachment.image->attachmentViews[depthAttachment.layer]);
             }
@@ -109,8 +109,8 @@ namespace Atlas {
 
         void FrameBuffer::ChangeColorAttachmentImage(const Ref<Image> &image, const uint32_t slot) {
 
-            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
-            assert(colorAttachments[slot].isValid && "Color attachment is not valid");
+            AE_ASSERT(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            AE_ASSERT(colorAttachments[slot].isValid && "Color attachment is not valid");
 
             colorAttachments[slot].image = image;
 
@@ -118,8 +118,8 @@ namespace Atlas {
 
         void FrameBuffer::ChangeColorAttachmentImage(const Ref<Image>& image, const uint32_t layer, const uint32_t slot) {
 
-            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
-            assert(colorAttachments[slot].isValid && "Color attachment is not valid");
+            AE_ASSERT(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            AE_ASSERT(colorAttachments[slot].isValid && "Color attachment is not valid");
 
             colorAttachments[slot].image = image;
             colorAttachments[slot].layer = layer;
@@ -128,7 +128,7 @@ namespace Atlas {
 
         void FrameBuffer::ChangeDepthAttachmentImage(const Ref<Image> &image) {
 
-            assert(depthAttachment.isValid && "Depth attachment is not valid");
+            AE_ASSERT(depthAttachment.isValid && "Depth attachment is not valid");
 
             depthAttachment.image = image;
 
@@ -136,7 +136,7 @@ namespace Atlas {
 
         Ref<Image> &FrameBuffer::GetColorImage(uint32_t slot) {
 
-            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            AE_ASSERT(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
 
             return colorAttachments[slot].image;
 

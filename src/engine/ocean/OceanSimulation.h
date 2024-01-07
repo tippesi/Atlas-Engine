@@ -40,17 +40,17 @@ namespace Atlas {
 
             float choppinessScale = 3.0f;
             float displacementScale = 4.0f;
-            float tiling = 64.0f;
+            float tiling = 20.0f;
 
             vec4 spectrumTilingFactors = vec4(1.0f, 3.0f, 6.0f, 9.0f);
             vec4 spectrumWeights = vec4(1.0f, 0.5f, 0.25f, 0.125f);
             vec4 spectrumFadeoutDistances = vec4(200.0f, 400.0f, 1000.0f, 4000.0f);
 
-            float waveAmplitude = 1.0f;
+            float waveAmplitude = 0.45e-3f;
             float waveSurpression = 0.001f;
 
             vec2 windDirection = vec2(0.8f, 0.6f);
-            float windSpeed = 60.0f;
+            float windSpeed = 100.0f;
             float windDependency = 0.9f;
 
             float foamTemporalWeight = 0.985f;

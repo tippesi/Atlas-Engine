@@ -20,25 +20,17 @@ namespace Atlas {
 
         const std::string ShaderStageFile::GetGlslCode(const std::vector<std::string>& macros) const {
 
-            auto device = GraphicsDevice::DefaultDevice;
-
             std::string glslCode = "";
             glslCode.append("#version 460\n\n");
 
-            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
-                glslCode.append("#define AE_TEXTURE_SHADOW_LOD\n");
-            }
+            auto envMacros = GetEnvironmentMacros();
 
-            if (device->support.shaderPrintf) {
-                glslCode.append("#define AE_SHADER_PRINTF\n");
-            }
-
-            if (device->support.hardwareRayTracing) {
-                glslCode.append("#define AE_HARDWARE_RAYTRACING\n");
+            for (const auto& macro : envMacros) {
+                glslCode.append("#define " + macro + "\n");
             }
 
             // Extensions have to come first
-            for (auto& extension : extensions) {
+            for (const auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
                     glslCode += ifdef + "\n";
                 glslCode += extension.extension + "\n";
@@ -46,7 +38,7 @@ namespace Atlas {
                     glslCode += "#endif\n";
             }
 
-            for (auto& macro : macros) {
+            for (const auto& macro : macros) {
                 glslCode.append("#define " + macro + "\n");
             }
 
@@ -54,6 +46,31 @@ namespace Atlas {
             glslCode.erase(std::remove(glslCode.begin(), glslCode.end(), '\r'), glslCode.end());
 
             return glslCode;
+
+        }
+
+        const std::vector<std::string> ShaderStageFile::GetEnvironmentMacros() const {
+
+            auto device = GraphicsDevice::DefaultDevice;
+
+            std::vector<std::string> macros;
+
+            if (Extensions::IsSupported("GL_EXT_texture_shadow_lod")) {
+                macros.push_back("AE_TEXTURE_SHADOW_LOD");
+            }
+            if (device->support.shaderPrintf) {
+                macros.push_back("AE_SHADER_PRINTF");
+            }
+
+            if (device->support.hardwareRayTracing) {
+                macros.push_back("AE_HARDWARE_RAYTRACING");
+            }
+
+            if (device->support.bindless) {
+                macros.push_back("AE_BINDLESS");
+            }
+
+            return macros;
 
         }
 
@@ -195,14 +212,14 @@ namespace Atlas {
             uint32_t allStageFlags = 0;
 
             std::vector<ShaderModule> shaderModules(stages.size());
-            modules.resize(stages.size());
+            modules.resize(stages.size(), VK_NULL_HANDLE);
             for (size_t i = 0; i < stages.size(); i++) {
                 auto& stage = stages[i];
 
                 bool isCompiled = false;
-                auto spirvBinary = ShaderCompiler::Compile(stage, macros, isCompiled);
+                auto spirvBinary = ShaderCompiler::Compile(stage, macros, true, isCompiled);
 
-                assert(isCompiled && "Shader compilation was unsuccessful");
+                AE_ASSERT(isCompiled && "Shader compilation was unsuccessful");
                 if (!isCompiled) return;
 
                 VkShaderModuleCreateInfo createInfo = {};
@@ -211,13 +228,10 @@ namespace Atlas {
                 createInfo.codeSize = spirvBinary.size() * sizeof(uint32_t);
                 createInfo.pCode = spirvBinary.data();
 
-                bool success = vkCreateShaderModule(device->device, &createInfo,
-                    nullptr, &modules[i]) == VK_SUCCESS;
-                assert(success && "Error creating shader module");
-                if (!success) {
-                    auto stream = Loader::AssetLoader::WriteFile("dump.txt", std::ios::out | std::ios::binary);
-                    stream.write(reinterpret_cast<char*>(spirvBinary.data()), spirvBinary.size() * sizeof(uint32_t));
-                    stream.close();
+                auto result = vkCreateShaderModule(device->device, &createInfo,
+                    nullptr, &modules[i]);
+                VK_CHECK_MESSAGE(result, "Error creating shader module");
+                if (result != VK_SUCCESS) {                    
                     return;
                 }
 
@@ -255,7 +269,7 @@ namespace Atlas {
                     for (uint32_t i = 0; i < set.bindingCount; i++) {
                         auto& binding = set.bindings[i];
                         if (bindings.contains(binding.hash)) {
-                            bindings[binding.hash].layoutBinding.stageFlags |= shaderModule.shaderStageFlag;
+                            bindings[binding.hash].binding.stageFlags |= shaderModule.shaderStageFlag;
                         }
                         else {
                             bindings[binding.hash] = binding;
@@ -268,25 +282,21 @@ namespace Atlas {
                 pushConstantRanges.push_back(range);
             }
 
+            DescriptorSetLayoutDesc layoutDesc[DESCRIPTOR_SET_COUNT];
             for (auto& [key, binding] : bindings) {
 
                 auto layoutIdx = sets[binding.set].bindingCount++;
 
-                auto idx = binding.layoutBinding.binding;
+                auto idx = binding.binding.bindingIdx;
                 sets[binding.set].bindings[idx] = binding;
-                sets[binding.set].layoutBindings[layoutIdx] = binding.layoutBinding;
 
+                layoutDesc[binding.set].bindings[layoutIdx] = binding.binding;
             }
 
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                VkDescriptorSetLayoutCreateInfo setInfo = {};
-                setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                setInfo.pNext = nullptr;
-                setInfo.bindingCount = sets[i].bindingCount;
-                setInfo.flags = 0;
-                setInfo.pBindings = sets[i].bindingCount ? sets[i].layoutBindings : VK_NULL_HANDLE;
+                layoutDesc[i].bindingCount = sets[i].bindingCount;
 
-                VK_CHECK(vkCreateDescriptorSetLayout(device->device, &setInfo, nullptr, &sets[i].layout))
+                sets[i].layout = device->CreateDescriptorSetLayout(layoutDesc[i]);
             }
 
             isComplete = true;
@@ -295,13 +305,9 @@ namespace Atlas {
 
         ShaderVariant::~ShaderVariant() {
 
-            if (!isComplete) return;
-
-            for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
-                vkDestroyDescriptorSetLayout(device->device, sets[i].layout, nullptr);
-            }
-
             for (auto module : modules) {
+                if (module == VK_NULL_HANDLE) continue;
+
                 vkDestroyShaderModule(device->device, module, nullptr);
             }
 
@@ -319,20 +325,48 @@ namespace Atlas {
 
         }
 
+        bool ShaderVariant::TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set) {
+
+            AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set index out of range");
+
+            if (set >= DESCRIPTOR_SET_COUNT ||
+                !layout->IsCompatible(sets[set].layout)) {
+                return false;
+            }
+
+            sets[set].layout = layout;
+            sets[set].bindingCount = uint32_t(layout->bindings.size());
+
+            for (size_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
+                sets[set].bindings[i].valid = false;
+            }
+            
+            for (size_t i = 0; i < layout->layoutBindings.size(); i++) {
+                const auto& binding = layout->bindings[i];
+
+                auto idx = binding.bindingIdx;
+                sets[set].bindings[idx].binding = binding;
+                sets[set].bindings[idx].valid = true;
+            }
+
+            return true;
+
+        }
+
         void ShaderVariant::GenerateReflectionData(ShaderModule &shaderModule, const std::vector<uint32_t>& spirvBinary) {
 
             SpvReflectShaderModule module;
             SpvReflectResult result = spvReflectCreateShaderModule(spirvBinary.size() * sizeof(uint32_t),
                 spirvBinary.data(), &module);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't create shader reflection module");
 
             uint32_t pushConstantCount = 0;
             result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, nullptr);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
 
             std::vector<SpvReflectBlockVariable*> pushConstants(pushConstantCount);
             result = spvReflectEnumeratePushConstantBlocks(&module, &pushConstantCount, pushConstants.data());
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve push constants");
 
             for (auto pushConstant : pushConstants) {
                 PushConstantRange range;
@@ -351,16 +385,16 @@ namespace Atlas {
 
             uint32_t descSetCount = 0;
             result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, nullptr);
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
             std::vector<SpvReflectDescriptorSet*> descSets(descSetCount);
             result = spvReflectEnumerateDescriptorSets(&module, &descSetCount, descSets.data());
-            assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+            AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
             for (auto descriptorSet : descSets) {
                 ShaderDescriptorSet bindGroup;
 
-                assert(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
+                AE_ASSERT(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
 
                 for(uint32_t i = 0; i < descriptorSet->binding_count; i++) {
                     auto descriptorBinding = descriptorSet->bindings[i];
@@ -369,23 +403,26 @@ namespace Atlas {
 
                     binding.name.assign(descriptorBinding->name);
                     binding.set = descriptorBinding->set;
-                    binding.size = descriptorBinding->block.size;
-                    binding.arrayElement = 0;
+                    
                     binding.valid = true;
 
-                    assert(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
+                    AE_ASSERT(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
 
-                    binding.layoutBinding.binding = descriptorBinding->binding;
-                    binding.layoutBinding.descriptorCount = descriptorBinding->count;
-                    binding.layoutBinding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
-                    binding.layoutBinding.stageFlags = shaderModule.shaderStageFlag;
+                    binding.binding.bindingIdx = descriptorBinding->binding;
+                    binding.binding.descriptorCount = descriptorBinding->count;
+                    binding.binding.descriptorType = (VkDescriptorType)descriptorBinding->descriptor_type;
+                    binding.binding.size = descriptorBinding->block.size;
+                    binding.binding.arrayElement = 0;
+                    binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
+                    binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
+                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
 
-                    binding.layoutBinding.descriptorType =
-                        binding.layoutBinding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.layoutBinding.descriptorType;
+                    binding.binding.descriptorType =
+                        binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : binding.binding.descriptorType;
 
                     HashCombine(binding.hash, binding.set);
-                    HashCombine(binding.hash, binding.layoutBinding.binding);
+                    HashCombine(binding.hash, binding.binding.bindingIdx);
 
                     bindGroup.bindings[i] = binding;
                     bindGroup.bindingCount++;
@@ -397,11 +434,11 @@ namespace Atlas {
             if (shaderModule.shaderStageFlag == VK_SHADER_STAGE_VERTEX_BIT) {
                 uint32_t inputVariableCount = 0;
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, nullptr);
-                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+                AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
                 std::vector<SpvReflectInterfaceVariable *> inputVariables(inputVariableCount);
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, inputVariables.data());
-                assert(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
+                AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
                 for (auto inputVariable: inputVariables) {
                     // Reject all build in variables

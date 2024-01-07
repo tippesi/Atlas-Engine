@@ -35,6 +35,7 @@ Triangle UnpackTriangle(PackedTriangle triangle) {
     
     tri.materialIndex = floatBitsToInt(triangle.d0.w);
     tri.endOfNode = triangle.d1.z > 0.0 ? true : false;
+    tri.opacity = triangle.d2.w;
     
     return tri;    
 }
@@ -49,8 +50,6 @@ Ray UnpackRay(PackedRay compressed) {
     ray.hitID = floatBitsToInt(compressed.hit.y);
     ray.hitDistance = compressed.hit.x;
     ray.hitInstanceID = floatBitsToInt(compressed.hit.z);
-    
-    ray.inverseDirection = 1.0 / ray.direction;
 
     return ray;
 }

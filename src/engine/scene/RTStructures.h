@@ -15,7 +15,7 @@ namespace Atlas {
         vec4 d2;
     };
 
-    struct BVHTriangle {
+    struct GPUBVHTriangle {
         vec4 v0;
         vec4 v1;
         vec4 v2;
@@ -44,6 +44,8 @@ namespace Atlas {
     };
 
     struct GPUMaterial {
+        int32_t ID;
+
         vec3 baseColor;
         vec3 emissiveColor;
 
@@ -59,13 +61,14 @@ namespace Atlas {
 
         int32_t invertUVs;
         int32_t twoSided;
+        int32_t useVertexColors;
 
-        GPUTexture baseColorTexture;
-        GPUTexture opacityTexture;
-        GPUTexture normalTexture;
-        GPUTexture roughnessTexture;
-        GPUTexture metalnessTexture;
-        GPUTexture aoTexture;
+        int32_t baseColorTexture = -1;
+        int32_t opacityTexture = -1;
+        int32_t normalTexture = -1;
+        int32_t roughnessTexture = -1;
+        int32_t metalnessTexture = -1;
+        int32_t aoTexture = -1;
     };
 
     struct GPUAABB {
@@ -76,10 +79,10 @@ namespace Atlas {
     struct GPUBVHInstance {
         mat3x4 inverseMatrix;
 
-        int32_t blasOffset;
-        int32_t triangleOffset;
+        int32_t meshOffset;
+        int32_t materialOffset;
 
-        int32_t padding0;
+        int32_t nextInstance;
         int32_t padding1;
     };
 
