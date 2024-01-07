@@ -39,7 +39,7 @@ namespace Atlas {
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
 
-            pathLastModified = GetModifiedTime(Loader::AssetLoader::GetFullPath(path), fileTime);
+            pathLastModified = AssetLoader::GetFileLastModifiedTime(Loader::AssetLoader::GetFullPath(path), fileTime);
             return pathLastModified > fileTime;
 
         }
@@ -59,7 +59,7 @@ namespace Atlas {
             std::stringstream shaderStream;
 
             if (mainFile)
-                lastModified = GetModifiedTime(Loader::AssetLoader::GetFullPath(filename), lastModified);
+                lastModified = AssetLoader::GetFileLastModifiedTime(Loader::AssetLoader::GetFullPath(filename), lastModified);
 
             shaderFile = Loader::AssetLoader::ReadFile(filename, std::ios::in);
 
@@ -117,7 +117,7 @@ namespace Atlas {
 
                     includes.push_back(includePath);
 
-                    auto includeLastModified = GetModifiedTime(includePath, lastModified);
+                    auto includeLastModified = AssetLoader::GetFileLastModifiedTime(includePath, lastModified);
                     lastModified = includeLastModified > lastModified ? includeLastModified : lastModified;
                     auto includeCode = ReadShaderFile(includePath, false, includes, extensions, lastModified);
 
@@ -221,24 +221,6 @@ namespace Atlas {
             }
 
             return lines;
-
-        }
-
-        std::filesystem::file_time_type ShaderLoader::GetModifiedTime(const std::string& path,
-            const std::filesystem::file_time_type defaultTime) {
-
-            const int32_t tryCount = 2;
-
-            for (int32_t i = 0; i < tryCount; i++) {
-                try {
-                    return std::filesystem::last_write_time(path);
-                }
-                catch (...) {}
-            }
-
-            Log::Warning("Couldn't access shader for reload checking: " + path);
-
-            return defaultTime;
 
         }
 
