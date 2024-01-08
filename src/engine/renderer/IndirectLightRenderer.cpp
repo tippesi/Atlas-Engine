@@ -30,10 +30,7 @@ namespace Atlas {
             auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
             auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
             auto ssgiEnabled = ssgi && ssgi->enable && (!ssgi->rt || rtDataValid);
-
-            bool ssgiAo = ssgi && ssgi->enable && ssgi->enableAo;
-            aoEnabled |= ssgiAo;
-            
+            bool ssgiAo = ssgi && ssgi->enable && ssgi->enableAo;            
 
             pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
             pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
@@ -56,11 +53,11 @@ namespace Atlas {
             }
 
             auto uniforms = Uniforms{
-                .aoEnabled = aoEnabled ? 1 : 0,
+                .aoEnabled = aoEnabled || ssgiAo ? 1 : 0,
                 .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES : 
                     target->GetAOResolution() == RenderResolution::HALF_RES,
                 .reflectionEnabled = reflectionEnabled ? 1 : 0,
-                .aoStrength = aoEnabled ? (ssgiAo ? ssgi->aoStrength / sqrt(ssgi->radius) : ao->strength) : 1.0f,
+                .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ssgi->aoStrength / sqrt(ssgi->radius) : ao->strength) : 1.0f,
                 .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->cubemap.image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
