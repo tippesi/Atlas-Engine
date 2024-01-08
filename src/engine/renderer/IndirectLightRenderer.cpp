@@ -57,7 +57,7 @@ namespace Atlas {
                 .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES : 
                     target->GetAOResolution() == RenderResolution::HALF_RES,
                 .reflectionEnabled = reflectionEnabled ? 1 : 0,
-                .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ssgi->aoStrength / sqrt(ssgi->radius) : ao->strength) : 1.0f,
+                .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ao->strength : ssgi->aoStrength / sqrt(ssgi->radius)) : 1.0f,
                 .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->cubemap.image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
