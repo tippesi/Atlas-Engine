@@ -58,6 +58,8 @@ void App::LoadContent() {
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
     scene->ao->rt = true;
+    // Use SSGI by default
+    scene->ao->enable = false; 
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
     scene->reflection->useShadowMap = true;
 

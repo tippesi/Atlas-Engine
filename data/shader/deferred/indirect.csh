@@ -90,6 +90,8 @@ float UpsampleAo2x(float referenceDepth) {
 
     float invocationDepths[9];
 
+    referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
+
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
         invocationDepths[i] = depths[sharedMemoryOffset];
@@ -222,19 +224,24 @@ void main() {
         indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 
+#ifdef SSGI
+        vec4 ssgi = UpsampleGi2x(depth, texCoord);
+#endif
+
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef AO
         float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ?
             UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
-#ifdef SSGI
-        vec4 ssgi = UpsampleGi2x(depth, texCoord);
-        occlusionFactor = ssgi.a;
-#endif
+
         indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
-#ifdef SSGI
-        indirect += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
 #endif
+#ifdef SSGI
+        // Only apply SSGI ao if normal AO is turned off
+#ifndef AO
+        indirect *= vec3(pow(ssgi.a, Uniforms.aoStrength));
+#endif
+        indirect += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
 #endif
 
     }
