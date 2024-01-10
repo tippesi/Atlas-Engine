@@ -29,13 +29,9 @@ namespace Atlas {
 
             RTData(Scene* scene);
 
-            void Build();
-
             void Update(bool updateTriangleLights);
 
-            void UpdateMaterials(bool updateTextures = false);
-
-            void UpdateTextures();
+            void UpdateMaterials();
 
             bool IsValid();
 
@@ -46,25 +42,19 @@ namespace Atlas {
                 Ref<Graphics::BLAS> blas = nullptr;
 
                 int32_t offset = 0;
-                int32_t triangleOffset = 0;
+                int32_t materialOffset = 0;
+
+                int32_t idx = 0;
 
                 std::vector<GPULight> triangleLights;
                 std::vector<uint32_t> instanceIndices;
                 std::vector<mat4x3> matrices;
             };
 
-            void UpdateMaterials(std::vector<GPUMaterial>& materials, bool updateTextures);
+            void UpdateMaterials(std::vector<GPUMaterial>& materials);
 
-            GPUTexture CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices);
-
-            GPUTextureLevel CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice);
-
-            void BuildForSoftwareRayTracing();
-
-            void BuildForHardwareRayTracing();
-
-            std::vector<GPUBVHInstance> UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-                std::vector<Volume::AABB>& actorAABBs);
+            void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+                std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
             void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
 
@@ -77,29 +67,18 @@ namespace Atlas {
             Ref<Graphics::TLAS> tlas;
             std::vector<Ref<Graphics::BLAS>> blases;
 
-            Buffer::Buffer triangleBuffer;
-            Buffer::Buffer bvhTriangleBuffer;
             Buffer::Buffer materialBuffer;
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
-            Buffer::Buffer blasNodeBuffer;
-            Buffer::Buffer geometryTriangleOffsetBuffer;
-
-            Texture::TextureAtlas baseColorTextureAtlas;
-            Texture::TextureAtlas opacityTextureAtlas;
-            Texture::TextureAtlas normalTextureAtlas;
-            Texture::TextureAtlas roughnessTextureAtlas;
-            Texture::TextureAtlas metalnessTextureAtlas;
-            Texture::TextureAtlas aoTextureAtlas;
+            Buffer::Buffer lastMatricesBuffer;
 
             std::vector<GPULight> triangleLights;
 
-            std::unordered_map<Material*, int32_t> materialAccess;
             std::unordered_map<size_t, MeshInfo> meshInfos;
 
             bool hardwareRayTracing = false;
 
-            std::atomic_bool isValid = false;
+            std::atomic_bool isValid = true;
             std::mutex mutex;
 
         };

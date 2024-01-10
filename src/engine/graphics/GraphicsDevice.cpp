@@ -21,10 +21,7 @@ namespace Atlas {
             instance = Instance::DefaultInstance;
 
             std::vector<const char*> requiredExtensions = {
-                    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-#ifdef AE_OS_MACOS
-                    , "VK_KHR_portability_subset"
-#endif
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             };
 
             std::vector<const char*> optionalExtensions = {
@@ -32,27 +29,29 @@ namespace Atlas {
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                 VK_KHR_RAY_QUERY_EXTENSION_NAME
+#ifdef AE_BINDLESS
+                , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
+#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+#endif
+#ifdef AE_OS_MACOS
+                , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
 
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
 
-            GetPhysicalDeviceProperties(physicalDevice);
+            auto availableOptionalExtension = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
+            requiredExtensions.insert(requiredExtensions.end(), availableOptionalExtension.begin(),
+                availableOptionalExtension.end());
 
-            auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
-            requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
-                optionalExtensionOverlap.end());
+            GetPhysicalDeviceProperties(physicalDevice);            
 
             auto queueCreateInfos = CreateQueueInfos();
 
             BuildPhysicalDeviceFeatures(physicalDevice);
-
-#ifdef AE_OS_MACOS
-            setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-#endif
 
             // Uses the physical device structures generated above
             CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
@@ -92,62 +91,67 @@ namespace Atlas {
             // We assume everything else is terminated by now, so this is the only thread still alive
             // In that case we don't lock all the mutexes
             for (auto& tlasRef : tlases.data) {
-                assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
+                AE_ASSERT(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
                 tlasRef.reset();
             }
 
             for (auto& blasRef : blases.data) {
-                assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
+                AE_ASSERT(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
                 blasRef.reset();
             }
 
             for (auto& pipelineRef : pipelines.data) {
-                assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
+                AE_ASSERT(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
             }
 
             for (auto& frameBufferRef : frameBuffers.data) {
-                assert(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
                 frameBufferRef.reset();
             }
 
             for (auto& renderPassRef : renderPasses.data) {
-                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
+                AE_ASSERT(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
                 renderPassRef.reset();
             }
 
             for (auto& shaderRef : shaders.data) {
-                assert(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
+                AE_ASSERT(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
                 shaderRef.reset();
             }
 
             for (auto& bufferRef : buffers.data) {
-                assert(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
                 bufferRef.reset();
             }
 
             for (auto& multiBufferRef : multiBuffers.data) {
-                assert(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
+                AE_ASSERT(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
                 multiBufferRef.reset();
             }
 
             for (auto& imageRef : images.data) {
-                assert(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
+                AE_ASSERT(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
                 imageRef.reset();
             }
 
             for (auto& samplerRef : samplers.data) {
-                assert(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
+                AE_ASSERT(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
                 samplerRef.reset();
             }
 
             for (auto& poolRef : descriptorPools.data) {
-                assert(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
+                AE_ASSERT(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
+            for (auto& descLayoutRef : descriptorSetLayouts.data) {
+                AE_ASSERT(descLayoutRef.use_count() == 1 && "Descriptor layout wasn't deallocated or allocated wrongly");
+                descLayoutRef.reset();
+            }
+
             for (auto& poolRef : queryPools.data) {
-                assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
+                AE_ASSERT(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
@@ -161,12 +165,11 @@ namespace Atlas {
         SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, ColorSpace preferredColorSpace) {
 
             auto nativeSurface = surface->GetNativeSurface();
-            auto nativeWindow = surface->GetNativeWindow();
 
             auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
 
             int32_t width, height;
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+            surface->GetExtent(width, height);
 
             windowWidth = width;
             windowHeight = height;
@@ -296,6 +299,17 @@ namespace Atlas {
 
         }
 
+        Ref<DescriptorSetLayout> GraphicsDevice::CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc) {
+
+            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+
+            std::lock_guard<std::mutex> guard(descriptorSetLayouts.mutex);
+            descriptorSetLayouts.data.push_back(layout);
+
+            return layout;
+
+        }
+
         Ref<DescriptorPool> GraphicsDevice::CreateDescriptorPool() {
 
             auto pool = std::make_shared<DescriptorPool>(this);
@@ -367,10 +381,10 @@ namespace Atlas {
 
         void GraphicsDevice::SubmitCommandList(CommandList *cmd, VkPipelineStageFlags waitStage, ExecutionOrder order) {
 
-            assert(!cmd->frameIndependent && "Submitted command list is frame independent."
+            AE_ASSERT(!cmd->frameIndependent && "Submitted command list is frame independent."
                 && "Please use the flush method instead");
 
-            assert(swapChain->isComplete && "Swap chain should be complete."
+            AE_ASSERT(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
 
             auto frame = GetFrameData();
@@ -393,7 +407,7 @@ namespace Atlas {
 
         void GraphicsDevice::FlushCommandList(CommandList *cmd) {
 
-            assert(cmd->frameIndependent && "Flushed command list is not frame independent."
+            AE_ASSERT(cmd->frameIndependent && "Flushed command list is not frame independent."
                    && "Please use the submit method instead");
 
             VkSubmitInfo submit = {};
@@ -449,7 +463,7 @@ namespace Atlas {
                 allListSubmitted &= commandList->isSubmitted;
             }
 
-            assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
+            AE_ASSERT(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
             auto presenterQueue = SubmitAllCommandLists();
@@ -642,7 +656,7 @@ namespace Atlas {
             }
 
             auto foundSuitableDevice = candidates.rbegin()->first > 0;
-            assert(foundSuitableDevice && "No suitable device found");
+            AE_ASSERT(foundSuitableDevice && "No suitable device found");
             // Check if the best candidate is suitable at all
             if (foundSuitableDevice) {
                 physicalDevice = candidates.rbegin()->second;
@@ -654,13 +668,13 @@ namespace Atlas {
             {
                 FindQueueFamilies(physicalDevice, surface);
                 auto completeIndices = queueFamilyIndices.IsComplete();
-                assert(completeIndices && "No valid queue family found");
+                AE_ASSERT(completeIndices && "No valid queue family found");
                 if (!completeIndices) {
                     return false;
                 }
 
                 auto extensionsSupported = CheckDeviceExtensionSupport(physicalDevice, requiredExtensions);
-                assert(extensionsSupported && "Some required extensions are not supported");
+                AE_ASSERT(extensionsSupported && "Some required extensions are not supported");
                 if (!extensionsSupported) {
                     return false;
                 }
@@ -675,6 +689,8 @@ namespace Atlas {
             const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions) {
 
             int32_t score = 0;
+
+            
 
             VkPhysicalDeviceProperties physicalDeviceProperties;
             VkPhysicalDeviceFeatures physicalDeviceFeatures;
@@ -876,6 +892,8 @@ namespace Atlas {
             std::vector<const char*> extensionOverlap;
             for (const auto extensionName : extensionNames) {
                 for (const auto& extension : availableExtensions) {
+                    supportedExtensions.insert(extension.extensionName);
+
                     if (std::string(extension.extensionName) == std::string(extensionName)) {
                         extensionOverlap.push_back(extensionName);
                     }
@@ -907,14 +925,22 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+            deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
 
-            propertiesBuilder.Append(rayTracingPipelineProperties);
-            propertiesBuilder.Append(accelerationStructureProperties);
+            propertiesBuilder.Append(deviceProperties11);
+            propertiesBuilder.Append(deviceProperties12);
+
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+                propertiesBuilder.Append(rayTracingPipelineProperties);
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
+                propertiesBuilder.Append(accelerationStructureProperties);
 
             vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
@@ -932,12 +958,6 @@ namespace Atlas {
             createInfo.enabledExtensionCount = uint32_t(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
-            std::set<std::string> availableExtensions;
-
-            for (auto extensionName : extensions) {
-                availableExtensions.insert(extensionName);
-            }
-
             StructureChainBuilder featureBuilder(createInfo);
 
             VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature = {};
@@ -945,20 +965,20 @@ namespace Atlas {
 
             VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeature = {};
             rtPipelineFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-            
+
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
             // Check for ray tracing extension support
-            if (availableExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
-               
+
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
@@ -966,32 +986,42 @@ namespace Atlas {
                 support.hardwareRayTracing = true;
             }
 
-            if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
                 support.shaderPrintf = true;
             }
 
+#ifdef AE_BINDLESS
+            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+                features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
+                support.bindless = true;
+            }
+#endif
+
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-            // This is hacked since I can't get it to work otherwise
-            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
-            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
-            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
 
-            // This feature struct is the last one in the pNext chain for now
-            featureBuilder.Append(portabilityFeatures);
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+                // This is hacked since I can't get it to work otherwise
+                // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
+                portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
+                portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+
+                // This feature struct is the last one in the pNext chain for now
+                featureBuilder.Append(portabilityFeatures);
+            }
 #endif
             featureBuilder.Append(features);
+            featureBuilder.Append(features11);
+            featureBuilder.Append(features12);
 
-            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
+            VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 
         }
 
         bool GraphicsDevice::CheckForWindowResize() {
 
-            auto nativeWindow = surface->GetNativeWindow();
-
             int32_t width, height;
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+            surface->GetExtent(width, height);
 
             if (width != windowWidth || height != windowHeight) {
                 windowWidth = width;
@@ -1047,6 +1077,7 @@ namespace Atlas {
             DeleteOutdatedResources<MultiBuffer>(multiBuffers);
             DeleteOutdatedResources<Image>(images);
             DeleteOutdatedResources<Sampler>(samplers);
+            DeleteOutdatedResources<DescriptorSetLayout>(descriptorSetLayouts);
             DeleteOutdatedResources<DescriptorPool>(descriptorPools);
             DeleteOutdatedResources<QueryPool>(queryPools);
             DeleteOutdatedResources<BLAS>(blases);

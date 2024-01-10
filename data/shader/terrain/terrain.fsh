@@ -195,7 +195,7 @@ void main() {
         + 0.5 * PushConstants.normalTexelSize;
     vec3 norm = 2.0 * texture(normalMap, tex).rgb - 1.0;
 
-    geometryNormalFS = EncodeNormal(normalize(mat3(globalData.vMatrix) * norm));
+    geometryNormalFS = EncodeNormal(normalize(mat3(globalData[0].vMatrix) * norm));
     
 #ifdef MATERIAL_MAPPING
     // Normal mapping only for near tiles
@@ -220,15 +220,15 @@ void main() {
     vec3 normal = norm;
 #endif
     
-    normalFS = EncodeNormal(normalize(mat3(globalData.vMatrix) * normal));
+    normalFS = EncodeNormal(normalize(mat3(globalData[0].vMatrix) * normal));
     roughnessMetalnessAoFS = vec3(roughness, metalness, ao);
     
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData[0].jitterLast;
+    ndcC -= globalData[0].jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
     

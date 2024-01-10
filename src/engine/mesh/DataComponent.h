@@ -205,28 +205,28 @@ namespace Atlas {
                 switch(format) {
                     case ComponentFormat::UnsignedInt: return VK_FORMAT_R32_UINT;
                     case ComponentFormat::UnsignedShort: return VK_FORMAT_R16_UINT;
-                    default: assert(0 && "Invalid combination of formats");
+                    default: AE_ASSERT(0 && "Invalid combination of formats");
                 }
             }
             if constexpr(std::is_same_v<T, float>) {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16_SFLOAT;
-                    default: assert(0 && "Invalid combination of formats");
+                    default: AE_ASSERT(0 && "Invalid combination of formats");
                 }
             }
             if constexpr(std::is_same_v<T, vec2>) {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16_SFLOAT;
-                    default: assert(0 && "Invalid combination of formats");
+                    default: AE_ASSERT(0 && "Invalid combination of formats");
                 }
             }
             if constexpr(std::is_same_v<T, vec3>) {
                 switch(format) {
                     case ComponentFormat::Float: return VK_FORMAT_R32G32B32_SFLOAT;
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16_SFLOAT;
-                    default: assert(0 && "Invalid combination of formats");
+                    default: AE_ASSERT(0 && "Invalid combination of formats");
                 }
             }
             if constexpr(std::is_same_v<T, vec4>) {
@@ -235,11 +235,11 @@ namespace Atlas {
                     case ComponentFormat::HalfFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
                     case ComponentFormat::PackedNormal: return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
                     case ComponentFormat::PackedColor: return VK_FORMAT_R8G8B8A8_UNORM;
-                    default: assert(0 && "Invalid combination of formats"); 
+                    default: AE_ASSERT(0 && "Invalid combination of formats"); 
                 }
             }
 
-            assert(0 && "Invalid combination of formats");
+            AE_ASSERT(0 && "Invalid combination of formats");
             return VK_FORMAT_R32G32B32A32_SFLOAT;
 
         }
@@ -326,12 +326,16 @@ namespace Atlas {
             data.clear();
             converted.clear();
 
+            data.shrink_to_fit();
+            converted.shrink_to_fit();
+
         }
 
         template <class T>
         void DataComponent<T>::ClearConverted() {
 
             converted.clear();
+            converted.shrink_to_fit();
 
         }
 

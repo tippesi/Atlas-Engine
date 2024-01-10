@@ -18,7 +18,6 @@ layout(location=8) out vec3 ndcLast;
 #ifdef TERRAIN
 layout(location=9) out vec3 normalShoreWave;
 #endif
-layout(location=10) out float perlinScale;
 
 vec3 stitch(vec3 position) {
     
@@ -59,17 +58,18 @@ void main() {
     
 #ifndef TERRAIN
     vec3 normalShoreWave;
-#endif   
-    float distanceToCamera = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
+#endif
+    float perlinScale;
+    float distanceToCamera = distance(fOriginalCoord.xyz, globalData[0].cameraLocation.xyz);
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     fModelCoord = fPosition;
     
-    fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
-    fClipSpace = globalData.pMatrix * vec4(fPosition, 1.0);
+    fPosition = vec3(globalData[0].vMatrix * vec4(fPosition, 1.0));
+    fClipSpace = globalData[0].pMatrix * vec4(fPosition, 1.0);
 
     ndcCurrent = vec3(fClipSpace.xy, fClipSpace.w);
     // For moving objects we need the last matrix
-    vec4 last = globalData.pvMatrixLast * vec4(fModelCoord, 1.0);
+    vec4 last = globalData[0].pvMatrixLast * vec4(fModelCoord, 1.0);
     ndcLast = vec3(last.xy, last.w);
     
     gl_Position = fClipSpace;

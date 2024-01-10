@@ -10,7 +10,8 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
-#include "Descriptor.h"
+#include "DescriptorSetLayout.h"
+#include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "BLAS.h"
 #include "TLAS.h"
@@ -22,6 +23,7 @@
 #include <optional>
 #include <vector>
 #include <mutex>
+#include <set>
 
 namespace Atlas {
 
@@ -33,6 +35,7 @@ namespace Atlas {
         struct DeviceSupport {
             bool hardwareRayTracing = false;
             bool shaderPrintf = false;
+            bool bindless = false;
         };
 
         struct CommandListSubmission {
@@ -94,7 +97,7 @@ namespace Atlas {
 
             GraphicsDevice& operator=(const GraphicsDevice& that) = delete;
 
-            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR,
+            SwapChain* CreateSwapChain(VkPresentModeKHR presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR,
                 ColorSpace preferredColorSpace = SRGB_NONLINEAR);
 
             Ref<RenderPass> CreateRenderPass(RenderPassDesc desc);
@@ -114,6 +117,8 @@ namespace Atlas {
             Ref<Image> CreateImage(ImageDesc desc);
 
             Ref<Sampler> CreateSampler(SamplerDesc desc);
+
+            Ref<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc);
 
             Ref<DescriptorPool> CreateDescriptorPool();
 
@@ -141,6 +146,12 @@ namespace Atlas {
 
             void ForceMemoryCleanup();
 
+            template <class T>
+            struct Resources {
+                std::vector<Ref<T>> data;
+                std::mutex mutex;
+            };
+
             Instance* instance = nullptr;
             SwapChain* swapChain = nullptr;
             MemoryManager* memoryManager = nullptr;
@@ -150,6 +161,8 @@ namespace Atlas {
             VkDevice device;
 
             VkPhysicalDeviceProperties2 deviceProperties = {};
+            VkPhysicalDeviceVulkan11Properties deviceProperties11 = {};
+            VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
 
@@ -158,6 +171,20 @@ namespace Atlas {
             VkPhysicalDeviceVulkan12Features features12 = {};
 
             DeviceSupport support;
+
+            Resources<RenderPass> renderPasses;
+            Resources<FrameBuffer> frameBuffers;
+            Resources<Shader> shaders;
+            Resources<Pipeline> pipelines;
+            Resources<Buffer> buffers;
+            Resources<MultiBuffer> multiBuffers;
+            Resources<Image> images;
+            Resources<Sampler> samplers;
+            Resources<DescriptorSetLayout> descriptorSetLayouts;
+            Resources<DescriptorPool> descriptorPools;
+            Resources<QueryPool> queryPools;
+            Resources<BLAS> blases;
+            Resources<TLAS> tlases;
 
             bool isComplete = false;
 
@@ -180,17 +207,16 @@ namespace Atlas {
                 std::vector<QueueFamily> families;
 
                 bool IsComplete() {
+#ifndef AE_HEADLESS
                     return queueFamilies[QueueType::GraphicsQueue].has_value() &&
                         queueFamilies[QueueType::PresentationQueue].has_value() &&
                         queueFamilies[QueueType::TransferQueue].has_value();
+#else
+                    return queueFamilies[QueueType::GraphicsQueue].has_value() &&
+                        queueFamilies[QueueType::TransferQueue].has_value();
+#endif
                 }
             }; 
-
-            template <class T>
-            struct Resources {
-                std::vector<Ref<T>> data;
-                std::mutex mutex;
-            };
 
             QueueRef SubmitAllCommandLists();
 
@@ -255,19 +281,6 @@ namespace Atlas {
 
             QueueFamilyIndices queueFamilyIndices;
 
-            Resources<RenderPass> renderPasses;
-            Resources<FrameBuffer> frameBuffers;
-            Resources<Shader> shaders;
-            Resources<Pipeline> pipelines;
-            Resources<Buffer> buffers;
-            Resources<MultiBuffer> multiBuffers;
-            Resources<Image> images;
-            Resources<Sampler> samplers;
-            Resources<DescriptorPool> descriptorPools;
-            Resources<QueryPool> queryPools;
-            Resources<BLAS> blases;
-            Resources<TLAS> tlases;
-
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
 
@@ -276,6 +289,9 @@ namespace Atlas {
 
             int32_t windowWidth = 0;
             int32_t windowHeight = 0;
+
+            std::set<std::string> supportedExtensions;
+
         };
 
     }

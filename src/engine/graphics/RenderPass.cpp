@@ -30,7 +30,7 @@ namespace Atlas {
 
         void RenderPass::AttachColor(const RenderPassColorAttachment& attachment, uint32_t slot) {
 
-            assert(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
+            AE_ASSERT(slot < MAX_COLOR_ATTACHMENTS && "Color attachment slot is not available");
 
             colorAttachments[slot] = attachment;
             colorAttachments[slot].isValid = true;

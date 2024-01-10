@@ -51,9 +51,11 @@ endif()
 if(APPLE)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
+
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk volk::volk_headers SPIRV-Tools-opt
-            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan
+            volk::volk SPIRV-Tools-opt
+            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
 
@@ -132,15 +134,27 @@ endif()
 
 find_path(GLM_INCLUDE_DIRS "glm/common.hpp")
 find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
+find_path(VULKAN_HEADERS_INCLUDE_DIRS "vk_video/vulkan_video_codec_h264std.h")
+
+if (ATLAS_HEADLESS)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
+endif()
+
+if (ATLAS_BINDLESS)
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
+endif()
 
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 
     PUBLIC
+    ${VULKAN_HEADERS_INCLUDE_DIRS}
     ${STB_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
+
+message(${VULKAN_HEADERS_INCLUDE_DIRS})
     
 # Link libraries ##################################################################################
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${ATLAS_ENGINE_LIBS} LINK_PRIVATE ${ATLAS_ENGINE_SYSTEM_LIBS})

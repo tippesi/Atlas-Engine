@@ -61,7 +61,7 @@ void main() {
 
     float fold;
     vec2 gradientDisplacement;
-    GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz),
+    GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData[0].cameraLocation.xyz),
         fold, gradientDisplacement);
 
     vec2 gradient = gradientDisplacement;
@@ -99,8 +99,8 @@ void main() {
     vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
 #ifdef RIPPLE_TEXTURE
-        rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2)).rgb - 1.0);
-        rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05)).rgb - 1.0);
+        rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData[0].time * 0.2)).rgb - 1.0);
+        rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData[0].time * 0.05)).rgb - 1.0);
         // Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
         norm = normalize(tbn * rippleNormal);
 #endif
@@ -109,7 +109,7 @@ void main() {
     float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
     norm = normalize(mix(fNormal, norm, rippleScaling));
 
-    vec3 eyeDir = normalize(fModelCoord - globalData.cameraLocation.xyz);
+    vec3 eyeDir = normalize(fModelCoord - globalData[0].cameraLocation.xyz);
 
     float nDotL = dot(norm, -light.direction.xyz);
     float nDotE = saturate(dot(norm, -eyeDir));
@@ -143,7 +143,7 @@ void main() {
     // Calculate water depth based on the viewer (ray from camera to ground)
     float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
     
-    vec2 disturbance = (mat3(globalData.vMatrix) * vec3(norm.x, 0.0, norm.z)).xz;
+    vec2 disturbance = (mat3(globalData[0].vMatrix) * vec3(norm.x, 0.0, norm.z)).xz;
 
     vec2 refractionDisturbance = vec2(-disturbance.x, disturbance.y) * 0.02;
     refractionDisturbance *= min(2.0, waterViewDepth);
@@ -198,7 +198,7 @@ void main() {
 
     if (!gl_FrontFacing) {
         fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - saturate(dot(fNormal, eyeDir)), 5.0);
-        disturbance = (mat3(globalData.vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
+        disturbance = (mat3(globalData[0].vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
 
         refractionDisturbance = vec2(disturbance.x, -disturbance.y) * 0.1;
         refractionDisturbance *= min(2.0, waterViewDepth);
@@ -213,15 +213,15 @@ void main() {
         volumetricClouds = textureLod(volumetricCloudTexture, ndcCoord, 0.0);
 #endif
         color = ApplyVolumetrics(Uniforms.fog, color, volumetricFog, volumetricClouds,
-            eyeDir, globalData.planetCenter.xyz, Uniforms.innerCloudRadius);
+            eyeDir, globalData[0].planetCenter.xyz, Uniforms.innerCloudRadius);
     }
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData[0].jitterLast;
+    ndcC -= globalData[0].jitterCurrent;
 
     velocity = (ndcL - ndcC) * 0.5;
 

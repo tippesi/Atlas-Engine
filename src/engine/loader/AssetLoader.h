@@ -8,6 +8,7 @@
 #include <vector>
 #include <mutex>
 #include <unordered_set>
+#include <filesystem>
 
 namespace Atlas {
 
@@ -74,6 +75,13 @@ namespace Atlas {
              * @note Assumes the stream is opened in binary mode.
              */
             static size_t GetFileSize(std::ifstream& stream);
+
+            /**
+             * @param filename A path to the file relative to the asset directory.
+             * @param defaultTime A default time to be returned if the file can't be checked, e.g. if it is opened
+             */
+            static std::filesystem::file_time_type GetFileLastModifiedTime(const std::string& path,
+                const std::filesystem::file_time_type defaultTime);
 
             /**
              * Returns the content of the file as a byte vector.

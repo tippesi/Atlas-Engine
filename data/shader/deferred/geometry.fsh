@@ -176,8 +176,8 @@ void main() {
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-    ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData[0].jitterLast;
+    ndcC -= globalData[0].jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
 

@@ -22,6 +22,7 @@
 #include "PostProcessRenderer.h"
 #include "GBufferDownscaleRenderer.h"
 #include "TextRenderer.h"
+#include "GIRenderer.h"
 #include "DDGIRenderer.h"
 #include "AORenderer.h"
 #include "RTReflectionRenderer.h"
@@ -193,10 +194,16 @@ namespace Atlas {
                 int32_t volumeEnabled;
             };
 
+            void CreateGlobalDescriptorSetLayout();
+
             void SetUniforms(Scene::Scene* scene, Camera* camera);
 
             void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
                 std::unordered_map<void*, uint16_t>& materialMap);
+
+            void PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+                std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
+                std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers);
 
             void FillRenderList(Scene::Scene* scene, Camera* camera);
 
@@ -209,6 +216,8 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> globalUniformBuffer;
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
+            Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
+            Ref<Graphics::Sampler> globalSampler;
 
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray cubeVertexArray;
@@ -228,6 +237,7 @@ namespace Atlas {
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
             GBufferDownscaleRenderer downscaleRenderer;
+            GIRenderer giRenderer;
             DDGIRenderer ddgiRenderer;
             AORenderer aoRenderer;
             RTReflectionRenderer rtrRenderer;

@@ -17,7 +17,7 @@ namespace Atlas {
         uint32_t BVHBuilder::spatialSplitCount = 0;
         float BVHBuilder::totalSurfaceArea = 0.0f;
 
-        BVH::BVH(std::vector<AABB>& aabbs, std::vector<BVHTriangle>& data) {
+        BVH::BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
             Log::Message("Started BVH build");
 
@@ -41,7 +41,7 @@ namespace Atlas {
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
             auto builder = new BVHBuilder(aabb, 0, refs.size(), minOverlap, 256);
 
-            builder->Build(refs, data);
+            builder->Build(refs, data, parallelBuild);
             refs.reserve(data.size());
 
             Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
@@ -72,7 +72,7 @@ namespace Atlas {
 
         }
 
-        BVH::BVH(std::vector<AABB>& aabbs) {
+        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {
 
             refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {
@@ -88,7 +88,7 @@ namespace Atlas {
 
             auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
 
-            builder->Build(refs);
+            builder->Build(refs, parallelBuild);
 
             refs.reserve(data.size());
 
@@ -271,11 +271,11 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data) {
+        void BVHBuilder::Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
             const size_t refCount = 2;
             // Create leaf node
-            if (refs.size() <= refCount || depth >= 32) {
+            if ((refs.size() <= refCount || depth >= 32) && depth > 0) {
                 CreateLeaf(refs);
                 return;
             }
@@ -302,8 +302,14 @@ namespace Atlas {
             // If we haven't found a cost improvement we create a leaf node
             if ((objectSplit.axis < 0 || objectSplit.cost >= nodeCost) &&
                 (spatialSplit.axis < 0 || spatialSplit.cost >= nodeCost)) {
-                CreateLeaf(refs);
-                return;
+                // In the rare case there was not enough improvements with just a few triangles
+                if (depth == 0) {
+                    split = PerformMedianSplit(refs, rightRefs, leftRefs);
+                }
+                else {
+                    CreateLeaf(refs);
+                    return;
+                }
             }
             else {
                 if (spatialSplit.cost < objectSplit.cost) {
@@ -325,17 +331,17 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 5) {
+            if (depth <= 5 && parallelBuild) {
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
                     leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
-                    leftChild->Build(leftRefs, data);
+                    leftChild->Build(leftRefs, data, parallelBuild);
                 };
 
                 auto rightLambda = [&]() {
                     if (!rightRefs.size()) return;
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
-                    rightChild->Build(rightRefs, data);
+                    rightChild->Build(rightRefs, data, parallelBuild);
                 };
 
                 auto leftBuilderFuture = std::async(leftLambda);
@@ -347,18 +353,18 @@ namespace Atlas {
             else {
                 if (leftRefs.size()) {
                     leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
-                    leftChild->Build(leftRefs, data);
+                    leftChild->Build(leftRefs, data, parallelBuild);
                 }
 
                 if (rightRefs.size()) {
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
-                    rightChild->Build(rightRefs, data);
+                    rightChild->Build(rightRefs, data, parallelBuild);
                 }
             }
 
         }
 
-        void BVHBuilder::Build(std::vector<Ref>& refs) {
+        void BVHBuilder::Build(std::vector<Ref>& refs, bool parallelBuild) {
 
             // Create leaf node
             if (refs.size() == 1) {
@@ -390,17 +396,17 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 5) {
+            if (depth <= 5 && parallelBuild) {
                 auto leftLambda = [&]() {
                     if (!leftRefs.size()) return;
                     leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
-                    leftChild->Build(leftRefs);
+                    leftChild->Build(leftRefs, parallelBuild);
                 };
 
                 auto rightLambda = [&]() {
                     if (!rightRefs.size()) return;
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
-                    rightChild->Build(rightRefs);
+                    rightChild->Build(rightRefs, parallelBuild);
                 };
 
                 auto leftBuilderFuture = std::async(leftLambda);
@@ -413,12 +419,12 @@ namespace Atlas {
             else {
                 if (leftRefs.size()) {
                     leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
-                    leftChild->Build(leftRefs);
+                    leftChild->Build(leftRefs, parallelBuild);
                 }
 
                 if (rightRefs.size()) {
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
-                    rightChild->Build(rightRefs);
+                    rightChild->Build(rightRefs, parallelBuild);
                 }
             }
 
@@ -437,6 +443,10 @@ namespace Atlas {
             else {
                 const auto nodeIdx = nodes.size();
                 nodes.push_back(BVHNode());
+
+                // Reorder such that shadow rays hit large surface are first
+                if (leftChild->aabb.GetSurfaceArea() < rightChild->aabb.GetSurfaceArea())
+                    std::swap(leftChild, rightChild);
 
                 // Flatten recursively
                 if (leftChild) {
@@ -818,26 +828,51 @@ namespace Atlas {
             Split split;
 
             auto dimensions = aabb.max - aabb.min;
-            auto axis = dimensions.x > dimensions.y ? dimensions.x > dimensions.z ? 0 : 2 :
-                dimensions.y > dimensions.z ? 1 : 2;
-            std::sort(refs.begin(), refs.end(), [&](const Ref& ref0, const Ref& ref1) {
-                auto center0 = ref0.aabb.max[axis] - ref0.aabb.min[axis];
-                auto center1 = ref1.aabb.max[axis] - ref1.aabb.min[axis];
-                return center0 < center1;
-                });
 
-            auto splitIdx = uint32_t(refs.size() / 2);
+            auto axis = 0;
+            axis = dimensions.y > dimensions[axis] ? 1 : axis;
+            axis = dimensions.z > dimensions[axis] ? 2 : axis;
 
-            for (uint32_t i = 0; i < splitIdx; i++) {
-                const auto& ref = refs[i];
-                split.leftAABB.Grow(ref.aabb);
-                leftRefs.push_back(ref);
+            auto splitCutoff = aabb.min[axis] + dimensions[axis] / 2.0f;
+
+            for (auto& ref : refs) {
+                auto center = (ref.aabb.max[axis] - ref.aabb.min[axis]) * 0.5f + ref.aabb.min[axis];
+                if (center < splitCutoff) {
+                    split.leftAABB.Grow(ref.aabb);
+                    leftRefs.push_back(ref);
+                }
+                else {
+                    split.rightAABB.Grow(ref.aabb);
+                    rightRefs.push_back(ref);
+                }
             }
 
-            for (uint32_t i = splitIdx; i < uint32_t(refs.size()); i++) {
-                const auto& ref = refs[i];
-                split.rightAABB.Grow(ref.aabb);
-                rightRefs.push_back(ref);
+            // Use this as a fallback, otherwise we might get endless recursions
+            if (!leftRefs.size() || !rightRefs.size()) {
+                split = Split();
+
+                leftRefs.clear();
+                rightRefs.clear();
+
+                std::sort(refs.begin(), refs.end(), [&](const Ref& ref0, const Ref& ref1) {
+                    auto center0 = ref0.aabb.max[axis] - ref0.aabb.min[axis];
+                    auto center1 = ref1.aabb.max[axis] - ref1.aabb.min[axis];
+                    return center0 < center1;
+                    });
+
+                auto splitIdx = uint32_t(refs.size() / 2);
+
+                for (uint32_t i = 0; i < splitIdx; i++) {
+                    const auto& ref = refs[i];
+                    split.leftAABB.Grow(ref.aabb);
+                    leftRefs.push_back(ref);
+                }
+
+                for (uint32_t i = splitIdx; i < uint32_t(refs.size()); i++) {
+                    const auto& ref = refs[i];
+                    split.rightAABB.Grow(ref.aabb);
+                    rightRefs.push_back(ref);
+                }
             }
 
             return split;

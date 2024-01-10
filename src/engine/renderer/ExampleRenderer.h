@@ -31,7 +31,7 @@ namespace Atlas {
 
             Ref<Graphics::QueryPool> queryPool = nullptr;
 
-            Ref<Mesh::Mesh> mesh = nullptr;
+            ResourceHandle<Mesh::Mesh> mesh;
 
             struct PushConstants {
                 mat4 vMatrix;

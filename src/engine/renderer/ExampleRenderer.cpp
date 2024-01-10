@@ -116,7 +116,7 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
+                mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
                     "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
                 );
 
@@ -165,11 +165,13 @@ namespace Atlas {
 
         void ExampleRenderer::Render(Camera* camera) {
 
+            auto swapChain = device->swapChain;
+            if (!swapChain->isComplete) return;
+
             auto blue = abs(sin(Clock::Get()));
 
             auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
-            auto swapChain = device->swapChain;
-
+            
             Graphics::Profiler::BeginThread("Main thread", commandList);
 
             commandList->BeginCommands();

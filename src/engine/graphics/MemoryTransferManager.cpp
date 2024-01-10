@@ -221,14 +221,17 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
             }
 
+            commandList->EndCommands();
+
+            device->FlushCommandList(commandList);
+            device->WaitForIdle();
+
             void* src;
             vmaMapMemory(allocator, stagingAllocation.allocation, &src);
             std::memcpy(data, src, pixelCount * formatSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
 
-            commandList->EndCommands();
-
-            device->FlushCommandList(commandList);
+            
             DestroyStagingBuffer(stagingAllocation);
 
         }

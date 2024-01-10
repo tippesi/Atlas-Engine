@@ -6,7 +6,7 @@
 
 // Atlas engine includes
 #include <Window.h>
-#include <graphics/Descriptor.h>
+#include <graphics/DescriptorPool.h>
 
 class ImguiWrapper {
 
@@ -52,5 +52,7 @@ private:
     Atlas::Ref<Atlas::Graphics::DescriptorPool> pool = nullptr;
 
     std::unordered_map<VkImageView, VkDescriptorSet> imageViewToDescriptorSetMap;
+
+    bool initialized = false;
 
 };

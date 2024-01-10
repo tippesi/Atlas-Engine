@@ -40,10 +40,9 @@ namespace Atlas {
          * @param width The width of the window in pixels
          * @param height The height of the window in pixels
          * @param flags Window flags. See {@link Window.h} for more.
-         * @param createSurface Whether or not to immediately create a surface
          */
         Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
-               int32_t flags = AE_WINDOW_FULLSCREEN, bool createSurface = true);
+               int32_t flags = AE_WINDOW_FULLSCREEN);
 
         ~Window();
 
@@ -157,18 +156,11 @@ namespace Atlas {
         void SetDisplayMode(const DisplayMode& mode);
 
         /**
-         * Creates a surface for the window to render to.
-         */
-        bool CreateSurface();
-
-        /**
          * Returns the pointer to the SDL window structure
          */
         SDL_Window* GetSDLWindow();
 
         const std::string title;
-
-        Graphics::Surface* surface;
 
         Events::EventDelegate<Events::WindowEvent> windowEventDelegate;
         Events::EventDelegate<Events::KeyboardEvent> keyboardEventDelegate;

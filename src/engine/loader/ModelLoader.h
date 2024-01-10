@@ -36,6 +36,13 @@ namespace Atlas {
                 Ref<Common::Image<uint8_t>> metallicImage;
                 Ref<Common::Image<uint8_t>> normalImage;
                 Ref<Common::Image<uint8_t>> displacementImage;
+
+                Ref<Texture::Texture2D> baseColorTexture;
+                Ref<Texture::Texture2D> opacityTexture;
+                Ref<Texture::Texture2D> roughnessTexture;
+                Ref<Texture::Texture2D> metallicTexture;
+                Ref<Texture::Texture2D> normalTexture;
+                Ref<Texture::Texture2D> displacementTexture;
             };
 
             static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
@@ -43,6 +50,8 @@ namespace Atlas {
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
                 const std::string& directory, bool isObj, bool hasTangents,
                 int32_t maxTextureResolution, bool rgbSupport);
+
+            static void ImagesToTexture(MaterialImages& images);
 
             static std::string GetDirectoryPath(std::string filename);
 

@@ -34,6 +34,10 @@ namespace Atlas {
             };
             shadowSampler = device->CreateSampler(samplerDesc);
 
+            std::vector<uint8_t> dummyData = { 0 };
+            dummyTexture = Texture::Texture2D(1, 1, VK_FORMAT_R8_UNORM);
+            dummyTexture.SetData(dummyData);
+
         }
 
         void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
@@ -193,8 +197,8 @@ namespace Atlas {
                 commandList->CopyImage(depthImage, depthTexture.image);
 
                 imageBarriers = {
-                    {colorImage, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT},
-                    {depthImage, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT},
+                    {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
@@ -255,7 +259,12 @@ namespace Atlas {
                 ocean->simulation.displacementMap.Bind(commandList, 3, 0);
                 ocean->simulation.normalMap.Bind(commandList, 3, 1);
 
-                ocean->foamTexture.Bind(commandList, 3, 2);
+                if (ocean->foamTexture.IsValid()) {
+                    ocean->foamTexture.Bind(commandList, 3, 2);
+                }
+                else {
+                    dummyTexture.Bind(commandList, 3, 2);
+                }
 
                 if (scene->sky.GetProbe()) {
                     scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
@@ -295,6 +304,9 @@ namespace Atlas {
 
                 if (ocean->rippleTexture.IsValid()) {
                     ocean->rippleTexture.Bind(commandList, 3, 10);
+                }
+                else {
+                    dummyTexture.Bind(commandList, 3, 10);
                 }
 
                 uniformBuffer.SetData(&uniforms, 0);

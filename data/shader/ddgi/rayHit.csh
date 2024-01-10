@@ -70,9 +70,11 @@ vec3 EvaluateHit(inout Ray ray) {
     }
     
     // Unpack the compressed triangle and extract surface parameters
-    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-    bool backfaceHit;    
-    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, 4);
+    Instance instance = GetInstance(ray);
+    Triangle tri = GetTriangle(ray, instance);
+
+    bool backfaceHit;
+    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, 4);
 
     // Indicates backface hit
     if (backfaceHit) {
@@ -115,12 +117,18 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     // Check for visibilty. This is important to get an
     // estimate of the solid angle of the light from point P
     // on the surface.
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
 #ifdef USE_SHADOW_MAP
-    radiance *= CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
-        surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        float shadowFactor = CalculateShadowWorldSpace(Uniforms.shadow, cascadeMaps, surface.P,
+            surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
+        radiance *= shadowFactor;
 #else
-    radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
 #endif
+    }
+    else {
+        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+    }
     
     return reflectance * radiance * surface.NdotL / lightPdf;
 
@@ -132,7 +140,6 @@ bool CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
     }
     else {

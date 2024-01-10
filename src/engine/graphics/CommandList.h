@@ -8,7 +8,7 @@
 #include "RenderPass.h"
 #include "Pipeline.h"
 #include "Buffer.h"
-#include "Descriptor.h"
+#include "DescriptorPool.h"
 #include "Sampler.h"
 #include "QueryPool.h"
 
@@ -83,6 +83,8 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<Buffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
+            void BindBuffers(const std::vector<Ref<Buffer>>& buffers, uint32_t set, uint32_t binding);
+
             void BindBuffer(const Ref<MultiBuffer>& buffer, uint32_t set, uint32_t binding);
 
             void BindBufferOffset(const Ref<MultiBuffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
@@ -90,6 +92,10 @@ namespace Atlas {
             void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel = 0);
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
+
+            void BindSampledImages(const std::vector<Ref<Image>>& images, uint32_t set, uint32_t binding);
+
+            void BindSampler(const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
             void BindTLAS(const Ref<TLAS>& tlas, uint32_t set, uint32_t binding);
 
@@ -184,14 +190,22 @@ namespace Atlas {
 
         private:
             struct DescriptorBindingData {
-                Buffer* buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                std::pair<Buffer*, uint32_t> dynamicBuffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::vector<Buffer*> buffersArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::vector<Image*> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                Sampler* samplers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
-                VkDescriptorSet sets[DESCRIPTOR_SET_COUNT];
+                Ref<DescriptorSet> sets[DESCRIPTOR_SET_COUNT];
+                Ref<DescriptorSetLayout> layouts[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
+
+                std::vector<VkWriteDescriptorSet> setWrites;
+                std::vector<VkDescriptorBufferInfo> bufferInfos;
+                std::vector<VkDescriptorImageInfo> imageInfos;
+                std::vector<VkWriteDescriptorSetAccelerationStructureKHR> tlasInfos;
 
                 DescriptorBindingData() {
                     Reset();
@@ -199,15 +213,22 @@ namespace Atlas {
                         sets[i] = nullptr;
                         changed[i] = true;
                     }
+
+                    setWrites.resize(BINDINGS_PER_DESCRIPTOR_SET);
+                    tlasInfos.resize(BINDINGS_PER_DESCRIPTOR_SET);
+                    bufferInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 1024);
+                    imageInfos.resize(BINDINGS_PER_DESCRIPTOR_SET * 1024);
                 }
 
                 void Reset() {
                     for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                            buffers[i][j] = nullptr;
-                            dynamicBuffers[i][j] = { nullptr, 0u };
+                            buffers[i][j] = { nullptr, 0u };
                             images[i][j] = { nullptr, 0u };
                             sampledImages[i][j] = { nullptr, nullptr };
+                            sampledImagesArray[i][j] = {};
+                            buffersArray[i][j] = {};
+                            samplers[i][j] = nullptr;
                             tlases[i][j] = nullptr;
                         }
                         sets[i] = nullptr;
@@ -217,15 +238,28 @@ namespace Atlas {
 
                 void Reset(uint32_t set) {
                     for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
-                        buffers[set][j] = nullptr;
-                        dynamicBuffers[set][j] = { nullptr, 0u };
+                        buffers[set][j] = { nullptr, 0u };
                         images[set][j] = { nullptr, 0u };
                         sampledImages[set][j] = { nullptr, nullptr };
+                        sampledImagesArray[set][j] = {};
+                        buffersArray[set][j] = {};
+                        samplers[set][j] = nullptr;
                         tlases[set][j] = nullptr;
                     }
                     sets[set] = nullptr;
                     changed[set] = true;
                 }
+
+                void ResetBinding(uint32_t set, uint32_t binding) {
+                    buffers[set][binding] = { nullptr, 0u };
+                    images[set][binding] = { nullptr, 0u };
+                    sampledImages[set][binding] = { nullptr, nullptr };
+                    sampledImagesArray[set][binding] = {};
+                    buffersArray[set][binding] = {};
+                    samplers[set][binding] = nullptr;
+                    tlases[set][binding] = nullptr;
+                }
+
             }descriptorBindingData;
 
             struct Semaphore {
@@ -243,9 +277,16 @@ namespace Atlas {
 
             const std::vector<VkSemaphore> GetSemaphores() const;
 
+            void CreatePlaceholders(GraphicsDevice* device);
+
+            void ChangePlaceholderLayouts();
+
             VkDevice device;
             MemoryManager* memoryManager = nullptr;
             DescriptorPool* descriptorPool = nullptr;
+
+            Ref<Buffer> placeholderBuffer = nullptr;
+            Ref<Image> placeholderImage = nullptr;
 
             std::atomic_bool isLocked = true;
             std::atomic_bool isSubmitted = true;

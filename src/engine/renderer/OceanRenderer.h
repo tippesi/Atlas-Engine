@@ -83,6 +83,7 @@ namespace Atlas {
 
             Texture::Texture2D refractionTexture;
             Texture::Texture2D depthTexture;
+            Texture::Texture2D dummyTexture;
 
             Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer depthUniformBuffer;

@@ -97,7 +97,7 @@ void main(){
     texCoords /= PushConstants.nodeSideLength;
     
 #ifndef DISTANCE
-    float vertexDistance = distance(position.xyz, globalData.cameraLocation.xyz);
+    float vertexDistance = distance(position.xyz, globalData[0].cameraLocation.xyz);
     float weight = clamp((Uniforms.displacementDistance - vertexDistance), 0.0, 1.0);
 
     vec2 tex = vec2(PushConstants.normalTexelSize) + texCoords *
@@ -130,11 +130,11 @@ void main(){
     }
 #endif
     
-    gl_Position = globalData.pMatrix * globalData.vMatrix * position;
+    gl_Position = globalData[0].pMatrix * globalData[0].vMatrix * position;
     
     ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
     
-    vec4 last = globalData.pvMatrixLast * position;
+    vec4 last = globalData[0].pvMatrixLast * position;
     ndcLast = vec3(last.xy, last.w);
     
 }

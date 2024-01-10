@@ -12,7 +12,10 @@ layout(set = 3, binding = 2) uniform sampler2D currentTexture;
 layout(set = 3, binding = 3) uniform sampler2D velocityTexture;
 layout(set = 3, binding = 4) uniform sampler2D depthTexture;
 layout(set = 3, binding = 5) uniform sampler2D lastVelocityTexture;
+
+#ifndef PATHTRACE
 layout(set = 3, binding = 6) uniform usampler2D stencilTexture;
+#endif
 
 layout(push_constant) uniform constants {
     vec2 resolution;
@@ -24,10 +27,13 @@ const float minVelocityBlend = 0.05;
 const float maxVelocityBlend = 0.5;
 
 #define TAA_YCOCG
-//#define TAA_CLIP // Use clip instead of clamping for better ghosting prevention, introduces more flickering
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
 //#define TAA_DENOISE
+
+#ifdef PATHTRACE
+#define TAA_CLIP
+#endif
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -362,10 +368,12 @@ void main() {
     float range = 1.4;
     float localAntiFlicker = mix(0.6, 5.0, 1.0 - velocityBlend);
 
+#ifndef PATHTRACE
 #ifdef TAA_DENOISE
     range += localAntiFlicker;
 #else
     range += mix(0.0, localAntiFlicker, historyContrast);
+#endif
 #endif
 
     localNeighbourhoodMin = average - range * (average - localNeighbourhoodMin);
@@ -381,7 +389,11 @@ void main() {
     historyColor = clamp(historyColor, localNeighbourhoodMin, localNeighbourhoodMax);
 #endif
 
+#ifndef PATHTRACE
     float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
+#else
+    float blendFactor = mix(minVelocityBlend, maxVelocityBlend, velocityBlend);
+#endif
 
 #ifdef TAA_YCOCG
     historyColor = YCoCgToRGB(historyColor); 
@@ -393,8 +405,10 @@ void main() {
     currentColor.rgb = InverseTonemap(currentColor.rgb);
 #endif
 
+#ifndef PATHTRACE
     StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
     blendFactor = features.responsivePixel ? 0.5 : blendFactor;
+#endif    
 
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

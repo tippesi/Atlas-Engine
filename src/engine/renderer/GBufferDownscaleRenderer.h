@@ -23,9 +23,6 @@ namespace Atlas {
             PipelineConfig downscalePipelineConfig;
             PipelineConfig downscaleDepthOnlyPipelineConfig;
 
-            //OldShader::OldShader downscale;
-            //OldShader::OldShader downscaleDepthOnly;
-
         };
 
     }

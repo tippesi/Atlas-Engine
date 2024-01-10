@@ -40,9 +40,9 @@ void main() {
 
     vec3 viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
     vec3 viewSpaceOceanPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
-    vec3 pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
-    vec3 oceanPos = vec3(globalData.ivMatrix * vec4(viewSpaceOceanPos, 1.0));
-    vec3 nearPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(0.0, texCoord), 1.0));
+    vec3 pixelPos = vec3(globalData[0].ivMatrix * vec4(viewSpacePos, 1.0));
+    vec3 oceanPos = vec3(globalData[0].ivMatrix * vec4(viewSpaceOceanPos, 1.0));
+    vec3 nearPos = vec3(globalData[0].ivMatrix * vec4(ConvertDepthToViewSpace(0.0, texCoord), 1.0));
 
     float distanceToCamera = length(viewSpacePos);
 
@@ -77,12 +77,12 @@ void main() {
 
     texCoord = (texCoord + vec2(0.05)) * 0.9;
 
-    texCoord.x += sin(texCoord.y * 2.0 * PI * 5.0 + 5.0 * globalData.time) * 0.001 / depth;
-    texCoord.y += cos(texCoord.x * 2.0 * PI * 2.0 + 2.0 * globalData.time) * 0.001 / depth;
+    texCoord.x += sin(texCoord.y * 2.0 * PI * 5.0 + 5.0 * globalData[0].time) * 0.001 / depth;
+    texCoord.y += cos(texCoord.x * 2.0 * PI * 2.0 + 2.0 * globalData[0].time) * 0.001 / depth;
 
     depth = textureLod(depthTexture, texCoord, 0.0).r;
     viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
-    pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
+    pixelPos = vec3(globalData[0].ivMatrix * vec4(viewSpacePos, 1.0));
 
     vec3 refractionColor = textureLod(refractionTexture, texCoord, 0.0).rgb;
 

@@ -73,7 +73,7 @@ void main() {
 vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 
     vec2 resolution = vec2(imageSize(volumetricImage));
-    vec3 viewPosition = vec3(globalData.ivMatrix * vec4(fragPos, 1.0));
+    vec3 viewPosition = vec3(globalData[0].ivMatrix * vec4(fragPos, 1.0));
 
     // We compute this in view space
     vec3 rayVector = fragPos;
@@ -140,7 +140,7 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 #endif
 
         //shadowValue = distance > uniforms.light.shadow.distance ? 1.0 : shadowValue;
-        vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
+        vec3 worldPosition = vec3(globalData[0].ivMatrix * vec4(currentPosition, 1.0));
 
 #ifdef CLOUDS
         vec3 planetCenter = uniforms.planetCenterAndRadius.xyz;

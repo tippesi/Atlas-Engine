@@ -1,3 +1,5 @@
+#define LOCAL_STACK
+
 #include <../globals.hsh>
 #include <../raytracer/structures.hsh>
 #include <../raytracer/common.hsh>
@@ -63,8 +65,8 @@ void main() {
         ivec2 offset = offsets[offsetIdx];
 
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
-        vec3 worldPos = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
+        vec3 worldPos = vec3(globalData[0].ivMatrix * vec4(ConvertDepthToViewSpace(depth, recontructTexCoord), 1.0));
+        vec3 worldNorm = normalize(vec3(globalData[0].ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
 
         float ao = 0.0;
 
@@ -86,7 +88,6 @@ void main() {
                 BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec);
 
                 ray.direction = brdfSample.L;
-                ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
                 ray.hitID = -1;

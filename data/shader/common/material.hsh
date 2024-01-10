@@ -10,6 +10,7 @@
 #define FEATURE_VERTEX_COLORS (1 << 8)
 
 struct Material {
+    uint ID;
 
     vec3 baseColor;
     vec3 emissiveColor;
@@ -42,7 +43,7 @@ struct PackedMaterial {
     vec4 data1;
 };
 
-layout (std430, set = 0, binding = 2) buffer PackedMaterials {
+layout (std430, set = 1, binding = 14) buffer PackedMaterials {
     PackedMaterial packedMaterials[];
 };
 
@@ -51,6 +52,8 @@ Material UnpackMaterial(uint idx) {
     PackedMaterial compressed = packedMaterials[idx];
     
     Material material;
+
+    material.ID = idx;
 
     vec2 emissiveIntensityTiling = unpackHalf2x16(floatBitsToUint(compressed.data0.w));
 
