@@ -1,5 +1,4 @@
-#ifndef AE_DECALACTOR_H
-#define AE_DECALACTOR_H
+#pragma once
 
 #include "Actor.h"
 #include "../Decal.h"
@@ -27,5 +26,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

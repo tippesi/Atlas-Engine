@@ -1,5 +1,4 @@
-#ifndef AE_MODELLOADER_H
-#define AE_MODELLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../mesh/MeshData.h"
@@ -21,6 +20,10 @@ namespace Atlas {
                 bool forceTangents = false, mat4 transform = mat4(1.0f),
                 int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
+                Mesh::MeshMobility mobility, bool forceTangents = false,
+                mat4 transform = mat4(1.0f), int32_t maxTextureResolution = 4096);
+
             static Ref<Scene::Scene> LoadScene(const std::string& filename,
                 bool forceTangents = false, mat4 transform = mat4(1.0f),
                 int32_t maxTextureResolution = 4096);
@@ -33,6 +36,13 @@ namespace Atlas {
                 Ref<Common::Image<uint8_t>> metallicImage;
                 Ref<Common::Image<uint8_t>> normalImage;
                 Ref<Common::Image<uint8_t>> displacementImage;
+
+                Ref<Texture::Texture2D> baseColorTexture;
+                Ref<Texture::Texture2D> opacityTexture;
+                Ref<Texture::Texture2D> roughnessTexture;
+                Ref<Texture::Texture2D> metallicTexture;
+                Ref<Texture::Texture2D> normalTexture;
+                Ref<Texture::Texture2D> displacementTexture;
             };
 
             static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
@@ -40,6 +50,8 @@ namespace Atlas {
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
                 const std::string& directory, bool isObj, bool hasTangents,
                 int32_t maxTextureResolution, bool rgbSupport);
+
+            static void ImagesToTexture(MaterialImages& images);
 
             static std::string GetDirectoryPath(std::string filename);
 
@@ -87,5 +99,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

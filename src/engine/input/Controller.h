@@ -1,5 +1,4 @@
-#ifndef AE_CONTROLLER_H
-#define AE_CONTROLLER_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -62,5 +61,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

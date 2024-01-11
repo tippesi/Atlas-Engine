@@ -6,9 +6,10 @@
 namespace Atlas {
 
     Window::Window(const std::string& title, int32_t x, int32_t y, int32_t width, int32_t height,
-            int32_t flags, bool createSurface) : title(title), x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x),
+            int32_t flags) : title(title), x(x == AE_WINDOWPOSITION_UNDEFINED ? 0 : x),
             y(y == AE_WINDOWPOSITION_UNDEFINED ? 0 : y), width(width), height(height) {
 
+#ifndef AE_HEADLESS
         sdlWindow = SDL_CreateWindow(title.c_str(), x, y, width, height, flags | SDL_WINDOW_VULKAN);
         if (!sdlWindow) {
             auto error = SDL_GetError();
@@ -16,9 +17,8 @@ namespace Atlas {
             return;
         }
 
-        if (createSurface) CreateSurface();
-
         ID = SDL_GetWindowID(sdlWindow);
+#endif
 
         auto windowEventHandler = std::bind(&Window::WindowEventHandler, this, std::placeholders::_1);
         windowEventSubcriberID = Events::EventManager::WindowEventDelegate.Subscribe(windowEventHandler);
@@ -196,20 +196,6 @@ namespace Atlas {
         };
 
         SDL_SetWindowDisplayMode(sdlWindow, &displayMode);
-
-    }
-
-    bool Window::CreateSurface() {
-
-        bool success = false;
-        auto graphicsInstance = Graphics::Instance::DefaultInstance;
-        surface = graphicsInstance->CreateSurface(sdlWindow);
-        if (!surface) {
-            Log::Error("Error initializing window surface");
-            return false;
-        }
-
-        return true;
 
     }
 

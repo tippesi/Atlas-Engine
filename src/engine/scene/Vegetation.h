@@ -1,5 +1,4 @@
-#ifndef AE_VEGETATION_H
-#define AE_VEGETATION_H
+#pragma once
 
 #include "../System.h"
 #include "mesh/Mesh.h"
@@ -45,5 +44,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

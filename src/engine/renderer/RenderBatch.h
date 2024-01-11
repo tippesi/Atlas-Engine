@@ -1,5 +1,4 @@
-#ifndef AE_RENDERBATCH_H
-#define AE_RENDERBATCH_H
+#pragma once
 
 #include "System.h"
 #include "buffer/VertexArray.h"
@@ -66,5 +65,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

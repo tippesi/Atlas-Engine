@@ -22,7 +22,7 @@ void main() {
     bool cull = false;
     Instance instance = instanceData[idx];
 
-    float dist = distance(instance.position.xyz, globalData.cameraLocation.xyz);
+    float dist = distance(instance.position.xyz, globalData[0].cameraLocation.xyz);
     uint binIdx = min(GetBin(instance, meshInfo), PushConstants.binCount - 1u) + binOffset;
 
     cull = !IsInstanceVisible(instance, meshInfo) || dist > 100.0;

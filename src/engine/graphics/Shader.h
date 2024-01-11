@@ -1,7 +1,8 @@
-#ifndef AE_GRAPHICSSHADER_H
-#define AE_GRAPHICSSHADER_H
+#pragma once
 
 #include "Common.h"
+#include "DescriptorSetLayout.h"
+
 #include <vector>
 #include <string>
 #include <mutex>
@@ -21,6 +22,8 @@ namespace Atlas {
             ShaderStageFile() = default;
 
             const std::string GetGlslCode(const std::vector<std::string>& macros) const;
+
+            const std::vector<std::string> GetEnvironmentMacros() const;
 
             struct Extension {
                 std::string extension;
@@ -52,9 +55,8 @@ namespace Atlas {
             size_t hash = 0;
 
             uint32_t set = 0;
-            uint32_t size = 0;
-            uint32_t arrayElement = 0;
-            VkDescriptorSetLayoutBinding layoutBinding = {};
+           
+            DescriptorSetBinding binding;
 
             bool valid = false;
         };
@@ -63,8 +65,7 @@ namespace Atlas {
             ShaderDescriptorBinding bindings[BINDINGS_PER_DESCRIPTOR_SET];
             uint32_t bindingCount = 0;
 
-            VkDescriptorSetLayout layout = {};
-            VkDescriptorSetLayoutBinding layoutBindings[BINDINGS_PER_DESCRIPTOR_SET];
+            Ref<DescriptorSetLayout> layout;
         };
 
         struct ShaderVertexInput {
@@ -82,6 +83,8 @@ namespace Atlas {
             ~ShaderVariant();
 
             PushConstantRange* GetPushConstantRange(const std::string& name);
+
+            bool TryOverrideDescriptorSetLayout(Ref<DescriptorSetLayout> layout, uint32_t set);
 
             std::vector<VkShaderModule> modules;
             std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
@@ -132,6 +135,9 @@ namespace Atlas {
             GraphicsDevice* device = nullptr;
 
             std::vector<ShaderStageFile> shaderStageFiles;
+            std::vector<ShaderStageFile> historyShaderStageFiles;
+
+            std::filesystem::file_time_type lastReload = std::filesystem::file_time_type::min();
 
             std::mutex variantMutex;
             std::vector<Ref<ShaderVariant>> shaderVariants;
@@ -141,5 +147,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

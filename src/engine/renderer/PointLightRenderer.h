@@ -1,5 +1,4 @@
-#ifndef AE_POINTLIGHTRENDERER_H
-#define AE_POINTLIGHTRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -41,5 +40,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

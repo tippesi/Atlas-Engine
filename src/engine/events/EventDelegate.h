@@ -1,5 +1,4 @@
-#ifndef AE_EVENTDELEGATE_H
-#define AE_EVENTDELEGATE_H
+#pragma once
 
 #include "../System.h"
 
@@ -104,5 +103,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

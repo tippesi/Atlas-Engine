@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
+
 project(AtlasEngineDemo)
 
 # Note: For this project, the root CMakeLists.txt turns
@@ -33,6 +34,7 @@ endforeach()
 if (UNIX AND NOT APPLE AND NOT ANDROID)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
 endif()
+
 # We use the exported main file from the AtlasEngine library to able to use
 # the app class. Alternatively, you can write a main function yourself.
 # To export the main file the ATLAS_EXPORT_MAIN option has to be turned on.

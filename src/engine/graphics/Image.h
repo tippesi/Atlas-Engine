@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSTEXTURE_H
-#define AE_GRAPHICSTEXTURE_H
+#pragma once
 
 #include "Common.h"
 
@@ -79,6 +78,8 @@ namespace Atlas {
             uint32_t layers = 1;
             VkFormat format;
 
+            uint32_t bitDepth = 8;
+
             uint32_t mipLevels = 1;
 
             ImageDomain domain;
@@ -93,5 +94,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

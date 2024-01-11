@@ -1,5 +1,4 @@
-#ifndef AE_RENDERER_H
-#define AE_RENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderTarget.h"
@@ -11,6 +10,8 @@
 
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
+
+#include "../common/ColorConverter.h"
 
 #include "helper/CommonStructures.h"
 
@@ -37,5 +38,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

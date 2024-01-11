@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSBARRIER_H
-#define AE_GRAPHICSBARRIER_H
+#pragma once
 
 #include "Common.h"
 
@@ -54,5 +53,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

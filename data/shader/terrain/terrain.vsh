@@ -98,11 +98,11 @@ void main() {
 #ifndef DISTANCE
     gl_Position =  worldPosition;
 #else
-    gl_Position =  globalData.pMatrix * globalData.vMatrix * worldPosition;
+    gl_Position =  globalData[0].pMatrix * globalData[0].vMatrix * worldPosition;
 
     ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 
-    vec4 last = globalData.pvMatrixLast * worldPosition;
+    vec4 last = globalData[0].pvMatrixLast * worldPosition;
     ndcLast = vec3(last.xy, last.w);
 #endif
     

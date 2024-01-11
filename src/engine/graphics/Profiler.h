@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSPROFILER_H
-#define AE_GRAPHICSPROFILER_H
+#pragma once
 
 #include "Common.h"
 #include "CommandList.h"
@@ -9,6 +8,7 @@
 #include <atomic>
 #include <thread>
 #include <deque>
+#include <atomic>
 
 #define PROFILER_MAX_THREADS 32
 
@@ -142,6 +142,8 @@ namespace Atlas {
             static std::vector<Profiler::ThreadData> GetQueriesAverage(uint32_t frameCount = 32,
                 OrderBy order = OrderBy::CHRONO);
 
+            static std::atomic_bool enable;
+
         private:
             struct ThreadContext {
                 std::thread::id id;
@@ -181,12 +183,8 @@ namespace Atlas {
             static std::unordered_map<std::string, ThreadHistory> queryHistory;
             static size_t frameIdx;
 
-            static bool activate;
-
         };
 
     }
 
 }
-
-#endif

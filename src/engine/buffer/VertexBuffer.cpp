@@ -8,8 +8,8 @@ namespace Atlas {
     namespace Buffer {
 
 
-        VertexBuffer::VertexBuffer(VkFormat format, size_t elementCount, void* data)
-            : format(format), elementSize(Graphics::GetFormatSize(format)) {
+        VertexBuffer::VertexBuffer(VkFormat format, size_t elementCount, void* data, bool hostAccess)
+            : format(format), elementSize(Graphics::GetFormatSize(format)), hostAccessible(hostAccess) {
 
             if (elementCount) {
                 SetSize(elementCount, data);
@@ -48,7 +48,7 @@ namespace Atlas {
             Graphics::BufferDesc desc {
                 .usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
                     | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                .domain = Graphics::BufferDomain::Device,
+                .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
                 .data = data,
                 .size = sizeInBytes
             };

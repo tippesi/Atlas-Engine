@@ -1,5 +1,4 @@
-#ifndef AE_SYSTEM_H
-#define AE_SYSTEM_H
+#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -30,6 +29,8 @@
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 
 #endif
+
+#define AE_ASSERT assert
 
 // SDL
 #ifdef AE_NO_APP
@@ -64,5 +65,3 @@ namespace Atlas {
     typedef short float16;
 
 }
-
-#endif

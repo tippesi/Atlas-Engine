@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSBLAS_H
-#define AE_GRAPHICSBLAS_H
+#pragma once
 
 #include "Common.h"
 #include "Buffer.h"
@@ -55,5 +54,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

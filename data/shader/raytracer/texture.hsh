@@ -1,125 +1,63 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <structures.hsh>
+#include <../globals.hsh>
 #include <../common/sample.hsh>
 
-layout (set = 2, binding = 0) uniform sampler2DArray baseColorTextures;
-layout (set = 2, binding = 1) uniform sampler2DArray opacityTextures;
-layout (set = 2, binding = 2) uniform sampler2DArray normalTextures;
-layout (set = 2, binding = 3) uniform sampler2DArray roughnessTextures;
-layout (set = 2, binding = 4) uniform sampler2DArray metalnessTextures;
-layout (set = 2, binding = 5) uniform sampler2DArray aoTextures;
 layout (set = 2, binding = 6) uniform samplerCube environmentMap;
 
-vec2 GetTexCoord(vec2 texCoord, TextureLevel level, vec2 size) {
-    
-    return (vec2(mod(texCoord.x, float(level.width) - 0.5),
-        mod(texCoord.y, float(level.height) - 0.5)) + 
-        vec2(level.x, level.y)) / size;
-        
-}
+vec3 SampleBaseColorBilinear(int textureId, float mip, vec2 texCoord) {
 
-TextureLevel GetTextureLevel(Texture texture, int level) {
-    if (level == 0) return texture.level0;
-    else if (level == 1) return texture.level1;
-    else if (level == 2) return texture.level2;
-    else if (level == 3) return texture.level3;
-    else if (level == 4) return texture.level4;
-    else return texture.level4;
-}
-
-vec3 SampleBaseColorBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+    if (textureId < 0)
         return vec3(1.0);
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(baseColorTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(baseColorTextures, 
-        vec3(texCoord, float(level.layer)), 0).rgb;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).rgb;
+
 }
 
-float SampleOpacityBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+float SampleOpacityBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
         return 1.0;
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(opacityTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(opacityTextures, 
-        vec3(texCoord, float(level.layer)), 0).r;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
 }
 
-vec3 SampleNormalBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+vec3 SampleNormalBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
         return vec3(1.0);
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(normalTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(normalTextures, 
-        vec3(texCoord, float(level.layer)), 0).rgb;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).rgb;
+
 }
 
-float SampleRoughnessBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+float SampleRoughnessBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
         return 1.0;
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(roughnessTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(roughnessTextures, 
-        vec3(texCoord, float(level.layer)), 0).r;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
 }
 
-float SampleMetalnessBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+float SampleMetalnessBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
         return 1.0;
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(metalnessTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(metalnessTextures, 
-        vec3(texCoord, float(level.layer)), 0).r;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
 }
 
-float SampleAoBilinear(TextureLevel level, vec2 texCoord) {
-    
-    if (level.valid < 0)
+float SampleAoBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
         return 1.0;
-        
-    texCoord *= vec2(level.width - 1, level.height - 1);
-    texCoord += vec2(0.5);
-    
-    vec2 size = vec2(textureSize(aoTextures, 0));
-    texCoord = GetTexCoord(texCoord, level, size);
-    
-    return textureLod(aoTextures, 
-        vec3(texCoord, float(level.layer)), 0).r;
-    
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).r;
+
 }
 
 vec4 SampleEnvironmentMap(vec3 v) {

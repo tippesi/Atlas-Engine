@@ -1,11 +1,11 @@
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D displacementMap;
-layout (set = 3, binding = 1, rgba32f) readonly uniform image2D pingpongMap;
+layout (set = 3, binding = 0, rgba16f) writeonly uniform image2DArray displacementMap;
+layout (set = 3, binding = 1, rgba32f) readonly uniform image2DArray pingpongMap;
 
 void main() {
 
-    ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     
     float perm = bool((coord.x + coord.y) & 1) ? -1.0 : 1.0;
     

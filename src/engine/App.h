@@ -1,5 +1,4 @@
-#ifndef AE_APP_H
-#define AE_APP_H
+#pragma once
 
 #include <EngineInstance.h>
 #include <input/Mouse.h>
@@ -23,5 +22,3 @@ public:
     virtual void Render(float deltaTime) final;
 
 };
-
-#endif

@@ -1,9 +1,8 @@
-
-#ifndef AE_GRAPHICINSTANCE_H
-#define AE_GRAPHICINSTANCE_H
+#pragma once
 
 #include <string>
 #include <vector>
+#include <set>
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
@@ -19,6 +18,13 @@ namespace Atlas {
 
     namespace Graphics {
 
+        struct InstanceDesc {
+            std::string instanceName;
+
+            bool enableValidationLayers = false;
+            Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
+        };
+
         class Instance {
 
             friend GraphicsDevice;
@@ -27,7 +33,7 @@ namespace Atlas {
             friend Extensions;
 
         public:
-            explicit Instance(const std::string& instanceName, bool enableValidationLayers = false);
+            explicit Instance(const InstanceDesc& desc);
 
             Instance(const Instance& that) = delete;
 
@@ -40,6 +46,8 @@ namespace Atlas {
             GraphicsDevice* GetGraphicsDevice() const;
 
             Surface* CreateSurface(SDL_Window* window);
+
+            Surface* CreateHeadlessSurface();
 
             bool isComplete = false;
 
@@ -60,8 +68,6 @@ namespace Atlas {
 
             VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();
 
-            bool CheckRequiredVector(const std::vector<const char*>& available, const std::vector<const char*>& required);
-
             const std::string name;
             bool validationLayersEnabled;
 
@@ -70,11 +76,15 @@ namespace Atlas {
             std::vector<VkExtensionProperties> extensionProperties;
             std::vector<const char*> extensionNames;
 
+            std::set<std::string> supportedExtensions;
+
             VkInstance instance;
             VkDebugUtilsMessengerEXT debugMessenger;
 
             GraphicsDevice* graphicsDevice;
             std::vector<Surface*> surfaces;
+
+            Log::Severity validationLayerSeverity;
 
         private:
             static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -88,5 +98,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

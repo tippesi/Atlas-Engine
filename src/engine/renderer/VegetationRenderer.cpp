@@ -78,7 +78,7 @@ namespace Atlas {
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
                         .twoSided = material->twoSided ? 1u : 0u,
-                        .materialIdx = uint32_t(materialMap[material]),
+                        .materialIdx = uint32_t(materialMap[material.get()]),
                         .normalScale = material->normalScale,
                         .displacementScale = material->displacementScale
                     };

@@ -1,5 +1,4 @@
-#ifndef AE_GBUFFERDOWNSCALERENDERER_H
-#define AE_GBUFFERDOWNSCALERENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -24,13 +23,8 @@ namespace Atlas {
             PipelineConfig downscalePipelineConfig;
             PipelineConfig downscaleDepthOnlyPipelineConfig;
 
-            //OldShader::OldShader downscale;
-            //OldShader::OldShader downscaleDepthOnly;
-
         };
 
     }
 
 }
-
-#endif

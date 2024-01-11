@@ -1,5 +1,4 @@
-#ifndef AE_TEXTURERENDERER_H
-#define AE_TEXTURERENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -73,5 +72,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

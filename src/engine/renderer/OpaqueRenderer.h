@@ -1,5 +1,4 @@
-#ifndef AE_GEOMETRYRENDERER_H
-#define AE_GEOMETRYRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderList.h"
@@ -44,5 +43,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

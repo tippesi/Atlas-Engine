@@ -1,5 +1,4 @@
-#ifndef AE_IMPOSTORSHADOWRENDERER_H
-#define AE_IMPOSTORSHADOWRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -30,5 +29,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

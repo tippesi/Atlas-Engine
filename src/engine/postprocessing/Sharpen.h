@@ -1,5 +1,4 @@
-#ifndef AE_SHARPEN_H
-#define AE_SHARPEN_H
+#pragma once
 
 #include "../System.h"
 
@@ -22,5 +21,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

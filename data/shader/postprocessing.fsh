@@ -15,6 +15,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
     float whitePoint;
     float saturation;
+    float contrast;
     float filmGrainStrength;
     int bloomPasses;
     float aberrationStrength;
@@ -125,7 +126,7 @@ void main() {
     color *= Uniforms.exposure;
 
 #ifdef FILM_GRAIN
-    color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData.time)) - 1.0);
+    color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData[0].time)) - 1.0);
     color = max(color, vec3(0.0));
 #endif
     
@@ -159,6 +160,8 @@ void main() {
 #endif
 
     color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
+
+    color = ((color - 0.5) * max(Uniforms.contrast, 0.0)) + 0.5;
 
 #ifdef VIGNETTE    
     float vignetteFactor = max(1.0 - max(pow(length(fPosition) - Uniforms.vignetteOffset,

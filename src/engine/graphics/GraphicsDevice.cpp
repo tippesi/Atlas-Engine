@@ -21,10 +21,7 @@ namespace Atlas {
             instance = Instance::DefaultInstance;
 
             std::vector<const char*> requiredExtensions = {
-                    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-#ifdef AE_OS_MACOS
-                    , "VK_KHR_portability_subset"
-#endif
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             };
 
             std::vector<const char*> optionalExtensions = {
@@ -32,27 +29,29 @@ namespace Atlas {
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                 VK_KHR_RAY_QUERY_EXTENSION_NAME
+#ifdef AE_BINDLESS
+                , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
+#endif
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
+#endif
+#ifdef AE_OS_MACOS
+                , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
 
             SelectPhysicalDevice(instance->instance, surface->GetNativeSurface(),
                 requiredExtensions, optionalExtensions);
 
-            GetPhysicalDeviceProperties(physicalDevice);
+            auto availableOptionalExtension = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
+            requiredExtensions.insert(requiredExtensions.end(), availableOptionalExtension.begin(),
+                availableOptionalExtension.end());
 
-            auto optionalExtensionOverlap = CheckDeviceOptionalExtensionSupport(physicalDevice, optionalExtensions);
-            requiredExtensions.insert(requiredExtensions.end(), optionalExtensionOverlap.begin(),
-                optionalExtensionOverlap.end());
+            GetPhysicalDeviceProperties(physicalDevice);            
 
             auto queueCreateInfos = CreateQueueInfos();
 
             BuildPhysicalDeviceFeatures(physicalDevice);
-
-#ifdef AE_OS_MACOS
-            setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-#endif
 
             // Uses the physical device structures generated above
             CreateDevice(queueCreateInfos, requiredExtensions, enableValidationLayers);
@@ -89,63 +88,70 @@ namespace Atlas {
             // so delete all of the memoryManager content before cleaning the rest
             memoryManager->DestroyAllImmediate();
 
-            for (auto& tlasRef : tlases) {
-                assert(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
+            // We assume everything else is terminated by now, so this is the only thread still alive
+            // In that case we don't lock all the mutexes
+            for (auto& tlasRef : tlases.data) {
+                AE_ASSERT(tlasRef.use_count() == 1 && "TLAS wasn't deallocated or allocated wrongly");
                 tlasRef.reset();
             }
 
-            for (auto& blasRef : blases) {
-                assert(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
+            for (auto& blasRef : blases.data) {
+                AE_ASSERT(blasRef.use_count() == 1 && "BLAS wasn't deallocated or allocated wrongly");
                 blasRef.reset();
             }
 
-            for (auto& pipelineRef : pipelines) {
-                assert(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
+            for (auto& pipelineRef : pipelines.data) {
+                AE_ASSERT(pipelineRef.use_count() == 1 && "Pipeline wasn't deallocated or allocated wrongly");
                 pipelineRef.reset();
             }
 
-            for (auto& frameBufferRef : frameBuffers) {
-                assert(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
+            for (auto& frameBufferRef : frameBuffers.data) {
+                AE_ASSERT(frameBufferRef.use_count() == 1 && "Frame buffer wasn't deallocated or allocated wrongly");
                 frameBufferRef.reset();
             }
 
-            for (auto& renderPassRef : renderPasses) {
-                assert(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
+            for (auto& renderPassRef : renderPasses.data) {
+                AE_ASSERT(renderPassRef.use_count() == 1 && "Render pass wasn't deallocated or allocated wrongly");
                 renderPassRef.reset();
             }
 
-            for (auto& shaderRef : shaders) {
-                assert(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
+            for (auto& shaderRef : shaders.data) {
+                AE_ASSERT(shaderRef.use_count() == 1 && "Shader wasn't deallocated or allocated wrongly");
                 shaderRef.reset();
             }
 
-            for (auto& bufferRef : buffers) {
-                assert(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
+            for (auto& bufferRef : buffers.data) {
+                AE_ASSERT(bufferRef.use_count() == 1 && "Buffer wasn't deallocated or allocated wrongly");
                 bufferRef.reset();
             }
 
-            for (auto& multiBufferRef : multiBuffers) {
-                assert(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
+            for (auto& multiBufferRef : multiBuffers.data) {
+                AE_ASSERT(multiBufferRef.use_count() == 1 && "Multi buffer wasn't deallocated or allocated wrongly");
                 multiBufferRef.reset();
             }
 
-            for (auto& imageRef : images) {
-                assert(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
+            for (auto& imageRef : images.data) {
+                AE_ASSERT(imageRef.use_count() == 1 && "Image wasn't deallocated or allocated wrongly");
                 imageRef.reset();
             }
 
-            for (auto& samplerRef : samplers) {
-                assert(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
+            for (auto& samplerRef : samplers.data) {
+                AE_ASSERT(samplerRef.use_count() == 1 && "Sampler wasn't deallocated or allocated wrongly");
                 samplerRef.reset();
             }
 
-            for (auto& poolRef : descriptorPools) {
-                assert(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
+            for (auto& poolRef : descriptorPools.data) {
+                AE_ASSERT(poolRef.use_count() == 1 && "Descriptor pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
-            for (auto& poolRef : queryPools) {
-                assert(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
+            for (auto& descLayoutRef : descriptorSetLayouts.data) {
+                AE_ASSERT(descLayoutRef.use_count() == 1 && "Descriptor layout wasn't deallocated or allocated wrongly");
+                descLayoutRef.reset();
+            }
+
+            for (auto& poolRef : queryPools.data) {
+                AE_ASSERT(poolRef.use_count() == 1 && "Query pool wasn't deallocated or allocated wrongly");
                 poolRef.reset();
             }
 
@@ -159,12 +165,11 @@ namespace Atlas {
         SwapChain* GraphicsDevice::CreateSwapChain(VkPresentModeKHR presentMode, ColorSpace preferredColorSpace) {
 
             auto nativeSurface = surface->GetNativeSurface();
-            auto nativeWindow = surface->GetNativeWindow();
 
             auto supportDetails = SwapChainSupportDetails(physicalDevice, nativeSurface);
 
             int32_t width, height;
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+            surface->GetExtent(width, height);
 
             windowWidth = width;
             windowHeight = height;
@@ -199,7 +204,8 @@ namespace Atlas {
 
             auto renderPass = std::make_shared<RenderPass>(this, desc);
 
-            renderPasses.push_back(renderPass);
+            std::lock_guard<std::mutex> guard(renderPasses.mutex);
+            renderPasses.data.push_back(renderPass);
 
             return renderPass;
 
@@ -209,7 +215,8 @@ namespace Atlas {
 
             auto frameBuffer = std::make_shared<FrameBuffer>(this, desc);
 
-            frameBuffers.push_back(frameBuffer);
+            std::lock_guard<std::mutex> guard(frameBuffers.mutex);
+            frameBuffers.data.push_back(frameBuffer);
 
             return frameBuffer;
 
@@ -219,7 +226,8 @@ namespace Atlas {
 
             auto shader = std::make_shared<Shader>(this, desc);
 
-            shaders.push_back(shader);
+            std::lock_guard<std::mutex> guard(shaders.mutex);
+            shaders.data.push_back(shader);
 
             return shader;
 
@@ -229,7 +237,8 @@ namespace Atlas {
 
             auto pipeline = std::make_shared<Pipeline>(this, desc);
 
-            pipelines.push_back(pipeline);
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
 
             return pipeline;
 
@@ -239,7 +248,8 @@ namespace Atlas {
 
             auto pipeline = std::make_shared<Pipeline>(this, desc);
 
-            pipelines.push_back(pipeline);
+            std::lock_guard<std::mutex> guard(pipelines.mutex);
+            pipelines.data.push_back(pipeline);
 
             return pipeline;
 
@@ -249,7 +259,8 @@ namespace Atlas {
 
             auto buffer = std::make_shared<Buffer>(this, desc);
 
-            buffers.push_back(buffer);
+            std::lock_guard<std::mutex> guard(buffers.mutex);
+            buffers.data.push_back(buffer);
 
             return buffer;
 
@@ -259,7 +270,8 @@ namespace Atlas {
 
             auto multiBuffer = std::make_shared<MultiBuffer>(this, desc);
 
-            multiBuffers.push_back(multiBuffer);
+            std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+            multiBuffers.data.push_back(multiBuffer);
 
             return multiBuffer;
 
@@ -269,7 +281,8 @@ namespace Atlas {
 
             auto image = std::make_shared<Image>(this, desc);
 
-            images.push_back(image);
+            std::lock_guard<std::mutex> guard(images.mutex);
+            images.data.push_back(image);
 
             return image;
 
@@ -279,9 +292,21 @@ namespace Atlas {
 
             auto sampler = std::make_shared<Sampler>(this, desc);
 
-            samplers.push_back(sampler);
+            std::lock_guard<std::mutex> guard(samplers.mutex);
+            samplers.data.push_back(sampler);
 
             return sampler;
+
+        }
+
+        Ref<DescriptorSetLayout> GraphicsDevice::CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc) {
+
+            auto layout = std::make_shared<DescriptorSetLayout>(this, desc);
+
+            std::lock_guard<std::mutex> guard(descriptorSetLayouts.mutex);
+            descriptorSetLayouts.data.push_back(layout);
+
+            return layout;
 
         }
 
@@ -289,7 +314,8 @@ namespace Atlas {
 
             auto pool = std::make_shared<DescriptorPool>(this);
 
-            descriptorPools.push_back(pool);
+            std::lock_guard<std::mutex> guard(descriptorPools.mutex);
+            descriptorPools.data.push_back(pool);
 
             return pool;
 
@@ -299,7 +325,8 @@ namespace Atlas {
 
             auto pool = std::make_shared<QueryPool>(this, desc);
 
-            queryPools.push_back(pool);
+            std::lock_guard<std::mutex> guard(queryPools.mutex);
+            queryPools.data.push_back(pool);
 
             return pool;
 
@@ -309,7 +336,8 @@ namespace Atlas {
 
             auto blas = std::make_shared<BLAS>(this, desc);
 
-            blases.push_back(blas);
+            std::lock_guard<std::mutex> guard(blases.mutex);
+            blases.data.push_back(blas);
 
             return blas;
 
@@ -319,7 +347,8 @@ namespace Atlas {
 
             auto tlas = std::make_shared<TLAS>(this, desc);
 
-            tlases.push_back(tlas);
+            std::lock_guard<std::mutex> guard(tlases.mutex);
+            tlases.data.push_back(tlas);
 
             return tlas;
 
@@ -352,10 +381,10 @@ namespace Atlas {
 
         void GraphicsDevice::SubmitCommandList(CommandList *cmd, VkPipelineStageFlags waitStage, ExecutionOrder order) {
 
-            assert(!cmd->frameIndependent && "Submitted command list is frame independent."
+            AE_ASSERT(!cmd->frameIndependent && "Submitted command list is frame independent."
                 && "Please use the flush method instead");
 
-            assert(swapChain->isComplete && "Swap chain should be complete."
+            AE_ASSERT(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
 
             auto frame = GetFrameData();
@@ -378,7 +407,7 @@ namespace Atlas {
 
         void GraphicsDevice::FlushCommandList(CommandList *cmd) {
 
-            assert(cmd->frameIndependent && "Flushed command list is not frame independent."
+            AE_ASSERT(cmd->frameIndependent && "Flushed command list is not frame independent."
                    && "Please use the submit method instead");
 
             VkSubmitInfo submit = {};
@@ -434,7 +463,7 @@ namespace Atlas {
                 allListSubmitted &= commandList->isSubmitted;
             }
 
-            assert(allListSubmitted && "Not all command list were submitted before frame completion." &&
+            AE_ASSERT(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
             auto presenterQueue = SubmitAllCommandLists();
@@ -482,8 +511,12 @@ namespace Atlas {
 
             // Update frame index of all objects in need
             memoryManager->UpdateFrameIndex(frameIndex);
-            for (auto& multiBuffer : multiBuffers) {
-                multiBuffer->UpdateFrameIndex(frameIndex);
+
+            {
+                std::lock_guard<std::mutex> guard(multiBuffers.mutex);
+                for (auto& multiBuffer : multiBuffers.data) {
+                    multiBuffer->UpdateFrameIndex(frameIndex);
+                }
             }
 
             auto nextFrame = GetFrameData();
@@ -623,7 +656,7 @@ namespace Atlas {
             }
 
             auto foundSuitableDevice = candidates.rbegin()->first > 0;
-            assert(foundSuitableDevice && "No suitable device found");
+            AE_ASSERT(foundSuitableDevice && "No suitable device found");
             // Check if the best candidate is suitable at all
             if (foundSuitableDevice) {
                 physicalDevice = candidates.rbegin()->second;
@@ -635,13 +668,13 @@ namespace Atlas {
             {
                 FindQueueFamilies(physicalDevice, surface);
                 auto completeIndices = queueFamilyIndices.IsComplete();
-                assert(completeIndices && "No valid queue family found");
+                AE_ASSERT(completeIndices && "No valid queue family found");
                 if (!completeIndices) {
                     return false;
                 }
 
                 auto extensionsSupported = CheckDeviceExtensionSupport(physicalDevice, requiredExtensions);
-                assert(extensionsSupported && "Some required extensions are not supported");
+                AE_ASSERT(extensionsSupported && "Some required extensions are not supported");
                 if (!extensionsSupported) {
                     return false;
                 }
@@ -656,6 +689,8 @@ namespace Atlas {
             const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions) {
 
             int32_t score = 0;
+
+            
 
             VkPhysicalDeviceProperties physicalDeviceProperties;
             VkPhysicalDeviceFeatures physicalDeviceFeatures;
@@ -857,6 +892,8 @@ namespace Atlas {
             std::vector<const char*> extensionOverlap;
             for (const auto extensionName : extensionNames) {
                 for (const auto& extension : availableExtensions) {
+                    supportedExtensions.insert(extension.extensionName);
+
                     if (std::string(extension.extensionName) == std::string(extensionName)) {
                         extensionOverlap.push_back(extensionName);
                     }
@@ -888,14 +925,22 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
+
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+            deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
 
-            propertiesBuilder.Append(rayTracingPipelineProperties);
-            propertiesBuilder.Append(accelerationStructureProperties);
+            propertiesBuilder.Append(deviceProperties11);
+            propertiesBuilder.Append(deviceProperties12);
+
+            if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+                propertiesBuilder.Append(rayTracingPipelineProperties);
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
+                propertiesBuilder.Append(accelerationStructureProperties);
 
             vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
@@ -913,12 +958,6 @@ namespace Atlas {
             createInfo.enabledExtensionCount = uint32_t(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
-            std::set<std::string> availableExtensions;
-
-            for (auto extensionName : extensions) {
-                availableExtensions.insert(extensionName);
-            }
-
             StructureChainBuilder featureBuilder(createInfo);
 
             VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature = {};
@@ -926,20 +965,20 @@ namespace Atlas {
 
             VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeature = {};
             rtPipelineFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-            
+
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
             // Check for ray tracing extension support
-            if (availableExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
-                availableExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
-               
+
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
@@ -947,32 +986,42 @@ namespace Atlas {
                 support.hardwareRayTracing = true;
             }
 
-            if (availableExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
                 support.shaderPrintf = true;
             }
 
+#ifdef AE_BINDLESS
+            if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
+                features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
+                support.bindless = true;
+            }
+#endif
+
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-            // This is hacked since I can't get it to work otherwise
-            // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
-            portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
-            portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
 
-            // This feature struct is the last one in the pNext chain for now
-            featureBuilder.Append(portabilityFeatures);
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+                // This is hacked since I can't get it to work otherwise
+                // See VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR in vulkan_core.h
+                portabilityFeatures.sType = static_cast<VkStructureType>(1000163000);
+                portabilityFeatures.mutableComparisonSamplers = VK_TRUE;
+
+                // This feature struct is the last one in the pNext chain for now
+                featureBuilder.Append(portabilityFeatures);
+            }
 #endif
             featureBuilder.Append(features);
+            featureBuilder.Append(features11);
+            featureBuilder.Append(features12);
 
-            VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device))
+            VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 
         }
 
         bool GraphicsDevice::CheckForWindowResize() {
 
-            auto nativeWindow = surface->GetNativeWindow();
-
             int32_t width, height;
-            SDL_GL_GetDrawableSize(nativeWindow, &width, &height);
+            surface->GetExtent(width, height);
 
             if (width != windowWidth || height != windowHeight) {
                 windowWidth = width;
@@ -1020,115 +1069,19 @@ namespace Atlas {
 
         void GraphicsDevice::DestroyUnusedGraphicObjects() {
 
-            for (size_t i = 0; i < renderPasses.size(); i++) {
-                auto& renderPassRef = renderPasses[i];
-                if (renderPassRef.use_count() == 1) {
-                    renderPassRef.swap(renderPasses.back());
-                    memoryManager->DestroyAllocation(renderPasses.back());
-                    renderPasses.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < pipelines.size(); i++) {
-                auto& pipelineRef = pipelines[i];
-                if (pipelineRef.use_count() == 1) {
-                    pipelineRef.swap(pipelines.back());
-                    memoryManager->DestroyAllocation(pipelines.back());
-                    pipelines.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < shaders.size(); i++) {
-                auto& shaderRef = shaders[i];
-                if (shaderRef.use_count() == 1) {
-                    shaderRef.swap(shaders.back());
-                    memoryManager->DestroyAllocation(shaders.back());
-                    shaders.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < buffers.size(); i++) {
-                auto& bufferRef = buffers[i];
-                if (bufferRef.use_count() == 1) {
-                    bufferRef.swap(buffers.back());
-                    memoryManager->DestroyAllocation(buffers.back());
-                    buffers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < multiBuffers.size(); i++) {
-                auto& multiBufferRef = multiBuffers[i];
-                if (multiBufferRef.use_count() == 1) {
-                    multiBufferRef.swap(multiBuffers.back());
-                    memoryManager->DestroyAllocation(multiBuffers.back());
-                    multiBuffers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < images.size(); i++) {
-                auto& imageRef = images[i];
-                if (imageRef.use_count() == 1) {
-                    imageRef.swap(images.back());
-                    memoryManager->DestroyAllocation(images.back());
-                    images.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < samplers.size(); i++) {
-                auto& samplerRef = samplers[i];
-                if (samplerRef.use_count() == 1) {
-                    samplerRef.swap(samplers.back());
-                    memoryManager->DestroyAllocation(samplers.back());
-                    samplers.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < descriptorPools.size(); i++) {
-                auto& poolRef = descriptorPools[i];
-                if (poolRef.use_count() == 1) {
-                    poolRef.swap(descriptorPools.back());
-                    memoryManager->DestroyAllocation(descriptorPools.back());
-                    descriptorPools.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < queryPools.size(); i++) {
-                auto& poolRef = queryPools[i];
-                if (poolRef.use_count() == 1) {
-                    poolRef.swap(queryPools.back());
-                    memoryManager->DestroyAllocation(queryPools.back());
-                    queryPools.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < blases.size(); i++) {
-                auto& blasRef = blases[i];
-                if (blasRef.use_count() == 1) {
-                    blasRef.swap(blases.back());
-                    memoryManager->DestroyAllocation(blases.back());
-                    blases.pop_back();
-                    i--;
-                }
-            }
-
-            for (size_t i = 0; i < tlases.size(); i++) {
-                auto& tlasRef = tlases[i];
-                if (tlasRef.use_count() == 1) {
-                    tlasRef.swap(tlases.back());
-                    memoryManager->DestroyAllocation(tlases.back());
-                    tlases.pop_back();
-                    i--;
-                }
-            }
+            DeleteOutdatedResources<RenderPass>(renderPasses);
+            DeleteOutdatedResources<FrameBuffer>(frameBuffers);
+            DeleteOutdatedResources<Shader>(shaders);
+            DeleteOutdatedResources<Pipeline>(pipelines);
+            DeleteOutdatedResources<Buffer>(buffers);
+            DeleteOutdatedResources<MultiBuffer>(multiBuffers);
+            DeleteOutdatedResources<Image>(images);
+            DeleteOutdatedResources<Sampler>(samplers);
+            DeleteOutdatedResources<DescriptorSetLayout>(descriptorSetLayouts);
+            DeleteOutdatedResources<DescriptorPool>(descriptorPools);
+            DeleteOutdatedResources<QueryPool>(queryPools);
+            DeleteOutdatedResources<BLAS>(blases);
+            DeleteOutdatedResources<TLAS>(tlases);
 
         }
 

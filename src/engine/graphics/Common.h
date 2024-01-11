@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSCOMMON_H
-#define AE_GRAPHICSCOMMON_H
+#pragma once
 
 #include "Initializers.h"
 #include "../Log.h"
@@ -11,7 +10,7 @@
 #include <cassert>
 
 #define FRAME_DATA_COUNT 2
-#define DESCRIPTOR_POOL_SIZE 128
+#define DESCRIPTOR_POOL_SIZE 128u
 #define DESCRIPTOR_SET_COUNT 4
 #define BINDINGS_PER_DESCRIPTOR_SET 32
 #define MAX_COLOR_ATTACHMENTS 8
@@ -22,7 +21,17 @@
                 {                                                                   \
                     Atlas::Log::Error("Detected Vulkan error: " +                   \
                         Atlas::Graphics::VkResultToString(err));                    \
-                    assert(err == VK_SUCCESS);                                      \
+                    AE_ASSERT(err == VK_SUCCESS);                                      \
+                }                                                                   \
+            }
+
+#define VK_CHECK_MESSAGE(x,y) {                                                     \
+                VkResult err = x;                                                   \
+                if (err)                                                            \
+                {                                                                   \
+                    Atlas::Log::Error("Detected Vulkan error: " +                   \
+                        Atlas::Graphics::VkResultToString(err));                    \
+                    AE_ASSERT(err == VK_SUCCESS && y);                                 \
                 }                                                                   \
             }
 
@@ -75,5 +84,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

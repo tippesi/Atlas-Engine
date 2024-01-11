@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSFORMAT_H
-#define AE_GRAPHICSFORMAT_H
+#pragma once
 
 #include "Common.h"
 
@@ -279,5 +278,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

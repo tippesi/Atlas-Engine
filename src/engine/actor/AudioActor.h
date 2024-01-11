@@ -1,5 +1,4 @@
-#ifndef AE_AUDIOACTOR_H
-#define AE_AUDIOACTOR_H
+#pragma once
 
 #include "../System.h"
 #include "../audio/AudioStream.h"
@@ -46,5 +45,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

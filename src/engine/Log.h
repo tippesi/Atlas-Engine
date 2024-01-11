@@ -1,5 +1,4 @@
-#ifndef AE_LOG_H
-#define AE_LOG_H
+#pragma once
 
 #include "System.h"
 
@@ -74,5 +73,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

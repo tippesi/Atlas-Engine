@@ -1,5 +1,4 @@
-#ifndef AE_POINTLIGHT_H
-#define AE_POINTLIGHT_H
+#pragma once
 
 #include "../System.h"
 #include "Light.h"
@@ -36,5 +35,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

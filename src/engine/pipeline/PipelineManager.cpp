@@ -13,14 +13,27 @@ namespace Atlas {
 #endif
     std::mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
+    Ref<Graphics::DescriptorSetLayout> PipelineManager::globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
 
     void PipelineManager::Init() {
 
-
+        for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+            globalDescriptorSetLayoutOverrides[i] = nullptr;
+        }
 
     }
 
     void PipelineManager::Shutdown() {
+
+        Clear();
+
+    }
+
+    void PipelineManager::Clear() {
+
+        for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+            globalDescriptorSetLayoutOverrides[i] = nullptr;
+        }
 
         shaderToVariantsMap.clear();
 
@@ -33,12 +46,17 @@ namespace Atlas {
         std::unordered_map<std::string, std::filesystem::file_time_type> lastModifiedMap;
         if (hotReload) {
             for (auto& [_, variants] : shaderToVariantsMap) {
+                std::lock_guard innerLock(variants->variantsMutex);
+
                 for (auto& stageFile : variants->shader->shaderStageFiles) {
                     for (auto& includePath : stageFile.includes) {
                         if (lastModifiedMap.find(includePath) != lastModifiedMap.end())
                             continue;
 
-                        lastModifiedMap[includePath] = std::filesystem::last_write_time(includePath);
+                        std::error_code errorCode;
+                        auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
+                        if (!errorCode)
+                            lastModifiedMap[includePath] = lastModified;
                     }
                 }
             }
@@ -46,11 +64,25 @@ namespace Atlas {
 
         // Do check for hot reload only once per frame
         for (auto& [hash, variants] : shaderToVariantsMap) {
+            std::lock_guard innerLock(variants->variantsMutex);
+
             if (hotReload && variants->shader->Reload(lastModifiedMap)) {
                 // Clear variants on hot reload
-                variants->variants.clear();
+                variants->pipelines.clear();
             }
         }
+
+    }
+
+    void PipelineManager::EnableHotReload() {
+
+        hotReload = true;
+
+    }
+
+    void PipelineManager::DisableHotReload() {
+
+        hotReload = false;
 
     }
 
@@ -63,6 +95,40 @@ namespace Atlas {
     Ref<Graphics::Pipeline> PipelineManager::GetPipeline(PipelineConfig &config) {
 
         return GetOrCreatePipeline(config);
+
+    }
+
+    void PipelineManager::OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set) {
+        
+        std::lock_guard lock(shaderToVariantsMutex);
+
+        if (set < DESCRIPTOR_SET_COUNT) {
+
+            globalDescriptorSetLayoutOverrides[set] = layout;
+
+            for (auto& [_, variants] : shaderToVariantsMap) {
+                
+                std::unordered_map<size_t, Ref<Graphics::Pipeline>> validPipelines;
+
+                std::lock_guard innerLock(variants->variantsMutex);
+
+                for (auto& [pipelineHash, pipeline] : variants->pipelines) {
+
+                    // Note: We need to only recreate pipelines where the override layout
+                    // is compatible with the shader. Other pipelines should remain valid
+                    // Also: We might override a layout per shader several times, but that doesn't hurt
+                    if (!pipeline->shader->TryOverrideDescriptorSetLayout(layout, set)) {
+                        validPipelines[pipelineHash] = pipeline;
+                    }
+
+                }
+
+                // Overwrite old piplines
+                variants->pipelines = validPipelines;
+
+            }
+
+        }
 
     }
 
@@ -100,21 +166,33 @@ namespace Atlas {
             }
 
             Ref<Graphics::Pipeline> pipeline;
-            if (!variants->variants.contains(config.variantHash)) {
+            if (!variants->pipelines.contains(config.variantHash)) {
+                auto shaderVariant = variants->shader->GetVariant(config.macros);
+                
+                for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
+                    auto& layout = globalDescriptorSetLayoutOverrides[i];
+                    if (layout == nullptr) continue;
+
+                    // Only override layout if it is compatible
+                    if (shaderVariant->sets[i].bindingCount > 0) {
+                        shaderVariant->TryOverrideDescriptorSetLayout(layout, i);
+                    }
+                }
+
                 if (config.isCompute) {
-                    auto pipelineDesc = Graphics::ComputePipelineDesc {
-                        .shader = variants->shader->GetVariant(config.macros)
+                    auto pipelineDesc = Graphics::ComputePipelineDesc{
+                        .shader = shaderVariant
                     };
                     pipeline = graphicsDevice->CreatePipeline(pipelineDesc);
                 }
                 else {
-                    config.graphicsPipelineDesc.shader = variants->shader->GetVariant(config.macros);
+                    config.graphicsPipelineDesc.shader = shaderVariant;
                     pipeline = graphicsDevice->CreatePipeline(config.graphicsPipelineDesc);
                 }
-                variants->variants[config.variantHash] = pipeline;
+                variants->pipelines[config.variantHash] = pipeline;
             }
             else {
-                pipeline = variants->variants[config.variantHash];
+                pipeline = variants->pipelines[config.variantHash];
             }
 
             return pipeline;

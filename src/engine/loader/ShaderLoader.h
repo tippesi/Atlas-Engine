@@ -1,5 +1,4 @@
-#ifndef AE_SHADERLOADER_H
-#define AE_SHADERLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../graphics/Shader.h"
@@ -16,7 +15,8 @@ namespace Atlas {
         public:
             static Graphics::ShaderStageFile LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage);
 
-            static bool CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime);
+            static bool CheckForReload(const std::string& filename, const std::filesystem::file_time_type fileTime,
+                std::filesystem::file_time_type& pathLastModified);
 
             static void SetSourceDirectory(const std::string& sourceDirectory);
 
@@ -32,9 +32,6 @@ namespace Atlas {
             static std::vector<std::string> ExtractExtensions(std::vector<std::string> codeLines,
                 std::vector<Graphics::ShaderStageFile::Extension>& extensions);
 
-            static std::filesystem::file_time_type GetModifiedTime(const std::string& path, 
-                const std::filesystem::file_time_type defaultTime);
-
             static std::string sourceDirectory;
 
         };
@@ -42,5 +39,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

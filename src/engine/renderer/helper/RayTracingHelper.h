@@ -1,5 +1,4 @@
-#ifndef RAYTRACINGHELPER_H
-#define RAYTRACINGHELPER_H
+#pragma once
 
 #include "../../System.h"
 #include "../../scene/Scene.h"
@@ -99,5 +98,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

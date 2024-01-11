@@ -1,5 +1,4 @@
-#ifndef AE_KERNEL_H
-#define AE_KERNEL_H
+#pragma once
 
 #include "System.h"
 #include <vector>
@@ -92,5 +91,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

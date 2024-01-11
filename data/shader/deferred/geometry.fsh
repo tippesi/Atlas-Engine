@@ -2,11 +2,7 @@
 #include <../common/normalencode.hsh>
 #include <../globals.hsh>
 
-#ifdef GENERATE_IMPOSTOR
-layout (location = 0) out vec4 baseColorFS;
-#else
 layout (location = 0) out vec3 baseColorFS;
-#endif
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
@@ -50,13 +46,6 @@ layout(location=5) in vec4 vertexColorsVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=6) in mat3 TBN;
-#endif
-
-#ifdef GENERATE_IMPOSTOR
-uniform vec3 baseColor;
-uniform float roughness;
-uniform float metalness;
-uniform float ao;
 #endif
 
 layout(push_constant) uniform constants {
@@ -127,11 +116,7 @@ void main() {
     texCoords = ParallaxMapping(texCoords, viewDir);
 #endif
 
-#ifdef GENERATE_IMPOSTOR
-    baseColorFS = vec4(1.0);
-#else
     baseColorFS = vec3(1.0);
-#endif
 
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
@@ -147,15 +132,7 @@ void main() {
 
 #ifdef BASE_COLOR_MAP
     vec3 textureColor = texture(baseColorMap, texCoords).rgb;
-#ifdef GENERATE_IMPOSTOR
-    baseColorFS *= vec4(textureColor.rgb, 1.0);
-#else
     baseColorFS *= textureColor.rgb;
-#endif
-#endif
-
-#ifdef GENERATE_IMPOSTOR
-    baseColorFS *= vec4(baseColor, 1.0);
 #endif
 
 #ifdef VERTEX_COLORS
@@ -178,15 +155,9 @@ void main() {
     
     geometryNormalFS = EncodeNormal(geometryNormal);
 
-#ifdef GENERATE_IMPOSTOR
-    float roughnessFactor = roughness;
-    float metalnessFactor = metalness;
-    float aoFactor = ao;
-#else
     float roughnessFactor = 1.0;
     float metalnessFactor = 1.0;
     float aoFactor = 1.0;
-#endif
 
 #ifdef ROUGHNESS_MAP
     roughnessFactor *= texture(roughnessMap, texCoords).r;
@@ -201,16 +172,12 @@ void main() {
     roughnessMetalnessAoFS.b = aoFactor;
 #endif
 
-#ifdef GENERATE_IMPOSTOR
-    roughnessMetalnessAoFS = vec3(roughnessFactor,
-        metalnessFactor, aoFactor);
-#endif
     // Calculate velocity
     vec2 ndcL = ndcLastVS.xy / ndcLastVS.z;
     vec2 ndcC = ndcCurrentVS.xy / ndcCurrentVS.z;
 
-    ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData[0].jitterLast;
+    ndcC -= globalData[0].jitterCurrent;
 
     velocityFS = (ndcL - ndcC) * 0.5;
 

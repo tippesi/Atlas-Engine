@@ -1,6 +1,7 @@
 name: Build pipeline
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - '*'
@@ -11,6 +12,8 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE_DEBUG: Debug
   BUILD_TYPE_RELEASE: Release
+  USE_CACHE: true
+  RUN_TESTS: true
 
 jobs:
   windows-build:
@@ -24,13 +27,35 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Windows
+          key: ${{ runner.os }}
+
+      - name: Checkout swiftshader repository
+        uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          repository: google/swiftshader
+          path: swiftshader
 
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 93895b28ea7bc8cda10f156c5d336f3fc070f8b1
+          committish: 6c937c32233bdf295ab2140dbce97fd00084a5f3
+          cache: ${{ env.USE_CACHE }}
+
+      # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
+        with:
+          version: 1.3.261.1
+          cache: true
 
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
@@ -41,20 +66,33 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
-        with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
-
       - name: Run scripts
         shell: pwsh
         # Add additional scripting steps here
         run: |
+          Get-ChildItem -Recurse D:/a/Atlas-Engine/Atlas-Engine/VULKAN_SDK
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Remove-Item –path vcpkg_installed –recurse
+
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "cl"
+          cxx: "cl"
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          parallel: 16
+          build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Windows
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}    
 
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -64,9 +102,38 @@ jobs:
           cc: "cl"
           cxx: "cl"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Build ${{ matrix.build-type }} test configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        if: ${{ env.RUN_TESTS }} == true
+        with:
+          build-dir: ${{ github.workspace }}/tests/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "cl"
+          cxx: "cl"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+
+      - name: Run tests
+        shell: pwsh
+        if: ${{ env.RUN_TESTS }} == true
+        # Add additional scripting steps here
+        run: |
+          Copy-Item -Path "${{ github.workspace }}\swiftshader\build\Windows\*.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
+          Copy-Item -Path "${{ github.workspace }}\VULKAN_SDK\Bin\VkLayer_khronos_validation.*" -Destination "${{ github.workspace }}/bin/tests/${{ matrix.build-type }}"
+          cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          set VK_LOADER_LAYERS_ENABLE=*validation
+          set VK_ADD_LAYER_PATH=${{ github.workspace }}\VULKAN_SDK\Bin\
+          .\AtlasEngineTests.exe
+        env: 
+          VK_ICD_FILENAMES: ${{ github.workspace }}/bin/${{ matrix.build-type }}/vk_swiftshader_icd.json
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}\VULKAN_SDK\Bin\;${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
@@ -80,10 +147,11 @@ jobs:
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo.exe
             ${{ github.workspace }}/bin/**/*.dll
+            !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -93,13 +161,28 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Linux
+          key: ${{ runner.os }}
+
+      - name: Checkout swiftshader repository
+        uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          repository: google/swiftshader
+          path: swiftshader
 
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 93895b28ea7bc8cda10f156c5d336f3fc070f8b1
+          committish: 6c937c32233bdf295ab2140dbce97fd00084a5f3
+          cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -107,13 +190,12 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
-
+          version: 1.3.261.1
+          cache: true
+          
       - name: Run scripts
         shell: bash
         # Add additional scripting steps here
@@ -124,6 +206,25 @@ jobs:
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
 
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "gcc"
+          cxx: "g++"
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          parallel: 16
+          build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Linux
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}    
+
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -133,9 +234,35 @@ jobs:
           cc: "gcc"
           cxx: "g++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Build ${{ matrix.build-type }} test configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        if: ${{ env.RUN_TESTS }} == true
+        with:
+          build-dir: ${{ github.workspace }}/tests/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "gcc"
+          cxx: "g++"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+
+      - name: Run tests
+        shell: bash
+        if: ${{ env.RUN_TESTS }} == true
+        # Add additional scripting steps here
+        run: |
+          cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          ./AtlasEngineTests
+        env: 
+          VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Linux/vk_swiftshader_icd.json
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/vulkan/layers/:${{ github.workspace }}/VULKAN_SDK/etc/vulkan/explicit_layer.d/
+          LD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
+          VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
@@ -149,6 +276,7 @@ jobs:
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
             ${{ github.workspace }}/bin/**/*.so*
+            !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
 
   macos-build:
@@ -164,11 +292,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Restore swiftshader repository cache
+        uses: actions/cache/restore@v3
+        id: swiftshadercache-restore
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Darwin
+          key: ${{ runner.os }}
+
+      - name: Checkout swiftshader repository
+        uses: actions/checkout@v4
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          repository: google/swiftshader
+          path: swiftshader
+
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 93895b28ea7bc8cda10f156c5d336f3fc070f8b1
+          committish: 6c937c32233bdf295ab2140dbce97fd00084a5f3
+          cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -176,12 +319,11 @@ jobs:
           # ninja version to download. Default: 1.10.0
           version: 1.10.0
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
         with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
+          version: 1.3.261.1
+          cache: true
 
       - name: Run scripts
         shell: bash
@@ -192,6 +334,25 @@ jobs:
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
           rm -r vcpkg_installed
 
+      - name: Build swiftshader
+        uses: ashutoshvarma/action-cmake-build@master
+        if: steps.swiftshadercache-restore.outputs.cache-hit != 'true'
+        with:
+          build-dir: ${{ github.workspace }}/swiftshader/build
+          source-dir: ${{ github.workspace }}/swiftshader
+          cc: "clang"
+          cxx: "clang++"
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          parallel: 16
+          build-type: MinSizeRel
+
+      - name: Save swiftshader respository cache
+        id: swiftshadercache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ github.workspace }}/swiftshader/build/Darwin
+          key: ${{ steps.swiftshadercache-restore.outputs.cache-primary-key }}
+
       # https://github.com/marketplace/actions/setup-ninja
       - name: Build ${{ matrix.build-type }} configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -201,6 +362,47 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Build ${{ matrix.build-type }} test configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        if: ${{ env.RUN_TESTS }} == true
+        with:
+          build-dir: ${{ github.workspace }}/tests/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "clang"
+          cxx: "clang++"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_HEADLESS=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+
+      - name: Run tests
+        shell: bash
+        if: ${{ env.RUN_TESTS }} == true
+        # Add additional scripting steps here
+        run: |
+          cd ${{ github.workspace }}/bin/tests/${{ matrix.build-type }}
+          ./AtlasEngineTests
+        env: 
+          VK_ICD_FILENAMES: ${{ github.workspace }}/swiftshader/build/Darwin/vk_swiftshader_icd.json   
+          VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/share/vulkan/explicit_layer.d/
+          DYLD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
+          VK_LOADER_LAYERS_ENABLE: '*validation'
+
+      - name: Upload artifact
+        if: ${{ matrix.build-type == 'Release' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Atlas Engine Demo MacOS ${{ matrix.build-type }}
+          path: |
+            data
+            README.md
+            LICENSE.md
+            THIRDPARTY.md
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/*.dylib*
+            !${{ github.workspace }}/bin/tests
+            !**/CMakeFiles

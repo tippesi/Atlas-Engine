@@ -1,7 +1,6 @@
 #include "AORenderer.h"
 
 #include "Clock.h"
-#include "../common/RandomHelper.h"
 
 namespace Atlas {
 
@@ -126,7 +125,7 @@ namespace Atlas {
                     .frameCount = frameCount++
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
-                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);
+                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, ao->samples.size() * sizeof(vec4));
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
 

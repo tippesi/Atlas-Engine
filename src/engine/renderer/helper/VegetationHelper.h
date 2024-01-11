@@ -1,5 +1,4 @@
-#ifndef AE_VEGETATIONHELPER_H
-#define AE_VEGETATIONHELPER_H
+#pragma once
 
 #include "../../System.h"
 #include "../../scene/Vegetation.h"
@@ -76,5 +75,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

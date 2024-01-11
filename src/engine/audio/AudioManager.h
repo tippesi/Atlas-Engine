@@ -1,5 +1,4 @@
-#ifndef AE_AUDIOMANAGER_H
-#define AE_AUDIOMANAGER_H
+#pragma once
 
 #include "../System.h"
 
@@ -49,6 +48,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

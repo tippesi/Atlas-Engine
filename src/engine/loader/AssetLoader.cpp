@@ -160,6 +160,22 @@ namespace Atlas {
 
         }
 
+        std::filesystem::file_time_type AssetLoader::GetFileLastModifiedTime(const std::string& path,
+            const std::filesystem::file_time_type defaultTime) {
+
+            const int32_t tryCount = 2;
+
+            for (int32_t i = 0; i < tryCount; i++) {
+                try {
+                    return std::filesystem::last_write_time(GetFullPath(path));
+                }
+                catch (...) {}
+            }
+
+            return defaultTime;
+
+        }
+
         std::vector<char> AssetLoader::GetFileContent(std::ifstream& stream) {
 
             auto size = AssetLoader::GetFileSize(stream);

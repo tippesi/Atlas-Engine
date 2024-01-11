@@ -1,14 +1,32 @@
 struct StencilFeatures {
     bool responsivePixel;
+    bool waterPixel;
+    bool underWaterPixel;
 };
+
+StencilFeatures CreateStencilFeatures() {
+    
+    StencilFeatures features;
+    
+    features.responsivePixel = false;
+    features.waterPixel = false;
+    features.underWaterPixel = false;
+    
+    return features;
+    
+}
 
 uint EncodeStencilFeatures(StencilFeatures features) {
 
     const uint responsivePixel = (1 << 0);
+    const uint waterPixel = (1 << 1);
+    const uint underWaterPixel = (1 << 2);
 
-    uint data = 0;
+    uint data = 0u;
 
-    data |= features.responsivePixel ? responsivePixel : 0;
+    data |= features.responsivePixel ? responsivePixel : 0u;
+    data |= features.waterPixel ? waterPixel : 0u;
+    data |= features.underWaterPixel ? underWaterPixel : 0u;
 
     return data;
 
@@ -17,10 +35,14 @@ uint EncodeStencilFeatures(StencilFeatures features) {
 StencilFeatures DecodeStencilFeatures(uint data) {
 
     const uint responsivePixel = (1 << 0);
+    const uint waterPixel = (1 << 1);
+    const uint underWaterPixel = (1 << 2);
 
     StencilFeatures features;
 
     features.responsivePixel = (data & responsivePixel) > 0u;
+    features.waterPixel = (data & waterPixel) > 0u;
+    features.underWaterPixel = (data & underWaterPixel) > 0u;
 
     return features;
 

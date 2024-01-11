@@ -1,5 +1,4 @@
-#ifndef AE_APP_H
-#define AE_APP_H
+#pragma once
 
 #include <EngineInstance.h>
 #include <input/Mouse.h>
@@ -40,7 +39,9 @@ private:
         PICAPICA,
         SUBWAY,
         MATERIALS,
-        FOREST
+        FOREST,
+        EMERALDSQUARE,
+        FLYINGWORLD
     };
 
     void DisplayLoadingScreen(float deltaTime);
@@ -74,6 +75,7 @@ private:
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+    Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
 
@@ -97,5 +99,3 @@ private:
     ImguiWrapper imguiWrapper;
 
 };
-
-#endif

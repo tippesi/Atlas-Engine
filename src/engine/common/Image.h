@@ -1,5 +1,4 @@
-#ifndef AE_IMAGE_H
-#define AE_IMAGE_H
+#pragma once
 
 #include "../System.h"
 #include "../Filter.h"
@@ -428,7 +427,7 @@ namespace Atlas {
         template<typename S>
         void Image<T>::SetData(int32_t x, int32_t y, S data) {
 
-            assert(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
+            AE_ASSERT(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
 
             if constexpr (std::is_integral_v<T> && (std::is_same_v<S, glm::ivec2>
                 || std::is_same_v<S, glm::ivec3> || std::is_same_v<S, glm::ivec4>)) {
@@ -854,5 +853,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

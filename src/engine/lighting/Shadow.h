@@ -1,5 +1,4 @@
-#ifndef AE_SHADOW_H
-#define AE_SHADOW_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -32,6 +31,8 @@ namespace Atlas {
 
             Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
+            void SetResolution(int32_t resolution);
+
             void Update();
 
             float distance = 300.0f;
@@ -60,6 +61,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

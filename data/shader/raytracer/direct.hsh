@@ -1,3 +1,5 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <lights.hsh>
 #include <common.hsh>
 #include <surface.hsh>
@@ -58,7 +60,7 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
 
         if (light.type == uint(TRIANGLE_LIGHT)) {
             Instance instance = bvhInstances[light.instanceIdx];
-            Triangle tri = UnpackTriangle(triangles[light.triangleIdx + instance.triangleOffset]);
+            Triangle tri = UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[light.triangleIdx]);
             TransformTriangle(tri, instance);
             lightSample = SampleTriangleLight(light, tri, surface, r0, r1);
         }

@@ -15,7 +15,7 @@ namespace Atlas {
 
         }
 
-        TextureAtlas::TextureAtlas(const std::vector<Ref<Texture2D>>& textures, int32_t padding,
+        TextureAtlas::TextureAtlas(const std::set<Ref<Texture2D>>& textures, int32_t padding,
             int32_t downscale) : padding(padding), downscale(downscale) {
 
             Update(textures);
@@ -37,7 +37,7 @@ namespace Atlas {
 
         }
 
-        void TextureAtlas::Update(const std::vector<Ref<Texture2D>>& textures) {
+        void TextureAtlas::Update(const std::set<Ref<Texture2D>>& textures) {
 
             if (!textures.size())
                 return;
@@ -82,9 +82,8 @@ namespace Atlas {
 
             // Approximation of total padding by assuming to stuff
             // the smallest texture over and over again.
-            auto& smallest = textureStructures.back();
-            auto smallestSize = glm::max(ivec2(smallest.width, smallest.height), glm::ivec2(1));
-            ivec2 totalPadding = ivec2(width, height) / smallestSize * padding;
+            auto largest = textureStructures.front();
+            ivec2 totalPadding = ivec2(glm::ceil(glm::log2(glm::vec2(float(largest.width), float(largest.height))))) * padding;
 
             // Add total padding to total size
             width += totalPadding.x;

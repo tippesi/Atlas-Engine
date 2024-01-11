@@ -1,5 +1,4 @@
-#ifndef AE_ECSSTORAGE_H
-#define AE_ECSSTORAGE_H
+#pragma once
 
 #include "../System.h"
 #include "Entity.h"
@@ -97,5 +96,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

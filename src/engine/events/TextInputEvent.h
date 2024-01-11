@@ -1,5 +1,4 @@
-#ifndef AE_TEXTINPUTEVENT_H
-#define AE_TEXTINPUTEVENT_H
+#pragma once
 
 
 #include "../System.h"
@@ -44,5 +43,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

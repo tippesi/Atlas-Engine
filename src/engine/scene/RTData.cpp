@@ -4,6 +4,10 @@
 #include "../mesh/MeshData.h"
 #include "../volume/BVH.h"
 #include "../graphics/ASBuilder.h"
+#include "../common/ColorConverter.h"
+
+#include <unordered_map>
+#include <set>
 
 namespace Atlas {
 
@@ -15,75 +19,70 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
-            bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(BVHTriangle));
-            blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
-            geometryTriangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
-
             auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
-                Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit;
+               Buffer::BufferUsageBits::MultiBufferedBit | Buffer::BufferUsageBits::HostAccessBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
-
-        }
-
-        void RTData::Build() {
-
-            isValid = false;
-
-            if (hardwareRayTracing) {
-                BuildForHardwareRayTracing();
-            }
-            else {
-                BuildForSoftwareRayTracing();
-            }
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, true);
-
-            isValid = true;
+            lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
 
         }
 
         void RTData::Update(bool updateTriangleLights) {
 
-            auto actors = scene->GetMeshActors();
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
 
+            if (!device->swapChain->isComplete) return;
+
+            auto actors = scene->GetMeshActors();
             if (!actors.size()) return;
 
-            UpdateMaterials();
+            auto meshes = scene->GetMeshes();
+            for (auto& mesh : meshes) {
+                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || 
+                    !scene->meshIdToBindlessIdx.contains(mesh.GetID()))
+                    continue;
+
+                if (!meshInfos.contains(mesh.GetID())) {
+                    meshInfos[mesh.GetID()] = {};
+                    BuildTriangleLightsForMesh(mesh);
+                }
+
+                auto &meshInfo = meshInfos[mesh.GetID()];
+                meshInfo.offset = int32_t(scene->meshIdToBindlessIdx[mesh.GetID()]);
+            }
 
             std::vector<GPUBVHInstance> gpuBvhInstances;
             std::vector<Volume::AABB> actorAABBs;
+            std::vector<mat3x4> lastMatrices;
 
             for (auto& [_, meshInfo] : meshInfos) {
                 meshInfo.instanceIndices.clear();
                 meshInfo.matrices.clear();
             }
 
-            for (auto& actor : actors) {
-                if (!actor->mesh.IsLoaded())
-                    continue;
+            UpdateMaterials();
 
+            for (auto& actor : actors) {
                 if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
                 actorAABBs.push_back(actor->aabb);
-                auto& meshInfo = meshInfos[actor->mesh.GetID()];
+                auto &meshInfo = meshInfos[actor->mesh.GetID()];
 
                 auto inverseMatrix = mat3x4(glm::transpose(actor->inverseGlobalMatrix));
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
-                    .blasOffset = meshInfo.offset,
-                    .triangleOffset = meshInfo.triangleOffset
+                    .meshOffset = meshInfo.offset,
+                    .materialOffset = meshInfo.materialOffset
                 };
 
                 meshInfo.matrices.push_back(actor->globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
+                lastMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
             }
 
             if (!gpuBvhInstances.size())
@@ -93,378 +92,126 @@ namespace Atlas {
                 UpdateForHardwareRayTracing(actors);
             }
             else {
-                gpuBvhInstances = UpdateForSoftwareRayTracing(gpuBvhInstances, actorAABBs);
+                UpdateForSoftwareRayTracing(gpuBvhInstances, lastMatrices, actorAABBs);
             }
-
-            std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, false);
 
             if (updateTriangleLights)
                 UpdateTriangleLights();
 
-            bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+            if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
+                bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
+                lastMatricesBuffer.SetSize(lastMatrices.size());
+            }
+           
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
+            lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
 
         }
 
-        void RTData::UpdateMaterials(bool updateTextures) {
+        void RTData::UpdateMaterials() {
 
             std::vector<GPUMaterial> materials;
-            UpdateMaterials(materials, updateTextures);
+            UpdateMaterials(materials);
 
         }
 
-        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials,
-            bool updateTextures) {
+        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials) {
 
             std::lock_guard lock(mutex);
 
             auto actors = scene->GetMeshActors();
 
-            int32_t materialCount = 0;
-
-            if (updateTextures)  UpdateTextures();
-
             auto meshes = scene->GetMeshes();
-            materials.resize(materialAccess.size());
+            materials.clear();
 
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
+                if (!meshInfos.contains(mesh.GetID()))
                     continue;
 
+                auto& meshInfo = meshInfos[mesh.GetID()];
+                meshInfo.materialOffset = int32_t(materials.size());
+
+                int32_t meshMaterialID = 0;
+
                 for (auto& material : mesh->data.materials) {
-                    if (!materialAccess.contains(&material))
-                        continue;
-
-                    auto materialIdx = materialAccess[&material];
-
                     GPUMaterial gpuMaterial;
 
-                    gpuMaterial.baseColor = material.baseColor;
-                    gpuMaterial.emissiveColor = material.emissiveColor;
+                    size_t hash = mesh.GetID();
+                    HashCombine(hash, meshMaterialID++);
 
-                    gpuMaterial.opacity = material.opacity;
+                    // Only is persistent when no materials are reorderd in mesh
+                    gpuMaterial.ID = int32_t(hash % 65535);
 
-                    gpuMaterial.roughness = material.roughness;
-                    gpuMaterial.metalness = material.metalness;
-                    gpuMaterial.ao = material.ao;
+                    gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                    gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                        * material->emissiveIntensity;
 
-                    gpuMaterial.reflectance = material.reflectance;
+                    gpuMaterial.opacity = material->opacity;
 
-                    gpuMaterial.normalScale = material.normalScale;
+                    gpuMaterial.roughness = material->roughness;
+                    gpuMaterial.metalness = material->metalness;
+                    gpuMaterial.ao = material->ao;
+
+                    gpuMaterial.reflectance = material->reflectance;
+
+                    gpuMaterial.normalScale = material->normalScale;
 
                     gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
-                    gpuMaterial.twoSided = material.twoSided ? 1 : 0;
+                    gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                    gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
-                    if (material.HasBaseColorMap()) {
-                        auto& slices = baseColorTextureAtlas.slices[material.baseColorMap.get()];
-
-                        gpuMaterial.baseColorTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasBaseColorMap()) {
+                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap];
                     }
 
-                    if (material.HasOpacityMap()) {
-                        auto& slices = opacityTextureAtlas.slices[material.opacityMap.get()];
-
-                        gpuMaterial.opacityTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasOpacityMap()) {
+                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap];
                     }
 
-                    if (material.HasNormalMap()) {
-                        auto& slices = normalTextureAtlas.slices[material.normalMap.get()];
-
-                        gpuMaterial.normalTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasNormalMap()) {
+                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap];
                     }
 
-                    if (material.HasRoughnessMap()) {
-                        auto& slices = roughnessTextureAtlas.slices[material.roughnessMap.get()];
-
-                        gpuMaterial.roughnessTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasRoughnessMap()) {
+                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap];
                     }
 
-                    if (material.HasMetalnessMap()) {
-                        auto& slices = metalnessTextureAtlas.slices[material.metalnessMap.get()];
-
-                        gpuMaterial.metalnessTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasMetalnessMap()) {
+                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap];
                     }
 
-                    if (material.HasAoMap()) {
-                        auto& slices = aoTextureAtlas.slices[material.aoMap.get()];
-
-                        gpuMaterial.aoTexture = CreateGPUTextureStruct(slices);
+                    if (material->HasAoMap()) {
+                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap];
                     }
 
-                    materials[materialIdx] = gpuMaterial;
+                    materials.push_back(gpuMaterial);
                 }
             }
+
+            if (!materials.size())
+                return;
 
             materialBuffer.SetSize(materials.size());
             materialBuffer.SetData(materials.data(), 0, materials.size());
 
         }
 
-        void RTData::UpdateTextures() {
-
-            auto meshes = scene->GetMeshes();
-
-            std::vector<Ref<Texture::Texture2D>> baseColorTextures;
-            std::vector<Ref<Texture::Texture2D>> opacityTextures;
-            std::vector<Ref<Texture::Texture2D>> normalTextures;
-            std::vector<Ref<Texture::Texture2D>> roughnessTextures;
-            std::vector<Ref<Texture::Texture2D>> metalnessTextures;
-            std::vector<Ref<Texture::Texture2D>> aoTextures;
-
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                for (auto& material : mesh->data.materials) {
-                    if (!materialAccess.contains(&material))
-                        continue;
-
-                    if (material.HasBaseColorMap())
-                        baseColorTextures.push_back(material.baseColorMap);
-                    if (material.HasOpacityMap())
-                        opacityTextures.push_back(material.opacityMap);
-                    if (material.HasNormalMap())
-                        normalTextures.push_back(material.normalMap);
-                    if (material.HasRoughnessMap())
-                        roughnessTextures.push_back(material.roughnessMap);
-                    if (material.HasMetalnessMap())
-                        metalnessTextures.push_back(material.metalnessMap);
-                    if (material.HasAoMap())
-                        aoTextures.push_back(material.aoMap);
-                }
-            }
-
-            const int32_t textureDownscale = 1;
-            baseColorTextureAtlas = Texture::TextureAtlas(baseColorTextures, 1, textureDownscale);
-            opacityTextureAtlas = Texture::TextureAtlas(opacityTextures, 1, textureDownscale);
-            normalTextureAtlas = Texture::TextureAtlas(normalTextures, 1, textureDownscale);
-            roughnessTextureAtlas = Texture::TextureAtlas(roughnessTextures, 1, textureDownscale);
-            metalnessTextureAtlas = Texture::TextureAtlas(metalnessTextures, 1, textureDownscale);
-            aoTextureAtlas = Texture::TextureAtlas(aoTextures, 1, textureDownscale);
-
-        }
-
         void RTData::Clear() {
 
-            isValid = false;
-
-            baseColorTextureAtlas.Clear();
-            opacityTextureAtlas.Clear();
-            normalTextureAtlas.Clear();
-            roughnessTextureAtlas.Clear();
-            metalnessTextureAtlas.Clear();
-            aoTextureAtlas.Clear();
+            meshInfos.clear();
 
         }
 
         bool RTData::IsValid() {
 
-            return isValid;
-
-        }
-
-        GPUTexture RTData::CreateGPUTextureStruct(std::vector<Texture::TextureAtlas::Slice> slices) {
-
-            GPUTexture texture;
-
-            if (slices.size() > 0) texture.level0 = CreateGPUTextureLevelStruct(slices[0]);
-            if (slices.size() > 1) texture.level1 = CreateGPUTextureLevelStruct(slices[1]);
-            if (slices.size() > 2) texture.level2 = CreateGPUTextureLevelStruct(slices[2]);
-            if (slices.size() > 3) texture.level3 = CreateGPUTextureLevelStruct(slices[3]);
-            if (slices.size() > 4) texture.level4 = CreateGPUTextureLevelStruct(slices[4]);
-
-            texture.valid = 1;
-
-            return texture;
-
-        }
-
-        GPUTextureLevel RTData::CreateGPUTextureLevelStruct(Texture::TextureAtlas::Slice slice) {
-
-            GPUTextureLevel level;
-
-            level.x = slice.offset.x;
-            level.y = slice.offset.y;
-
-            level.width = slice.size.x;
-            level.height = slice.size.y;
-
-            level.layer = slice.layer;
-            level.valid = 1;
-
-            return level;
-
-        }
-
-        void RTData::BuildForSoftwareRayTracing() {
-
-            std::vector<GPUTriangle> gpuTriangles;
-            std::vector<BVHTriangle> gpuBvhTriangles;
-            std::vector<GPUBVHNode> gpuBvhNodes;
-
-            auto meshes = scene->GetMeshes();
-
-            materialAccess.clear();
-
-            int32_t materialCount = 0;
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                // Not all meshes might have a bvh
-                if (!mesh->data.gpuTriangles.size())
-                    continue;
-
-                auto triangleOffset = int32_t(gpuTriangles.size());
-                auto nodeOffset = int32_t(gpuBvhNodes.size());
-
-                for (size_t i = 0; i < mesh->data.gpuBvhNodes.size(); i++) {
-                    auto gpuBvhNode = mesh->data.gpuBvhNodes[i];
-
-                    auto leftPtr = gpuBvhNode.leftPtr;
-                    auto rightPtr = gpuBvhNode.rightPtr;
-
-                    gpuBvhNode.leftPtr = leftPtr < 0 ? ~((~leftPtr) + triangleOffset) : leftPtr + nodeOffset;
-                    gpuBvhNode.rightPtr = rightPtr < 0 ? ~((~rightPtr) + triangleOffset) : rightPtr + nodeOffset;
-
-                    gpuBvhNodes.push_back(gpuBvhNode);
-                }
-
-                // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data.gpuTriangles[i];
-                    auto gpuBvhTriangle = mesh->data.gpuBvhTriangles[i];
-
-                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
-                    auto materialIdx = localMaterialIdx + materialCount;
-
-                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
-                    gpuBvhTriangle.v1.w = reinterpret_cast<float&>(materialIdx);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                    gpuBvhTriangles.push_back(gpuBvhTriangle);
-                }
-
-                for (auto& material : mesh->data.materials) {
-                    materialAccess[&material] = materialCount++;
-                }
-
-                MeshInfo meshInfo = {
-                    .offset = nodeOffset,
-                    .triangleOffset = triangleOffset
-                };
-                meshInfos[mesh.GetID()] = meshInfo;
-
-                BuildTriangleLightsForMesh(mesh);
-
-            }
-
-            if (!gpuTriangles.size())
-                return;
-
-            // Upload triangles
-            triangleBuffer.SetSize(gpuTriangles.size());
-            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
-
-            bvhTriangleBuffer.SetSize(gpuBvhTriangles.size());
-            bvhTriangleBuffer.SetData(gpuBvhTriangles.data(), 0, gpuBvhTriangles.size());
-
-            blasNodeBuffer.SetSize(gpuBvhNodes.size());
-            blasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
-
-        }
-
-        void RTData::BuildForHardwareRayTracing() {
-
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-            std::vector<uint32_t> triangleOffsets;
-            std::vector<GPUTriangle> gpuTriangles;
-
-            Graphics::ASBuilder asBuilder;
-
-            auto meshes = scene->GetMeshes();
-
-            materialAccess.clear();
-            blases.clear();
-
-            int32_t materialCount = 0;
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                // Not all meshes might have a bvh
-                if (!mesh->data.gpuTriangles.size())
-                    continue;
-
-                auto triangleOffset = int32_t(gpuTriangles.size());
-                auto offset = int32_t(triangleOffsets.size());
-
-                // Subtract and reassign material offset
-                for (size_t i = 0; i < mesh->data.gpuTriangles.size(); i++) {
-                    auto gpuTriangle = mesh->data.gpuTriangles[i];
-
-                    auto localMaterialIdx = reinterpret_cast<int32_t&>(gpuTriangle.d0.w);
-                    auto materialIdx = localMaterialIdx + materialCount;
-
-                    gpuTriangle.d0.w = reinterpret_cast<float&>(materialIdx);
-
-                    gpuTriangles.push_back(gpuTriangle);
-                }
-
-                for (auto& material : mesh->data.materials) {
-                    materialAccess[&material] = materialCount++;
-                }
-
-                std::vector<Graphics::ASGeometryRegion> geometryRegions;
-                for (auto& subData : mesh->data.subData) {
-                    geometryRegions.emplace_back(Graphics::ASGeometryRegion{
-                        .indexCount = subData.indicesCount,
-                        .indexOffset = subData.indicesOffset,
-                        .opaque = !subData.material->HasOpacityMap() && subData.material->opacity == 1.0f
-                        });
-                }
-
-                auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(mesh->vertexBuffer.buffer, mesh->indexBuffer.buffer,
-                    mesh->vertexBuffer.elementCount, mesh->vertexBuffer.elementSize,
-                    mesh->indexBuffer.elementSize, geometryRegions);
-
-                blases.push_back(device->CreateBLAS(blasDesc));
-
-                MeshInfo meshInfo = {
-                    .blas = blases.back(),
-
-                    .offset = offset,
-                    .triangleOffset = triangleOffset
-                };
-                meshInfos[mesh.GetID()] = meshInfo;
-
-                for (auto& subData : mesh->data.subData) {
-                    auto totalTriangleOffset = triangleOffset + subData.indicesOffset / 3;
-                    triangleOffsets.push_back(totalTriangleOffset);
-                }
-
-                BuildTriangleLightsForMesh(mesh);
-
-            }
-
-            if (!gpuTriangles.size())
-                return;
-
-            // Upload triangles
-            triangleBuffer.SetSize(gpuTriangles.size());
-            triangleBuffer.SetData(gpuTriangles.data(), 0, gpuTriangles.size());
-
-            geometryTriangleOffsetBuffer.SetSize(triangleOffsets.size());
-            geometryTriangleOffsetBuffer.SetData(triangleOffsets.data(), 0, triangleOffsets.size());
-
-            asBuilder.BuildBLAS(blases);
+            return materialBuffer.GetSize() > 0 && device->support.bindless && !meshInfos.empty();
 
         }
 
-        std::vector<GPUBVHInstance> RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
-            std::vector<Volume::AABB>& actorAABBs) {
+        void RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+            std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs) {
 
             auto bvh = Volume::BVH(actorAABBs);
 
@@ -484,14 +231,22 @@ namespace Atlas {
 
             // Order after the BVH build to fit the node indices
             std::vector<GPUBVHInstance> orderedGpuBvhInstances(bvh.refs.size());
+            std::vector<mat3x4> orderedLastMatrices(bvh.refs.size());
             for (size_t i = 0; i < bvh.refs.size(); i++) {
+                const auto& ref = bvh.refs[i];
+                orderedLastMatrices[i] = lastMatrices[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
+                orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
 
-            tlasNodeBuffer.SetSize(gpuBvhNodes.size());
+            if (tlasNodeBuffer.GetElementCount() < gpuBvhNodes.size()) {
+                tlasNodeBuffer.SetSize(gpuBvhNodes.size());
+            }
+
             tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
-            return orderedGpuBvhInstances;
+            gpuBvhInstances = orderedGpuBvhInstances;
+            lastMatrices = orderedLastMatrices;
 
         }
 
@@ -501,12 +256,31 @@ namespace Atlas {
 
             Graphics::ASBuilder asBuilder;
 
+            auto meshes = scene->GetMeshes();
+
+            blases.clear();
+
+            int32_t meshCount = 0;
+            for (auto& mesh : meshes) {
+                if (!meshInfos.contains(mesh.GetID()))
+                    continue;
+
+                if (mesh->needsBvhRefresh) {
+                    blases.push_back(mesh->blas);
+                    mesh->needsBvhRefresh = false;
+                }
+
+                auto& meshInfo = meshInfos[mesh.GetID()];
+                meshInfo.blas = mesh->blas;
+                meshInfo.idx = meshCount++;
+            }
+
+            if (blases.size())
+                asBuilder.BuildBLAS(blases);
+
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
             for (auto actor : actors) {
-                if (!actor->mesh.IsLoaded())
-                    continue;
-
                 if (!meshInfos.contains(actor->mesh.GetID()))
                     continue;
 
@@ -540,6 +314,7 @@ namespace Atlas {
             auto& materials = mesh->data.materials;
 
             auto& meshInfo = meshInfos[mesh.GetID()];
+            meshInfo.triangleLights.clear();
 
             // Triangle lights
             for (size_t i = 0; i < gpuTriangles.size(); i++) {
@@ -547,7 +322,7 @@ namespace Atlas {
                 auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
                 auto& material = materials[idx];
 
-                auto radiance = material.emissiveColor;
+                auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor);
                 auto brightness = dot(radiance, vec3(0.3333f));
 
                 if (brightness > 0.0f) {
@@ -580,7 +355,7 @@ namespace Atlas {
                     GPULight light;
                     light.P = vec4(P, 1.0f);
                     light.N = vec4(N, 0.0f);
-                    light.color = vec4(radiance, 0.0f);
+                    light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance) * material->emissiveIntensity, 0.0f);
                     light.data = vec4(cd, weight, area, 0.0f);
 
                     meshInfo.triangleLights.push_back(light);

@@ -1,5 +1,4 @@
-#ifndef AE_VULKANTEXTURE_H
-#define AE_VULKANTEXTURE_H
+#pragma once
 
 #include "../System.h"
 
@@ -101,6 +100,9 @@ namespace Atlas {
              */
             template<typename T> std::vector<T> GetData(int32_t depth = 0);
 
+            /**
+             *
+             */
             void GenerateMipmap();
 
             /**
@@ -140,7 +142,8 @@ namespace Atlas {
         std::vector<T> Texture::GetData(int32_t layerOffset) {
 
             static_assert(std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
-                          std::is_same_v<T, float>, "Unsupported type. Supported are uint8_t, uint16_t and float");
+                          std::is_same_v<T, float> || std::is_same_v<T, float16>,
+                "Unsupported type. Supported are uint8_t, uint16_t, float and float16");
 
             std::vector<T> data(width * height * channels);
             
@@ -158,5 +161,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

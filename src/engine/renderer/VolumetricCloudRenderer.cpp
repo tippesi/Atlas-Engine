@@ -72,6 +72,8 @@ namespace Atlas {
                 auto uniforms = GetUniformStructure(camera, scene);
                 volumetricUniformBuffer.SetData(&uniforms, 0);
 
+                integratePipelineConfig.ManageMacro("STOCHASTIC_OCCLUSION_SAMPLING", clouds->stochasticOcclusionSampling);
+
                 auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
@@ -189,6 +191,7 @@ namespace Atlas {
             shadowUniforms.ipMatrix = glm::inverse(shadowUniforms.ipMatrix);
             shadowUniforms.ivMatrix = glm::inverse(shadowUniforms.ivMatrix);
             shadowUniforms.lightDirection = vec4(normalize(sun->direction), 0.0f);
+            shadowUniforms.shadowSampleFraction = clouds->shadowSampleFraction;
             shadowUniformBuffer.SetData(&shadowUniforms, 0);
 
             auto uniforms = GetUniformStructure(camera, scene);
@@ -311,17 +314,18 @@ namespace Atlas {
                 .frameSeed = frameCount,
 
                 .sampleCount = clouds->sampleCount,
-                .shadowSampleCount = clouds->shadowSampleCount,
+                .occlusionSampleCount = clouds->occlusionSampleCount,
 
                 .darkEdgeDirect = clouds->darkEdgeFocus,
                 .darkEdgeDetail = clouds->darkEdgeAmbient,
 
-                .extinctionCoefficients = clouds->scattering.extinctionCoefficients
+                .extinctionCoefficients = clouds->scattering.extinctionCoefficients,
+                .planetCenter = vec4(scene->sky.planetCenter, 1.0f)
             };
 
             if (sun) {
                 uniforms.light.direction = vec4(sun->direction, 0.0f);
-                uniforms.light.color = vec4(sun->color, 1.0f);
+                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 1.0f);
                 uniforms.light.intensity = sun->intensity;
             }
             else {

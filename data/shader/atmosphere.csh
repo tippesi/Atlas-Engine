@@ -37,8 +37,6 @@ vec2 resolution = vec2(imageSize(colorImage));
 const float rayScaleHeight = 8.0e3;
 const float mieScaleHeight = 1.2e3;
 
-vec3 planetCenter = -vec3(0.0, uniforms.planetRadius, 0.0);
-
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos,
     vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
 
@@ -104,14 +102,14 @@ void main() {
 
 #ifndef ENVIRONMENT_PROBE
     // Calculate velocity
-    vec3 ndcCurrent = (globalData.pMatrix * vec4(viewPos, 1.0)).xyw;
-    vec3 ndcLast = (globalData.pvMatrixLast * vec4(worldPos, 1.0)).xyw;
+    vec3 ndcCurrent = (globalData[0].pMatrix * vec4(viewPos, 1.0)).xyw;
+    vec3 ndcLast = (globalData[0].pvMatrixLast * vec4(worldPos, 1.0)).xyw;
 
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globalData.jitterLast;
-    ndcC -= globalData.jitterCurrent;
+    ndcL -= globalData[0].jitterLast;
+    ndcC -= globalData[0].jitterCurrent;
 
     vec2 velocity = (ndcL - ndcC) * 0.5;
 
@@ -148,8 +146,8 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 
 void CalculateRayLength(vec3 rayOrigin, vec3 rayDirection, out float minDist, out float maxDist) {
 
-    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, uniforms.planetRadius);
-    vec2 atmosDist = IntersectSphere(rayOrigin, rayDirection, planetCenter, uniforms.atmosphereRadius);
+    vec2 planetDist = IntersectSphere(rayOrigin, rayDirection, uniforms.planetCenter.xyz, uniforms.planetRadius);
+    vec2 atmosDist = IntersectSphere(rayOrigin, rayDirection, uniforms.planetCenter.xyz, uniforms.atmosphereRadius);
 
     // We're in the in the planet
     if (planetDist.x < 0.0 && planetDist.y >= 0.0) {
@@ -194,7 +192,7 @@ out float opticalDepthRay) {
 
         vec3 pos = origin + sunDirection * (time + 0.5 * stepSize);
 
-        float height = distance(planetCenter, pos) - planetRadius;
+        float height = distance(uniforms.planetCenter.xyz, pos) - planetRadius;
 
         if (height < 0.0)
         return false;
@@ -241,7 +239,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
         vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
 
         // Calculate the height of the sample.
-        float iHeight = distance(iPos, planetCenter) - rPlanet;
+        float iHeight = distance(iPos, uniforms.planetCenter.xyz) - rPlanet;
 
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
         float odStepRlh = exp(-iHeight / rayScaleHeight) * iStepSize;

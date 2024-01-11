@@ -1,5 +1,4 @@
-#ifndef AE_RTAORENDERER_H
-#define AE_RTAORENDERER_H
+#pragma once
 
 #include "../System.h"
 
@@ -55,5 +54,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

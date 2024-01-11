@@ -1,5 +1,4 @@
-#ifndef AE_VEGETATIONACTOR_H
-#define AE_VEGETATIONACTOR_H
+#pragma once
 
 #include "../System.h"
 #include "../Camera.h"
@@ -31,6 +30,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

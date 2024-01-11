@@ -1,5 +1,4 @@
-#ifndef AE_PATH_H
-#define AE_PATH_H
+#pragma once
 
 #include "../System.h"
 
@@ -74,5 +73,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_IMGUIWRAPPER_H
-#define AE_IMGUIWRAPPER_H
+#pragma once
 
 // ImguiExtension includes
 #include <imgui.h>
@@ -7,7 +6,7 @@
 
 // Atlas engine includes
 #include <Window.h>
-#include <graphics/Descriptor.h>
+#include <graphics/DescriptorPool.h>
 
 class ImguiWrapper {
 
@@ -54,6 +53,6 @@ private:
 
     std::unordered_map<VkImageView, VkDescriptorSet> imageViewToDescriptorSetMap;
 
-};
+    bool initialized = false;
 
-#endif
+};

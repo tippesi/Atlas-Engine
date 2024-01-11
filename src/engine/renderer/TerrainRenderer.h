@@ -1,5 +1,4 @@
-#ifndef AE_TERRAINRENDERER_H
-#define AE_TERRAINRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -79,5 +78,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

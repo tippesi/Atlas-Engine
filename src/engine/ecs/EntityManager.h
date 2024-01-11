@@ -1,5 +1,4 @@
-#ifndef AE_ECSENTITYMANAGER_H
-#define AE_ECSENTITYMANAGER_H
+#pragma once
 
 #include "Entity.h"
 #include "Pools.h"
@@ -186,5 +185,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

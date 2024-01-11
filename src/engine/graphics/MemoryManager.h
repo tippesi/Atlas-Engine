@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSMEMORYMANAGER_H
-#define AE_GRAPHICSMEMORYMANAGER_H
+#pragma once
 
 #include "Common.h"
 #include "RenderPass.h"
@@ -8,7 +7,8 @@
 #include "Buffer.h"
 #include "Image.h"
 #include "Sampler.h"
-#include "Descriptor.h"
+#include "DescriptorSetLayout.h"
+#include "DescriptorPool.h"
 #include "QueryPool.h"
 #include "Framebuffer.h"
 #include "BLAS.h"
@@ -72,6 +72,8 @@ namespace Atlas {
 
             void DestroyAllocation(Ref<Sampler>& allocation);
 
+            void DestroyAllocation(Ref<DescriptorSetLayout>& allocation);
+
             void DestroyAllocation(Ref<DescriptorPool>& allocation);
 
             void DestroyAllocation(Ref<QueryPool>& allocation);
@@ -103,7 +105,7 @@ namespace Atlas {
                     auto &allocation = deleteAllocations.front();
 
                     // This should never happen
-                    assert(allocation.resource.use_count() == 1 && "Resource allocation is not uniquely owned");
+                    AE_ASSERT(allocation.resource.use_count() == 1 && "Resource allocation is not uniquely owned");
                     allocation.resource.reset();
 
                     deleteAllocations.pop_front();
@@ -122,6 +124,7 @@ namespace Atlas {
             std::deque<DeleteResource<MultiBuffer>> deleteMultiBufferAllocations;
             std::deque<DeleteResource<Image>> deleteImageAllocations;
             std::deque<DeleteResource<Sampler>> deleteSamplerAllocations;
+            std::deque<DeleteResource<DescriptorSetLayout>> deleteDescriptorSetLayoutAllocations;
             std::deque<DeleteResource<DescriptorPool>> deleteDescriptorPoolAllocations;
             std::deque<DeleteResource<QueryPool>> deleteQueryPoolAllocations;
             std::deque<DeleteResource<BLAS>> deleteBLASAllocations;
@@ -132,5 +135,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -81,13 +81,15 @@ namespace Atlas {
 
             // Approximate transmission
             for (auto& material : mesh->data.materials) {
-                impostor->transmissiveColor += material.transmissiveColor / (float)mesh->data.materials.size();
+                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
             }
 
             impostor->baseColorTexture.GenerateMipmap();
             impostor->roughnessMetalnessAoTexture.GenerateMipmap();
             impostor->normalTexture.GenerateMipmap();
             impostor->depthTexture.GenerateMipmap();
+
+            
 
             return impostor;
 

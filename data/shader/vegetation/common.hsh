@@ -7,8 +7,8 @@ bool IsInstanceVisible(Instance instance, MeshInformation meshInfo) {
     vec3 max = meshInfo.aabbMin.xyz + instance.position.xyz;
 
     for (int i = 0; i < 6; i++) {
-        vec3 normal = globalData.frustumPlanes[i].xyz;
-        float dist = globalData.frustumPlanes[i].w;
+        vec3 normal = globalData[0].frustumPlanes[i].xyz;
+        float dist = globalData[0].frustumPlanes[i].w;
         
         vec3 s;
         s.x = normal.x >= 0.0 ? min.x : max.x;
@@ -26,7 +26,7 @@ uint GetBin(Instance instance, MeshInformation meshInfo) {
 
     const float binScale = 32.0;
 
-    float dist = distance(globalData.cameraLocation.xyz, instance.position.xyz);
+    float dist = distance(globalData[0].cameraLocation.xyz, instance.position.xyz);
     // return uint(log2((dist * binScale) + 1.0));
     return uint(sqrt(dist * binScale));
     //return uint(sqrt(sqrt(dist * 64000.0)));

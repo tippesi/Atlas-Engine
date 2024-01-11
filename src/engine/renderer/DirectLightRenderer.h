@@ -1,5 +1,4 @@
-#ifndef AE_DIRECTLIGHTRENDERER_H
-#define AE_DIRECTLIGHTRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -33,5 +32,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

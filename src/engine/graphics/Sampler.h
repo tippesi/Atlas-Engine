@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSSAMPLER_H
-#define AE_GRAPHICSSAMPLER_H
+#pragma once
 
 #include "Common.h"
 
@@ -42,5 +41,3 @@ namespace Atlas {
     }
 
 }
-
-#endif
