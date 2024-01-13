@@ -23,7 +23,7 @@ namespace Atlas {
                 MeshComponent(const MeshComponent& that) = default;
                 explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {}
 
-                const ResourceHandle<Mesh::Mesh> mesh;
+                const ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
 
             protected:
                 bool inserted = false;

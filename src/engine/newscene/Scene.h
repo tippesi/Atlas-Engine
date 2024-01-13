@@ -65,7 +65,7 @@ namespace Atlas {
         template<typename T, typename ...Args>
         T Scene::CreatePrefab(Args&&... args) {
 
-            static_assert(std::is_convertible<T, Entity>() && sizeof(T) == sizeof(Entity),
+            static_assert(std::is_convertible<T, Entity>() && sizeof(T) == (sizeof(Scene*) + sizeof(ECS::Entity)),
                 "Prefab needs to inherit from Scene::Entity class without any extra members");
             static_assert(std::is_constructible<T, ECS::Entity, Scene*, Args...>(),
                 "Can't construct prefab with given arguments. Prefab needs to have at \
