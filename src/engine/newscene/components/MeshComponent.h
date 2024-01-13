@@ -10,16 +10,23 @@ namespace Atlas {
 
 	namespace NewScene {
 
+        class Scene;
+
 		namespace Components {
 
             class MeshComponent {
+
+                friend Scene;
 
             public:
                 MeshComponent() = default;
                 MeshComponent(const MeshComponent& that) = default;
                 explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {}
 
-                ResourceHandle<Mesh::Mesh> mesh;
+                const ResourceHandle<Mesh::Mesh> mesh;
+
+            protected:
+                bool inserted = false;
 
             };
 

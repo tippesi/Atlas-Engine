@@ -24,12 +24,34 @@ namespace Atlas {
 
         void Scene::Update(float deltaTime) {
 
-            auto subset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
-            for (auto entity : subset) {
-                //if ()
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            for (auto entity : hierarchySubset) {
+                auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+
+                if (hierarchyComponent.root) {
+                    hierarchyComponent.Update(transformComponent, false);
+                }
             }
 
-            //auto subset = entityManager.GetSubset
+            auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+            for (auto entity : meshSubset) {
+                auto& meshComponent = entityManager.Get<MeshComponent>(entity);
+
+                if (!meshComponent.mesh.IsLoaded())
+                    continue;
+
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                if (!transformComponent.changed)
+                    continue;
+
+                if (meshComponent.inserted)
+                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, this), transformComponent);
+
+                transformComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
+
+                SpacePartitioning::InsertRenderableEntity(Entity(entity, this), transformComponent);
+            }
 
             if (terrain) {
                 //terrain->Update()

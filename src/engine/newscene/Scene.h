@@ -2,11 +2,17 @@
 
 #include "../System.h"
 #include "../ecs/EntityManager.h"
+#include "../resource/ResourceManager.h"
 
 #include "../ocean/Ocean.h"
 #include "../terrain/Terrain.h"
 
+#include "../mesh/Mesh.h"
+
+#include "SpacePartitioning.h"
+
 #include <type_traits>
+#include <map>
 
 namespace Atlas {
 
@@ -14,12 +20,21 @@ namespace Atlas {
 
         class Entity;
 
-        class Scene {
+        class Scene : public SpacePartitioning {
+
+            template<typename T>
+            struct RegisteredResource {
+                ResourceHandle<T> resource;
+                uint32_t refCount = 0;
+            };
 
         public:
-            Scene() = default;
+            Scene() : SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {};
             Scene(const Scene& that) = default;
-            explicit Scene(const std::string& name) : name(name) {}
+            explicit Scene(const std::string& name) 
+                : name(name), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
+            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
+                : name(name), SpacePartitioning(min, max, depth) {}
 
             Entity CreateEntity();
 
@@ -38,6 +53,10 @@ namespace Atlas {
         private:
             ECS::EntityManager entityManager;
 
+            std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
+
+            std::vector<Entity> newMeshComponentEntities;
+
             friend class Entity;
             friend class SceneSerializer;
 
@@ -46,7 +65,7 @@ namespace Atlas {
         template<typename T, typename ...Args>
         T Scene::CreatePrefab(Args&&... args) {
 
-            static_assert(std::is_convertible<T, Entity>(),
+            static_assert(std::is_convertible<T, Entity>() && sizeof(T) == sizeof(Entity),
                 "Prefab needs to inherit from Scene::Entity class without any extra members");
             static_assert(std::is_constructible<T, ECS::Entity, Scene*, Args...>(),
                 "Can't construct prefab with given arguments. Prefab needs to have at \

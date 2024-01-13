@@ -2,6 +2,7 @@
 
 #include "newscene/Scene.h"
 #include "newscene/prefabs/Node.h"
+#include "newscene/prefabs/MeshInstance.h"
 #include "newscene/components/CameraComponent.h"
 
 #include <chrono>
@@ -17,6 +18,7 @@ void App::LoadContent() {
     Atlas::NewScene::Scene newScene;
 
     auto node = newScene.CreatePrefab<Atlas::NewScene::Prefabs::Node>(glm::mat4(1.0f));
+    auto meshInstance = newScene.CreatePrefab<Atlas::NewScene::Prefabs::MeshInstance>();
 
     Atlas::NewScene::Entity nodeEntiy = node;
 

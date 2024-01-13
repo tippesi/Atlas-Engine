@@ -7,9 +7,13 @@ namespace Atlas {
 
 	namespace NewScene {
 
+        class Scene;
+
 		namespace Components {
 
             class HierarchyComponent {
+
+                friend Scene;
 
             public:
                 HierarchyComponent() = default;
@@ -18,7 +22,8 @@ namespace Atlas {
                 bool root = false;
                 std::vector<Entity> entities;
 
-                mat4 globalMatrix = mat4{ 1.0f };
+            protected:
+                void Update(const TransformComponent& transform, bool parentChanged);
 
             };
 
