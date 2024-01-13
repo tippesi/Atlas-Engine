@@ -1,5 +1,9 @@
 #include "App.h"
 
+#include "newscene/Scene.h"
+#include "newscene/prefabs/Node.h"
+#include "newscene/components/CameraComponent.h"
+
 #include <chrono>
 #include <thread>
 
@@ -9,6 +13,14 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 };
 
 void App::LoadContent() {
+
+    Atlas::NewScene::Scene newScene;
+
+    auto node = newScene.CreatePrefab<Atlas::NewScene::Prefabs::Node>(glm::mat4(1.0f));
+
+    Atlas::NewScene::Entity nodeEntiy = node;
+
+    nodeEntiy.AddComponent<Atlas::NewScene::Components::CameraComponent>();
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);

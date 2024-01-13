@@ -1,5 +1,4 @@
-#ifndef AE_ENTITY_H
-#define AE_ENTITY_H
+#pragma once
 
 #include "../System.h"
 #include "Scene.h"
@@ -15,10 +14,16 @@ namespace Atlas {
             Entity(const Entity& that) = default;
             Entity(ECS::Entity entity, Scene* scene) : entity(entity), scene(scene) {}
 
+            Entity Get() const {
+
+                return *this;
+
+            }
+
             template<typename Comp, typename... Args>
             Comp& AddComponent(Args&&... args) {
 
-                scene->entityManager.Emplace<Comp>(entity, std::forward<Args>(args)...);
+                return scene->entityManager.Emplace<Comp>(entity, std::forward<Args>(args)...);
 
             }
 
@@ -56,5 +61,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

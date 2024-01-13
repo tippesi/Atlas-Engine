@@ -1,6 +1,6 @@
 #include "SceneSerializer.h"
 #include "Entity.h"
-#include "Components.h"
+#include "components/Components.h"
 
 #include "../common/SerializationHelper.h"
 #include "../loader/AssetLoader.h"
@@ -9,6 +9,8 @@
 namespace Atlas {
 
     namespace NewScene {
+
+        using namespace Components;
 
         void SceneSerializer::SerializeScene(const std::string& filename) {
 

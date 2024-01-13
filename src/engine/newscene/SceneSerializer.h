@@ -1,5 +1,4 @@
-#ifndef AE_SCENESERIALIZER_H
-#define AE_SCENESERIALIZER_H
+#pragma once
 
 #include "Scene.h"
 
@@ -33,5 +32,3 @@ namespace Atlas {
 
 
 }
-
-#endif

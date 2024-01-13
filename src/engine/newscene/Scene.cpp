@@ -1,10 +1,12 @@
 #include "Scene.h"
 #include "Entity.h"
-#include "Components.h"
+#include "components/Components.h"
 
 namespace Atlas {
 
     namespace NewScene {
+
+        using namespace Components;
 
         Entity Scene::CreateEntity() {
 
@@ -14,11 +16,20 @@ namespace Atlas {
 
         void Scene::DestroyEntity(Entity entity) {
 
+            entityManager.GetIfContains<HierarchyComponent>(entity);
+
             entityManager.Destroy(entity);
 
         }
 
         void Scene::Update(float deltaTime) {
+
+            auto subset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            for (auto entity : subset) {
+                //if ()
+            }
+
+            //auto subset = entityManager.GetSubset
 
             if (terrain) {
                 //terrain->Update()
@@ -26,11 +37,6 @@ namespace Atlas {
 
             if (ocean) {
                 //ocean->Update()
-            }
-
-            auto subset = entityManager.GetSubset<HierarchyComponent>();
-            for (auto entity : subset) {
-                
             }
 
         }

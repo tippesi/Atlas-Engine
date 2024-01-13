@@ -4,6 +4,8 @@
 #include "Pools.h"
 #include "Subset.h"
 
+#include <optional>
+
 namespace Atlas {
 
     namespace ECS {
@@ -104,6 +106,16 @@ namespace Atlas {
             Comp& Get(Entity entity);
 
             /**
+             * Returns the component which is associated with the entity if the entity has the component.
+             * @tparam Comp The component type
+             * @param entity The entity
+             * @return A pointer to the component if valid, nullptr if it wasn't found.
+             * @note The pointer is only valid temporarily
+             */
+            template<typename Comp>
+            Comp* GetIfContains(Entity entity);
+
+            /**
              * Returns a subset of entities which have all Comp types.
              * @tparam Comp The component types on which entities are selected
              * @return A subset of entities.
@@ -135,7 +147,7 @@ namespace Atlas {
         template<typename Comp, typename ...Args>
         Comp& EntityManager::Emplace(Entity entity, Args&&... args) {
 
-            const auto& pool = pools.Get<Comp>();
+            auto& pool = pools.Get<Comp>();
 
             return pool.Emplace(entity, std::forward<Args>(args)...);
 
@@ -163,6 +175,19 @@ namespace Atlas {
             auto& pool = pools.Get<Comp>();
 
             return pool.Get(entity);
+
+        }
+
+        template<typename Comp>
+        Comp* EntityManager::GetIfContains(Entity entity) {
+
+            auto& pool = pools.Get<Comp>();
+
+            if (!pool.Contains(entity)) {
+                return nullptr;
+            }
+
+            return &pool.Get(entity);
 
         }
 

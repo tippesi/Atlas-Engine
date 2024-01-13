@@ -1,11 +1,12 @@
-#ifndef AE_SCENE_H
-#define AE_SCENE_H
+#pragma once
 
 #include "../System.h"
 #include "../ecs/EntityManager.h"
 
 #include "../ocean/Ocean.h"
 #include "../terrain/Terrain.h"
+
+#include <type_traits>
 
 namespace Atlas {
 
@@ -21,6 +22,9 @@ namespace Atlas {
             explicit Scene(const std::string& name) : name(name) {}
 
             Entity CreateEntity();
+
+            template<typename T, typename ...Args>
+            T CreatePrefab(Args&&... args);
 
             void DestroyEntity(Entity entity);
 
@@ -39,8 +43,19 @@ namespace Atlas {
 
         };
 
+        template<typename T, typename ...Args>
+        T Scene::CreatePrefab(Args&&... args) {
+
+            static_assert(std::is_convertible<T, Entity>(),
+                "Prefab needs to inherit from Scene::Entity class without any extra members");
+            static_assert(std::is_constructible<T, ECS::Entity, Scene*, Args...>(),
+                "Can't construct prefab with given arguments. Prefab needs to have at \
+                least ECS::Entity and Scene* as constructor arguments.");
+
+            return T(entityManager.Create(), this, std::forward<Args>(args)...);
+
+        }
+
     }
 
 }
-
-#endif
