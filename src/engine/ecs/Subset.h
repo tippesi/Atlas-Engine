@@ -63,7 +63,7 @@ namespace Atlas {
 
                 }
 
-            private:
+            protected:
                 inline bool HasAllComponents() {
 
                     entity = (*mainStorage)[idx];

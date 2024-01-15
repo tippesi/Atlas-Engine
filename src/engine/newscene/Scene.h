@@ -10,6 +10,7 @@
 #include "../mesh/Mesh.h"
 
 #include "SpacePartitioning.h"
+#include "Subset.h"
 
 #include <type_traits>
 #include <map>
@@ -43,6 +44,9 @@ namespace Atlas {
 
             void DestroyEntity(Entity entity);
 
+            template<typename... Comp>
+            Subset<Comp...> GetEntitySubset();
+
             void Update(float deltaTime);
 
             std::string name;
@@ -51,7 +55,7 @@ namespace Atlas {
             Ref<Terrain::Terrain> terrain;
 
         private:
-            ECS::EntityManager entityManager;
+            ECS::EntityManager entityManager = ECS::EntityManager(this);
 
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
 
@@ -67,11 +71,18 @@ namespace Atlas {
 
             static_assert(std::is_convertible<T, Entity>() && sizeof(T) == (sizeof(Scene*) + sizeof(ECS::Entity)),
                 "Prefab needs to inherit from Scene::Entity class without any extra members");
-            static_assert(std::is_constructible<T, ECS::Entity, Scene*, Args...>(),
+            static_assert(std::is_constructible<T, ECS::Entity, ECS::EntityManager*, Args...>(),
                 "Can't construct prefab with given arguments. Prefab needs to have at \
                 least ECS::Entity and Scene* as constructor arguments.");
 
-            return T(entityManager.Create(), this, std::forward<Args>(args)...);
+            return T(entityManager.Create(), &entityManager, std::forward<Args>(args)...);
+
+        }
+
+        template<typename... Comp>
+        Subset<Comp...> Scene::GetEntitySubset() {
+
+            return Subset<Comp...>(entityManager.GetSubset<Comp...>());
 
         }
 

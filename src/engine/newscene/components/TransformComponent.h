@@ -10,6 +10,7 @@ namespace Atlas {
 	namespace NewScene {
 
         class Scene;
+        class SpacePartitioning;
 
 		namespace Components {
 
@@ -18,6 +19,7 @@ namespace Atlas {
             class TransformComponent {
 
                 friend Scene;
+                friend SpacePartitioning;
                 friend HierarchyComponent;
 
             public:

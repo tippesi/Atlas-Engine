@@ -15,7 +15,7 @@ namespace Atlas {
 			class Node : public Entity {
 
 			public:
-				Node(ECS::Entity entity, Scene* scene, mat4 transform) : Entity(entity, scene) {
+				Node(ECS::Entity entity, ECS::EntityManager* manager, mat4 transform) : Entity(entity, manager) {
 
 					AddComponent<Components::HierarchyComponent>();
 					AddComponent<Components::TransformComponent>();

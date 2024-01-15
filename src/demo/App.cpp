@@ -24,6 +24,12 @@ void App::LoadContent() {
 
     nodeEntiy.AddComponent<Atlas::NewScene::Components::CameraComponent>();
 
+    auto subset = newScene.GetEntitySubset<Atlas::NewScene::Components::CameraComponent>();
+
+    for (auto entity : subset) {
+
+    }
+
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 

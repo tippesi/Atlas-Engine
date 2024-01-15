@@ -23,6 +23,11 @@ namespace Atlas {
             EntityManager() = default;
 
             /**
+             * Constructs an EntityManager object with userData.
+             */
+            explicit EntityManager(void* userData) : userData(userData) {}
+
+            /**
              * Creates a new entity
              * @return The new entity.
              */
@@ -135,6 +140,8 @@ namespace Atlas {
                 return entities.end();
 
             }
+
+            void* userData;
 
         private:
             Pools pools;

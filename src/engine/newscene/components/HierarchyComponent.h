@@ -3,6 +3,8 @@
 #include "../Entity.h"
 #include "../../System.h"
 
+#include "TransformComponent.h"
+
 namespace Atlas {
 
 	namespace NewScene {

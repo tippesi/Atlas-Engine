@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../volume/Octree.h"
+#include "../RenderList.h"
 
 #include "components/TransformComponent.h"
 
@@ -19,6 +20,8 @@ namespace Atlas {
 			void InsertRenderableEntity(Entity entity, const Components::TransformComponent& transform);
 
 			void RemoveRenderableEntity(Entity entity, const Components::TransformComponent& transform);
+
+			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
 		private:
 			Volume::AABB aabb;

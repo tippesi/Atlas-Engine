@@ -10,7 +10,7 @@ namespace Atlas {
 
         Entity Scene::CreateEntity() {
 
-            return Entity(entityManager.Create(), this);
+            return Entity(entityManager.Create(), &entityManager);
 
         }
 
@@ -46,11 +46,11 @@ namespace Atlas {
                     continue;
 
                 if (meshComponent.inserted)
-                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, this), transformComponent);
+                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, &entityManager), transformComponent);
 
                 transformComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
 
-                SpacePartitioning::InsertRenderableEntity(Entity(entity, this), transformComponent);
+                SpacePartitioning::InsertRenderableEntity(Entity(entity, &entityManager), transformComponent);
             }
 
             if (terrain) {

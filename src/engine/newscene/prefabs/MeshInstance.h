@@ -14,7 +14,7 @@ namespace Atlas {
 			class MeshInstance : public Entity {
 
 			public:
-				MeshInstance(ECS::Entity entity, Scene* scene) : Entity(entity, scene) {
+				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager) : Entity(entity, manager) {
 
 					AddComponent<Components::MeshComponent>();
 					AddComponent<Components::TransformComponent>();

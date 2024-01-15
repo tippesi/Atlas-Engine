@@ -15,7 +15,7 @@ namespace Atlas {
         void SceneSerializer::SerializeScene(const std::string& filename) {
 
             for (auto entity : scene->entityManager) {
-                SerializeEntity(Entity { entity, scene.get() });
+                //SerializeEntity(Entity { entity, scene.get() });
             }
 
 
