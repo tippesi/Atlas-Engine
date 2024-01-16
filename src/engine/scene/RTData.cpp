@@ -35,8 +35,8 @@ namespace Atlas {
 
             if (!device->swapChain->isComplete) return;
 
-            auto actors = scene->GetMeshActors();
-            if (!actors.size()) return;
+            auto subset = scene->GetSubset<Components::MeshComponent, Components::TransformComponent>();
+            if (!subset.Any()) return;
 
             auto meshes = scene->GetMeshes();
             for (auto& mesh : meshes) {
@@ -64,14 +64,17 @@ namespace Atlas {
 
             UpdateMaterials();
 
-            for (auto& actor : actors) {
-                if (!meshInfos.contains(actor->mesh.GetID()))
+            for (auto entity : subset) {
+
+                const auto& [meshComponent, transformComponent] = subset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+
+                if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
 
-                actorAABBs.push_back(actor->aabb);
-                auto &meshInfo = meshInfos[actor->mesh.GetID()];
+                actorAABBs.push_back(transformComponent.aabb);
+                auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
 
-                auto inverseMatrix = mat3x4(glm::transpose(actor->inverseGlobalMatrix));
+                auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
 
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
@@ -79,17 +82,17 @@ namespace Atlas {
                     .materialOffset = meshInfo.materialOffset
                 };
 
-                meshInfo.matrices.push_back(actor->globalMatrix);
+                meshInfo.matrices.push_back(transformComponent.globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-                lastMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
+                lastMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
             }
 
             if (!gpuBvhInstances.size())
                 return;
 
             if (hardwareRayTracing) {
-                UpdateForHardwareRayTracing(actors);
+                UpdateForHardwareRayTracing(subset);
             }
             else {
                 UpdateForSoftwareRayTracing(gpuBvhInstances, lastMatrices, actorAABBs);
@@ -118,8 +121,6 @@ namespace Atlas {
         void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials) {
 
             std::lock_guard lock(mutex);
-
-            auto actors = scene->GetMeshActors();
 
             auto meshes = scene->GetMeshes();
             materials.clear();
@@ -250,7 +251,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors) {
+        void RTData::UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -280,16 +281,18 @@ namespace Atlas {
 
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
-            for (auto actor : actors) {
-                if (!meshInfos.contains(actor->mesh.GetID()))
+            for (auto entity : entitySubset) {
+                const auto& [meshComponent, transformComponent] = entitySubset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+
+                if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
 
-                auto& meshInfo = meshInfos[actor->mesh.GetID()];
+                auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
 
                 VkAccelerationStructureInstanceKHR inst = {};
                 VkTransformMatrixKHR transform;
 
-                auto transposed = glm::transpose(actor->globalMatrix);
+                auto transposed = glm::transpose(transformComponent.globalMatrix);
                 std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
 
                 inst.transform = transform;

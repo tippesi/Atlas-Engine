@@ -7,7 +7,7 @@
 
 namespace Atlas {
 
-	namespace NewScene {
+	namespace Scene {
 
         class Scene;
         class SpacePartitioning;
@@ -27,6 +27,8 @@ namespace Atlas {
                 TransformComponent(const TransformComponent& that) = default;
                 explicit TransformComponent(mat4 matrix, bool isStatic = true) : matrix(matrix), isStatic(isStatic) {}
 
+                void Set(const glm::mat4& matrix);
+
                 void Translate(glm::vec3 translation);
                 void Rotate(glm::vec3 rotation);
                 void Scale(glm::vec3 scale);
@@ -36,14 +38,15 @@ namespace Atlas {
 
                 glm::mat4 matrix;
 
+                Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
+                mat4 globalMatrix = mat4{ 1.0f };
+                mat4 lastGlobalMatrix = mat4{ 1.0f };
+                mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
+
                 const bool isStatic = true;
 
             protected:
                 void Update(const TransformComponent& parentTransform, bool parentChanged);
-
-                Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
-                mat4 globalMatrix = mat4{ 1.0f };
-                mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
                 bool changed = true;
 

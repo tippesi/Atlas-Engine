@@ -54,7 +54,11 @@ namespace Atlas {
 
             auto sun = scene->sky.sun.get();
             if (!sun) {
-                auto lights = scene->GetLights();
+                auto lightEntities = scene->GetSubset<LightComponent>();
+                std::vector<Lighting::Light*> lights;
+                for (auto entity : lightEntities) {
+                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                }
                 for (auto& light : lights) {
                     if (light->type == AE_DIRECTIONAL_LIGHT) {
                         sun = static_cast<Lighting::DirectionalLight*>(light);

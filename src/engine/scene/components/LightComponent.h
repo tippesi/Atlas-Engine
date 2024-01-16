@@ -3,9 +3,11 @@
 #include "../Entity.h"
 #include "../../System.h"
 
+#include "../../lighting/Light.h"
+
 namespace Atlas {
 
-	namespace NewScene {
+	namespace Scene {
 
 		namespace Components {
 
@@ -14,6 +16,8 @@ namespace Atlas {
 			public:
 				LightComponent() = default;
 				LightComponent(const LightComponent& that) = default;
+
+				Ref<Lighting::Light> light = nullptr;
 
 			};
 

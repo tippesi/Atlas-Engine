@@ -7,3 +7,4 @@
 #include "MeshComponent.h"
 #include "NameComponent.h"
 #include "TransformComponent.h"
+#include "ObjectComponent.h"

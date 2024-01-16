@@ -3,7 +3,11 @@
 #include "../System.h"
 
 #include "RTStructures.h"
-#include "../actor/MeshActor.h"
+#include "Subset.h"
+
+#include "components/MeshComponent.h"
+#include "components/TransformComponent.h"
+
 #include "../texture/TextureAtlas.h"
 
 #include <vector>
@@ -56,7 +60,7 @@ namespace Atlas {
             void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
-            void UpdateForHardwareRayTracing(std::vector<Actor::MeshActor*>& actors);
+            void UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset);
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 

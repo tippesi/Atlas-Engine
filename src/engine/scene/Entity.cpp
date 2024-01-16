@@ -3,7 +3,7 @@
 
 namespace Atlas {
 
-	namespace NewScene {
+	namespace Scene {
 
 		void Entity::RegisterMeshInstance(const Components::MeshComponent& comp) {
 

@@ -8,7 +8,7 @@
 
 namespace Atlas {
 
-	namespace NewScene {
+	namespace Scene {
 
         class Scene;
 
@@ -24,6 +24,9 @@ namespace Atlas {
                 explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {}
 
                 const ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
+
+                bool visible = true;
+                bool dontCull = false;
 
             protected:
                 bool inserted = false;

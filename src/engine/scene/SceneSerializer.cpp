@@ -8,7 +8,7 @@
 
 namespace Atlas {
 
-    namespace NewScene {
+    namespace Scene {
 
         using namespace Components;
 

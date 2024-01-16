@@ -116,12 +116,22 @@ namespace Atlas {
             template<typename... Component>
             decltype(auto) Get(const Entity entity) const {
 
-                return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
-                /*
-                if constexpr (sizeof...(Component) == 1) {
-                    return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                if constexpr (sizeof...(Component) == 0) {
+                    if constexpr (sizeof...(Comp) == 1) {
+                        return (std::get<Pool<Comp>*>(pools)->Get(entity), ...);
+                    }
+                    else {
+                        return std::tuple_cat(std::forward_as_tuple(std::get<Pool<Comp>*>(pools)->Get(entity))...);
+                    }
                 }
-                 */
+                else {
+                    if constexpr (sizeof...(Component) == 1) {
+                        return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                    }
+                    else {
+                        return std::tuple_cat(std::forward_as_tuple(std::get<Pool<Component>*>(pools)->Get(entity))...);
+                    }
+                }
 
             }
 
@@ -137,7 +147,31 @@ namespace Atlas {
 
             }
 
+            bool Any() const {
+
+                size_t idx = 0;
+                while (++idx < mainStorage->Size() - 1)
+                    if (HasAllComponents(idx))
+                        return true;
+
+                return false;
+
+            }
+
         public:
+            inline bool HasAllComponents(size_t idx) const {
+
+                auto entity = (*mainStorage)[idx];
+                bool valid = true;
+
+                for (auto& storage : otherStorages) {
+                    valid &= storage->Contains(entity);
+                }
+
+                return valid;
+
+            }
+
             std::tuple<Pool<Comp>*...> pools;
 
             const Storage* mainStorage = nullptr;

@@ -6,7 +6,7 @@
 
 namespace Atlas {
 
-    namespace NewScene {
+    namespace Scene {
 
         template<typename... Comp>
         class Subset {
@@ -46,7 +46,19 @@ namespace Atlas {
 
             }
 
-        private:
+            template<typename... Component>
+            decltype(auto) Get(const Entity entity) const {
+
+                return subset.Get<Component...>(entity);
+
+            }
+
+            bool Any() const {
+
+                return subset.Any();
+
+            }
+
             ECS::Subset<Comp...> subset;
             ECS::EntityManager* entityManager;
 

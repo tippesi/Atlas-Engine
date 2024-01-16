@@ -1,80 +1,82 @@
 #include "Scene.h"
+#include "Entity.h"
+#include "components/Components.h"
 
 namespace Atlas {
 
     namespace Scene {
 
-        Scene::Scene(vec3 min, vec3 max, int32_t depth) : SceneNode(),
-            SpacePartitioning(min, max, depth), rtData(this) {
+        using namespace Components;
 
-            AddToScene(this, &rootMeshMap);
+        Entity Scene::CreateEntity() {
 
-        }
-
-        Scene::~Scene() {
-
-
+            return Entity(entityManager.Create(), &entityManager);
 
         }
 
-        Scene& Scene::operator=(const Scene& that) {
+        void Scene::DestroyEntity(Entity entity) {
 
-            if (this != &that) {
+            entityManager.Destroy(entity);
 
-                SceneNode::operator=(that);
-                SpacePartitioning::operator=(that);
+        }
 
-                terrain = that.terrain;
-                ocean = that.ocean;
-                sky = that.sky;
-                postProcessing = that.postProcessing;
+        void Scene::Update(Ref<Camera> camera, float deltaTime) {
 
-                hasChanged = true;
+            Update(deltaTime);
+            UpdateCameraDependent(camera, deltaTime);
 
+        }
+
+        void Scene::Update(float deltaTime) {
+
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            for (auto entity : hierarchySubset) {
+                auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+
+                if (hierarchyComponent.root) {
+                    hierarchyComponent.Update(transformComponent, false);
+                }
             }
 
-            return *this;
+            auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+            for (auto entity : meshSubset) {
+                auto& meshComponent = entityManager.Get<MeshComponent>(entity);
+
+                if (!meshComponent.mesh.IsLoaded())
+                    continue;
+
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                if (!transformComponent.changed)
+                    continue;
+
+                if (meshComponent.inserted)
+                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, &entityManager), transformComponent);
+
+                transformComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
+
+                SpacePartitioning::InsertRenderableEntity(Entity(entity, &entityManager), transformComponent);
+                meshComponent.inserted = true;
+            }            
+
+            auto transformSubset = entityManager.GetSubset<TransformComponent>();
+            for (auto entity : transformSubset) {
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+
+                transformComponent.changed = false;
+            }
 
         }
 
-        void Scene::Update(Camera *camera, float deltaTime) {
-
-            auto meshes = GetMeshes();
+        void Scene::UpdateCameraDependent(Ref<Camera> camera, float deltaTime) {
 
             if (terrain) {
-                terrain->Update(camera);
+                terrain->Update(camera.get());
             }
 
-            if (ocean)
-                ocean->Update(camera, deltaTime);
-
-            if (sky.sun) {
-                sky.sun->Update(camera);
+            if (ocean) {
+                ocean->Update(camera.get(), deltaTime);
             }
-
-            hasChanged = SceneNode::Update(camera, deltaTime, mat4(1.0f), false);
-
-            UpdateBindlessIndexMaps();
-
-            // Make sure this is changed just once at the start of a frame
-            rtData.Update(true);
-            rtDataValid = rtData.IsValid();
-
-        }
-
-        bool Scene::HasChanged() {
-
-            return hasChanged;
-
-        }
-
-        void Scene::Clear() {
-
-            sky = Lighting::Sky();
-            postProcessing = PostProcessing::PostProcessing();
-
-            SceneNode::Clear();
-            SpacePartitioning::Clear();
 
         }
 
@@ -83,8 +85,8 @@ namespace Atlas {
             std::vector<ResourceHandle<Mesh::Mesh>> meshes;
 
             // Not really efficient, but does the job
-            for (auto& [meshId, registeredMesh] : rootMeshMap) {
-                meshes.push_back(registeredMesh.mesh);
+            for (auto& [meshId, registeredMesh] : registeredMeshes) {
+                meshes.push_back(registeredMesh.resource);
             }
 
             return meshes;
@@ -104,7 +106,7 @@ namespace Atlas {
 
                     materials.push_back(material.get());
                 }
-                
+
             }
 
             auto meshes = GetMeshes();
@@ -136,7 +138,7 @@ namespace Atlas {
 
             auto meshes = GetMeshes();
 
-            for(auto mesh : meshes) {
+            for (auto mesh : meshes) {
                 mesh.WaitForLoad();
             }
 
@@ -148,7 +150,7 @@ namespace Atlas {
 
             auto meshes = GetMeshes();
 
-            for(auto mesh : meshes) {
+            for (auto mesh : meshes) {
                 loaded &= mesh.IsLoaded();
             }
 
@@ -176,7 +178,7 @@ namespace Atlas {
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                for (auto &material: mesh->data.materials) {
+                for (auto& material : mesh->data.materials) {
                     if (material->HasBaseColorMap())
                         textures.insert(material->baseColorMap);
                     if (material->HasOpacityMap())

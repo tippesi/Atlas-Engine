@@ -7,7 +7,7 @@
 
 namespace Atlas {
 
-	namespace NewScene {
+	namespace Scene {
 
         class Scene;
 
