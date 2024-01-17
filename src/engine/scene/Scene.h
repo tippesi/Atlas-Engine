@@ -6,6 +6,7 @@
 
 #include "../ocean/Ocean.h"
 #include "../terrain/Terrain.h"
+#include "../physics/PhysicsWorld.h"
 #include "../lighting/Light.h"
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
@@ -89,6 +90,7 @@ namespace Atlas {
             Ref<Ocean::Ocean> ocean = nullptr;
             Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Vegetation> vegetation = nullptr;
+            Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
 
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;

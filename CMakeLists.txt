@@ -86,6 +86,7 @@ find_package(glslang CONFIG REQUIRED)
 find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(unofficial-joltphysics CONFIG REQUIRED)
 
 if (ATLAS_TESTS)
 find_package(GTest CONFIG REQUIRED)

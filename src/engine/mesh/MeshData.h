@@ -113,6 +113,8 @@ namespace Atlas {
 
             mat4 transform;
 
+            float radius = 0.0f;
+
         private:
             void DeepCopy(const MeshData& that);
 

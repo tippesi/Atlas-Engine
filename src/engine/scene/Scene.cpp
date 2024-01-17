@@ -32,8 +32,7 @@ namespace Atlas {
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
             // Update hierarchy and their entities
             for (auto entity : hierarchySubset) {
-                auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                const auto& [hierarchyComponent, transformComponent] = hierarchySubset.Get(entity);
 
                 if (hierarchyComponent.root) {
                     hierarchyComponent.Update(transformComponent, false);
@@ -52,6 +51,46 @@ namespace Atlas {
                 }
             }
 
+            // Wait for transform updates to finish
+            if (physicsWorld != nullptr) {
+                auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
+
+                for (auto entity : rigidBodySubset) {
+                    const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
+
+                    // Apply update here (transform overwrite everything else in physics simulation for now)
+                    if (transformComponent.changed && rigidBodyComponent.Valid()) {
+                        rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
+                    }
+
+                    if (!rigidBodyComponent.Valid())
+                        rigidBodyComponent.TryInsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                }
+
+                physicsWorld->Update(deltaTime);
+
+                for (auto entity : rigidBodySubset) {
+                    const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
+
+                    if (!rigidBodyComponent.Valid())
+                        continue;
+
+                    // Check if this was already updated above, in that case we want to keep the
+                    // already updated last global matrix and not update again
+                    if (!transformComponent.changed)
+                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+
+                    // Need to set changed to true such that the space partitioning is updated
+                    transformComponent.changed = true;
+                    transformComponent.updated = true;
+
+                    // Physics are updated in global space, so we don't need the parent transform
+                    transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
+                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                }
+            }
+
+            // Do the space partitioning update here (ofc also update AABBs)
             auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto entity : meshSubset) {
                 auto& meshComponent = entityManager.Get<MeshComponent>(entity);
@@ -72,10 +111,12 @@ namespace Atlas {
                 meshComponent.inserted = true;
             }            
 
+            // After everything we need to reset transform component changed and prepare the updated for next frame
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
 
                 transformComponent.changed = false;
+                transformComponent.updated = false;
             }
 
         }

@@ -82,6 +82,8 @@ void App::LoadContent() {
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
 
+    scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+
     LoadScene();
 
     ImGui::CreateContext();
@@ -137,10 +139,15 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
+    /*
     if (sceneSelection == SPONZA) {
         auto meshEntitySubset = scene->GetSubset<MeshComponent, TransformComponent>();
 
+        int idx = 0;
         for (auto entity : meshEntitySubset) {
+
+            if (idx++ >= 3)
+                continue;
 
             const auto& [meshComponent, transformComponent] = meshEntitySubset.Get(entity);
 
@@ -162,6 +169,30 @@ void App::Update(float deltaTime) {
 
         }
     }
+
+    if (scene->IsFullyLoaded() && sceneSelection == SPONZA) {
+
+
+        static float lastSpawn = 0.0f;
+        const float spawnRate = 0.001f;
+        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius);
+
+        if (Atlas::Clock::Get() - spawnRate > lastSpawn) {
+            auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
+            auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
+
+            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z));
+
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
+
+            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+
+            entities.push_back(entity);
+            lastSpawn = Atlas::Clock::Get();
+        }
+
+    }
+    */
 
     scene->Update(deltaTime);
     scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
@@ -295,6 +326,7 @@ void App::Render(float deltaTime) {
             ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
             ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
             ImGui::Text("Scene triangle count: %d", triangleCount);
+            ImGui::Text("Number of entities %zu", entities.size());
 
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -887,7 +919,7 @@ bool App::LoadScene() {
         );
         meshes.push_back(mesh);
  
-        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+        transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
             false, transform, 2048
@@ -1145,21 +1177,31 @@ bool App::LoadScene() {
                 continue;
             }
 
-            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
-            entities.push_back(entity);
-
             /*
+            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+
+            if (meshCount == 0) {
+                auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(mesh);
+                entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+            }
+            else {
+                auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(5.0f);
+                entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+            }
+            entities.push_back(entity);
+            */
+
             if (meshCount == 1) {
-                for (int32_t i = 0; i < 20000; i++) {
+                for (int32_t i = 0; i < 200000; i++) {
                     auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
                     auto y = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
                     auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
 
-                    actors.push_back(Atlas::Actor::MovableMeshActor{mesh, glm::translate(glm::mat4(1.0f),
-                        glm::vec3(x, y, z))});
+                    auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::translate(glm::mat4(1.0f),
+                        glm::vec3(x, y, z)));
+                    entities.push_back(entity);
                 }
             }
-            */
 
             meshCount++;
         }
@@ -1246,6 +1288,7 @@ void App::CheckLoadScene() {
     }
 
     for (auto& mesh : meshes) {
+        if (!mesh.IsLoaded()) continue;
         mesh->invertUVs = true;
         mesh->cullBackFaces = true;
     }
