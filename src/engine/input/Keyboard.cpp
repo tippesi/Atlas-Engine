@@ -54,6 +54,8 @@ namespace Atlas {
             location += camera->direction * movement.x * deltaTime * speed;
             location += camera->right * movement.y * deltaTime * speed;
 
+            location.y += movement.z * deltaTime * speed;
+
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
             camera->location = glm::mix(camera->location, location, progress);
@@ -106,6 +108,25 @@ namespace Atlas {
             if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
                 movement.y += 1.0f;
             }
+
+
+            if (event.keyCode == AE_KEY_E && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.z += 1.0f;
+            }
+
+            if (event.keyCode == AE_KEY_E && event.state == AE_BUTTON_RELEASED) {
+                movement.z -= 1.0f;
+            }
+
+
+            if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+                movement.z -= 1.0f;
+            }
+
+            if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_RELEASED) {
+                movement.z += 1.0f;
+            }
+            
 
         }
 
