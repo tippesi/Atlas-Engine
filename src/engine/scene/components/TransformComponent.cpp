@@ -10,6 +10,7 @@ namespace Atlas {
 
 				this->matrix = matrix;
 				changed = true;
+                updated = false;
 
 			}
 
@@ -21,6 +22,8 @@ namespace Atlas {
 
 					globalMatrix = parentTransform.globalMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));
+
+                    updated = true;
 
 				}
 

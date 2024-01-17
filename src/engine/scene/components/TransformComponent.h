@@ -36,9 +36,8 @@ namespace Atlas {
                 Common::MatrixDecomposition Decompose() const;
                 void Compose(Common::MatrixDecomposition composition);
 
-                glm::mat4 matrix;
+                glm::mat4 matrix = mat4{ 1.0f };
 
-                Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
                 mat4 globalMatrix = mat4{ 1.0f };
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
@@ -49,6 +48,7 @@ namespace Atlas {
                 void Update(const TransformComponent& parentTransform, bool parentChanged);
 
                 bool changed = true;
+                bool updated = false;
 
             };
 

@@ -31,7 +31,7 @@ namespace Atlas {
                 Iterator(const Storage* mainStorage, OtherStorage otherStorages, size_t idx) :
                     mainStorage(mainStorage), otherStorages(otherStorages), idx(idx) {
 
-                    if (idx <= mainStorage->Size() - 1 && !HasAllComponents()) {
+                    if (idx < mainStorage->Size() && !HasAllComponents()) {
                         operator++();
                     }
 
@@ -39,7 +39,7 @@ namespace Atlas {
 
                 Iterator& operator++() {
 
-                    while (++idx < mainStorage->Size() - 1 && !HasAllComponents());
+                    while (++idx < mainStorage->Size() && !HasAllComponents());
                     return *this;
 
                 }
@@ -114,7 +114,7 @@ namespace Atlas {
             }
 
             template<typename... Component>
-            decltype(auto) Get(const Entity entity) const {
+            decltype(auto) Get(const Entity entity) {
 
                 if constexpr (sizeof...(Component) == 0) {
                     if constexpr (sizeof...(Comp) == 1) {
@@ -150,7 +150,7 @@ namespace Atlas {
             bool Any() const {
 
                 size_t idx = 0;
-                while (++idx < mainStorage->Size() - 1)
+                while (++idx < mainStorage->Size())
                     if (HasAllComponents(idx))
                         return true;
 

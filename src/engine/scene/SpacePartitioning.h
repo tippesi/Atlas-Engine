@@ -17,9 +17,9 @@ namespace Atlas {
 		public:
 			SpacePartitioning(vec3 min, vec3 max, int32_t depth);
 
-			void InsertRenderableEntity(Entity entity, const Components::TransformComponent& transform);
+			void InsertRenderableEntity(Entity entity, const Components::MeshComponent& transform);
 
-			void RemoveRenderableEntity(Entity entity, const Components::TransformComponent& transform);
+			void RemoveRenderableEntity(Entity entity, const Components::MeshComponent& transform);
 
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 

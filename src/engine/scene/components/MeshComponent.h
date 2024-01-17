@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Entity.h"
 #include "../../System.h"
 
 #include "../../mesh/Mesh.h"
@@ -27,6 +26,8 @@ namespace Atlas {
 
                 bool visible = true;
                 bool dontCull = false;
+
+                Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
 
             protected:
                 bool inserted = false;

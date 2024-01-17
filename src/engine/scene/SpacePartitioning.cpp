@@ -13,9 +13,9 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::InsertRenderableEntity(Entity entity, const Components::TransformComponent& transform) {
+		void SpacePartitioning::InsertRenderableEntity(Entity entity, const Components::MeshComponent& transform) {
 
-			if (transform.isStatic) {
+			if (false) {
 				renderableStaticEntityOctree.Insert(entity, transform.aabb);
 			}
 			else {
@@ -24,9 +24,9 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::RemoveRenderableEntity(Entity entity, const Components::TransformComponent& transform) {
+		void SpacePartitioning::RemoveRenderableEntity(Entity entity, const Components::MeshComponent& transform) {
 
-			if (transform.isStatic) {
+			if (false) {
 				renderableStaticEntityOctree.Remove(entity, transform.aabb);
 			}
 			else {
@@ -47,41 +47,38 @@ namespace Atlas {
             renderableMovableEntityOctree.QueryFrustum(movableEntities,
                 insideMovableEntities, frustum);
 
-            /*
             for (auto entity : staticEntities) {
                 auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
-                    renderList.Add(actor);
+                    renderList.Add(entity, *meshComp);
             }
 
             for (auto entity : insideStaticEntities) {
                 auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
                 if (!meshComp) continue;
 
-                if (actor->visible)
-                    renderList.Add(actor);
+                if (meshComp->visible)
+                    renderList.Add(entity, *meshComp);
             }
 
             for (auto entity : movableEntities) {
                 auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
                 if (!meshComp) continue;
 
-                if (actor->dontCull || actor->visible && frustum.Intersects(actor->aabb)) {
-                    renderList.Add(actor);
+                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb)) {
+                    renderList.Add(entity, *meshComp);
                 }
             }
 
-            for (auto actor : insideMovableEntities) {
+            for (auto entity : insideMovableEntities) {
                 auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
                 if (!meshComp) continue;
 
-                if (entity->visible)
-                    renderList.Add(actor);
+                if (meshComp->visible)
+                    renderList.Add(entity, *meshComp);
             }
-            */
-            
 
         }
 

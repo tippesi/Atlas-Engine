@@ -71,7 +71,7 @@ namespace Atlas {
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
 
-                actorAABBs.push_back(transformComponent.aabb);
+                actorAABBs.push_back(meshComponent.aabb);
                 auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
 
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));

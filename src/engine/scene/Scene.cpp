@@ -30,12 +30,25 @@ namespace Atlas {
         void Scene::Update(float deltaTime) {
 
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            // Update hierarchy and their entities
             for (auto entity : hierarchySubset) {
                 auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
 
                 if (hierarchyComponent.root) {
                     hierarchyComponent.Update(transformComponent, false);
+                }
+            }
+
+            auto transformSubset = entityManager.GetSubset<TransformComponent>();
+
+            TransformComponent rootTransform = {};
+            // Update all other transforms not affected by the hierarchy (entities don't need to be in hierarchy)
+            for (auto entity : transformSubset) {
+                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+
+                if (!transformComponent.updated) {
+                    transformComponent.Update(rootTransform, false);
                 }
             }
 
@@ -47,19 +60,18 @@ namespace Atlas {
                     continue;
 
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
-                if (!transformComponent.changed)
+                if (!transformComponent.changed && meshComponent.inserted)
                     continue;
 
                 if (meshComponent.inserted)
-                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, &entityManager), transformComponent);
+                    SpacePartitioning::RemoveRenderableEntity(Entity(entity, &entityManager), meshComponent);
 
-                transformComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
+                meshComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
 
-                SpacePartitioning::InsertRenderableEntity(Entity(entity, &entityManager), transformComponent);
+                SpacePartitioning::InsertRenderableEntity(Entity(entity, &entityManager), meshComponent);
                 meshComponent.inserted = true;
             }            
 
-            auto transformSubset = entityManager.GetSubset<TransformComponent>();
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
 

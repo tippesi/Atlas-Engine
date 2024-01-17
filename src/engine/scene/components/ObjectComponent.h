@@ -6,7 +6,11 @@ namespace Atlas {
 	
 		namespace Components {
 		
-			 
+			 class ObjectComponent {
+
+
+
+             };
 
 		}
 

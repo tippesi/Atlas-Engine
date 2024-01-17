@@ -144,6 +144,9 @@ void App::Update(float deltaTime) {
 
             const auto& [meshComponent, transformComponent] = meshEntitySubset.Get(entity);
 
+            if (!meshComponent.mesh.IsLoaded())
+                continue;
+
             if (meshComponent.mesh->name == "chromesphere.gltf") {
                 float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
                 auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
@@ -1236,7 +1239,7 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    auto transformEntities = scene->GetSubset<TransformComponent>();
+    auto transformEntities = scene->GetSubset<MeshComponent>();
     for (auto entity : transformEntities) {
         const auto& comp = transformEntities.Get(entity);
         sceneAABB.Grow(comp.aabb);

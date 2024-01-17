@@ -21,7 +21,7 @@ namespace Atlas {
                     ECS::EntityManager* entityManager) : entityManager(entityManager),
                     ECS::Subset<Comp...>::Iterator(mainStorage, otherStorages, idx) {}
 
-                inline const Entity& operator*() const {
+                inline const Entity operator*() const {
 
                     return { ECS::Subset<Comp...>::Iterator::entity, entityManager };
 
@@ -47,9 +47,9 @@ namespace Atlas {
             }
 
             template<typename... Component>
-            decltype(auto) Get(const Entity entity) const {
+            decltype(auto) Get(const Entity entity) {
 
-                return subset.Get<Component...>(entity);
+                return subset.template Get<Component...>(entity);
 
             }
 

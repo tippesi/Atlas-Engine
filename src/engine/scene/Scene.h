@@ -47,7 +47,7 @@ namespace Atlas {
 
         public:
             Scene() : SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {};
-            Scene(const Scene& that) = default;
+            Scene(const Scene& that) = delete;
             explicit Scene(const std::string& name) 
                 : name(name), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
@@ -146,18 +146,16 @@ namespace Atlas {
         template<typename... Comp>
         void Scene::Merge(const Ref<Scene> other) {
 
-            /*
             auto subset = GetSubset<Comp...>();
 
             for (auto entity : subset) {
 
                 const auto components = subset.Get(entity);
 
-                auto entity = CreateEntity();                
-                (entity.AddComponent(std::get<Comp>(components)),...);
+                auto newEntity = CreateEntity();
+                (newEntity.AddComponent(std::get<Comp&>(components)),...);
 
             }
-            */
 
         }
 

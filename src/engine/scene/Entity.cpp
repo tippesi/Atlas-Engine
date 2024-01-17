@@ -5,9 +5,15 @@ namespace Atlas {
 
 	namespace Scene {
 
-		void Entity::RegisterMeshInstance(const Components::MeshComponent& comp) {
+		void Entity::RegisterMeshInstance(const Components::MeshComponent& meshComponent) {
 
+            auto scene = GetScene();
+            auto& mesh = meshComponent.mesh;
 
+            if (!scene->registeredMeshes.contains(mesh.GetID()))
+                scene->registeredMeshes[mesh.GetID()] = { .resource = mesh, .refCount = 1 };
+            else
+                scene->registeredMeshes[mesh.GetID()].refCount++;
 
 		}
 
@@ -16,9 +22,10 @@ namespace Atlas {
 			auto scene = GetScene();
 
 			auto& meshComponent = GetComponent<Components::MeshComponent>();
+            auto& mesh = meshComponent.mesh;
 
-			if (meshComponent.mesh.IsValid() && scene->registeredMeshes.contains(meshComponent.mesh.GetID()))
-				scene->registeredMeshes[meshComponent.mesh.GetID()].refCount--;
+			if (mesh.IsValid() && scene->registeredMeshes.contains(mesh.GetID()))
+				scene->registeredMeshes[mesh.GetID()].refCount--;
 
 		}
 
