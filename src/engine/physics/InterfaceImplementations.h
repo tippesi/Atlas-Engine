@@ -39,7 +39,7 @@ namespace Atlas {
         namespace BroadPhaseLayers {
             static constexpr JPH::BroadPhaseLayer STATIC(0);
             static constexpr JPH::BroadPhaseLayer MOVABLE(1);
-            static constexpr uint NUM_LAYERS(2);
+            static constexpr uint32_t NUM_LAYERS(2);
         };
 
         // BroadPhaseLayerInterface implementation

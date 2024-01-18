@@ -38,6 +38,8 @@ namespace Atlas {
 
             inline size_t GetIndex(const Entity entity) const;
 
+            inline size_t TryGetIndex(const Entity entity) const;
+
         private:
             std::vector<Page> pageData;
             std::vector<Entity> packedData;
@@ -89,6 +91,18 @@ namespace Atlas {
         size_t Storage::GetIndex(const Entity entity) const {
 
             auto idx = EntityToIdx(entity);
+            return pageData[GetPage(idx)][GetOffset(idx)];
+
+        }
+
+        size_t Storage::TryGetIndex(const Entity entity) const {
+
+            auto idx = EntityToIdx(entity);
+            auto page = GetPage(idx);
+
+            if (page >= pageData.size())
+                return EntityConfig::InvalidEntity;
+
             return pageData[GetPage(idx)][GetOffset(idx)];
 
         }

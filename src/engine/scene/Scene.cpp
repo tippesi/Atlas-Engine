@@ -109,7 +109,9 @@ namespace Atlas {
 
                 SpacePartitioning::InsertRenderableEntity(Entity(entity, &entityManager), meshComponent);
                 meshComponent.inserted = true;
-            }            
+            }
+
+            SpacePartitioning::SortOctrees();
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
             for (auto entity : transformSubset) {

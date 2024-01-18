@@ -209,11 +209,7 @@ namespace Atlas {
 
             auto& pool = pools.Get<Comp>();
 
-            if (!pool.Contains(entity)) {
-                return nullptr;
-            }
-
-            return &pool.Get(entity);
+            return pool.TryGet(entity);
 
         }
 

@@ -21,6 +21,8 @@ namespace Atlas {
 
             Comp& Get(const Entity entity);
 
+            Comp* TryGet(const Entity entity);
+
         private:
             std::vector<Comp> components;
 
@@ -53,6 +55,17 @@ namespace Atlas {
         Comp& Pool<Comp>::Get(const Entity entity) {
 
             return components[Storage::GetIndex(entity)];
+
+        }
+
+        template<typename Comp>
+        Comp* Pool<Comp>::TryGet(const Entity entity) {
+
+            auto idx = Storage::GetIndex(entity);
+            if (idx == EntityConfig::InvalidEntity)
+                return nullptr;
+
+            return &components[idx];
 
         }
 

@@ -47,12 +47,12 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {};
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) {};
             Scene(const Scene& that) = delete;
             explicit Scene(const std::string& name) 
-                : name(name), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
+                : name(name), SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) {}
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : name(name), SpacePartitioning(min, max, depth) {}
+                : name(name), SpacePartitioning(this, min, max, depth) {}
 
             Entity CreateEntity();
 
@@ -118,8 +118,9 @@ namespace Atlas {
 
             friend class Entity;
             friend class SceneSerializer;
+            friend class SpacePartitioning;
             friend class RTData;
-            friend class RTData;
+            friend class RenderList;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
 
