@@ -20,6 +20,8 @@ namespace Atlas {
 
             RegisterDefaultAllocator();
 
+            Trace = TraceImpl;
+
             // Create a factory
             Factory::sInstance = new Factory();
 

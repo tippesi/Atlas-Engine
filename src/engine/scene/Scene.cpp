@@ -102,6 +102,7 @@ namespace Atlas {
                 if (!transformComponent.changed && meshComponent.inserted)
                     continue;
 
+                // No need for space partitioning right now
                 if (meshComponent.inserted)
                     SpacePartitioning::RemoveRenderableEntity(Entity(entity, &entityManager), meshComponent);
 
@@ -111,8 +112,6 @@ namespace Atlas {
                 meshComponent.inserted = true;
             }
 
-            SpacePartitioning::SortOctrees();
-
             // After everything we need to reset transform component changed and prepare the updated for next frame
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
@@ -120,6 +119,14 @@ namespace Atlas {
                 transformComponent.changed = false;
                 transformComponent.updated = false;
             }
+
+#ifdef AE_BINDLESS
+            UpdateBindlessIndexMaps();
+
+            // Make sure this is changed just once at the start of a frame
+            rtData.Update(true);
+            rtDataValid = rtData.IsValid();
+#endif
 
         }
 
@@ -179,6 +186,19 @@ namespace Atlas {
             }
 
             return materials;
+
+        }
+
+        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
+
+            // This is much quicker presumably due to cache coherency
+            auto subset = entityManager.GetSubset<Components::MeshComponent>();
+            for (auto& entity : subset) {
+                auto& comp = subset.Get(entity);
+
+                if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
+                    renderList.Add(entity, comp);
+            }
 
         }
 

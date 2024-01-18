@@ -10,7 +10,7 @@ namespace Atlas {
 
         public:
             template<typename Type>
-            static const uint64_t Get() noexcept {
+            static inline uint64_t Get() noexcept {
 
                 static const uint64_t value = Identifier();
                 return value;
@@ -18,7 +18,7 @@ namespace Atlas {
             }
 
             template<typename S, typename T>
-            static const bool Equal() noexcept {
+            static inline bool Equal() noexcept {
 
                 static const bool equal = (TypeIndex::Get<S>() == TypeIndex::Get<T>());
                 return equal;

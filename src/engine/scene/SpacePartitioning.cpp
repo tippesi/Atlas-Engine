@@ -40,15 +40,6 @@ namespace Atlas {
 
             auto entityManager = &scene->entityManager;
 
-            auto subset = entityManager->GetSubset<Components::MeshComponent>();
-            for (auto entity : subset) {
-                auto& comp = subset.Get(entity);
-
-                if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
-                    renderList.Add(entity, comp);
-            }
-            
-            /*
             std::vector<ECS::Entity> staticEntities;
             std::vector<ECS::Entity> insideStaticEntities;
             std::vector<ECS::Entity> movableEntities;
@@ -58,9 +49,6 @@ namespace Atlas {
                 insideStaticEntities, frustum);
             renderableMovableEntityOctree.QueryFrustum(movableEntities,
                 insideMovableEntities, frustum);
-
-            std::sort(movableEntities.begin(), movableEntities.end());
-            std::sort(insideMovableEntities.begin(), insideMovableEntities.end());
 
             for (auto entity : staticEntities) {
                 auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
@@ -79,11 +67,11 @@ namespace Atlas {
             }
 
             for (auto entity : movableEntities) {
-                auto meshComp = entityManager->Get<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                if (!meshComp) continue;
 
-                if (meshComp.dontCull || meshComp.visible && frustum.Intersects(meshComp.aabb)) {
-                    renderList.Add(entity, meshComp);
-                }
+                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
+                    renderList.Add(entity, *meshComp);
             }
 
             for (auto entity : insideMovableEntities) {
@@ -93,14 +81,6 @@ namespace Atlas {
                 if (meshComp->visible)
                     renderList.Add(entity, *meshComp);
             }
-            */
-
-        }
-
-        void SpacePartitioning::SortOctrees() {
-
-            renderableStaticEntityOctree.Sort();
-            renderableMovableEntityOctree.Sort();
 
         }
 

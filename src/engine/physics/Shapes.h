@@ -17,7 +17,7 @@ namespace Atlas {
         public:
             Shape(ResourceHandle<Mesh::Mesh> mesh);
 
-            Shape(float radius);
+            Shape(float radius, float density = 1.0f);
 
             bool TryCreateShape();
 

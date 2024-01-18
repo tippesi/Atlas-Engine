@@ -47,6 +47,13 @@ void App::LoadContent() {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
+
+    Atlas::Events::EventManager::MouseButtonEventDelegate.Subscribe(
+        [this](Atlas::Events::MouseButtonEvent event) {
+            if (event.button == AE_MOUSEBUTTON_RIGHT) {
+                shootSphere = event.down && shootSpheresEnabled;
+            }
+        });
     
     Atlas::PipelineManager::EnableHotReload();
 
@@ -139,7 +146,6 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
-    /*
     if (sceneSelection == SPONZA) {
         auto meshEntitySubset = scene->GetSubset<MeshComponent, TransformComponent>();
 
@@ -170,14 +176,12 @@ void App::Update(float deltaTime) {
         }
     }
 
-    if (scene->IsFullyLoaded() && sceneSelection == SPONZA) {
-
+    if (scene->IsFullyLoaded() && emitSpheresEnabled && sceneSelection == SPONZA) {
 
         static float lastSpawn = 0.0f;
-        const float spawnRate = 0.001f;
         const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius);
 
-        if (Atlas::Clock::Get() - spawnRate > lastSpawn) {
+        if (Atlas::Clock::Get() - emitSpawnRate > lastSpawn) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
             auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
 
@@ -192,7 +196,30 @@ void App::Update(float deltaTime) {
         }
 
     }
-    */
+
+    if (scene->IsFullyLoaded() && shootSpheresEnabled && sceneSelection == SPONZA) {
+
+        static float lastSpawn = 0.0f;
+        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius);
+
+        if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
+            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() + camera.direction * meshes[2]->data.radius * 2.0f));
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
+
+            auto transformComponent = entity.GetComponent<TransformComponent>();
+            auto rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+
+            auto velocity = glm::vec3(-1.0f, 0.0f, 0.0f) * shootVelocity;
+            rigidBodyComponent.TryInsertIntoPhysicsWorld(transformComponent, scene->physicsWorld.get(),
+                velocity);
+            //rigidBodyComponent.SetMatrix(matrix);
+            //rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
+
+            entities.push_back(entity);
+            lastSpawn = Atlas::Clock::Get();
+        }
+
+    }
 
     scene->Update(deltaTime);
     scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
@@ -655,6 +682,16 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Film grain");
                 ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
                 ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
+            }
+            if (ImGui::CollapsingHeader("Physics")) {
+                ImGui::Text("Sphere emitter");
+                ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
+                ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);
+                ImGui::Separator();
+                ImGui::Text("Shoot spheres");
+                ImGui::Checkbox("Enable##PhysicsShoot", &shootSpheresEnabled);
+                ImGui::SliderFloat("Spawn rate##PhysicsShoot", &shootSpawnRate, 0.001f, 1.0f);
+                ImGui::SliderFloat("Velocity##PhysicsShoot", &shootVelocity, 0.0f, 100.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
@@ -1177,7 +1214,7 @@ bool App::LoadScene() {
                 continue;
             }
 
-            /*
+
             auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
 
             if (meshCount == 0) {
@@ -1189,8 +1226,8 @@ bool App::LoadScene() {
                 entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
             }
             entities.push_back(entity);
-            */
 
+            /*
             if (meshCount == 1) {
                 for (int32_t i = 0; i < 200000; i++) {
                     auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 100.0f;
@@ -1202,6 +1239,7 @@ bool App::LoadScene() {
                     entities.push_back(entity);
                 }
             }
+            */
 
             meshCount++;
         }

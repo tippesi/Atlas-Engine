@@ -24,8 +24,6 @@ namespace Atlas {
 
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
-			void SortOctrees();
-
 		private:
 			Scene* scene;
 

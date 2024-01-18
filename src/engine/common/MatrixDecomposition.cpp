@@ -23,6 +23,8 @@ namespace Atlas {
             auto conjugate = glm::conjugate(quat);
             rotation = glm::eulerAngles(conjugate);
 
+            quat = glm::normalize(quat);
+
         }
 
         mat4 MatrixDecomposition::Compose() {

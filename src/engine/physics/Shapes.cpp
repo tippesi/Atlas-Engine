@@ -17,9 +17,10 @@ namespace Atlas {
 
         }
 
-        Shape::Shape(float radius) {
+        Shape::Shape(float radius, float density) {
 
             SphereShapeSettings sphereShapeSettings(radius);
+            sphereShapeSettings.SetDensity(density);
 
             shapeRef = sphereShapeSettings.Create().Get();
 

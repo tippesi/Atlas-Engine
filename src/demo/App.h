@@ -96,6 +96,15 @@ private:
     bool loadingComplete = false;
     bool sceneReload = false;
 
+    bool emitSpheresEnabled = false;
+    float emitSpawnRate = 0.1f;
+
+    bool shootSpheresEnabled = false;
+    bool shootSphere = false;
+    float shootSpawnRate = 0.1f;
+    float shootVelocity = 5.0f;
+    float shootMass = 1.0f;
+
     ImguiWrapper imguiWrapper;
 
 };

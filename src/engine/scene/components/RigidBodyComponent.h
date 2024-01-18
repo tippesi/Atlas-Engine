@@ -27,13 +27,15 @@ namespace Atlas {
 
                 mat4 GetMatrix();
 
+                void SetLinearVelocity(vec3 velocity);
+
+                void TryInsertIntoPhysicsWorld(const TransformComponent& transformComponent,
+                    Physics::PhysicsWorld* physicsWorld, vec3 velocity = vec3(0.0f));
+
                 Ref<Physics::Shape> shape = nullptr;
                 JPH::ObjectLayer layer;
 
             private:
-                void TryInsertIntoPhysicsWorld(const TransformComponent& transformComponent,
-                    Physics::PhysicsWorld* physicsWorld);
-
                 JPH::BodyID bodyId;
                 Physics::PhysicsWorld* physicsWorld = nullptr;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Log.h"
 #include <Jolt/Jolt.h>
 
 #include <Jolt/Physics/PhysicsSettings.h>
@@ -91,6 +92,17 @@ namespace Atlas {
                 }
             }
         };
+
+        static void TraceImpl(const char *inFMT, ...) {
+            // Format the message
+            va_list list;
+            va_start(list, inFMT);
+            char buffer[1024];
+            vsnprintf(buffer, sizeof(buffer), inFMT, list);
+            va_end(list);
+
+            Log::Message(std::string(buffer));
+        }
 
     }
 

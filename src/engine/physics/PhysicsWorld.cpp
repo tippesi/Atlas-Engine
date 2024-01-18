@@ -34,13 +34,14 @@ namespace Atlas {
 
         }
 
-        JPH::BodyID PhysicsWorld::CreateBody(const Ref<Shape> &shape, JPH::ObjectLayer objectLayer, const mat4& matrix) {
+        JPH::BodyID PhysicsWorld::CreateBody(const Ref<Shape> &shape, JPH::ObjectLayer objectLayer,
+            const mat4& matrix, vec3 veloctiy) {
 
             auto& bodyInterface = system.GetBodyInterface();
 
             JPH::Vec3 pos;
             JPH::Quat quat;
-            MatrixToPosAndRot(matrix, pos, quat);
+            MatrixToJPHPosAndRot(matrix, pos, quat);
 
             JPH::EMotionType motionType;
             switch(objectLayer) {
@@ -49,7 +50,12 @@ namespace Atlas {
                 default: motionType = JPH::EMotionType::Static; break;
             }
 
+            auto velo = VecToJPHVec(veloctiy);
+
+
             JPH::BodyCreationSettings bodyCreationSettings(shape->shapeRef, pos, quat, motionType, objectLayer);
+            bodyCreationSettings.mLinearVelocity = JPH::Vec3(veloctiy.x, veloctiy.y, veloctiy.z);
+
             return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
 
         }
@@ -58,7 +64,7 @@ namespace Atlas {
 
             JPH::Vec3 pos;
             JPH::Quat quat;
-            MatrixToPosAndRot(matrix, pos, quat);
+            MatrixToJPHPosAndRot(matrix, pos, quat);
 
             auto& bodyInterface = system.GetBodyInterface();
             bodyInterface.SetPositionAndRotation(bodyId, pos, quat, JPH::EActivation::Activate);
@@ -69,7 +75,7 @@ namespace Atlas {
 
             auto& bodyInterface = system.GetBodyInterface();
 
-            auto transform = bodyInterface.GetCenterOfMassTransform(bodyId);
+            auto transform = bodyInterface.GetWorldTransform(bodyId);
 
             mat4 matrix;
             for (int8_t i = 0; i < 4; i++) {
@@ -81,7 +87,23 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::MatrixToPosAndRot(const mat4& matrix, JPH::Vec3& pos, JPH::Quat& quat) {
+        void PhysicsWorld::SetLinearVelocity(JPH::BodyID bodyId, glm::vec3 velocity) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+
+            bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
+
+        }
+
+        vec3 PhysicsWorld::GetLinearVelocity(JPH::BodyID bodyId) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+
+            return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
+
+        }
+
+        void PhysicsWorld::MatrixToJPHPosAndRot(const mat4& matrix, JPH::Vec3& pos, JPH::Quat& quat) {
 
             Common::MatrixDecomposition decomp(matrix);
 
@@ -90,9 +112,21 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::PosAndRotToMatrix(const JPH::Vec3& pos, const JPH::Quat& quat, mat4& matrix) {
+        void PhysicsWorld::JPHPosAndRotToMatrix(const JPH::Vec3& pos, const JPH::Quat& quat, mat4& matrix) {
 
 
+
+        }
+
+        JPH::Vec3 PhysicsWorld::VecToJPHVec(const glm::vec3 vec) {
+
+            return JPH::Vec3(vec.x, vec.y, vec.z);
+
+        }
+
+        vec3 PhysicsWorld::JPHVecToVec(const JPH::Vec3 vec) {
+
+            return vec3(vec.GetX(), vec.GetY(), vec.GetZ());
 
         }
 

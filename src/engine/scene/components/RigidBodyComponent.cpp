@@ -22,15 +22,24 @@ namespace Atlas {
 
             }
 
+            void RigidBodyComponent::SetLinearVelocity(glm::vec3 velocity) {
+
+                assert(physicsWorld != nullptr && "Physics world is invalid");
+
+                physicsWorld->SetLinearVelocity(bodyId, velocity);
+
+            }
+
             void RigidBodyComponent::TryInsertIntoPhysicsWorld(const TransformComponent &transformComponent,
-                Physics::PhysicsWorld* physicsWorld) {
+                Physics::PhysicsWorld* physicsWorld, vec3 velocity) {
 
                 if (!shape || !shape->TryCreateShape())
                     return;
 
                 this->physicsWorld = physicsWorld;
 
-                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix);
+                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix, velocity);
+                assert(!bodyId.IsInvalid() && "Body id is invalid");
 
             }
 
