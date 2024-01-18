@@ -30,6 +30,14 @@ namespace Atlas {
 
             }
 
+            vec3 RigidBodyComponent::GetLinearVelocity() {
+
+                assert(physicsWorld != nullptr && "Physics world is invalid");
+
+                return physicsWorld->GetLinearVelocity(bodyId);
+
+            }
+
             void RigidBodyComponent::TryInsertIntoPhysicsWorld(const TransformComponent &transformComponent,
                 Physics::PhysicsWorld* physicsWorld, vec3 velocity) {
 
@@ -38,7 +46,7 @@ namespace Atlas {
 
                 this->physicsWorld = physicsWorld;
 
-                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix, velocity);
+                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.matrix, velocity);
                 assert(!bodyId.IsInvalid() && "Body id is invalid");
 
             }

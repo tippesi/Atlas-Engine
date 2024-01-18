@@ -17,14 +17,17 @@ namespace Atlas {
             objectVsBroadPhaseLayerFilter(objectVsBroadPhaseLayerFilter) {
 
             if (objectLayerFilter == nullptr)
-                this->objectLayerFilter = Atlas::CreateRef<ObjectLayerPairFilterImpl>();
+                this->objectLayerFilter = CreateRef<ObjectLayerPairFilterImpl>();
             if (broadPhaseLayerInterface == nullptr)
-                this->broadPhaseLayerInterface = Atlas::CreateRef<BroadPhaseLayerInterfaceImpl>();
+                this->broadPhaseLayerInterface = CreateRef<BroadPhaseLayerInterfaceImpl>();
             if (objectVsBroadPhaseLayerFilter == nullptr)
-                this->objectVsBroadPhaseLayerFilter = Atlas::CreateRef<ObjectVsBroadPhaseLayerFilterImpl>();
+                this->objectVsBroadPhaseLayerFilter = CreateRef<ObjectVsBroadPhaseLayerFilterImpl>();
 
             system.Init(maxBodyCount, bodyMutexesCount, maxBodyPairCount, maxContactConstraintCount,
                 *this->broadPhaseLayerInterface, *this->objectVsBroadPhaseLayerFilter, *this->objectLayerFilter);
+
+            //contactListener = CreateRef<MyContactListener>();
+            //system.SetContactListener(contactListener.get());
 
         }
 
@@ -50,11 +53,8 @@ namespace Atlas {
                 default: motionType = JPH::EMotionType::Static; break;
             }
 
-            auto velo = VecToJPHVec(veloctiy);
-
-
             JPH::BodyCreationSettings bodyCreationSettings(shape->shapeRef, pos, quat, motionType, objectLayer);
-            bodyCreationSettings.mLinearVelocity = JPH::Vec3(veloctiy.x, veloctiy.y, veloctiy.z);
+            bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
 
             return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
 

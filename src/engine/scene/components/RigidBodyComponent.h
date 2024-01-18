@@ -29,6 +29,8 @@ namespace Atlas {
 
                 void SetLinearVelocity(vec3 velocity);
 
+                vec3 GetLinearVelocity();
+
                 void TryInsertIntoPhysicsWorld(const TransformComponent& transformComponent,
                     Physics::PhysicsWorld* physicsWorld, vec3 velocity = vec3(0.0f));
 

@@ -185,7 +185,7 @@ void App::Update(float deltaTime) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
             auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
 
-            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z));
+            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z)) * glm::scale(glm::vec3(emitSphereScale));
 
             auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
 
@@ -197,23 +197,22 @@ void App::Update(float deltaTime) {
 
     }
 
-    if (scene->IsFullyLoaded() && shootSpheresEnabled && sceneSelection == SPONZA) {
+    if (scene->IsFullyLoaded() && shootSphere && sceneSelection == SPONZA) {
 
         static float lastSpawn = 0.0f;
-        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius);
+        
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
+            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius, shootDensity);
+
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() + camera.direction * meshes[2]->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
 
-            auto transformComponent = entity.GetComponent<TransformComponent>();
-            auto rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+            auto& transformComponent = entity.GetComponent<TransformComponent>();
+            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
 
-            auto velocity = glm::vec3(-1.0f, 0.0f, 0.0f) * shootVelocity;
-            rigidBodyComponent.TryInsertIntoPhysicsWorld(transformComponent, scene->physicsWorld.get(),
-                velocity);
-            //rigidBodyComponent.SetMatrix(matrix);
-            //rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
+            rigidBodyComponent.TryInsertIntoPhysicsWorld(transformComponent, scene->physicsWorld.get());
+            rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -687,11 +686,13 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Sphere emitter");
                 ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);
+                ImGui::SliderFloat("Sphere scale##PhysicsEmitter", &emitSphereScale, 1.0f, 10.0f);
                 ImGui::Separator();
                 ImGui::Text("Shoot spheres");
                 ImGui::Checkbox("Enable##PhysicsShoot", &shootSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsShoot", &shootSpawnRate, 0.001f, 1.0f);
                 ImGui::SliderFloat("Velocity##PhysicsShoot", &shootVelocity, 0.0f, 100.0f);
+                ImGui::SliderFloat("Density##PhysicsShoot", &shootDensity, 0.0f, 100.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
@@ -956,7 +957,7 @@ bool App::LoadScene() {
         );
         meshes.push_back(mesh);
  
-        transform = glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
             false, transform, 2048
@@ -1213,7 +1214,6 @@ bool App::LoadScene() {
                 meshCount++;
                 continue;
             }
-
 
             auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
 

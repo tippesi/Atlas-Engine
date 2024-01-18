@@ -98,12 +98,13 @@ private:
 
     bool emitSpheresEnabled = false;
     float emitSpawnRate = 0.1f;
+    float emitSphereScale = 1.0f;
 
     bool shootSpheresEnabled = false;
     bool shootSphere = false;
     float shootSpawnRate = 0.1f;
     float shootVelocity = 5.0f;
-    float shootMass = 1.0f;
+    float shootDensity = 1.0f;
 
     ImguiWrapper imguiWrapper;
 

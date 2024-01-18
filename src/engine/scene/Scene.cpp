@@ -140,6 +140,10 @@ namespace Atlas {
                 ocean->Update(camera.get(), deltaTime);
             }
 
+            if (sky.sun) {
+                sky.sun->Update(camera.get());
+            }
+
         }
 
         std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {

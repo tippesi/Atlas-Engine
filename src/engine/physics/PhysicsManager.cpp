@@ -30,7 +30,7 @@ namespace Atlas {
 
             tempAllocator = Atlas::CreateRef<TempAllocatorImpl>(100 * 1024 * 1024);
             jobSystemThreadPool = Atlas::CreateRef<JobSystemThreadPool>(cMaxPhysicsJobs,
-                cMaxPhysicsBarriers, thread::hardware_concurrency() / 2);
+                cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 
         }
 

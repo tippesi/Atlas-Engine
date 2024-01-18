@@ -5,6 +5,7 @@
 
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <cstdarg>
 
 namespace Atlas {
 
@@ -103,6 +104,28 @@ namespace Atlas {
 
             Log::Message(std::string(buffer));
         }
+
+        class MyContactListener : public JPH::ContactListener {
+        public:
+            virtual JPH::ValidateResult	OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override {
+                Log::Message("Contact validation");
+
+                // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
+                return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
+            }
+
+            virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
+                Log::Message("Contact added");
+            }
+
+            virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override {
+                Log::Message("Contact persisted");
+            }
+
+            virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override {
+                Log::Message("Contact removed");
+            }
+        };
 
     }
 

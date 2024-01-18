@@ -56,6 +56,7 @@ namespace Atlas {
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr;
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
+            Ref<JPH::ContactListener> contactListener = nullptr;
 
             friend class Scene::Scene;
             friend class Scene::Components::RigidBodyComponent;
