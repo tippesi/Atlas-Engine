@@ -18,7 +18,7 @@ namespace Atlas {
 
             void Emplace(const Entity entity);
 
-            void Erase(const Entity entity);
+            virtual void Erase(const Entity entity);
 
             inline Entity& operator[](size_t idx);
 

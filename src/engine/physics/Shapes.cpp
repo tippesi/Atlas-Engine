@@ -1,7 +1,9 @@
 #include "Shapes.h"
+#include "MathConversion.h"
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 
 namespace Atlas {
@@ -10,28 +12,7 @@ namespace Atlas {
 
         using namespace JPH;
 
-        Shape::Shape(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {
-
-            if (!mesh.IsLoaded())
-                return;
-
-        }
-
-        Shape::Shape(float radius, float density) {
-
-            SphereShapeSettings sphereShapeSettings(radius);
-            sphereShapeSettings.SetDensity(density);
-
-            shapeRef = sphereShapeSettings.Create().Get();
-
-        }
-
-        bool Shape::TryCreateShape() {
-
-            if (shapeRef.GetPtr() != nullptr) return true;
-
-            if (!mesh.IsValid() || !mesh.IsLoaded())
-                return false;
+        Shape::Shape(Ref<Mesh::Mesh> mesh) {
 
             VertexList vertexList;
             IndexedTriangleList triangleList;
@@ -57,7 +38,35 @@ namespace Atlas {
 
             shapeRef = meshShapeSettings.Create().Get();
 
-            return true;
+        }
+
+        Shape::Shape(const Volume::AABB& aabb, float density) {
+
+            auto halfSize = aabb.GetSize() / 2.0f;
+
+            BoxShapeSettings boxShapeSettings(VecToJPHVec(halfSize));
+            boxShapeSettings.SetDensity(density);
+
+            auto boxShapeRef = boxShapeSettings.Create().Get();
+
+            auto translation = VecToJPHVec(aabb.min + halfSize);
+            JPH::RotatedTranslatedShapeSettings translatedBox(translation, JPH::Quat::sIdentity(), boxShapeRef);
+            shapeRef = translatedBox.Create().Get();
+
+        }
+
+        Shape::Shape(float radius, float density) {
+
+            SphereShapeSettings sphereShapeSettings(radius);
+            sphereShapeSettings.SetDensity(density);
+
+            shapeRef = sphereShapeSettings.Create().Get();
+
+        }
+
+        bool Shape::TryCreateShape() {
+
+            return shapeRef.GetPtr() != nullptr;
 
         }
 

@@ -17,7 +17,7 @@ namespace Atlas {
             template<typename... Args>
             Comp& Emplace(const Entity entity, Args&&... args);
 
-            void Erase(const Entity entity);
+            void Erase(const Entity entity) override;
 
             Comp& Get(const Entity entity);
 

@@ -46,7 +46,7 @@ namespace Atlas {
 
                 this->physicsWorld = physicsWorld;
 
-                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.matrix, velocity);
+                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix, velocity);
                 assert(!bodyId.IsInvalid() && "Body id is invalid");
 
             }

@@ -18,12 +18,12 @@ namespace Atlas {
             glm::vec3 skew;
             glm::vec4 perspective;
 
-            glm::decompose(matrix, scale, quat, translation, skew, perspective);
+            glm::decompose(matrix, scale, quaternion, translation, skew, perspective);
 
-            auto conjugate = glm::conjugate(quat);
+            auto conjugate = glm::conjugate(quaternion);
             rotation = glm::eulerAngles(conjugate);
 
-            quat = glm::normalize(quat);
+            quaternion = glm::normalize(quaternion);
 
         }
 

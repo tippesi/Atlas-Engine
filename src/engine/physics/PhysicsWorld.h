@@ -42,17 +42,13 @@ namespace Atlas {
 
             vec3 GetLinearVelocity(JPH::BodyID bodyId);
 
+            void OptimizeBroadphase();
+
             JPH::PhysicsSystem system;
 
             int32_t simulationStepsPerSecond = 120;
 
         private:
-            void MatrixToJPHPosAndRot(const mat4& matrix, JPH::Vec3& pos, JPH::Quat& quat);
-            void JPHPosAndRotToMatrix(const JPH::Vec3& pos, const JPH::Quat& quat, mat4& matrix);
-
-            JPH::Vec3 VecToJPHVec(const vec3 vec);
-            vec3 JPHVecToVec(const JPH::Vec3 vec);
-
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr;
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;

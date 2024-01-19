@@ -176,10 +176,10 @@ void App::Update(float deltaTime) {
         }
     }
 
-    if (scene->IsFullyLoaded() && emitSpheresEnabled && sceneSelection == SPONZA) {
+    if (scene->IsFullyLoaded() && emitSpheresEnabled) {
 
         static float lastSpawn = 0.0f;
-        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius);
+        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes.back()->data.radius);
 
         if (Atlas::Clock::Get() - emitSpawnRate > lastSpawn) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
@@ -187,7 +187,7 @@ void App::Update(float deltaTime) {
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z)) * glm::scale(glm::vec3(emitSphereScale));
 
-            auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix);
 
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
 
@@ -197,16 +197,17 @@ void App::Update(float deltaTime) {
 
     }
 
-    if (scene->IsFullyLoaded() && shootSphere && sceneSelection == SPONZA) {
+    if (scene->IsFullyLoaded() && shootSphere) {
 
         static float lastSpawn = 0.0f;
         
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
-            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes[2]->data.radius, shootDensity);
+            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes.back()->data.radius, shootDensity);
 
-            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() + camera.direction * meshes[2]->data.radius * 2.0f));
-            auto entity = scene->CreatePrefab<MeshInstance>(meshes[2], matrix);
+            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
+                camera.direction * meshes.back()->data.radius * 2.0f));
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix);
 
             auto& transformComponent = entity.GetComponent<TransformComponent>();
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
@@ -352,7 +353,7 @@ void App::Render(float deltaTime) {
             ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
             ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
             ImGui::Text("Scene triangle count: %d", triangleCount);
-            ImGui::Text("Number of entities %zu", entities.size());
+            ImGui::Text("Number of entities: %zu", entities.size());
 
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -964,14 +965,6 @@ bool App::LoadScene() {
         );
         meshes.push_back(mesh);
 
-        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
-        mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-            false, transform, 2048
-        );
-        meshes.push_back(mesh);
-       
-
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
         directionalLight->intensity = 100.0f;
@@ -1207,24 +1200,22 @@ bool App::LoadScene() {
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
+    // Load chrome sphere for every scene in order to test physics
+    auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+    auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
+        false, transform, 2048
+    );
+    meshes.push_back(mesh);
+
     if (sceneSelection != FOREST && sceneSelection != EMERALDSQUARE) {
         auto meshCount = 0;
         for (auto &mesh: meshes) {
-            if (meshCount == 10) {
-                meshCount++;
+            // Only Sponza scene gets extra moving ball
+            if (mesh.GetID() == meshes.back().GetID() && sceneSelection != SPONZA)
                 continue;
-            }
 
             auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
-
-            if (meshCount == 0) {
-                auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(mesh);
-                entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
-            }
-            else {
-                auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(5.0f);
-                entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
-            }
             entities.push_back(entity);
 
             /*
@@ -1265,6 +1256,7 @@ void App::UnloadScene() {
     }
 
     meshes.clear();
+    entities.clear();
 
     meshes.shrink_to_fit();
 
@@ -1398,6 +1390,20 @@ void App::CheckLoadScene() {
     }
 
     scene->irradianceVolume->useShadowMap = true;
+
+    // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
+    int32_t entityCount = 0;
+    for (auto& entity : entities) {
+        auto meshComponent = entity.GetComponent<MeshComponent>();
+        if (entityCount++ == 0) {
+            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshComponent.mesh.Get());
+            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+        }
+        else {
+            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshComponent.mesh->data.aabb);
+            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+        }
+    }
 
     Atlas::Clock::ResetAverage();
 

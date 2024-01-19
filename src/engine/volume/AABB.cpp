@@ -105,6 +105,12 @@ namespace Atlas {
                 dimension.z * dimension.x);
         }
 
+        vec3 AABB::GetSize() const {
+
+            return max - min;
+
+        }
+
         std::vector<vec3> AABB::GetCorners() {
 
             std::vector<vec3> corners;

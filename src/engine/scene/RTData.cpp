@@ -66,7 +66,7 @@ namespace Atlas {
 
             for (auto entity : subset) {
 
-                const auto& [meshComponent, transformComponent] = subset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+                const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
@@ -82,13 +82,13 @@ namespace Atlas {
                     .materialOffset = meshInfo.materialOffset
                 };
 
-                meshInfo.matrices.push_back(transformComponent.globalMatrix);
+                meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-                lastMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
             }
 
-            if (!gpuBvhInstances.size())
+            if (gpuBvhInstances.empty())
                 return;
 
             if (hardwareRayTracing) {
@@ -189,7 +189,7 @@ namespace Atlas {
                 }
             }
 
-            if (!materials.size())
+            if (materials.empty())
                 return;
 
             materialBuffer.SetSize(materials.size());
@@ -276,7 +276,7 @@ namespace Atlas {
                 meshInfo.idx = meshCount++;
             }
 
-            if (blases.size())
+            if (!blases.empty())
                 asBuilder.BuildBLAS(blases);
 
             std::vector<VkAccelerationStructureInstanceKHR> instances;
@@ -287,7 +287,7 @@ namespace Atlas {
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
 
-                auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
+                const auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
 
                 VkAccelerationStructureInstanceKHR inst = {};
                 VkTransformMatrixKHR transform;

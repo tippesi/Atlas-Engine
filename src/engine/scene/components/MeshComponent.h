@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "../../System.h"
 
 #include "../../mesh/Mesh.h"
@@ -20,9 +22,9 @@ namespace Atlas {
             public:
                 MeshComponent() = default;
                 MeshComponent(const MeshComponent& that) = default;
-                explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {}
+                explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(std::move(mesh)) {}
 
-                const ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
+                ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
 
                 bool visible = true;
                 bool dontCull = false;

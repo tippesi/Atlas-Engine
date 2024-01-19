@@ -1,7 +1,6 @@
 #include "PhysicsWorld.h"
 #include "PhysicsManager.h"
-
-#include "../common/MatrixDecomposition.h"
+#include "MathConversion.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 
@@ -103,30 +102,9 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::MatrixToJPHPosAndRot(const mat4& matrix, JPH::Vec3& pos, JPH::Quat& quat) {
+        void PhysicsWorld::OptimizeBroadphase() {
 
-            Common::MatrixDecomposition decomp(matrix);
-
-            pos = JPH::Vec3(decomp.translation.x, decomp.translation.y, decomp.translation.z);
-            quat = JPH::Quat(decomp.quat.x, decomp.quat.y, decomp.quat.z, decomp.quat.w);
-
-        }
-
-        void PhysicsWorld::JPHPosAndRotToMatrix(const JPH::Vec3& pos, const JPH::Quat& quat, mat4& matrix) {
-
-
-
-        }
-
-        JPH::Vec3 PhysicsWorld::VecToJPHVec(const glm::vec3 vec) {
-
-            return JPH::Vec3(vec.x, vec.y, vec.z);
-
-        }
-
-        vec3 PhysicsWorld::JPHVecToVec(const JPH::Vec3 vec) {
-
-            return vec3(vec.GetX(), vec.GetY(), vec.GetZ());
+            system.OptimizeBroadPhase();
 
         }
 

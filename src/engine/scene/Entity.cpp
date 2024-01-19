@@ -21,7 +21,7 @@ namespace Atlas {
 
 			auto scene = GetScene();
 
-			auto& meshComponent = GetComponent<Components::MeshComponent>();
+			const auto& meshComponent = GetComponent<Components::MeshComponent>();
             auto& mesh = meshComponent.mesh;
 
 			if (mesh.IsValid() && scene->registeredMeshes.contains(mesh.GetID()))

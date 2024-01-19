@@ -38,6 +38,11 @@ namespace Atlas {
 
             entities[pos] = EntityConfig::InvalidEntity;
 
+            for (auto& poolData : pools.data) {
+                if (poolData.storage->Contains(entity))
+                    poolData.storage->Erase(entity);
+            }
+
             destroyed.emplace_back(entity);
 
         }
