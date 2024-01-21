@@ -104,13 +104,9 @@ namespace Atlas {
                 for (auto entity : rigidBodySubset) {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
-                    if (!rigidBodyComponent.Valid())
+                    if (!rigidBodyComponent.Valid() || transformComponent.isStatic ||
+                        rigidBodyComponent.layer == Physics::Layers::STATIC)
                         continue;
-
-                    // Check if this was already updated above, in that case we want to keep the
-                    // already updated last global matrix and not update again
-                    if (!transformComponent.changed)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
                     // Need to set changed to true such that the space partitioning is updated
                     transformComponent.changed = true;

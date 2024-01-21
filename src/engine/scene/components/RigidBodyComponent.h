@@ -18,7 +18,7 @@ namespace Atlas {
             public:
                 RigidBodyComponent() = default;
                 RigidBodyComponent(const RigidBodyComponent& that) = default;
-                explicit RigidBodyComponent(const Ref<Physics::ShapesManager> shape, JPH::ObjectLayer layer)
+                explicit RigidBodyComponent(const Physics::ShapeRef shape, JPH::ObjectLayer layer)
                     : shape(shape), layer(layer) {}
 
                 inline const bool Valid() const { return physicsWorld != nullptr; }
@@ -31,7 +31,7 @@ namespace Atlas {
 
                 vec3 GetLinearVelocity();
 
-                Ref<Physics::ShapesManager> shape = nullptr;
+                Physics::ShapeRef shape = nullptr;
                 JPH::ObjectLayer layer;
 
             private:

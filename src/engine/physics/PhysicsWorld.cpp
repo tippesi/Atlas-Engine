@@ -3,6 +3,7 @@
 #include "MathConversion.h"
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 
 namespace Atlas {
 
@@ -36,7 +37,7 @@ namespace Atlas {
 
         }
 
-        Body PhysicsWorld::CreateBody(const Ref<ShapesManager> &shape, JPH::ObjectLayer objectLayer,
+        Body PhysicsWorld::CreateBody(const ShapeRef &shape, JPH::ObjectLayer objectLayer,
             const mat4& matrix, vec3 veloctiy) {
 
             auto& bodyInterface = system.GetBodyInterface();
@@ -52,7 +53,7 @@ namespace Atlas {
                 default: motionType = JPH::EMotionType::Static; break;
             }
 
-            JPH::BodyCreationSettings bodyCreationSettings(shape->shapeRef, pos, quat, motionType, objectLayer);
+            JPH::BodyCreationSettings bodyCreationSettings(shape, pos, quat, motionType, objectLayer);
             bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
             bodyCreationSettings.mFriction = 1.0f;
             bodyCreationSettings.mRestitution = 0.2f;
@@ -91,6 +92,14 @@ namespace Atlas {
             for (int8_t i = 0; i < 4; i++) {
                 auto col = transform.GetColumn4(i);
                 matrix[i] = vec4(col.GetX(), col.GetY(), col.GetZ(), col.GetW());
+            }
+
+            auto shapeRef = bodyInterface.GetShape(bodyId);
+            // Need to scale here since the tranform doesn't include scale
+            if (shapeRef->GetSubType() == JPH::EShapeSubType::Scaled) {
+                auto shape = static_cast<const JPH::ScaledShape*>(shapeRef.GetPtr());
+
+                matrix = matrix * glm::scale(glm::mat4(1.0f), JPHVecToVec(shape->GetScale()));
             }
 
             return matrix;

@@ -4,6 +4,8 @@
 
 #include "Entity.h"
 
+#include <functional>
+
 namespace Atlas {
 
     namespace ECS {

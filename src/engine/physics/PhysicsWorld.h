@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../System.h"
-#include "Shapes.h"
+#include "ShapesManager.h"
 
 #include "InterfaceImplementations.h"
 
@@ -33,7 +33,7 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
-            Body CreateBody(const Ref<ShapesManager>& shape, JPH::ObjectLayer objectLayer, const mat4& matrix,
+            Body CreateBody(const ShapeRef& shape, JPH::ObjectLayer objectLayer, const mat4& matrix,
                 vec3 velocity = vec3(0.0f));
 
             void DestroyBody(Body bodyId);

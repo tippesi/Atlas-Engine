@@ -179,7 +179,6 @@ void App::Update(float deltaTime) {
     if (scene->IsFullyLoaded() && emitSpheresEnabled) {
 
         static float lastSpawn = 0.0f;
-        const auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshes.back()->data.radius);
 
         if (Atlas::Clock::Get() - emitSpawnRate > lastSpawn) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
@@ -187,8 +186,9 @@ void App::Update(float deltaTime) {
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z)) * glm::scale(glm::vec3(emitSphereScale));
 
-            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix);
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
+            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius);
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
 
             entities.push_back(entity);
@@ -203,13 +203,13 @@ void App::Update(float deltaTime) {
         
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
-            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshes.back()->data.radius, shootDensity);
+            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
+                glm::vec3(5.0f), shootDensity);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
-                camera.direction * meshes.back()->data.radius * 2.0f));
-            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix);
+                camera.direction * meshes.back()->data.radius * 2.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(5.0f));
+            auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
-            auto& transformComponent = entity.GetComponent<TransformComponent>();
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
             rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
 
@@ -1213,7 +1213,8 @@ bool App::LoadScene() {
             if (mesh.GetID() == meshes.back().GetID() && sceneSelection != SPONZA)
                 continue;
 
-            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+            auto isStatic = meshCount == 0;
+            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f), isStatic);
             entities.push_back(entity);
 
             /*
@@ -1394,11 +1395,11 @@ void App::CheckLoadScene() {
     for (auto& entity : entities) {
         auto& meshComponent = entity.GetComponent<MeshComponent>();
         if (entityCount++ == 0) {
-            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshComponent.mesh.Get());
+            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromMesh(meshComponent.mesh.Get());
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
         }
         else {
-            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshComponent.mesh->data.aabb);
+            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromAABB(meshComponent.mesh->data.aabb);
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
         }
     }

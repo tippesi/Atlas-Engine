@@ -8,6 +8,12 @@ namespace Atlas {
 
 			void TransformComponent::Set(const glm::mat4& matrix) {
 
+                AE_ASSERT(!isStatic && "Change of static transform component not allowed");
+
+                if (isStatic) {
+                    return;
+                }
+
 				this->matrix = matrix;
 				changed = true;
                 updated = false;
@@ -18,7 +24,7 @@ namespace Atlas {
 
 				lastGlobalMatrix = globalMatrix;
 
-				if (changed || parentChanged) {
+				if ((changed && !isStatic) || parentChanged) {
 
 					globalMatrix = parentTransform.globalMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));
