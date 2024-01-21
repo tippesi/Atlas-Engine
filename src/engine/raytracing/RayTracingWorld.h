@@ -24,14 +24,17 @@ namespace Atlas {
 
         class Scene;
 
+    }
+
+    namespace RayTracing {
+
         class RayTracingWorld {
 
             friend Renderer::Helper::RayTracingHelper;
+            friend Scene::Scene;
 
         public:
-            RayTracingWorld() = default;
-
-            RayTracingWorld(Scene* scene);
+            RayTracingWorld();
 
             void Update(bool updateTriangleLights);
 
@@ -60,13 +63,14 @@ namespace Atlas {
             void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
-            void UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset);
+            void UpdateForHardwareRayTracing(Scene::Subset<Scene::Components::MeshComponent,
+                Scene::Components::TransformComponent>& entitySubset);
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 
             void UpdateTriangleLights();
 
-            Scene* scene;
+            Scene::Scene* scene;
 
             Ref<Graphics::TLAS> tlas;
             std::vector<Ref<Graphics::BLAS>> blases;

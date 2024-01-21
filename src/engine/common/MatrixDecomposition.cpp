@@ -20,8 +20,8 @@ namespace Atlas {
 
             glm::decompose(matrix, scale, quaternion, translation, skew, perspective);
 
-            auto conjugate = glm::conjugate(quaternion);
-            rotation = glm::eulerAngles(conjugate);
+            quaternion = glm::conjugate(quaternion);
+            rotation = glm::eulerAngles(quaternion);
 
             quaternion = glm::normalize(quaternion);
 

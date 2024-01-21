@@ -151,8 +151,11 @@ namespace Atlas {
             UpdateBindlessIndexMaps();
 
             // Make sure this is changed just once at the start of a frame
-            rayTracingWorld.Update(true);
-            rtDataValid = rayTracingWorld.IsValid();
+            if (rayTracingWorld) {
+                rayTracingWorld->scene = this;
+                rayTracingWorld->Update(true);
+            }
+            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
 #endif
 
         }
@@ -236,7 +239,8 @@ namespace Atlas {
         void Scene::ClearRTStructures() {
 
             rtDataValid = false;
-            rayTracingWorld.Clear();
+            if (rayTracingWorld != nullptr)
+                rayTracingWorld->Clear();
 
         }
 
@@ -374,12 +378,14 @@ namespace Atlas {
                     auto transformComp = entityManager.GetIfContains<TransformComponent>(entity);
                     if (!transformComp) return;
 
-                    rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
                 });
 
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentErase,
                 [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
-                    rigidBodyComponent.RemoveFromPhysicsWorld();
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
 
         }

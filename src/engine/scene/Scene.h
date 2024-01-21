@@ -46,13 +46,12 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
-                rayTracingWorld(this) { RegisterSubscribers(); }
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : name(name), rayTracingWorld(this),
+            explicit Scene(const std::string& name) : name(name),
                 SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : name(name), rayTracingWorld(this), SpacePartitioning(this, min, max, depth) { RegisterSubscribers(); }
+                : name(name), SpacePartitioning(this, min, max, depth) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -100,7 +99,7 @@ namespace Atlas {
             Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Vegetation> vegetation = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            RayTracingWorld rayTracingWorld;
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
 
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
@@ -142,7 +141,7 @@ namespace Atlas {
             friend class Entity;
             friend class SceneSerializer;
             friend class SpacePartitioning;
-            friend class RayTracingWorld;
+            friend class RayTracing::RayTracingWorld;
             friend class Components::MeshComponent;
             friend RenderList;
             friend class Renderer::Helper::RayTracingHelper;

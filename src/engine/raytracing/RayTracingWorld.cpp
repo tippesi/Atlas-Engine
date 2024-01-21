@@ -11,9 +11,9 @@
 
 namespace Atlas {
 
-    namespace Scene {
+    namespace RayTracing {
 
-        RayTracingWorld::RayTracingWorld(Scene* scene) : scene(scene) {
+        RayTracingWorld::RayTracingWorld() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -35,7 +35,7 @@ namespace Atlas {
 
             if (!device->swapChain->isComplete) return;
 
-            auto subset = scene->GetSubset<Components::MeshComponent, Components::TransformComponent>();
+            auto subset = scene->GetSubset<Scene::Components::MeshComponent, Scene::Components::TransformComponent>();
             if (!subset.Any()) return;
 
             auto meshes = scene->GetMeshes();
@@ -251,7 +251,8 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset) {
+        void RayTracingWorld::UpdateForHardwareRayTracing(Scene::Subset<Scene::Components::MeshComponent,
+            Scene::Components::TransformComponent>& entitySubset) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -282,7 +283,8 @@ namespace Atlas {
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
             for (auto entity : entitySubset) {
-                const auto& [meshComponent, transformComponent] = entitySubset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+                const auto& [meshComponent, transformComponent] = entitySubset.Get<Scene::Components::MeshComponent,
+                    Scene::Components::TransformComponent>(entity);
 
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;

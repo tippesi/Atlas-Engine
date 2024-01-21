@@ -10,7 +10,7 @@
 
 namespace Atlas {
 
-    namespace Scene {
+    namespace RayTracing {
         class RayTracingWorld;
     }
 
@@ -33,7 +33,7 @@ namespace Atlas {
         class MeshData {
 
             friend class Mesh;
-            friend class Scene::RayTracingWorld;
+            friend class RayTracing::RayTracingWorld;
 
         public:
             /**

@@ -50,7 +50,7 @@ namespace Atlas {
 
             JPH::PhysicsSystem system;
 
-            int32_t simulationStepsPerSecond = 120;
+            int32_t simulationStepsPerSecond = 60;
 
         private:
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;

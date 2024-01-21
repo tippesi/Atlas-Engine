@@ -150,9 +150,11 @@ namespace Atlas {
             bool Any() const {
 
                 size_t idx = 0;
-                while (idx++ < mainStorage->Size())
+                while (idx < mainStorage->Size()) {
                     if (HasAllComponents(idx))
                         return true;
+                    idx++;
+                }
 
                 return false;
 

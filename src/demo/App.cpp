@@ -90,6 +90,7 @@ void App::LoadContent() {
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+    scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
 
     LoadScene();
 
@@ -204,10 +205,10 @@ void App::Update(float deltaTime) {
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
             auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
-                glm::vec3(5.0f), shootDensity);
+                glm::vec3(1.0f), shootDensity);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
-                camera.direction * meshes.back()->data.radius * 2.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(5.0f));
+                camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
