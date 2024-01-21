@@ -12,7 +12,7 @@ namespace Atlas {
 
         using namespace JPH;
 
-        Shape::Shape(Ref<Mesh::Mesh> mesh) {
+        ShapesManager::ShapesManager(Ref<Mesh::Mesh> mesh) {
 
             VertexList vertexList;
             IndexedTriangleList triangleList;
@@ -40,7 +40,7 @@ namespace Atlas {
 
         }
 
-        Shape::Shape(const Volume::AABB& aabb, float density) {
+        ShapesManager::ShapesManager(const Volume::AABB& aabb, float density) {
 
             auto halfSize = aabb.GetSize() / 2.0f;
 
@@ -55,7 +55,7 @@ namespace Atlas {
 
         }
 
-        Shape::Shape(float radius, float density) {
+        ShapesManager::ShapesManager(float radius, float density) {
 
             SphereShapeSettings sphereShapeSettings(radius);
             sphereShapeSettings.SetDensity(density);
@@ -64,7 +64,7 @@ namespace Atlas {
 
         }
 
-        bool Shape::TryCreateShape() {
+        bool ShapesManager::TryCreateShape() {
 
             return shapeRef.GetPtr() != nullptr;
 

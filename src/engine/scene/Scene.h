@@ -20,13 +20,14 @@
 
 #include "../mesh/Mesh.h"
 
+#include "SceneIterator.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
 
 #include "components/Components.h"
 #include "prefabs/Prefabs.h"
 
-#include "RTData.h"
+#include "raytracing/RayTracingWorld.h"
 #include "Vegetation.h"
 
 #include <type_traits>
@@ -35,8 +36,6 @@
 namespace Atlas {
 
     namespace Scene {
-
-        class Entity;
 
         class Scene : public SpacePartitioning {
 
@@ -47,12 +46,15 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), rtData(this) {}
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
+                rayTracingWorld(this) { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : name(name), rtData(this),
-                SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) {}
+            explicit Scene(const std::string& name) : name(name), rayTracingWorld(this),
+                SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : name(name), rtData(this), SpacePartitioning(this, min, max, depth) {}
+                : name(name), rayTracingWorld(this), SpacePartitioning(this, min, max, depth) { RegisterSubscribers(); }
+
+            ~Scene();
 
             Entity CreateEntity();
 
@@ -64,8 +66,7 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
-            template<typename... Comp>
-            void Merge(const Ref<Scene> other);
+            void Merge(const Ref<Scene>& other);
 
             void Update(Ref<Camera> camera, float deltaTime);
 
@@ -85,7 +86,13 @@ namespace Atlas {
 
             bool IsFullyLoaded();
 
-            bool IsRtDataValid();
+            bool IsRtDataValid() const;
+
+            void Clear();
+
+            SceneIterator begin();
+
+            SceneIterator end();
 
             std::string name;
 
@@ -93,6 +100,7 @@ namespace Atlas {
             Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Vegetation> vegetation = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
+            RayTracingWorld rayTracingWorld;
 
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
@@ -106,6 +114,21 @@ namespace Atlas {
         private:
             void UpdateBindlessIndexMaps();
 
+            Entity ToSceneEntity(ECS::Entity entity);
+
+            void RegisterSubscribers();
+
+            void CleanupUnusedResources();
+
+            template<class T>
+            void RegisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
+
+            template<class T>
+            void UnregisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
+
+            template<class T>
+            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);
+
             ECS::EntityManager entityManager = ECS::EntityManager(this);
 
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
@@ -113,15 +136,14 @@ namespace Atlas {
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
-            RTData rtData;
-
             bool hasChanged = true;
             bool rtDataValid = false;
 
             friend class Entity;
             friend class SceneSerializer;
             friend class SpacePartitioning;
-            friend class RTData;
+            friend class RayTracingWorld;
+            friend class Components::MeshComponent;
             friend RenderList;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
@@ -148,20 +170,36 @@ namespace Atlas {
 
         }
 
-        template<typename... Comp>
-        void Scene::Merge(const Ref<Scene> other) {
+        template<class T>
+        void Scene::RegisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource) {
 
-            auto subset = GetSubset<Comp...>();
+            if (!resources.contains(resource.GetID()))
+                resources[resource.GetID()] = { .resource = resource, .refCount = 1 };
+            else
+                resources[resource.GetID()].refCount++;
 
-            for (auto entity : subset) {
+        }
 
-                const auto components = subset.Get(entity);
+        template<class T>
+        void Scene::UnregisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource) {
 
-                auto newEntity = CreateEntity();
-                (newEntity.AddComponent(std::get<Comp&>(components)),...);
+            if (resources.contains(resource.GetID()))
+                resources[resource.GetID()].refCount--;
 
+        }
+
+        template<typename T>
+        void Scene::CleanupUnusedResources(std::map<Hash, RegisteredResource<T>> &registeredResources) {
+            std::vector<Hash> toBeDeleted;
+
+            for (const auto &[hash, resource] : registeredResources) {
+                if (resource.refCount == 0)
+                    toBeDeleted.push_back(hash);
             }
 
+            for (const auto hash : toBeDeleted) {
+                registeredResources.erase(hash);
+            }
         }
 
     }

@@ -14,7 +14,7 @@ namespace Atlas {
 
             class RayTracingHelper {
 
-                friend Scene::RTData;
+                friend Scene::RayTracingWorld;
 
             public:
                 RayTracingHelper();

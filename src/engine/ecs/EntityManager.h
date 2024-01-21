@@ -42,6 +42,11 @@ namespace Atlas {
             void Destroy(Entity entity);
 
             /**
+             * Destroys all data inside the entity manager
+             */
+            void Clear();
+
+            /**
              * Checks whether an entity is valid.
              * @param entity The entity to be checked.
              * @return True if valid, false otherwise
@@ -139,6 +144,9 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            template<typename Comp>
+            size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
+
             std::vector<Entity>::const_iterator begin() const {
 
                 return entities.begin();
@@ -226,6 +234,16 @@ namespace Atlas {
                 return std::forward_as_tuple(Subset<Comp>()...);
             }
             */
+
+        }
+
+        template<typename Comp>
+        size_t EntityManager::SubscribeToTopic(const Topic topic,
+            std::function<void(const Entity, Comp&)> function) {
+
+            auto& pool = pools.Get<Comp>();
+
+            return pool.Subscribe(topic, function);
 
         }
 

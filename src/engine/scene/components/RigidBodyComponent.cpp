@@ -38,16 +38,26 @@ namespace Atlas {
 
             }
 
-            void RigidBodyComponent::TryInsertIntoPhysicsWorld(const TransformComponent &transformComponent,
-                Physics::PhysicsWorld* physicsWorld, vec3 velocity) {
+            void RigidBodyComponent::InsertIntoPhysicsWorld(const TransformComponent &transformComponent,
+                Physics::PhysicsWorld* physicsWorld) {
 
-                if (!shape || !shape->TryCreateShape())
+                if (!shape || Valid())
                     return;
 
                 this->physicsWorld = physicsWorld;
 
-                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix, velocity);
+                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix);
                 assert(!bodyId.IsInvalid() && "Body id is invalid");
+
+            }
+
+            void RigidBodyComponent::RemoveFromPhysicsWorld() {
+
+                if (!Valid())
+                    return;
+
+                physicsWorld->DestroyBody(bodyId);
+                physicsWorld = nullptr;
 
             }
 

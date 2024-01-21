@@ -47,6 +47,15 @@ namespace Atlas {
 
         }
 
+        void EntityManager::Clear() {
+
+            entities.clear();
+            destroyed.clear();
+
+            pools.data.clear();
+
+        }
+
         bool EntityManager::Valid(Entity entity) {
 
             const auto pos = EntityToPosition(entity);

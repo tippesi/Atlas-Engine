@@ -12,18 +12,20 @@ namespace Atlas {
 
     namespace Physics {
 
-        class Shape {
+        using ShapeRef = JPH::ShapeRefC;
+
+        class ShapesManager {
 
         public:
-            explicit Shape(Ref<Mesh::Mesh> mesh);
+            explicit ShapesManager(Ref<Mesh::Mesh> mesh);
 
-            explicit Shape(const Volume::AABB& aabb, float density = 1.0f);
+            explicit ShapesManager(const Volume::AABB& aabb, float density = 1.0f);
 
-            explicit Shape(float radius, float density = 1.0f);
+            explicit ShapesManager(float radius, float density = 1.0f);
 
             bool TryCreateShape();
 
-            JPH::ShapeRefC shapeRef;
+            ShapeRef shapeRef;
 
         };
 

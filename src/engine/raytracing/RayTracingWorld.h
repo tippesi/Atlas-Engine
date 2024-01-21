@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../System.h"
+#include "System.h"
 
 #include "RTStructures.h"
-#include "Subset.h"
+#include "scene/Subset.h"
 
-#include "components/MeshComponent.h"
-#include "components/TransformComponent.h"
+#include "scene/components/MeshComponent.h"
+#include "scene/components/TransformComponent.h"
 
-#include "../texture/TextureAtlas.h"
+#include "texture/TextureAtlas.h"
 
 #include <vector>
 #include <unordered_map>
@@ -24,14 +24,14 @@ namespace Atlas {
 
         class Scene;
 
-        class RTData {
+        class RayTracingWorld {
 
             friend Renderer::Helper::RayTracingHelper;
 
         public:
-            RTData() = default;
+            RayTracingWorld() = default;
 
-            RTData(Scene* scene);
+            RayTracingWorld(Scene* scene);
 
             void Update(bool updateTriangleLights);
 

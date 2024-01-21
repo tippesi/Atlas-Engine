@@ -105,7 +105,7 @@ namespace Atlas {
             Log::Message(std::string(buffer));
         }
 
-        class MyContactListener : public JPH::ContactListener {
+        class ContactListener : public JPH::ContactListener {
         public:
             virtual JPH::ValidateResult	OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override {
                 Log::Message("Contact validation");

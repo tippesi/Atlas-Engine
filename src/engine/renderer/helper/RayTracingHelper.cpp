@@ -77,7 +77,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
+                auto& rtData = scene->rayTracingWorld;
 
                 if (!rtData.IsValid()) return;
 
@@ -157,7 +157,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
 
-                if (!scene->rtData.IsValid()) return;
+                if (!scene->rayTracingWorld.IsValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -234,7 +234,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                 bool opacityCheck, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
+                auto& rtData = scene->rayTracingWorld;
                 if (!rtData.IsValid()) return;
 
                 // Bind textures and buffers
@@ -490,7 +490,7 @@ namespace Atlas {
                 }
 
                 if (useEmissivesAsLights) {
-                    auto& rtData = scene->rtData;
+                    auto& rtData = scene->rayTracingWorld;
                     lights.insert(lights.end(), rtData.triangleLights.begin(), rtData.triangleLights.end());
                 }
                     

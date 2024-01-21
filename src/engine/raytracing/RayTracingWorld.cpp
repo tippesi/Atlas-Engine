@@ -1,10 +1,10 @@
-#include "RTData.h"
-#include "Scene.h"
+#include "RayTracingWorld.h"
+#include "scene/Scene.h"
 
-#include "../mesh/MeshData.h"
-#include "../volume/BVH.h"
-#include "../graphics/ASBuilder.h"
-#include "../common/ColorConverter.h"
+#include "mesh/MeshData.h"
+#include "volume/BVH.h"
+#include "graphics/ASBuilder.h"
+#include "common/ColorConverter.h"
 
 #include <unordered_map>
 #include <set>
@@ -13,7 +13,7 @@ namespace Atlas {
 
     namespace Scene {
 
-        RTData::RTData(Scene* scene) : scene(scene) {
+        RayTracingWorld::RayTracingWorld(Scene* scene) : scene(scene) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -29,7 +29,7 @@ namespace Atlas {
 
         }
 
-        void RTData::Update(bool updateTriangleLights) {
+        void RayTracingWorld::Update(bool updateTriangleLights) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -111,14 +111,14 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateMaterials() {
+        void RayTracingWorld::UpdateMaterials() {
 
             std::vector<GPUMaterial> materials;
             UpdateMaterials(materials);
 
         }
 
-        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials) {
+        void RayTracingWorld::UpdateMaterials(std::vector<GPUMaterial>& materials) {
 
             std::lock_guard lock(mutex);
 
@@ -197,13 +197,13 @@ namespace Atlas {
 
         }
 
-        void RTData::Clear() {
+        void RayTracingWorld::Clear() {
 
             meshInfos.clear();
 
         }
 
-        bool RTData::IsValid() {
+        bool RayTracingWorld::IsValid() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -211,7 +211,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+        void RayTracingWorld::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
             std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs) {
 
             auto bvh = Volume::BVH(actorAABBs);
@@ -251,7 +251,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset) {
+        void RayTracingWorld::UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -311,7 +311,7 @@ namespace Atlas {
 
         }
 
-        void RTData::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
+        void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
             auto& gpuTriangles = mesh->data.gpuTriangles;
             auto& materials = mesh->data.materials;
@@ -367,7 +367,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateTriangleLights() {
+        void RayTracingWorld::UpdateTriangleLights() {
 
             triangleLights.clear();
 

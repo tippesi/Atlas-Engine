@@ -21,6 +21,8 @@ namespace Atlas {
 
     namespace Physics {
 
+        using Body = JPH::BodyID;
+
         class PhysicsWorld {
 
         public:
@@ -31,16 +33,18 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
-            JPH::BodyID CreateBody(const Ref<Shape>& shape, JPH::ObjectLayer objectLayer, const mat4& matrix,
-                vec3 velocity);
+            Body CreateBody(const Ref<ShapesManager>& shape, JPH::ObjectLayer objectLayer, const mat4& matrix,
+                vec3 velocity = vec3(0.0f));
 
-            void SetBodyMatrix(JPH::BodyID bodyId, const mat4& matrix);
+            void DestroyBody(Body bodyId);
 
-            mat4 GetBodyMatrix(JPH::BodyID bodyId);
+            void SetBodyMatrix(Body bodyId, const mat4& matrix);
 
-            void SetLinearVelocity(JPH::BodyID bodyId, vec3 velocity);
+            mat4 GetBodyMatrix(Body bodyId);
 
-            vec3 GetLinearVelocity(JPH::BodyID bodyId);
+            void SetLinearVelocity(Body bodyId, vec3 velocity);
+
+            vec3 GetLinearVelocity(Body bodyId);
 
             void OptimizeBroadphase();
 

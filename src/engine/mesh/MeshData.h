@@ -2,7 +2,7 @@
 
 #include "../System.h"
 #include "../volume/AABB.h"
-#include "../scene/RTStructures.h"
+#include "raytracing/RTStructures.h"
 #include "DataComponent.h"
 #include "Material.h"
 
@@ -11,7 +11,7 @@
 namespace Atlas {
 
     namespace Scene {
-        class RTData;
+        class RayTracingWorld;
     }
 
     namespace Mesh {
@@ -33,7 +33,7 @@ namespace Atlas {
         class MeshData {
 
             friend class Mesh;
-            friend class Scene::RTData;
+            friend class Scene::RayTracingWorld;
 
         public:
             /**

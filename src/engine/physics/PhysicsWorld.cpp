@@ -36,7 +36,7 @@ namespace Atlas {
 
         }
 
-        JPH::BodyID PhysicsWorld::CreateBody(const Ref<Shape> &shape, JPH::ObjectLayer objectLayer,
+        Body PhysicsWorld::CreateBody(const Ref<ShapesManager> &shape, JPH::ObjectLayer objectLayer,
             const mat4& matrix, vec3 veloctiy) {
 
             auto& bodyInterface = system.GetBodyInterface();
@@ -54,12 +54,23 @@ namespace Atlas {
 
             JPH::BodyCreationSettings bodyCreationSettings(shape->shapeRef, pos, quat, motionType, objectLayer);
             bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
+            bodyCreationSettings.mFriction = 1.0f;
+            bodyCreationSettings.mRestitution = 0.2f;
 
             return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
 
         }
 
-        void PhysicsWorld::SetBodyMatrix(JPH::BodyID bodyId, const mat4& matrix) {
+        void PhysicsWorld::DestroyBody(Body bodyId) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+
+            bodyInterface.RemoveBody(bodyId);
+            bodyInterface.DestroyBody(bodyId);
+
+        }
+
+        void PhysicsWorld::SetBodyMatrix(Body bodyId, const mat4& matrix) {
 
             JPH::Vec3 pos;
             JPH::Quat quat;
@@ -70,7 +81,7 @@ namespace Atlas {
 
         }
 
-        mat4 PhysicsWorld::GetBodyMatrix(JPH::BodyID bodyId) {
+        mat4 PhysicsWorld::GetBodyMatrix(Body bodyId) {
 
             auto& bodyInterface = system.GetBodyInterface();
 
@@ -86,7 +97,7 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::SetLinearVelocity(JPH::BodyID bodyId, glm::vec3 velocity) {
+        void PhysicsWorld::SetLinearVelocity(Body bodyId, glm::vec3 velocity) {
 
             auto& bodyInterface = system.GetBodyInterface();
 
@@ -94,7 +105,7 @@ namespace Atlas {
 
         }
 
-        vec3 PhysicsWorld::GetLinearVelocity(JPH::BodyID bodyId) {
+        vec3 PhysicsWorld::GetLinearVelocity(Body bodyId) {
 
             auto& bodyInterface = system.GetBodyInterface();
 

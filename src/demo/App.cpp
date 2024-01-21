@@ -179,7 +179,7 @@ void App::Update(float deltaTime) {
     if (scene->IsFullyLoaded() && emitSpheresEnabled) {
 
         static float lastSpawn = 0.0f;
-        const auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes.back()->data.radius);
+        const auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshes.back()->data.radius);
 
         if (Atlas::Clock::Get() - emitSpawnRate > lastSpawn) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
@@ -203,7 +203,7 @@ void App::Update(float deltaTime) {
         
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
-            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshes.back()->data.radius, shootDensity);
+            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshes.back()->data.radius, shootDensity);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
@@ -211,8 +211,6 @@ void App::Update(float deltaTime) {
 
             auto& transformComponent = entity.GetComponent<TransformComponent>();
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
-
-            rigidBodyComponent.TryInsertIntoPhysicsWorld(transformComponent, scene->physicsWorld.get());
             rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
 
             entities.push_back(entity);
@@ -1394,16 +1392,18 @@ void App::CheckLoadScene() {
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
     for (auto& entity : entities) {
-        auto meshComponent = entity.GetComponent<MeshComponent>();
+        auto& meshComponent = entity.GetComponent<MeshComponent>();
         if (entityCount++ == 0) {
-            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshComponent.mesh.Get());
+            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshComponent.mesh.Get());
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
         }
         else {
-            auto shape = Atlas::CreateRef<Atlas::Physics::Shape>(meshComponent.mesh->data.aabb);
+            auto shape = Atlas::CreateRef<Atlas::Physics::ShapesManager>(meshComponent.mesh->data.aabb);
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
         }
     }
+
+    scene->physicsWorld->OptimizeBroadphase();
 
     Atlas::Clock::ResetAverage();
 
@@ -1420,7 +1420,8 @@ void App::SetResolution(int32_t width, int32_t height) {
 
 void App::CopyActors(Atlas::Ref<Atlas::Scene::Scene> otherScene) {
 
-    scene->Merge<MeshComponent, TransformComponent>(otherScene);
+    // Can use entity map for user created components to merge them as well
+    scene->Merge(otherScene);
 
     auto otherMeshes = otherScene->GetMeshes();
 
