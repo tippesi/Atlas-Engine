@@ -69,7 +69,7 @@ private:
     Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
-    std::vector<Atlas::Actor::MovableMeshActor> actors;
+    std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;
 

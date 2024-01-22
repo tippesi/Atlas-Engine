@@ -22,7 +22,12 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
-            auto lights = scene->GetLights();
+            auto lightEntities = scene->GetSubset<LightComponent>();
+            std::vector<Lighting::Light*> lights;
+            for (auto entity : lightEntities) {
+                lights.push_back(entity.GetComponent<LightComponent>().light.get());
+            }
+
             if (scene->sky.sun) {
                 lights.push_back(scene->sky.sun.get());
             }

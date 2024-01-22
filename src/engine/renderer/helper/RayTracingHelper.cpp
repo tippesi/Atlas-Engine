@@ -444,7 +444,11 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto lightSources = scene->GetLights();
+                auto lightEntities = scene->GetSubset<Scene::Components::LightComponent>();
+                std::vector<Lighting::Light*> lightSources;
+                for (auto entity : lightEntities) {
+                    lightSources.push_back(entity.GetComponent<Scene::Components::LightComponent>().light.get());
+                }
 
                 if (scene->sky.sun) {
                     lightSources.push_back(scene->sky.sun.get());

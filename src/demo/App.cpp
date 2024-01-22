@@ -8,6 +8,9 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .shaderDirectory = "shader"
 };
 
+using namespace Atlas::Scene::Components;
+using namespace Atlas::Scene::Prefabs;
+
 void App::LoadContent() {
 
     renderTarget = Atlas::RenderTarget(1920, 1080);
@@ -23,7 +26,7 @@ void App::LoadContent() {
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-    scene = Atlas::CreateRef<Atlas::Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
+    scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
     mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
     keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
@@ -135,18 +138,33 @@ void App::Update(float deltaTime) {
     camera.UpdateProjection();
 
     if (sceneSelection == SPONZA) {
-        auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
-        matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto meshEntitySubset = scene->GetSubset<MeshComponent, TransformComponent>();
 
-        actors[1].SetMatrix(matrix);
+        for (auto entity : meshEntitySubset) {
 
-        float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
-        matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
+            const auto& [meshComponent, transformComponent] = meshEntitySubset.Get(entity);
 
-        actors[2].SetMatrix(matrix);
+            if (!meshComponent.mesh.IsLoaded())
+                continue;
+
+            if (meshComponent.mesh->name == "chromesphere.gltf") {
+                float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
+                auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
+
+                transformComponent.Set(matrix);
+            }
+            else if (meshComponent.mesh->name == "metallicwall.gltf") {
+                auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
+                matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                transformComponent.Set(matrix);
+            }
+
+        }
     }
 
-    scene->Update(&camera, deltaTime);
+    scene->Update(deltaTime);
+    scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
 
     CheckLoadScene();
 
@@ -1025,7 +1043,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
-        otherScene->Update(&camera, 1.0f);
+        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
 
         CopyActors(otherScene);
 
@@ -1042,7 +1060,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
-        otherScene->Update(&camera, 1.0f);
+        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
 
         CopyActors(otherScene);
 
@@ -1126,8 +1144,9 @@ bool App::LoadScene() {
                 meshCount++;
                 continue;
             }
-            actors.push_back(Atlas::Actor::MovableMeshActor{mesh, glm::translate(glm::mat4(1.0f),
-                glm::vec3(0.0f))});
+
+            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+            entities.push_back(entity);
 
             /*
             if (meshCount == 1) {
@@ -1146,12 +1165,8 @@ bool App::LoadScene() {
         }
     }
 
-    for (auto& actor : actors) {
-        scene->Add(&actor);
-    }
-
     camera.Update();
-    scene->Update(&camera, 1.0f);
+    scene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
 
     // Reset input handlers
     keyboardHandler.Reset(&camera);
@@ -1165,12 +1180,12 @@ bool App::LoadScene() {
 
 void App::UnloadScene() {
 
-    for (auto& actor : actors) scene->Remove(&actor);
+    for (auto entity : entities) {
+        scene->DestroyEntity(entity);
+    }
 
-    actors.clear();
     meshes.clear();
 
-    actors.shrink_to_fit();
     meshes.shrink_to_fit();
 
     scene->ClearRTStructures();
@@ -1224,9 +1239,10 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    auto sceneActors = scene->GetMeshActors();
-    for (auto& actor : sceneActors) {
-        sceneAABB.Grow(actor->aabb);
+    auto transformEntities = scene->GetSubset<MeshComponent>();
+    for (auto entity : transformEntities) {
+        const auto& comp = transformEntities.Get(entity);
+        sceneAABB.Grow(comp.aabb);
     }
 
     for (auto& mesh : meshes) {
@@ -1317,15 +1333,7 @@ void App::SetResolution(int32_t width, int32_t height) {
 
 void App::CopyActors(Atlas::Ref<Atlas::Scene::Scene> otherScene) {
 
-    auto otherActors = otherScene->GetMeshActors();
-
-    for (auto actor : otherActors) {
-
-        actors.push_back(Atlas::Actor::MovableMeshActor{actor->mesh, actor->globalMatrix});
-
-        delete actor;
-
-    }
+    scene->Merge<MeshComponent, TransformComponent>(otherScene);
 
     auto otherMeshes = otherScene->GetMeshes();
 

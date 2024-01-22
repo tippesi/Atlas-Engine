@@ -1,7 +1,7 @@
-#include <actor/MeshActor.h>
 #include "RenderList.h"
 
 #include "graphics/GraphicsDevice.h"
+#include "scene/components/TransformComponent.h"
 
 #include <glm/gtx/norm.hpp>
 
@@ -77,24 +77,24 @@ namespace Atlas {
 
     }
 
-    void RenderList::Add(Actor::MeshActor *actor) {
+    void RenderList::Add(Scene::Entity entity, Scene::Components::MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
 
-        if (!actor->mesh.IsLoaded())
+        if (!meshComponent.mesh.IsLoaded())
             return;
 
-        auto id = actor->mesh.GetID();
+        auto id = meshComponent.mesh.GetID();
 
         if (!meshToActorMap.contains(id)) {
             auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
-            meshToActorMap[id] = { actor };
-            meshIdToMeshMap[id] = actor->mesh;
+            meshToActorMap[id] = { entity };
+            meshIdToMeshMap[id] = meshComponent.mesh;
         }
         else {
-            meshToActorMap[id].push_back(actor);
+            meshToActorMap[id].push_back(entity);
         }
 
     }
@@ -126,9 +126,9 @@ namespace Atlas {
         lastActorMatrices.reserve(maxActorCount);
         impostorMatrices.reserve(maxImpostorCount);
 
-        for (auto& [meshId, actors] : meshToActorMap) {
+        for (auto& [meshId, entities] : meshToActorMap) {
             auto mesh = meshIdToMeshMap[meshId];
-            if (!actors.size()) continue;
+            if (!entities.size()) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
             auto hasImpostor = mesh->impostor != nullptr;
@@ -145,30 +145,32 @@ namespace Atlas {
             instances.impostorOffset = impostorMatrices.size();
 
             if (hasImpostor) {
-                for (auto actor : actors) {
+                for (auto entity : entities) {
+                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
                     auto distance = glm::distance2(
-                        vec3(actor->globalMatrix[3]),
+                        vec3(transformComponent.globalMatrix[3]),
                         cameraLocation);
 
                     if (distance < sqdDistance) {
-                        currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
-                        if (needsHistory) lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
+                        currentActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        if (needsHistory) lastActorMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
                     else {
-                        impostorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                        impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
                     //impostorMatrices.push_back(actor->globalMatrix);
                 }
             }
             else {
-                for (auto actor : actors) {
-                    currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                for (auto entity : entities) {
+                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
+                    currentActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
-                        lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
+                        lastActorMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
                     else {
                         // For now push back anyways
-                        lastActorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                        lastActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
                 }
             }

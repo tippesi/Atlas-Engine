@@ -116,11 +116,11 @@ namespace Atlas {
 
         ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
 
-        inline bool IsValid() {
+        inline bool IsValid() const {
             return resource != nullptr;
         }
 
-        inline bool IsLoaded() {
+        inline bool IsLoaded() const {
             return IsValid() && resource->isLoaded;
         }
 
@@ -133,7 +133,7 @@ namespace Atlas {
             }
         }
 
-        inline size_t GetID() {
+        inline size_t GetID() const {
             if (!IsValid()) return 0;
 
             return resource->ID;

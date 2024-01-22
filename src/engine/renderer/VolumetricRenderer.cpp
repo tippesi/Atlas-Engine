@@ -49,7 +49,11 @@ namespace Atlas {
             commandList->BindImage(target->volumetricTexture.image, 3, 0);
             commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 1);
 
-            auto lights = scene->GetLights();
+            auto lightEntities = scene->GetSubset<LightComponent>();
+            std::vector<Lighting::Light*> lights;
+            for (auto entity : lightEntities) {
+                lights.push_back(entity.GetComponent<LightComponent>().light.get());
+            }
             if (scene->sky.sun) {
                 lights.push_back(scene->sky.sun.get());
             }

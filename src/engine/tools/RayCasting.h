@@ -3,7 +3,6 @@
 #include "../System.h"
 #include "../Viewport.h"
 #include "../volume/Ray.h"
-#include "actor/MeshActor.h"
 #include "../terrain/Terrain.h"
 #include "events/EventManager.h"
 
