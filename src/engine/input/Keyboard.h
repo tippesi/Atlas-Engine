@@ -36,7 +36,7 @@ namespace Atlas {
             void DeepCopy(const KeyboardHandler& that);
 
             vec3 location = vec3(0.0f);
-            vec2 movement = vec2(0.0f);
+            vec3 movement = vec3(0.0f);
 
             int32_t eventHandle = -1;
 
