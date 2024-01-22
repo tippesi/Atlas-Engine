@@ -1,8 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "actor/MeshActor.h"
-#include "actor/DecalActor.h"
+#include "scene/Entity.h"
 #include "lighting/Light.h"
 
 #include "graphics/Buffer.h"
@@ -34,7 +33,7 @@ namespace Atlas {
             Lighting::Light* light;
             uint32_t layer;
 
-            std::map<size_t, std::vector<Actor::MeshActor*>> meshToActorMap;
+            std::map<size_t, std::vector<Scene::Entity>> meshToActorMap;
             std::map<size_t, MeshInstances> meshToInstancesMap;
             std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
@@ -51,7 +50,7 @@ namespace Atlas {
 
         Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
-        void Add(Actor::MeshActor *actor);
+        void Add(Scene::Entity entity, Scene::Components::MeshComponent& meshComponent);
 
         void Update(Camera* camera);
 

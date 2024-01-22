@@ -4,6 +4,8 @@
 #include "Pools.h"
 #include "Subset.h"
 
+#include <optional>
+
 namespace Atlas {
 
     namespace ECS {
@@ -19,6 +21,11 @@ namespace Atlas {
              * Constructs an EntityManager object.
              */
             EntityManager() = default;
+
+            /**
+             * Constructs an EntityManager object with userData.
+             */
+            explicit EntityManager(void* userData) : userData(userData) {}
 
             /**
              * Creates a new entity
@@ -78,6 +85,16 @@ namespace Atlas {
             Comp& Emplace(Entity entity, Args&&... args);
 
             /**
+             * Creates a component and associates it with an entity.
+             * @tparam Comp The component type
+             * @param entity The entity which is associated with the component
+             * @param comp The component to add
+             * @return Returns a reference to the newly created component
+             */
+            template<typename Comp>
+            Comp& Add(Entity entity, const Comp comp);
+
+            /**
              * Erases a component.
              * @tparam Comp The component type.
              * @param entity The entity which associated component should be erased.
@@ -104,6 +121,16 @@ namespace Atlas {
             Comp& Get(Entity entity);
 
             /**
+             * Returns the component which is associated with the entity if the entity has the component.
+             * @tparam Comp The component type
+             * @param entity The entity
+             * @return A pointer to the component if valid, nullptr if it wasn't found.
+             * @note The pointer is only valid temporarily
+             */
+            template<typename Comp>
+            Comp* GetIfContains(Entity entity);
+
+            /**
              * Returns a subset of entities which have all Comp types.
              * @tparam Comp The component types on which entities are selected
              * @return A subset of entities.
@@ -111,6 +138,20 @@ namespace Atlas {
              */
             template<typename... Comp>
             Subset<Comp...> GetSubset();
+
+            std::vector<Entity>::const_iterator begin() const {
+
+                return entities.begin();
+
+            }
+
+            std::vector<Entity>::const_iterator end() const {
+
+                return entities.end();
+
+            }
+
+            void* userData;
 
         private:
             Pools pools;
@@ -123,9 +164,18 @@ namespace Atlas {
         template<typename Comp, typename ...Args>
         Comp& EntityManager::Emplace(Entity entity, Args&&... args) {
 
-            const auto& pool = pools.Get<Comp>();
+            auto& pool = pools.Get<Comp>();
 
             return pool.Emplace(entity, std::forward<Args>(args)...);
+
+        }
+
+        template<typename Comp>
+        Comp& EntityManager::Add(Entity entity, const Comp comp) {
+
+            auto& pool = pools.Get<Comp>();
+
+            return pool.Emplace(entity, comp);
 
         }
 
@@ -151,6 +201,19 @@ namespace Atlas {
             auto& pool = pools.Get<Comp>();
 
             return pool.Get(entity);
+
+        }
+
+        template<typename Comp>
+        Comp* EntityManager::GetIfContains(Entity entity) {
+
+            auto& pool = pools.Get<Comp>();
+
+            if (!pool.Contains(entity)) {
+                return nullptr;
+            }
+
+            return &pool.Get(entity);
 
         }
 

@@ -484,7 +484,7 @@ namespace Atlas {
                 meshMap[assimpMesh] = handle;
             }
 
-            auto scene = CreateRef<Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
+            auto scene = CreateRef<Scene::Scene>(filename, glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
             scene->name = filename;
 
@@ -499,8 +499,7 @@ namespace Atlas {
 
                     triangleCount += mesh->mNumFaces;
 
-                    auto actor = new Actor::StaticMeshActor(meshMap[mesh], accTransform);
-                    scene->Add(actor);
+                    scene->CreatePrefab<Scene::Prefabs::MeshInstance>(meshMap[mesh], accTransform);
                 }
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {

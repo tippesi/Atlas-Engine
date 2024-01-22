@@ -19,6 +19,8 @@ namespace Atlas {
 
     namespace Renderer {
 
+        using namespace Scene::Components;
+
         class Renderer {
 
         public:

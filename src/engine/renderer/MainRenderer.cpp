@@ -184,7 +184,12 @@ namespace Atlas {
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
                 std::vector<Graphics::ImageBarrier> imageBarriers;
 
-                auto lights = scene->GetLights();
+                auto lightEntities = scene->GetSubset<LightComponent>();
+                std::vector<Lighting::Light*> lights;
+                for (auto entity : lightEntities) {
+                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                }
+
                 if (scene->sky.sun) {
                     lights.push_back(scene->sky.sun.get());
                 }
@@ -1101,9 +1106,9 @@ namespace Atlas {
             triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
 
             for (const auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
-                if (!scene->rootMeshMap.contains(meshId)) continue;
+                if (!scene->registeredMeshes.contains(meshId)) continue;
 
-                const auto& mesh = scene->rootMeshMap[meshId].mesh;
+                const auto& mesh = scene->registeredMeshes[meshId].resource;
 
                 auto blasBuffer = mesh->blasNodeBuffer.Get();
                 auto triangleBuffer = mesh->triangleBuffer.Get();
@@ -1136,7 +1141,11 @@ namespace Atlas {
             scene->GetRenderList(camera->frustum, renderList);
             renderList.Update(camera);
 
-            auto lights = scene->GetLights();
+            auto lightEntities = scene->GetSubset<LightComponent>();
+            std::vector<Lighting::Light*> lights;
+            for (auto entity : lightEntities) {
+                lights.push_back(entity.GetComponent<LightComponent>().light.get());
+            }
 
             if (scene->sky.sun) {
                 lights.push_back(scene->sky.sun.get());

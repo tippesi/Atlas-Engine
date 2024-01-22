@@ -1,7 +1,10 @@
 #pragma once
 
 #include "../System.h"
-#include "../actor/MeshActor.h"
+#include "../ecs/EntityManager.h"
+#include "../resource/ResourceManager.h"
+
+#include "../ocean/Ocean.h"
 #include "../terrain/Terrain.h"
 #include "../lighting/Light.h"
 #include "../lighting/Sky.h"
@@ -12,120 +15,79 @@
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
 #include "../lighting/SSGI.h"
-#include "../ocean/Ocean.h"
 #include "../postprocessing/PostProcessing.h"
-#include "../Decal.h"
 
-#include "SceneNode.h"
+#include "../mesh/Mesh.h"
+
 #include "SpacePartitioning.h"
+#include "Subset.h"
+
+#include "components/Components.h"
+#include "prefabs/Prefabs.h"
+
 #include "RTData.h"
 #include "Vegetation.h"
 
-#include <unordered_map>
+#include <type_traits>
+#include <map>
 
 namespace Atlas {
 
     namespace Scene {
 
-        class Scene : public SceneNode, public SpacePartitioning {
+        class Entity;
 
-            friend class RTData;
-            friend class Renderer::Helper::RayTracingHelper;
-            friend class Renderer::MainRenderer;
+        class Scene : public SpacePartitioning {
+
+            template<typename T>
+            struct RegisteredResource {
+                ResourceHandle<T> resource;
+                uint32_t refCount = 0;
+            };
 
         public:
-            /**
-             * Constructs a scene object.
-             */
-            Scene() : SceneNode(this, &rootMeshMap), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5),
-                      rtData(this) {}
+            Scene() : SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {};
+            Scene(const Scene& that) = delete;
+            explicit Scene(const std::string& name) 
+                : name(name), SpacePartitioning(vec3(-2048.0f), vec3(2048.0f), 5) {}
+            explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
+                : name(name), SpacePartitioning(min, max, depth) {}
 
-            /**
-             * Constructs a scene object.
-             * @param min The minimum scene boundary.
-             * @param max The maximum scene boundary.
-             * @param depth The maximum depths of the octrees.
-             * @note The boundary should be as tightly fitted to the scene as possible.
-             * It determines the size of the octrees.
-             */
-            Scene(vec3 min, vec3 max, int32_t depth = 5);
+            Entity CreateEntity();
 
-            /**
-             * Destructs a scene object.
-             */
-            ~Scene();
+            template<typename T, typename ...Args>
+            T CreatePrefab(Args&&... args);
 
+            void DestroyEntity(Entity entity);
 
-            Scene& operator=(const Scene& that);
+            template<typename... Comp>
+            Subset<Comp...> GetSubset();
 
-            /**
-             * Updates the scene based on the camera and the times passed.
-             * @param camera The camera from whichs perspective the scene should be rendered later on.
-             * @param deltaTime The time that has passed since the last update.
-             */
-            void Update(Camera *camera, float deltaTime);
+            template<typename... Comp>
+            void Merge(const Ref<Scene> other);
 
-            /**
-             * Checks whether the scene has changed since the last update
-             * @return True if scene has changed, false otherwise.
-             */
-            bool HasChanged();
+            void Update(Ref<Camera> camera, float deltaTime);
 
-            /**
-             * Renamed from SceneNode: A scene shouldn't be transformed.
-             */
-            void SetMatrix() {}
+            void Update(float deltaTime);
 
-            /**
-             * Removes everything from the scene.
-             */
-            void Clear();
+            void UpdateCameraDependent(Ref<Camera> camera, float deltaTime);
 
-            /**
-             * Returns all the scenes meshes
-             * @return The meshes of the scene
-             */
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
-            /**
-             * Returns all the scenes materials
-             * @return The materials of the scene
-             * @note The material pointers are only valid until there
-             * are material changes in meshes, the terrain, etc.
-             */
             std::vector<Material*> GetMaterials();
 
-            /**
-             *
-             */
             void ClearRTStructures();
 
-            /**
-             * Waits for all resources to be loaded that are in the scene
-             */
             void WaitForResourceLoad();
 
-            /**
-             * Checks if all resources are loaded
-             * @return
-             */
             bool IsFullyLoaded();
 
-            /**
-             *
-             * @return
-             */
             bool IsRtDataValid();
 
-            /**
-             * To overload the Add and Remove methods we need to specify this
-             * here. It would just rename the method instead.
-             */
-            using SceneNode::Add;
-            using SceneNode::Remove;
+            std::string name;
 
-            Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Ocean::Ocean> ocean = nullptr;
+            Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Vegetation> vegetation = nullptr;
 
             Lighting::Sky sky;
@@ -140,7 +102,10 @@ namespace Atlas {
         private:
             void UpdateBindlessIndexMaps();
 
-            std::unordered_map<size_t, RegisteredMesh> rootMeshMap;
+            ECS::EntityManager entityManager = ECS::EntityManager(this);
+
+            std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
+
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
@@ -149,7 +114,50 @@ namespace Atlas {
             bool hasChanged = true;
             bool rtDataValid = false;
 
+            friend class Entity;
+            friend class SceneSerializer;
+            friend class RTData;
+            friend class RTData;
+            friend class Renderer::Helper::RayTracingHelper;
+            friend class Renderer::MainRenderer;
+
         };
+
+        template<typename T, typename ...Args>
+        T Scene::CreatePrefab(Args&&... args) {
+
+            static_assert(std::is_convertible<T, Entity>() && sizeof(T) == (sizeof(Scene*) + sizeof(ECS::Entity)),
+                "Prefab needs to inherit from Scene::Entity class without any extra members");
+            static_assert(std::is_constructible<T, ECS::Entity, ECS::EntityManager*, Args...>(),
+                "Can't construct prefab with given arguments. Prefab needs to have at \
+                least ECS::Entity and Scene* as constructor arguments.");
+
+            return T(entityManager.Create(), &entityManager, std::forward<Args>(args)...);
+
+        }
+
+        template<typename... Comp>
+        Subset<Comp...> Scene::GetSubset() {
+
+            return Subset<Comp...>(entityManager.GetSubset<Comp...>());
+
+        }
+
+        template<typename... Comp>
+        void Scene::Merge(const Ref<Scene> other) {
+
+            auto subset = GetSubset<Comp...>();
+
+            for (auto entity : subset) {
+
+                const auto components = subset.Get(entity);
+
+                auto newEntity = CreateEntity();
+                (newEntity.AddComponent(std::get<Comp&>(components)),...);
+
+            }
+
+        }
 
     }
 

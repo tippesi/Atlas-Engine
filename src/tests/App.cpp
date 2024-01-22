@@ -9,6 +9,9 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .validationLayerSeverity = Log::SEVERITY_MEDIUM,
 };
 
+using namespace Atlas::Scene::Components;
+using namespace Atlas::Scene::Prefabs;
+
 void App::LoadContent(AppConfiguration config) {
 
     this->config = config;
@@ -26,7 +29,7 @@ void App::LoadContent(AppConfiguration config) {
     camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-    scene = Atlas::CreateRef<Atlas::Scene::Scene>(glm::vec3(-2048.0f), glm::vec3(2048.0f));
+    scene = Atlas::CreateRef<Atlas::Scene::Scene>("testscene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
     mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
     keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
@@ -166,7 +169,8 @@ void App::Update(float deltaTime) {
     camera.UpdateView();
     camera.UpdateProjection();
 
-    scene->Update(&camera, deltaTime);
+    scene->Update(deltaTime);
+    scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
 
     CheckLoadScene();
 
@@ -302,18 +306,15 @@ bool App::LoadScene() {
             meshCount++;
             continue;
         }
-        actors.push_back(Atlas::Actor::MovableMeshActor{ mesh, glm::translate(glm::mat4(1.0f),
-            glm::vec3(0.0f)) });
+        
+        auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+        entities.push_back(entity);
 
         meshCount++;
     }
 
-    for (auto& actor : actors) {
-        scene->Add(&actor);
-    }
-
     camera.Update();
-    scene->Update(&camera, 1.0f);
+    scene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
 
     // Reset input handlers
     keyboardHandler.Reset(&camera);
@@ -327,12 +328,11 @@ bool App::LoadScene() {
 
 void App::UnloadScene() {
 
-    for (auto& actor : actors) scene->Remove(&actor);
-
-    actors.clear();
+    for (auto entity : entities) {
+        scene->DestroyEntity(entity);
+    }
     meshes.clear();
 
-    actors.shrink_to_fit();
     meshes.shrink_to_fit();
 
     scene->ClearRTStructures();
@@ -371,9 +371,10 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    auto sceneActors = scene->GetMeshActors();
-    for (const auto& actor : sceneActors) {
-        sceneAABB.Grow(actor->aabb);
+    auto transformEntities = scene->GetSubset<TransformComponent>();
+    for (auto entity : transformEntities) {
+        const auto& comp = transformEntities.Get(entity);
+        sceneAABB.Grow(comp.aabb);
     }
 
     for (const auto& mesh : meshes) {

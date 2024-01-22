@@ -47,7 +47,12 @@ namespace Atlas {
             // Try to get a shadow map
             Lighting::Shadow* shadow = nullptr;
             if (!scene->sky.sun) {
-                auto lights = scene->GetLights();
+                auto lightEntities = scene->GetSubset<LightComponent>();
+                std::vector<Lighting::Light*> lights;
+                for (auto entity : lightEntities) {
+                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                }
+
                 for (auto& light : lights) {
                     if (light->type == AE_DIRECTIONAL_LIGHT) {
                         shadow = light->GetShadow();
