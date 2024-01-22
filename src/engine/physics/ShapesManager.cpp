@@ -5,6 +5,7 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 
 namespace Atlas {
@@ -87,6 +88,23 @@ namespace Atlas {
             if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
                 return CreateShapeScaled(result.Get(), scale);
             }
+
+            return result.Get();
+
+        }
+
+        ShapeRef ShapesManager::CreateShapeFromHeightField(std::vector<float> &heightData, glm::vec3 translation,
+            glm::vec3 scale) {
+
+            auto sampleCount = std::sqrt(heightData.size());
+
+            HeightFieldShapeSettings heightFieldShapeSettings(heightData.data(), VecToJPHVec(translation),
+                VecToJPHVec(scale), uint32_t(sampleCount));
+
+            auto result = heightFieldShapeSettings.Create();
+
+            if (!result.IsValid())
+                return nullptr;
 
             return result.Get();
 

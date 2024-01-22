@@ -23,6 +23,9 @@ namespace Atlas {
 
             static ShapeRef CreateShapeFromSphere(float radius, vec3 scale = vec3(1.0f), float density = 1.0f);
 
+            static ShapeRef CreateShapeFromHeightField(std::vector<float>& heightData, vec3 translation,
+                vec3 scale);
+
         private:
             static ShapeRef CreateShapeScaled(ShapeRef shape, vec3 scale);
 

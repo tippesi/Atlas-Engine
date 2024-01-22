@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../Material.h"
+#include "../physics/ShapesManager.h"
 
 #include <vector>
 
@@ -27,6 +28,8 @@ namespace Atlas {
             int32_t LoD = 0;
 
             vec2 position;
+
+            Physics::ShapeRef shape;
 
             std::vector<float> heightData;
 

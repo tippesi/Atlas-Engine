@@ -24,7 +24,7 @@ namespace Atlas {
 
 				lastGlobalMatrix = globalMatrix;
 
-				if ((changed && !isStatic) || parentChanged) {
+				if (changed || parentChanged) {
 
 					globalMatrix = parentTransform.globalMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));

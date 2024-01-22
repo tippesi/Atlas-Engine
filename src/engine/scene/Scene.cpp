@@ -93,6 +93,11 @@ namespace Atlas {
                 for (auto entity : rigidBodySubset) {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
+                    // Might happen if there was no transform at the creation of rigid body component
+                    if (!rigidBodyComponent.Valid()) {
+                        rigidBodyComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                    }
+
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed && rigidBodyComponent.Valid()) {
                         rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
@@ -282,7 +287,7 @@ namespace Atlas {
             CleanupUnusedResources();
 
             // Clean up stuff that components haven't done by themselves (should not happen, inform in debug mode)
-            AE_ASSERT(registeredMeshes.empty() && "Registered meshes should be emtpy after cleanup");
+                AE_ASSERT(registeredMeshes.empty() && "Registered meshes should be emtpy after cleanup");
             registeredMeshes.clear();
 
         }

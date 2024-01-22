@@ -301,6 +301,59 @@ namespace Atlas {
 
         }
 
+        Common::Image<float> Terrain::GetHeightField(int32_t LoD) {
+
+            auto lodCountSqd = storage.GetCellCount(LoD);
+            auto lodCount = std::sqrt(lodCountSqd);
+
+            int32_t width = 0, height = 0;
+            for (int32_t x = 0; x < lodCount; x++) {
+                auto cell = storage.GetCell(x, 0, LoD);
+
+                AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
+                    be loaded to be converted into height field");
+
+                width += cell->heightField.width - 1;
+            }
+
+            for (int32_t y = 0; y < lodCount; y++) {
+                auto cell = storage.GetCell(0, y, LoD);
+
+                AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
+                    be loaded to be converted into height field");
+
+                height += cell->heightField.height - 1;
+            }
+
+            Common::Image<float> heightImage(width, height, 1);
+
+            height = 0;
+            for (int32_t cellY = 0; cellY < lodCount; cellY++) {
+                width = 0;
+                for (int32_t cellX = 0; cellX < lodCount; cellX++) {
+                    auto cell = storage.GetCell(cellX, cellY, LoD);
+
+                    AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
+                        be loaded to be converted into height field");
+
+                    for (int32_t y = 0; y < cell->heightField.height - 1; y++) {
+                        for (int32_t x = 0; x < cell->heightField.width - 1; x++) {
+                            auto idx = y * cell->heightField.width + x;
+
+                            heightImage.SetData(width + x, height + y, 0, cell->heightData[idx]);
+                        }
+                    }
+
+                    width += cell->heightField.width - 1;
+                }
+
+                auto cell = storage.GetCell(0, cellY, LoD);
+                height += cell->heightField.height - 1;
+            }
+
+            return heightImage;
+        }
+
         void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation) {
 
             std::sort(nodes.begin(), nodes.end(),

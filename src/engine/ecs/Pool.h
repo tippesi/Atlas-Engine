@@ -72,7 +72,7 @@ namespace Atlas {
         template<typename Comp>
         Comp* Pool<Comp>::TryGet(const Entity entity) {
 
-            auto idx = Storage::GetIndex(entity);
+            auto idx = Storage::TryGetIndex(entity);
             if (idx == EntityConfig::InvalidEntity)
                 return nullptr;
 
