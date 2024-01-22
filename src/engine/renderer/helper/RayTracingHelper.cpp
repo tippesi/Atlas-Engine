@@ -77,9 +77,9 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
+                if (!scene->IsRtDataValid()) return;
 
-                if (!rtData.IsValid()) return;
+                auto& rtData = scene->rayTracingWorld;
 
                 // Select lights once per initial ray dispatch
                 {
@@ -125,16 +125,16 @@ namespace Atlas {
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData.lastMatricesBuffer.Bind(commandList, 2, 27);
+                    rtData->materialBuffer.Bind(commandList, 2, 7);
+                    rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
-                    if (rtData.hardwareRayTracing) {
-                        commandList->BindTLAS(rtData.tlas, 2, 23);
+                    if (rtData->hardwareRayTracing) {
+                        commandList->BindTLAS(rtData->tlas, 2, 23);
                     }
                     else {
-                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                        rtData->tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }
 
@@ -157,7 +157,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
 
-                if (!scene->rtData.IsValid()) return;
+                if (!scene->IsRtDataValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -234,8 +234,9 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                 bool opacityCheck, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
-                if (!rtData.IsValid()) return;
+                if (!scene->IsRtDataValid()) return;
+
+                auto& rtData = scene->rayTracingWorld;
 
                 // Bind textures and buffers
                 {
@@ -245,16 +246,16 @@ namespace Atlas {
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData.lastMatricesBuffer.Bind(commandList, 2, 27);
+                    rtData->materialBuffer.Bind(commandList, 2, 7);
+                    rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
-                    if (rtData.hardwareRayTracing) {
-                        commandList->BindTLAS(rtData.tlas, 2, 23);
+                    if (rtData->hardwareRayTracing) {
+                        commandList->BindTLAS(rtData->tlas, 2, 23);
                     }
                     else {
-                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                        rtData->tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }
 
@@ -489,9 +490,9 @@ namespace Atlas {
                     lights.push_back(gpuLight);
                 }
 
-                if (useEmissivesAsLights) {
-                    auto& rtData = scene->rtData;
-                    lights.insert(lights.end(), rtData.triangleLights.begin(), rtData.triangleLights.end());
+                if (useEmissivesAsLights && scene->IsRtDataValid()) {
+                    auto& rtData = scene->rayTracingWorld;
+                    lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                     
                 // Find the maximum weight

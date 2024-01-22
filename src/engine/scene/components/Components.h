@@ -8,3 +8,4 @@
 #include "NameComponent.h"
 #include "TransformComponent.h"
 #include "ObjectComponent.h"
+#include "RigidBodyComponent.h"

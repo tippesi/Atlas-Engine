@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../System.h"
+#include "System.h"
 
 #include "RTStructures.h"
-#include "Subset.h"
+#include "scene/Subset.h"
 
-#include "components/MeshComponent.h"
-#include "components/TransformComponent.h"
+#include "scene/components/MeshComponent.h"
+#include "scene/components/TransformComponent.h"
 
-#include "../texture/TextureAtlas.h"
+#include "texture/TextureAtlas.h"
 
 #include <vector>
 #include <unordered_map>
@@ -24,14 +24,17 @@ namespace Atlas {
 
         class Scene;
 
-        class RTData {
+    }
+
+    namespace RayTracing {
+
+        class RayTracingWorld {
 
             friend Renderer::Helper::RayTracingHelper;
+            friend Scene::Scene;
 
         public:
-            RTData() = default;
-
-            RTData(Scene* scene);
+            RayTracingWorld();
 
             void Update(bool updateTriangleLights);
 
@@ -60,13 +63,14 @@ namespace Atlas {
             void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
-            void UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset);
+            void UpdateForHardwareRayTracing(Scene::Subset<Scene::Components::MeshComponent,
+                Scene::Components::TransformComponent>& entitySubset);
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 
             void UpdateTriangleLights();
 
-            Scene* scene;
+            Scene::Scene* scene;
 
             Ref<Graphics::TLAS> tlas;
             std::vector<Ref<Graphics::BLAS>> blases;

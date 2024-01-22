@@ -41,7 +41,7 @@ if(WIN32)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt)
 endif()
 
 if (MINGW)
@@ -54,7 +54,7 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk SPIRV-Tools-opt
+            volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
 endif()
@@ -78,7 +78,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
 endif()
 

@@ -122,10 +122,10 @@ ivec2 FindNearest3x3(ivec2 pixel) {
 
 }
 
-void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
+void ComputeVarianceMinMax(out vec4 mean, out vec4 std) {
 
-    vec3 m1 = vec3(0.0);
-    vec3 m2 = vec3(0.0);
+    vec4 m1 = vec4(0.0);
+    vec4 m2 = vec4(0.0);
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
@@ -144,13 +144,16 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
             vec3 sampleGi = FetchCurrentGi(sharedMemoryIdx);
+            float sampleAo = FetchCurrentAo(sharedMemoryIdx);
+
+            vec4 sampleAll = vec4(sampleGi, sampleAo);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
             float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
         
-            m1 += sampleGi * weight;
-            m2 += sampleGi * sampleGi * weight;
+            m1 += sampleAll * weight;
+            m2 += sampleAll * sampleAll * weight;
 
             totalWeight += weight;
         }
@@ -245,16 +248,17 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
-    vec3 mean, std;
+    vec4 mean, std;
     ComputeVarianceMinMax(mean, std);
 
-    const float historyClipFactor = 1.0;
-    vec3 historyNeighbourhoodMin = mean - historyClipFactor * std;
-    vec3 historyNeighbourhoodMax = mean + historyClipFactor * std;
+    const float historyClipFactorGi = 1.0, historyClipFactorAo = 1.0;
+    vec4 historyClipFactor = vec4(vec3(historyClipFactorGi), historyClipFactorAo);
+    vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
+    vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
     const float currentClipFactor = 4.0;
-    vec3 currentNeighbourhoodMin = mean - currentClipFactor * std;
-    vec3 currentNeighbourhoodMax = mean + currentClipFactor * std;
+    vec4 currentNeighbourhoodMin = mean - currentClipFactor * std;
+    vec4 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
     ivec2 velocityPixel = pixel;
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -271,8 +275,9 @@ void main() {
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
 
     // In case of clipping we might also reject the sample. TODO: Investigate
-    currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    //historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
+    currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
+    // Only clamp AO for now, since this leaves visible streaks
+    // historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0

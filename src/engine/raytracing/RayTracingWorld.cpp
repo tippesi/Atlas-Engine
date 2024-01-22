@@ -1,19 +1,19 @@
-#include "RTData.h"
-#include "Scene.h"
+#include "RayTracingWorld.h"
+#include "scene/Scene.h"
 
-#include "../mesh/MeshData.h"
-#include "../volume/BVH.h"
-#include "../graphics/ASBuilder.h"
-#include "../common/ColorConverter.h"
+#include "mesh/MeshData.h"
+#include "volume/BVH.h"
+#include "graphics/ASBuilder.h"
+#include "common/ColorConverter.h"
 
 #include <unordered_map>
 #include <set>
 
 namespace Atlas {
 
-    namespace Scene {
+    namespace RayTracing {
 
-        RTData::RTData(Scene* scene) : scene(scene) {
+        RayTracingWorld::RayTracingWorld() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -29,13 +29,13 @@ namespace Atlas {
 
         }
 
-        void RTData::Update(bool updateTriangleLights) {
+        void RayTracingWorld::Update(bool updateTriangleLights) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             if (!device->swapChain->isComplete) return;
 
-            auto subset = scene->GetSubset<Components::MeshComponent, Components::TransformComponent>();
+            auto subset = scene->GetSubset<Scene::Components::MeshComponent, Scene::Components::TransformComponent>();
             if (!subset.Any()) return;
 
             auto meshes = scene->GetMeshes();
@@ -66,7 +66,7 @@ namespace Atlas {
 
             for (auto entity : subset) {
 
-                const auto& [meshComponent, transformComponent] = subset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+                const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
@@ -82,13 +82,13 @@ namespace Atlas {
                     .materialOffset = meshInfo.materialOffset
                 };
 
-                meshInfo.matrices.push_back(transformComponent.globalMatrix);
+                meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-                lastMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
             }
 
-            if (!gpuBvhInstances.size())
+            if (gpuBvhInstances.empty())
                 return;
 
             if (hardwareRayTracing) {
@@ -111,14 +111,14 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateMaterials() {
+        void RayTracingWorld::UpdateMaterials() {
 
             std::vector<GPUMaterial> materials;
             UpdateMaterials(materials);
 
         }
 
-        void RTData::UpdateMaterials(std::vector<GPUMaterial>& materials) {
+        void RayTracingWorld::UpdateMaterials(std::vector<GPUMaterial>& materials) {
 
             std::lock_guard lock(mutex);
 
@@ -189,7 +189,7 @@ namespace Atlas {
                 }
             }
 
-            if (!materials.size())
+            if (materials.empty())
                 return;
 
             materialBuffer.SetSize(materials.size());
@@ -197,13 +197,13 @@ namespace Atlas {
 
         }
 
-        void RTData::Clear() {
+        void RayTracingWorld::Clear() {
 
             meshInfos.clear();
 
         }
 
-        bool RTData::IsValid() {
+        bool RayTracingWorld::IsValid() {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -211,7 +211,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
+        void RayTracingWorld::UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
             std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs) {
 
             auto bvh = Volume::BVH(actorAABBs);
@@ -251,7 +251,8 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateForHardwareRayTracing(Subset<Components::MeshComponent, Components::TransformComponent>& entitySubset) {
+        void RayTracingWorld::UpdateForHardwareRayTracing(Scene::Subset<Scene::Components::MeshComponent,
+            Scene::Components::TransformComponent>& entitySubset) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -276,18 +277,19 @@ namespace Atlas {
                 meshInfo.idx = meshCount++;
             }
 
-            if (blases.size())
+            if (!blases.empty())
                 asBuilder.BuildBLAS(blases);
 
             std::vector<VkAccelerationStructureInstanceKHR> instances;
 
             for (auto entity : entitySubset) {
-                const auto& [meshComponent, transformComponent] = entitySubset.Get<Components::MeshComponent, Components::TransformComponent>(entity);
+                const auto& [meshComponent, transformComponent] = entitySubset.Get<Scene::Components::MeshComponent,
+                    Scene::Components::TransformComponent>(entity);
 
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
                     continue;
 
-                auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
+                const auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
 
                 VkAccelerationStructureInstanceKHR inst = {};
                 VkTransformMatrixKHR transform;
@@ -311,7 +313,7 @@ namespace Atlas {
 
         }
 
-        void RTData::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
+        void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
             auto& gpuTriangles = mesh->data.gpuTriangles;
             auto& materials = mesh->data.materials;
@@ -367,7 +369,7 @@ namespace Atlas {
 
         }
 
-        void RTData::UpdateTriangleLights() {
+        void RayTracingWorld::UpdateTriangleLights() {
 
             triangleLights.clear();
 

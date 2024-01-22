@@ -12,7 +12,7 @@ endif(COMMAND cmake_policy)
 
 cmake_minimum_required(VERSION 3.24)
 
-project(AtlasEngine VERSION 0.1.10)
+project(AtlasEngine VERSION 0.2.0)
 
 # Only 64 bit is supported
 ###################################################################
@@ -78,14 +78,15 @@ if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
+find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
-find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(unofficial-joltphysics CONFIG REQUIRED)
 
 if (ATLAS_TESTS)
 find_package(GTest CONFIG REQUIRED)

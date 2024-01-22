@@ -1,6 +1,7 @@
 #include "RenderList.h"
 
 #include "graphics/GraphicsDevice.h"
+#include "scene/Scene.h"
 #include "scene/components/TransformComponent.h"
 
 #include <glm/gtx/norm.hpp>
@@ -13,7 +14,9 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame() {
+    void RenderList::NewFrame(Scene::Scene* scene) {
+
+        this->scene = scene;
 
         auto lastSize = currentActorMatrices.size();
         currentActorMatrices.clear();
@@ -77,7 +80,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Add(Scene::Entity entity, Scene::Components::MeshComponent& meshComponent) {
+    void RenderList::Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToActorMap;
@@ -145,7 +148,8 @@ namespace Atlas {
             instances.impostorOffset = impostorMatrices.size();
 
             if (hasImpostor) {
-                for (auto entity : entities) {
+                for (auto ecsEntity : entities) {
+                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
                     auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
                     auto distance = glm::distance2(
                         vec3(transformComponent.globalMatrix[3]),
@@ -162,7 +166,8 @@ namespace Atlas {
                 }
             }
             else {
-                for (auto entity : entities) {
+                for (auto ecsEntity : entities) {
+                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
                     auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
                     currentActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {

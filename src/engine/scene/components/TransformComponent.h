@@ -42,13 +42,13 @@ namespace Atlas {
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
-                const bool isStatic = true;
-
             protected:
                 void Update(const TransformComponent& parentTransform, bool parentChanged);
 
                 bool changed = true;
                 bool updated = false;
+
+                bool isStatic = true;
 
             };
 

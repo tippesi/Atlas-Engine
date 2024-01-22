@@ -21,40 +21,22 @@ namespace Atlas {
             template<typename Comp, typename... Args>
             inline Comp& AddComponent(Args&&... args) {
 
-                auto& comp = entityManager->Emplace<Comp>(entity, std::forward<Args>(args)...);
+                AE_ASSERT(!HasComponent<Comp>() && "Entity already has this component");
 
-                // Need to inform scene, which itself needs to take care of not yet loaded resources (like mesh, audio, etc.)
-                if constexpr (std::is_same_v<Comp, Components::MeshComponent>) {
-                    RegisterMeshInstance(comp);
+                if constexpr (std::is_constructible_v<Comp, Scene*, Args...>) {
+                    return entityManager->Emplace<Comp>(entity,
+                        static_cast<Scene*>(entityManager->userData), std::forward<Args>(args)...);
                 }
-
-                return comp;
-
-            }
-
-            template<typename Comp>
-            inline Comp& AddComponent(const Comp component) {
-
-                auto& comp = entityManager->Emplace<Comp>(entity, component);
-
-                // Need to inform scene, which itself needs to take care of not yet loaded resources (like mesh, audio, etc.)
-                if constexpr (std::is_same_v<Comp, Components::MeshComponent>) {
-                    RegisterMeshInstance(comp);
+                else {
+                    return entityManager->Emplace<Comp>(entity, std::forward<Args>(args)...);
                 }
-
-                return comp;
 
             }
 
             template<typename Comp>
             inline void RemoveComponent() {
 
-                assert(HasComponent<Comp>() && "Entity doesn't have this component");
-
-                // Need to decrement resource counters
-                if constexpr (std::is_same_v<Comp, Components::MeshComponent>) {
-                    UnregisterMeshInstance();
-                }
+                AE_ASSERT(HasComponent<Comp>() && "Entity doesn't have this component");
 
                 entityManager->Erase<Comp>(entity);
 
@@ -70,7 +52,7 @@ namespace Atlas {
             template<typename Comp>
             inline Comp& GetComponent() const {
 
-                assert(HasComponent<Comp>() && "Entity doesn't have this component");
+                AE_ASSERT(HasComponent<Comp>() && "Entity doesn't have this component");
 
                 return entityManager->Get<Comp>(entity);
 
@@ -79,7 +61,7 @@ namespace Atlas {
             template<typename Comp>
             inline Comp* GetComponentIfContains() const {
 
-                assert(HasComponent<Comp>() && "Entity doesn't have this component");
+                AE_ASSERT(HasComponent<Comp>() && "Entity doesn't have this component");
 
                 return entityManager->GetIfContains<Comp>(entity);
 
@@ -96,11 +78,6 @@ namespace Atlas {
         private:
             ECS::Entity entity = ECS::EntityConfig::InvalidEntity;
             ECS::EntityManager* entityManager = nullptr;
-
-            void RegisterMeshInstance(const Components::MeshComponent& comp);
-            void UnregisterMeshInstance();
-
-            Scene* GetScene() const;
 
         };
 

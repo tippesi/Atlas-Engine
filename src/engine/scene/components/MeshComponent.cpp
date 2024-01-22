@@ -1,4 +1,5 @@
 #include "MeshComponent.h"
+#include "../Scene.h"
 
 namespace Atlas {
 
