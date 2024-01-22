@@ -1,8 +1,8 @@
 #pragma once
 
-#include <System.h>
+#include "System.h"
 
-#include "../graphics/BLAS.h"
+#include "graphics/BLAS.h"
 
 namespace Atlas {
 

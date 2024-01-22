@@ -11,11 +11,12 @@ namespace Atlas {
 	namespace Scene {
 		
 		class Entity;
+		class Scene;
 
 		class SpacePartitioning {
 
 		public:
-			SpacePartitioning(vec3 min, vec3 max, int32_t depth);
+			SpacePartitioning(Scene* scene, vec3 min, vec3 max, int32_t depth);
 
 			void InsertRenderableEntity(Entity entity, const Components::MeshComponent& transform);
 
@@ -24,10 +25,12 @@ namespace Atlas {
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
 		private:
+			Scene* scene;
+
 			Volume::AABB aabb;
 
-			Volume::Octree<Entity> renderableMovableEntityOctree;
-			Volume::Octree<Entity> renderableStaticEntityOctree;
+			Volume::Octree<ECS::Entity> renderableMovableEntityOctree;
+			Volume::Octree<ECS::Entity> renderableStaticEntityOctree;
 
 		};
 

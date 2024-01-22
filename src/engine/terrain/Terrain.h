@@ -134,6 +134,13 @@ namespace Atlas {
             */
             TerrainStorageCell* GetStorageCell(float x, float z, int32_t LoD);
 
+            /**
+             *
+             * @param LoD
+             * @return
+             */
+            Common::Image<float> GetHeightField(int32_t LoD);
+
             TerrainStorage storage;
 
             Texture::Texture2D shoreLine;

@@ -5,6 +5,7 @@
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 
 #include "graphics/ShaderCompiler.h"
@@ -69,6 +70,7 @@ namespace Atlas {
         Loader::AssetLoader::Init();
         Common::Random::Init();
         PipelineManager::Init();
+        Physics::PhysicsManager::Init();
 
         Audio::AudioManager::Configure(48000, 2, 1024);
 
@@ -81,6 +83,7 @@ namespace Atlas {
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
+        Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
 
 #ifdef AE_NO_APP

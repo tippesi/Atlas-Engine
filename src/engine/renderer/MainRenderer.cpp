@@ -1135,7 +1135,7 @@ namespace Atlas {
 
         void MainRenderer::FillRenderList(Scene::Scene *scene, Atlas::Camera *camera) {
 
-            renderList.NewFrame();
+            renderList.NewFrame(scene);
             renderList.NewMainPass();
 
             scene->GetRenderList(camera->frustum, renderList);

@@ -1,4 +1,5 @@
 #include "SpacePartitioning.h"
+#include "Scene.h"
 
 #include "Entity.h"
 
@@ -6,10 +7,10 @@ namespace Atlas {
 
 	namespace Scene {
 
-		SpacePartitioning::SpacePartitioning(vec3 min, vec3 max, int32_t depth) : aabb(min, max) {
+		SpacePartitioning::SpacePartitioning(Scene* scene, vec3 min, vec3 max, int32_t depth) : scene(scene), aabb(min, max) {
 
-			renderableStaticEntityOctree = Volume::Octree<Entity>(aabb, depth);
-			renderableMovableEntityOctree = Volume::Octree<Entity>(aabb, depth);
+			renderableStaticEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
+			renderableMovableEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
 
 		}
 
@@ -37,10 +38,12 @@ namespace Atlas {
 
         void SpacePartitioning::GetRenderList(Volume::Frustum frustum, RenderList& renderList) {
 
-            std::vector<Entity> staticEntities;
-            std::vector<Entity> insideStaticEntities;
-            std::vector<Entity> movableEntities;
-            std::vector<Entity> insideMovableEntities;
+            auto entityManager = &scene->entityManager;
+
+            std::vector<ECS::Entity> staticEntities;
+            std::vector<ECS::Entity> insideStaticEntities;
+            std::vector<ECS::Entity> movableEntities;
+            std::vector<ECS::Entity> insideMovableEntities;
 
             renderableStaticEntityOctree.QueryFrustum(staticEntities,
                 insideStaticEntities, frustum);
@@ -48,7 +51,7 @@ namespace Atlas {
                 insideMovableEntities, frustum);
 
             for (auto entity : staticEntities) {
-                auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
+                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -56,7 +59,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideStaticEntities) {
-                auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
+                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)
@@ -64,16 +67,15 @@ namespace Atlas {
             }
 
             for (auto entity : movableEntities) {
-                auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
+                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
-                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb)) {
+                if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
                     renderList.Add(entity, *meshComp);
-                }
             }
 
             for (auto entity : insideMovableEntities) {
-                auto meshComp = entity.GetComponentIfContains<Components::MeshComponent>();
+                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)

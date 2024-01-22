@@ -81,6 +81,8 @@ namespace Atlas {
 
             float GetSurfaceArea() const;
 
+            vec3 GetSize() const;
+
             /**
              * Returns the eight corners of the AABB.
              * @return The eight corners of the AABB.

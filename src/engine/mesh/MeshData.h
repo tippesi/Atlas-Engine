@@ -2,7 +2,7 @@
 
 #include "../System.h"
 #include "../volume/AABB.h"
-#include "../scene/RTStructures.h"
+#include "raytracing/RTStructures.h"
 #include "DataComponent.h"
 #include "Material.h"
 
@@ -10,8 +10,8 @@
 
 namespace Atlas {
 
-    namespace Scene {
-        class RTData;
+    namespace RayTracing {
+        class RayTracingWorld;
     }
 
     namespace Mesh {
@@ -33,7 +33,7 @@ namespace Atlas {
         class MeshData {
 
             friend class Mesh;
-            friend class Scene::RTData;
+            friend class RayTracing::RayTracingWorld;
 
         public:
             /**
@@ -112,6 +112,8 @@ namespace Atlas {
             Volume::AABB aabb;
 
             mat4 transform;
+
+            float radius = 0.0f;
 
         private:
             void DeepCopy(const MeshData& that);

@@ -371,7 +371,7 @@ void App::CheckLoadScene() {
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
-    auto transformEntities = scene->GetSubset<TransformComponent>();
+    auto transformEntities = scene->GetSubset<MeshComponent>();
     for (auto entity : transformEntities) {
         const auto& comp = transformEntities.Get(entity);
         sceneAABB.Grow(comp.aabb);

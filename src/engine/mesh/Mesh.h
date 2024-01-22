@@ -13,8 +13,8 @@
 
 namespace Atlas {
 
-    namespace Scene {
-        class RTData;
+    namespace RayTracing {
+        class RayTracingWorld;
     }
 
     namespace Mesh {
@@ -35,7 +35,7 @@ namespace Atlas {
 
         class Mesh {
 
-            friend Scene::RTData;
+            friend RayTracing::RayTracingWorld;
 
         public:
             Mesh() = default;

@@ -11,6 +11,10 @@
 
 namespace Atlas {
 
+    namespace Scene {
+        class Scene;
+    }
+
     class RenderList {
 
     public:
@@ -33,14 +37,14 @@ namespace Atlas {
             Lighting::Light* light;
             uint32_t layer;
 
-            std::map<size_t, std::vector<Scene::Entity>> meshToActorMap;
+            std::map<size_t, std::vector<ECS::Entity>> meshToActorMap;
             std::map<size_t, MeshInstances> meshToInstancesMap;
             std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
 
         RenderList();
 
-        void NewFrame();
+        void NewFrame(Scene::Scene* scene);
 
         void NewMainPass();
 
@@ -50,11 +54,13 @@ namespace Atlas {
 
         Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
-        void Add(Scene::Entity entity, Scene::Components::MeshComponent& meshComponent);
+        void Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent);
 
         void Update(Camera* camera);
 
         void FillBuffers();
+
+        Scene::Scene* scene = nullptr;
 
         std::vector<mat3x4> currentActorMatrices;
         std::vector<mat3x4> lastActorMatrices;

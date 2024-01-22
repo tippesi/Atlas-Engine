@@ -23,7 +23,7 @@ namespace Atlas {
             Texture::Texture2D shadowTexture;
 
             struct Scattering {
-                float extinctionFactor = 0.24f;
+                float extinctionFactor = 0.16f;
                 float scatteringFactor = 2.00f;
 
                 vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);

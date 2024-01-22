@@ -27,6 +27,8 @@ namespace Atlas {
 
             std::vector<PoolData> data;
 
+            friend class EntityManager;
+
         };
 
         template<typename Comp>

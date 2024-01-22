@@ -11,15 +11,17 @@ namespace Atlas {
         public:
             MatrixDecomposition() = default;
 
-            explicit MatrixDecomposition(mat4 matrix);
+            explicit MatrixDecomposition(const mat4& matrix);
 
-            void Decompose(mat4 matrix);
+            void Decompose(const mat4& matrix);
 
             mat4 Compose();
 
             vec3 translation = vec3(0.0f);
             vec3 rotation = vec3(0.0f);
             vec3 scale = vec3(1.0f);
+
+            quat quaternion;
 
         };
 

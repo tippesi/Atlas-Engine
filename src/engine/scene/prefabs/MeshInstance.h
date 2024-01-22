@@ -14,17 +14,19 @@ namespace Atlas {
 			class MeshInstance : public Entity {
 
 			public:
-				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh) : Entity(entity, manager) {
+				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh,
+                    bool isStatic = true) : Entity(entity, manager) {
 
 					AddComponent<Components::MeshComponent>(mesh);
-					AddComponent<Components::TransformComponent>();
+					AddComponent<Components::TransformComponent>(mat4(1.0f), isStatic);
 
 				}
 
-				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh, mat4 transform) : Entity(entity, manager) {
+				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh,
+                    mat4 transform, bool isStatic = true) : Entity(entity, manager) {
 
 					AddComponent<Components::MeshComponent>(mesh);
-					AddComponent<Components::TransformComponent>(transform);
+					AddComponent<Components::TransformComponent>(transform, isStatic);
 
 				}
 
