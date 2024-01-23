@@ -68,6 +68,9 @@ private:
     Ref<Atlas::Scene::Scene> scene;
     Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
+    Atlas::ResourceHandle<Atlas::Audio::AudioData> audio;
+    Atlas::ResourceHandle<Atlas::Audio::AudioData> music;
+
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
     std::vector<Atlas::Scene::Entity> entities;
 
@@ -107,5 +110,7 @@ private:
     float shootDensity = 1.0f;
 
     ImguiWrapper imguiWrapper;
+
+    std::vector<Ref<Atlas::Audio::AudioStream>> audioStreams;
 
 };

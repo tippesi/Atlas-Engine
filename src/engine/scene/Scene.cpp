@@ -127,7 +127,6 @@ namespace Atlas {
             auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto entity : meshSubset) {
                 auto& meshComponent = entityManager.Get<MeshComponent>(entity);
-
                 if (!meshComponent.mesh.IsLoaded())
                     continue;
 
@@ -166,6 +165,14 @@ namespace Atlas {
         }
 
         void Scene::UpdateCameraDependent(Ref<Camera> camera, float deltaTime) {
+
+            auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
+            for (auto entity : audioSubset) {
+                const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
+
+                audioComponent.Update(deltaTime, transformComponent, camera->GetLocation(),
+                    camera->GetLastLocation(), camera->right);
+            }
 
             if (terrain) {
                 terrain->Update(camera.get());

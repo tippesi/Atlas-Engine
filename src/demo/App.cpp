@@ -13,6 +13,15 @@ using namespace Atlas::Scene::Prefabs;
 
 void App::LoadContent() {
 
+    music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
+    audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
+    //static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
+
+    for (uint32_t i = 0; i < 10000; i++) {
+        //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
+        //audioStreams.back()->SetVolume(0.0001);
+    }
+
     renderTarget = Atlas::RenderTarget(1920, 1080);
     pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
 
@@ -191,6 +200,7 @@ void App::Update(float deltaTime) {
 
             auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius);
             entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+            entity.AddComponent<AudioComponent>(audio);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -211,6 +221,7 @@ void App::Update(float deltaTime) {
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
+            entity.AddComponent<AudioComponent>(audio);
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
             rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
 

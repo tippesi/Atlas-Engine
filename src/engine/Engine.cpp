@@ -85,6 +85,7 @@ namespace Atlas {
         PipelineManager::Shutdown();
         Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
+        Audio::AudioManager::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -97,6 +98,7 @@ namespace Atlas {
         Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
         PipelineManager::Update();
+        Audio::AudioManager::Update();
 
     }
 
