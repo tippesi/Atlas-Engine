@@ -1,5 +1,3 @@
-#pragma once
-
 #include "AudioComponent.h"
 #include "../../audio/AudioManager.h"
 
@@ -9,7 +7,8 @@ namespace Atlas {
 
         namespace Components {
 
-            AudioComponent::AudioComponent(ResourceHandle<Audio::AudioData> audioData) {
+            AudioComponent::AudioComponent(ResourceHandle<Audio::AudioData> audioData,
+                float falloffFactor) : falloffFactor(falloffFactor) {
 
                 stream = Audio::AudioManager::CreateStream(audioData);
 
@@ -27,7 +26,7 @@ namespace Atlas {
 
                 auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
 
-                float distanceVolume = glm::min(1.0f, 1.0f / (distance / 1.0f));
+                float distanceVolume = glm::min(1.0f, falloffFactor / distance);
 
                 auto audible = distanceVolume > cutoff;
 

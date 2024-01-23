@@ -15,7 +15,7 @@ void App::LoadContent() {
 
     music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
     audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    //static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
+    static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
 
     for (uint32_t i = 0; i < 10000; i++) {
         //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
@@ -648,7 +648,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Dimensions");
                 ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 2000.0f);
                 ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 4000.0f);
-                ImGui::SliderFloat("Distance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
+                ImGui::SliderFloat("GetDistance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
                 ImGui::Separator();
                 ImGui::Text("Scattering");
                 ImGui::ColorPicker3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);

@@ -16,7 +16,7 @@ namespace Atlas {
         class AudioManager {
 
         public:
-            static bool Configure(uint32_t frequency, uint8_t channels, uint32_t samples);
+            static bool Configure(int32_t frequency, uint8_t channels, uint32_t samples);
 
             static void Shutdown();
 

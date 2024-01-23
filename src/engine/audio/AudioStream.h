@@ -53,7 +53,7 @@ namespace Atlas {
 
             bool IsValid();
 
-            virtual void GetChunk(std::vector<int16_t>& chunk);
+            bool GetChunk(std::vector<int16_t>& chunk);
 
             bool loop = false;
 

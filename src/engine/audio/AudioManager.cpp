@@ -15,7 +15,7 @@ namespace Atlas {
 
         std::mutex AudioManager::mutex;
         
-        bool AudioManager::Configure(uint32_t frequency, uint8_t channels, uint32_t samples) {
+        bool AudioManager::Configure(int32_t frequency, uint8_t channels, uint32_t samples) {
 
             std::lock_guard<std::mutex> guard(mutex);
 
@@ -48,6 +48,8 @@ namespace Atlas {
         }
 
         void AudioManager::Shutdown() {
+
+            SDL_LockAudioDevice(audioDevice);
 
             audioStreams.clear();
 
@@ -126,7 +128,8 @@ namespace Atlas {
                 if (!stream->IsValid() || stream->IsPaused())
                     continue;
 
-                stream->GetChunk(chunk);
+                if (!stream->GetChunk(chunk))
+                    continue;
 
                 Mix(dest, chunk);
 

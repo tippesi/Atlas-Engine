@@ -102,15 +102,18 @@ namespace Atlas {
 
         }
 
-        void AudioStream::GetChunk(std::vector<int16_t>& chunk) {
+        bool AudioStream::GetChunk(std::vector<int16_t>& chunk) {
+
+            if (!data.IsLoaded())
+                return false;
 
             std::lock_guard<std::mutex> lock(mutex);
 
+            if (volume == 0.0f)
+                return false;
+
             int32_t length = int32_t(chunk.size());
             std::memset(chunk.data(), 0, chunk.size() * 2);
-
-            if (volume == 0.0f)
-                return;
 
             auto channels = (int32_t)data->GetChannelCount();
             length /= channels;
@@ -163,6 +166,8 @@ namespace Atlas {
                 progress += pitch;
 
             }
+
+            return true;
 
         }
 

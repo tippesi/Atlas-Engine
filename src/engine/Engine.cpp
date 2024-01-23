@@ -72,7 +72,8 @@ namespace Atlas {
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
 
-        Audio::AudioManager::Configure(48000, 2, 1024);
+        // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
+        Audio::AudioManager::Configure(48000, 2, 256);
 
         Clock::Update();
 

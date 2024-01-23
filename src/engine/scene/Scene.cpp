@@ -174,6 +174,13 @@ namespace Atlas {
                     camera->GetLastLocation(), camera->right);
             }
 
+            auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
+            for (auto entity : audioVolumeSubset) {
+                const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
+
+                audioComponent.Update(transformComponent, camera->GetLocation());
+            }
+
             if (terrain) {
                 terrain->Update(camera.get());
             }

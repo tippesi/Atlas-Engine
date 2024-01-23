@@ -21,11 +21,13 @@ namespace Atlas {
 				AudioComponent() = default;
 				AudioComponent(const AudioComponent& that) = delete;
                 AudioComponent(AudioComponent&&) noexcept = default;
-                explicit AudioComponent(ResourceHandle<Audio::AudioData> audioData);
+                explicit AudioComponent(ResourceHandle<Audio::AudioData> audioData,
+                    float falloffFactor = 10.0f);
 
                 AudioComponent& operator=(AudioComponent&&) noexcept = default;
 
-                float cutoff = 0.001f;
+                float falloffFactor = 10.0f;
+                float cutoff = 0.0001f;
 
             private:
                 void Update(float deltaTime, const TransformComponent& transformComponent,
