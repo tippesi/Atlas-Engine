@@ -17,9 +17,9 @@ namespace Atlas {
         public:
             AudioData();
 
-            explicit AudioData(std::string filename);
+            explicit AudioData(const std::string& filename);
 
-            void ApplyFormat(const SDL_AudioSpec& formatSpec);
+            bool ApplyFormat(const SDL_AudioSpec& formatSpec);
 
             bool Convert(uint32_t frequency, uint8_t channels, uint32_t format);
 
@@ -31,10 +31,15 @@ namespace Atlas {
 
             std::vector<int16_t> data;
 
-            std::string filename;
+            const std::string filename;
 
         private:
             SDL_AudioSpec spec;
+
+            bool isValid;
+
+            friend class AudioManager;
+            friend class AudioStream;
 
         };
 

@@ -16,7 +16,7 @@ namespace Atlas {
 
         }
 
-        AudioData::AudioData(std::string filename) : filename(filename) {
+        AudioData::AudioData(const std::string& filename) : filename(filename) {
 
             uint8_t* data;
             uint32_t length;
@@ -48,16 +48,19 @@ namespace Atlas {
 
             SDL_FreeWAV(data);
 
+            // Automatically apply format on load
+            isValid = ApplyFormat(AudioManager::audioSpec);
+
         }
 
-        void AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
+        bool AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
 
             if (formatSpec.channels == spec.channels &&  formatSpec.format == spec.format &&
                 formatSpec.freq == spec.freq) {
-                return;
+                return true;
             }
 
-            Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
+            return Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
 
         }
 
@@ -87,6 +90,8 @@ namespace Atlas {
                 return true;
 
             }
+
+            Log::Warning("Couldn't convert audio data from " + filename + " internally");
 
             return false;
 
