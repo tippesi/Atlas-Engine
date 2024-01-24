@@ -4,29 +4,6 @@ namespace Atlas {
     
     namespace Audio {
 
-        AudioStream& AudioStream::operator=(const AudioStream& that) {
-
-            if (this != &that) {
-
-                std::lock(mutex, that.mutex);
-                std::lock_guard<std::mutex> lock_this(mutex, std::adopt_lock);
-                std::lock_guard<std::mutex> lock_that(that.mutex, std::adopt_lock);
-
-                this->loop = that.loop;
-
-                this->progress = that.progress;
-
-                this->volume = that.volume;
-                this->pitch = that.pitch;
-
-                this->data = that.data;
-
-            }
-
-            return *this;
-
-        }
-
         double AudioStream::GetDuration() {
 
             std::lock_guard<std::mutex> lock(mutex);
@@ -69,6 +46,22 @@ namespace Atlas {
 
         }
 
+        void AudioStream::SetChannelVolume(Channel channel, float volume) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            this->channelVolume[channel] = volume;
+
+        }
+
+        float AudioStream::GetChannelVolume(Channel channel) {
+
+            std::lock_guard<std::mutex> lock(mutex);
+
+            return this->channelVolume[channel];
+
+        }
+
         void AudioStream::SetPitch(double pitch) {
 
             std::lock_guard<std::mutex> lock(mutex);
@@ -103,19 +96,34 @@ namespace Atlas {
 
         }
 
-        std::vector<int16_t> AudioStream::GetChunk(int32_t length) {
+        bool AudioStream::IsValid() {
+
+            return data->isValid;
+
+        }
+
+        bool AudioStream::GetChunk(std::vector<int16_t>& chunk) {
+
+            if (!data.IsLoaded())
+                return false;
 
             std::lock_guard<std::mutex> lock(mutex);
 
-            std::vector<int16_t> chunk(length);
+            if (volume == 0.0f)
+                return false;
 
+            int32_t length = int32_t(chunk.size());
             std::memset(chunk.data(), 0, chunk.size() * 2);
 
             auto channels = (int32_t)data->GetChannelCount();
-
             length /= channels;
 
             auto sampleCount = (double)data->data.size() / (double)channels - 1.0;
+            auto preMultipliedChannelVolume = channelVolume;
+
+            for (int32_t i = 0; i < channels; i++) {
+                preMultipliedChannelVolume[i] *= volume;
+            }
 
             for (int32_t i = 0; i < length; i++) {
 
@@ -126,35 +134,40 @@ namespace Atlas {
                         break;
                 }
 
-                auto upperIndex = (int32_t)ceil(progress) * channels;
-                auto lowerIndex = (int32_t)floor(progress) * channels;
+                if (pitch == 1.0) {
+                    auto index = int32_t(progress) * channels;
 
-                auto remainder = progress - floor(progress);
-                
-                for (int32_t j = 0; j < channels; j++) {
+                    for (int32_t j = 0; j < channels; j++) {
+                        auto sample = float(data->data[index + j]);
 
-                    auto sample = (double)data->data[lowerIndex + j] + remainder *
-                        ((double)data->data[upperIndex + j] - (double)data->data[lowerIndex + j]);
+                        sample *= preMultipliedChannelVolume[j];
 
-                    sample *= volume;
+                        chunk[i * channels + j] = (int16_t) sample;
+                    }
+                }
+                else {
+                    auto upperIndex = (int32_t) ceil(progress) * channels;
+                    auto lowerIndex = (int32_t) floor(progress) * channels;
 
-                    chunk[i * channels + j] = (int16_t)sample;
+                    auto remainder = progress - floor(progress);
 
+                    for (int32_t j = 0; j < channels; j++) {
+
+                        auto sample = (double) data->data[lowerIndex + j] + remainder *
+                            ((double) data->data[upperIndex + j] - (double) data->data[lowerIndex + j]);
+
+                        sample *= preMultipliedChannelVolume[j];
+
+                        chunk[i * channels + j] = (int16_t) sample;
+
+                    }
                 }
 
                 progress += pitch;
 
             }
 
-            return chunk;
-
-        }
-
-        void AudioStream::ApplyFormat(const SDL_AudioSpec& spec) {
-
-            std::lock_guard<std::mutex> lock(mutex);
-
-            data->ApplyFormat(spec);
+            return true;
 
         }
 

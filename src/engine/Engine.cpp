@@ -72,7 +72,8 @@ namespace Atlas {
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
 
-        Audio::AudioManager::Configure(48000, 2, 1024);
+        // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
+        Audio::AudioManager::Configure(48000, 2, 256);
 
         Clock::Update();
 
@@ -85,6 +86,7 @@ namespace Atlas {
         PipelineManager::Shutdown();
         Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
+        Audio::AudioManager::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -97,6 +99,7 @@ namespace Atlas {
         Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
         PipelineManager::Update();
+        Audio::AudioManager::Update();
 
     }
 
