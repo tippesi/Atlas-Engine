@@ -18,13 +18,13 @@ namespace Atlas {
 
         this->scene = scene;
 
-        auto lastSize = currentActorMatrices.size();
-        currentActorMatrices.clear();
-        if (lastSize) currentActorMatrices.reserve(lastSize);
+        auto lastSize = currentEntityMatrices.size();
+        currentEntityMatrices.clear();
+        if (lastSize) currentEntityMatrices.reserve(lastSize);
 
-        lastSize = lastActorMatrices.size();
-        lastActorMatrices.clear();
-        if (lastSize) lastActorMatrices.reserve(lastSize);
+        lastSize = lastEntityMatrices.size();
+        lastEntityMatrices.clear();
+        if (lastSize) lastEntityMatrices.reserve(lastSize);
 
         lastSize = impostorMatrices.size();
         impostorMatrices.clear();
@@ -83,7 +83,7 @@ namespace Atlas {
     void RenderList::Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
-        auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshToActorMap = pass.meshToEntityMap;
 
         if (!meshComponent.mesh.IsLoaded())
             return;
@@ -108,7 +108,7 @@ namespace Atlas {
 
         auto& pass = passes.back();
         auto type = pass.type;
-        auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshToActorMap = pass.meshToEntityMap;
         auto& meshToInstancesMap = pass.meshToInstancesMap;
         auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
@@ -125,10 +125,6 @@ namespace Atlas {
             maxImpostorCount += hasImpostor ? actors.size() : 0;
         }
 
-        currentActorMatrices.reserve(maxActorCount);
-        lastActorMatrices.reserve(maxActorCount);
-        impostorMatrices.reserve(maxImpostorCount);
-
         for (auto& [meshId, entities] : meshToActorMap) {
             auto mesh = meshIdToMeshMap[meshId];
             if (!entities.size()) continue;
@@ -144,7 +140,7 @@ namespace Atlas {
 
             MeshInstances instances;
 
-            instances.offset = currentActorMatrices.size();
+            instances.offset = currentEntityMatrices.size();
             instances.impostorOffset = impostorMatrices.size();
 
             if (hasImpostor) {
@@ -156,31 +152,36 @@ namespace Atlas {
                         cameraLocation);
 
                     if (distance < sqdDistance) {
-                        currentActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
-                        if (needsHistory) lastActorMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                        currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        if (needsHistory) {
+                            lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                        }
+                        else {
+                            // For now push back anyways (since indices of matrices per entity need to match)
+                            lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        }
                     }
                     else {
                         impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
-                    //impostorMatrices.push_back(actor->globalMatrix);
                 }
             }
             else {
                 for (auto ecsEntity : entities) {
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
                     auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
-                    currentActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                    currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
-                        lastActorMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                        lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
                     else {
                         // For now push back anyways
-                        lastActorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
                 }
             }
 
-            instances.count = currentActorMatrices.size() - instances.offset;
+            instances.count = currentEntityMatrices.size() - instances.offset;
             instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
             meshToInstancesMap[meshId] = instances;
 
@@ -192,10 +193,10 @@ namespace Atlas {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat3x4) * currentActorMatrices.size()) {
+        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat3x4) * currentEntityMatrices.size()) {
             auto newSize = currentMatricesBuffer != nullptr ? currentMatricesBuffer->size * 2 :
-                           sizeof(mat3x4) * currentActorMatrices.size();
-            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * currentActorMatrices.size());
+                           sizeof(mat3x4) * currentEntityMatrices.size();
+            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * currentEntityMatrices.size());
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -218,10 +219,10 @@ namespace Atlas {
         }
 
         // Probably better to use a device local buffer since we upload once per frame
-        if (currentActorMatrices.size() > 0)
-            currentMatricesBuffer->SetData(currentActorMatrices.data(), 0, currentActorMatrices.size() * sizeof(mat3x4));
-        if (lastActorMatrices.size() > 0)
-            lastMatricesBuffer->SetData(lastActorMatrices.data(), 0, lastActorMatrices.size() * sizeof(mat3x4));
+        if (currentEntityMatrices.size() > 0)
+            currentMatricesBuffer->SetData(currentEntityMatrices.data(), 0, currentEntityMatrices.size() * sizeof(mat3x4));
+        if (lastEntityMatrices.size() > 0)
+            lastMatricesBuffer->SetData(lastEntityMatrices.data(), 0, lastEntityMatrices.size() * sizeof(mat3x4));
         if (impostorMatrices.size() > 0)
             impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
 
