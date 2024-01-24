@@ -8,7 +8,7 @@
 #include <../common/utility.hsh>
 #include <../common/normalencode.hsh>
 
-//#define TRACE_WORLD_SPACE
+#define TRACE_WORLD_SPACE
 
 layout (local_size_x = 8, local_size_y = 8) in;
 

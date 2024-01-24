@@ -35,7 +35,7 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, globalData[0].windDir, vPosition, globalData[0].time, mMatrix[3].xyz);
+        position = WindAnimation(windNoiseMap, globalData[0].windDir, vPosition, 1.0, globalData[0].time, mMatrix[3].xyz);
 
     }
     

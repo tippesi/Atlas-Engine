@@ -10,16 +10,14 @@ vec4 TriangleWave( vec4 x ) {   return abs( fract( x + 0.5 ) * 2.0 - 1.0 ); }
 vec4 SmoothTriangleWave( vec4 x ) {   return SmoothCurve( TriangleWave( x ) ); }
 
 vec3 WindAnimation(sampler2D noiseTexture, vec2 windDir,
-    vec3 position, float animTime, vec3 location) {
+    vec3 position, float bendFactor, float animTime, vec3 location) {
 
     vec3 originalPos = position;
 
-    const vec2 windDir = vec2(1.0, -1.0);
-    
     float centerDistance = length(position.xz);
-    float height = position.y;
+    float height = position.y * bendFactor * 0.5;
 
-    float bendScale = textureLod(noiseTexture, position.xy / 128.0, 0.0).r;
+    float bendScale = textureLod(noiseTexture, location.xz / 128.0 + windDir * 0.01 * animTime, 0.0).r * 0.1;
     float mainBending = height * bendScale;
     mainBending += 1.0;
     mainBending *= mainBending;
@@ -43,8 +41,8 @@ vec3 WindAnimation(sampler2D noiseTexture, vec2 windDir,
     
     vec2 waveSum = waves.xy + waves.zw;
     
-    position.xyz += waveSum.x * vec3(edgeAtten * detailAmp * vec3(0.0, 1.0,0.0));
-    position.y += waveSum.y * centerDistance * branchAmp;
+    //position.xyz += waveSum.x * vec3(edgeAtten * detailAmp * vec3(0.0, 1.0,0.0));
+    //position.y += waveSum.y * centerDistance * branchAmp;
     
     //position.y += sin(animTime* 10.0) * pow(centerDistance/6.0, 4.0);
 

@@ -25,7 +25,7 @@ namespace Atlas {
 
             if (!stream.is_open()) {
                 Log::Error("Error loading audio file " + filename);
-                return;
+                throw std::exception();
             }
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
@@ -34,12 +34,12 @@ namespace Atlas {
 
             if (!rw) {
                 Log::Error("Error getting RWOPS interface " + filename);
-                return;
+                throw std::exception();
             }
 
             if (!SDL_LoadWAV_RW(rw, 1, &spec, &data, &length)) {
                 Log::Error("Error loading audio data " + filename);
-                return;
+                throw std::exception();
             }
 
             this->data.resize(length / 2);

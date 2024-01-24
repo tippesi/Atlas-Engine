@@ -222,7 +222,7 @@ void main() {
 #endif
 
         indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
-        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+        indirect = indirectDiffuse * surface.material.ao;
 
 #ifdef SSGI
         vec4 ssgi = UpsampleGi2x(depth, texCoord);
@@ -243,6 +243,8 @@ void main() {
 #endif
         indirect += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
 #endif
+
+        indirect += indirectSpecular * surface.material.ao;
 
     }
 
