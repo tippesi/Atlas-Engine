@@ -22,13 +22,13 @@ namespace Atlas {
                 AudioVolumeComponent(const AudioVolumeComponent& that) = delete;
                 AudioVolumeComponent(AudioVolumeComponent&&) noexcept = default;
                 explicit AudioVolumeComponent(ResourceHandle<Audio::AudioData> audioData,
-                    float falloffFactor = 10.0f);
+                    Volume::AABB aabb, float falloffFactor = 1.0f);
 
                 AudioVolumeComponent& operator=(AudioVolumeComponent&&) noexcept = default;
 
                 Volume::AABB aabb;
 
-                float falloffFactor = 10.0f;
+                float falloffFactor = 1.0f;
                 float cutoff = 0.0001f;
 
             private:

@@ -40,10 +40,13 @@ namespace Atlas {
                     auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
                     auto dist = glm::sqrt(dx * dx + dy * dy);
 
+                    /*
                     if (dist < terrain->displacementDistance)
                         detailDisplacementNodes.push_back(node);
                     else
                         detailNodes.push_back(node);
+                    */
+                    detailNodes.push_back(node);
                 }
                 else {
                     distanceNodes.push_back(node);

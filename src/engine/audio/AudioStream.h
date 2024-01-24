@@ -23,7 +23,7 @@ namespace Atlas {
         public:
             AudioStream()  { channelVolume.fill(1.0f); }
 
-            explicit AudioStream(ResourceHandle<AudioData> data) : data(data) { channelVolume.fill(1.0f); }
+            explicit AudioStream(ResourceHandle<AudioData> data, float volume, bool loop = false);
 
             AudioStream& operator=(const AudioStream& that) = delete;
 

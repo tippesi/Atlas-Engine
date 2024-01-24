@@ -47,7 +47,7 @@ namespace Atlas {
 
                 mesh->vertexArray.Bind(commandList);
 
-                buffers->binnedInstanceData.Bind(commandList, 3, 7);
+                buffers->binnedInstanceData.Bind(commandList, 3, 8);
 
                 for (auto& subData : mesh->data.subData) {
 
@@ -74,6 +74,8 @@ namespace Atlas {
                         material->aoMap->Bind(commandList, 3, 5);
                     if (material->HasDisplacementMap())
                         material->displacementMap->Bind(commandList, 3, 6);
+
+                    scene->wind.noiseMap.Bind(commandList, 3, 7);
 
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,

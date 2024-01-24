@@ -26,6 +26,12 @@ namespace Atlas {
 
         }
 
+        size_t Scene::GetEntityCount() const {
+
+            return entityManager.Alive();
+
+        }
+
         void Scene::Merge(const Ref<Scene> &other) {
 
             std::unordered_map<ECS::Entity, ECS::Entity> entityToEntityMap;
@@ -112,6 +118,11 @@ namespace Atlas {
                     if (!rigidBodyComponent.Valid() || transformComponent.isStatic ||
                         rigidBodyComponent.layer == Physics::Layers::STATIC)
                         continue;
+
+                    // This happens if no change was triggered by the user, then we still need
+                    // to update the last global matrix, since it might have changed due to physics simulation
+                    if (!transformComponent.changed)
+                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
                     // Need to set changed to true such that the space partitioning is updated
                     transformComponent.changed = true;

@@ -32,7 +32,9 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
-layout(std430, set = 3, binding = 7) readonly buffer InstanceData {
+layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+
+layout(std430, set = 3, binding = 8) readonly buffer InstanceData {
     Instance instanceData[];
 };
 
@@ -53,8 +55,10 @@ void main() {
 
     vec3 position = instance.position.xyz + vPosition;
 
-    position = instance.position.xyz + WindAnimation(vPosition, globalData[0].time, instance.position.xyz);
-    vec3 lastPosition = instance.position.xyz + WindAnimation(vPosition, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
+    position = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
+        vPosition, globalData[0].time, instance.position.xyz);
+    vec3 lastPosition = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
+        vPosition, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 #ifdef NORMAL_MAP

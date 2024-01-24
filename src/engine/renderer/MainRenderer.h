@@ -163,6 +163,7 @@ namespace Atlas {
                 vec4 cameraUp;
                 vec4 cameraRight;
                 vec4 planetCenter;
+                vec2 windDir;
                 float planetRadius;
                 float time;
                 float deltaTime;

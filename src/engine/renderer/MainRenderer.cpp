@@ -925,6 +925,7 @@ namespace Atlas {
                 .cameraUp = vec4(camera->up, 0.0f),
                 .cameraRight = vec4(camera->right, 0.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+                .windDir = scene->wind.direction,
                 .planetRadius = scene->sky.planetRadius,
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),

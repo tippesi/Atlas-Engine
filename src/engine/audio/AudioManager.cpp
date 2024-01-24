@@ -49,7 +49,7 @@ namespace Atlas {
 
         void AudioManager::Shutdown() {
 
-            SDL_LockAudioDevice(audioDevice);
+            Pause();
 
             audioStreams.clear();
 
@@ -81,12 +81,9 @@ namespace Atlas {
 
         }
 
-        Ref<AudioStream> AudioManager::CreateStream(ResourceHandle<AudioData> data) {
+        Ref<AudioStream> AudioManager::CreateStream(ResourceHandle<AudioData> data, float volume, bool loop) {
 
-            if (!data->isValid)
-                return nullptr;
-
-            auto stream = CreateRef<AudioStream>(data);
+            auto stream = CreateRef<AudioStream>(data, volume, loop);
 
             std::lock_guard<std::mutex> lock(mutex);
             audioStreams.push_back(stream);

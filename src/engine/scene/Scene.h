@@ -23,6 +23,7 @@
 #include "SceneIterator.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
+#include "Wind.h"
 
 #include "components/Components.h"
 #include "prefabs/Prefabs.h"
@@ -61,6 +62,8 @@ namespace Atlas {
             T CreatePrefab(Args&&... args);
 
             void DestroyEntity(Entity entity);
+
+            size_t GetEntityCount() const;
 
             template<typename... Comp>
             Subset<Comp...> GetSubset();
@@ -101,6 +104,7 @@ namespace Atlas {
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
 
+            Wind wind;
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;

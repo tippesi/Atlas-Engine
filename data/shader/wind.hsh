@@ -9,21 +9,17 @@ vec4 SmoothCurve( vec4 x ) {   return x * x *( 3.0 - 2.0 * x ); }
 vec4 TriangleWave( vec4 x ) {   return abs( fract( x + 0.5 ) * 2.0 - 1.0 ); } 
 vec4 SmoothTriangleWave( vec4 x ) {   return SmoothCurve( TriangleWave( x ) ); }
 
-vec3 WindAnimation(vec3 position, float animTime, vec3 location) {
+vec3 WindAnimation(sampler2D noiseTexture, vec2 windDir,
+    vec3 position, float animTime, vec3 location) {
 
     vec3 originalPos = position;
-
-    float offset = 2.0 * 3.14 * random(location);
-
-    animTime += offset;
 
     const vec2 windDir = vec2(1.0, -1.0);
     
     float centerDistance = length(position.xz);
     float height = position.y;
 
-    float bendScale = sin(animTime) * 0.01 + 0.02 * cos(animTime / 2.0) + sin(animTime / 3.0) * 0.01 + 
-        0.03 * sin(animTime * 2.0) * sin(animTime / 10.0);
+    float bendScale = textureLod(noiseTexture, position.xy / 128.0, 0.0).r;
     float mainBending = height * bendScale;
     mainBending += 1.0;
     mainBending *= mainBending;

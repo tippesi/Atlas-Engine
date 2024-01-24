@@ -27,9 +27,21 @@ namespace Atlas {
 
                 mat4 GetMatrix();
 
+                void SetMotionQuality(Physics::MotionQuality quality);
+
+                Physics::MotionQuality GetMotionQuality();
+
                 void SetLinearVelocity(vec3 velocity);
 
                 vec3 GetLinearVelocity();
+
+                void SetRestitution(float restitution);
+
+                float GetRestitution();
+
+                void SetFriction(float friction);
+
+                float GetFriction();
 
                 Physics::ShapeRef shape = nullptr;
                 JPH::ObjectLayer layer;
