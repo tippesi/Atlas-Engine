@@ -32,32 +32,6 @@ namespace Atlas {
 
         }
 
-        void Scene::Merge(const Ref<Scene> &other) {
-
-            std::unordered_map<ECS::Entity, ECS::Entity> entityToEntityMap;
-
-            // We need all entities before we can start to attach components
-            for(auto entity : *other) {
-                auto newEntity = CreateEntity();
-
-                entityToEntityMap[entity] = newEntity;
-            }
-
-            for (auto entity : *other) {
-                auto newEntity = entityToEntityMap[entity];
-
-                if (entity.HasComponent<HierarchyComponent>()) {
-
-                }
-                if (entity.HasComponent<TransformComponent>()) {
-
-                }
-            }
-
-
-
-        }
-
         void Scene::Update(Ref<Camera> camera, float deltaTime) {
 
             Update(deltaTime);
@@ -389,12 +363,12 @@ namespace Atlas {
 
             // Each resource type needs to count references
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
                     RegisterResource(registeredMeshes, meshComponent.mesh);
                 });
 
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
                     UnregisterResource(registeredMeshes, meshComponent.mesh);
 
                     if (meshComponent.inserted) {
@@ -417,6 +391,61 @@ namespace Atlas {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
+
+        }
+
+        std::unordered_map<ECS::Entity, Entity> Scene::Merge(const Ref<Scene>& other) {
+
+            std::unordered_map<ECS::Entity, Entity> entityToEntityMap;
+
+            // We need all entities before we can start to attach components
+            for(auto entity : *other) {
+                auto newEntity = CreateEntity();
+
+                entityToEntityMap[entity] = newEntity;
+            }
+
+            for (auto entity : *other) {
+                auto newEntity = entityToEntityMap[entity];
+
+                if (entity.HasComponent<HierarchyComponent>()) {
+                    // This is not trivially copiable, need to preserve new entity relationships
+                    auto& otherComp = entity.GetComponent<HierarchyComponent>();
+                    auto& comp = newEntity.AddComponent<HierarchyComponent>();
+
+                    comp.root = otherComp.root;
+                    for (auto compEntity : otherComp.entities) {
+                        comp.entities.push_back(entityToEntityMap[compEntity]);
+                    }
+                }
+                if (entity.HasComponent<TransformComponent>()) {
+                    // Can just be copied
+                    auto& otherComp = entity.GetComponent<TransformComponent>();
+                    newEntity.AddComponent<TransformComponent>(otherComp);
+                }
+
+                // Resource components need extra attention (resources need to be registered in this scene)
+                if (entity.HasComponent<MeshComponent>()) {
+                    auto& otherComp = entity.GetComponent<MeshComponent>();
+                    auto& comp = newEntity.AddComponent<MeshComponent>(otherComp.mesh);
+                    comp.visible = otherComp.visible;
+                    comp.dontCull = otherComp.dontCull;
+                }
+                if (entity.HasComponent<AudioComponent>()) {
+                    auto& otherComp = entity.GetComponent<AudioComponent>();
+                    auto& comp = newEntity.AddComponent<AudioComponent>(otherComp.stream->data);
+                    comp.falloffFactor = otherComp.falloffFactor;
+                    comp.cutoff = otherComp.cutoff;
+                }
+                if (entity.HasComponent<AudioVolumeComponent>()) {
+                    auto& otherComp = entity.GetComponent<AudioVolumeComponent>();
+                    auto& comp = newEntity.AddComponent<AudioVolumeComponent>(otherComp.stream->data, otherComp.aabb);
+                    comp.falloffFactor = otherComp.falloffFactor;
+                    comp.cutoff = otherComp.cutoff;
+                }
+            }
+
+            return entityToEntityMap;
 
         }
 

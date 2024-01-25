@@ -56,9 +56,9 @@ void main() {
     vec3 position = instance.position.xyz + vPosition;
 
     position = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
-        vPosition, globalData[0].time, instance.position.xyz);
+        vPosition, 10.0, globalData[0].time, instance.position.xyz);
     vec3 lastPosition = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
-        vPosition, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
+        vPosition, 10.0, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 #ifdef NORMAL_MAP

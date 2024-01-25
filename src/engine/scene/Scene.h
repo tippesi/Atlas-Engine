@@ -68,7 +68,7 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
-            void Merge(const Ref<Scene>& other);
+            std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
             void Update(Ref<Camera> camera, float deltaTime);
 

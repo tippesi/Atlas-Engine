@@ -107,7 +107,7 @@ namespace Atlas {
 
         }
 
-        void AudioManager::Callback(void* userData, uint8_t* stream, int32_t length) {
+        void AudioManager::Callback(void* userData, uint8_t* streamData, int32_t length) {
 
             // We only use 16 bit audio internally
             length /= 2;
@@ -120,7 +120,7 @@ namespace Atlas {
             lock.unlock();
 
             // Take ownership of stream here, such that the update can run in parallel
-            for (auto stream : localStreams) {
+            for (const auto& stream : localStreams) {
 
                 if (!stream->IsValid() || stream->IsPaused())
                     continue;
@@ -132,7 +132,7 @@ namespace Atlas {
 
             }
 
-            std::memcpy(stream, dest.data(), length * 2);
+            std::memcpy(streamData, dest.data(), length * 2);
 
         }
 

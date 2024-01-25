@@ -57,6 +57,8 @@ namespace Atlas {
 
             bool loop = false;
 
+            ResourceHandle<AudioData> data;
+
         private:
             double progress = 0.0;
 
@@ -66,8 +68,6 @@ namespace Atlas {
             bool pause = false;
 
             std::array<float, 8> channelVolume;
-
-            ResourceHandle<AudioData> data;
 
             mutable std::mutex mutex;
 

@@ -40,13 +40,15 @@ namespace Atlas {
                     auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
                     auto dist = glm::sqrt(dx * dx + dy * dy);
 
-                    /*
+#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+                    // Bindless and tesselation on Mac with MoltenVK don't seem to properly work and cause crashes
+                    detailNodes.push_back(node);
+#else
                     if (dist < terrain->displacementDistance)
                         detailDisplacementNodes.push_back(node);
                     else
                         detailNodes.push_back(node);
-                    */
-                    detailNodes.push_back(node);
+#endif
                 }
                 else {
                     distanceNodes.push_back(node);
