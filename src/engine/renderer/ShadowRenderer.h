@@ -34,6 +34,9 @@ namespace Atlas {
                 mat4 lightSpaceMatrix;
                 uint32_t vegetation;
                 uint32_t invertUVs;
+                float windTextureLod;
+                float windBendScale;
+                float windWiggleScale;
             };
 
             LightMap lightMap;

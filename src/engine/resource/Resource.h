@@ -1,6 +1,7 @@
 #pragma once
 
 #include "System.h"
+#include "ResourceLoadException.h"
 #include "../common/Hash.h"
 
 #include <vector>
@@ -54,7 +55,7 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const std::exception& exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
             }

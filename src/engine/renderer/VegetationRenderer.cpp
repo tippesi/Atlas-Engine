@@ -27,6 +27,9 @@ namespace Atlas {
                 uint32_t materialIdx;
                 float normalScale;
                 float displacementScale;
+                float windTextureLod;
+                float windBendScale;
+                float windWiggleScale;
             };
 
             if (!scene->vegetation) return;
@@ -47,7 +50,7 @@ namespace Atlas {
 
                 mesh->vertexArray.Bind(commandList);
 
-                buffers->binnedInstanceData.Bind(commandList, 3, 7);
+                buffers->binnedInstanceData.Bind(commandList, 3, 8);
 
                 for (auto& subData : mesh->data.subData) {
 
@@ -75,12 +78,17 @@ namespace Atlas {
                     if (material->HasDisplacementMap())
                         material->displacementMap->Bind(commandList, 3, 6);
 
+                    scene->wind.noiseMap.Bind(commandList, 3, 7);
+
                     auto pushConstants = PushConstants {
                         .invertUVs = mesh->invertUVs ? 1u : 0u,
                         .twoSided = material->twoSided ? 1u : 0u,
                         .materialIdx = uint32_t(materialMap[material.get()]),
                         .normalScale = material->normalScale,
-                        .displacementScale = material->displacementScale
+                        .displacementScale = material->displacementScale,
+                        .windTextureLod = mesh->windNoiseTextureLod,
+                        .windBendScale = mesh->windBendScale,
+                        .windWiggleScale = mesh->windWiggleScale,
                     };
                     commandList->PushConstants("constants", &pushConstants);
 

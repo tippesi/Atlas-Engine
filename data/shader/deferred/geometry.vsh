@@ -51,6 +51,8 @@ layout(location=5) out vec4 vertexColorsVS;
 layout(location=6) out mat3 TBN;
 #endif
 
+layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -59,6 +61,9 @@ layout(push_constant) uniform constants {
     uint materialIdx;
     float normalScale;
     float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 // Functions
@@ -78,8 +83,11 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(vPosition, globalData[0].time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(vPosition, globalData[0].time - globalData[0].deltaTime, mMatrix[3].xyz);
+        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData[0].time, mMatrix[3].xyz);
+        lastPosition = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod,
+            globalData[0].time - globalData[0].deltaTime, mMatrix[3].xyz);
 
     }
 

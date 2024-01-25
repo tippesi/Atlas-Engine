@@ -80,6 +80,8 @@ namespace Atlas {
                 if (material->HasDisplacementMap())
                     material->displacementMap->Bind(commandList, 3, 6);
 
+                scene->wind.noiseMap.Bind(commandList, 3, 7);
+
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
@@ -87,7 +89,10 @@ namespace Atlas {
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
                     .materialIdx = uint32_t(materialMap[material.get()]),
                     .normalScale = material->normalScale,
-                    .displacementScale = material->displacementScale
+                    .displacementScale = material->displacementScale,
+                    .windTextureLod = mesh->windNoiseTextureLod,
+                    .windBendScale = mesh->windBendScale,
+                    .windWiggleScale = mesh->windWiggleScale
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

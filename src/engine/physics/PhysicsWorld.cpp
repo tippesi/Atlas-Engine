@@ -38,7 +38,7 @@ namespace Atlas {
         }
 
         Body PhysicsWorld::CreateBody(const ShapeRef &shape, JPH::ObjectLayer objectLayer,
-            const mat4& matrix, vec3 veloctiy) {
+            MotionQuality motionQuality, const mat4& matrix, vec3 veloctiy) {
 
             auto& bodyInterface = system.GetBodyInterface();
 
@@ -57,6 +57,7 @@ namespace Atlas {
             bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
             bodyCreationSettings.mFriction = 1.0f;
             bodyCreationSettings.mRestitution = 0.2f;
+            bodyCreationSettings.mMotionQuality = motionQuality;
 
             return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
 
@@ -106,10 +107,23 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::SetMotionQuality(Body bodyId, MotionQuality quality) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            bodyInterface.SetMotionQuality(bodyId, quality);
+
+        }
+
+        MotionQuality PhysicsWorld::GetMotionQuality(Body bodyId) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            return bodyInterface.GetMotionQuality(bodyId);
+
+        }
+
         void PhysicsWorld::SetLinearVelocity(Body bodyId, glm::vec3 velocity) {
 
             auto& bodyInterface = system.GetBodyInterface();
-
             bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
 
         }
@@ -117,8 +131,35 @@ namespace Atlas {
         vec3 PhysicsWorld::GetLinearVelocity(Body bodyId) {
 
             auto& bodyInterface = system.GetBodyInterface();
-
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
+
+        }
+
+        void PhysicsWorld::SetRestitution(Body bodyId, float restitution) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            bodyInterface.SetRestitution(bodyId, restitution);
+
+        }
+
+        float PhysicsWorld::GetRestitution(Body bodyId) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            return bodyInterface.GetRestitution(bodyId);
+
+        }
+
+        void PhysicsWorld::SetFriction(Body bodyId, float friction) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            bodyInterface.SetFriction(bodyId, friction);
+
+        }
+
+        float PhysicsWorld::GetFriction(Body bodyId) {
+
+            auto& bodyInterface = system.GetBodyInterface();
+            return bodyInterface.GetFriction(bodyId);
 
         }
 

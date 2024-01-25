@@ -34,6 +34,9 @@ namespace Atlas {
                 uint32_t materialIdx;
                 float normalScale;
                 float displacementScale;
+                float windTextureLod;
+                float windBendScale;
+                float windWiggleScale;
             };
 
 

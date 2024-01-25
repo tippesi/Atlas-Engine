@@ -23,6 +23,7 @@
 #include "SceneIterator.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
+#include "Wind.h"
 
 #include "components/Components.h"
 #include "prefabs/Prefabs.h"
@@ -62,10 +63,12 @@ namespace Atlas {
 
             void DestroyEntity(Entity entity);
 
+            size_t GetEntityCount() const;
+
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
-            void Merge(const Ref<Scene>& other);
+            std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
             void Update(Ref<Camera> camera, float deltaTime);
 
@@ -101,6 +104,7 @@ namespace Atlas {
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
 
+            Wind wind;
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;

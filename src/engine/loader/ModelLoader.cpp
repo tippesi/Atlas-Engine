@@ -52,8 +52,8 @@ namespace Atlas {
                                                      aiProcess_ImproveCacheLocality);
 
             if (!scene) {
-                Log::Error("Error processing model " + std::string(importer.GetErrorString()));
-                return nullptr;
+                throw ResourceLoadException(filename, "Error processing model "
+                    + std::string(importer.GetErrorString()));
             }
 
             int32_t indexCount = 0;
@@ -320,8 +320,8 @@ namespace Atlas {
                 aiProcess_ImproveCacheLocality);
 
             if (!assimpScene) {
-                Log::Error("Error processing model " + std::string(importer.GetErrorString()));
-                return nullptr;
+                throw ResourceLoadException(filename, "Error processing model "
+                    + std::string(importer.GetErrorString()));
             }
 
             std::atomic_int32_t counter = 0;

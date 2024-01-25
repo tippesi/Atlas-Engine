@@ -14,10 +14,15 @@ layout(std430, set = 1, binding = 1) buffer Matrices {
     mat3x4 matrices[];
 };
 
+layout(set = 3, binding = 1) uniform sampler2D windNoiseMap;
+
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
     uint vegetation;
     uint invertUVs;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 void main() {
@@ -33,7 +38,8 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(vPosition, globalData[0].time, mMatrix[3].xyz);
+        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData[0].time, mMatrix[3].xyz);
 
     }
     

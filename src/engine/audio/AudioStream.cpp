@@ -4,6 +4,13 @@ namespace Atlas {
     
     namespace Audio {
 
+        AudioStream::AudioStream(ResourceHandle<Atlas::Audio::AudioData> data, float volume, bool loop)
+            : data(data), volume(volume), loop(loop) {
+
+            channelVolume.fill(1.0f);
+
+        }
+
         double AudioStream::GetDuration() {
 
             std::lock_guard<std::mutex> lock(mutex);
@@ -98,7 +105,7 @@ namespace Atlas {
 
         bool AudioStream::IsValid() {
 
-            return data->isValid;
+            return data.IsLoaded() && data->isValid;
 
         }
 

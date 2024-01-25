@@ -137,10 +137,15 @@ namespace Atlas {
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
 
+                        scene->wind.noiseMap.Bind(commandList, 3, 1);
+
                         auto pushConstants = PushConstants {
                             .lightSpaceMatrix = lightSpaceMatrix,
                             .vegetation = mesh->vegetation ? 1u : 0u,
-                            .invertUVs = mesh->invertUVs ? 1u : 0u
+                            .invertUVs = mesh->invertUVs ? 1u : 0u,
+                            .windTextureLod = mesh->windNoiseTextureLod,
+                            .windBendScale = mesh->windBendScale,
+                            .windWiggleScale = mesh->windWiggleScale
                         };
                         commandList->PushConstants("constants", &pushConstants);
 

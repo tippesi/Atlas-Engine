@@ -24,10 +24,10 @@ namespace Atlas {
 
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
+            const Volume::AABB aabb;
+
 		private:
 			Scene* scene;
-
-			Volume::AABB aabb;
 
 			Volume::Octree<ECS::Entity> renderableMovableEntityOctree;
 			Volume::Octree<ECS::Entity> renderableStaticEntityOctree;

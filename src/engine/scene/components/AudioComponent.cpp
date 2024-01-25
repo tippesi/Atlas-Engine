@@ -8,9 +8,9 @@ namespace Atlas {
         namespace Components {
 
             AudioComponent::AudioComponent(ResourceHandle<Audio::AudioData> audioData,
-                float falloffFactor) : falloffFactor(falloffFactor) {
+                float falloffFactor, bool loop) : falloffFactor(falloffFactor) {
 
-                stream = Audio::AudioManager::CreateStream(audioData);
+                stream = Audio::AudioManager::CreateStream(audioData, 0.0f, loop);
 
             }
 
@@ -44,6 +44,12 @@ namespace Atlas {
                     auto lastDistance = glm::distance(lastObjectLocation, lastListenerLocation);
 
                     auto velocity = (lastDistance - distance) / std::max(deltaTime, epsilon);
+
+                    // Avoids high pitch when there is no movement history
+                    if (initialState) {
+                        initialState = false;
+                        velocity = 0.0f;
+                    }
 
                     auto pitch = 1.0 + velocity / 333.3;
                     pitch = pitch >= 0.0 ? pitch : 0.0;
