@@ -98,7 +98,11 @@ namespace Atlas {
             bool depthTest = true;
 
             bool castShadow = true;
+
             bool vegetation = false;
+            float windNoiseTextureLod = 2.0f;
+            float windBendScale = 1.0f;
+            float windWiggleScale = 1.0f;
 
             int32_t allowedShadowCascades = 6;
 

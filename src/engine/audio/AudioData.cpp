@@ -2,6 +2,7 @@
 #include "AudioManager.h"
 
 #include "../Log.h"
+#include "../resource/ResourceLoadException.h"
 #include "../loader/AssetLoader.h"
 
 #include <SDL_audio.h>
@@ -24,8 +25,7 @@ namespace Atlas {
             auto stream = Loader::AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!stream.is_open()) {
-                Log::Error("Error loading audio file " + filename);
-                throw std::exception();
+                throw ResourceLoadException(filename, "Couldn't open file stream");
             }
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
@@ -33,13 +33,11 @@ namespace Atlas {
             auto rw = SDL_RWFromMem(filedata.data(), (int32_t)filedata.size());
 
             if (!rw) {
-                Log::Error("Error getting RWOPS interface " + filename);
-                throw std::exception();
+                throw ResourceLoadException(filename, "Couldn't get RWOPS interface");
             }
 
             if (!SDL_LoadWAV_RW(rw, 1, &spec, &data, &length)) {
-                Log::Error("Error loading audio data " + filename);
-                throw std::exception();
+                throw ResourceLoadException(filename, "Couldn't load audio data");
             }
 
             this->data.resize(length / 2);

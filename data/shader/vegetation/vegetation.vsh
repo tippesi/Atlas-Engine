@@ -44,6 +44,9 @@ layout(push_constant) uniform constants {
     uint materialIdx;
     float normalScale;
     float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } pushConstants;
 
 void main() {
@@ -55,10 +58,11 @@ void main() {
 
     vec3 position = instance.position.xyz + vPosition;
 
-    position = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
-        vPosition, 10.0, globalData[0].time, instance.position.xyz);
-    vec3 lastPosition = instance.position.xyz + WindAnimation(windNoiseMap, globalData[0].windDir,
-        vPosition, 10.0, globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
+    position = instance.position.xyz + WindAnimation(windNoiseMap, vPosition, pushConstants.windBendScale,
+        pushConstants.windWiggleScale, pushConstants.windTextureLod,globalData[0].time, instance.position.xyz);
+    vec3 lastPosition = instance.position.xyz + WindAnimation(windNoiseMap,  vPosition, pushConstants.windBendScale,
+        pushConstants.windWiggleScale, pushConstants.windTextureLod,
+        globalData[0].time - globalData[0].deltaTime, instance.position.xyz);
 
     vec4 positionToCamera = mvMatrix * vec4(position, 1.0);
 #ifdef NORMAL_MAP

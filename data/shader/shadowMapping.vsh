@@ -20,6 +20,9 @@ layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
     uint vegetation;
     uint invertUVs;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 void main() {
@@ -35,7 +38,8 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, globalData[0].windDir, vPosition, 1.0, globalData[0].time, mMatrix[3].xyz);
+        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData[0].time, mMatrix[3].xyz);
 
     }
     

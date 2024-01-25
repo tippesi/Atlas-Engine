@@ -164,6 +164,7 @@ namespace Atlas {
                 vec4 cameraRight;
                 vec4 planetCenter;
                 vec2 windDir;
+                float windSpeed;
                 float planetRadius;
                 float time;
                 float deltaTime;

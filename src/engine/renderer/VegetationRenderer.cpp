@@ -27,6 +27,9 @@ namespace Atlas {
                 uint32_t materialIdx;
                 float normalScale;
                 float displacementScale;
+                float windTextureLod;
+                float windBendScale;
+                float windWiggleScale;
             };
 
             if (!scene->vegetation) return;
@@ -82,7 +85,10 @@ namespace Atlas {
                         .twoSided = material->twoSided ? 1u : 0u,
                         .materialIdx = uint32_t(materialMap[material.get()]),
                         .normalScale = material->normalScale,
-                        .displacementScale = material->displacementScale
+                        .displacementScale = material->displacementScale,
+                        .windTextureLod = mesh->windNoiseTextureLod,
+                        .windBendScale = mesh->windBendScale,
+                        .windWiggleScale = mesh->windWiggleScale,
                     };
                     commandList->PushConstants("constants", &pushConstants);
 

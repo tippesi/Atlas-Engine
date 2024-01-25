@@ -61,6 +61,9 @@ layout(push_constant) uniform constants {
     uint materialIdx;
     float normalScale;
     float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 // Functions
@@ -80,9 +83,10 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, globalData[0].windDir, vPosition, 1.0,
-            globalData[0].time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(windNoiseMap, globalData[0].windDir, vPosition, 1.0f,
+        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData[0].time, mMatrix[3].xyz);
+        lastPosition = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod,
             globalData[0].time - globalData[0].deltaTime, mMatrix[3].xyz);
 
     }
