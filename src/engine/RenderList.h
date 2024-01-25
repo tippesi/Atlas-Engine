@@ -37,7 +37,7 @@ namespace Atlas {
             Lighting::Light* light;
             uint32_t layer;
 
-            std::map<size_t, std::vector<ECS::Entity>> meshToActorMap;
+            std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
             std::map<size_t, MeshInstances> meshToInstancesMap;
             std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
@@ -62,8 +62,8 @@ namespace Atlas {
 
         Scene::Scene* scene = nullptr;
 
-        std::vector<mat3x4> currentActorMatrices;
-        std::vector<mat3x4> lastActorMatrices;
+        std::vector<mat3x4> currentEntityMatrices;
+        std::vector<mat3x4> lastEntityMatrices;
         std::vector<mat3x4> impostorMatrices;
 
         Ref<Graphics::MultiBuffer> currentMatricesBuffer;

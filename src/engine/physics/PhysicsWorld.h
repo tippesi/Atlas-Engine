@@ -23,6 +23,8 @@ namespace Atlas {
 
         using Body = JPH::BodyID;
 
+        using MotionQuality = JPH::EMotionQuality;
+
         class PhysicsWorld {
 
         public:
@@ -33,8 +35,8 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
-            Body CreateBody(const ShapeRef& shape, JPH::ObjectLayer objectLayer, const mat4& matrix,
-                vec3 velocity = vec3(0.0f));
+            Body CreateBody(const ShapeRef& shape, JPH::ObjectLayer objectLayer, MotionQuality motionQuality,
+                const mat4& matrix, vec3 velocity = vec3(0.0f));
 
             void DestroyBody(Body bodyId);
 
@@ -42,9 +44,21 @@ namespace Atlas {
 
             mat4 GetBodyMatrix(Body bodyId);
 
+            void SetMotionQuality(Body bodyId, MotionQuality quality);
+
+            MotionQuality GetMotionQuality(Body bodyId);
+
             void SetLinearVelocity(Body bodyId, vec3 velocity);
 
             vec3 GetLinearVelocity(Body bodyId);
+
+            void SetRestitution(Body bodyId, float restitution);
+
+            float GetRestitution(Body bodyId);
+
+            void SetFriction(Body bodyId, float friction);
+
+            float GetFriction(Body bodyId);
 
             void OptimizeBroadphase();
 

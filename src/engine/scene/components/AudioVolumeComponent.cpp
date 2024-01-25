@@ -9,9 +9,9 @@ namespace Atlas {
         namespace Components {
 
             AudioVolumeComponent::AudioVolumeComponent(ResourceHandle<Audio::AudioData> audioData,
-                float falloffFactor) : falloffFactor(falloffFactor) {
+                Volume::AABB aabb, float falloffFactor) : aabb(aabb), falloffFactor(falloffFactor) {
 
-                stream = Audio::AudioManager::CreateStream(audioData);
+                stream = Audio::AudioManager::CreateStream(audioData, 0.0f);
 
                 stream->loop = true;
 
@@ -21,8 +21,7 @@ namespace Atlas {
 
                 const float epsilon = 0.00001f;
 
-                auto objectLocation = vec3(transformComponent.globalMatrix[3]);
-                auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
+                auto distance = glm::max(epsilon, aabb.Transform(transformComponent.globalMatrix).GetDistance(listenerLocation));
 
                 float distanceVolume = glm::min(1.0f, falloffFactor / distance);
 

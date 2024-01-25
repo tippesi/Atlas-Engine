@@ -56,6 +56,9 @@ layout(push_constant) uniform constants {
     uint materialIdx;
     float normalScale;
     float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {

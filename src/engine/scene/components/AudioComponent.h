@@ -22,11 +22,11 @@ namespace Atlas {
 				AudioComponent(const AudioComponent& that) = delete;
                 AudioComponent(AudioComponent&&) noexcept = default;
                 explicit AudioComponent(ResourceHandle<Audio::AudioData> audioData,
-                    float falloffFactor = 10.0f);
+                    float falloffFactor = 1.0f, bool loop = false);
 
                 AudioComponent& operator=(AudioComponent&&) noexcept = default;
 
-                float falloffFactor = 10.0f;
+                float falloffFactor = 1.0f;
                 float cutoff = 0.0001f;
 
             private:
@@ -34,6 +34,8 @@ namespace Atlas {
                     vec3 listenerLocation, vec3 lastListenerLocation, vec3 listenerRight);
 
                 Ref<Audio::AudioStream> stream;
+
+                bool initialState = true;
 
                 friend Scene;
 

@@ -194,12 +194,14 @@ void App::Update(float deltaTime) {
             auto x = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
             auto z = (2.0f * Atlas::Common::Random::SampleFastUniformFloat() - 1.0f) * 20.0f;
 
-            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z)) * glm::scale(glm::vec3(emitSphereScale));
+            auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 100.0f, z));
 
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
-            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius);
-            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
+                glm::vec3(sphereScale), sphereDensity);
+            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+            rigidBodyComponent.SetRestitution(sphereRestitution);
             entity.AddComponent<AudioComponent>(audio);
 
             entities.push_back(entity);
@@ -215,7 +217,7 @@ void App::Update(float deltaTime) {
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
             auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
-                glm::vec3(1.0f), shootDensity);
+                glm::vec3(sphereScale), sphereDensity);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
@@ -224,6 +226,8 @@ void App::Update(float deltaTime) {
             entity.AddComponent<AudioComponent>(audio);
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
             rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
+            rigidBodyComponent.SetMotionQuality(Atlas::Physics::MotionQuality::LinearCast);
+            rigidBodyComponent.SetRestitution(sphereRestitution);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -363,7 +367,7 @@ void App::Render(float deltaTime) {
             ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
             ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
             ImGui::Text("Scene triangle count: %d", triangleCount);
-            ImGui::Text("Number of entities: %zu", entities.size());
+            ImGui::Text("Number of entities: %zu", scene->GetEntityCount());
 
             {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
@@ -694,16 +698,18 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Physics")) {
+                ImGui::Text("Sphere body");
+                ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
+                ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
+                ImGui::SliderFloat("Sphere restitution##PhysicsBody", &sphereRestitution, 0.0f, 1.0f);
                 ImGui::Text("Sphere emitter");
                 ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);
-                ImGui::SliderFloat("Sphere scale##PhysicsEmitter", &emitSphereScale, 1.0f, 10.0f);
                 ImGui::Separator();
                 ImGui::Text("Shoot spheres");
                 ImGui::Checkbox("Enable##PhysicsShoot", &shootSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsShoot", &shootSpawnRate, 0.001f, 1.0f);
                 ImGui::SliderFloat("Velocity##PhysicsShoot", &shootVelocity, 0.0f, 100.0f);
-                ImGui::SliderFloat("Density##PhysicsShoot", &shootDensity, 0.0f, 100.0f);
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;

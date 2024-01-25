@@ -8,6 +8,8 @@
 #include <../common/utility.hsh>
 #include <../common/normalencode.hsh>
 
+#define TRACE_WORLD_SPACE
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, r16f) uniform image2D image;
@@ -65,14 +67,20 @@ void main() {
     float startDepth = -rayPos.z;
     vec3 rayDir = normalize(-pushConstants.lightDirection.xyz);
 
-    vec3 rayEndPos = rayPos + pushConstants.maxLength;
-    float endDepth = textureLod(depthTexture, PosToUV(rayEndPos), 0.0).r;
-    float rayEndDepth = ConvertDepthToViewSpaceDepth(endDepth);
-
-    // Compute ray step
-    float depthMultiplier = max(10.0, -rayPos.z);
     float stepLength = pushConstants.maxLength / (float(pushConstants.sampleCount));
-    float depthThickness = 0.25 * pushConstants.maxLength;
+
+#ifdef TRACE_WORLD_SPACE
+    float depthThickness = pushConstants.thickness;
+    vec3 rayEndPos = rayPos + pushConstants.maxLength * rayDir;
+#else
+    float depthThickness = pushConstants.thickness;
+    vec2 stepPos = PosToUV(rayPos + rayDir);
+    float stepPosLength = length(stepPos - texCoord);
+    vec3 rayEndPos = rayPos + (pushConstants.maxLength / max(0.01, stepPosLength)) * rayDir;
+    depthThickness *= stepPosLength;
+    depthThickness = max(abs(rayPos.z), abs(rayPos.z - rayEndPos.z)) * pushConstants.thickness;
+    vec2 uvDir = normalize(stepPos - texCoord);
+#endif
 
     float resultDelta = 0.0;
     vec2 resultUV = texCoord;
@@ -80,20 +88,36 @@ void main() {
     vec3 resultPos = rayPos;
     float resultDepth = -rayPos.z;
 
+    float rayLength = distance(rayPos, rayEndPos);
+
     //depthThickness = abs(rayPos.z - rayEndPos.z) * stepLength;
 
+    vec2 uvPos = texCoord;
     float noiseOffset = GetInterleavedGradientNoise(texCoord * vec2(resolution));
+
+#ifdef TRACE_WORLD_SPACE
     rayPos += noiseOffset * stepLength * rayDir;
+#else
+    uvPos += noiseOffset * stepLength * uvDir;
+    rayPos += noiseOffset * stepLength * rayDir / stepPosLength;
+#endif
 
     // Ray march towards the light
     float occlusion = 0.0;
     for (int i = 0; i < pushConstants.sampleCount; i++) {
         // Step the ray
+#ifdef TRACE_WORLD_SPACE
         rayPos += rayDir * stepLength;
         
         vec4 offset = globalData[0].pMatrix * vec4(rayPos, 1.0);
         offset.xyz /= offset.w;
-        vec2 uvPos = offset.xy * 0.5 + 0.5;
+        uvPos = offset.xy * 0.5 + 0.5;
+#else
+        uvPos += uvDir * stepLength;
+        rayPos += rayDir * stepLength / stepPosLength;
+#endif
+        if (uvPos.x < 0.0 || uvPos.x > 1.0 || uvPos.y < 0.0 || uvPos.y > 1.0)
+            continue;
 
         ivec2 stepPixel = ivec2(uvPos * vec2(resolution));
         float stepDepth = texelFetch(depthTexture, stepPixel, 0).r;
@@ -108,8 +132,7 @@ void main() {
         float depthDelta = rayDepth - stepLinearDepth;
 
         // Check if the camera can't "see" the ray (ray depth must be larger than the camera depth, so positive depth_delta)
-        if (depthDelta > 0.0 && depthDelta < pushConstants.thickness &&
-            depthDelta > pushConstants.thickness * 0.25) {
+        if (depthDelta > 0.0 && depthDelta < depthThickness && depthDelta < 0.5 * rayLength) {
             // Mark as occluded
             occlusion = 1.0;
             resultDelta = depthDelta;
@@ -126,9 +149,5 @@ void main() {
     }
 
     imageStore(image, pixel, vec4(1.0 - occlusion, 0.0,0.0,0.0));
-    //imageStore(image, pixel, vec4(float(resultStep) / 2, resultDelta, resultUV - texCoord));
-    // imageStore(image, pixel, vec4(float(resultStep) / 2, 0.0,0.0,0.0));
-    // imageStore(image, pixel, vec4(float(resultDelta) * 1000.0, 0.0,0.0,0.0));
-    //imageStore(image, pixel, vec4(rayDir * 0.5 + 0.5,0.0));
 
 }

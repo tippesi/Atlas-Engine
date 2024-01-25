@@ -28,7 +28,7 @@ namespace Atlas {
 
             static void Resume();
 
-            static Ref<AudioStream> CreateStream(ResourceHandle<AudioData> data);
+            static Ref<AudioStream> CreateStream(ResourceHandle<AudioData> data, float volume = 1.0f, bool loop = false);
 
             static void Update();
 

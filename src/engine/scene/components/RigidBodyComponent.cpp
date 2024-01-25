@@ -8,33 +8,71 @@ namespace Atlas {
 
             void RigidBodyComponent::SetMatrix(glm::mat4 matrix) {
 
-                assert(physicsWorld != nullptr && "Physics world is invalid");
-
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
                 physicsWorld->SetBodyMatrix(bodyId, matrix);
 
             }
 
             mat4 RigidBodyComponent::GetMatrix() {
 
-                assert(physicsWorld != nullptr && "Physics world is invalid");
-
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
                 return physicsWorld->GetBodyMatrix(bodyId);
+
+            }
+
+            void RigidBodyComponent::SetMotionQuality(Physics::MotionQuality quality) {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                physicsWorld->SetMotionQuality(bodyId, quality);
+
+            }
+
+            Physics::MotionQuality RigidBodyComponent::GetMotionQuality() {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                return physicsWorld->GetMotionQuality(bodyId);
 
             }
 
             void RigidBodyComponent::SetLinearVelocity(glm::vec3 velocity) {
 
-                assert(physicsWorld != nullptr && "Physics world is invalid");
-
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
                 physicsWorld->SetLinearVelocity(bodyId, velocity);
 
             }
 
             vec3 RigidBodyComponent::GetLinearVelocity() {
 
-                assert(physicsWorld != nullptr && "Physics world is invalid");
-
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
                 return physicsWorld->GetLinearVelocity(bodyId);
+
+            }
+
+            void RigidBodyComponent::SetRestitution(float restitution) {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                physicsWorld->SetRestitution(bodyId, restitution);
+
+            }
+
+            float RigidBodyComponent::GetRestitution() {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                return physicsWorld->GetRestitution(bodyId);
+
+            }
+
+            void RigidBodyComponent::SetFriction(float friction) {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                physicsWorld->SetFriction(bodyId, friction);
+
+            }
+
+            float RigidBodyComponent::GetFriction() {
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                return physicsWorld->GetFriction(bodyId);
 
             }
 
@@ -46,8 +84,10 @@ namespace Atlas {
 
                 this->physicsWorld = physicsWorld;
 
-                bodyId = physicsWorld->CreateBody(shape, layer, transformComponent.globalMatrix);
-                assert(!bodyId.IsInvalid() && "Body id is invalid");
+
+                bodyId = physicsWorld->CreateBody(shape, layer, Physics::MotionQuality::Discrete,
+                    transformComponent.globalMatrix);
+                AE_ASSERT(!bodyId.IsInvalid() && "Body id is invalid");
 
             }
 

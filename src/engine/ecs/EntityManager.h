@@ -70,13 +70,13 @@ namespace Atlas {
              * on the maximum number of entities created. For
              * now it will not shrink.
              */
-            size_t Size();
+            size_t Size() const;
 
             /**
              * Returns the number of entities which are alive.
              * @return The number of entities which are alive.
              */
-            size_t Alive();
+            size_t Alive() const;
 
             /**
              * Creates a component and associates it with an entity.

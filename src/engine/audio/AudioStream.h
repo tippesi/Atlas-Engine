@@ -23,7 +23,7 @@ namespace Atlas {
         public:
             AudioStream()  { channelVolume.fill(1.0f); }
 
-            explicit AudioStream(ResourceHandle<AudioData> data) : data(data) { channelVolume.fill(1.0f); }
+            explicit AudioStream(ResourceHandle<AudioData> data, float volume, bool loop = false);
 
             AudioStream& operator=(const AudioStream& that) = delete;
 
@@ -57,6 +57,8 @@ namespace Atlas {
 
             bool loop = false;
 
+            ResourceHandle<AudioData> data;
+
         private:
             double progress = 0.0;
 
@@ -66,8 +68,6 @@ namespace Atlas {
             bool pause = false;
 
             std::array<float, 8> channelVolume;
-
-            ResourceHandle<AudioData> data;
 
             mutable std::mutex mutex;
 

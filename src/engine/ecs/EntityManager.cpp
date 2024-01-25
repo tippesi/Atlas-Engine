@@ -69,13 +69,13 @@ namespace Atlas {
 
         }
 
-        size_t EntityManager::Size() {
+        size_t EntityManager::Size() const {
 
             return entities.size();
 
         }
 
-        size_t EntityManager::Alive() {
+        size_t EntityManager::Alive() const {
 
             return entities.size() - destroyed.size();
 
