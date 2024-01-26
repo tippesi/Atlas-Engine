@@ -30,23 +30,23 @@ void main() {
 
     // Don't use the global inverse matrices here, since we also render the cubemap with this shader
     vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
-    vec3 worldPos = vec3(globalData[0].ivMatrix * vec4(viewPos, 1.0));
+    vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
 
-    vec3 cubemapCoord = normalize(worldPos - globalData[0].cameraLocation.xyz);
+    vec3 cubemapCoord = normalize(worldPos - globalData.cameraLocation.xyz);
 
     vec3 color = textureLod(skyCubemap, cubemapCoord, 0).rgb;
 
-    vec3 cameraLocationDiff = globalData[0].cameraLocation.xyz - pushConstants.cameraLocationLast.xyz;
+    vec3 cameraLocationDiff = globalData.cameraLocation.xyz - pushConstants.cameraLocationLast.xyz;
 
     // Calculate velocity
-    vec3 ndcCurrent = (globalData[0].pMatrix * vec4(viewPos, 1.0)).xyw;
-    vec3 ndcLast = (globalData[0].pvMatrixLast * vec4(worldPos - cameraLocationDiff, 1.0)).xyw;
+    vec3 ndcCurrent = (globalData.pMatrix * vec4(viewPos, 1.0)).xyw;
+    vec3 ndcLast = (globalData.pvMatrixLast * vec4(worldPos - cameraLocationDiff, 1.0)).xyw;
 
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globalData[0].jitterLast;
-    ndcC -= globalData[0].jitterCurrent;
+    ndcL -= globalData.jitterLast;
+    ndcC -= globalData.jitterCurrent;
 
     vec2 velocity = (ndcL - ndcC) * 0.5;
 

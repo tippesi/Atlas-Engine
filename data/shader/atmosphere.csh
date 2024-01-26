@@ -102,14 +102,14 @@ void main() {
 
 #ifndef ENVIRONMENT_PROBE
     // Calculate velocity
-    vec3 ndcCurrent = (globalData[0].pMatrix * vec4(viewPos, 1.0)).xyw;
-    vec3 ndcLast = (globalData[0].pvMatrixLast * vec4(worldPos, 1.0)).xyw;
+    vec3 ndcCurrent = (globalData.pMatrix * vec4(viewPos, 1.0)).xyw;
+    vec3 ndcLast = (globalData.pvMatrixLast * vec4(worldPos, 1.0)).xyw;
 
     vec2 ndcL = ndcLast.xy / ndcLast.z;
     vec2 ndcC = ndcCurrent.xy / ndcCurrent.z;
 
-    ndcL -= globalData[0].jitterLast;
-    ndcC -= globalData[0].jitterCurrent;
+    ndcL -= globalData.jitterLast;
+    ndcC -= globalData.jitterCurrent;
 
     vec2 velocity = (ndcL - ndcC) * 0.5;
 

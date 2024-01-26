@@ -90,10 +90,10 @@ void main() {
             vec3 midCD = vec3(gl_in[2].gl_Position + gl_in[3].gl_Position) / 2.0;
             vec3 midDA = vec3(gl_in[3].gl_Position + gl_in[0].gl_Position) / 2.0;
             
-            float distanceAB = distance(globalData[0].cameraLocation.xyz, midAB);
-            float distanceBC = distance(globalData[0].cameraLocation.xyz, midBC);
-            float distanceCD = distance(globalData[0].cameraLocation.xyz, midCD);
-            float distanceDA = distance(globalData[0].cameraLocation.xyz, midDA);
+            float distanceAB = distance(globalData.cameraLocation.xyz, midAB);
+            float distanceBC = distance(globalData.cameraLocation.xyz, midBC);
+            float distanceCD = distance(globalData.cameraLocation.xyz, midCD);
+            float distanceDA = distance(globalData.cameraLocation.xyz, midDA);
             
             gl_TessLevelOuter[AB] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceAB));
             gl_TessLevelOuter[BC] = mix(1.0, Uniforms.maxTessellationLevel, GetTessLevel(distanceBC));

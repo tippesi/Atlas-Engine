@@ -111,12 +111,12 @@ namespace Atlas {
 
             SetUniforms(scene, camera);
 
-            commandList->BindBuffer(globalUniformBuffer, 0, 3);
+            commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(triangleBuffers, 0, 1);
             if (images.size())
-                commandList->BindSampledImages(images, 0, 4);
+                commandList->BindSampledImages(images, 0, 3);
 
             if (device->support.hardwareRayTracing) {
                 commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
@@ -410,11 +410,11 @@ namespace Atlas {
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
             PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
 
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 0, 3);
+            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindBuffers(triangleBuffers, 0, 1);
-            commandList->BindSampledImages(images, 0, 4);
+            commandList->BindSampledImages(images, 0, 3);
 
             if (device->support.hardwareRayTracing) {
                 commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
@@ -893,15 +893,11 @@ namespace Atlas {
                         .descriptorCount = 8192, .bindless = true
                     },
                     {
-                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 4, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                         .descriptorCount = 16384, .bindless = true
                     }
                 },
-                .bindingCount = 5
+                .bindingCount = 4
             };
             globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 
@@ -1141,7 +1137,7 @@ namespace Atlas {
             renderList.NewMainPass();
 
             scene->GetRenderList(camera->frustum, renderList);
-            renderList.Update(camera);
+            renderList.Update(camera->GetLocation());
 
             auto lightEntities = scene->GetSubset<LightComponent>();
             std::vector<Lighting::Light*> lights;
@@ -1169,7 +1165,7 @@ namespace Atlas {
 
                     renderList.NewShadowPass(light, i);
                     scene->GetRenderList(frustum, renderList);
-                    renderList.Update(camera);
+                    renderList.Update(camera->GetLocation());
                 }
 
             }

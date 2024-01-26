@@ -56,7 +56,7 @@ namespace Atlas {
 
         void Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent);
 
-        void Update(Camera* camera);
+        void Update(vec3 cameraLocation);
 
         void FillBuffers();
 

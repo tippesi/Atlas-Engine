@@ -144,7 +144,7 @@ void main() {
 
     vec3 viewPosition = ConvertDepthToViewSpace(depth, texCoord);
 
-    vec3 worldDirection = normalize(vec3(globalData[0].ivMatrix * vec4(viewPosition, 0.0)));
+    vec3 worldDirection = normalize(vec3(globalData.ivMatrix * vec4(viewPosition, 0.0)));
 
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 

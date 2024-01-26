@@ -102,9 +102,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Update(Camera* camera) {
-
-        auto cameraLocation = camera->GetLocation();
+    void RenderList::Update(vec3 cameraLocation) {
 
         auto& pass = passes.back();
         auto type = pass.type;

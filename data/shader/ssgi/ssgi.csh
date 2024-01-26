@@ -73,9 +73,9 @@ void main() {
 
         vec2 recontructTexCoord = (2.0 * vec2(pixel) + pixelOffset + vec2(0.5)) / (2.0 * vec2(resolution));
         vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
-        vec3 worldPos = vec3(globalData[0].ivMatrix * vec4(viewPos, 1.0));
-        vec3 viewVec = vec3(globalData[0].ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(globalData[0].ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
+        vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
+        vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
@@ -122,9 +122,9 @@ void main() {
                 bool hit = false;
                 for (uint i = 0; i < uniforms.sampleCount; i++) {
 
-                    vec3 rayPos = vec3(globalData[0].vMatrix * vec4(ray.origin + float(i) * ray.direction * stepSize, 1.0));
+                    vec3 rayPos = vec3(globalData.vMatrix * vec4(ray.origin + float(i) * ray.direction * stepSize, 1.0));
 
-                    vec4 offset = globalData[0].pMatrix * vec4(rayPos, 1.0);
+                    vec4 offset = globalData.pMatrix * vec4(rayPos, 1.0);
                     offset.xyz /= offset.w;
                     vec2 uvPos = offset.xy * 0.5 + 0.5;
 
@@ -138,7 +138,7 @@ void main() {
                     float rayDepth = -rayPos.z;
 
                     float depthDelta = rayDepth - stepLinearDepth;
-                    vec3 worldNorm = normalize(vec3(globalData[0].ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
+                    vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
 
                     if (depthDelta > 0.0 && depthDelta < rayLength) {
                         float NdotL = dot(worldNorm, -ray.direction);

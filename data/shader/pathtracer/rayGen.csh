@@ -36,7 +36,7 @@ void main() {
         vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
 #else
-        vec2 coord = globalData[0].jitterCurrent * 0.25 + (vec2(pixel) + vec2(0.5)) /
+        vec2 coord = globalData.jitterCurrent * 0.25 + (vec2(pixel) + vec2(0.5)) /
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
 #endif
         
@@ -45,8 +45,8 @@ void main() {
         ray.ID = Flatten2D(pixel, Uniforms.resolution) * int(gl_NumWorkGroups.z) + int(gl_WorkGroupID.z);
         
         ray.direction = normalize(Uniforms.origin.xyz + Uniforms.right.xyz * coord.x 
-            + Uniforms.bottom.xyz * coord.y - globalData[0].cameraLocation.xyz);
-        ray.origin = globalData[0].cameraLocation.xyz;
+            + Uniforms.bottom.xyz * coord.y - globalData.cameraLocation.xyz);
+        ray.origin = globalData.cameraLocation.xyz;
 
         ray.hitID = 0;
 

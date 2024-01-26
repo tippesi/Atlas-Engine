@@ -15,7 +15,7 @@ void App::LoadContent() {
 
     music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
     audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
+    // static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
 
     for (uint32_t i = 0; i < 10000; i++) {
         //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
