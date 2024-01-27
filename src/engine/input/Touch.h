@@ -23,8 +23,6 @@ namespace Atlas {
 
             void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Scene::Components::CameraComponent& camera);
-
             float sensibility = 1.5f;
             float speed = 7.0f;
             float reactivity = 6.0f;
@@ -44,8 +42,11 @@ namespace Atlas {
             struct Finger leftFinger = { vec2(0.0f), -1 };
             struct Finger rightFinger = { vec2(0.0f), -1 };
 
-            vec3 location = vec3(0.0f);
-            vec2 rotation = vec2(0.0f);
+            vec3 linearVelocity = vec3(0.0f);
+            vec2 angularVelocity = vec2(0.0f);
+
+            vec3 interpolatedLinearVelocity = vec3(0.0f);
+            vec2 interpolatedAngularVelocity = vec2(0.0f);
 
             int32_t eventHandle = -1;
 

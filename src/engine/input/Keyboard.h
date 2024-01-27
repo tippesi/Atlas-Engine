@@ -23,8 +23,6 @@ namespace Atlas {
 
             void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Scene::Components::CameraComponent& camera);
-
             float speed = 7.0f;
             float reactivity = 6.0f;
 
@@ -35,7 +33,9 @@ namespace Atlas {
 
             void DeepCopy(const KeyboardHandler& that);
 
-            vec3 location = vec3(0.0f);
+            vec3 linearVelocity = vec3(0.0f);
+            vec3 interpolatedLinearVelocity = vec3(0.0f);
+
             vec3 movement = vec3(0.0f);
 
             int32_t eventHandle = -1;

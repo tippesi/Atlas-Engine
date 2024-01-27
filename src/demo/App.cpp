@@ -40,9 +40,9 @@ void App::LoadContent() {
     auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
-    controllerHandler = Atlas::Input::ControllerHandler(camera, 1.5f, 5.0f, 10.0f, 5000.0f);
+    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 8.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 5.0f);
+    controllerHandler = Atlas::Input::ControllerHandler(camera, 1.0f, 5.0f, 10.0f, 5000.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -150,12 +150,10 @@ void App::Update(float deltaTime) {
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(camera);
     }
 
     if(moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(camera);
     }
 
     if (sceneSelection == SPONZA) {
@@ -701,6 +699,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Physics")) {
+                ImGui::Checkbox("Pause simulation##Phyiscs", &scene->physicsWorld->pauseSimulation);
                 ImGui::Text("Sphere body");
                 ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
                 ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
@@ -1260,10 +1259,6 @@ bool App::LoadScene() {
 
     scene->Timestep(1.0f);
     scene->Update();
-
-    // Reset input handlers
-    keyboardHandler.Reset(camera);
-    mouseHandler.Reset(camera);
 
     Atlas::Clock::ResetAverage();
 

@@ -164,12 +164,10 @@ void App::Update(float deltaTime) {
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(camera);
     }
 
     if(moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(camera);
     }
 
     camera.UpdateView();
@@ -322,12 +320,6 @@ bool App::LoadScene() {
     }
 
     scene->Timestep(1.0f);
-
-    auto& camera = cameraEntity.GetComponent<CameraComponent>();
-
-    // Reset input handlers
-    keyboardHandler.Reset(camera);
-    mouseHandler.Reset(camera);
 
     Atlas::Clock::ResetAverage();
 

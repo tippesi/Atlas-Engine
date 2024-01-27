@@ -24,8 +24,6 @@ namespace Atlas {
 
             void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Scene::Components::CameraComponent& camera);
-
             bool IsControllerAvailable();
 
             float sensibility = 1.5f;
@@ -47,8 +45,11 @@ namespace Atlas {
 
             float speedIncrease = 0.0f;
 
-            vec3 location = vec3(0.0f);
-            vec2 rotation = vec3(0.0f);
+            vec3 linearVelocity = vec3(0.0f);
+            vec2 angularVelocity = vec2(0.0f);
+
+            vec3 interpolatedLinearVelocity = vec3(0.0f);
+            vec2 interpolatedAngularVelocity = vec2(0.0f);
 
             int32_t controllerDevice = -1;
 

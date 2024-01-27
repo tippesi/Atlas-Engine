@@ -23,8 +23,6 @@ namespace Atlas {
 
             void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Scene::Components::CameraComponent& camera);
-
             void SetActivationButton(uint8_t mouseButton);
 
             void HideMouse();
@@ -48,7 +46,8 @@ namespace Atlas {
             bool activationButtonDown = false;
             uint8_t activationButton = AE_MOUSEBUTTON_LEFT;
 
-            vec2 rotation = vec2(0.0f);
+            vec2 angularVelocity = vec2(0.0f);
+            vec2 interpolatedAngularVelocity = vec2(0.0f);
 
             int32_t mouseMotionEventHandle = -1;
             int32_t mouseButtonEventHandle = -1;
