@@ -35,7 +35,7 @@ namespace Atlas {
                 vec4 vignetteColor;
             };
 
-            void SetUniforms(const Scene::Components::CameraComponent& camera, Ref<Scene::Scene> scene);
+            void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);
 
             PipelineConfig GetMainPipelineConfig();
 

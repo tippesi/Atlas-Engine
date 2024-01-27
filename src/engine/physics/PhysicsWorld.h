@@ -74,7 +74,7 @@ namespace Atlas {
             Ref<JPH::ContactListener> contactListener = nullptr;
 
             friend class Scene::Scene;
-            friend class Scene::Components::RigidBodyComponent;
+            friend class RigidBodyComponent;
 
         };
 

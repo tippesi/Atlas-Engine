@@ -24,7 +24,7 @@ namespace Atlas {
 
         }
 
-        void TerrainNode::Update(const Scene::Components::CameraComponent& camera, std::vector<float>& LoDDistances,
+        void TerrainNode::Update(const CameraComponent& camera, std::vector<float>& LoDDistances,
             std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
             auto calcHeight = 0.0f;

@@ -45,7 +45,7 @@ namespace Atlas {
 
         }
 
-        void PointLight::Update(const Scene::Components::CameraComponent& camera) {
+        void PointLight::Update(const CameraComponent& camera) {
 
             if (mobility == AE_MOVABLE_LIGHT && shadow) {
                 shadow->Update();

@@ -49,7 +49,7 @@ namespace Atlas {
              * can't increase the level of detail of the specific nodes. The storage->unusedCells list contains
              * all the cells which aren't needed any more at the moment. (Caching might be needed)
              */
-            void Update(const Scene::Components::CameraComponent& camera);
+            void Update(const CameraComponent& camera);
 
             /**
              * Updates the list of nodes to render.

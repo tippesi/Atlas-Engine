@@ -30,7 +30,7 @@ namespace Atlas {
 
         }
 
-        void Ocean::Update(const Scene::Components::CameraComponent& camera, float deltaTime) {
+        void Ocean::Update(const CameraComponent& camera, float deltaTime) {
 
             if (!enable) return;
 

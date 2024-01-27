@@ -15,14 +15,14 @@ namespace Atlas {
 
             ControllerHandler(const ControllerHandler& that);
 
-            ControllerHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity,
+            ControllerHandler(CameraComponent& camera, float sensibility, float speed, float reactivity,
                     float threshold, int32_t device = -1);
 
             ~ControllerHandler();
 
             ControllerHandler& operator=(const ControllerHandler& that);
 
-            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
+            void Update(CameraComponent& camera, float deltaTime);
 
             bool IsControllerAvailable();
 

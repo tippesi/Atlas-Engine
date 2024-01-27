@@ -32,7 +32,7 @@ void App::LoadContent() {
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22, 5);
+    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 

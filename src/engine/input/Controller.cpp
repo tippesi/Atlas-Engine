@@ -19,7 +19,7 @@ namespace Atlas {
 
         }
 
-        ControllerHandler::ControllerHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity,
+        ControllerHandler::ControllerHandler(CameraComponent& camera, float sensibility, float speed, float reactivity,
                 float threshold, int32_t device) :
                 sensibility(sensibility), speed(speed), reactivity(reactivity),
                 threshold(threshold), controllerDevice(device) {
@@ -54,7 +54,7 @@ namespace Atlas {
 
         }
 
-        void ControllerHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
+        void ControllerHandler::Update(CameraComponent& camera, float deltaTime) {
 
             if (controllerDevice > -1) {
 

@@ -54,7 +54,7 @@ namespace Atlas {
 
         Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
 
-        void Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent);
+        void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 
         void Update(vec3 cameraLocation);
 

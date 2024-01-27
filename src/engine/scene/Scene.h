@@ -78,7 +78,7 @@ namespace Atlas {
 
             std::vector<Material*> GetMaterials();
 
-            Components::CameraComponent& GetMainCamera();
+            CameraComponent& GetMainCamera();
 
             bool HasMainCamera() const;
 
@@ -151,7 +151,7 @@ namespace Atlas {
             friend class SceneSerializer;
             friend class SpacePartitioning;
             friend class RayTracing::RayTracingWorld;
-            friend class Components::MeshComponent;
+            friend class MeshComponent;
             friend RenderList;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;

@@ -26,7 +26,7 @@ namespace Atlas {
 
         }
 
-        void VolumetricClouds::GetShadowMatrices(const Scene::Components::CameraComponent& camera, glm::vec3 lightDirection,
+        void VolumetricClouds::GetShadowMatrices(const CameraComponent& camera, glm::vec3 lightDirection,
             glm::mat4 &viewMatrix, glm::mat4 &projectionMatrix) {
 
             auto cameraLocation = camera.GetLocation();

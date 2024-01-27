@@ -18,7 +18,7 @@ namespace Atlas {
 
         }
 
-        TouchHandler::TouchHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity)
+        TouchHandler::TouchHandler(CameraComponent& camera, float sensibility, float speed, float reactivity)
             : sensibility(sensibility), speed(speed), reactivity(reactivity) {
 
             RegisterEvent();
@@ -43,7 +43,7 @@ namespace Atlas {
 
         }
 
-        void TouchHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
+        void TouchHandler::Update(CameraComponent& camera, float deltaTime) {
 
             linearVelocity = 2.0f * camera.direction * -leftFinger.position.y * deltaTime * speed;
             linearVelocity += 2.0f * camera.right * leftFinger.position.x * deltaTime * speed;

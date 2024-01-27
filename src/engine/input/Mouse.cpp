@@ -21,7 +21,7 @@ namespace Atlas {
 
         }
 
-        MouseHandler::MouseHandler(Scene::Components::CameraComponent& camera, float sensibility, float reactivity, bool hideMouse) :
+        MouseHandler::MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse) :
                 sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
             RegisterEvents();
@@ -51,7 +51,7 @@ namespace Atlas {
 
         }
 
-        void MouseHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
+        void MouseHandler::Update(CameraComponent& camera, float deltaTime) {
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 

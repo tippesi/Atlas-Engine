@@ -244,7 +244,7 @@ namespace Atlas {
 
         }
 
-        Components::CameraComponent& Scene::GetMainCamera() {           
+        CameraComponent& Scene::GetMainCamera() {           
 
             return mainCameraEntity.GetComponent<CameraComponent>();
 
@@ -259,7 +259,7 @@ namespace Atlas {
         void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
-            auto subset = entityManager.GetSubset<Components::MeshComponent>();
+            auto subset = entityManager.GetSubset<MeshComponent>();
             for (auto& entity : subset) {
                 auto& comp = subset.Get(entity);
 

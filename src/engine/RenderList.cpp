@@ -80,7 +80,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent) {
+    void RenderList::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToEntityMap;
@@ -144,7 +144,7 @@ namespace Atlas {
             if (hasImpostor) {
                 for (auto ecsEntity : entities) {
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
                     auto distance = glm::distance2(
                         vec3(transformComponent.globalMatrix[3]),
                         cameraLocation);
@@ -167,7 +167,7 @@ namespace Atlas {
             else {
                 for (auto ecsEntity : entities) {
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
                     currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
                         lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));

@@ -19,7 +19,7 @@ namespace Atlas {
                 VegetationHelper();
 
                 void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
-                    const Scene::Components::CameraComponent& camera, Graphics::CommandList* commandList);
+                    const CameraComponent& camera, Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetCommandBuffer();
 

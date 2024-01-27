@@ -15,13 +15,13 @@ namespace Atlas {
 
             KeyboardHandler(const KeyboardHandler& that);
 
-            KeyboardHandler(Scene::Components::CameraComponent& camera, float speed, float reactivity);
+            KeyboardHandler(CameraComponent& camera, float speed, float reactivity);
 
             ~KeyboardHandler();
 
             KeyboardHandler& operator=(const KeyboardHandler& that);
 
-            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
+            void Update(CameraComponent& camera, float deltaTime);
 
             float speed = 7.0f;
             float reactivity = 6.0f;

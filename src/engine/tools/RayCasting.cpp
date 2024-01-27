@@ -12,7 +12,7 @@ namespace Atlas {
         }
 
         RayIntersection RayCasting::MouseRayIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
-            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
+            const CameraComponent& camera, vec2 mouseOffset) {
 
             auto intersection = MouseRayTerrainIntersection(viewport, 
                 terrain, camera, mouseOffset);
@@ -22,7 +22,7 @@ namespace Atlas {
         }
 
         RayIntersection RayCasting::MouseRayTerrainIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
-            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
+            const CameraComponent& camera, vec2 mouseOffset) {
 
             const float linearStepLength = 1.0f;
 
@@ -95,7 +95,7 @@ namespace Atlas {
         }
 
         Volume::Ray RayCasting::CalculateRay(Ref<Viewport>& viewport,
-            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
+            const CameraComponent& camera, vec2 mouseOffset) {
 
             Volume::Ray ray;
 

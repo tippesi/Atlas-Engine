@@ -32,7 +32,7 @@ namespace Atlas {
             }
 
             void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation,
-                const Scene::Components::CameraComponent& camera, Graphics::CommandList* commandList) {
+                const CameraComponent& camera, Graphics::CommandList* commandList) {
 
                 struct PushConstants {
                     int32_t instanceCount;

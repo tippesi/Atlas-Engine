@@ -30,7 +30,7 @@ namespace Atlas {
             float bottomLoDStitch = 1.0f;
 
         protected:
-            void Update(const Scene::Components::CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
+            void Update(const CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
                 std::vector<OceanNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
             std::vector<OceanNode> children;

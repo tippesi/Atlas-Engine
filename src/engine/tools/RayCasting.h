@@ -23,10 +23,10 @@ namespace Atlas {
             RayCasting();
 
             RayIntersection MouseRayIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
-                const Scene::Components::CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
+                const CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
 
             RayIntersection MouseRayTerrainIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
-                const Scene::Components::CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
+                const CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
 
         private:
             RayIntersection BinarySearch(Volume::Ray ray, Ref<Terrain::Terrain>& terrain, float start,
@@ -37,7 +37,7 @@ namespace Atlas {
             bool IsUnderground(vec3 position, Ref<Terrain::Terrain>& terrain);
 
             Volume::Ray CalculateRay(Ref<Viewport>& viewport, 
-                const Scene::Components::CameraComponent& camera, vec2 mouseOffset);
+                const CameraComponent& camera, vec2 mouseOffset);
 
             void MouseEventHandler(Events::MouseMotionEvent event);
 

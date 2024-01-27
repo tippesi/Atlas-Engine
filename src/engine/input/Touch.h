@@ -15,13 +15,13 @@ namespace Atlas {
 
             TouchHandler(const TouchHandler& that);
 
-            TouchHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity);
+            TouchHandler(CameraComponent& camera, float sensibility, float speed, float reactivity);
 
             ~TouchHandler();
 
             TouchHandler& operator=(const TouchHandler& that);
 
-            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
+            void Update(CameraComponent& camera, float deltaTime);
 
             float sensibility = 1.5f;
             float speed = 7.0f;

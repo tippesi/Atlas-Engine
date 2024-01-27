@@ -15,13 +15,13 @@ namespace Atlas {
 
             MouseHandler(const MouseHandler& that);
 
-            MouseHandler(Scene::Components::CameraComponent& camera, float sensibility, float reactivity, bool hideMouse = false);
+            MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse = false);
 
             ~MouseHandler();
 
             MouseHandler& operator=(const MouseHandler& that);
 
-            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
+            void Update(CameraComponent& camera, float deltaTime);
 
             void SetActivationButton(uint8_t mouseButton);
 

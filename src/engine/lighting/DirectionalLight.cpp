@@ -96,7 +96,7 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::Update(const Scene::Components::CameraComponent& camera) {
+        void DirectionalLight::Update(const CameraComponent& camera) {
 
             if (shadow != nullptr) {
 
@@ -133,7 +133,7 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, const Scene::Components::CameraComponent& camera) {
+        void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, const CameraComponent& camera) {
 
             auto cameraLocation = camera.GetLocation();
 

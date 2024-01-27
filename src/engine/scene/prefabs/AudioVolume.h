@@ -17,16 +17,16 @@ namespace Atlas {
                 AudioVolume(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Audio::AudioData> audioData,
                     Volume::AABB aabb, float falloffFactor = 1.0f) : Entity(entity, manager) {
 
-                    AddComponent<Components::AudioVolumeComponent>(audioData, aabb, falloffFactor);
-                    AddComponent<Components::TransformComponent>(mat4(1.0f), true);
+                    AddComponent<AudioVolumeComponent>(audioData, aabb, falloffFactor);
+                    AddComponent<TransformComponent>(mat4(1.0f), true);
 
                 }
 
                 AudioVolume(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Audio::AudioData> audioData,
                     Volume::AABB aabb, mat4 transform, float falloffFactor = 1.0f) : Entity(entity, manager) {
 
-                    AddComponent<Components::AudioVolumeComponent>(audioData, aabb, falloffFactor);
-                    AddComponent<Components::TransformComponent>(transform, true);
+                    AddComponent<AudioVolumeComponent>(audioData, aabb, falloffFactor);
+                    AddComponent<TransformComponent>(transform, true);
 
                 }
 

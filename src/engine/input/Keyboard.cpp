@@ -22,7 +22,7 @@ namespace Atlas {
 
         }
 
-        KeyboardHandler::KeyboardHandler(Scene::Components::CameraComponent& camera, float speed, float reactivity) :
+        KeyboardHandler::KeyboardHandler(CameraComponent& camera, float speed, float reactivity) :
                 speed(speed), reactivity(reactivity) {
 
             RegisterEvent();
@@ -47,7 +47,7 @@ namespace Atlas {
 
         }
 
-        void KeyboardHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
+        void KeyboardHandler::Update(CameraComponent& camera, float deltaTime) {
 
             linearVelocity = camera.direction * movement.x * deltaTime * speed;
             linearVelocity += camera.right * movement.y * deltaTime * speed;

@@ -163,7 +163,7 @@ namespace Atlas {
             }
         }
 
-        void ExampleRenderer::Render(const Scene::Components::CameraComponent& camera) {
+        void ExampleRenderer::Render(const CameraComponent& camera) {
 
             auto swapChain = device->swapChain;
             if (!swapChain->isComplete) return;

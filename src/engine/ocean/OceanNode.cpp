@@ -43,7 +43,7 @@ namespace Atlas {
 
         }
 
-        void OceanNode::Update(const Scene::Components::CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
+        void OceanNode::Update(const CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
             std::vector<OceanNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
             float calcHeight = 0.0f;

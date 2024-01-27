@@ -60,7 +60,7 @@ namespace Atlas {
 
         }
 
-        void Terrain::Update(const Scene::Components::CameraComponent& camera) {
+        void Terrain::Update(const CameraComponent& camera) {
 
             leafList.clear();
 

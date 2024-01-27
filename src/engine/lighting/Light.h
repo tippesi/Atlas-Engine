@@ -24,7 +24,7 @@ namespace Atlas {
 
             virtual void RemoveVolumetric() = 0;
 
-            virtual void Update(const Scene::Components::CameraComponent& camera) = 0;
+            virtual void Update(const CameraComponent& camera) = 0;
 
             inline Shadow* GetShadow() {
                 return shadow;
