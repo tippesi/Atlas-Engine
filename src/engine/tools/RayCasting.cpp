@@ -11,18 +11,18 @@ namespace Atlas {
 
         }
 
-        RayIntersection RayCasting::MouseRayIntersection(Viewport* viewport, Camera* camera,
-            Terrain::Terrain* terrain, vec2 mouseOffset) {
+        RayIntersection RayCasting::MouseRayIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
+            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
 
             auto intersection = MouseRayTerrainIntersection(viewport, 
-                camera, terrain, mouseOffset);
+                terrain, camera, mouseOffset);
 
             return intersection;
 
         }
 
-        RayIntersection RayCasting::MouseRayTerrainIntersection(Viewport* viewport, Camera* camera,
-                Terrain::Terrain* terrain, vec2 mouseOffset) {
+        RayIntersection RayCasting::MouseRayTerrainIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
+            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
 
             const float linearStepLength = 1.0f;
 
@@ -33,7 +33,7 @@ namespace Atlas {
             vec3 position = ray.origin;
             vec3 nextPosition;
 
-            while (distance < camera->farPlane) {
+            while (distance < camera.farPlane) {
                 nextPosition = ray.origin + ray.direction * distance;
                 if (!IsUnderground(position, terrain) && IsUnderground(nextPosition, terrain)) {
                     return BinarySearch(ray, terrain, distance - linearStepLength, distance, 10);
@@ -50,7 +50,7 @@ namespace Atlas {
 
         }
 
-        RayIntersection RayCasting::BinarySearch(Volume::Ray ray, Terrain::Terrain* terrain, float start,
+        RayIntersection RayCasting::BinarySearch(Volume::Ray ray, Ref<Terrain::Terrain>& terrain, float start,
                 float finish, int count) {
 
             float half = start + (finish - start) / 2.0f;
@@ -73,7 +73,7 @@ namespace Atlas {
 
         }
 
-        bool RayCasting::IntersectionInRange(Volume::Ray ray, Terrain::Terrain* terrain, float start, float finish) {
+        bool RayCasting::IntersectionInRange(Volume::Ray ray, Ref<Terrain::Terrain>& terrain, float start, float finish) {
 
             auto startPosition = ray.origin + ray.direction * start;
             auto finishPosition = ray.origin + ray.direction * finish;
@@ -86,7 +86,7 @@ namespace Atlas {
 
         }
 
-        bool RayCasting::IsUnderground(vec3 position, Terrain::Terrain* terrain) {
+        bool RayCasting::IsUnderground(vec3 position, Ref<Terrain::Terrain>& terrain) {
 
             float height = terrain->GetHeight(position.x, position.z);
 
@@ -94,7 +94,8 @@ namespace Atlas {
 
         }
 
-        Volume::Ray RayCasting::CalculateRay(Viewport *viewport, Camera *camera, vec2 mouseOffset) {
+        Volume::Ray RayCasting::CalculateRay(Ref<Viewport>& viewport,
+            const Scene::Components::CameraComponent& camera, vec2 mouseOffset) {
 
             Volume::Ray ray;
 

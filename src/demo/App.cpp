@@ -22,24 +22,27 @@ void App::LoadContent() {
         //audioStreams.back()->SetVolume(0.0001);
     }
 
-    renderTarget = Atlas::RenderTarget(1920, 1080);
-    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
+    renderTarget = Atlas::CreateRef<Atlas::RenderTarget>(1920, 1080);
+    pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
+
+    viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::Font("font/roboto.ttf", 22, 5);
-
-    camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
-    controllerHandler = Atlas::Input::ControllerHandler(&camera, 1.5f, 5.0f, 10.0f, 5000.0f);
+    cameraEntity = scene->CreateEntity();
+    auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
+        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+
+    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
+    controllerHandler = Atlas::Input::ControllerHandler(camera, 1.5f, 5.0f, 10.0f, 5000.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -135,26 +138,25 @@ void App::Update(float deltaTime) {
         mouseHandler.lock = false;
     }
 
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
     if (controllerHandler.IsControllerAvailable()) {
-        controllerHandler.Update(&camera, deltaTime);
+        controllerHandler.Update(camera, deltaTime);
     }
     else {
-        mouseHandler.Update(&camera, deltaTime);
-        keyboardHandler.Update(&camera, deltaTime);
+        mouseHandler.Update(camera, deltaTime);
+        keyboardHandler.Update(camera, deltaTime);
     }    
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
+        mouseHandler.Reset(camera);
     }
 
     if(moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
+        mouseHandler.Reset(camera);
     }
-
-    camera.UpdateView();
-    camera.UpdateProjection();
 
     if (sceneSelection == SPONZA) {
         auto meshEntitySubset = scene->GetSubset<MeshComponent, TransformComponent>();
@@ -235,8 +237,8 @@ void App::Update(float deltaTime) {
 
     }
 
-    scene->Update(deltaTime);
-    scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
+    scene->Timestep(deltaTime);
+    scene->Update();
 
     CheckLoadScene();
 
@@ -272,11 +274,11 @@ void App::Render(float deltaTime) {
     if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
     if (pathTrace) {
-        viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, scene.get());
+        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
+        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
     }
     else {
-        mainRenderer->RenderScene(&viewport, &renderTarget, &camera, scene.get());
+        mainRenderer->RenderScene(viewport, renderTarget, scene);
 
         auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugMotion;
 
@@ -286,29 +288,29 @@ void App::Render(float deltaTime) {
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
             if (debugAo) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->aoTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugReflection) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugClouds) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricCloudsTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugSSS) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugSSGI) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.giTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugMotion) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
-                    renderTarget.GetData(Atlas::FULL_RES)->velocityTexture.get(),
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 10.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
+                    renderTarget->GetData(Atlas::FULL_RES)->velocityTexture.get(),
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 10.0f, false, true);
             }
 
             commandList->EndRenderPass();
@@ -325,6 +327,7 @@ void App::Render(float deltaTime) {
 
         ImGui::NewFrame();
 
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
         const auto& light = directionalLight;
         const auto& volume = scene->irradianceVolume;
         const auto& ao = scene->ao;
@@ -886,17 +889,17 @@ void App::DisplayLoadingScreen(float deltaTime) {
 
     rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
 
-    mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
+    mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
         loadingTexture.get(), x, y, width, height, rotation);
 
     float textWidth, textHeight;
-    font.ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
+    font->ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
 
     x = windowSize.x / 2 - textWidth / 2;
     y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
-    viewport.Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer->textRenderer.Render(commandList, &viewport, &font,
+    viewport->Set(0, 0, windowSize.x, windowSize.y);
+    mainRenderer->textRenderer.Render(commandList, viewport, font,
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
@@ -934,6 +937,8 @@ bool App::LoadScene() {
 
     Atlas::Texture::Cubemap sky;
     directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
+
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
     scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 1400.0f;
@@ -1122,7 +1127,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
-        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
+        otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
 
@@ -1139,7 +1144,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
-        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
+        otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
 
@@ -1253,12 +1258,12 @@ bool App::LoadScene() {
         }
     }
 
-    camera.Update();
-    scene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
+    scene->Timestep(1.0f);
+    scene->Update();
 
     // Reset input handlers
-    keyboardHandler.Reset(&camera);
-    mouseHandler.Reset(&camera);
+    keyboardHandler.Reset(camera);
+    mouseHandler.Reset(camera);
 
     Atlas::Clock::ResetAverage();
 
@@ -1432,8 +1437,8 @@ void App::CheckLoadScene() {
 
 void App::SetResolution(int32_t width, int32_t height) {
 
-    renderTarget.Resize(width, height);
-    pathTraceTarget.Resize(width, height);
+    renderTarget->Resize(width, height);
+    pathTraceTarget->Resize(width, height);
 
 }
 

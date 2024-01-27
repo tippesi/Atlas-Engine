@@ -16,13 +16,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList);
+            void TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void DebugProbes(Viewport* viewport, RenderTarget* target,
-                Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList,
+            void DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
             // Used for debugging

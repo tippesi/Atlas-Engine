@@ -3,7 +3,6 @@
 #include "../System.h"
 #include "../mesh/Impostor.h"
 #include "../mesh/Mesh.h"
-#include "../Camera.h"
 
 namespace Atlas {
 

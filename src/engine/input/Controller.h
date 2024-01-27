@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../System.h"
-#include "../Camera.h"
+#include "System.h"
 #include "events/EventManager.h"
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -15,16 +15,16 @@ namespace Atlas {
 
             ControllerHandler(const ControllerHandler& that);
 
-            ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
+            ControllerHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity,
                     float threshold, int32_t device = -1);
 
             ~ControllerHandler();
 
             ControllerHandler& operator=(const ControllerHandler& that);
 
-            void Update(Camera* camera, float deltaTime);
+            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Camera* camera);
+            void Reset(Scene::Components::CameraComponent& camera);
 
             bool IsControllerAvailable();
 

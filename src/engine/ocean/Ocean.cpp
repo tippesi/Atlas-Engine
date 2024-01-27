@@ -30,7 +30,7 @@ namespace Atlas {
 
         }
 
-        void Ocean::Update(Camera* camera, float deltaTime) {
+        void Ocean::Update(const Scene::Components::CameraComponent& camera, float deltaTime) {
 
             if (!enable) return;
 
@@ -53,7 +53,7 @@ namespace Atlas {
                         node->location.y + node->sideLength) + translation
                 );
 
-                if (camera->frustum.Intersects(aabb))
+                if (camera.frustum.Intersects(aabb))
                     renderList.push_back(node);
             }
 
@@ -61,7 +61,7 @@ namespace Atlas {
                 node->CheckNeighbourLoD(LoDImage);
             }
 
-            auto cameraLocation = camera->GetLocation();
+            auto cameraLocation = camera.GetLocation();
 
             // Sort the list to render from front to back
             SortNodes(renderList, cameraLocation);

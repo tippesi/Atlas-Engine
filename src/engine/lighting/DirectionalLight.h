@@ -26,12 +26,12 @@ namespace Atlas {
 
             void RemoveVolumetric() override;
 
-            void Update(Camera* camera) override;
+            void Update(const Scene::Components::CameraComponent& camera) override;
 
             vec3 direction = vec3(0.0f, -1.0f, 0.0f);
 
         private:
-            void UpdateShadowCascade(ShadowComponent* cascade, Camera* camera);
+            void UpdateShadowCascade(ShadowComponent* cascade, const Scene::Components::CameraComponent& camera);
 
             float FrustumSplitFormula(float correction, float nearDist, float farDist, float splitIndex, float splitCount);
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 
 #include "OceanState.h"
 #include "OceanNode.h"
@@ -21,7 +20,7 @@ namespace Atlas {
             Ocean(int32_t LoDCount, float size, vec3 translation = vec3(0.0f),
                 int32_t N = 512, int32_t L = 4000);
 
-            void Update(Camera* camera, float deltaTime);
+            void Update(const Scene::Components::CameraComponent& camera, float deltaTime);
 
             /**
              * Sets the distance of a specific level of detail.

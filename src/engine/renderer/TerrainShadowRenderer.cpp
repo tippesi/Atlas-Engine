@@ -11,8 +11,7 @@ namespace Atlas {
 
         }
 
-        void TerrainShadowRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void TerrainShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->terrain)
                 return;
@@ -83,7 +82,7 @@ namespace Atlas {
                     auto center = corners[4] + 0.5f * (corners[5] - corners[4])
                         + 0.5f * (corners[6] - corners[4]);
 
-                    terrain->UpdateRenderlist(&frustum, center);
+                    terrain->UpdateRenderlist(frustum, center);
 
                     for (auto node : terrain->renderList) {
 

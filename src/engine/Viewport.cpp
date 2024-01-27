@@ -17,9 +17,9 @@ namespace Atlas {
 
     }
 
-    vec3 Viewport::Project(vec3 point, Camera* camera) const {
+    vec3 Viewport::Project(vec3 point, const Scene::Components::CameraComponent& camera) const {
 
-        vec4 transformed = camera->unjitterdProjection * camera->viewMatrix * vec4(point, 1.0f);
+        vec4 transformed = camera.unjitterdProjection * camera.viewMatrix * vec4(point, 1.0f);
 
         transformed.w = 1.0f / transformed.w;
         transformed.x *= transformed.w;
@@ -47,7 +47,7 @@ namespace Atlas {
 
     }
 
-    vec3 Viewport::Unproject(vec3 point, Camera *camera) const {
+    vec3 Viewport::Unproject(vec3 point, const Scene::Components::CameraComponent& camera) const {
 
         float fWidth = float(width) + float(x);
         float fHeight = float(height) + float(y);
@@ -61,7 +61,7 @@ namespace Atlas {
         point.x = 2.0f * (point.x - fX) / (fWidth - fX) - 1.0f;
         point.y = -2.0f * (point.y - fY) / (fHeight - fY) + 1.0f;
 
-        vec4 transformed = camera->invViewMatrix * camera->invUnjitteredProjection * vec4(point, 1.0f);
+        vec4 transformed = camera.invViewMatrix * camera.invUnjitteredProjection * vec4(point, 1.0f);
 
         transformed.w = 1.0f / transformed.w;
         transformed.x *= transformed.w;

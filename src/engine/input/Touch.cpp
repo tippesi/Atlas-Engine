@@ -18,13 +18,13 @@ namespace Atlas {
 
         }
 
-        TouchHandler::TouchHandler(Camera* camera, float sensibility, float speed, float reactivity)
+        TouchHandler::TouchHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity)
             : sensibility(sensibility), speed(speed), reactivity(reactivity) {
 
             RegisterEvent();
 
-            location = camera->location;
-            rotation = camera->rotation;
+            location = camera.location;
+            rotation = camera.rotation;
 
         }
 
@@ -46,27 +46,27 @@ namespace Atlas {
 
         }
 
-        void TouchHandler::Update(Camera* camera, float deltaTime) {
+        void TouchHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
 
-            location += 2.0f * camera->direction * -leftFinger.position.y * deltaTime * speed;
-            location += 2.0f * camera->right * leftFinger.position.x * deltaTime * speed;
+            location += 2.0f * camera.direction * -leftFinger.position.y * deltaTime * speed;
+            location += 2.0f * camera.right * leftFinger.position.x * deltaTime * speed;
 
             rotation += 60.0f * -rightFinger.position * deltaTime * sensibility;
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-            camera->location = glm::mix(camera->location, location, progress);
-            camera->rotation = glm::mix(camera->rotation, rotation, progress);
+            camera.location = glm::mix(camera.location, location, progress);
+            camera.rotation = glm::mix(camera.rotation, rotation, progress);
 
             // We want to reset the accumulated position to zero for the right finger
             rightFinger.position = vec2(0.0f);
             
         }
 
-        void TouchHandler::Reset(Camera* camera) {
+        void TouchHandler::Reset(Scene::Components::CameraComponent& camera) {
 
-            rotation = camera->rotation;
-            location = camera->location;
+            rotation = camera.rotation;
+            location = camera.location;
 
         }
 

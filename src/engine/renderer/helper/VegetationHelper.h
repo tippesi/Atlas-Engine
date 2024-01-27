@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../../System.h"
-#include "../../scene/Vegetation.h"
-#include "../../buffer/Buffer.h"
+#include "System.h"
+#include "scene/Vegetation.h"
+#include "buffer/Buffer.h"
+#include "scene/components/CameraComponent.h"
 
 #include <map>
 
@@ -18,7 +19,7 @@ namespace Atlas {
                 VegetationHelper();
 
                 void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
-                    Camera* camera, Graphics::CommandList* commandList);
+                    const Scene::Components::CameraComponent& camera, Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetCommandBuffer();
 

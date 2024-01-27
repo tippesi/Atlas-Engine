@@ -27,7 +27,7 @@ namespace Atlas {
 
         }
 
-        void DecalRenderer::Render(Viewport *viewport, RenderTarget *target, Camera *camera, Scene::Scene *scene) {
+        void DecalRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene) {
 
             /*
             vertexArray.Bind();

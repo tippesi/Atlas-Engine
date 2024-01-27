@@ -35,10 +35,11 @@ namespace Atlas {
 
         }
 
-        void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Render volumetric");
+
+            auto& camera = scene->GetMainCamera();
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -77,7 +78,7 @@ namespace Atlas {
                 if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
 
                 auto directionalLight = (Lighting::DirectionalLight*)light;
-                vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
+                vec3 direction = normalize(vec3(camera.viewMatrix * vec4(directionalLight->direction, 0.0f)));
 
                 VolumetricUniforms uniforms;
                 uniforms.sampleCount = volumetric->sampleCount;
@@ -97,10 +98,10 @@ namespace Atlas {
                         auto cascade = &shadow->components[i];
                         cascadeUniform.distance = cascade->farDistance;
                         cascadeUniform.cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera->invViewMatrix;
+                            cascade->viewMatrix * camera.invViewMatrix;
                     }
                     else {
-                        cascadeUniform.distance = camera->farPlane;
+                        cascadeUniform.distance = camera.farPlane;
                     }
                 }
 
@@ -148,7 +149,7 @@ namespace Atlas {
                     clouds->GetShadowMatrices(camera, directionalLight->direction,
                         cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
-                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
 
                     cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                     cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);

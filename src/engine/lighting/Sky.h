@@ -16,7 +16,7 @@ namespace Atlas {
         public:
             Sky();
 
-            EnvironmentProbe* GetProbe();
+            Ref<EnvironmentProbe> GetProbe();
 
             vec3 planetCenter = vec3(0.0f, -650000.0f, 0.0f);
             float planetRadius = 649000.0f;

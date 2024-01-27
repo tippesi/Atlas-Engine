@@ -51,7 +51,7 @@ namespace Atlas {
                 insideMovableEntities, frustum);
 
             for (auto entity : staticEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -59,7 +59,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideStaticEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)
@@ -67,7 +67,7 @@ namespace Atlas {
             }
 
             for (auto entity : movableEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -75,7 +75,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideMovableEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<Components::MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)

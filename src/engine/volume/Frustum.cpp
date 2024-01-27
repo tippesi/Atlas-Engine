@@ -35,7 +35,7 @@ namespace Atlas {
 
         }
 
-        bool Frustum::Intersects(AABB aabb) {
+        bool Frustum::Intersects(AABB aabb) const {
 
             for (uint8_t i = 0; i < 6; i++) {
 
@@ -56,7 +56,7 @@ namespace Atlas {
 
         }
 
-        bool Frustum::IsInside(AABB aabb) {
+        bool Frustum::IsInside(AABB aabb) const {
 
             for (uint8_t i = 0; i < 6; i++) {
 
@@ -77,7 +77,7 @@ namespace Atlas {
 
         }
 
-        std::vector<vec4> Frustum::GetPlanes() {
+        std::vector<vec4> Frustum::GetPlanes() const {
 
             std::vector<vec4> planes;
 
@@ -90,7 +90,7 @@ namespace Atlas {
 
         }
 
-        std::vector<vec3> Frustum::GetCorners() {
+        std::vector<vec3> Frustum::GetCorners() const {
 
             return corners;
 

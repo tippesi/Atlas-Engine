@@ -14,7 +14,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame(Scene::Scene* scene) {
+    void RenderList::NewFrame(Ref<Scene::Scene> scene) {
 
         this->scene = scene;
 

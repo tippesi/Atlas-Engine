@@ -17,8 +17,7 @@ namespace Atlas {
 
         }
 
-        void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList) {
+        void ShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
             Graphics::Profiler::BeginQuery("Shadows");
 

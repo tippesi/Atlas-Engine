@@ -1,5 +1,7 @@
 #include "DirectionalLight.h"
 
+#include "../scene/components/CameraComponent.h"
+
 namespace Atlas {
 
     namespace Lighting {
@@ -94,7 +96,7 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::Update(Camera* camera) {
+        void DirectionalLight::Update(const Scene::Components::CameraComponent& camera) {
 
             if (shadow != nullptr) {
 
@@ -107,10 +109,10 @@ namespace Atlas {
                     // We want cascaded shadow mapping for directional lights
                     for (int32_t i = 0; i < componentCount; i++) {
                         shadow->components[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection, 
-                            camera->nearPlane, distance,
+                            camera.nearPlane, distance,
                             (float)i, (float)componentCount);
                         shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection, 
-                            camera->nearPlane, distance,
+                            camera.nearPlane, distance,
                             (float)i + 1, (float)componentCount);
                     }
 
@@ -131,11 +133,11 @@ namespace Atlas {
 
         }
 
-        void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, Camera* camera) {
+        void DirectionalLight::UpdateShadowCascade(ShadowComponent* cascade, const Scene::Components::CameraComponent& camera) {
 
-            auto cameraLocation = camera->GetLocation();
+            auto cameraLocation = camera.GetLocation();
 
-            auto cascadeCenter = cameraLocation + camera->direction * 
+            auto cascadeCenter = cameraLocation + camera.direction * 
                 (cascade->nearDistance + (cascade->farDistance + 
                     shadow->cascadeBlendDistance - cascade->nearDistance) * 0.5f);
 
@@ -147,7 +149,7 @@ namespace Atlas {
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
             cascade->viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-            std::vector<vec3> corners = camera->GetFrustumCorners(cascade->nearDistance, 
+            std::vector<vec3> corners = camera.GetFrustumCorners(cascade->nearDistance, 
                 cascade->farDistance + shadow->cascadeBlendDistance);
 
             vec3 maxProj = vec3(cascade->viewMatrix * vec4(corners.at(0), 1.0f));

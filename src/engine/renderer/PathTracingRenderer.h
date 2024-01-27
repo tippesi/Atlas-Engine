@@ -127,10 +127,8 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
-
-            void Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
-                ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<PathTracerRenderTarget> renderTarget, Ref<Scene::Scene> scene,
+                ivec2 imageSubdivisions, Graphics::CommandList* commandList);
 
             bool UpdateData(Scene::Scene* scene);
 

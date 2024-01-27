@@ -22,7 +22,7 @@ namespace Atlas {
 
             void RemoveVolumetric() override;
 
-            void Update(Camera* camera) override;
+            void Update(const Scene::Components::CameraComponent& camera) override;
 
             vec3 location = vec3(0.0f, 3.0f, 0.0f);
 

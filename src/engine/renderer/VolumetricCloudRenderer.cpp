@@ -33,8 +33,7 @@ namespace Atlas {
 
         }
 
-        void VolumetricCloudRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricCloudRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             frameCount++;
 
@@ -69,7 +68,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-                auto uniforms = GetUniformStructure(camera, scene);
+                auto uniforms = GetUniformStructure(scene);
                 volumetricUniformBuffer.SetData(&uniforms, 0);
 
                 integratePipelineConfig.ManageMacro("STOCHASTIC_OCCLUSION_SAMPLING", clouds->stochasticOcclusionSampling);
@@ -151,8 +150,7 @@ namespace Atlas {
 
         }
 
-        void VolumetricCloudRenderer::RenderShadow(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricCloudRenderer::RenderShadow(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;
@@ -165,6 +163,7 @@ namespace Atlas {
                 clouds->needsNoiseUpdate = false;
             }
 
+            auto& camera = scene->GetMainCamera();
             auto shadowMap = clouds->shadowTexture;
 
             auto res = ivec2(shadowMap.width, shadowMap.height);
@@ -194,7 +193,7 @@ namespace Atlas {
             shadowUniforms.shadowSampleFraction = clouds->shadowSampleFraction;
             shadowUniformBuffer.SetData(&shadowUniforms, 0);
 
-            auto uniforms = GetUniformStructure(camera, scene);
+            auto uniforms = GetUniformStructure(scene);
             uniforms.distanceLimit = 10e9f;
             shadowVolumetricUniformBuffer.SetData(&uniforms, 0);
 
@@ -210,7 +209,7 @@ namespace Atlas {
 
         }
 
-        void VolumetricCloudRenderer::GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricCloudRenderer::GenerateTextures(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto clouds = scene->sky.clouds;
             if (!clouds) return;
@@ -279,8 +278,7 @@ namespace Atlas {
 
         }
 
-        VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(Camera *camera,
-            Scene::Scene *scene) {
+        VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(Ref<Scene::Scene> scene) {
 
             auto clouds = scene->sky.clouds;
             auto sun = scene->sky.sun;

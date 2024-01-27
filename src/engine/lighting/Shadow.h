@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../texture/Cubemap.h"
 #include "../texture/Texture2DArray.h"
 

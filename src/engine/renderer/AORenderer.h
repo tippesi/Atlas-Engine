@@ -16,8 +16,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) RTUniforms {

@@ -44,7 +44,7 @@ namespace Atlas {
 
         RenderList();
 
-        void NewFrame(Scene::Scene* scene);
+        void NewFrame(Ref<Scene::Scene> scene);
 
         void NewMainPass();
 
@@ -60,7 +60,7 @@ namespace Atlas {
 
         void FillBuffers();
 
-        Scene::Scene* scene = nullptr;
+        Ref<Scene::Scene> scene = nullptr;
 
         std::vector<mat3x4> currentEntityMatrices;
         std::vector<mat3x4> lastEntityMatrices;

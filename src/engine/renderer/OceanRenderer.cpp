@@ -40,14 +40,14 @@ namespace Atlas {
 
         }
 
-        void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void OceanRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
                 return;
 
             Graphics::Profiler::BeginQuery("Ocean");
 
+            auto& camera = scene->GetMainCamera();
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
             auto fog = scene->fog;
@@ -102,7 +102,7 @@ namespace Atlas {
                             abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                                                 cascade->viewMatrix * camera->invViewMatrix;
+                                                                 cascade->viewMatrix * camera.invViewMatrix;
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -130,7 +130,7 @@ namespace Atlas {
                 clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
 
                 cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                 cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
@@ -419,8 +419,7 @@ namespace Atlas {
 
         }
 
-        void OceanRenderer::RenderDepthOnly(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
                 return;
@@ -536,7 +535,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool depthOnly, bool wireframe) {
+        PipelineConfig OceanRenderer::GeneratePipelineConfig(Ref<RenderTarget> target, bool depthOnly, bool wireframe) {
 
             const auto shaderConfig = ShaderConfig {
                 {depthOnly ? "ocean/depth.vsh" : "ocean/ocean.vsh", VK_SHADER_STAGE_VERTEX_BIT},

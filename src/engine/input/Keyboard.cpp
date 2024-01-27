@@ -22,12 +22,12 @@ namespace Atlas {
 
         }
 
-        KeyboardHandler::KeyboardHandler(Camera* camera, float speed, float reactivity) :
+        KeyboardHandler::KeyboardHandler(Scene::Components::CameraComponent& camera, float speed, float reactivity) :
                 speed(speed), reactivity(reactivity) {
 
             RegisterEvent();
 
-            location = camera->location;
+            location = camera.location;
             
         }
 
@@ -49,22 +49,22 @@ namespace Atlas {
 
         }
 
-        void KeyboardHandler::Update(Camera* camera, float deltaTime) {
+        void KeyboardHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
 
-            location += camera->direction * movement.x * deltaTime * speed;
-            location += camera->right * movement.y * deltaTime * speed;
+            location += camera.direction * movement.x * deltaTime * speed;
+            location += camera.right * movement.y * deltaTime * speed;
 
             location.y += movement.z * deltaTime * speed;
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-            camera->location = glm::mix(camera->location, location, progress);
+            camera.location = glm::mix(camera.location, location, progress);
 
         }
 
-        void KeyboardHandler::Reset(Camera* camera) {
+        void KeyboardHandler::Reset(Scene::Components::CameraComponent& camera) {
 
-            location = camera->location;
+            location = camera.location;
 
         }
 

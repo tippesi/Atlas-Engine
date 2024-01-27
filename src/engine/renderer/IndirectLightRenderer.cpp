@@ -15,8 +15,7 @@ namespace Atlas {
 
         }
 
-        void IndirectLightRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void IndirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Indirect lighting");
 

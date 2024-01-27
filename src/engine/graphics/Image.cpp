@@ -125,6 +125,7 @@ namespace Atlas {
                 case ImageType::ImageCube:
                 case ImageType::Image2DArray: return VK_IMAGE_TYPE_2D;
                 case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
+                default: return VK_IMAGE_TYPE_2D;
             }
 
         }

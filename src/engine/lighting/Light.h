@@ -4,6 +4,8 @@
 #include "Shadow.h"
 #include "Volumetric.h"
 
+#include "scene/components/CameraComponent.h"
+
 #define AE_STATIONARY_LIGHT 0
 #define AE_MOVABLE_LIGHT 1
 
@@ -22,7 +24,7 @@ namespace Atlas {
 
             virtual void RemoveVolumetric() = 0;
 
-            virtual void Update(Camera* camera) = 0;
+            virtual void Update(const Scene::Components::CameraComponent& camera) = 0;
 
             inline Shadow* GetShadow() {
                 return shadow;

@@ -2,7 +2,6 @@
 
 #include "../System.h"
 #include "../RenderTarget.h"
-#include "../Camera.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../pipeline/PipelineManager.h"

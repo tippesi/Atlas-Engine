@@ -57,13 +57,11 @@ private:
 
     SceneSelection sceneSelection = SPONZA;
 
-    Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
-    Atlas::RenderTarget renderTarget;
-    Atlas::Viewport viewport;
+    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
+    Ref<Atlas::RenderTarget> renderTarget;
+    Ref<Atlas::Viewport> viewport;
 
-    Atlas::Font font;
-
-    Atlas::Camera camera;
+    Ref<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
     Ref<Atlas::Lighting::DirectionalLight> directionalLight;
@@ -72,6 +70,8 @@ private:
     Atlas::ResourceHandle<Atlas::Audio::AudioData> music;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
+
+    Atlas::Scene::Entity cameraEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;

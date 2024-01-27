@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
+        void ImpostorRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
             Graphics::CommandList* commandList, RenderList* renderList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
@@ -66,7 +66,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Generate(Atlas::Viewport *viewport, const std::vector<mat4> &viewMatrices,
+        void ImpostorRenderer::Generate(const std::vector<mat4> &viewMatrices,
             glm::mat4 projectionMatrix, float distToCenter, Mesh::Mesh *mesh, Mesh::Impostor *impostor) {
 
             struct alignas(16) PushConstants {

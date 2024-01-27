@@ -14,9 +14,8 @@ namespace Atlas {
 
         }
 
-        void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+            RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
@@ -107,7 +106,7 @@ namespace Atlas {
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh>& mesh, RenderTarget *target) {
+            ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target) {
 
             auto shaderConfig = ShaderConfig {
                 {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},

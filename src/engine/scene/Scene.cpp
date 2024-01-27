@@ -32,14 +32,9 @@ namespace Atlas {
 
         }
 
-        void Scene::Update(Ref<Camera> camera, float deltaTime) {
+        void Scene::Timestep(float deltaTime) {
 
-            Update(deltaTime);
-            UpdateCameraDependent(camera, deltaTime);
-
-        }
-
-        void Scene::Update(float deltaTime) {
+            this->deltaTime = deltaTime;
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
@@ -149,33 +144,55 @@ namespace Atlas {
 
         }
 
-        void Scene::UpdateCameraDependent(Ref<Camera> camera, float deltaTime) {
+        void Scene::Update() {
+
+            mainCameraEntity = Entity();
+
+            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+            // Attempt to find a main camera
+            for (auto entity : cameraSubset) {
+                auto& camera = cameraSubset.Get(entity);
+
+                if (camera.isMain) {
+                    camera.Update();
+
+                    mainCameraEntity = { entity, &entityManager };
+                    break;
+                }
+            }
+
+            AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
+
+            if (!mainCameraEntity.IsValid())
+                return;
+
+            auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
             auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
             for (auto entity : audioSubset) {
                 const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
 
-                audioComponent.Update(deltaTime, transformComponent, camera->GetLocation(),
-                    camera->GetLastLocation(), camera->right);
+                audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
+                    mainCamera.GetLastLocation(), mainCamera.right);
             }
 
             auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
             for (auto entity : audioVolumeSubset) {
                 const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
 
-                audioComponent.Update(transformComponent, camera->GetLocation());
+                audioComponent.Update(transformComponent, mainCamera.GetLocation());
             }
 
             if (terrain) {
-                terrain->Update(camera.get());
+                terrain->Update(mainCamera);
             }
 
             if (ocean) {
-                ocean->Update(camera.get(), deltaTime);
+                ocean->Update(mainCamera, deltaTime);
             }
 
             if (sky.sun) {
-                sky.sun->Update(camera.get());
+                sky.sun->Update(mainCamera);
             }
 
         }
@@ -224,6 +241,18 @@ namespace Atlas {
             }
 
             return materials;
+
+        }
+
+        Components::CameraComponent& Scene::GetMainCamera() {           
+
+            return mainCameraEntity.GetComponent<CameraComponent>();
+
+        }
+
+        bool Scene::HasMainCamera() const {
+
+            return mainCameraEntity.HasComponent<CameraComponent>();
 
         }
 
@@ -379,7 +408,7 @@ namespace Atlas {
             // Need insert/remove physics components into physics world
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentEmplace,
                 [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
-                    auto transformComp = entityManager.GetIfContains<TransformComponent>(entity);
+                    auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
                     if (physicsWorld != nullptr)

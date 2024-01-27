@@ -16,7 +16,6 @@
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
-// The fixture for testing class Foo.
 class EngineEndToEndTest : public testing::TestWithParam<AppConfiguration> {
 protected:
     void SetUp() override {

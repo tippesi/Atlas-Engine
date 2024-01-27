@@ -2,7 +2,7 @@
 
 #include "../System.h"
 #include "TerrainStorage.h"
-#include "Camera.h"
+#include "scene/components/CameraComponent.h"
 
 #include <vector>
 
@@ -19,7 +19,7 @@ namespace Atlas {
 
             ~TerrainNode();
 
-            void Update(Camera* camera, std::vector<float>& LoDDistances, 
+            void Update(const Scene::Components::CameraComponent& camera, std::vector<float>& LoDDistances,
                 std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
             void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);

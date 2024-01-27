@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../System.h"
-#include "../events/EventManager.h"
-#include "../Camera.h"
+#include "System.h"
+#include "events/EventManager.h"
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -15,15 +15,15 @@ namespace Atlas {
 
             TouchHandler(const TouchHandler& that);
 
-            TouchHandler(Camera* camera, float sensibility, float speed, float reactivity);
+            TouchHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity);
 
             ~TouchHandler();
 
             TouchHandler& operator=(const TouchHandler& that);
 
-            void Update(Camera* camera, float deltaTime);
+            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Camera* camera);
+            void Reset(Scene::Components::CameraComponent& camera);
 
             float sensibility = 1.5f;
             float speed = 7.0f;

@@ -59,11 +59,11 @@ namespace Atlas {
             }
 
             template<typename Comp>
-            inline Comp* GetComponentIfContains() const {
+            inline Comp* TryGetComponent() const {
 
                 AE_ASSERT(HasComponent<Comp>() && "Entity doesn't have this component");
 
-                return entityManager->GetIfContains<Comp>(entity);
+                return entityManager->TryGet<Comp>(entity);
 
             }
 

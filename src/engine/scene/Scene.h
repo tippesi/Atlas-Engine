@@ -70,15 +70,17 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Update(Ref<Camera> camera, float deltaTime);
+            void Timestep(float deltaTime);
 
-            void Update(float deltaTime);
-
-            void UpdateCameraDependent(Ref<Camera> camera, float deltaTime);
+            void Update();
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
             std::vector<Material*> GetMaterials();
+
+            Components::CameraComponent& GetMainCamera();
+
+            bool HasMainCamera() const;
 
             void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
@@ -138,6 +140,9 @@ namespace Atlas {
 
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+
+            Entity mainCameraEntity;
+            float deltaTime = 1.0f;
 
             bool hasChanged = true;
             bool rtDataValid = false;

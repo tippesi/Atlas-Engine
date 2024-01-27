@@ -38,8 +38,7 @@ namespace Atlas {
 
         }
 
-        void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void RTReflectionRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
             
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;

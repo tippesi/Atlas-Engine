@@ -2,7 +2,6 @@
 
 #include "System.h"
 #include "Window.h"
-#include "Camera.h"
 #include "Clock.h"
 #include "Log.h"
 #include "resource/ResourceManager.h"

@@ -71,12 +71,13 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera, 
-            Scene::Scene* scene, Texture::Texture2D* texture, RenderBatch* batch) {
+        void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+            Ref<RenderBatch> batch, Texture::Texture2D* texture) {
 
-            if (!device->swapChain->isComplete) 
+            if (!device->swapChain->isComplete || !scene->HasMainCamera()) 
                 return;
 
+            auto& camera = scene->GetMainCamera();
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
             commandList->BeginCommands();
@@ -87,12 +88,12 @@ namespace Atlas {
                 jitter.x /= (float)target->GetWidth();
                 jitter.y /= (float)target->GetHeight();
 
-                camera->Jitter(jitter * taa.jitterRange);
+                camera.Jitter(jitter * taa.jitterRange);
             }
             else {
                 // Even if there is no TAA we need to update the jitter for other techniques
                 // E.g. the reflections and ambient occlusion use reprojection
-                camera->Jitter(vec2(0.0f));
+                camera.Jitter(vec2(0.0f));
             }
 
             Graphics::Profiler::BeginThread("Main renderer", commandList);
@@ -144,13 +145,13 @@ namespace Atlas {
 
             if (scene->sky.probe) {
                 if (scene->sky.probe->update) {
-                    FilterProbe(scene->sky.probe.get(), commandList);
+                    FilterProbe(scene->sky.probe, commandList);
                     //scene->sky.probe->update = false;
                 }
             }
             else if (scene->sky.atmosphere) {
-                atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
-                FilterProbe(&scene->sky.atmosphere->probe, commandList);
+                atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
+                FilterProbe(scene->sky.atmosphere->probe, commandList);
             }
 
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
@@ -163,9 +164,9 @@ namespace Atlas {
             }
 
             {
-                shadowRenderer.Render(viewport, target, camera, scene, commandList, &renderList);
+                shadowRenderer.Render(target, scene, commandList, &renderList);
 
-                terrainShadowRenderer.Render(viewport, target, camera, scene, commandList);
+                terrainShadowRenderer.Render(target, scene, commandList);
             }
 
             if (scene->sky.GetProbe()) {
@@ -175,7 +176,7 @@ namespace Atlas {
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
             }
 
-            volumetricCloudRenderer.RenderShadow(viewport, target, camera, scene, commandList);
+            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -216,22 +217,22 @@ namespace Atlas {
 
                 commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
 
-                opaqueRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
+                opaqueRenderer.Render(target, scene, commandList, &renderList, materialMap);
 
-                ddgiRenderer.DebugProbes(viewport, target, camera, scene, commandList, materialMap);
+                ddgiRenderer.DebugProbes(target, scene, commandList, materialMap);
 
-                vegetationRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
+                vegetationRenderer.Render(target, scene, commandList, materialMap);
 
-                terrainRenderer.Render(viewport, target, camera, scene, commandList, materialMap);
+                terrainRenderer.Render(target, scene, commandList, materialMap);
 
-                impostorRenderer.Render(viewport, target, camera, scene, commandList, &renderList, materialMap);
+                impostorRenderer.Render(target, scene, commandList, &renderList, materialMap);
 
                 commandList->EndRenderPass();
 
                 Graphics::Profiler::EndQuery();
             }
 
-            oceanRenderer.RenderDepthOnly(viewport, target, camera, scene, commandList);
+            oceanRenderer.RenderDepthOnly(target, scene, commandList);
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -293,20 +294,20 @@ namespace Atlas {
 
             {
                 if (scene->sky.probe) {
-                    skyboxRenderer.Render(viewport, target, camera, scene, commandList);
+                    skyboxRenderer.Render(target, scene, commandList);
                 }
                 else if (scene->sky.atmosphere) {
-                    atmosphereRenderer.Render(viewport, target, camera, scene, commandList);
+                    atmosphereRenderer.Render(target, scene, commandList);
                 }
             }
 
             downscaleRenderer.Downscale(target, commandList);
 
-            aoRenderer.Render(viewport, target, camera, scene, commandList);
+            aoRenderer.Render(target, scene, commandList);
 
-            rtrRenderer.Render(viewport, target, camera, scene, commandList);
+            rtrRenderer.Render(target, scene, commandList);
 
-            sssRenderer.Render(viewport, target, camera, scene, commandList);
+            sssRenderer.Render(target, scene, commandList);
 
             {
                 Graphics::Profiler::BeginQuery("Lighting pass");
@@ -314,17 +315,17 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                directLightRenderer.Render(viewport, target, camera, scene, commandList);
+                directLightRenderer.Render(target, scene, commandList);
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                giRenderer.Render(viewport, target, camera, scene, commandList);
+                giRenderer.Render(target, scene, commandList);
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                indirectLightRenderer.Render(viewport, target, camera, scene, commandList);
+                indirectLightRenderer.Render(target, scene, commandList);
 
                 Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
@@ -338,19 +339,19 @@ namespace Atlas {
             // downscaleRenderer.Downscale(target, commandList);
 
             {
-                volumetricCloudRenderer.Render(viewport, target, camera, scene, commandList);
+                volumetricCloudRenderer.Render(target, scene, commandList);
 
-                volumetricRenderer.Render(viewport, target, camera, scene, commandList);
+                volumetricRenderer.Render(target, scene, commandList);
             }
 
-            oceanRenderer.Render(viewport, target, camera, scene, commandList);
+            oceanRenderer.Render(target, scene, commandList);
 
             {
-                taaRenderer.Render(viewport, target, camera, scene, commandList);
+                taaRenderer.Render(target, scene, commandList);
 
                 target->Swap();
 
-                postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+                postProcessRenderer.Render(target, scene, commandList);
             }
 
             Graphics::Profiler::EndQuery();
@@ -361,13 +362,15 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::PathTraceScene(Viewport *viewport, PathTracerRenderTarget *target, Camera *camera,
-            Scene::Scene *scene, Texture::Texture2D *texture) {
+        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+            Ref<Scene::Scene> scene, Texture::Texture2D *texture) {
 
-            if (!scene->IsRtDataValid() || !device->swapChain->isComplete)
+            if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
             static vec2 lastJitter = vec2(0.0f);
+
+            auto& camera = scene->GetMainCamera();
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
@@ -375,7 +378,7 @@ namespace Atlas {
             jitter.x /= (float)target->GetWidth();
             jitter.y /= (float)target->GetHeight();
 
-            camera->Jitter(jitter * 0.0f);
+            camera.Jitter(jitter * 0.0f);
 
             commandList->BeginCommands();
 
@@ -383,18 +386,18 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Buffer operations");
 
             auto globalUniforms = GlobalUniforms{
-                 .vMatrix = camera->viewMatrix,
-                 .pMatrix = camera->projectionMatrix,
-                 .ivMatrix = camera->invViewMatrix,
-                 .ipMatrix = camera->invProjectionMatrix,
-                 .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                 .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
+                 .vMatrix = camera.viewMatrix,
+                 .pMatrix = camera.projectionMatrix,
+                 .ivMatrix = camera.invViewMatrix,
+                 .ipMatrix = camera.invProjectionMatrix,
+                 .pvMatrixLast = camera.GetLastJitteredMatrix(),
+                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
                  .jitterLast = lastJitter,
                  .jitterCurrent = jitter,
-                 .cameraLocation = vec4(camera->location, 0.0f),
-                 .cameraDirection = vec4(camera->direction, 0.0f),
-                 .cameraUp = vec4(camera->up, 0.0f),
-                 .cameraRight = vec4(camera->right, 0.0f),
+                 .cameraLocation = vec4(camera.location, 0.0f),
+                 .cameraDirection = vec4(camera.direction, 0.0f),
+                 .cameraUp = vec4(camera.up, 0.0f),
+                 .cameraRight = vec4(camera.right, 0.0f),
                  .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
                  .planetRadius = scene->sky.planetRadius,
                  .time = Clock::Get(),
@@ -428,15 +431,15 @@ namespace Atlas {
 
             // No probe filtering required
             if (scene->sky.atmosphere) {
-                atmosphereRenderer.Render(&scene->sky.atmosphere->probe, scene, commandList);
+                atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
             }
 
-            pathTracingRenderer.Render(viewport, target, ivec2(1, 1), camera, scene, commandList);
+            pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
             if (pathTracingRenderer.realTime) {
-                taaRenderer.Render(viewport, target, camera, scene, commandList);
+                taaRenderer.Render(target, scene, commandList);
 
-                postProcessRenderer.Render(viewport, target, camera, scene, commandList);
+                postProcessRenderer.Render(target, scene, commandList);
             }
             else {
                 Graphics::Profiler::BeginQuery("Post processing");
@@ -462,79 +465,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-            bool alphaBlending) {
-
-            /*
-            float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-            float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
-
-            if (x > viewportWidth || y > viewportHeight ||
-                y + height < 0 || x + width < 0) {
-                return;
-            }
-
-            vec4 clipArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-            vec4 blendArea = vec4(0.0f, 0.0f, viewportWidth, viewportHeight);
-
-            RenderRectangle(viewport, color, x, y, width, height, clipArea, blendArea, alphaBlending, framebuffer);
-            */
-
-        }
-
-        void MainRenderer::RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-            vec4 clipArea, vec4 blendArea, bool alphaBlending) {
-
-            /*
-            float viewportWidth = (float)(!framebuffer ? viewport->width : framebuffer->width);
-            float viewportHeight = (float)(!framebuffer ? viewport->height : framebuffer->height);
-
-            if (x > viewportWidth || y > viewportHeight ||
-                y + height < 0 || x + width < 0) {
-                return;
-            }
-
-            vertexArray.Bind();
-
-            rectangleShader.Bind();
-
-            glDisable(GL_CULL_FACE);
-
-            if (framebuffer) {
-                framebuffer->Bind(true);
-            }
-            else {
-                glViewport(0, 0, viewport->width, viewport->height);
-            }
-
-            if (alphaBlending) {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            }
-
-            rectangleProjectionMatrix->SetValue(glm::ortho(0.0f, (float)viewportWidth, 0.0f, (float)viewportHeight));
-            rectangleOffset->SetValue(vec2(x, y));
-            rectangleScale->SetValue(vec2(width, height));
-            rectangleColor->SetValue(color);
-            rectangleBlendArea->SetValue(blendArea);
-            rectangleClipArea->SetValue(clipArea);
-
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-            if (alphaBlending) {
-                glDisable(GL_BLEND);
-            }
-
-            if (framebuffer) {
-                framebuffer->Unbind();
-            }
-
-            glEnable(GL_CULL_FACE);
-            */
-
-        }
-
-        void MainRenderer::RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch) {
+        void MainRenderer::RenderBatched(Ref<Viewport> viewport, Ref<RenderBatch> batch, const CameraComponent& camera) {
 
             /*
             batch->TransferData();
@@ -569,7 +500,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene) {
+        void MainRenderer::RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene) {
 
             /*
             if (probe->resolution != target->GetWidth() ||
@@ -754,7 +685,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList) {
+        void MainRenderer::FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Filter probe");
 
@@ -905,21 +836,21 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::SetUniforms(Scene::Scene *scene, Camera *camera) {
+        void MainRenderer::SetUniforms(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
             auto globalUniforms = GlobalUniforms {
-                .vMatrix = camera->viewMatrix,
-                .pMatrix = camera->projectionMatrix,
-                .ivMatrix = camera->invViewMatrix,
-                .ipMatrix = camera->invProjectionMatrix,
-                .pvMatrixLast = camera->GetLastJitteredMatrix(),
-                .pvMatrixCurrent = camera->projectionMatrix * camera->viewMatrix,
-                .jitterLast = camera->GetLastJitter(),
-                .jitterCurrent = camera->GetJitter(),
-                .cameraLocation = vec4(camera->location, 0.0f),
-                .cameraDirection = vec4(camera->direction, 0.0f),
-                .cameraUp = vec4(camera->up, 0.0f),
-                .cameraRight = vec4(camera->right, 0.0f),
+                .vMatrix = camera.viewMatrix,
+                .pMatrix = camera.projectionMatrix,
+                .ivMatrix = camera.invViewMatrix,
+                .ipMatrix = camera.invProjectionMatrix,
+                .pvMatrixLast = camera.GetLastJitteredMatrix(),
+                .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
+                .jitterLast = camera.GetLastJitter(),
+                .jitterCurrent = camera.GetJitter(),
+                .cameraLocation = vec4(camera.location, 0.0f),
+                .cameraDirection = vec4(camera.direction, 0.0f),
+                .cameraUp = vec4(camera.up, 0.0f),
+                .cameraRight = vec4(camera.right, 0.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
                 .windDir = glm::normalize(scene->wind.direction),
                 .windSpeed = scene->wind.speed,
@@ -929,7 +860,7 @@ namespace Atlas {
                 .frameCount = frameCount
             };
 
-            auto frustumPlanes = camera->frustum.GetPlanes();
+            auto frustumPlanes = camera.frustum.GetPlanes();
             std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
 
             globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
@@ -982,7 +913,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+        void MainRenderer::PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
             std::unordered_map<void*, uint16_t>& materialMap) {
 
             auto sceneMaterials = scene->GetMaterials();
@@ -1091,7 +1022,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+        void MainRenderer::PrepareBindlessData(Ref<Scene::Scene> scene, std::vector<Ref<Graphics::Image>>& images,
             std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
             std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
 
@@ -1131,13 +1062,13 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::FillRenderList(Scene::Scene *scene, Atlas::Camera *camera) {
+        void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
             renderList.NewFrame(scene);
             renderList.NewMainPass();
 
-            scene->GetRenderList(camera->frustum, renderList);
-            renderList.Update(camera->GetLocation());
+            scene->GetRenderList(camera.frustum, renderList);
+            renderList.Update(camera.GetLocation());
 
             auto lightEntities = scene->GetSubset<LightComponent>();
             std::vector<Lighting::Light*> lights;
@@ -1165,7 +1096,7 @@ namespace Atlas {
 
                     renderList.NewShadowPass(light, i);
                     scene->GetRenderList(frustum, renderList);
-                    renderList.Update(camera->GetLocation());
+                    renderList.Update(camera.GetLocation());
                 }
 
             }

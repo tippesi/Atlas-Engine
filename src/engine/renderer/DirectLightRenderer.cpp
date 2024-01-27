@@ -27,18 +27,18 @@ namespace Atlas {
 
         }
 
-        void DirectLightRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->sky.sun) return;
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 
+            auto& camera = scene->GetMainCamera();
             auto light = scene->sky.sun;
             auto sss = scene->sss;
             auto clouds = scene->sky.clouds;
 
-            vec3 direction = normalize(vec3(camera->viewMatrix * vec4(light->direction, 0.0f)));
+            vec3 direction = normalize(vec3(camera.viewMatrix * vec4(light->direction, 0.0f)));
 
             Uniforms uniforms;
 
@@ -76,7 +76,7 @@ namespace Atlas {
                             abs(corners[1].y - corners[3].y)) / (float)light->GetShadow()->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera->invViewMatrix;
+                            cascade->viewMatrix * camera.invViewMatrix;
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -110,7 +110,7 @@ namespace Atlas {
                 cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                 cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
 
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
             }
 
             cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);

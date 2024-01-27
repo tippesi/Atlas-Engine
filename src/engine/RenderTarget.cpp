@@ -154,13 +154,13 @@ namespace Atlas {
 
     }
 
-    int32_t RenderTarget::GetWidth() {
+    int32_t RenderTarget::GetWidth() const {
 
         return width;
 
     }
 
-    int32_t RenderTarget::GetHeight() {
+    int32_t RenderTarget::GetHeight() const {
 
         return height;
 

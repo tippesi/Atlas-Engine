@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../RenderTarget.h"
 #include "../texture/Texture3D.h"
+
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -15,7 +16,7 @@ namespace Atlas {
             VolumetricClouds(int32_t coverageResolution = 512, int32_t shapeResolution = 128,
                 int32_t detailResolution = 32, int32_t shadowResolution = 512);
 
-            void GetShadowMatrices(Camera* camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
+            void GetShadowMatrices(const Scene::Components::CameraComponent& camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
 
             Texture::Texture2D coverageTexture;
             Texture::Texture3D shapeTexture;

@@ -19,8 +19,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);

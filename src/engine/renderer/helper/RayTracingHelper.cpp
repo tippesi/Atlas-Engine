@@ -56,7 +56,7 @@ namespace Atlas {
             }
 
 
-            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale,
+            void RayTracingHelper::SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale,
                 bool useEmissivesAsLights) {
 
                 this->scene = scene;

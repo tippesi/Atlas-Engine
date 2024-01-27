@@ -15,13 +15,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void RenderShadow(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void RenderShadow(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
+            void GenerateTextures(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) VolumetricCloudUniforms {
@@ -77,8 +75,7 @@ namespace Atlas {
             void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
 
-            VolumetricCloudUniforms GetUniformStructure(Camera* camera,
-                Scene::Scene* scene);
+            VolumetricCloudUniforms GetUniformStructure(Ref<Scene::Scene> scene);
 
             PipelineConfig shapeNoisePipelineConfig;
             PipelineConfig detailNoisePipelineConfig;

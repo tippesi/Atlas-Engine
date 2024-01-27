@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../System.h"
-#include "../Camera.h"
+#include "System.h"
 #include "events/EventManager.h"
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -15,15 +15,15 @@ namespace Atlas {
 
             KeyboardHandler(const KeyboardHandler& that);
 
-            KeyboardHandler(Camera* camera, float speed, float reactivity);
+            KeyboardHandler(Scene::Components::CameraComponent& camera, float speed, float reactivity);
 
             ~KeyboardHandler();
 
             KeyboardHandler& operator=(const KeyboardHandler& that);
 
-            void Update(Camera* camera, float deltaTime);
+            void Update(Scene::Components::CameraComponent& camera, float deltaTime);
 
-            void Reset(Camera* camera);
+            void Reset(Scene::Components::CameraComponent& camera);
 
             float speed = 7.0f;
             float reactivity = 6.0f;

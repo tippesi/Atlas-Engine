@@ -19,15 +19,15 @@ namespace Atlas {
 
         }
 
-        ControllerHandler::ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
+        ControllerHandler::ControllerHandler(Scene::Components::CameraComponent& camera, float sensibility, float speed, float reactivity,
                 float threshold, int32_t device) :
                 sensibility(sensibility), speed(speed), reactivity(reactivity),
                 threshold(threshold), controllerDevice(device) {
 
             RegisterEvents();
 
-            location = camera->location;
-            rotation = camera->rotation;
+            location = camera.location;
+            rotation = camera.rotation;
 
         }
 
@@ -57,34 +57,34 @@ namespace Atlas {
 
         }
 
-        void ControllerHandler::Update(Camera* camera, float deltaTime) {
+        void ControllerHandler::Update(Scene::Components::CameraComponent& camera, float deltaTime) {
 
             if (controllerDevice > -1) {
 
-                location += camera->direction * -leftStick.y * deltaTime * (speed + speedIncrease);
-                location += camera->right * leftStick.x * deltaTime * (speed + speedIncrease);
+                location += camera.direction * -leftStick.y * deltaTime * (speed + speedIncrease);
+                location += camera.right * leftStick.x * deltaTime * (speed + speedIncrease);
 
                 rotation += -rightStick * deltaTime * sensibility;
 
                 float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-                camera->location = glm::mix(camera->location, location, progress);
-                camera->rotation = glm::mix(camera->rotation, rotation, progress);
+                camera.location = glm::mix(camera.location, location, progress);
+                camera.rotation = glm::mix(camera.rotation, rotation, progress);
 
             }
             else {
 
-                location = camera->location;
-                rotation = camera->rotation;
+                location = camera.location;
+                rotation = camera.rotation;
 
             }
 
         }
 
-        void ControllerHandler::Reset(Camera* camera) {
+        void ControllerHandler::Reset(Scene::Components::CameraComponent& camera) {
 
-            location = camera->location;
-            rotation = camera->rotation;
+            location = camera.location;
+            rotation = camera.rotation;
 
         }
 

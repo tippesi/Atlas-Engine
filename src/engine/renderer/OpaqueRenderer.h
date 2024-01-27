@@ -18,13 +18,12 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
-                std::unordered_map<void*, uint16_t> materialMap);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+                RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap);
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                ResourceHandle<Mesh::Mesh>& mesh, RenderTarget* target);
+                ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
 
             struct PushConstants {
                 uint32_t vegetation;

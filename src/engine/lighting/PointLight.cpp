@@ -23,8 +23,6 @@ namespace Atlas {
 
             shadow = new Shadow(0.0f, bias, resolution, true);
 
-            Update(nullptr);
-
         }
 
         void PointLight::RemoveShadow() {
@@ -47,7 +45,7 @@ namespace Atlas {
 
         }
 
-        void PointLight::Update(Camera* camera) {
+        void PointLight::Update(const Scene::Components::CameraComponent& camera) {
 
             if (mobility == AE_MOVABLE_LIGHT && shadow) {
                 shadow->Update();
