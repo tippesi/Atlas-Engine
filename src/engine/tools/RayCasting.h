@@ -36,7 +36,7 @@ namespace Atlas {
 
             bool IsUnderground(vec3 position, Ref<Terrain::Terrain>& terrain);
 
-            Volume::Ray CalculateRay(Ref<Viewport>& viewport, 
+            Volume::Ray CalculateRay(const Ref<Viewport>& viewport,
                 const CameraComponent& camera, vec2 mouseOffset);
 
             void MouseEventHandler(Events::MouseMotionEvent event);

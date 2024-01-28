@@ -11,7 +11,7 @@ namespace Atlas {
 
             // Currently the renderers just support one main directional light
             for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
+                const auto &light = lightEntity.GetComponent<LightComponent>();
 
                 if (light.type == LightType::DirectionalLight) {
                     mainLightEntity = lightEntity;

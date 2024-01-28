@@ -116,11 +116,11 @@ namespace Atlas {
                     vec3 position = transformedProperties.point.position;
 
                     mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
-                    vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                    const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
                                      vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
                                      vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-                    vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                    const vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
                                    vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
                                    vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 

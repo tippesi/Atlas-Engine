@@ -106,7 +106,7 @@ namespace Atlas {
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target) {
+            const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target) {
 
             auto shaderConfig = ShaderConfig {
                 {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},

@@ -146,7 +146,7 @@ namespace Atlas {
         }
 
         PipelineConfig VegetationRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh> &mesh, Ref<RenderTarget> target) {
+            const ResourceHandle<Mesh::Mesh> &mesh, Ref<RenderTarget> target) {
 
             auto shaderConfig = ShaderConfig {
                 {"vegetation/vegetation.vsh", VK_SHADER_STAGE_VERTEX_BIT},

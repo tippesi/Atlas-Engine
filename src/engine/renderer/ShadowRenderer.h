@@ -25,7 +25,7 @@ namespace Atlas {
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
             using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
 

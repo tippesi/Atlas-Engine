@@ -538,8 +538,8 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Light")) {
                 ImGui::Checkbox("Animate", &animateLight);
-                ImGui::SliderFloat3("Direction", (float*)&light.properties.directional.direction, -1.0f, 1.0f);
-                ImGui::ColorEdit3("Color", (float*)&light.color);
+                ImGui::SliderFloat3("Direction", &light.properties.directional.direction[0], -1.0f, 1.0f);
+                ImGui::ColorEdit3("Color", &light.color[0]);
                 ImGui::SliderFloat("Intensity##Light", &light.intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");

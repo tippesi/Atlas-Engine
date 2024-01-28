@@ -395,7 +395,7 @@ namespace Atlas {
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();
             for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
+                const auto& lightComponent = lightSubset.Get(entity);
 
                 if (!lightComponent.shadow)
                     continue;

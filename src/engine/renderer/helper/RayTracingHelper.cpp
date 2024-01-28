@@ -79,8 +79,6 @@ namespace Atlas {
 
                 if (!scene->IsRtDataValid()) return;
 
-                auto& rtData = scene->rayTracingWorld;
-
                 // Select lights once per initial ray dispatch
                 {
                     auto lightCount = lightBuffer.GetElementCount();
@@ -119,6 +117,8 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
+                    auto& rtData = scene->rayTracingWorld;
+
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);

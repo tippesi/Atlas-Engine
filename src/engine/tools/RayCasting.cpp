@@ -94,7 +94,7 @@ namespace Atlas {
 
         }
 
-        Volume::Ray RayCasting::CalculateRay(Ref<Viewport>& viewport,
+        Volume::Ray RayCasting::CalculateRay(const Ref<Viewport>& viewport,
             const CameraComponent& camera, vec2 mouseOffset) {
 
             Volume::Ray ray;
