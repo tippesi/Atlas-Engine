@@ -1,8 +1,6 @@
 #include <fog.hsh>
 #include <../globals.hsh>
 
-#define RAYMARCHED_FOG
-
 vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 
     vec3 L = pos - origin;

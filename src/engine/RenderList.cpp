@@ -46,7 +46,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewShadowPass(Lighting::Light *light, uint32_t layer) {
+    void RenderList::NewShadowPass(const LightComponent* light, uint32_t layer) {
 
         Pass pass {
             .type = RenderPassType::Shadow,
@@ -69,7 +69,7 @@ namespace Atlas {
 
     }
 
-    RenderList::Pass* RenderList::GetShadowPass(const Lighting::Light *light, const uint32_t layer) {
+    RenderList::Pass* RenderList::GetShadowPass(const LightComponent* light, const uint32_t layer) {
 
         for (auto& pass : passes) {
             if (pass.type == RenderPassType::Shadow &&

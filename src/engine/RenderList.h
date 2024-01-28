@@ -2,7 +2,7 @@
 
 #include "System.h"
 #include "scene/Entity.h"
-#include "lighting/Light.h"
+#include "scene/components/LightComponent.h"
 
 #include "graphics/Buffer.h"
 
@@ -34,7 +34,7 @@ namespace Atlas {
         struct Pass {
             RenderPassType type;
 
-            Lighting::Light* light;
+            const LightComponent* light;
             uint32_t layer;
 
             std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
@@ -48,11 +48,11 @@ namespace Atlas {
 
         void NewMainPass();
 
-        void NewShadowPass(Lighting::Light* light, uint32_t layer);
+        void NewShadowPass(const LightComponent* light, uint32_t layer);
 
         Pass* GetMainPass();
 
-        Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
+        Pass* GetShadowPass(const LightComponent* light, const uint32_t layer);
 
         void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 

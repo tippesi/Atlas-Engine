@@ -40,6 +40,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Render volumetric");
 
             auto& camera = scene->GetMainCamera();
+            auto volumetric = scene->volumetric;
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -53,7 +54,7 @@ namespace Atlas {
             auto lightEntities = scene->GetSubset<LightComponent>();
             std::vector<Lighting::Light*> lights;
             for (auto entity : lightEntities) {
-                lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                // lights.push_back(entity.GetComponent<LightComponent>().light.get());
             }
             if (scene->sky.sun) {
                 lights.push_back(scene->sky.sun.get());
@@ -64,6 +65,9 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Ray marching");
 
             for (auto& light : lights) {
+                // Skip if no global volumetric were created
+                if (!volumetric) continue;
+
                 const int32_t groupSize = 8;
 
                 res = ivec2(target->GetWidth(), target->GetHeight());
@@ -72,7 +76,6 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                auto volumetric = light->GetVolumetric();
                 auto shadow = light->GetShadow();
 
                 if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
@@ -91,7 +94,7 @@ namespace Atlas {
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
 
                 auto& shadowUniform = uniforms.light.shadow;
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     auto& cascadeUniform = shadowUniform.cascades[i];
                     auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
                     if (i < shadow->componentCount) {
@@ -173,7 +176,7 @@ namespace Atlas {
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
 
-            {
+            if (volumetric) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
@@ -256,8 +259,11 @@ namespace Atlas {
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
+                bool rayMarchedFog = volumetric != nullptr;
+
                 resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 resolvePipelineConfig.ManageMacro("FOG", fogEnabled);
+                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", rayMarchedFog);
 
                 auto resolvePipeline = PipelineManager::GetPipeline(resolvePipelineConfig);
                 commandList->BindPipeline(resolvePipeline);

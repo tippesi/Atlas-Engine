@@ -51,13 +51,14 @@ namespace Atlas {
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
             auto fog = scene->fog;
+            auto volumetric = scene->volumetric;
 
             auto sun = scene->sky.sun.get();
             if (!sun) {
                 auto lightEntities = scene->GetSubset<LightComponent>();
                 std::vector<Lighting::Light*> lights;
                 for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
                 }
                 for (auto& light : lights) {
                     if (light->type == AE_DIRECTIONAL_LIGHT) {
@@ -75,7 +76,7 @@ namespace Atlas {
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 0.0);
             lightUniform.intensity = sun->intensity;
 
-            if (sun->GetVolumetric()) {
+            if (volumetric) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
@@ -93,7 +94,7 @@ namespace Atlas {
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
 
                 auto componentCount = shadow->componentCount;
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     if (i < componentCount) {
                         auto cascade = &shadow->components[i];
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);

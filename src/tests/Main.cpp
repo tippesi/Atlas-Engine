@@ -95,6 +95,7 @@ auto testingValues = testing::Values(
     AppConfiguration { .ddgi = false },
     AppConfiguration { .reflection = false },
 #endif
+    AppConfiguration { .volumetric = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },

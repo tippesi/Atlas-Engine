@@ -1,7 +1,4 @@
 #include "Shadow.h"
-#include "Light.h"
-#include "DirectionalLight.h"
-#include "PointLight.h"
 
 namespace Atlas {
 
@@ -14,14 +11,15 @@ namespace Atlas {
             componentCount = cascadeCount;
             this->splitCorrection = splitCorrection;
 
+            isCascaded = true;
             useCubemap = false;
 
             maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
                 VK_FORMAT_D16_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-            components = std::vector<ShadowComponent>(cascadeCount);
+            components = std::vector<ShadowView>(cascadeCount);
 
-            Update();
+            update = true;
 
         }
 
@@ -29,6 +27,7 @@ namespace Atlas {
                 distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
 
             splitCorrection = 0.0f;
+            isCascaded = false;
 
             if (useCubemap) {
                 componentCount = 6;
@@ -43,9 +42,9 @@ namespace Atlas {
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
-            components = std::vector<ShadowComponent>(componentCount);
+            components = std::vector<ShadowView>(componentCount);
 
-            Update();
+            update = true;
 
         }
 
@@ -62,7 +61,7 @@ namespace Atlas {
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
-            Update();
+            update = true;
 
         }
 
@@ -70,7 +69,7 @@ namespace Atlas {
 
             update = true;
 
-        }
+        }     
 
     }
 

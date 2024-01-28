@@ -72,7 +72,7 @@ namespace Atlas {
         }
 
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-            Ref<RenderBatch> batch, Texture::Texture2D* texture) {
+            Ref<PrimitiveBatch> batch, Texture::Texture2D* texture) {
 
             if (!device->swapChain->isComplete || !scene->HasMainCamera()) 
                 return;
@@ -188,7 +188,7 @@ namespace Atlas {
                 auto lightEntities = scene->GetSubset<LightComponent>();
                 std::vector<Lighting::Light*> lights;
                 for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
                 }
 
                 if (scene->sky.sun) {
@@ -465,7 +465,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::RenderBatched(Ref<Viewport> viewport, Ref<RenderBatch> batch, const CameraComponent& camera) {
+        void MainRenderer::RenderBatched(Ref<Viewport> viewport, Ref<PrimitiveBatch> batch, const CameraComponent& camera) {
 
             /*
             batch->TransferData();
@@ -1073,7 +1073,7 @@ namespace Atlas {
             auto lightEntities = scene->GetSubset<LightComponent>();
             std::vector<Lighting::Light*> lights;
             for (auto entity : lightEntities) {
-                lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                //lights.push_back(entity.GetComponent<LightComponent>().light.get());
             }
 
             if (scene->sky.sun) {

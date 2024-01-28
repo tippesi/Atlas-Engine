@@ -62,7 +62,6 @@ void App::LoadContent(AppConfiguration config) {
     directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-    directionalLight->AddVolumetric(10, 0.28f);
 
     scene->sky.sun = directionalLight;
 
@@ -112,6 +111,10 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.sss) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+    }
+
+    if (config.volumetric) {
+        scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
     }
 
     if (config.ocean) {

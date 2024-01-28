@@ -22,6 +22,7 @@ struct AppConfiguration {
     bool ssgi = true;
     bool ddgi = true;
     bool reflection = true;
+    bool volumetric = true;
     bool ocean = true;
     bool resize = false;
     bool recreateSwapchain = false;

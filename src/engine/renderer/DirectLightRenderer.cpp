@@ -67,7 +67,7 @@ namespace Atlas {
                 }
 
                 auto componentCount = shadow->componentCount;
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     if (i < componentCount) {
                         auto cascade = &shadow->components[i];
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);

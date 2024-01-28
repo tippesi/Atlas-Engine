@@ -22,6 +22,9 @@ void App::LoadContent() {
         //audioStreams.back()->SetVolume(0.0001);
     }
 
+    LightComponent component = LightComponent(LightType::DirectionalLight);
+    component.properties.directional.direction = glm::vec3(1.0f);
+
     renderTarget = Atlas::CreateRef<Atlas::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
@@ -74,7 +77,6 @@ void App::LoadContent() {
     directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-    directionalLight->AddVolumetric(10, 0.28f);
 
     scene->sky.sun = directionalLight;
 
@@ -100,6 +102,8 @@ void App::LoadContent() {
     scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+
+    scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -334,6 +338,7 @@ void App::Render(float deltaTime) {
         const auto& clouds = scene->sky.clouds;
         const auto& sss = scene->sss;
         const auto& ssgi = scene->ssgi;
+        const auto& volumetric = scene->volumetric;
         auto& postProcessing = scene->postProcessing;
 
         bool openSceneNotFoundPopup = false;
@@ -538,7 +543,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");
-                ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
+                ImGui::SliderFloat("Intensity##Volumetric", &volumetric->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
                 auto shadow = light->GetShadow();
                 const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
@@ -961,13 +966,13 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 0.0f;
-        directionalLight->GetVolumetric()->intensity = 0.0f;
 
         // Setup camera
         camera.location = glm::vec3(0.0f, 14.0f, 40.0f);
         camera.rotation = glm::vec2(-3.14f, -0.1f);
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.0f;
     }
     else if (sceneSelection == SPONZA) {
         meshes.reserve(1);
@@ -988,7 +993,6 @@ bool App::LoadScene() {
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
         directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -996,6 +1000,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == BISTRO) {
         meshes.reserve(1);
@@ -1008,7 +1013,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
 
         // Setup camera
         camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
@@ -1016,6 +1020,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == SANMIGUEL) {
         meshes.reserve(1);
@@ -1028,7 +1033,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
         directionalLight->direction = glm::vec3(0.0f, -1.0f, -1.0f);
 
         // Setup camera
@@ -1037,6 +1041,7 @@ bool App::LoadScene() {
         camera.exposure = 2.5f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == MEDIEVAL) {
         meshes.reserve(1);
@@ -1051,13 +1056,13 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == PICAPICA) {
         meshes.reserve(1);
@@ -1070,7 +1075,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1078,6 +1082,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == SUBWAY) {
         meshes.reserve(1);
@@ -1089,7 +1094,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1097,6 +1101,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == MATERIALS) {
         meshes.reserve(1);
@@ -1113,7 +1118,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1123,6 +1127,7 @@ bool App::LoadScene() {
         scene->fog->enable = false;
         scene->sky.clouds->enable = false;
         scene->sss->enable = true;
+        scene->volumetric->intensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
@@ -1132,7 +1137,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 50.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1140,6 +1144,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
@@ -1149,7 +1154,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1157,6 +1161,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == FLYINGWORLD) {
         meshes.reserve(1);
@@ -1171,7 +1176,6 @@ bool App::LoadScene() {
 
         // Other scene related settings apart from the mesh
         directionalLight->intensity = 50.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1184,6 +1188,7 @@ bool App::LoadScene() {
         scene->sky.clouds->heightStretch = 1.0f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
@@ -1209,13 +1214,13 @@ bool App::LoadScene() {
         // Other scene related settings apart from the mesh
         directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
         directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);

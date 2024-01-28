@@ -131,6 +131,22 @@ namespace Atlas {
                 transformComponent.updated = false;
             }
 
+            auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
+            for (auto entity : cameraSubset) {
+                const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
+
+                cameraComponent.parentTransform = transformComponent.globalMatrix;
+            }
+
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+
+                lightComponent.Update(transformComponent);
+            }
+
 #ifdef AE_BINDLESS
             UpdateBindlessIndexMaps();
 
@@ -183,16 +199,19 @@ namespace Atlas {
                 audioComponent.Update(transformComponent, mainCamera.GetLocation());
             }
 
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                lightComponent.Update(mainCamera);
+            }
+
             if (terrain) {
                 terrain->Update(mainCamera);
             }
 
             if (ocean) {
                 ocean->Update(mainCamera, deltaTime);
-            }
-
-            if (sky.sun) {
-                sky.sun->Update(mainCamera);
             }
 
         }
@@ -372,6 +391,21 @@ namespace Atlas {
 
                 textureToBindlessIdx[texture] = textureIdx++;
 
+            }
+
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                if (!lightComponent.shadow)
+                    continue;
+
+                if (lightComponent.shadow->useCubemap) {
+
+                }
+                else {
+
+                }
             }
 
         }

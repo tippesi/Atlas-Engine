@@ -8,6 +8,8 @@ namespace Atlas {
 
 	namespace Scene {
 
+        class Scene;
+
 		namespace Components {
 
             class CameraComponent {
@@ -18,12 +20,6 @@ namespace Atlas {
 
                 CameraComponent(float fieldOfView, float aspectRatio, float nearPlane, float farPlane, glm::vec3 location = vec3(0.0f),
                     vec2 rotation = vec2(0.0f));
-
-                void UpdateView();
-
-                void UpdateProjection();
-
-                void Update();
 
                 void Jitter(vec2 jitter);
 
@@ -74,6 +70,12 @@ namespace Atlas {
                 bool isMain = true;
 
             private:
+                void UpdateView();
+
+                void UpdateProjection();
+
+                void Update();
+
                 vec2 jitterVector = vec2{ 0.0f };
                 vec2 lastJitterVector = vec2{ 0.0f };
 
@@ -81,6 +83,8 @@ namespace Atlas {
                 mat4 lastJitteredMatrix = mat4{ 1.0f };
 
                 mat4 lastViewMatrix = mat4{ 1.0f };
+
+                friend Scene;
 
             };
 

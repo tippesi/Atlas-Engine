@@ -18,10 +18,6 @@ namespace Atlas {
 						transformComponent->Update(transform, parentChanged);
 					}
 
-					if (cameraComponent) {
-						cameraComponent->parentTransform = transformComponent ? transformComponent->globalMatrix : transform.globalMatrix;
-					}
-
 					if (hierarchyComponent) {
 						hierarchyComponent->Update(transformComponent ? *transformComponent : transform, parentChanged);
 					}

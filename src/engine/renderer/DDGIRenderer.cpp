@@ -50,7 +50,7 @@ namespace Atlas {
                 auto lightEntities = scene->GetSubset<LightComponent>();
                 std::vector<Lighting::Light*> lights;
                 for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
+                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
                 }
 
                 for (auto& light : lights) {
@@ -151,7 +151,7 @@ namespace Atlas {
                         commandList->BindImage(shadow->maps.image, shadowSampler, 3, 0);
 
                         auto componentCount = shadow->componentCount;
-                        for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                        for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                             if (i < componentCount) {
                                 auto cascade = &shadow->components[i];
                                 auto frustum = Volume::Frustum(cascade->frustumMatrix);

@@ -3,7 +3,7 @@
 #include "../System.h"
 #include "../graphics/GraphicsDevice.h"
 
-#include "RenderBatch.h"
+#include "PrimitiveBatch.h"
 
 #include "OpaqueRenderer.h"
 #include "ImpostorRenderer.h"
@@ -44,12 +44,12 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-                Ref<RenderBatch> batch = nullptr, Texture::Texture2D* texture = nullptr);
+                Ref<PrimitiveBatch> batch = nullptr, Texture::Texture2D* texture = nullptr);
 
             void PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
                 Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
 
-            void RenderBatched(Ref<Viewport> viewport, Ref<RenderBatch> batch, const CameraComponent& camera);
+            void RenderBatched(Ref<Viewport> viewport, Ref<PrimitiveBatch> batch, const CameraComponent& camera);
 
             void RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene);
 
