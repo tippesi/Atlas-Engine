@@ -60,16 +60,16 @@ void main() {
     vec3 normalShoreWave;
 #endif
     float perlinScale;
-    float distanceToCamera = distance(fOriginalCoord.xyz, globalData[0].cameraLocation.xyz);
+    float distanceToCamera = distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz);
     fPosition += GetOceanDisplacement(fPosition, distanceToCamera, perlinScale, shoreScaling, normalShoreWave);
     fModelCoord = fPosition;
     
-    fPosition = vec3(globalData[0].vMatrix * vec4(fPosition, 1.0));
-    fClipSpace = globalData[0].pMatrix * vec4(fPosition, 1.0);
+    fPosition = vec3(globalData.vMatrix * vec4(fPosition, 1.0));
+    fClipSpace = globalData.pMatrix * vec4(fPosition, 1.0);
 
     ndcCurrent = vec3(fClipSpace.xy, fClipSpace.w);
     // For moving objects we need the last matrix
-    vec4 last = globalData[0].pvMatrixLast * vec4(fModelCoord, 1.0);
+    vec4 last = globalData.pvMatrixLast * vec4(fModelCoord, 1.0);
     ndcLast = vec3(last.xy, last.w);
     
     gl_Position = fClipSpace;

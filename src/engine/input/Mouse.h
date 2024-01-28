@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../System.h"
-#include "../Camera.h"
+#include "System.h"
+#include "scene/components/CameraComponent.h"
 #include "events/EventManager.h"
 
 namespace Atlas {
@@ -15,15 +15,13 @@ namespace Atlas {
 
             MouseHandler(const MouseHandler& that);
 
-            MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse = false);
+            MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse = false);
 
             ~MouseHandler();
 
             MouseHandler& operator=(const MouseHandler& that);
 
-            void Update(Camera* camera, float deltaTime);
-
-            void Reset(Camera* camera);
+            void Update(CameraComponent& camera, float deltaTime);
 
             void SetActivationButton(uint8_t mouseButton);
 
@@ -48,7 +46,8 @@ namespace Atlas {
             bool activationButtonDown = false;
             uint8_t activationButton = AE_MOUSEBUTTON_LEFT;
 
-            vec2 rotation = vec2(0.0f);
+            vec2 angularVelocity = vec2(0.0f);
+            vec2 interpolatedAngularVelocity = vec2(0.0f);
 
             int32_t mouseMotionEventHandle = -1;
             int32_t mouseButtonEventHandle = -1;

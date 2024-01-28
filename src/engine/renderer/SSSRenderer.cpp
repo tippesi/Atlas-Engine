@@ -12,15 +12,16 @@ namespace Atlas {
 
         }
 
-        void SSSRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void SSSRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto sss = scene->sss;
-            auto sun = scene->sky.sun;
 
-            if (!sss || !sss->enable || !sun) return;
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (!sss || !sss->enable || !mainLightEntity.IsValid()) return;
 
             Graphics::Profiler::BeginQuery("Screen space shadows");
+
+            auto& camera = scene->GetMainCamera();
 
             ivec2 res = ivec2(target->sssTexture.width, target->sssTexture.height);
             auto downsampledTarget = target->GetData(RenderResolution::FULL_RES);
@@ -35,7 +36,9 @@ namespace Atlas {
 
                 static int frameCount = 0;
 
-                auto lightDirection = glm::normalize(vec3(camera->viewMatrix * vec4(sun->direction, 0.0f)));
+                auto& light = mainLightEntity.GetComponent<LightComponent>();
+                auto lightDirection = glm::normalize(vec3(camera.viewMatrix * vec4(
+                    light.transformedProperties.directional.direction, 0.0f)));
 
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);

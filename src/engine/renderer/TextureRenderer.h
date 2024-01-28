@@ -17,25 +17,25 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
+            void RenderTexture2D(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, float rotation = 0.0f, float brightness = 1.0f,
                 bool alphaBlending = false, bool invert = false);
 
-            void RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2D* texture,
+            void RenderTexture2D(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture2D* texture,
                 float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 float rotation = 0.0f, float brightness = 1.0f, bool alphaBlending = false, bool invert = false);
 
-            void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
+            void RenderTexture2DArray(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture2DArray* texture,
                 int32_t depth, float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
-            void RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture2DArray* texture,
+            void RenderTexture2DArray(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture2DArray* texture,
                 int32_t depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 bool alphaBlending = false, bool invert = false);
 
-            void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
+            void RenderTexture3D(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture3D* texture,
                 float depth, float x, float y, float width, float height, bool alphaBlending = false, bool invert = false);
 
-            void RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture3D* texture,
+            void RenderTexture3D(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture3D* texture,
                 float depth, float x, float y, float width, float height,
                 vec4 clipArea, vec4 blendArea, bool alphaBlending = false, bool invert = false);
 
@@ -52,7 +52,7 @@ namespace Atlas {
                 float brightness;
             };
 
-            void Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
+            void Draw(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture* texture,
                 float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
                 float rotation, float brightness, bool alphaBlending, bool invert, const std::string& macro);
 
@@ -60,12 +60,6 @@ namespace Atlas {
                 const std::vector<std::string>& macros);
 
             Buffer::VertexArray vertexArray;
-
-            /*
-            OldShader::OldShader texture2DShader;
-            OldShader::OldShader texture2DArrayShader;
-            OldShader::OldShader texture3DShader;
-            */
 
         };
 

@@ -10,10 +10,10 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class RenderBatch {
+        class PrimitiveBatch {
 
         public:
-            RenderBatch();
+            PrimitiveBatch();
 
             void AddLine(vec3 from, vec3 to, vec3 fromColor = vec3(1.0f),
                 vec3 toColor = vec3(1.0f));

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../mesh/Mesh.h"
 #include "../volume/AABB.h"
 

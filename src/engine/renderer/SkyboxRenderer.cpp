@@ -13,14 +13,14 @@ namespace Atlas {
 
         }
 
-        void SkyboxRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void SkyboxRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Skybox");
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
+            auto& camera = scene->GetMainCamera();
             auto rtData = target->GetData(FULL_RES);
             auto velocityTexture = rtData->velocityTexture;
             auto depthTexture = rtData->depthTexture;
@@ -32,7 +32,7 @@ namespace Atlas {
             };
             commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-            vec4 lastCameraLocation = vec4(camera->GetLastLocation(), 1.0f);
+            vec4 lastCameraLocation = vec4(camera.GetLastLocation(), 1.0f);
             commandList->PushConstants("constants", &lastCameraLocation);
 
             const auto& cubeMap = scene->sky.probe->cubemap;

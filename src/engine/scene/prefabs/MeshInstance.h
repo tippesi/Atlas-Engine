@@ -17,16 +17,16 @@ namespace Atlas {
 				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh,
                     bool isStatic = true) : Entity(entity, manager) {
 
-					AddComponent<Components::MeshComponent>(mesh);
-					AddComponent<Components::TransformComponent>(mat4(1.0f), isStatic);
+					AddComponent<MeshComponent>(mesh);
+					AddComponent<TransformComponent>(mat4(1.0f), isStatic);
 
 				}
 
 				MeshInstance(ECS::Entity entity, ECS::EntityManager* manager, ResourceHandle<Mesh::Mesh> mesh,
                     mat4 transform, bool isStatic = true) : Entity(entity, manager) {
 
-					AddComponent<Components::MeshComponent>(mesh);
-					AddComponent<Components::TransformComponent>(transform, isStatic);
+					AddComponent<MeshComponent>(mesh);
+					AddComponent<TransformComponent>(transform, isStatic);
 
 				}
 

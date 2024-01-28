@@ -40,46 +40,37 @@ namespace Atlas {
 
         }
 
-        void OceanRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void OceanRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
                 return;
 
             Graphics::Profiler::BeginQuery("Ocean");
 
+            auto& camera = scene->GetMainCamera();
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
             auto fog = scene->fog;
+            auto volumetric = scene->volumetric;
 
-            auto sun = scene->sky.sun.get();
-            if (!sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        sun = static_cast<Lighting::DirectionalLight*>(light);
-                    }
-                }
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (!mainLightEntity.IsValid())
+                return;
 
-                if (!sun) return;
-            }
+            auto& light = mainLightEntity.GetComponent<LightComponent>();
 
-            vec3 direction = normalize(sun->direction);
+            vec3 direction = normalize(light.transformedProperties.directional.direction);
 
             Light lightUniform;
-            lightUniform.direction = vec4(sun->direction, 0.0);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 0.0);
-            lightUniform.intensity = sun->intensity;
+            lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
+            lightUniform.intensity = light.intensity;
 
-            if (sun->GetVolumetric()) {
+            if (volumetric) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
-            auto shadow = sun->GetShadow();
+            auto shadow = light.shadow;
             if (shadow) {
                 auto distance = !shadow->longRange ? shadow->distance :
                                 shadow->longRangeDistance;
@@ -93,16 +84,16 @@ namespace Atlas {
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
 
                 auto componentCount = shadow->componentCount;
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     if (i < componentCount) {
                         auto cascade = &shadow->components[i];
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);
                         auto corners = frustum.GetCorners();
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                            abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+                            abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                                                 cascade->viewMatrix * camera->invViewMatrix;
+                                                                 cascade->viewMatrix * camera.invViewMatrix;
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -127,10 +118,10 @@ namespace Atlas {
             if (cloudShadowsEnabled) {
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
-                clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
+                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
 
                 cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                 cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
@@ -419,8 +410,7 @@ namespace Atlas {
 
         }
 
-        void OceanRenderer::RenderDepthOnly(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void OceanRenderer::RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             if (!scene->ocean || !scene->ocean->enable)
                 return;
@@ -536,7 +526,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig OceanRenderer::GeneratePipelineConfig(RenderTarget* target, bool depthOnly, bool wireframe) {
+        PipelineConfig OceanRenderer::GeneratePipelineConfig(Ref<RenderTarget> target, bool depthOnly, bool wireframe) {
 
             const auto shaderConfig = ShaderConfig {
                 {depthOnly ? "ocean/depth.vsh" : "ocean/ocean.vsh", VK_SHADER_STAGE_VERTEX_BIT},

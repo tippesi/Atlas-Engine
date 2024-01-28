@@ -1,10 +1,10 @@
-#include "RenderBatch.h"
+#include "PrimitiveBatch.h"
 
 namespace Atlas {
 
     namespace Renderer {
 
-        RenderBatch::RenderBatch() {
+        PrimitiveBatch::PrimitiveBatch() {
 
             /*
             lineVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
@@ -34,7 +34,7 @@ namespace Atlas {
 
         }
 
-        void RenderBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
+        void PrimitiveBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
 
             /*
             lineVertexData.push_back(from);
@@ -48,25 +48,25 @@ namespace Atlas {
 
         }
 
-        size_t RenderBatch::GetLineCount() const {
+        size_t PrimitiveBatch::GetLineCount() const {
 
             return lineVertexData.size() / 2;
 
         }
 
-        void RenderBatch::SetLineWidth(float width) {
+        void PrimitiveBatch::SetLineWidth(float width) {
 
             lineWidth = width;
 
         }
 
-        float RenderBatch::GetLineWidth() const {
+        float PrimitiveBatch::GetLineWidth() const {
 
             return lineWidth;
 
         }
 
-        void RenderBatch::AddTriangle(vec3 v0, vec3 v1, vec3 v2, vec3 v0Color,
+        void PrimitiveBatch::AddTriangle(vec3 v0, vec3 v1, vec3 v2, vec3 v0Color,
             vec3 v1Color, vec3 v2Color) {
 
             triangleVertexData.push_back(v0);
@@ -81,13 +81,13 @@ namespace Atlas {
 
         }
 
-        size_t RenderBatch::GetTriangleCount() const {
+        size_t PrimitiveBatch::GetTriangleCount() const {
 
             return triangleVertexData.size() / 3;
 
         }
 
-        void RenderBatch::TransferData() {
+        void PrimitiveBatch::TransferData() {
 
             if (!lineDataValid) {
 
@@ -113,19 +113,19 @@ namespace Atlas {
 
         }
 
-        void RenderBatch::BindLineBuffer() {
+        void PrimitiveBatch::BindLineBuffer() {
 
             // lineVertexArray.Bind();
 
         }
 
-        void RenderBatch::BindTriangleBuffer() {
+        void PrimitiveBatch::BindTriangleBuffer() {
 
             // triangleVertexArray.Bind();
 
         }
 
-        void RenderBatch::Clear() {
+        void PrimitiveBatch::Clear() {
 
             lineVertexData.clear();
             lineColorData.clear();

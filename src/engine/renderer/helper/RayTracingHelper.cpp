@@ -56,7 +56,7 @@ namespace Atlas {
             }
 
 
-            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale,
+            void RayTracingHelper::SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale,
                 bool useEmissivesAsLights) {
 
                 this->scene = scene;
@@ -78,8 +78,6 @@ namespace Atlas {
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
-
-                auto& rtData = scene->rayTracingWorld;
 
                 // Select lights once per initial ray dispatch
                 {
@@ -119,6 +117,8 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
+                    auto& rtData = scene->rayTracingWorld;
+
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);
@@ -445,19 +445,11 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto lightEntities = scene->GetSubset<Scene::Components::LightComponent>();
-                std::vector<Lighting::Light*> lightSources;
-                for (auto entity : lightEntities) {
-                    lightSources.push_back(entity.GetComponent<Scene::Components::LightComponent>().light.get());
-                }
+                auto lightSubset = scene->GetSubset<LightComponent>();
+                for (auto& lightEntity : lightSubset) {
+                    auto& light = lightEntity.GetComponent<LightComponent>();
 
-                if (scene->sky.sun) {
-                    lightSources.push_back(scene->sky.sun.get());
-                }
-
-                for (auto light : lightSources) {
-
-                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light->color) * light->intensity;
+                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);
@@ -468,13 +460,12 @@ namespace Atlas {
                     uint32_t data = 0;
 
                     // Parse individual light information based on type
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        auto dirLight = static_cast<Lighting::DirectionalLight*>(light);
+                    if (light.type == LightType::DirectionalLight) {
                         data |= (DIRECTIONAL_LIGHT << 28u);
                         weight = brightness;
-                        N = dirLight->direction;
+                        N = light.transformedProperties.directional.direction;
                     }
-                    else if (light->type == AE_POINT_LIGHT) {
+                    else if (light.type == LightType::PointLight) {
 
                     }
 

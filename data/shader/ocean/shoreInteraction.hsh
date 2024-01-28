@@ -22,11 +22,11 @@ vec3 CalculateGerstner(vec3 position) {
 
     float w = 1.0 / waveLength;
     float phi = speed * w;
-    float rad = w * shoreDistance + phi * globalData[0].time;
+    float rad = w * shoreDistance + phi * globalData.time;
 
     float modulation = saturate(sin(position.x / 20.0) + cos(position.z / 10.0));
     
-    float distanceScale = saturate(1.0 - (distance(globalData[0].cameraLocation.xyz, position)
+    float distanceScale = saturate(1.0 - (distance(globalData.cameraLocation.xyz, position)
          - Uniforms.shoreWaveDistanceOffset) / Uniforms.shoreWaveDistanceScale);
 
     float amplitude = 1.0 * Uniforms.shoreWaveAmplitude * scale * modulation * distanceScale;
@@ -57,7 +57,7 @@ vec2 CalculateShoreInteraction(vec3 position) {
 
     float w = 1.0 / waveLength;
     float phi = speed * w;
-    float rad = w * shoreDistance + phi * globalData[0].time;
+    float rad = w * shoreDistance + phi * globalData.time;
 
     float modulation = saturate(sin(position.x / 20.0) + cos(position.z / 10.0));
 

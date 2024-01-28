@@ -3,7 +3,7 @@
 #include "../System.h"
 #include "../graphics/GraphicsDevice.h"
 
-#include "RenderBatch.h"
+#include "PrimitiveBatch.h"
 
 #include "OpaqueRenderer.h"
 #include "ImpostorRenderer.h"
@@ -14,7 +14,6 @@
 #include "TerrainShadowRenderer.h"
 #include "DecalRenderer.h"
 #include "DirectLightRenderer.h"
-#include "PointLightRenderer.h"
 #include "IndirectLightRenderer.h"
 #include "TemporalAARenderer.h"
 #include "SkyboxRenderer.h"
@@ -44,85 +43,18 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            /**
-             *
-             * @param window
-             * @param target
-             * @param camera
-             * @param scene
-             */
-            void RenderScene(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Texture::Texture2D* texture = nullptr, 
-                RenderBatch* batch = nullptr);
+            void RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+                Ref<PrimitiveBatch> batch = nullptr, Texture::Texture2D* texture = nullptr);
 
-            /**
-             *
-             * @param window
-             * @param target
-             * @param camera
-             * @param scene
-             */
-            void PathTraceScene(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Texture::Texture2D* texture = nullptr);
+            void PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+                Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
 
-            /**
-             *
-             * @param window
-             * @param color
-             * @param x
-             * @param y
-             * @param width
-             * @param height
-             * @param alphaBlending
-             * @param framebuffer
-             */
-            void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-                                 bool alphaBlending = false);
+            void RenderBatched(Ref<Viewport> viewport, Ref<PrimitiveBatch> batch, const CameraComponent& camera);
 
-            /**
-             *
-             * @param window
-             * @param color
-             * @param x
-             * @param y
-             * @param width
-             * @param height
-             * @param clipArea
-             * @param blendArea
-             * @param alphaBlending
-             * @param framebuffer
-             */
-            void RenderRectangle(Viewport* viewport, vec4 color, float x, float y, float width, float height,
-                                 vec4 clipArea, vec4 blendArea, bool alphaBlending = false);
+            void RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene);
 
-            /**
-             *
-             * @param viewport
-             * @param camera
-             * @param batch
-             */
-            void RenderBatched(Viewport* viewport, Camera* camera, RenderBatch* batch);
+            void FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList);
 
-            /**
-             * Renders the scene into an environment probe
-             * @param probe The environment probe.
-             * @param target A render target to support rendering
-             * @param scene The scene which should be rendered-
-             * @note The render target must have the same resolution as the probe.
-             */
-            void RenderProbe(Lighting::EnvironmentProbe* probe, RenderTarget* target, Scene::Scene* scene);
-
-            /**
-             * Filters an environment probe.
-             * @param probe The environment probe.
-             * @note A probe has to be filtered to support image based lighting
-             */
-            void FilterProbe(Lighting::EnvironmentProbe* probe, Graphics::CommandList* commandList);
-
-            /**
-             * Update of the renderer
-             * @warning Must be called every frame
-             */
             void Update();
 
             TextRenderer textRenderer;
@@ -198,16 +130,16 @@ namespace Atlas {
 
             void CreateGlobalDescriptorSetLayout();
 
-            void SetUniforms(Scene::Scene* scene, Camera* camera);
+            void SetUniforms(Ref<Scene::Scene> scene, const CameraComponent& camera);
 
-            void PrepareMaterials(Scene::Scene* scene, std::vector<PackedMaterial>& materials,
+            void PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
-            void PrepareBindlessData(Scene::Scene* scene, std::vector<Ref<Graphics::Image>>& images,
+            void PrepareBindlessData(Ref<Scene::Scene> scene, std::vector<Ref<Graphics::Image>>& images,
                 std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
                 std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers);
 
-            void FillRenderList(Scene::Scene* scene, Camera* camera);
+            void FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera);
 
             void PreintegrateBRDF();
 

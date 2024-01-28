@@ -84,9 +84,9 @@ void main() {
             // As a reminder: The current inverse matrix is also transposed
             vec3 lastPos = vec3(lastMatrix * vec4(vec4(pos, 1.0) * instance.inverseMatrix, 1.0));
 
-            vec4 viewSpacePos = globalData[0].vMatrix * vec4(pos, 1.0);
-            vec4 projPositionCurrent = globalData[0].pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData[0].pvMatrixLast * vec4(lastPos, 1.0);
+            vec4 viewSpacePos = globalData.vMatrix * vec4(pos, 1.0);
+            vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
+            vec4 projPositionLast = globalData.pvMatrixLast * vec4(lastPos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
@@ -121,6 +121,7 @@ void main() {
                 imageStore(frameAccumImage, ivec3(pixel, 2), uvec4(floatBitsToUint(payload.radiance.b)));
             }
             else {
+#ifndef AE_OS_MACOS
                 uint maxValuePerSample = 0xFFFFFFFF / uint(Uniforms.samplesPerFrame);
 
                 vec3 normalizedRadiance = clamp(payload.radiance / Uniforms.maxRadiance, vec3(0.0), vec3(1.0));
@@ -129,6 +130,7 @@ void main() {
                 imageAtomicAdd(frameAccumImage, ivec3(pixel, 0), quantizedRadiance.r);
                 imageAtomicAdd(frameAccumImage, ivec3(pixel, 1), quantizedRadiance.g);
                 imageAtomicAdd(frameAccumImage, ivec3(pixel, 2), quantizedRadiance.b);
+#endif
             }
 #endif
         }

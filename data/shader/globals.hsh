@@ -1,12 +1,10 @@
 #ifdef AE_BINDLESS
-#define UNIFORM_COUNT 8192
 #define TEXTURE_COUNT 16384
 #else
-#define UNIFORM_COUNT 1
 #define TEXTURE_COUNT 1
 #endif
 
-layout(set = 0, binding = 3, std140) uniform GlobalBuffer {
+layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     vec4 frustumPlanes[6];
     mat4 vMatrix;
     mat4 pMatrix;
@@ -27,9 +25,9 @@ layout(set = 0, binding = 3, std140) uniform GlobalBuffer {
     float time;
     float deltaTime;
     uint frameCount;
-} globalData[UNIFORM_COUNT];
+} globalData;
 
-layout(set = 0, binding = 4) uniform texture2D bindlessTextures[TEXTURE_COUNT];
+layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
 
 layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
 

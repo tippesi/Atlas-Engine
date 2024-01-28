@@ -14,11 +14,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene,
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList, RenderList* renderList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
-            void Generate(Viewport* viewport, const std::vector<mat4>& viewMatrices,
+            void Generate(const std::vector<mat4>& viewMatrices,
                 mat4 projectionMatrix, float distToCenter, Mesh::Mesh* mesh, Mesh::Impostor* impostor);
 
         private:

@@ -18,13 +18,7 @@ namespace Atlas {
 
         }
 
-        void TextRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene) {
-
-            return;
-
-        }
-
-        void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, float scale,
             const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
@@ -39,7 +33,7 @@ namespace Atlas {
 
         }
 
-        void TextRenderer::Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 clipArea, vec4 blendArea,
             float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
@@ -48,7 +42,7 @@ namespace Atlas {
 
         }
 
-        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
             float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
@@ -63,7 +57,7 @@ namespace Atlas {
 
         }
 
-        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+        void TextRenderer::RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
             const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
             vec4 clipArea, vec4 blendArea, float scale, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
@@ -115,7 +109,7 @@ namespace Atlas {
 
         }
 
-        std::vector<vec4> TextRenderer::CalculateCharacterInstances(Font* font, const std::string& text,
+        std::vector<vec4> TextRenderer::CalculateCharacterInstances(Ref<Font>& font, const std::string& text,
             int32_t* characterCount) {
 
             *characterCount = 0;

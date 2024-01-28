@@ -60,7 +60,7 @@ namespace Atlas {
 
         }
 
-        void Terrain::Update(Camera *camera) {
+        void Terrain::Update(const CameraComponent& camera) {
 
             leafList.clear();
 
@@ -70,7 +70,7 @@ namespace Atlas {
 
         }
 
-        void Terrain::UpdateRenderlist(Volume::Frustum* frustum, vec3 location) {
+        void Terrain::UpdateRenderlist(const Volume::Frustum& frustum, vec3 location) {
 
             renderList.clear();
 
@@ -81,7 +81,7 @@ namespace Atlas {
                         node->location.y + node->sideLength)
                 );
 
-                if (frustum->Intersects(aabb))
+                if (frustum.Intersects(aabb))
                     renderList.push_back(node);
             }
 

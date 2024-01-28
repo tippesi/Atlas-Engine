@@ -14,7 +14,7 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::InsertRenderableEntity(Entity entity, const Components::MeshComponent& transform) {
+		void SpacePartitioning::InsertRenderableEntity(Entity entity, const MeshComponent& transform) {
 
 			if (false) {
 				renderableStaticEntityOctree.Insert(entity, transform.aabb);
@@ -25,7 +25,7 @@ namespace Atlas {
 
 		}
 
-		void SpacePartitioning::RemoveRenderableEntity(Entity entity, const Components::MeshComponent& transform) {
+		void SpacePartitioning::RemoveRenderableEntity(Entity entity, const MeshComponent& transform) {
 
 			if (false) {
 				renderableStaticEntityOctree.Remove(entity, transform.aabb);
@@ -51,7 +51,7 @@ namespace Atlas {
                 insideMovableEntities, frustum);
 
             for (auto entity : staticEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -59,7 +59,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideStaticEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)
@@ -67,7 +67,7 @@ namespace Atlas {
             }
 
             for (auto entity : movableEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->dontCull || meshComp->visible && frustum.Intersects(meshComp->aabb))
@@ -75,7 +75,7 @@ namespace Atlas {
             }
 
             for (auto entity : insideMovableEntities) {
-                auto meshComp = entityManager->GetIfContains<Components::MeshComponent>(entity);
+                auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;
 
                 if (meshComp->visible)

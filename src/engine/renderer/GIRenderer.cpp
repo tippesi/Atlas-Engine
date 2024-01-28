@@ -40,8 +40,7 @@ namespace Atlas {
 
         }
 
-        void GIRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void GIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto ssgi = scene->ssgi;
             if (!ssgi || !ssgi->enable) return;

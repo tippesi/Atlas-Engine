@@ -14,7 +14,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame(Scene::Scene* scene) {
+    void RenderList::NewFrame(Ref<Scene::Scene> scene) {
 
         this->scene = scene;
 
@@ -38,7 +38,7 @@ namespace Atlas {
 
         Pass pass {
             .type = RenderPassType::Main,
-            .light = nullptr,
+            .lightEntity = ECS::EntityConfig::InvalidEntity,
             .layer = 0
         };
 
@@ -46,11 +46,11 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewShadowPass(Lighting::Light *light, uint32_t layer) {
+    void RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
         Pass pass {
             .type = RenderPassType::Shadow,
-            .light = light,
+            .lightEntity = lightEntity,
             .layer = layer
         };
 
@@ -69,18 +69,18 @@ namespace Atlas {
 
     }
 
-    RenderList::Pass* RenderList::GetShadowPass(const Lighting::Light *light, const uint32_t layer) {
+    RenderList::Pass* RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
 
         for (auto& pass : passes) {
             if (pass.type == RenderPassType::Shadow &&
-                pass.light == light && pass.layer == layer) return &pass;
+                pass.lightEntity == lightEntity && pass.layer == layer) return &pass;
         }
 
         return nullptr;
 
     }
 
-    void RenderList::Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent) {
+    void RenderList::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
         auto& meshToActorMap = pass.meshToEntityMap;
@@ -102,9 +102,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Update(Camera* camera) {
-
-        auto cameraLocation = camera->GetLocation();
+    void RenderList::Update(vec3 cameraLocation) {
 
         auto& pass = passes.back();
         auto type = pass.type;
@@ -146,7 +144,7 @@ namespace Atlas {
             if (hasImpostor) {
                 for (auto ecsEntity : entities) {
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
                     auto distance = glm::distance2(
                         vec3(transformComponent.globalMatrix[3]),
                         cameraLocation);
@@ -169,7 +167,7 @@ namespace Atlas {
             else {
                 for (auto ecsEntity : entities) {
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<Scene::Components::TransformComponent>();
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
                     currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
                         lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));

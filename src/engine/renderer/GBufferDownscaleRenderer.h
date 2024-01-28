@@ -13,9 +13,9 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Downscale(RenderTarget* target, Graphics::CommandList* commandList);
+            void Downscale(Ref<RenderTarget> target, Graphics::CommandList* commandList);
 
-            void DownscaleDepthOnly(RenderTarget* target, Graphics::CommandList* commandList);
+            void DownscaleDepthOnly(Ref<RenderTarget> target, Graphics::CommandList* commandList);
 
         private:
             void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt, Graphics::CommandList* commandList);

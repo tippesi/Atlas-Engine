@@ -16,8 +16,7 @@ namespace Atlas {
 
         }
 
-        void TemporalAARenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void TemporalAARenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("TAA");
 
@@ -32,6 +31,8 @@ namespace Atlas {
             ivec2 groupCount = res / groupSize;
             groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
             groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+
+            auto& camera = scene->GetMainCamera();
 
             auto targetData = target->GetData(FULL_RES);
 
@@ -61,7 +62,7 @@ namespace Atlas {
             auto constants = PushConstants {
                 .resolution = vec2((float)target->GetWidth(), (float)target->GetHeight()),
                 .invResolution = 1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()),
-                .jitter = camera->GetJitter()
+                .jitter = camera.GetJitter()
             };
             commandList->PushConstants("constants", &constants);
 
@@ -74,8 +75,7 @@ namespace Atlas {
 
         }
 
-        void TemporalAARenderer::Render(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void TemporalAARenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             pipelineConfig.ManageMacro("PATHTRACE", true);
 

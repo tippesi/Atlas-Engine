@@ -66,4 +66,8 @@ namespace Atlas {
 
     typedef short float16;
 
+    namespace Scene::Components {}
+
+    using namespace Scene::Components;
+
 }

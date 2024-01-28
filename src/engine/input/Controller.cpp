@@ -19,15 +19,12 @@ namespace Atlas {
 
         }
 
-        ControllerHandler::ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
+        ControllerHandler::ControllerHandler(CameraComponent& camera, float sensibility, float speed, float reactivity,
                 float threshold, int32_t device) :
                 sensibility(sensibility), speed(speed), reactivity(reactivity),
                 threshold(threshold), controllerDevice(device) {
 
             RegisterEvents();
-
-            location = camera->location;
-            rotation = camera->rotation;
 
         }
 
@@ -57,34 +54,24 @@ namespace Atlas {
 
         }
 
-        void ControllerHandler::Update(Camera* camera, float deltaTime) {
+        void ControllerHandler::Update(CameraComponent& camera, float deltaTime) {
 
             if (controllerDevice > -1) {
 
-                location += camera->direction * -leftStick.y * deltaTime * (speed + speedIncrease);
-                location += camera->right * leftStick.x * deltaTime * (speed + speedIncrease);
+                linearVelocity = camera.direction * -leftStick.y * deltaTime * (speed + speedIncrease);
+                linearVelocity += camera.right * leftStick.x * deltaTime * (speed + speedIncrease);
 
-                rotation += -rightStick * deltaTime * sensibility;
+                angularVelocity = -rightStick * deltaTime * sensibility;
 
                 float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-                camera->location = glm::mix(camera->location, location, progress);
-                camera->rotation = glm::mix(camera->rotation, rotation, progress);
+                interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
+                interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);
+
+                camera.location += interpolatedLinearVelocity;
+                camera.rotation += interpolatedAngularVelocity;
 
             }
-            else {
-
-                location = camera->location;
-                rotation = camera->rotation;
-
-            }
-
-        }
-
-        void ControllerHandler::Reset(Camera* camera) {
-
-            location = camera->location;
-            rotation = camera->rotation;
 
         }
 
@@ -176,8 +163,11 @@ namespace Atlas {
 
             speedIncrease = that.speedIncrease;
 
-            location = that.location;
-            rotation = that.rotation;
+            linearVelocity = that.linearVelocity;
+            angularVelocity = that.angularVelocity;
+
+            interpolatedLinearVelocity = that.interpolatedLinearVelocity;
+            interpolatedAngularVelocity = that.interpolatedAngularVelocity;
 
             controllerDevice = that.controllerDevice;
 

@@ -63,8 +63,8 @@ namespace Atlas {
             void UpdateForSoftwareRayTracing(std::vector<GPUBVHInstance>& gpuBvhInstances,
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
-            void UpdateForHardwareRayTracing(Scene::Subset<Scene::Components::MeshComponent,
-                Scene::Components::TransformComponent>& entitySubset);
+            void UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
+                TransformComponent>& entitySubset);
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 

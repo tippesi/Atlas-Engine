@@ -15,31 +15,34 @@ void App::LoadContent() {
 
     music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
     audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
+    // static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
 
     for (uint32_t i = 0; i < 10000; i++) {
         //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
         //audioStreams.back()->SetVolume(0.0001);
     }
 
-    renderTarget = Atlas::RenderTarget(1920, 1080);
-    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
+    renderTarget = Atlas::CreateRef<Atlas::RenderTarget>(1920, 1080);
+    pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
+
+    viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::Font("font/roboto.ttf", 22, 5);
-
-    camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("demoScene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
-    controllerHandler = Atlas::Input::ControllerHandler(&camera, 1.5f, 5.0f, 10.0f, 5000.0f);
+    cameraEntity = scene->CreateEntity();
+    auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
+        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+
+    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 8.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 5.0f);
+    controllerHandler = Atlas::Input::ControllerHandler(camera, 1.0f, 5.0f, 10.0f, 5000.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -66,14 +69,14 @@ void App::LoadContent() {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLight = Atlas::CreateRef<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
-    directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
-    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-    directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-    directionalLight->AddVolumetric(10, 0.28f);
+    directionalLightEntity = scene->CreateEntity();
+    auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    scene->sky.sun = directionalLight;
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLight.isMain = false;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
     scene->ao->rt = true;
@@ -97,6 +100,8 @@ void App::LoadContent() {
     scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+
+    scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -135,26 +140,23 @@ void App::Update(float deltaTime) {
         mouseHandler.lock = false;
     }
 
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
     if (controllerHandler.IsControllerAvailable()) {
-        controllerHandler.Update(&camera, deltaTime);
+        controllerHandler.Update(camera, deltaTime);
     }
     else {
-        mouseHandler.Update(&camera, deltaTime);
-        keyboardHandler.Update(&camera, deltaTime);
+        mouseHandler.Update(camera, deltaTime);
+        keyboardHandler.Update(camera, deltaTime);
     }    
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
     }
 
     if(moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
     }
-
-    camera.UpdateView();
-    camera.UpdateProjection();
 
     if (sceneSelection == SPONZA) {
         auto meshEntitySubset = scene->GetSubset<MeshComponent, TransformComponent>();
@@ -235,8 +237,8 @@ void App::Update(float deltaTime) {
 
     }
 
-    scene->Update(deltaTime);
-    scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
+    scene->Timestep(deltaTime);
+    scene->Update();
 
     CheckLoadScene();
 
@@ -269,14 +271,16 @@ void App::Render(float deltaTime) {
         return;
     }
 
-    if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
+    auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
+    if (animateLight) directionalLight.properties.directional.direction
+        = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
     if (pathTrace) {
-        viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, scene.get());
+        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
+        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
     }
     else {
-        mainRenderer->RenderScene(&viewport, &renderTarget, &camera, scene.get());
+        mainRenderer->RenderScene(viewport, renderTarget, scene);
 
         auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugMotion;
 
@@ -286,29 +290,29 @@ void App::Render(float deltaTime) {
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
             if (debugAo) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.aoTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->aoTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugReflection) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.reflectionTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugClouds) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.volumetricCloudsTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricCloudsTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugSSS) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.sssTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugSSGI) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport, &renderTarget.giTexture,
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 1.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
             else if (debugMotion) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
-                    renderTarget.GetData(Atlas::FULL_RES)->velocityTexture.get(),
-                    0.0f, 0.0f, float(viewport.width), float(viewport.height), 0.0, 10.0f, false, true);
+                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
+                    renderTarget->GetData(Atlas::FULL_RES)->velocityTexture.get(),
+                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 10.0f, false, true);
             }
 
             commandList->EndRenderPass();
@@ -325,7 +329,8 @@ void App::Render(float deltaTime) {
 
         ImGui::NewFrame();
 
-        const auto& light = directionalLight;
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        auto& light = directionalLightEntity.GetComponent<LightComponent>();
         const auto& volume = scene->irradianceVolume;
         const auto& ao = scene->ao;
         const auto& fog = scene->fog;
@@ -333,6 +338,7 @@ void App::Render(float deltaTime) {
         const auto& clouds = scene->sky.clouds;
         const auto& sss = scene->sss;
         const auto& ssgi = scene->ssgi;
+        const auto& volumetric = scene->volumetric;
         auto& postProcessing = scene->postProcessing;
 
         bool openSceneNotFoundPopup = false;
@@ -532,14 +538,14 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Light")) {
                 ImGui::Checkbox("Animate", &animateLight);
-                ImGui::SliderFloat3("Direction", (float*)&light->direction, -1.0f, 1.0f);
-                ImGui::ColorEdit3("Color", (float*)&light->color);
-                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat3("Direction", &light.properties.directional.direction[0], -1.0f, 1.0f);
+                ImGui::ColorEdit3("Color", &light.color[0]);
+                ImGui::SliderFloat("Intensity##Light", &light.intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");
-                ImGui::SliderFloat("Intensity##Volumetric", &light->GetVolumetric()->intensity, 0.0f, 1.0f);
+                ImGui::SliderFloat("Intensity##Volumetric", &volumetric->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
-                auto shadow = light->GetShadow();
+                auto shadow = light.shadow;
                 const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
                 int currentItem = 0;
                 if (shadow->resolution == 512) currentItem = 0;
@@ -698,6 +704,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Physics")) {
+                ImGui::Checkbox("Pause simulation##Phyiscs", &scene->physicsWorld->pauseSimulation);
                 ImGui::Text("Sphere body");
                 ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
                 ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
@@ -886,17 +893,17 @@ void App::DisplayLoadingScreen(float deltaTime) {
 
     rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
 
-    mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
+    mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
         loadingTexture.get(), x, y, width, height, rotation);
 
     float textWidth, textHeight;
-    font.ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
+    font->ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
 
     x = windowSize.x / 2 - textWidth / 2;
     y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
-    viewport.Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer->textRenderer.Render(commandList, &viewport, &font,
+    viewport->Set(0, 0, windowSize.x, windowSize.y);
+    mainRenderer->textRenderer.Render(commandList, viewport, font,
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
@@ -933,7 +940,11 @@ bool App::LoadScene() {
     loadingComplete = false;
 
     Atlas::Texture::Cubemap sky;
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
+
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
     scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
     scene->sky.clouds->minHeight = 1400.0f;
@@ -956,14 +967,14 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 0.0f;
-        directionalLight->GetVolumetric()->intensity = 0.0f;
+        directionalLight.intensity = 0.0f;
 
         // Setup camera
         camera.location = glm::vec3(0.0f, 14.0f, 40.0f);
         camera.rotation = glm::vec2(-3.14f, -0.1f);
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.0f;
     }
     else if (sceneSelection == SPONZA) {
         meshes.reserve(1);
@@ -982,9 +993,8 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-        directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -992,6 +1002,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == BISTRO) {
         meshes.reserve(1);
@@ -1003,8 +1014,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
@@ -1012,6 +1022,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == SANMIGUEL) {
         meshes.reserve(1);
@@ -1023,9 +1034,8 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, -1.0f);
+        directionalLight.intensity = 100.0f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, -1.0f);
 
         // Setup camera
         camera.location = glm::vec3(45.0f, 26.0f, 17.0f);
@@ -1033,6 +1043,7 @@ bool App::LoadScene() {
         camera.exposure = 2.5f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
     else if (sceneSelection == MEDIEVAL) {
         meshes.reserve(1);
@@ -1046,14 +1057,14 @@ bool App::LoadScene() {
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == PICAPICA) {
         meshes.reserve(1);
@@ -1065,8 +1076,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1074,6 +1084,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == SUBWAY) {
         meshes.reserve(1);
@@ -1084,8 +1095,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1093,6 +1103,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == MATERIALS) {
         meshes.reserve(1);
@@ -1108,8 +1119,7 @@ bool App::LoadScene() {
         scene->sky.probe = Atlas::CreateRef(probe);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1119,16 +1129,16 @@ bool App::LoadScene() {
         scene->fog->enable = false;
         scene->sky.clouds->enable = false;
         scene->sss->enable = true;
+        scene->volumetric->intensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
-        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
+        otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 50.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 50.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1136,16 +1146,16 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
-        otherScene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
+        otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1153,6 +1163,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == FLYINGWORLD) {
         meshes.reserve(1);
@@ -1166,8 +1177,7 @@ bool App::LoadScene() {
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 50.0f;
-        directionalLight->GetVolumetric()->intensity = 0.08f;
+        directionalLight.intensity = 50.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1180,6 +1190,7 @@ bool App::LoadScene() {
         scene->sky.clouds->heightStretch = 1.0f;
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.08f;
     }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
@@ -1203,15 +1214,15 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-        directionalLight->intensity = 100.0f;
-        directionalLight->GetVolumetric()->intensity = 0.28f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
+        scene->volumetric->intensity = 0.28f;
     }
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
@@ -1253,12 +1264,8 @@ bool App::LoadScene() {
         }
     }
 
-    camera.Update();
-    scene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
-
-    // Reset input handlers
-    keyboardHandler.Reset(&camera);
-    mouseHandler.Reset(&camera);
+    scene->Timestep(1.0f);
+    scene->Update();
 
     Atlas::Clock::ResetAverage();
 
@@ -1432,8 +1439,8 @@ void App::CheckLoadScene() {
 
 void App::SetResolution(int32_t width, int32_t height) {
 
-    renderTarget.Resize(width, height);
-    pathTraceTarget.Resize(width, height);
+    renderTarget->Resize(width, height);
+    pathTraceTarget->Resize(width, height);
 
 }
 

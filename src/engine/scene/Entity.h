@@ -42,6 +42,15 @@ namespace Atlas {
 
             }
 
+            template<typename Comp, typename... Args>
+            inline Comp& ReplaceComponent(Args&&... args) {
+
+                // Can't just do a direct copy, since event subscribers need to be informed about the change
+                RemoveComponent<Comp>();
+                return AddComponent<Comp>(std::forward<Args>(args)...);
+
+            }
+
             template<typename Comp>
             inline bool HasComponent() const {
 
@@ -59,11 +68,11 @@ namespace Atlas {
             }
 
             template<typename Comp>
-            inline Comp* GetComponentIfContains() const {
+            inline Comp* TryGetComponent() const {
 
                 AE_ASSERT(HasComponent<Comp>() && "Entity doesn't have this component");
 
-                return entityManager->GetIfContains<Comp>(entity);
+                return entityManager->TryGet<Comp>(entity);
 
             }
 

@@ -29,7 +29,7 @@ namespace Atlas {
 
             rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
-            auto samplerDesc = Graphics::SamplerDesc{
+            auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                 .compareEnabled = true
@@ -38,8 +38,7 @@ namespace Atlas {
 
         }
 
-        void RTReflectionRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void RTReflectionRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
             
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
@@ -53,22 +52,10 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
-            Lighting::Shadow* shadow = nullptr;
-            if (!scene->sky.sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        shadow = light->GetShadow();
-                    }
-                }
-            }
-            else {
-                shadow = scene->sky.sun->GetShadow();
-            }
+            Ref<Lighting::Shadow> shadow = nullptr;
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (mainLightEntity.IsValid())
+                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             auto downsampledRT = target->GetData(target->GetReflectionResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
@@ -104,7 +91,7 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
-                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
+                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 
@@ -134,7 +121,7 @@ namespace Atlas {
                             commandList->BindImage(shadow->maps.image, shadowSampler, 3, 6);
 
                             auto componentCount = shadow->componentCount;
-                            for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                            for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                                 if (i < componentCount) {
                                     auto cascade = &shadow->components[i];
                                     auto frustum = Volume::Frustum(cascade->frustumMatrix);

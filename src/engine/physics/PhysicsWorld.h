@@ -65,6 +65,7 @@ namespace Atlas {
             JPH::PhysicsSystem system;
 
             int32_t simulationStepsPerSecond = 60;
+            bool pauseSimulation = false;
 
         private:
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;
@@ -73,7 +74,7 @@ namespace Atlas {
             Ref<JPH::ContactListener> contactListener = nullptr;
 
             friend class Scene::Scene;
-            friend class Scene::Components::RigidBodyComponent;
+            friend class RigidBodyComponent;
 
         };
 
