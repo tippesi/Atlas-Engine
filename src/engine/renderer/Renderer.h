@@ -32,6 +32,8 @@ namespace Atlas {
             Renderer& operator=(const Renderer&) = delete;
 
         protected:
+            Scene::Entity GetMainLightEntity(Ref<Scene::Scene>& scene);
+
             Graphics::GraphicsDevice* device = nullptr;
 
         };

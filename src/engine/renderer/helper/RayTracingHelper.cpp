@@ -445,19 +445,11 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lightSources;
-                for (auto entity : lightEntities) {
-                    //lightSources.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
+                auto lightSubset = scene->GetSubset<LightComponent>();
+                for (auto& lightEntity : lightSubset) {
+                    auto& light = lightEntity.GetComponent<LightComponent>();
 
-                if (scene->sky.sun) {
-                    lightSources.push_back(scene->sky.sun.get());
-                }
-
-                for (auto light : lightSources) {
-
-                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light->color) * light->intensity;
+                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);
@@ -468,13 +460,12 @@ namespace Atlas {
                     uint32_t data = 0;
 
                     // Parse individual light information based on type
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        auto dirLight = static_cast<Lighting::DirectionalLight*>(light);
+                    if (light.type == LightType::DirectionalLight) {
                         data |= (DIRECTIONAL_LIGHT << 28u);
                         weight = brightness;
-                        N = dirLight->direction;
+                        N = light.transformedProperties.directional.direction;
                     }
-                    else if (light->type == AE_POINT_LIGHT) {
+                    else if (light.type == LightType::PointLight) {
 
                     }
 

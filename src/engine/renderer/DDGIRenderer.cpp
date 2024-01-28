@@ -44,23 +44,17 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("DDGI");
 
-            // Try to get a shadow map
-            Lighting::Shadow* shadow = nullptr;
-            if (!scene->sky.sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
+            auto lightSubset = scene->GetSubset<LightComponent>();
 
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        shadow = light->GetShadow();
-                    }
+            // Currently the renderers just support one main directional light
+            Ref<Lighting::Shadow> shadow = nullptr;
+            for (auto& lightEntity : lightSubset) {
+                auto &light = lightEntity.GetComponent<LightComponent>();
+
+                if (light.isMain && light.type == LightType::DirectionalLight) {
+                    shadow = light.shadow;
+                    break;
                 }
-            }
-            else {
-                shadow = scene->sky.sun->GetShadow();
             }
 
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);

@@ -34,7 +34,7 @@ namespace Atlas {
         struct Pass {
             RenderPassType type;
 
-            const LightComponent* light;
+            ECS::Entity lightEntity;
             uint32_t layer;
 
             std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
@@ -48,11 +48,11 @@ namespace Atlas {
 
         void NewMainPass();
 
-        void NewShadowPass(const LightComponent* light, uint32_t layer);
+        void NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
 
         Pass* GetMainPass();
 
-        Pass* GetShadowPass(const LightComponent* light, const uint32_t layer);
+        Pass* GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
         void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 

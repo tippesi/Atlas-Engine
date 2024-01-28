@@ -29,29 +29,43 @@ namespace Atlas {
 
         void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->sky.sun) return;
+            Scene::Entity mainLightEntity;
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            // Currently the renderers just support one main directional light
+            for (auto& lightEntity : lightSubset) {
+                auto &light = lightEntity.GetComponent<LightComponent>();
+
+                if (light.isMain && light.type == LightType::DirectionalLight) {
+                    mainLightEntity = lightEntity;
+                    break;
+                }
+            }
+
+            if (!mainLightEntity.IsValid()) return;
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 
             auto& camera = scene->GetMainCamera();
-            auto light = scene->sky.sun;
+            auto& light = mainLightEntity.GetComponent<LightComponent>();
             auto sss = scene->sss;
             auto clouds = scene->sky.clouds;
 
-            vec3 direction = normalize(vec3(camera.viewMatrix * vec4(light->direction, 0.0f)));
+            vec3 direction = normalize(vec3(camera.viewMatrix *
+                vec4(light.transformedProperties.directional.direction, 0.0f)));
 
             Uniforms uniforms;
 
             auto& lightUniform = uniforms.light;
             lightUniform.location = vec4(0.0f);
             lightUniform.direction = vec4(direction, 0.0f);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light->color), 0.0f);
-            lightUniform.intensity = light->intensity;
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0f);
+            lightUniform.intensity = light.intensity;
             lightUniform.scatteringFactor = 1.0f;
             lightUniform.radius = 1.0f;
 
-            if (light->GetShadow()) {
-                auto shadow = light->GetShadow();
+            if (light.shadow) {
+                auto shadow = light.shadow;
                 auto& shadowUniform = lightUniform.shadow;
                 shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
                 shadowUniform.bias = shadow->bias;
@@ -73,7 +87,7 @@ namespace Atlas {
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);
                         auto corners = frustum.GetCorners();
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                            abs(corners[1].y - corners[3].y)) / (float)light->GetShadow()->resolution;
+                            abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
                             cascade->viewMatrix * camera.invViewMatrix;
@@ -104,7 +118,7 @@ namespace Atlas {
             if (clouds && clouds->enable && clouds->castShadow) {
                 clouds->shadowTexture.Bind(commandList, 3, 3);
 
-                clouds->GetShadowMatrices(camera, glm::normalize(light->direction),
+                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
                 cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);

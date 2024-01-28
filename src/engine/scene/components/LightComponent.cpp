@@ -6,6 +6,11 @@ namespace Atlas {
 
 		namespace Components {
 
+            const mat4 clipMatrix = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
+
 			LightComponent::LightComponent(LightType type, LightMobility mobility) : 
 				type(type), mobility(mobility), properties(type), transformedProperties(type) {
 
@@ -26,14 +31,35 @@ namespace Atlas {
                 if (longRange) {
                     auto& component = shadow->components.back();
 
-                    component.farDistance = distance;
+                    component.farDistance = longRangeDistance;
                     component.nearDistance = shadow->components[shadow->components.size() - 1].farDistance;
 
-                    shadow->longRangeDistance = distance;
+                    shadow->longRangeDistance = longRangeDistance;
                     shadow->longRange = true;
                 }
 
 			}
+
+            void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution,
+                vec3 shadowCenter, mat4 orthoProjection) {
+
+                AE_ASSERT(type == LightType::DirectionalLight && "Component must be of type directional light");
+
+                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution);
+
+                shadow->center = shadowCenter;
+
+                shadow->allowTerrain = true;
+
+                shadow->components[0].nearDistance = 0.0f;
+                shadow->components[0].farDistance = distance;
+                shadow->components[0].projectionMatrix = clipMatrix * orthoProjection;
+                shadow->components[0].frustumMatrix = clipMatrix * orthoProjection;
+                shadow->components[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
+                shadow->components[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
+                    properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
+
+            }
 
 			void LightComponent::AddPointShadow(float bias, int32_t resolution) {
 
@@ -59,10 +85,10 @@ namespace Atlas {
 
             void LightComponent::Update(const CameraComponent& camera) {
 
-                if (shadow != nullptr)
+                if (!shadow)
                     return;
 
-                if (type == LightType::DirectionalLight) {
+                if (shadow->isCascaded && type == LightType::DirectionalLight) {
                     auto distance = shadow->distance;
                     auto componentCount = shadow->longRange ? shadow->componentCount - 1
                         : shadow->componentCount;
@@ -81,6 +107,10 @@ namespace Atlas {
                         UpdateShadowCascade(shadow->components[i], camera);
                     }
 
+                }
+                else if (!shadow->isCascaded && type == LightType::DirectionalLight) {
+                    shadow->components[0].viewMatrix = glm::lookAt(shadow->center,
+                        shadow->center + transformedProperties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
                 }
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
@@ -181,16 +211,11 @@ namespace Atlas {
                 roundOffset.z = 0.0f;
                 roundOffset.w = 0.0f;
 
-                const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                    0.0f, -1.0f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 0.5f, 0.0f,
-                    0.0f, 0.0f, 0.5f, 1.0f);
-
                 glm::mat4 shadowProj = cascade.projectionMatrix;
                 shadowProj[3] += roundOffset;
-                cascade.projectionMatrix = clip * shadowProj;
-                cascade.frustumMatrix = clip * cascade.frustumMatrix;
-                cascade.terrainFrustumMatrix = clip * cascade.terrainFrustumMatrix;
+                cascade.projectionMatrix = clipMatrix * shadowProj;
+                cascade.frustumMatrix = clipMatrix * cascade.frustumMatrix;
+                cascade.terrainFrustumMatrix = clipMatrix * cascade.terrainFrustumMatrix;
 
             }
 

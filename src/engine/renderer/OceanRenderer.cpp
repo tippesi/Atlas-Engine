@@ -53,34 +53,24 @@ namespace Atlas {
             auto fog = scene->fog;
             auto volumetric = scene->volumetric;
 
-            auto sun = scene->sky.sun.get();
-            if (!sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        sun = static_cast<Lighting::DirectionalLight*>(light);
-                    }
-                }
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (!mainLightEntity.IsValid())
+                return;
 
-                if (!sun) return;
-            }
+            auto& light = mainLightEntity.GetComponent<LightComponent>();
 
-            vec3 direction = normalize(sun->direction);
+            vec3 direction = normalize(light.transformedProperties.directional.direction);
 
             Light lightUniform;
-            lightUniform.direction = vec4(sun->direction, 0.0);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(sun->color), 0.0);
-            lightUniform.intensity = sun->intensity;
+            lightUniform.direction = vec4(light.transformedProperties.directional.direction, 0.0);
+            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
+            lightUniform.intensity = light.intensity;
 
             if (volumetric) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
-            auto shadow = sun->GetShadow();
+            auto shadow = light.shadow;
             if (shadow) {
                 auto distance = !shadow->longRange ? shadow->distance :
                                 shadow->longRangeDistance;
@@ -100,7 +90,7 @@ namespace Atlas {
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);
                         auto corners = frustum.GetCorners();
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                            abs(corners[1].y - corners[3].y)) / (float)sun->GetShadow()->resolution;
+                            abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
                                                                  cascade->viewMatrix * camera.invViewMatrix;
@@ -128,7 +118,7 @@ namespace Atlas {
             if (cloudShadowsEnabled) {
                 clouds->shadowTexture.Bind(commandList, 3, 15);
 
-                clouds->GetShadowMatrices(camera, glm::normalize(sun->direction),
+                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
                 cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;

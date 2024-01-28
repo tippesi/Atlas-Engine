@@ -22,32 +22,18 @@ namespace Atlas {
 
             terrain->distanceVertexArray.Bind(commandList);
 
-            auto lightEntities = scene->GetSubset<LightComponent>();
-            std::vector<Lighting::Light*> lights;
-            for (auto entity : lightEntities) {
-                //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-            }
-
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
+            auto lightSubset = scene->GetSubset<LightComponent>();
 
             LightMap usedLightMap;
+            for (auto& lightEntity : lightSubset) {
 
-            for (auto light : lights) {
-
-                if (!light->GetShadow()) {
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || !light.shadow->update || !light.shadow->allowTerrain)
                     continue;
-                }
 
-                if (!light->GetShadow()->update ||
-                    !light->GetShadow()->allowTerrain) {
-                    continue;
-                }
-
-                auto shadow = light->GetShadow();
-                auto frameBuffer = GetOrCreateFrameBuffer(light);
-                usedLightMap[light] = frameBuffer;
+                auto shadow = light.shadow;
+                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+                usedLightMap[lightEntity] = frameBuffer;
 
                 if (frameBuffer->depthAttachment.layer != 0) {
                     frameBuffer->depthAttachment.layer = 0;
@@ -55,7 +41,7 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = light->GetShadow()->componentCount;
+                auto componentCount = shadow->componentCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
 
@@ -145,11 +131,13 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light *light) {
+        Ref<Graphics::FrameBuffer> TerrainShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity) {
 
-            auto shadow = light->GetShadow();
-            if (lightMap.contains(light)) {
-                return lightMap[light];
+            auto& light = entity.GetComponent<LightComponent>();
+
+            auto shadow = light.shadow;
+            if (lightMap.contains(entity)) {
+                return lightMap[entity];
             }
             else {
                 Graphics::RenderPassDepthAttachment attachment = {

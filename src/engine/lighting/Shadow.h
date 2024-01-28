@@ -35,6 +35,8 @@ namespace Atlas {
 
             void Update();
 
+            vec3 center = vec3(0.0f);
+
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
             float bias = 0.001f;

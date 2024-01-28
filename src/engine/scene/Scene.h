@@ -175,7 +175,7 @@ namespace Atlas {
         template<typename... Comp>
         Subset<Comp...> Scene::GetSubset() {
 
-            return Subset<Comp...>(entityManager.GetSubset<Comp...>());
+            return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
 
         }
 

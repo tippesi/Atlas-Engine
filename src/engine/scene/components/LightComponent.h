@@ -52,14 +52,16 @@ namespace Atlas {
 			class LightComponent {
 
 			public:
-				LightComponent() = default;
 				LightComponent(const LightComponent& that) = default;
 				LightComponent(LightType type, LightMobility mobility = LightMobility::MovableLight);
 
 				void AddDirectionalShadow(float distance, float bias, int32_t resolution, 
 					int32_t cascadeCount, float splitCorrection, bool longRange = false, float longRangeDistance = 0.0f);
 
-				void AddPointShadow(float bias, int32_t resolution);
+                void AddDirectionalShadow(float distance, float bias, int32_t resolution,
+                    vec3 shadowCenter, mat4 orthoProjection);
+
+                void AddPointShadow(float bias, int32_t resolution);
 
 				LightType type = LightType::DirectionalLight;
 				LightMobility mobility = LightMobility::MovableLight;
@@ -73,6 +75,7 @@ namespace Atlas {
 				Ref<Lighting::Shadow> shadow = nullptr;
 
 				bool isMain = false;
+                bool volumetric = true;
 
 			private:
 				void Update(const TransformComponent* transform);

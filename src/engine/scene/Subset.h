@@ -32,7 +32,8 @@ namespace Atlas {
 
             };
 
-            Subset(const ECS::Subset<Comp...>& subset) : subset(subset) {}
+            Subset(const ECS::Subset<Comp...>& subset, ECS::EntityManager* manager) :
+                subset(subset), entityManager(manager) {}
 
             Iterator begin() const {
 
@@ -60,7 +61,7 @@ namespace Atlas {
             }
 
             ECS::Subset<Comp...> subset;
-            ECS::EntityManager* entityManager;
+            ECS::EntityManager* entityManager = nullptr;
 
         };
 

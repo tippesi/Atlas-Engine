@@ -21,8 +21,6 @@ namespace Atlas {
                 uint32_t materialIdx;
             };
 
-            auto light = scene->sky.sun;
-
             Graphics::Profiler::BeginQuery("Impostors");
 
             auto mainPass = renderList->GetMainPass();

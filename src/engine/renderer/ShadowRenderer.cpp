@@ -2,9 +2,6 @@
 
 #include "../Clock.h"
 
-#include "../lighting/DirectionalLight.h"
-#include "../lighting/PointLight.h"
-
 namespace Atlas {
 
     namespace Renderer {
@@ -21,31 +18,18 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
-            auto lightEntities = scene->GetSubset<LightComponent>();
-            std::vector<Lighting::Light*> lights;
-            for (auto entity : lightEntities) {
-                //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-            }
-
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
+            auto lightSubset = scene->GetSubset<LightComponent>();
 
             LightMap usedLightMap;
+            for (auto& lightEntity : lightSubset) {
 
-            for (auto& light : lights) {
-
-                if (!light->GetShadow()) {
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || !light.shadow->update)
                     continue;
-                }
 
-                if (!light->GetShadow()->update) {
-                    continue;
-                }
-
-                auto shadow = light->GetShadow();
-                auto frameBuffer = GetOrCreateFrameBuffer(light);
-                usedLightMap[light] = frameBuffer;
+                auto shadow = light.shadow;
+                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+                usedLightMap[lightEntity] = frameBuffer;
 
                 if (frameBuffer->depthAttachment.layer != 0) {
                     frameBuffer->depthAttachment.layer = 0;
@@ -53,19 +37,17 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = light->GetShadow()->componentCount;
+                auto componentCount = shadow->componentCount;
 
                 bool isDirectionalLight = false;
                 vec3 lightLocation;
 
-                if (light->type == AE_DIRECTIONAL_LIGHT) {
-                    auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
-                    lightLocation = 1000000.0f * -normalize(directionLight->direction);
+                if (light.type == LightType::DirectionalLight) {
+                    lightLocation = 1000000.0f * -normalize(light.transformedProperties.directional.direction);
                     isDirectionalLight = true;
                 }
-                else if (light->type == AE_POINT_LIGHT) {
-                    auto pointLight = static_cast<Lighting::PointLight*>(light);
-                    lightLocation = pointLight->location;
+                else if (light.type == LightType::PointLight) {
+                    lightLocation = light.transformedProperties.point.position;
                 }
 
                 for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
@@ -77,16 +59,9 @@ namespace Atlas {
                         frameBuffer->Refresh();
                     }
 
-                    auto shadowPass = renderList->GetShadowPass(light, i);
+                    auto shadowPass = renderList->GetShadowPass(lightEntity, i);
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
-
-                    // For long range we just begin a render pass to clear the texture
-                    // and transition into the correct layout. Kinda dirty
-                    if (light->GetShadow()->longRange && i == light->GetShadow()->componentCount - 1) {
-                        commandList->EndRenderPass();
-                        continue;
-                    }
 
                     auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
@@ -169,12 +144,13 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
+        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity) {
 
-            auto shadow = light->GetShadow();
+            auto& light = entity.GetComponent<LightComponent>();
+            auto& shadow = light.shadow;
 
-            if (lightMap.contains(light)) {
-                auto frameBuffer = lightMap[light];
+            if (lightMap.contains(entity)) {
+                auto frameBuffer = lightMap[entity];
                 if (frameBuffer->extent.width == shadow->resolution ||
                     frameBuffer->extent.height == shadow->resolution) {
                     return frameBuffer;

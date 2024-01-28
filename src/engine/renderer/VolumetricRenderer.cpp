@@ -1,5 +1,4 @@
 #include "VolumetricRenderer.h"
-#include "../lighting/DirectionalLight.h"
 #include "../common/RandomHelper.h"
 
 namespace Atlas {
@@ -51,22 +50,20 @@ namespace Atlas {
             commandList->BindImage(target->volumetricTexture.image, 3, 0);
             commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 1);
 
-            auto lightEntities = scene->GetSubset<LightComponent>();
-            std::vector<Lighting::Light*> lights;
-            for (auto entity : lightEntities) {
-                // lights.push_back(entity.GetComponent<LightComponent>().light.get());
-            }
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
-
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
             Graphics::Profiler::BeginQuery("Ray marching");
 
-            for (auto& light : lights) {
-                // Skip if no global volumetric were created
-                if (!volumetric) continue;
+            auto mainLightEntity = GetMainLightEntity(scene);
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            for (auto& lightEntity : lightSubset) {
+
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || light.type != LightType::DirectionalLight || !light.volumetric)
+                    continue;
+
+                auto shadow = light.shadow;
 
                 const int32_t groupSize = 8;
 
@@ -76,19 +73,15 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                auto shadow = light->GetShadow();
-
-                if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
-
-                auto directionalLight = (Lighting::DirectionalLight*)light;
-                vec3 direction = normalize(vec3(camera.viewMatrix * vec4(directionalLight->direction, 0.0f)));
+                vec3 direction = normalize(vec3(camera.viewMatrix *
+                    vec4(light.transformedProperties.directional.direction, 0.0f)));
 
                 VolumetricUniforms uniforms;
                 uniforms.sampleCount = volumetric->sampleCount;
-                uniforms.intensity = volumetric->intensity * light->intensity;
+                uniforms.intensity = volumetric->intensity * light.intensity;
 
                 uniforms.light.direction = vec4(direction, 0.0);
-                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light->color), 0.0);
+                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
                 uniforms.light.shadow.cascadeCount = shadow->componentCount;
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
@@ -134,7 +127,7 @@ namespace Atlas {
                 }
 
                 auto clouds = scene->sky.clouds;
-                bool cloudsEnabled = clouds && clouds->enable;
+                bool cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
                 bool cloudShadowsEnabled = cloudsEnabled && clouds->castShadow;
 
                 if (cloudsEnabled) {
@@ -149,7 +142,7 @@ namespace Atlas {
 
                     clouds->shadowTexture.Bind(commandList, 3, 3);
 
-                    clouds->GetShadowMatrices(camera, directionalLight->direction,
+                    clouds->GetShadowMatrices(camera, normalize(light.transformedProperties.directional.direction),
                         cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
                     cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
@@ -254,7 +247,7 @@ namespace Atlas {
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
                 auto clouds = scene->sky.clouds;
-                auto cloudsEnabled = clouds && clouds->enable;
+                auto cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;

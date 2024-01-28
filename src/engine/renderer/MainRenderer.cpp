@@ -185,26 +185,16 @@ namespace Atlas {
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
                 std::vector<Graphics::ImageBarrier> imageBarriers;
 
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
+                auto lightSubset = scene->GetSubset<LightComponent>();
 
-                if (scene->sky.sun) {
-                    lights.push_back(scene->sky.sun.get());
-                }
-
-                for (auto& light : lights) {
-
-                    auto shadow = light->GetShadow();
-
-                    if (!shadow) {
+                for (auto& lightEntity : lightSubset) {
+                    auto& light = lightEntity.GetComponent<LightComponent>();
+                    if (!light.shadow || !light.shadow->update)
                         continue;
-                    }
 
-                    imageBarriers.push_back({ shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, layout, access });
-
+                    auto shadow = light.shadow;
+                    imageBarriers.push_back({ shadow->useCubemap ?
+                        shadow->cubemap.image : shadow->maps.image, layout, access });
                 }
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -1070,31 +1060,24 @@ namespace Atlas {
             scene->GetRenderList(camera.frustum, renderList);
             renderList.Update(camera.GetLocation());
 
-            auto lightEntities = scene->GetSubset<LightComponent>();
-            std::vector<Lighting::Light*> lights;
-            for (auto entity : lightEntities) {
-                //lights.push_back(entity.GetComponent<LightComponent>().light.get());
-            }
+            auto lightSubset = scene->GetSubset<LightComponent>();
 
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
+            for (auto& lightEntity : lightSubset) {
 
-            for (auto light : lights) {
-                if (!light->GetShadow())
-                    continue;
-                if (!light->GetShadow()->update)
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || !light.shadow->update)
                     continue;
 
-                auto componentCount = light->GetShadow()->longRange ?
-                    light->GetShadow()->componentCount - 1 :
-                    light->GetShadow()->componentCount;
+                auto& shadow = light.shadow;
+
+                auto componentCount = shadow->longRange ?
+                    shadow->componentCount - 1 : shadow->componentCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
-                    auto component = &light->GetShadow()->components[i];
+                    auto component = &shadow->components[i];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
-                    renderList.NewShadowPass(light, i);
+                    renderList.NewShadowPass(lightEntity, i);
                     scene->GetRenderList(frustum, renderList);
                     renderList.Update(camera.GetLocation());
                 }

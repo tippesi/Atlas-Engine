@@ -65,12 +65,12 @@ private:
 
     Ref<Atlas::Font> font;
 
-    Atlas::Scene::Entity cameraEntity;
-
     Ref<Atlas::Scene::Scene> scene;
-    Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
+
+    Atlas::Scene::Entity cameraEntity;
+    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;

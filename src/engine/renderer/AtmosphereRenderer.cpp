@@ -20,9 +20,21 @@ namespace Atlas {
 
         void AtmosphereRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            auto sun = scene->sky.sun;
             auto atmosphere = scene->sky.atmosphere;
-            if (!sun || !atmosphere) return;
+            Scene::Entity mainLightEntity;
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            // Currently the renderers just support one main directional light
+            for (auto& lightEntity : lightSubset) {
+                auto &light = lightEntity.GetComponent<LightComponent>();
+
+                if (light.isMain && light.type == LightType::DirectionalLight) {
+                    mainLightEntity = lightEntity;
+                    break;
+                }
+            }
+
+            if (!mainLightEntity.IsValid() || !atmosphere) return;
 
             Graphics::Profiler::BeginQuery("Atmosphere");
 
@@ -30,6 +42,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto& camera = scene->GetMainCamera();
+            auto& light = mainLightEntity.GetComponent<LightComponent>();
 
             auto location = camera.GetLocation();
 
@@ -42,8 +55,8 @@ namespace Atlas {
                 .ipMatrix = camera.invProjectionMatrix,
                 .cameraLocation = vec4(location, 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
-                .sunDirection = vec4(sun->direction, 0.0f),
-                .sunIntensity = sun->intensity,
+                .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
+                .sunIntensity = light.intensity,
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };
@@ -84,9 +97,14 @@ namespace Atlas {
         void AtmosphereRenderer::Render(Ref<Lighting::EnvironmentProbe> probe, Ref<Scene::Scene> scene,
             Graphics::CommandList* commandList) {
 
-            auto sun = scene->sky.sun;
             auto atmosphere = scene->sky.atmosphere;
-            if (!sun || !atmosphere) return;
+
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (!mainLightEntity.IsValid() || !atmosphere) {
+                commandList->ImageMemoryBarrier(probe->cubemap.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+                return;
+            }
 
             Graphics::Profiler::BeginQuery("Atmosphere environment probe");
 
@@ -95,6 +113,8 @@ namespace Atlas {
 
             commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
+            auto& light = mainLightEntity.GetComponent<LightComponent>();
+
             std::vector<mat4> matrices = probe->viewMatrices;
             for (auto& matrix : matrices) matrix = glm::inverse(matrix);
 
@@ -102,8 +122,8 @@ namespace Atlas {
                 .ipMatrix = glm::inverse(probe->projectionMatrix),
                 .cameraLocation = vec4(probe->GetPosition(), 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
-                .sunDirection = vec4(sun->direction, 0.0f),
-                .sunIntensity = sun->intensity,
+                .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
+                .sunIntensity = light.intensity,
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
             };

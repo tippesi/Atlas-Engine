@@ -22,9 +22,6 @@ void App::LoadContent() {
         //audioStreams.back()->SetVolume(0.0001);
     }
 
-    LightComponent component = LightComponent(LightType::DirectionalLight);
-    component.properties.directional.direction = glm::vec3(1.0f);
-
     renderTarget = Atlas::CreateRef<Atlas::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
@@ -72,13 +69,14 @@ void App::LoadContent() {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLight = Atlas::CreateRef<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
-    directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
-    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-    directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLightEntity = scene->CreateEntity();
+    auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    scene->sky.sun = directionalLight;
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLight.isMain = false;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
     scene->ao->rt = true;
@@ -273,7 +271,9 @@ void App::Render(float deltaTime) {
         return;
     }
 
-    if (animateLight) directionalLight->direction = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
+    auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
+    if (animateLight) directionalLight.properties.directional.direction
+        = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
     if (pathTrace) {
         viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
@@ -330,7 +330,7 @@ void App::Render(float deltaTime) {
         ImGui::NewFrame();
 
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        const auto& light = directionalLight;
+        auto& light = directionalLightEntity.GetComponent<LightComponent>();
         const auto& volume = scene->irradianceVolume;
         const auto& ao = scene->ao;
         const auto& fog = scene->fog;
@@ -538,14 +538,14 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Light")) {
                 ImGui::Checkbox("Animate", &animateLight);
-                ImGui::SliderFloat3("Direction", (float*)&light->direction, -1.0f, 1.0f);
-                ImGui::ColorEdit3("Color", (float*)&light->color);
-                ImGui::SliderFloat("Intensity##Light", &light->intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                ImGui::SliderFloat3("Direction", (float*)&light.properties.directional.direction, -1.0f, 1.0f);
+                ImGui::ColorEdit3("Color", (float*)&light.color);
+                ImGui::SliderFloat("Intensity##Light", &light.intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
                 ImGui::Text("Volumetric");
                 ImGui::SliderFloat("Intensity##Volumetric", &volumetric->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
-                auto shadow = light->GetShadow();
+                auto shadow = light.shadow;
                 const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
                 int currentItem = 0;
                 if (shadow->resolution == 512) currentItem = 0;
@@ -940,7 +940,9 @@ bool App::LoadScene() {
     loadingComplete = false;
 
     Atlas::Texture::Cubemap sky;
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
+
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
 
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
@@ -965,7 +967,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 0.0f;
+        directionalLight.intensity = 0.0f;
 
         // Setup camera
         camera.location = glm::vec3(0.0f, 14.0f, 40.0f);
@@ -991,8 +993,8 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-        directionalLight->intensity = 100.0f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1012,7 +1014,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 100.0f;
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(-21.0f, 8.0f, 1.0f);
@@ -1032,8 +1034,8 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 100.0f;
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, -1.0f);
+        directionalLight.intensity = 100.0f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, -1.0f);
 
         // Setup camera
         camera.location = glm::vec3(45.0f, 26.0f, 17.0f);
@@ -1055,7 +1057,7 @@ bool App::LoadScene() {
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1074,7 +1076,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1093,7 +1095,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1117,7 +1119,7 @@ bool App::LoadScene() {
         scene->sky.probe = Atlas::CreateRef(probe);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1136,7 +1138,7 @@ bool App::LoadScene() {
         CopyActors(otherScene);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 50.0f;
+        directionalLight.intensity = 50.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1153,7 +1155,7 @@ bool App::LoadScene() {
         CopyActors(otherScene);
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 10.0f;
+        directionalLight.intensity = 10.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1175,7 +1177,7 @@ bool App::LoadScene() {
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
 
         // Other scene related settings apart from the mesh
-        directionalLight->intensity = 50.0f;
+        directionalLight.intensity = 50.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);
@@ -1212,8 +1214,8 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
 
         // Other scene related settings apart from the mesh
-        directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-        directionalLight->intensity = 100.0f;
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.intensity = 100.0f;
 
         // Setup camera
         camera.location = glm::vec3(30.0f, 25.0f, 0.0f);

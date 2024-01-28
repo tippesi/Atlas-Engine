@@ -38,7 +38,7 @@ namespace Atlas {
 
         Pass pass {
             .type = RenderPassType::Main,
-            .light = nullptr,
+            .lightEntity = ECS::EntityConfig::InvalidEntity,
             .layer = 0
         };
 
@@ -46,11 +46,11 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewShadowPass(const LightComponent* light, uint32_t layer) {
+    void RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
         Pass pass {
             .type = RenderPassType::Shadow,
-            .light = light,
+            .lightEntity = lightEntity,
             .layer = layer
         };
 
@@ -69,11 +69,11 @@ namespace Atlas {
 
     }
 
-    RenderList::Pass* RenderList::GetShadowPass(const LightComponent* light, const uint32_t layer) {
+    RenderList::Pass* RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
 
         for (auto& pass : passes) {
             if (pass.type == RenderPassType::Shadow &&
-                pass.light == light && pass.layer == layer) return &pass;
+                pass.lightEntity == lightEntity && pass.layer == layer) return &pass;
         }
 
         return nullptr;

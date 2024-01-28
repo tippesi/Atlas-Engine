@@ -29,7 +29,7 @@ namespace Atlas {
 
             rtrUniformBuffer = Buffer::UniformBuffer(sizeof(RTRUniforms));
 
-            auto samplerDesc = Graphics::SamplerDesc{
+            auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                 .compareEnabled = true
@@ -52,21 +52,16 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
-            Lighting::Shadow* shadow = nullptr;
-            if (!scene->sky.sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    //lights.push_back(entity.GetComponent<LightComponent>().light.get());
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            Ref<Lighting::Shadow> shadow = nullptr;
+            for (auto& lightEntity : lightSubset) {
+                auto &light = lightEntity.GetComponent<LightComponent>();
+
+                if (light.isMain && light.type == LightType::DirectionalLight) {
+                    shadow = light.shadow;
+                    break;
                 }
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        shadow = light->GetShadow();
-                    }
-                }
-            }
-            else {
-                shadow = scene->sky.sun->GetShadow();
             }
 
             auto downsampledRT = target->GetData(target->GetReflectionResolution());
@@ -103,7 +98,7 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
-                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap);
+                rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 

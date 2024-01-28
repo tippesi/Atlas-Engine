@@ -10,8 +10,6 @@
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"
-#include "lighting/DirectionalLight.h"
-#include "lighting/PointLight.h"
 #include "loader/AssetLoader.h"
 #include "common/RandomHelper.h"
 

@@ -64,7 +64,6 @@ private:
     Ref<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
-    Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
     Atlas::ResourceHandle<Atlas::Audio::AudioData> audio;
     Atlas::ResourceHandle<Atlas::Audio::AudioData> music;
@@ -72,6 +71,7 @@ private:
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
 
     Atlas::Scene::Entity cameraEntity;
+    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;
