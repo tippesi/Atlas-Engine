@@ -14,7 +14,7 @@ namespace Atlas {
 
             float height = 100000.0f;
 
-            EnvironmentProbe probe;
+            Ref<EnvironmentProbe> probe;
 
         };
 

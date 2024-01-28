@@ -39,7 +39,7 @@ void main() {
     if (PushConstants.vegetation > 0) {
 
         position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData[0].time, mMatrix[3].xyz);
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, mMatrix[3].xyz);
 
     }
     

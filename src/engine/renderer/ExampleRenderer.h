@@ -13,7 +13,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Camera* camera);
+            void Render(const CameraComponent& camera);
 
         private:
             Graphics::GraphicsDevice* device = nullptr;

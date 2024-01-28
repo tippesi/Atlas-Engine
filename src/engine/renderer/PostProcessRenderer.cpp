@@ -21,13 +21,13 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void PostProcessRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
 
             auto& postProcessing = scene->postProcessing;
 
+            auto& camera = scene->GetMainCamera();
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
@@ -114,13 +114,13 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Viewport* viewport, PathTracerRenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void PostProcessRenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
 
             auto& postProcessing = scene->postProcessing;
 
+            auto& camera = scene->GetMainCamera();
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
@@ -207,7 +207,7 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::SetUniforms(Camera* camera, Scene::Scene* scene) {
+        void PostProcessRenderer::SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene) {
 
             const auto& postProcessing = scene->postProcessing;
 
@@ -216,7 +216,7 @@ namespace Atlas {
             const auto& filmGrain = postProcessing.filmGrain;
 
             Uniforms uniforms = {
-                .exposure = camera->exposure,
+                .exposure = camera.exposure,
                 .whitePoint = postProcessing.whitePoint,
                 .saturation = postProcessing.saturation,
                 .contrast = postProcessing.contrast

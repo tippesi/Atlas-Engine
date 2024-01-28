@@ -2,7 +2,7 @@
 
 #include "System.h"
 #include "scene/Entity.h"
-#include "lighting/Light.h"
+#include "scene/components/LightComponent.h"
 
 #include "graphics/Buffer.h"
 
@@ -34,7 +34,7 @@ namespace Atlas {
         struct Pass {
             RenderPassType type;
 
-            Lighting::Light* light;
+            ECS::Entity lightEntity;
             uint32_t layer;
 
             std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
@@ -44,23 +44,23 @@ namespace Atlas {
 
         RenderList();
 
-        void NewFrame(Scene::Scene* scene);
+        void NewFrame(Ref<Scene::Scene> scene);
 
         void NewMainPass();
 
-        void NewShadowPass(Lighting::Light* light, uint32_t layer);
+        void NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
 
         Pass* GetMainPass();
 
-        Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
+        Pass* GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
-        void Add(const ECS::Entity& entity, const Scene::Components::MeshComponent& meshComponent);
+        void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 
-        void Update(Camera* camera);
+        void Update(vec3 cameraLocation);
 
         void FillBuffers();
 
-        Scene::Scene* scene = nullptr;
+        Ref<Scene::Scene> scene = nullptr;
 
         std::vector<mat3x4> currentEntityMatrices;
         std::vector<mat3x4> lastEntityMatrices;

@@ -10,11 +10,11 @@ namespace Atlas {
 
         }
 
-        EnvironmentProbe* Sky::GetProbe() {
+        Ref<EnvironmentProbe> Sky::GetProbe() {
 
             // Prioritize user loaded cubemaps
-            if (probe) return probe.get();
-            if (atmosphere) return &atmosphere->probe;
+            if (probe) return probe;
+            if (atmosphere) return atmosphere->probe;
 
             return nullptr;
 

@@ -126,7 +126,7 @@ void main() {
     color *= Uniforms.exposure;
 
 #ifdef FILM_GRAIN
-    color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData[0].time)) - 1.0);
+    color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData.time)) - 1.0);
     color = max(color, vec3(0.0));
 #endif
     

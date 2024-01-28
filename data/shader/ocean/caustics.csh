@@ -23,7 +23,7 @@ layout(push_constant) uniform constants {
 // Modified from Shadertoy: https://www.shadertoy.com/view/XtKfRG
 float caustics(vec3 pos) {
     mat3 m = mat3(-2,-1,2, 3,-2,1, 1,2,2);
-    vec3 a = vec3(pos.xz * 0.5, globalData[0].time / 4.0) * m;
+    vec3 a = vec3(pos.xz * 0.5, globalData.time / 4.0) * m;
     vec3 b = a * m * 0.4;
     vec3 c = b * m * 0.3;
     return pow(
@@ -49,7 +49,7 @@ void main() {
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
     vec3 viewSpacePos = ConvertDepthToViewSpace(depth, texCoord);
-    vec3 pixelPos = vec3(globalData[0].ivMatrix * vec4(viewSpacePos, 1.0));
+    vec3 pixelPos = vec3(globalData.ivMatrix * vec4(viewSpacePos, 1.0));
 
     float distanceToCamera = length(viewSpacePos);
     float fadeout = min(1.0, 1.0 - (distanceToCamera - fadeoutDistance) / (fadeoutFalloff * fadeoutDistance));
@@ -60,7 +60,7 @@ void main() {
 
     float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, vec3(0.0, 1.0, 0.0), 0.0), 0.0);
 
-    vec3 pos = vec3(pixelPos.x, globalData[0].time * 0.5, pixelPos.z);
+    vec3 pos = vec3(pixelPos.x, globalData.time * 0.5, pixelPos.z);
     pos *= 2.0;
 
     vec3 o = vec3(1.0, 0.0, 1.0)*0.02;

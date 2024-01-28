@@ -17,21 +17,19 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
-
-            void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+            void Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font, const std::string& text,
                 float x, float y, vec4 color = vec4(1.0f), float scale = 1.0f,
                 const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-            void Render(Graphics::CommandList* commandList, Viewport* viewport, Font* font, const std::string& text,
+            void Render(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font, const std::string& text,
                 float x, float y, vec4 color, vec4 clipArea, vec4 blendArea, float scale = 1.0f,
                 const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-            void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+            void RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
                 float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
-            void RenderOutlined(Graphics::CommandList* commandList, Viewport* viewport, Font* font,
+            void RenderOutlined(Graphics::CommandList* commandList, Ref<Viewport> viewport, Ref<Font> font,
                 const std::string& text, float x, float y, vec4 color, vec4 outlineColor, float outlineScale,
                 vec4 clipArea, vec4 blendArea, float scale = 1.0f, const Ref<Graphics::FrameBuffer>& frameBuffer = nullptr);
 
@@ -51,7 +49,7 @@ namespace Atlas {
                 float smoothness;
             };
 
-            std::vector<vec4> CalculateCharacterInstances(Font* font, const std::string& text, int32_t* characterCount);
+            std::vector<vec4> CalculateCharacterInstances(Ref<Font>& font, const std::string& text, int32_t* characterCount);
 
             PipelineConfig GeneratePipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer);
 

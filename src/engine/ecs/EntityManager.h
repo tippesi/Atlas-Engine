@@ -133,7 +133,7 @@ namespace Atlas {
              * @note The pointer is only valid temporarily
              */
             template<typename Comp>
-            Comp* GetIfContains(Entity entity);
+            Comp* TryGet(Entity entity);
 
             /**
              * Returns a subset of entities which have all Comp types.
@@ -213,7 +213,7 @@ namespace Atlas {
         }
 
         template<typename Comp>
-        Comp* EntityManager::GetIfContains(Entity entity) {
+        Comp* EntityManager::TryGet(Entity entity) {
 
             auto& pool = pools.Get<Comp>();
 

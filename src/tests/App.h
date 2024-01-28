@@ -22,6 +22,7 @@ struct AppConfiguration {
     bool ssgi = true;
     bool ddgi = true;
     bool reflection = true;
+    bool volumetric = true;
     bool ocean = true;
     bool resize = false;
     bool recreateSwapchain = false;
@@ -58,18 +59,18 @@ private:
 
     void SetResolution(int32_t width, int32_t height);
 
-    Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
-    Atlas::RenderTarget renderTarget;
-    Atlas::Viewport viewport;
+    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
+    Ref<Atlas::RenderTarget> renderTarget;
+    Ref<Atlas::Viewport> viewport;
 
-    Atlas::Font font;
-
-    Atlas::Camera camera;
+    Ref<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
-    Ref<Atlas::Lighting::DirectionalLight> directionalLight;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
+
+    Atlas::Scene::Entity cameraEntity;
+    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;

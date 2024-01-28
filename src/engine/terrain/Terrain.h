@@ -4,7 +4,6 @@
 #include "TerrainNode.h"
 #include "TerrainStorage.h"
 
-#include "../Camera.h"
 #include "buffer/VertexArray.h"
 
 #include <vector>
@@ -50,14 +49,14 @@ namespace Atlas {
              * can't increase the level of detail of the specific nodes. The storage->unusedCells list contains
              * all the cells which aren't needed any more at the moment. (Caching might be needed)
              */
-            void Update(Camera* camera);
+            void Update(const CameraComponent& camera);
 
             /**
              * Updates the list of nodes to render.
              * @param frustum The frustum which will be used to cull nodes.
              * @param The location in which direction the nodes will be sorted.
              */
-            void UpdateRenderlist(Volume::Frustum* frustum, vec3 location);
+            void UpdateRenderlist(const Volume::Frustum& frustum, vec3 location);
 
             /**
              * Sets the distance of a specific level of detail.

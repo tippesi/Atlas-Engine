@@ -32,14 +32,9 @@ namespace Atlas {
 
         }
 
-        void Scene::Update(Ref<Camera> camera, float deltaTime) {
+        void Scene::Timestep(float deltaTime) {
 
-            Update(deltaTime);
-            UpdateCameraDependent(camera, deltaTime);
-
-        }
-
-        void Scene::Update(float deltaTime) {
+            this->deltaTime = deltaTime;
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
@@ -136,6 +131,22 @@ namespace Atlas {
                 transformComponent.updated = false;
             }
 
+            auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
+            for (auto entity : cameraSubset) {
+                const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
+
+                cameraComponent.parentTransform = transformComponent.globalMatrix;
+            }
+
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+
+                lightComponent.Update(transformComponent);
+            }
+
 #ifdef AE_BINDLESS
             UpdateBindlessIndexMaps();
 
@@ -149,33 +160,58 @@ namespace Atlas {
 
         }
 
-        void Scene::UpdateCameraDependent(Ref<Camera> camera, float deltaTime) {
+        void Scene::Update() {
+
+            mainCameraEntity = Entity();
+
+            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+            // Attempt to find a main camera
+            for (auto entity : cameraSubset) {
+                auto& camera = cameraSubset.Get(entity);
+
+                if (camera.isMain) {
+                    camera.Update();
+
+                    mainCameraEntity = { entity, &entityManager };
+                    break;
+                }
+            }
+
+            AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
+
+            if (!mainCameraEntity.IsValid())
+                return;
+
+            auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
             auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
             for (auto entity : audioSubset) {
                 const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
 
-                audioComponent.Update(deltaTime, transformComponent, camera->GetLocation(),
-                    camera->GetLastLocation(), camera->right);
+                audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
+                    mainCamera.GetLastLocation(), mainCamera.right);
             }
 
             auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
             for (auto entity : audioVolumeSubset) {
                 const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
 
-                audioComponent.Update(transformComponent, camera->GetLocation());
+                audioComponent.Update(transformComponent, mainCamera.GetLocation());
+            }
+
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                lightComponent.Update(mainCamera);
             }
 
             if (terrain) {
-                terrain->Update(camera.get());
+                terrain->Update(mainCamera);
             }
 
             if (ocean) {
-                ocean->Update(camera.get(), deltaTime);
-            }
-
-            if (sky.sun) {
-                sky.sun->Update(camera.get());
+                ocean->Update(mainCamera, deltaTime);
             }
 
         }
@@ -227,10 +263,22 @@ namespace Atlas {
 
         }
 
+        CameraComponent& Scene::GetMainCamera() {           
+
+            return mainCameraEntity.GetComponent<CameraComponent>();
+
+        }
+
+        bool Scene::HasMainCamera() const {
+
+            return mainCameraEntity.HasComponent<CameraComponent>();
+
+        }
+
         void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
-            auto subset = entityManager.GetSubset<Components::MeshComponent>();
+            auto subset = entityManager.GetSubset<MeshComponent>();
             for (auto& entity : subset) {
                 auto& comp = subset.Get(entity);
 
@@ -345,6 +393,21 @@ namespace Atlas {
 
             }
 
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                const auto& lightComponent = lightSubset.Get(entity);
+
+                if (!lightComponent.shadow)
+                    continue;
+
+                if (lightComponent.shadow->useCubemap) {
+
+                }
+                else {
+
+                }
+            }
+
         }
 
         void Scene::CleanupUnusedResources() {
@@ -379,7 +442,7 @@ namespace Atlas {
             // Need insert/remove physics components into physics world
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentEmplace,
                 [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
-                    auto transformComp = entityManager.GetIfContains<TransformComponent>(entity);
+                    auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
                     if (physicsWorld != nullptr)

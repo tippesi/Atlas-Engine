@@ -56,14 +56,14 @@ namespace Atlas {
              * @param aabb An AABB to test against the frustum
              * @return True if visible, false otherwise.
              */
-            bool Intersects(AABB aabb);
+            bool Intersects(AABB aabb) const;
 
             /**
              * Checks if the AABB is inside the frustum
              * @param aabb An AABB to test against the frustum
              * @return True if visible, false otherwise.
              */
-            bool IsInside(AABB aabb);
+            bool IsInside(AABB aabb) const;
 
             /**
              * Returns the planes of the frustum as 4-component vectors
@@ -71,7 +71,7 @@ namespace Atlas {
              * @note The xyz components encode the normal, the w component
              * encodes the distance -dot(normal, planeOrigin)
              */
-            std::vector<vec4> GetPlanes();
+            std::vector<vec4> GetPlanes() const;
 
             /**
             * Returns the corners of the frustum.
@@ -81,7 +81,7 @@ namespace Atlas {
             * Far plane: Upper left, upper right, bottom left, bottom right
             * Near plane: Upper left, upper right, bottom left, bottom right
             */
-            std::vector<vec3> GetCorners();
+            std::vector<vec3> GetCorners() const;
 
         private:
             void CalculateCorners(mat4 matrix);

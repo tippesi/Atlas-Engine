@@ -17,8 +17,8 @@ namespace Atlas {
                 Group(ECS::Entity entity, ECS::EntityManager* manager, const std::string& name)
                     : Entity(entity, manager) {
 
-                    AddComponent<Components::HierarchyComponent>();
-                    AddComponent<Components::NameComponent>(name);
+                    AddComponent<HierarchyComponent>();
+                    AddComponent<NameComponent>(name);
 
                 }
 

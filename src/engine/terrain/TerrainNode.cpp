@@ -24,12 +24,12 @@ namespace Atlas {
 
         }
 
-        void TerrainNode::Update(Camera* camera, std::vector<float>& LoDDistances,
+        void TerrainNode::Update(const CameraComponent& camera, std::vector<float>& LoDDistances,
             std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
             auto calcHeight = 0.0f;
 
-            auto cameraLocation = camera->GetLocation();
+            auto cameraLocation = camera.GetLocation();
 
             if (cameraLocation.y > height) {
                 calcHeight = height;

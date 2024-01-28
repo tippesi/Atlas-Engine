@@ -70,6 +70,16 @@ namespace Atlas {
                 macros.push_back("AE_BINDLESS");
             }
 
+#ifdef AE_OS_MACOS
+            macros.push_back("AE_OS_MACOS");
+#endif
+#ifdef AE_OS_LINUX
+            macros.push_back("AE_OS_LINUX");
+#endif
+#ifdef AE_OS_WINDOWS
+            macros.push_back("AE_OS_WINDOWS");
+#endif
+
             return macros;
 
         }

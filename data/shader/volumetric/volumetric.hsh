@@ -1,8 +1,6 @@
 #include <fog.hsh>
 #include <../globals.hsh>
 
-#define RAYMARCHED_FOG
-
 vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 
     vec3 L = pos - origin;
@@ -29,7 +27,7 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
 vec3 ApplyVolumetrics(Fog fog, vec3 inputColor, vec4 volumetricFog, vec4 volumetricClouds,
     vec3 worldViewDirection, vec3 planetCenter, float innerCloudRadius) {
 
-    vec2 intersectDists = IntersectSphere(globalData[0].cameraLocation.xyz, worldViewDirection,
+    vec2 intersectDists = IntersectSphere(globalData.cameraLocation.xyz, worldViewDirection,
         planetCenter, innerCloudRadius);
 
 #ifdef RAYMARCHED_FOG

@@ -16,11 +16,9 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void RenderDepthOnly(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) Uniforms {
@@ -74,7 +72,7 @@ namespace Atlas {
                 vec2 nodeLocation;
             };
 
-            PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool depthOnly, bool wireframe);
+            PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target, bool depthOnly, bool wireframe);
 
             PipelineConfig causticPipelineConfig;
             PipelineConfig underWaterPipelineConfig;

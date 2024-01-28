@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture2D* texture, float x, float y, float width, float height,
             float rotation, float brightness, bool alphaBlending, bool invert) {
 
@@ -30,7 +30,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2D(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture2D* texture, float x, float y, float width, float height, vec4 clipArea,
             vec4 blendArea, float rotation, float brightness, bool alphaBlending, bool invert) {
 
@@ -39,7 +39,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
             bool alphaBlending, bool invert) {
 
@@ -54,7 +54,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture2DArray(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture2DArray* texture, int32_t depth, float x, float y, float width, float height,
             vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
@@ -63,7 +63,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
             bool alphaBlending, bool invert) {
 
@@ -78,7 +78,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Viewport* viewport,
+        void TextureRenderer::RenderTexture3D(Graphics::CommandList* commandList, Ref<Viewport> viewport,
             Texture::Texture3D* texture, float depth, float x, float y, float width, float height,
             vec4 clipArea, vec4 blendArea, bool alphaBlending, bool invert) {
 
@@ -87,7 +87,7 @@ namespace Atlas {
 
         }
 
-        void TextureRenderer::Draw(Graphics::CommandList* commandList, Viewport* viewport, Texture::Texture* texture,
+        void TextureRenderer::Draw(Graphics::CommandList* commandList, Ref<Viewport> viewport, Texture::Texture* texture,
             float depth, float x, float y, float width, float height, vec4 clipArea, vec4 blendArea,
             float rotation, float brightness, bool alphaBlending, bool invert, const std::string& macro) {
 

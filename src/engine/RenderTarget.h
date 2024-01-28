@@ -96,13 +96,13 @@ namespace Atlas {
          * Returns the width of the render target.
          * @return The width of the render target.
          */
-        int32_t GetWidth();
+        int32_t GetWidth() const;
 
         /**
          * Returns the width of the render target.
          * @return The width of the render target.
          */
-        int32_t GetHeight();
+        int32_t GetHeight() const;
 
         /**
          * Swaps the history textures.

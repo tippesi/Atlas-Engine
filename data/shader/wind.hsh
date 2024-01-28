@@ -15,8 +15,8 @@ vec3 WindAnimation(sampler2D noiseTexture, vec3 position,
 
     vec3 originalPos = position;
 
-    vec2 windDir = globalData[0].windDir;
-    float windSpeed = globalData[0].windSpeed;
+    vec2 windDir = globalData.windDir;
+    float windSpeed = globalData.windSpeed;
 
     float centerDistance = length(position.xz);
     float height = position.y * bendFactor * 0.5;

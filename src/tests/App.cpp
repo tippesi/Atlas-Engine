@@ -16,23 +16,27 @@ void App::LoadContent(AppConfiguration config) {
 
     this->config = config;
 
-    renderTarget = Atlas::RenderTarget(1920, 1080);
-    pathTraceTarget = Atlas::Renderer::PathTracerRenderTarget(1920, 1080);
+    // Use lower resolution, we care only about correctness
+    renderTarget =  Atlas::CreateRef<Atlas::RenderTarget>(320, 240);
+    pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
+
+    viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
     window.SetIcon(&icon);
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::Font("font/roboto.ttf", 22, 5);
-
-    camera = Atlas::Camera(47.0f, 2.0f, 1.0f, 400.0f,
-        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("testscene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(&camera, 1.5f, 6.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(&camera, 7.0f, 6.0f);
+    cameraEntity = scene->CreateEntity();
+    auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
+        glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+
+    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -52,15 +56,14 @@ void App::LoadContent(AppConfiguration config) {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLight = Atlas::CreateRef<Atlas::Lighting::DirectionalLight>(AE_MOVABLE_LIGHT);
-    directionalLight->direction = glm::vec3(0.0f, -1.0f, 0.33f);
-    directionalLight->intensity = 100.0f;
-    directionalLight->color = glm::vec3(255, 236, 209) / 255.0f;
-    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-    directionalLight->AddShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-    directionalLight->AddVolumetric(10, 0.28f);
+    directionalLightEntity = scene->CreateEntity();
+    auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    scene->sky.sun = directionalLight;
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLight.isMain = true;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
 
@@ -70,7 +73,7 @@ void App::LoadContent(AppConfiguration config) {
     }
 
     if (config.ddgi) {
-        scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
+        scene->irradianceVolume = Atlas::CreateRef<Atlas::Lighting::IrradianceVolume>(
             Atlas::Volume::AABB(glm::vec3(-100.0f), glm::vec3(100.0f)), glm::ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
         scene->irradianceVolume->strength = 1.5f;
@@ -108,6 +111,10 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.sss) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+    }
+
+    if (config.volumetric) {
+        scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
     }
 
     if (config.ocean) {
@@ -153,24 +160,21 @@ void App::Update(float deltaTime) {
         mouseHandler.lock = false;
     }
 
-    mouseHandler.Update(&camera, deltaTime);
-    keyboardHandler.Update(&camera, deltaTime);
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
+    mouseHandler.Update(camera, deltaTime);
+    keyboardHandler.Update(camera, deltaTime);
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
     }
 
     if(moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
-        mouseHandler.Reset(&camera);
     }
 
-    camera.UpdateView();
-    camera.UpdateProjection();
-
-    scene->Update(deltaTime);
-    scene->UpdateCameraDependent(std::make_shared<Atlas::Camera>(camera), deltaTime);
+    scene->Timestep(deltaTime);
+    scene->Update();
 
     CheckLoadScene();
 
@@ -193,6 +197,8 @@ void App::Render(float deltaTime) {
     */
 #endif
 
+    auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
         return;
@@ -201,7 +207,7 @@ void App::Render(float deltaTime) {
     frameCount++;
 
     if (config.resize && frameCount == 2) {
-        SetResolution(2560, 1440);
+        SetResolution(640, 480);
     }
     if (config.recreateSwapchain && frameCount == 2) {
         Atlas::Graphics::GraphicsDevice::DefaultDevice->CreateSwapChain();
@@ -214,14 +220,14 @@ void App::Render(float deltaTime) {
     }
 
     if (config.exampleRenderer) {
-        exampleRenderer.Render(&camera);
+        exampleRenderer.Render(camera);
     }
     else if (pathTrace) {
-        viewport.Set(0, 0, pathTraceTarget.GetWidth(), pathTraceTarget.GetHeight());
-        mainRenderer->PathTraceScene(&viewport, &pathTraceTarget, &camera, scene.get());
+        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
+        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
     }
     else {
-        mainRenderer->RenderScene(&viewport, &renderTarget, &camera, scene.get());
+        mainRenderer->RenderScene(viewport, renderTarget, scene);
     }
 
     ImGui::NewFrame();
@@ -252,17 +258,17 @@ void App::DisplayLoadingScreen(float deltaTime) {
 
     rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
 
-    mainRenderer->textureRenderer.RenderTexture2D(commandList, &viewport,
+    mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
         loadingTexture.get(), x, y, width, height, rotation);
 
     float textWidth, textHeight;
-    font.ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
+    font->ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
 
     x = windowSize.x / 2 - textWidth / 2;
     y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
-    viewport.Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer->textRenderer.Render(commandList, &viewport, &font,
+    viewport->Set(0, 0, windowSize.x, windowSize.y);
+    mainRenderer->textRenderer.Render(commandList, viewport, font,
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
@@ -313,12 +319,7 @@ bool App::LoadScene() {
         meshCount++;
     }
 
-    camera.Update();
-    scene->Update(std::make_shared<Atlas::Camera>(camera), 1.0f);
-
-    // Reset input handlers
-    keyboardHandler.Reset(&camera);
-    mouseHandler.Reset(&camera);
+    scene->Timestep(1.0f);
 
     Atlas::Clock::ResetAverage();
 
@@ -390,8 +391,8 @@ void App::CheckLoadScene() {
 
 void App::SetResolution(int32_t width, int32_t height) {
 
-    renderTarget.Resize(width, height);
-    pathTraceTarget.Resize(width, height);
+    renderTarget->Resize(width, height);
+    pathTraceTarget->Resize(width, height);
 
 }
 

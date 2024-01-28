@@ -40,8 +40,7 @@ namespace Atlas {
 
         }
 
-        void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void AORenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             static int32_t frameCount = 0;
 

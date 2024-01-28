@@ -21,12 +21,10 @@ namespace Atlas {
 
         }
 
-        MouseHandler::MouseHandler(Camera* camera, float sensibility, float reactivity, bool hideMouse) :
+        MouseHandler::MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse) :
                 sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
             RegisterEvents();
-
-            rotation = camera->rotation;
 
         }
 
@@ -53,17 +51,14 @@ namespace Atlas {
 
         }
 
-        void MouseHandler::Update(Camera* camera, float deltaTime) {
+        void MouseHandler::Update(CameraComponent& camera, float deltaTime) {
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
-            camera->rotation = glm::mix(camera->rotation, rotation, progress);
+            interpolatedAngularVelocity = glm::mix(interpolatedAngularVelocity, angularVelocity, progress);
+            camera.rotation += interpolatedAngularVelocity;
 
-        }
-
-        void MouseHandler::Reset(Camera* camera) {
-
-            rotation = camera->rotation;
+            angularVelocity = vec2(0.0f);
 
         }
 
@@ -112,7 +107,7 @@ namespace Atlas {
                 if (!activationButtonDown)
                     return;
 
-                rotation += glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
+                angularVelocity = glm::vec2(-((float)event.dx), -((float)event.dy)) * sensibility * 0.001f;
 
             }
 
@@ -142,7 +137,8 @@ namespace Atlas {
             activationButtonDown = that.activationButtonDown;
             activationButton = that.activationButton;
 
-            rotation = that.rotation;
+            angularVelocity = that.angularVelocity;
+            interpolatedAngularVelocity = that.interpolatedAngularVelocity;
 
         }
 

@@ -17,9 +17,9 @@ namespace Atlas {
 			public:
 				Node(ECS::Entity entity, ECS::EntityManager* manager, mat4 transform) : Entity(entity, manager) {
 
-					AddComponent<Components::HierarchyComponent>();
-					AddComponent<Components::TransformComponent>();
-					AddComponent<Components::NameComponent>();
+					AddComponent<HierarchyComponent>();
+					AddComponent<TransformComponent>();
+					AddComponent<NameComponent>();
 
 				}
 

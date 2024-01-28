@@ -163,7 +163,7 @@ namespace Atlas {
             }
         }
 
-        void ExampleRenderer::Render(Camera* camera) {
+        void ExampleRenderer::Render(const CameraComponent& camera) {
 
             auto swapChain = device->swapChain;
             if (!swapChain->isComplete) return;
@@ -189,13 +189,13 @@ namespace Atlas {
                 commandList->BindPipeline(meshPipeline);
 
                 auto pushConstants = PushConstants {
-                    .vMatrix = camera->viewMatrix,
-                    .pMatrix = camera->projectionMatrix
+                    .vMatrix = camera.viewMatrix,
+                    .pMatrix = camera.projectionMatrix
                 };
 
                 auto uniforms = Uniforms{
-                    .vMatrix = camera->viewMatrix,
-                    .pMatrix = camera->projectionMatrix
+                    .vMatrix = camera.viewMatrix,
+                    .pMatrix = camera.projectionMatrix
                 };
                 uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 

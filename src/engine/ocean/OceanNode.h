@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../System.h"
-#include "../Camera.h"
-#include "../common/Image.h"
+#include "System.h"
+#include "common/Image.h"
+#include "scene/components/CameraComponent.h"
 
 #include <vector>
 
@@ -30,7 +30,7 @@ namespace Atlas {
             float bottomLoDStitch = 1.0f;
 
         protected:
-            void Update(Camera* camera, vec3 translation, std::vector<float>& LoDDistances, 
+            void Update(const CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
                 std::vector<OceanNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
             std::vector<OceanNode> children;

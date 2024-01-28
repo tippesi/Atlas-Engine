@@ -16,7 +16,6 @@
 
 extern Atlas::EngineInstance* GetEngineInstance();
 
-// The fixture for testing class Foo.
 class EngineEndToEndTest : public testing::TestWithParam<AppConfiguration> {
 protected:
     void SetUp() override {
@@ -96,6 +95,7 @@ auto testingValues = testing::Values(
     AppConfiguration { .ddgi = false },
     AppConfiguration { .reflection = false },
 #endif
+    AppConfiguration { .volumetric = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },

@@ -519,7 +519,10 @@ namespace Atlas {
                 }
             }
 
+            // Wait, reset and start with new semaphores
             auto nextFrame = GetFrameData();
+            nextFrame->WaitAndReset(device);
+
             if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
             }
@@ -528,10 +531,6 @@ namespace Atlas {
                 // A new image index is automatically acquired
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
-
-            // Wait, reset and start with new semaphores
-            nextFrame->WaitAndReset(device);
-
         }
 
         bool GraphicsDevice::CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags) {

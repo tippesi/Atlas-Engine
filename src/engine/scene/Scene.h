@@ -7,9 +7,9 @@
 #include "../ocean/Ocean.h"
 #include "../terrain/Terrain.h"
 #include "../physics/PhysicsWorld.h"
-#include "../lighting/Light.h"
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
+#include "../lighting/Volumetric.h"
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
@@ -70,15 +70,17 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Update(Ref<Camera> camera, float deltaTime);
+            void Timestep(float deltaTime);
 
-            void Update(float deltaTime);
-
-            void UpdateCameraDependent(Ref<Camera> camera, float deltaTime);
+            void Update();
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
             std::vector<Material*> GetMaterials();
+
+            CameraComponent& GetMainCamera();
+
+            bool HasMainCamera() const;
 
             void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
@@ -107,6 +109,7 @@ namespace Atlas {
             Wind wind;
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
+            Ref<Lighting::Volumetric> volumetric = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
@@ -139,6 +142,9 @@ namespace Atlas {
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
+            Entity mainCameraEntity;
+            float deltaTime = 1.0f;
+
             bool hasChanged = true;
             bool rtDataValid = false;
 
@@ -146,7 +152,7 @@ namespace Atlas {
             friend class SceneSerializer;
             friend class SpacePartitioning;
             friend class RayTracing::RayTracingWorld;
-            friend class Components::MeshComponent;
+            friend class MeshComponent;
             friend RenderList;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
@@ -169,7 +175,7 @@ namespace Atlas {
         template<typename... Comp>
         Subset<Comp...> Scene::GetSubset() {
 
-            return Subset<Comp...>(entityManager.GetSubset<Comp...>());
+            return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
 
         }
 

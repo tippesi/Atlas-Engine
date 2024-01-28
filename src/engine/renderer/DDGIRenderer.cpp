@@ -36,7 +36,7 @@ namespace Atlas {
 
         }
 
-        void DDGIRenderer::TraceAndUpdateProbes(Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void DDGIRenderer::TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto volume = scene->irradianceVolume;
             if (!volume || !volume->enable || !volume->update || !scene->IsRtDataValid())
@@ -44,24 +44,10 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("DDGI");
 
-            // Try to get a shadow map
-            Lighting::Shadow* shadow = nullptr;
-            if (!scene->sky.sun) {
-                auto lightEntities = scene->GetSubset<LightComponent>();
-                std::vector<Lighting::Light*> lights;
-                for (auto entity : lightEntities) {
-                    lights.push_back(entity.GetComponent<LightComponent>().light.get());
-                }
-
-                for (auto& light : lights) {
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        shadow = light->GetShadow();
-                    }
-                }
-            }
-            else {
-                shadow = scene->sky.sun->GetShadow();
-            }
+            Ref<Lighting::Shadow> shadow = nullptr;
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (mainLightEntity.IsValid())
+                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             
@@ -151,7 +137,7 @@ namespace Atlas {
                         commandList->BindImage(shadow->maps.image, shadowSampler, 3, 0);
 
                         auto componentCount = shadow->componentCount;
-                        for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                        for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                             if (i < componentCount) {
                                 auto cascade = &shadow->components[i];
                                 auto frustum = Volume::Frustum(cascade->frustumMatrix);
@@ -283,8 +269,8 @@ namespace Atlas {
 
         }
 
-        void DDGIRenderer::DebugProbes(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList, std::unordered_map<void*, uint16_t>& materialMap) {
+        void DDGIRenderer::DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+            std::unordered_map<void*, uint16_t>& materialMap) {
 
             auto volume = scene->irradianceVolume;
             if (!volume || !volume->enable || !volume->update || !volume->debug)

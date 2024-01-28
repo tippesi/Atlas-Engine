@@ -33,6 +33,8 @@ namespace Atlas {
 
         void PhysicsWorld::Update(float deltaTime) {
 
+            if (pauseSimulation) return;
+
             PhysicsManager::ExecuteUpdate(this, deltaTime);
 
         }

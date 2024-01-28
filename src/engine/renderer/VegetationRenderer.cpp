@@ -17,8 +17,7 @@ namespace Atlas {
 
         }
 
-        void VegetationRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera, 
-            Scene::Scene* scene, Graphics::CommandList* commandList,
+        void VegetationRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
             struct PushConstants {
@@ -104,7 +103,7 @@ namespace Atlas {
         }
 
         void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::Mesh*>& meshes,
-            Camera* camera, float time, float deltaTime) {
+            const CameraComponent& camera, float time, float deltaTime) {
 
             /*
             glColorMask(false, false, false, false);
@@ -147,7 +146,7 @@ namespace Atlas {
         }
 
         PipelineConfig VegetationRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh> &mesh, RenderTarget *target) {
+            const ResourceHandle<Mesh::Mesh> &mesh, Ref<RenderTarget> target) {
 
             auto shaderConfig = ShaderConfig {
                 {"vegetation/vegetation.vsh", VK_SHADER_STAGE_VERTEX_BIT},

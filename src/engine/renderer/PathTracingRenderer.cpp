@@ -26,31 +26,25 @@ namespace Atlas {
 
         }
 
-        void PathTracingRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene) {
-
-
-
-        }
-
-        void PathTracingRenderer::Render(Viewport* viewport, PathTracerRenderTarget* renderTarget,
-            ivec2 imageSubdivisions, Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void PathTracingRenderer::Render(Ref<PathTracerRenderTarget> renderTarget, Ref<Scene::Scene> scene,
+            ivec2 imageSubdivisions, Graphics::CommandList* commandList) {
 
             if (!scene->IsRtDataValid())
                 return;
 
             Graphics::Profiler::BeginQuery("Path tracing");
 
+            auto& camera = scene->GetMainCamera();
             auto width = renderTarget->GetWidth();
             auto height = renderTarget->GetHeight();
 
             auto rayCount = realTime ? 2 * width * height * realTimeSamplesPerFrame : 2 * width * height;
 
-            if (glm::distance(camera->GetLocation(), cameraLocation) > 1e-3f ||
-                glm::distance(camera->rotation, cameraRotation) > 1e-3f ||
+            if (glm::distance(camera.GetLocation(), cameraLocation) > 1e-3f ||
+                glm::distance(camera.rotation, cameraRotation) > 1e-3f ||
                 helper.GetRayBuffer()->GetElementCount() != rayCount) {
-                cameraLocation = camera->GetLocation();
-                cameraRotation = camera->rotation;
+                cameraLocation = camera.GetLocation();
+                cameraRotation = camera.rotation;
 
                 sampleCount = 0;
                 imageOffset = ivec2(0);
@@ -98,7 +92,7 @@ namespace Atlas {
                 uniforms.resolution = resolution;
                 uniforms.seed = Common::Random::SampleFastUniformFloat();
 
-                uniforms.exposure = camera->exposure;
+                uniforms.exposure = camera.exposure;
 
                 uniforms.samplesPerFrame = samplesPerFrame;
                 uniforms.maxRadiance = maxRadiance;
@@ -164,7 +158,7 @@ namespace Atlas {
             helper.DispatchRayGen(commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
                 ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
                 [=]() {
-                    auto corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
+                    auto corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
 
                     RayGenUniforms uniforms;
                     uniforms.origin = vec4(corners[4], 1.0f);
@@ -253,7 +247,7 @@ namespace Atlas {
                     .historyClipMax = historyClipMax,
                     .currentClipFactor = currentClipFactor,
                     .maxHistoryLength = float(historyLengthMax),
-                    .exposure = camera->exposure,
+                    .exposure = camera.exposure,
                     .samplesPerFrame = samplesPerFrame,
                     .maxRadiance = maxRadiance
                 };
