@@ -6,8 +6,6 @@ namespace Atlas {
 
         Scene::Entity Renderer::GetMainLightEntity(Ref<Scene::Scene>& scene) {
 
-            Scene::Entity entity;
-
             Scene::Entity mainLightEntity;
             auto lightSubset = scene->GetSubset<LightComponent>();
 
@@ -15,13 +13,14 @@ namespace Atlas {
             for (auto& lightEntity : lightSubset) {
                 auto &light = lightEntity.GetComponent<LightComponent>();
 
-                if (light.isMain && light.type == LightType::DirectionalLight) {
+                if (light.type == LightType::DirectionalLight) {
                     mainLightEntity = lightEntity;
-                    break;
+                    if (light.isMain)
+                        break;
                 }
             }
 
-            return entity;
+            return mainLightEntity;
 
         }
 

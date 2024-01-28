@@ -29,19 +29,7 @@ namespace Atlas {
 
         void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            Scene::Entity mainLightEntity;
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
-            // Currently the renderers just support one main directional light
-            for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
-
-                if (light.isMain && light.type == LightType::DirectionalLight) {
-                    mainLightEntity = lightEntity;
-                    break;
-                }
-            }
-
+            auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid()) return;
 
             Graphics::Profiler::BeginQuery("Direct lighting");

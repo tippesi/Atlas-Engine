@@ -9,7 +9,7 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class RTReflectionRenderer {
+        class RTReflectionRenderer : public Renderer {
 
         public:
             RTReflectionRenderer() = default;

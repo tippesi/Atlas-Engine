@@ -52,17 +52,10 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Try to get a shadow map
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
             Ref<Lighting::Shadow> shadow = nullptr;
-            for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
-
-                if (light.isMain && light.type == LightType::DirectionalLight) {
-                    shadow = light.shadow;
-                    break;
-                }
-            }
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (mainLightEntity.IsValid())
+                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             auto downsampledRT = target->GetData(target->GetReflectionResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());

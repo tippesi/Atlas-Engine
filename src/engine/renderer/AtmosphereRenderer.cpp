@@ -21,19 +21,8 @@ namespace Atlas {
         void AtmosphereRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto atmosphere = scene->sky.atmosphere;
-            Scene::Entity mainLightEntity;
-            auto lightSubset = scene->GetSubset<LightComponent>();
 
-            // Currently the renderers just support one main directional light
-            for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
-
-                if (light.isMain && light.type == LightType::DirectionalLight) {
-                    mainLightEntity = lightEntity;
-                    break;
-                }
-            }
-
+            auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid() || !atmosphere) return;
 
             Graphics::Profiler::BeginQuery("Atmosphere");

@@ -60,7 +60,7 @@ namespace Atlas {
             for (auto& lightEntity : lightSubset) {
 
                 auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || light.type != LightType::DirectionalLight || !light.volumetric)
+                if (!light.shadow || light.type != LightType::DirectionalLight || !light.volumetric || !volumetric)
                     continue;
 
                 auto shadow = light.shadow;

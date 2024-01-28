@@ -44,18 +44,10 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("DDGI");
 
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
-            // Currently the renderers just support one main directional light
             Ref<Lighting::Shadow> shadow = nullptr;
-            for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
-
-                if (light.isMain && light.type == LightType::DirectionalLight) {
-                    shadow = light.shadow;
-                    break;
-                }
-            }
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (mainLightEntity.IsValid())
+                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             

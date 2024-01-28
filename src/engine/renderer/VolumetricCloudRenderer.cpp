@@ -154,19 +154,8 @@ namespace Atlas {
         void VolumetricCloudRenderer::RenderShadow(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto clouds = scene->sky.clouds;
-            Scene::Entity mainLightEntity;
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
-            // Currently the renderers just support one main directional light
-            for (auto& lightEntity : lightSubset) {
-                auto &light = lightEntity.GetComponent<LightComponent>();
-
-                if (light.isMain && light.type == LightType::DirectionalLight) {
-                    mainLightEntity = lightEntity;
-                    break;
-                }
-            }
-
+            
+            auto mainLightEntity = GetMainLightEntity(scene);
             if (!clouds || !clouds->enable || !clouds->castShadow || !mainLightEntity.IsValid()) return;
 
             auto& light = mainLightEntity.GetComponent<LightComponent>();
