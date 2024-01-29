@@ -1,5 +1,4 @@
-#ifndef ATLASENGINE_VULKANTESTRENDERER_H
-#define ATLASENGINE_VULKANTESTRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -14,7 +13,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Camera* camera);
+            void Render(const CameraComponent& camera);
 
         private:
             Graphics::GraphicsDevice* device = nullptr;
@@ -32,7 +31,7 @@ namespace Atlas {
 
             Ref<Graphics::QueryPool> queryPool = nullptr;
 
-            Ref<Mesh::Mesh> mesh = nullptr;
+            ResourceHandle<Mesh::Mesh> mesh;
 
             struct PushConstants {
                 mat4 vMatrix;
@@ -54,5 +53,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

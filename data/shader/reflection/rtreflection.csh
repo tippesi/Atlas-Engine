@@ -119,7 +119,6 @@ void main() {
                     continue;
                 }
 
-                ray.inverseDirection = 1.0 / ray.direction;
                 ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
 
                 ray.hitID = -1;
@@ -168,9 +167,11 @@ vec3 EvaluateHit(inout Ray ray) {
     }
     
     // Unpack the compressed triangle and extract surface parameters
-    Triangle tri = UnpackTriangle(triangles[ray.hitID]);
-    bool backfaceHit;    
-    Surface surface = GetSurfaceParameters(tri, ray, false, backfaceHit, uniforms.textureLevel);
+    Instance instance = GetInstance(ray);
+    Triangle tri = GetTriangle(ray, instance);
+
+    bool backfaceHit;
+    Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
     
     radiance += surface.material.emissiveColor;
 
@@ -230,7 +231,6 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        ray.inverseDirection = 1.0 / ray.direction;
         return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {

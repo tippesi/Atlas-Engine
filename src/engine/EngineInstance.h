@@ -1,5 +1,4 @@
-#ifndef AE_ENGINEINSTANCE_H
-#define AE_ENGINEINSTANCE_H
+#pragma once
 
 #include "Engine.h"
 
@@ -67,7 +66,7 @@ namespace Atlas {
         const static EngineConfig engineConfig;
 
         /**
-         * The main window to which the context is attached to
+         * The main window
          */
         Window window;
 
@@ -76,8 +75,6 @@ namespace Atlas {
          * @note This member will be first available when LoadContent() is called.
          */
         std::vector<std::string> args;
-
-        static EngineInstance* GetInstance();
 
     protected:
         /**
@@ -93,18 +90,12 @@ namespace Atlas {
 
         Graphics::GraphicsDevice* graphicsDevice = nullptr;
 
-        Scope<Renderer::MainRenderer> mainRenderer = nullptr;
+        Graphics::Surface* surface = nullptr;
 
-        /**
-         * The main instance, needs to be implemented by user
-         */
-        static EngineInstance* instance;
+        Scope<Renderer::MainRenderer> mainRenderer = nullptr;
 
         std::vector<Display> displays;
 
     };
 
 }
-
-
-#endif

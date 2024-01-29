@@ -1,4 +1,5 @@
 #include "RayTracingHelper.h"
+#include "../../common/ColorConverter.h"
 #include "../../common/RandomHelper.h"
 #include "../../common/Piecewise.h"
 #include "../../volume/BVH.h"
@@ -55,7 +56,7 @@ namespace Atlas {
             }
 
 
-            void RayTracingHelper::SetScene(Scene::Scene* scene, int32_t textureDownscale,
+            void RayTracingHelper::SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale,
                 bool useEmissivesAsLights) {
 
                 this->scene = scene;
@@ -76,9 +77,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
-
-                if (!rtData.IsValid()) return;
+                if (!scene->IsRtDataValid()) return;
 
                 // Select lights once per initial ray dispatch
                 {
@@ -118,55 +117,24 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    if (rtData.baseColorTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
-                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
-                    if (rtData.opacityTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
-                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
-                    if (rtData.normalTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
-                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
-                    if (rtData.roughnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
-                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
-                    if (rtData.metalnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
-                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
-                    if (rtData.aoTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
-                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
+                    auto& rtData = scene->rayTracingWorld;
+
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.triangleBuffer.Bind(commandList, 2, 8);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->materialBuffer.Bind(commandList, 2, 7);
+                    rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
-                    if (rtData.hardwareRayTracing) {
-                        commandList->BindTLAS(rtData.tlas, 2, 23);
-                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
+                    if (rtData->hardwareRayTracing) {
+                        commandList->BindTLAS(rtData->tlas, 2, 23);
                     }
                     else {
-                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
-                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                        rtData->tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }
 
@@ -189,7 +157,7 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                 bool binning, std::function<void(void)> prepare) {
 
-                if (!scene->rtData.IsValid()) return;
+                if (!scene->IsRtDataValid()) return;
 
                 dispatchCounter = 0;
                 rayOffsetCounter = 0;
@@ -266,60 +234,28 @@ namespace Atlas {
                 const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                 bool opacityCheck, std::function<void(void)> prepare) {
 
-                auto& rtData = scene->rtData;
-                if (!rtData.IsValid()) return;
+                if (!scene->IsRtDataValid()) return;
+
+                auto& rtData = scene->rayTracingWorld;
 
                 // Bind textures and buffers
                 {
-                    if (rtData.baseColorTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.baseColorTextureAtlas.textureArray.image,
-                            rtData.baseColorTextureAtlas.textureArray.sampler, 2, 0);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 0);
-                    if (rtData.opacityTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.opacityTextureAtlas.textureArray.image,
-                            rtData.opacityTextureAtlas.textureArray.sampler, 2, 1);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 1);
-                    if (rtData.normalTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.normalTextureAtlas.textureArray.image,
-                            rtData.normalTextureAtlas.textureArray.sampler, 2, 2);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 2);
-                    if (rtData.roughnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.roughnessTextureAtlas.textureArray.image,
-                            rtData.roughnessTextureAtlas.textureArray.sampler, 2, 3);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 3);
-                    if (rtData.metalnessTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.metalnessTextureAtlas.textureArray.image,
-                            rtData.metalnessTextureAtlas.textureArray.sampler, 2, 4);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 4);
-                    if (rtData.aoTextureAtlas.slices.size())
-                        commandList->BindImage(rtData.aoTextureAtlas.textureArray.image,
-                            rtData.aoTextureAtlas.textureArray.sampler, 2, 5);
-                    else
-                        commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 5);
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
-                    rtData.materialBuffer.Bind(commandList, 2, 7);
-                    rtData.triangleBuffer.Bind(commandList, 2, 8);
-                    rtData.bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->materialBuffer.Bind(commandList, 2, 7);
+                    rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
+                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
-                    if (rtData.hardwareRayTracing) {
-                        commandList->BindTLAS(rtData.tlas, 2, 23);
-                        rtData.geometryTriangleOffsetBuffer.Bind(commandList, 2, 22);
+                    if (rtData->hardwareRayTracing) {
+                        commandList->BindTLAS(rtData->tlas, 2, 23);
                     }
                     else {
-                        rtData.bvhTriangleBuffer.Bind(commandList, 2, 9);
-                        rtData.blasNodeBuffer.Bind(commandList, 2, 10);
-                        rtData.tlasNodeBuffer.Bind(commandList, 2, 22);
+                        rtData->tlasNodeBuffer.Bind(commandList, 2, 22);
                     }
                 }
 
@@ -509,15 +445,11 @@ namespace Atlas {
 
                 lights.clear();
 
-                auto lightSources = scene->GetLights();
+                auto lightSubset = scene->GetSubset<LightComponent>();
+                for (auto& lightEntity : lightSubset) {
+                    auto& light = lightEntity.GetComponent<LightComponent>();
 
-                if (scene->sky.sun) {
-                    lightSources.push_back(scene->sky.sun.get());
-                }
-
-                for (auto light : lightSources) {
-
-                    auto radiance = light->color * light->intensity;
+                    auto radiance = Common::ColorConverter::ConvertSRGBToLinear(light.color) * light.intensity;
                     auto brightness = dot(radiance, vec3(0.3333f));
 
                     vec3 P = vec3(0.0f);
@@ -528,13 +460,12 @@ namespace Atlas {
                     uint32_t data = 0;
 
                     // Parse individual light information based on type
-                    if (light->type == AE_DIRECTIONAL_LIGHT) {
-                        auto dirLight = static_cast<Lighting::DirectionalLight*>(light);
+                    if (light.type == LightType::DirectionalLight) {
                         data |= (DIRECTIONAL_LIGHT << 28u);
                         weight = brightness;
-                        N = dirLight->direction;
+                        N = light.transformedProperties.directional.direction;
                     }
-                    else if (light->type == AE_POINT_LIGHT) {
+                    else if (light.type == LightType::PointLight) {
 
                     }
 
@@ -550,9 +481,9 @@ namespace Atlas {
                     lights.push_back(gpuLight);
                 }
 
-                if (useEmissivesAsLights) {
-                    auto& rtData = scene->rtData;
-                    lights.insert(lights.end(), rtData.triangleLights.begin(), rtData.triangleLights.end());
+                if (useEmissivesAsLights && scene->IsRtDataValid()) {
+                    auto& rtData = scene->rayTracingWorld;
+                    lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                     
                 // Find the maximum weight

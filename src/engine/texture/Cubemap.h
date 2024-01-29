@@ -1,5 +1,4 @@
-#ifndef AE_CUBEMAP_H
-#define AE_CUBEMAP_H
+#pragma once
 
 #include "System.h"
 #include "Texture.h"
@@ -86,5 +85,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

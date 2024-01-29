@@ -1,24 +1,31 @@
-#ifndef AE_AUDIOSTREAM_H
-#define AE_AUDIOSTREAM_H
+#pragma once
 
 #include "../System.h"
 
 #include "AudioData.h"
+#include "../resource/Resource.h"
 
 #include <vector>
+#include <array>
+#include <atomic>
 
 namespace Atlas {
 
     namespace Audio {
 
+        enum Channel {
+            Left = 0,
+            Right = 1
+        };
+
         class AudioStream {
 
         public:
-            AudioStream() : data(nullptr) {}
+            AudioStream()  { channelVolume.fill(1.0f); }
 
-            explicit AudioStream(AudioData* data) : data(data) {}
+            explicit AudioStream(ResourceHandle<AudioData> data, float volume, bool loop = false);
 
-            AudioStream& operator=(const AudioStream& that);
+            AudioStream& operator=(const AudioStream& that) = delete;
 
             double GetDuration();
 
@@ -30,6 +37,10 @@ namespace Atlas {
 
             float GetVolume();
 
+            void SetChannelVolume(Channel channel, float volume);
+
+            float GetChannelVolume(Channel channel);
+
             void SetPitch(double pitch);
 
             double GetPitch();
@@ -40,11 +51,13 @@ namespace Atlas {
 
             bool IsPaused();
 
-            void ApplyFormat(const SDL_AudioSpec& spec);
+            bool IsValid();
 
-            virtual std::vector<int16_t> GetChunk(int32_t length);
+            bool GetChunk(std::vector<int16_t>& chunk);
 
             bool loop = false;
+
+            ResourceHandle<AudioData> data;
 
         private:
             double progress = 0.0;
@@ -54,7 +67,7 @@ namespace Atlas {
 
             bool pause = false;
 
-            AudioData* data;
+            std::array<float, 8> channelVolume;
 
             mutable std::mutex mutex;
 
@@ -63,5 +76,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -62,8 +62,24 @@ namespace Atlas {
                 commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
             }
 
+            // Bind in batches to reduce driver binding overhead
+            uint32_t bindingOffset = 0;
+            std::vector<Ref<Graphics::Buffer>> buffers;
             for (auto& [attribArray, vertexComponent] : vertexComponents) {
-                commandList->BindVertexBuffer(vertexComponent.vertexBuffer.buffer, attribArray);
+                if (attribArray != bindingOffset + 1 && buffers.size() > 0) {
+                    uint32_t bindingCount = uint32_t(buffers.size());
+                    commandList->BindVertexBuffers(buffers, bindingOffset, bindingCount);
+
+                    buffers.clear();
+                    bindingOffset = attribArray;
+                }
+
+                buffers.push_back(vertexComponent.vertexBuffer.buffer);
+            }
+
+            if (buffers.size()) {
+                uint32_t bindingCount = uint32_t(buffers.size());
+                commandList->BindVertexBuffers(buffers, bindingOffset, bindingCount);
             }
 
         }

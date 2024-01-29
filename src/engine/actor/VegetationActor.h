@@ -1,8 +1,6 @@
-#ifndef AE_VEGETATIONACTOR_H
-#define AE_VEGETATIONACTOR_H
+#pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../mesh/Mesh.h"
 #include "../volume/AABB.h"
 
@@ -31,6 +29,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

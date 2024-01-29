@@ -1,9 +1,7 @@
-#ifndef AE_RENDERER_H
-#define AE_RENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderTarget.h"
-#include "../Camera.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../pipeline/PipelineManager.h"
@@ -12,11 +10,15 @@
 #include "../graphics/Profiler.h"
 #include "../graphics/GraphicsDevice.h"
 
+#include "../common/ColorConverter.h"
+
 #include "helper/CommonStructures.h"
 
 namespace Atlas {
 
     namespace Renderer {
+
+        using namespace Scene::Components;
 
         class Renderer {
 
@@ -30,6 +32,8 @@ namespace Atlas {
             Renderer& operator=(const Renderer&) = delete;
 
         protected:
+            Scene::Entity GetMainLightEntity(Ref<Scene::Scene>& scene);
+
             Graphics::GraphicsDevice* device = nullptr;
 
         };
@@ -37,5 +41,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

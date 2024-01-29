@@ -43,13 +43,13 @@ namespace Atlas {
 
         }
 
-        void OceanNode::Update(Camera* camera, vec3 translation, std::vector<float>& LoDDistances,
+        void OceanNode::Update(const CameraComponent& camera, vec3 translation, std::vector<float>& LoDDistances,
             std::vector<OceanNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
             float calcHeight = 0.0f;
 
-            auto cameraLocation = camera->thirdPerson ? camera->location -
-                camera->direction * camera->thirdPersonDistance : camera->location;
+            auto cameraLocation = camera.thirdPerson ? camera.location -
+                camera.direction * camera.thirdPersonDistance : camera.location;
 
             if (cameraLocation.y > translation.y) {
                 calcHeight = translation.y;
@@ -59,7 +59,7 @@ namespace Atlas {
                     calcHeight = 0.0f;
                 }
                 else {
-                    calcHeight = camera->location.y;
+                    calcHeight = camera.location.y;
                 }
             }
 

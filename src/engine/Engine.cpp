@@ -5,6 +5,7 @@
 #include "loader/ShaderLoader.h"
 #include "graphics/Instance.h"
 #include "pipeline/PipelineManager.h"
+#include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 
 #include "graphics/ShaderCompiler.h"
@@ -31,22 +32,37 @@ namespace Atlas {
 
         Graphics::ShaderCompiler::Init();
 
-        // First need to get a window to retrieve the title
+#ifndef AE_HEADLESS
         DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
-            AE_WINDOWPOSITION_UNDEFINED, 100, 100,
-            SDL_WINDOW_VULKAN | AE_WINDOW_HIDDEN, false);
+            AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
+#endif
 
         // Then create graphics instance
+        auto instanceDesc = Graphics::InstanceDesc{
+            .instanceName = "AtlasEngineInstance",
 #ifdef AE_BUILDTYPE_RELEASE
-        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", false);
+            .enableValidationLayers = false,
 #else
-        Graphics::Instance::DefaultInstance = new Graphics::Instance("AtlasEngineInstance", true);
+            .enableValidationLayers = true,
 #endif
+            .validationLayerSeverity = config.validationLayerSeverity
+        };
+
+        Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);
+        Graphics::Surface* surface;
         // Initialize window surface
-        DefaultWindow->CreateSurface();
+#ifndef AE_HEADLESS
+        surface = Graphics::Instance::DefaultInstance->CreateSurface(DefaultWindow->GetSDLWindow());
+#else
+        surface = Graphics::Instance::DefaultInstance->CreateHeadlessSurface();
+#endif
         // Initialize device
-        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(DefaultWindow->surface);
+        Graphics::Instance::DefaultInstance->InitializeGraphicsDevice(surface);
         Graphics::GraphicsDevice::DefaultDevice = Graphics::Instance::DefaultInstance->GetGraphicsDevice();
+
+#ifndef AE_HEADLESS
+        delete Engine::DefaultWindow;
+#endif
 
         Graphics::Extensions::Process();
 
@@ -54,16 +70,12 @@ namespace Atlas {
         Loader::AssetLoader::Init();
         Common::Random::Init();
         PipelineManager::Init();
+        Physics::PhysicsManager::Init();
 
-        Audio::AudioManager::Configure(48000, 2, 1024);
+        // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
+        Audio::AudioManager::Configure(48000, 2, 256);
 
         Clock::Update();
-
-        // Only then create engine instance. This makes sure that the engine instance already
-        // has access to all graphics functionality and all other functionality on construction
-        auto engineInstance = GetEngineInstance();
-        EngineInstance::instance = engineInstance;
-
 
     }
 
@@ -72,7 +84,9 @@ namespace Atlas {
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
+        Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
+        Audio::AudioManager::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();
@@ -85,6 +99,7 @@ namespace Atlas {
         Graphics::Profiler::BeginFrame();
         Events::EventManager::Update();
         PipelineManager::Update();
+        Audio::AudioManager::Update();
 
     }
 

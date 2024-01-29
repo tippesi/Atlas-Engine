@@ -1,17 +1,11 @@
-#include <sample>
-#include <convert>
+#include <convert.hsh>
 
-vec3 reconstructNormal(const in sampler2D depthTexture, vec2 texCoord) {
+vec3 ReconstructNormal(ivec2 resolution, float depthCenter, float depthLeft, float depthRight,
+    float depthTop, float depthBottom, vec2 texCoord) {
 
-    vec2 texSize = vec2(textureSize(depthTexture, 0));
+    vec2 texSize = vec2(resolution);
     vec2 invTexSize = 1.0 / texSize;
     ivec2 pixel = ivec2(texCoord * texSize);
-
-    float depthCenter = texelFetch(depthTexture, pixel, 0).r;
-    float depthLeft = sampleTex(depthTexture, pixel + ivec2(-1, 0), SAMPLE_CLAMP).r;
-    float depthRight = sampleTex(depthTexture, pixel + ivec2(1, 0), SAMPLE_CLAMP).r;
-    float depthTop = sampleTex(depthTexture, pixel + ivec2(0, -1), SAMPLE_CLAMP).r;
-    float depthBottom = sampleTex(depthTexture, pixel + ivec2(0, 1), SAMPLE_CLAMP).r;
 
     vec3 posCenter = ConvertDepthToViewSpace(depthCenter, texCoord);
     vec3 posLeft = ConvertDepthToViewSpace(depthLeft, texCoord + vec2(-1.0, 0.0) * invTexSize);
@@ -42,7 +36,6 @@ vec3 reconstructNormal(const in sampler2D depthTexture, vec2 texCoord) {
     }
 
     vec3 p0 = posCenter;
-
-    return normalize(cross(p2 - p0, p1 - p0));
+    return -normalize(cross(p2 - p0, p1 - p0));
 
 }

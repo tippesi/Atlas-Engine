@@ -121,6 +121,11 @@ namespace Atlas {
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);
+
+            for (int32_t i = 0; i < graphicsPipelineDesc.vertexInputInfo.vertexAttributeDescriptionCount; i++) {
+                auto& vertexAttributeDesc = graphicsPipelineDesc.vertexInputInfo.pVertexAttributeDescriptions[i];
+                HashCombine(variantHash, vertexAttributeDesc.format);
+            }
         }
 
     }

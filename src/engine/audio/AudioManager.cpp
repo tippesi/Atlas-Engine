@@ -1,4 +1,5 @@
 #include "AudioManager.h"
+#include "Log.h"
 
 #include <SDL_audio.h>
 #include <algorithm>
@@ -10,12 +11,11 @@ namespace Atlas {
         SDL_AudioSpec AudioManager::audioSpec;
         SDL_AudioDeviceID AudioManager::audioDevice;
 
-        std::vector<AudioStream*> AudioManager::musicQueue;
-        std::vector<AudioStream*> AudioManager::effectQueue;
+        std::vector<Ref<AudioStream>> AudioManager::audioStreams;
 
         std::mutex AudioManager::mutex;
         
-        bool AudioManager::Configure(uint32_t frequency, uint8_t channels, uint32_t samples) {
+        bool AudioManager::Configure(int32_t frequency, uint8_t channels, uint32_t samples) {
 
             std::lock_guard<std::mutex> guard(mutex);
 
@@ -41,7 +41,19 @@ namespace Atlas {
 
             }
 
+            Log::Warning("Couldn't configure audio device with required specifications");
+
             return false;
+
+        }
+
+        void AudioManager::Shutdown() {
+
+            Pause();
+
+            audioStreams.clear();
+
+            SDL_CloseAudioDevice(audioDevice);
 
         }
 
@@ -69,61 +81,58 @@ namespace Atlas {
 
         }
 
-        void AudioManager::AddMusic(AudioStream *stream) {
+        Ref<AudioStream> AudioManager::CreateStream(ResourceHandle<AudioData> data, float volume, bool loop) {
 
-            stream->ApplyFormat(audioSpec);
+            auto stream = CreateRef<AudioStream>(data, volume, loop);
 
             std::lock_guard<std::mutex> lock(mutex);
+            audioStreams.push_back(stream);
 
-            musicQueue.push_back(stream);
+            return stream;
 
         }
 
-        void AudioManager::RemoveMusic(AudioStream *stream) {
+        void AudioManager::Update() {
 
-            std::lock_guard<std::mutex> lock(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
 
-            auto item = std::find(musicQueue.begin(), musicQueue.end(), stream);
-
-            if (item != musicQueue.end()) {
-                musicQueue.erase(item);
+            for (size_t i = 0; i < audioStreams.size(); i++) {
+                auto& ref = audioStreams[i];
+                if (ref.use_count() == 1) {
+                    ref.swap(audioStreams.back());
+                    audioStreams.pop_back();
+                    i--;
+                }
             }
 
         }
 
-        void AudioManager::Callback(void* userData, uint8_t* stream, int32_t length) {
+        void AudioManager::Callback(void* userData, uint8_t* streamData, int32_t length) {
 
             // We only use 16 bit audio internally
             length /= 2;
 
             std::vector<int16_t> dest(length, 0);
+            std::vector<int16_t> chunk(length, 0);
 
-            // Compute music first
             std::unique_lock<std::mutex> lock(mutex);
-
-            auto queue = musicQueue;
-
+            auto localStreams = audioStreams;
             lock.unlock();
 
-            for (auto stream : queue) {
+            // Take ownership of stream here, such that the update can run in parallel
+            for (const auto& stream : localStreams) {
 
-                if (stream->IsPaused())
+                if (!stream->IsValid() || stream->IsPaused())
                     continue;
 
-                auto src = stream->GetChunk(length);
+                if (!stream->GetChunk(chunk))
+                    continue;
 
-                Mix(dest, src);
+                Mix(dest, chunk);
 
             }
 
-            // Compute audio effects
-            lock.lock();
-
-
-
-            lock.unlock();
-
-            std::memcpy(stream, dest.data(), length * 2);
+            std::memcpy(streamData, dest.data(), length * 2);
 
         }
 

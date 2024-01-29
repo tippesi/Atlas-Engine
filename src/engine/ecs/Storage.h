@@ -1,5 +1,4 @@
-#ifndef AE_ECSSTORAGE_H
-#define AE_ECSSTORAGE_H
+#pragma once
 
 #include "../System.h"
 #include "Entity.h"
@@ -19,7 +18,7 @@ namespace Atlas {
 
             void Emplace(const Entity entity);
 
-            void Erase(const Entity entity);
+            virtual void Erase(const Entity entity);
 
             inline Entity& operator[](size_t idx);
 
@@ -38,6 +37,8 @@ namespace Atlas {
             inline size_t GetOffset(uint32_t idx) const;
 
             inline size_t GetIndex(const Entity entity) const;
+
+            inline size_t TryGetIndex(const Entity entity) const;
 
         private:
             std::vector<Page> pageData;
@@ -94,8 +95,18 @@ namespace Atlas {
 
         }
 
+        size_t Storage::TryGetIndex(const Entity entity) const {
+
+            auto idx = EntityToIdx(entity);
+            auto page = GetPage(idx);
+
+            if (page >= pageData.size())
+                return EntityConfig::InvalidEntity;
+
+            return pageData[GetPage(idx)][GetOffset(idx)];
+
+        }
+
     }
 
 }
-
-#endif

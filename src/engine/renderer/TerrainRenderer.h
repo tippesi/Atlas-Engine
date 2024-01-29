@@ -1,5 +1,4 @@
-#ifndef AE_TERRAINRENDERER_H
-#define AE_TERRAINRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -15,8 +14,7 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList,
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t> materialMap);
 
         private:
@@ -71,7 +69,7 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::Buffer terrainMaterialBuffer;
 
-            PipelineConfig GeneratePipelineConfig(RenderTarget* target,
+            PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig,
                 bool materialMappingConfig);
         };
@@ -79,5 +77,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_APP_H
-#define AE_APP_H
+#pragma once
 
 #include <EngineInstance.h>
 #include <input/Mouse.h>
@@ -40,7 +39,9 @@ private:
         PICAPICA,
         SUBWAY,
         MATERIALS,
-        FOREST
+        FOREST,
+        EMERALDSQUARE,
+        FLYINGWORLD
     };
 
     void DisplayLoadingScreen(float deltaTime);
@@ -56,24 +57,28 @@ private:
 
     SceneSelection sceneSelection = SPONZA;
 
-    Atlas::Renderer::PathTracerRenderTarget pathTraceTarget;
-    Atlas::RenderTarget renderTarget;
-    Atlas::Viewport viewport;
+    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
+    Ref<Atlas::RenderTarget> renderTarget;
+    Ref<Atlas::Viewport> viewport;
 
-    Atlas::Font font;
-
-    Atlas::Camera camera;
+    Ref<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
-    Ref<Atlas::Lighting::DirectionalLight> directionalLight;
+
+    Atlas::ResourceHandle<Atlas::Audio::AudioData> audio;
+    Atlas::ResourceHandle<Atlas::Audio::AudioData> music;
 
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
-    std::vector<Atlas::Actor::MovableMeshActor> actors;
+
+    Atlas::Scene::Entity cameraEntity;
+    Atlas::Scene::Entity directionalLightEntity;
+    std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;
 
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
+    Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
 
@@ -94,8 +99,20 @@ private:
     bool loadingComplete = false;
     bool sceneReload = false;
 
+    float sphereScale = 1.0f;
+    float sphereDensity = 1.0f;
+    float sphereRestitution = 0.2f;
+
+    bool emitSpheresEnabled = false;
+    float emitSpawnRate = 0.1f;
+
+    bool shootSpheresEnabled = false;
+    bool shootSphere = false;
+    float shootSpawnRate = 0.1f;
+    float shootVelocity = 5.0f;
+
     ImguiWrapper imguiWrapper;
 
-};
+    std::vector<Ref<Atlas::Audio::AudioStream>> audioStreams;
 
-#endif
+};

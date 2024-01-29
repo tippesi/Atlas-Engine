@@ -1,10 +1,10 @@
-#ifndef AE_VOLUMETRICCLOUDS_H
-#define AE_VOLUMETRICCLOUDS_H
+#pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../RenderTarget.h"
 #include "../texture/Texture3D.h"
+
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -16,7 +16,7 @@ namespace Atlas {
             VolumetricClouds(int32_t coverageResolution = 512, int32_t shapeResolution = 128,
                 int32_t detailResolution = 32, int32_t shadowResolution = 512);
 
-            void GetShadowMatrices(Camera* camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
+            void GetShadowMatrices(const CameraComponent& camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
 
             Texture::Texture2D coverageTexture;
             Texture::Texture3D shapeTexture;
@@ -24,7 +24,7 @@ namespace Atlas {
             Texture::Texture2D shadowTexture;
 
             struct Scattering {
-                float extinctionFactor = 0.24f;
+                float extinctionFactor = 0.16f;
                 float scatteringFactor = 2.00f;
 
                 vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
@@ -35,10 +35,11 @@ namespace Atlas {
             };
 
             int32_t sampleCount = 64;
-            int32_t shadowSampleCount = 5;
+            int32_t occlusionSampleCount = 5;
+            int32_t shadowSampleFraction = 4;
 
-            float minHeight = 100.0f;
-            float maxHeight = 600.0f;
+            float minHeight = 1400.0f;
+            float maxHeight = 1700.0f;
             float distanceLimit = 8000.0f;
 
             float coverageScale = 0.25f;
@@ -61,11 +62,10 @@ namespace Atlas {
             bool needsNoiseUpdate = true;
             bool enable = true;
             bool castShadow = true;
+            bool stochasticOcclusionSampling = true;
 
         };
 
     }
 
 }
-
-#endif

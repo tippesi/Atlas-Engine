@@ -10,8 +10,9 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
-project(AtlasEngine VERSION 0.1.8)
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
+
+project(AtlasEngine VERSION 0.2.0)
 
 # Only 64 bit is supported
 ###################################################################
@@ -28,8 +29,20 @@ option(ATLAS_DEMO "Build demo executable" OFF)
 option(ATLAS_DEMO "Build editor executable" ON)
 option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
+option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
+option(ATLAS_BINDLESS "Activate support for running the engine with bindless resources turned on" ON)
+
+if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+    option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" ON)
+else()
+    option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" OFF)
+endif()
+
 
 if (ATLAS_DEMO)
+    set (ATLAS_IMGUI ON)
+endif()
+if (ATLAS_TESTS)
     set (ATLAS_IMGUI ON)
 endif()
 
@@ -53,6 +66,7 @@ endif()
 # Set dependencies location #######################################################################
 set (ATLAS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/engine)
 set (DEMO_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/demo)
+set (TESTS_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 set (EDITOR_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/editor)
 set (IMGUI_EXTENSION_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/ImguiExtension)
 
@@ -66,12 +80,19 @@ if (ANDROID)
     add_subdirectory(${HIDAPI_LOCATION})
 endif()
 
+find_package(unofficial-spirv-reflect CONFIG REQUIRED)
+find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
 find_package(volk CONFIG REQUIRED)
-find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
-find_package(unofficial-spirv-reflect CONFIG REQUIRED)
 find_package(SPIRV-Tools-opt CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(unofficial-joltphysics CONFIG REQUIRED)
+
+if (ATLAS_TESTS)
+find_package(GTest CONFIG REQUIRED)
+endif()
 
 add_subdirectory(${ATLAS_LOCATION})
 
@@ -85,4 +106,8 @@ endif()
 
 if (ATLAS_EDITOR)
     add_subdirectory(${EDITOR_LOCATION})
+endif()
+
+if (ATLAS_TESTS)
+    add_subdirectory(${TESTS_LOCATION})
 endif()

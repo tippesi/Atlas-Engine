@@ -1,7 +1,6 @@
 #include "AORenderer.h"
 
 #include "Clock.h"
-#include "../common/RandomHelper.h"
 
 namespace Atlas {
 
@@ -41,8 +40,7 @@ namespace Atlas {
 
         }
 
-        void AORenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void AORenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             static int32_t frameCount = 0;
 
@@ -126,7 +124,7 @@ namespace Atlas {
                     .frameCount = frameCount++
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
-                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0);
+                ssSamplesUniformBuffer.SetData(&ao->samples[0], 0, ao->samples.size() * sizeof(vec4));
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
 

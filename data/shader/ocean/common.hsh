@@ -1,0 +1,123 @@
+#include <sharedUniforms.hsh>
+#include <shoreInteraction.hsh>
+
+layout(set = 3, binding = 0) uniform sampler2DArray displacementMap;
+layout(set = 3, binding = 1) uniform sampler2DArray normalMap;
+layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
+
+const float shoreStartScaling = 15.0;
+const float shoreOffsetScaling = 5.0;
+const float minShoreScaling = 0.3;
+
+const vec4 fadeDistances = vec4(10.0, 20.0, 40.0, 100.0);
+vec4 spectrumScaling = Uniforms.spectrumWeights;
+
+vec3 GetOceanDisplacement(vec3 position, float dist, out float perlinScale, 
+    out float shoreScale, out vec3 normalShoreWave) {
+
+    vec2 texCoord = position.xz / Uniforms.tiling;
+
+#ifdef TERRAIN
+    float waterDepth = shoreStartScaling;
+
+    vec2 terrainTex = (position.xz - vec2(Uniforms.terrainTranslation.xz))
+        / Uniforms.terrainSideLength;
+
+    if (terrainTex.x >= 0.0 && terrainTex.y >= 0.0
+        && terrainTex.x <= 1.0 && terrainTex.y <= 1.0) {
+        waterDepth = position.y - textureLod(terrainHeight, terrainTex, 0.0).r 
+            * Uniforms.terrainHeightScale + Uniforms.terrainTranslation.y;
+    }
+
+    shoreScale = clamp((waterDepth - shoreOffsetScaling) / 
+        (shoreStartScaling - shoreOffsetScaling), minShoreScaling, 1.0);
+#else
+    shoreScale = 1.0;
+#endif
+    
+    vec4 tilingFactors = Uniforms.spectrumTilingFactors;
+    vec4 fadeoutDistances = Uniforms.spectrumFadeoutDistances;
+    
+    vec3 displacement0 = vec3(0.0), displacement1 = vec3(0.0), displacement2 = vec3(0.0), displacement3 = vec3(0.0);
+    
+    vec4 fade = saturate((fadeoutDistances - vec4(dist)) / fadeDistances);
+    if (Uniforms.spectrumCount > 0 && fade[0] > 0.0) {
+        displacement0 = textureLod(displacementMap, vec3(texCoord / tilingFactors[0], 0.0), 0.0).grb * spectrumScaling.x;
+        displacement0 *= fade[0];
+    }
+    if (Uniforms.spectrumCount > 1 && fade[1] > 0.0) {
+        displacement1 = textureLod(displacementMap, vec3(texCoord / tilingFactors[1] + vec2(0.25), 1.0), 0.0).grb * spectrumScaling.y;
+        displacement1 *= fade[1];
+    }
+    if (Uniforms.spectrumCount > 2 && fade[2] > 0.0) {
+        displacement2 = textureLod(displacementMap, vec3(texCoord / tilingFactors[2] + vec2(0.5), 2.0), 0.0).grb * spectrumScaling.z;
+        displacement2 *= fade[2];
+    }
+    if (Uniforms.spectrumCount > 3 && fade[3] > 0.0) {
+        displacement3 = textureLod(displacementMap, vec3(texCoord / tilingFactors[3] + vec2(0.75), 3.0), 0.0).grb * spectrumScaling.w;
+        displacement3 *= fade[3];
+    }
+    
+    float weightSum = dot(vec4(1.0), spectrumScaling);
+    vec3 displacement = (displacement0 + displacement1 + displacement2 + displacement3) / weightSum;
+    displacement.y *= Uniforms.displacementScale * shoreScale;
+    displacement.x *= Uniforms.choppyScale * shoreScale;
+    displacement.z *= Uniforms.choppyScale * shoreScale;
+
+    float perlin = textureLod(perlinNoiseMap, texCoord * 0.125 * 0.125, 0.0).r;
+    perlinScale = saturate(sqr(perlin));
+
+    displacement = displacement;
+
+#ifdef TERRAIN
+    vec3 dx = vec3(0.1, 0.0, 0.0) + CalculateGerstner(position + vec3(0.1, 0.0, 0.0));
+    vec3 dz = vec3(0.0, 0.0, 0.1) + CalculateGerstner(position + vec3(0.0, 0.0, 0.1));
+    vec3 centerOffset = CalculateGerstner(position);
+
+    normalShoreWave = normalize(cross(dz - centerOffset, dx - centerOffset));
+    displacement += centerOffset;
+#endif
+
+    return displacement;
+
+}
+
+void GetOceanGradientAndFold(vec2 texCoord, float dist, out float fold, out vec2 gradient) {
+    
+    texCoord /= Uniforms.tiling;
+
+    vec4 tilingFactors = Uniforms.spectrumTilingFactors;
+    vec4 fadeoutDistances = Uniforms.spectrumFadeoutDistances;
+    
+    vec4 data0 = vec4(0.0), data1 = vec4(0.0), data2 = vec4(0.0), data3 = vec4(0.0);
+    
+    vec4 fade = saturate((fadeoutDistances - vec4(dist)) / fadeDistances);
+    if (Uniforms.spectrumCount > 0 && fade[0] > 0.0) {
+        data0 = texture(normalMap, vec3(texCoord / tilingFactors[0], 0.0)) * spectrumScaling.x;
+        data0 *= fade[0];
+    }
+    if (Uniforms.spectrumCount > 1 && fade[1] > 0.0) {
+        data1 = texture(normalMap, vec3(texCoord / tilingFactors[1] + vec2(0.25), 1.0)) * spectrumScaling.y;
+        data1 *= fade[1];
+    }
+    if (Uniforms.spectrumCount > 2 && fade[2] > 0.0) {
+        data2 = texture(normalMap, vec3(texCoord / tilingFactors[2] + vec2(0.5), 2.0)) * spectrumScaling.z;
+        data2 *= fade[2];
+    }
+    if (Uniforms.spectrumCount > 3 && fade[3] > 0.0) {
+        data3 = texture(normalMap, vec3(texCoord / tilingFactors[3] + vec2(0.75), 3.0)) * spectrumScaling.w;
+        data3 *= fade[3];
+    }
+
+    float perlin = textureLod(perlinNoiseMap, texCoord * 0.125 * 0.125, 0.0).r;
+    float perlinScale = sqr(clamp(perlin, 0.0, 1.0));
+    
+    float weightSum = dot(vec4(1.0), spectrumScaling);
+    fold = saturate(10.0 * ((data0.a + data1.a + data2.a + data3.a) / weightSum));
+    gradient = ((data0.rg / tilingFactors[0]) + (data1.rg / tilingFactors[1])
+        + (data2.rg / tilingFactors[2]) + (data3.rg / tilingFactors[3])) / weightSum;
+    
+    //fold *= perlinScale;
+    //gradient *= perlinScale;
+
+}

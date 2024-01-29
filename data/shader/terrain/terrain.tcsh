@@ -79,8 +79,8 @@ void main() {
         // Displacement is in normal direction
         // To fix culling we simply scale the bounding
         // box of the current tile by a small margin
-        maxVec += dir * .25;
-        minVec -= dir * .25;
+        maxVec += dir;
+        minVec -= dir;
 
         if (IsTileVisible(minVec, maxVec)) {
     

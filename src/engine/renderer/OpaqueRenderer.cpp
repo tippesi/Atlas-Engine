@@ -14,9 +14,8 @@ namespace Atlas {
 
         }
 
-        void OpaqueRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList,
-            std::unordered_map<void*, uint16_t> materialMap) {
+        void OpaqueRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+            RenderList* renderList, std::unordered_map<void*, uint16_t> materialMap) {
 
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
@@ -80,14 +79,19 @@ namespace Atlas {
                 if (material->HasDisplacementMap())
                     material->displacementMap->Bind(commandList, 3, 6);
 
+                scene->wind.noiseMap.Bind(commandList, 3, 7);
+
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
                     .twoSided = material->twoSided ? 1u : 0u,
                     .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
-                    .materialIdx = uint32_t(materialMap[material]),
+                    .materialIdx = uint32_t(materialMap[material.get()]),
                     .normalScale = material->normalScale,
-                    .displacementScale = material->displacementScale
+                    .displacementScale = material->displacementScale,
+                    .windTextureLod = mesh->windNoiseTextureLod,
+                    .windBendScale = mesh->windBendScale,
+                    .windWiggleScale = mesh->windWiggleScale
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
@@ -102,7 +106,7 @@ namespace Atlas {
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh>& mesh, RenderTarget *target) {
+            const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target) {
 
             auto shaderConfig = ShaderConfig {
                 {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},

@@ -25,11 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
-layout(std430, set = 1, binding = 0) buffer CurrentMatrices {
+layout(std430, set = 1, binding = 1) buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
 
-layout(std430, set = 1, binding = 1) buffer LastMatrices {
+layout(std430, set = 1, binding = 2) buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 
@@ -51,6 +51,8 @@ layout(location=5) out vec4 vertexColorsVS;
 layout(location=6) out mat3 TBN;
 #endif
 
+layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -59,6 +61,9 @@ layout(push_constant) uniform constants {
     uint materialIdx;
     float normalScale;
     float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
 } PushConstants;
 
 // Functions
@@ -78,8 +83,11 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(vPosition, globalData.time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(vPosition, globalData.time - globalData.deltaTime, mMatrix[3].xyz);
+        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, mMatrix[3].xyz);
+        lastPosition = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod,
+            globalData.time - globalData.deltaTime, mMatrix[3].xyz);
 
     }
 
@@ -96,10 +104,6 @@ void main() {
 
     // Only after ndc calculation apply the clip correction
     gl_Position = gl_Position;
-    
-#ifdef GENERATE_IMPOSTOR
-    mvMatrix = globalData.mMatrix;
-#endif
     
     normalVS = mat3(mvMatrix) * vNormal;    
 

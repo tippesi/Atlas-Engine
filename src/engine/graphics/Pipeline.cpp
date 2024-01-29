@@ -12,10 +12,10 @@ namespace Atlas {
             bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS), shader(desc.shader),
             frameBuffer(desc.frameBuffer), device(device) {
 
-            assert(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
+            AE_ASSERT(!desc.shader->isCompute && "Can't create a graphics pipeline with a compute shader");
             if (desc.shader->isCompute) return;
 
-            assert((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
+            AE_ASSERT((desc.swapChain || desc.frameBuffer) && "Must provide a swap chain or a frame buffer");
 
             GeneratePipelineLayoutFromShader();
 
@@ -60,6 +60,17 @@ namespace Atlas {
             auto vertexInputInfo = GenerateVertexInputStateInfoFromShader(desc.vertexInputInfo,
                 bindingDescriptions, attributeDescriptions);
 
+            auto assemblyInputInfo = desc.assemblyInputInfo;
+#ifdef AE_OS_MACOS
+            // Need to disable it for other LIST topologies as well, but they are not in use right now
+            if (assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_LINE_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_POINT_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST &&
+                assemblyInputInfo.topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                assemblyInputInfo.primitiveRestartEnable = VK_TRUE;
+            }
+#endif
+
             VkGraphicsPipelineCreateInfo pipelineInfo = {};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.pNext = nullptr;
@@ -67,7 +78,7 @@ namespace Atlas {
             pipelineInfo.stageCount = uint32_t(desc.shader->stageCreateInfos.size());
             pipelineInfo.pStages = desc.shader->stageCreateInfos.data();
             pipelineInfo.pVertexInputState = &vertexInputInfo;
-            pipelineInfo.pInputAssemblyState = &desc.assemblyInputInfo;
+            pipelineInfo.pInputAssemblyState = &assemblyInputInfo;
             pipelineInfo.pDepthStencilState = &desc.depthStencilInputInfo;
             pipelineInfo.pViewportState = &viewportState;
             pipelineInfo.pRasterizationState = &desc.rasterizer;
@@ -96,7 +107,7 @@ namespace Atlas {
         Pipeline::Pipeline(GraphicsDevice* device, const ComputePipelineDesc& desc) :
             bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE), shader(desc.shader), device(device) {
 
-            assert(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
+            AE_ASSERT(desc.shader->isCompute && "Can't create a compute pipeline without a compute shader");
             if (!desc.shader->isCompute) return;
 
             GeneratePipelineLayoutFromShader();
@@ -148,8 +159,8 @@ namespace Atlas {
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
             for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                 // We need to check if there are any bindings at all
-                //if (!shader->sets[i].bindingCount) continue;
-                descriptorSetLayouts.push_back(shader->sets[i].layout);
+                //if (!shader->sets[i].) continue;
+                descriptorSetLayouts.push_back(shader->sets[i].layout->layout);
             }
 
             if (descriptorSetLayouts.size() > 0) {
@@ -166,7 +177,7 @@ namespace Atlas {
             std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
             std::vector<VkVertexInputAttributeDescription>& attributeDescriptions) {
 
-            assert(descVertexInputState.vertexBindingDescriptionCount ==
+            AE_ASSERT(descVertexInputState.vertexBindingDescriptionCount ==
                 descVertexInputState.vertexAttributeDescriptionCount && "Expected bindings and attributes \
                 to have the same amount of elements");
 
@@ -182,7 +193,7 @@ namespace Atlas {
                         break;
                     }
                 }
-                assert(found && "Vertex input was not specified in the pipeline desc");
+                AE_ASSERT(found && "Vertex input was not specified in the pipeline desc");
             }
 
             return Graphics::Initializers::InitPipelineVertexInputStateCreateInfo(

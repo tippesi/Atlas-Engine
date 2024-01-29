@@ -19,6 +19,7 @@ layout(std140, set = 3, binding = 8) uniform UniformBuffer {
     mat4 ipMatrix;
 
     vec4 lightDirection;
+    int shadowSampleFraction;
 } uniforms;
 
 vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos);
@@ -51,7 +52,7 @@ vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
     float rayLength = outDist - inDist;
     float rayStart = inDist;
 
-    int raySampleCount = cloudUniforms.sampleCount / 4;
+    int raySampleCount = cloudUniforms.sampleCount / uniforms.shadowSampleFraction;
     float stepLength = rayLength / float(raySampleCount);
     vec3 stepVector = rayDirection * stepLength;
 

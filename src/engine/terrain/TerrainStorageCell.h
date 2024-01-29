@@ -1,8 +1,8 @@
-#ifndef AE_TERRAINSTORAGECELL_H
-#define AE_TERRAINSTORAGECELL_H
+#pragma once
 
 #include "../System.h"
 #include "../Material.h"
+#include "../physics/ShapesManager.h"
 
 #include <vector>
 
@@ -29,6 +29,8 @@ namespace Atlas {
 
             vec2 position;
 
+            Physics::ShapeRef shape;
+
             std::vector<float> heightData;
 
             Texture::Texture2D heightField;
@@ -44,5 +46,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

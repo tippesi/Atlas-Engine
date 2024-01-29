@@ -1,5 +1,4 @@
-#ifndef AE_DISPLAY_H
-#define AE_DISPLAY_H
+#pragma once
 
 #include "System.h"
 
@@ -46,5 +45,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

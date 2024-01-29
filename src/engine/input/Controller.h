@@ -1,9 +1,8 @@
-#ifndef AE_CONTROLLER_H
-#define AE_CONTROLLER_H
+#pragma once
 
-#include "../System.h"
-#include "../Camera.h"
+#include "System.h"
 #include "events/EventManager.h"
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -16,16 +15,14 @@ namespace Atlas {
 
             ControllerHandler(const ControllerHandler& that);
 
-            ControllerHandler(Camera* camera, float sensibility, float speed, float reactivity,
+            ControllerHandler(CameraComponent& camera, float sensibility, float speed, float reactivity,
                     float threshold, int32_t device = -1);
 
             ~ControllerHandler();
 
             ControllerHandler& operator=(const ControllerHandler& that);
 
-            void Update(Camera* camera, float deltaTime);
-
-            void Reset(Camera* camera);
+            void Update(CameraComponent& camera, float deltaTime);
 
             bool IsControllerAvailable();
 
@@ -48,8 +45,11 @@ namespace Atlas {
 
             float speedIncrease = 0.0f;
 
-            vec3 location = vec3(0.0f);
-            vec2 rotation = vec3(0.0f);
+            vec3 linearVelocity = vec3(0.0f);
+            vec2 angularVelocity = vec2(0.0f);
+
+            vec3 interpolatedLinearVelocity = vec3(0.0f);
+            vec2 interpolatedAngularVelocity = vec2(0.0f);
 
             int32_t controllerDevice = -1;
 
@@ -62,5 +62,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

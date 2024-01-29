@@ -1,5 +1,4 @@
-#ifndef AE_POSTPROCESSING_H
-#define AE_POSTPROCESSING_H
+#pragma once
 
 #include "../System.h"
 
@@ -17,6 +16,7 @@ namespace Atlas {
 
         public:
             float saturation = 1.0f;
+            float contrast = 1.0f;
             float whitePoint = 10.0f;
 
             bool filmicTonemapping = false;
@@ -32,5 +32,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

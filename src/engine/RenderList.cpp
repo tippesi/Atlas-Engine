@@ -1,7 +1,8 @@
-#include <actor/MeshActor.h>
 #include "RenderList.h"
 
 #include "graphics/GraphicsDevice.h"
+#include "scene/Scene.h"
+#include "scene/components/TransformComponent.h"
 
 #include <glm/gtx/norm.hpp>
 
@@ -13,15 +14,17 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame() {
+    void RenderList::NewFrame(Ref<Scene::Scene> scene) {
 
-        auto lastSize = currentActorMatrices.size();
-        currentActorMatrices.clear();
-        if (lastSize) currentActorMatrices.reserve(lastSize);
+        this->scene = scene;
 
-        lastSize = lastActorMatrices.size();
-        lastActorMatrices.clear();
-        if (lastSize) lastActorMatrices.reserve(lastSize);
+        auto lastSize = currentEntityMatrices.size();
+        currentEntityMatrices.clear();
+        if (lastSize) currentEntityMatrices.reserve(lastSize);
+
+        lastSize = lastEntityMatrices.size();
+        lastEntityMatrices.clear();
+        if (lastSize) lastEntityMatrices.reserve(lastSize);
 
         lastSize = impostorMatrices.size();
         impostorMatrices.clear();
@@ -35,7 +38,7 @@ namespace Atlas {
 
         Pass pass {
             .type = RenderPassType::Main,
-            .light = nullptr,
+            .lightEntity = ECS::EntityConfig::InvalidEntity,
             .layer = 0
         };
 
@@ -43,11 +46,11 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewShadowPass(Lighting::Light *light, uint32_t layer) {
+    void RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
         Pass pass {
             .type = RenderPassType::Shadow,
-            .light = light,
+            .lightEntity = lightEntity,
             .layer = layer
         };
 
@@ -66,46 +69,44 @@ namespace Atlas {
 
     }
 
-    RenderList::Pass* RenderList::GetShadowPass(const Lighting::Light *light, const uint32_t layer) {
+    RenderList::Pass* RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
 
         for (auto& pass : passes) {
             if (pass.type == RenderPassType::Shadow &&
-                pass.light == light && pass.layer == layer) return &pass;
+                pass.lightEntity == lightEntity && pass.layer == layer) return &pass;
         }
 
         return nullptr;
 
     }
 
-    void RenderList::Add(Actor::MeshActor *actor) {
+    void RenderList::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
         auto& pass = passes.back();
-        auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshToActorMap = pass.meshToEntityMap;
 
-        if (!actor->mesh.IsLoaded())
+        if (!meshComponent.mesh.IsLoaded())
             return;
 
-        auto id = actor->mesh.GetID();
+        auto id = meshComponent.mesh.GetID();
 
         if (!meshToActorMap.contains(id)) {
             auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
-            meshToActorMap[id] = { actor };
-            meshIdToMeshMap[id] = actor->mesh;
+            meshToActorMap[id] = { entity };
+            meshIdToMeshMap[id] = meshComponent.mesh;
         }
         else {
-            meshToActorMap[id].push_back(actor);
+            meshToActorMap[id].push_back(entity);
         }
 
     }
 
-    void RenderList::Update(Camera* camera) {
-
-        auto cameraLocation = camera->GetLocation();
+    void RenderList::Update(vec3 cameraLocation) {
 
         auto& pass = passes.back();
         auto type = pass.type;
-        auto& meshToActorMap = pass.meshToActorMap;
+        auto& meshToActorMap = pass.meshToEntityMap;
         auto& meshToInstancesMap = pass.meshToInstancesMap;
         auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
@@ -122,13 +123,9 @@ namespace Atlas {
             maxImpostorCount += hasImpostor ? actors.size() : 0;
         }
 
-        currentActorMatrices.reserve(maxActorCount);
-        lastActorMatrices.reserve(maxActorCount);
-        impostorMatrices.reserve(maxImpostorCount);
-
-        for (auto& [meshId, actors] : meshToActorMap) {
+        for (auto& [meshId, entities] : meshToActorMap) {
             auto mesh = meshIdToMeshMap[meshId];
-            if (!actors.size()) continue;
+            if (!entities.size()) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
             auto hasImpostor = mesh->impostor != nullptr;
@@ -141,39 +138,48 @@ namespace Atlas {
 
             MeshInstances instances;
 
-            instances.offset = currentActorMatrices.size();
+            instances.offset = currentEntityMatrices.size();
             instances.impostorOffset = impostorMatrices.size();
 
             if (hasImpostor) {
-                for (auto actor : actors) {
+                for (auto ecsEntity : entities) {
+                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
                     auto distance = glm::distance2(
-                        vec3(actor->globalMatrix[3]),
+                        vec3(transformComponent.globalMatrix[3]),
                         cameraLocation);
 
                     if (distance < sqdDistance) {
-                        currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
-                        if (needsHistory) lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
+                        currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        if (needsHistory) {
+                            lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                        }
+                        else {
+                            // For now push back anyways (since indices of matrices per entity need to match)
+                            lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        }
                     }
                     else {
-                        impostorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                        impostorMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
-                    //impostorMatrices.push_back(actor->globalMatrix);
                 }
             }
             else {
-                for (auto actor : actors) {
-                    currentActorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                for (auto ecsEntity : entities) {
+                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
+                    auto& transformComponent = entity.GetComponent<TransformComponent>();
+                    currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
-                        lastActorMatrices.push_back(glm::transpose(actor->lastGlobalMatrix));
+                        lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
                     else {
                         // For now push back anyways
-                        lastActorMatrices.push_back(glm::transpose(actor->globalMatrix));
+                        lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     }
                 }
             }
 
-            instances.count = currentActorMatrices.size() - instances.offset;
+            instances.count = currentEntityMatrices.size() - instances.offset;
             instances.impostorCount = impostorMatrices.size() - instances.impostorOffset;
             meshToInstancesMap[meshId] = instances;
 
@@ -185,10 +191,10 @@ namespace Atlas {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat3x4) * currentActorMatrices.size()) {
+        if (!currentMatricesBuffer || currentMatricesBuffer->size < sizeof(mat3x4) * currentEntityMatrices.size()) {
             auto newSize = currentMatricesBuffer != nullptr ? currentMatricesBuffer->size * 2 :
-                           sizeof(mat3x4) * currentActorMatrices.size();
-            newSize = std::max(newSize, size_t(1));
+                           sizeof(mat3x4) * currentEntityMatrices.size();
+            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * currentEntityMatrices.size());
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -201,7 +207,7 @@ namespace Atlas {
         if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat3x4) * impostorMatrices.size()) {
             auto newSize = impostorMatricesBuffer != nullptr ? impostorMatricesBuffer->size * 2 :
                            sizeof(mat3x4) * impostorMatrices.size();
-            newSize = std::max(newSize, size_t(1));
+            newSize = std::max(std::max(newSize, size_t(1)), sizeof(mat3x4) * impostorMatrices.size());
             auto bufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .domain = Graphics::BufferDomain::Host,
@@ -211,10 +217,10 @@ namespace Atlas {
         }
 
         // Probably better to use a device local buffer since we upload once per frame
-        if (currentActorMatrices.size() > 0)
-            currentMatricesBuffer->SetData(currentActorMatrices.data(), 0, currentActorMatrices.size() * sizeof(mat3x4));
-        if (lastActorMatrices.size() > 0)
-            lastMatricesBuffer->SetData(lastActorMatrices.data(), 0, lastActorMatrices.size() * sizeof(mat3x4));
+        if (currentEntityMatrices.size() > 0)
+            currentMatricesBuffer->SetData(currentEntityMatrices.data(), 0, currentEntityMatrices.size() * sizeof(mat3x4));
+        if (lastEntityMatrices.size() > 0)
+            lastMatricesBuffer->SetData(lastEntityMatrices.data(), 0, lastEntityMatrices.size() * sizeof(mat3x4));
         if (impostorMatrices.size() > 0)
             impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
 

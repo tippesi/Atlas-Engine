@@ -1,10 +1,8 @@
-#ifndef AE_IMPOSTORTOOL_H
-#define AE_IMPOSTORTOOL_H
+#pragma once
 
 #include "../System.h"
 #include "../mesh/Impostor.h"
 #include "../mesh/Mesh.h"
-#include "../Camera.h"
 
 namespace Atlas {
 
@@ -30,5 +28,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

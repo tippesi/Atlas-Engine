@@ -1,5 +1,4 @@
-#ifndef AE_DECAL_H
-#define AE_DECAL_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2D.h"
@@ -23,5 +22,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

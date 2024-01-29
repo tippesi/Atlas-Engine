@@ -1,5 +1,4 @@
-#ifndef AE_AUDIOMANAGER_H
-#define AE_AUDIOMANAGER_H
+#pragma once
 
 #include "../System.h"
 
@@ -17,7 +16,9 @@ namespace Atlas {
         class AudioManager {
 
         public:
-            static bool Configure(uint32_t frequency, uint8_t channels, uint32_t samples);
+            static bool Configure(int32_t frequency, uint8_t channels, uint32_t samples);
+
+            static void Shutdown();
 
             static void Mute();
 
@@ -27,9 +28,9 @@ namespace Atlas {
 
             static void Resume();
 
-            static void AddMusic(AudioStream* stream);
+            static Ref<AudioStream> CreateStream(ResourceHandle<AudioData> data, float volume = 1.0f, bool loop = false);
 
-            static void RemoveMusic(AudioStream* stream);
+            static void Update();
 
         private:
             static void Callback(void* userData, uint8_t* stream, int32_t length);
@@ -39,16 +40,14 @@ namespace Atlas {
             static SDL_AudioSpec audioSpec;
             static SDL_AudioDeviceID audioDevice;
 
-            static std::vector<AudioStream*> musicQueue;
-            static std::vector<AudioStream*> effectQueue;
+            static std::vector<Ref<AudioStream>> audioStreams;
 
             static std::mutex mutex;
+
+            friend AudioData;
 
         };
 
     }
 
 }
-
-
-#endif

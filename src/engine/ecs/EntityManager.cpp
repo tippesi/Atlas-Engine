@@ -38,7 +38,21 @@ namespace Atlas {
 
             entities[pos] = EntityConfig::InvalidEntity;
 
+            for (auto& poolData : pools.data) {
+                if (poolData.storage->Contains(entity))
+                    poolData.storage->Erase(entity);
+            }
+
             destroyed.emplace_back(entity);
+
+        }
+
+        void EntityManager::Clear() {
+
+            entities.clear();
+            destroyed.clear();
+
+            pools.data.clear();
 
         }
 
@@ -55,13 +69,13 @@ namespace Atlas {
 
         }
 
-        size_t EntityManager::Size() {
+        size_t EntityManager::Size() const {
 
             return entities.size();
 
         }
 
-        size_t EntityManager::Alive() {
+        size_t EntityManager::Alive() const {
 
             return entities.size() - destroyed.size();
 

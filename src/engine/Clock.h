@@ -1,5 +1,4 @@
-#ifndef AE_TIME_H
-#define AE_TIME_H
+#pragma once
 
 #include "System.h"
 
@@ -64,5 +63,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

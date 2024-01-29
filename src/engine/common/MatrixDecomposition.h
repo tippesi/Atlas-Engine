@@ -1,5 +1,4 @@
-#ifndef AE_MATRIXDECOMPOSITION_H
-#define AE_MATRIXDECOMPOSITION_H
+#pragma once
 
 #include "../System.h"
 
@@ -12,9 +11,9 @@ namespace Atlas {
         public:
             MatrixDecomposition() = default;
 
-            explicit MatrixDecomposition(mat4 matrix);
+            explicit MatrixDecomposition(const mat4& matrix);
 
-            void Decompose(mat4 matrix);
+            void Decompose(const mat4& matrix);
 
             mat4 Compose();
 
@@ -22,12 +21,10 @@ namespace Atlas {
             vec3 rotation = vec3(0.0f);
             vec3 scale = vec3(1.0f);
 
+            quat quaternion;
+
         };
 
     }
 
 }
-
-
-
-#endif

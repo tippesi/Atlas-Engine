@@ -1,5 +1,4 @@
-#ifndef AE_IRRADIANCEVOLUME_H
-#define AE_IRRADIANCEVOLUME_H
+#pragma once
 
 #include "../System.h"
 
@@ -109,5 +108,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

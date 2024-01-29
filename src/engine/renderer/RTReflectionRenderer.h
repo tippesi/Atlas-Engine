@@ -1,5 +1,4 @@
-#ifndef AE_RTRRENDERER_H
-#define AE_RTRRENDERER_H
+#pragma once
 
 #include "../System.h"
 
@@ -10,15 +9,14 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class RTReflectionRenderer {
+        class RTReflectionRenderer : public Renderer {
 
         public:
             RTReflectionRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) RTRUniforms {
@@ -57,5 +55,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

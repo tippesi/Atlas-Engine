@@ -1,5 +1,4 @@
-#ifndef AE_REF_H
-#define AE_REF_H
+#pragma once
 
 #include <memory>
 
@@ -30,5 +29,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

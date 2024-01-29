@@ -105,6 +105,20 @@ namespace Atlas {
                 dimension.z * dimension.x);
         }
 
+        vec3 AABB::GetSize() const {
+
+            return max - min;
+
+        }
+
+        float AABB::GetDistance(vec3 point) const {
+
+            auto closestPoint = glm::clamp(point, min, max);
+
+            return glm::distance(point, closestPoint);
+
+        }
+
         std::vector<vec3> AABB::GetCorners() {
 
             std::vector<vec3> corners;

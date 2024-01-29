@@ -1,3 +1,4 @@
+#include <globals.hsh>
 #include <common/random.hsh>
 
 #define SIDE_TO_SIDE_FREQ1 1.975
@@ -9,37 +10,36 @@ vec4 SmoothCurve( vec4 x ) {   return x * x *( 3.0 - 2.0 * x ); }
 vec4 TriangleWave( vec4 x ) {   return abs( fract( x + 0.5 ) * 2.0 - 1.0 ); } 
 vec4 SmoothTriangleWave( vec4 x ) {   return SmoothCurve( TriangleWave( x ) ); }
 
-vec3 WindAnimation(vec3 position, float animTime, vec3 location) {
+vec3 WindAnimation(sampler2D noiseTexture, vec3 position,
+    float bendFactor, float wiggleFactor, float lod, float animTime, vec3 location) {
 
     vec3 originalPos = position;
 
-    float offset = 2.0 * 3.14 * random(location);
+    vec2 windDir = globalData.windDir;
+    float windSpeed = globalData.windSpeed;
 
-    animTime += offset;
-
-    const vec2 windDir = vec2(1.0, -1.0);
-    
     float centerDistance = length(position.xz);
-    float height = position.y;
+    float height = position.y * bendFactor * 0.5;
 
-    float bendScale = sin(animTime) * 0.01 + 0.02 * cos(animTime / 2.0) + sin(animTime / 3.0) * 0.01 + 
-        0.03 * sin(animTime * 2.0) * sin(animTime / 10.0);
-    float mainBending = height * bendScale;
+    float windScale = textureLod(noiseTexture, location.xz / 128.0 +
+        windDir * sqrt(windSpeed) * 0.01 * animTime, lod).r * 0.1;
+
+    float mainBending = height * windScale;
     mainBending += 1.0;
     mainBending *= mainBending;
     mainBending = mainBending * mainBending - mainBending;
 
-    position.xz += windDir * mainBending;
+    position.xz += windDir * mainBending * sqrt(windSpeed);
     position.xyz = normalize(position) * length(originalPos);
 
-    float branchAmp = .1;
+    float branchAmp = .25 * sqrt(windSpeed);
     float detailAmp = 0.02;
     float edgeAtten = 0.5;
     float speed = 0.2;
     float detailPhase = 0.5; // Should be controlled by vertex colors
     float objectPhase = dot(location, vec3(1.0));
     float vertexPhase = dot(originalPos, vec3(detailPhase + objectPhase));
-    vec2 wavesIn = (animTime * 3.0) + vec2(vertexPhase, objectPhase);
+    vec2 wavesIn = (animTime * 0.5 * sqrt(windSpeed)) + vec2(vertexPhase, objectPhase) * sqrt(windSpeed);
     vec4 waves = (fract(wavesIn.xxyy * 
         vec4(SIDE_TO_SIDE_FREQ1, SIDE_TO_SIDE_FREQ2, UP_AND_DOWN_FREQ1, UP_AND_DOWN_FREQ2)) * 
         2.0 - 1.0) * speed;
@@ -47,8 +47,8 @@ vec3 WindAnimation(vec3 position, float animTime, vec3 location) {
     
     vec2 waveSum = waves.xy + waves.zw;
     
-    position.xyz += waveSum.x * vec3(edgeAtten * detailAmp * vec3(0.0, 1.0,0.0));
-    position.y += waveSum.y * centerDistance * branchAmp;
+    position.xyz += waveSum.x * vec3(edgeAtten * detailAmp * vec3(0.0, 1.0,0.0)) * wiggleFactor * windScale;
+    position.y += waveSum.y * centerDistance * branchAmp * wiggleFactor * windScale;
     
     //position.y += sin(animTime* 10.0) * pow(centerDistance/6.0, 4.0);
 

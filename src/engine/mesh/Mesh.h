@@ -1,5 +1,4 @@
-#ifndef AE_MESH_H
-#define AE_MESH_H
+#pragma once
 
 #include "../System.h"
 #include "../Material.h"
@@ -14,6 +13,10 @@
 
 namespace Atlas {
 
+    namespace RayTracing {
+        class RayTracingWorld;
+    }
+
     namespace Mesh {
 
         enum class MeshMobility {
@@ -21,28 +24,71 @@ namespace Atlas {
             Movable
         };
 
+        typedef uint32_t MeshUsage;
+
+        typedef enum MeshUsageBits {
+            MultiBufferedBit = (1 << 0),
+            HostAccessBit = (1 << 1),
+        } MeshUsageBits;
+
+        
+
         class Mesh {
+
+            friend RayTracing::RayTracingWorld;
 
         public:
             Mesh() = default;
 
-            explicit Mesh(MeshData& meshData,
-                MeshMobility mobility = MeshMobility::Stationary);
+            explicit Mesh(MeshData& meshData, MeshMobility mobility = MeshMobility::Stationary,
+                MeshUsage usage = 0);
 
+            explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
+
+            /**
+             * Transforms the underlying mesh data and updates the buffer data afterwards
+             * @param transform
+             */
             void SetTransform(mat4 transform);
 
+            /**
+             * Fully updates the buffer data with data available through the MeshData member
+             */
             void UpdateData();
 
-            bool CheckForLoad();
+            /**
+             * Updates the vertex array based on the state of the vertex buffers.
+             * @note This is useful when running your own data pipeline
+             */
+            void UpdateVertexArray();
+
+            /**
+             * Builds up BVH and fills raytracing related buffers
+             */
+            void BuildBVH(bool parallelBuild = true);
+
+
+            bool IsBVHBuilt() const;
 
             std::string name = "";
 
             MeshData data;
             MeshMobility mobility = MeshMobility::Stationary;
+            MeshUsage usage = 0;
 
             Buffer::VertexArray vertexArray;
+
             Buffer::IndexBuffer indexBuffer;
             Buffer::VertexBuffer vertexBuffer;
+            Buffer::VertexBuffer normalBuffer;
+            Buffer::VertexBuffer texCoordBuffer;
+            Buffer::VertexBuffer tangentBuffer;
+            Buffer::VertexBuffer colorBuffer;
+
+            Buffer::Buffer blasNodeBuffer;
+            Buffer::Buffer triangleBuffer;
+            Buffer::Buffer bvhTriangleBuffer;
+            Buffer::Buffer triangleOffsetBuffer;
 
             Ref<Graphics::BLAS> blas = nullptr;
 
@@ -52,7 +98,11 @@ namespace Atlas {
             bool depthTest = true;
 
             bool castShadow = true;
+
             bool vegetation = false;
+            float windNoiseTextureLod = 2.0f;
+            float windBendScale = 1.0f;
+            float windWiggleScale = 1.0f;
 
             int32_t allowedShadowCascades = 6;
 
@@ -64,11 +114,12 @@ namespace Atlas {
         private:
             bool isLoaded = false;
 
+            std::atomic_bool isBvhBuilt = false;
+            std::atomic_bool needsBvhRefresh = false;
+
         };
 
 
     }
 
 }
-
-#endif

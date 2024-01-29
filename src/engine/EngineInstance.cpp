@@ -1,8 +1,7 @@
 #include "EngineInstance.h"
+#include "graphics/Instance.h"
 
 namespace Atlas {
-
-    EngineInstance* EngineInstance::instance;
 
     EngineInstance::EngineInstance(const std::string& instanceName, int32_t windowWidth,
         int32_t windowHeight, int32_t flags, bool createMainRenderer) : window(instanceName, AE_WINDOWPOSITION_UNDEFINED,
@@ -10,14 +9,14 @@ namespace Atlas {
 
         graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
+        // If we're in headless mode, we already have a valid surface
+#ifndef AE_HEADLESS
         // Only create swap chain after the engine instance window was created and
         // it's surface was assigned to the default graphics device
-        graphicsDevice->surface = window.surface;
+        auto graphicsInstance = Graphics::Instance::DefaultInstance;
+        graphicsDevice->surface = graphicsInstance->CreateSurface(window.GetSDLWindow());
+#endif
         graphicsDevice->CreateSwapChain();
-
-        // Clean up old invisible default window and assign this one
-        delete Engine::DefaultWindow;
-        Engine::DefaultWindow = &window;
 
         if(createMainRenderer) {
             mainRenderer = std::make_unique<Renderer::MainRenderer>();
@@ -53,12 +52,6 @@ namespace Atlas {
     void EngineInstance::Exit() {
 
         Events::EventManager::QuitEventDelegate.Fire();
-
-    }
-
-    EngineInstance* EngineInstance::GetInstance() {
-
-        return instance;
 
     }
 

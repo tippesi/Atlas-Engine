@@ -1,10 +1,8 @@
-#ifndef AE_RAYCASTING_H
-#define AE_RAYCASTING_H
+#pragma once
 
 #include "../System.h"
 #include "../Viewport.h"
 #include "../volume/Ray.h"
-#include "actor/MeshActor.h"
 #include "../terrain/Terrain.h"
 #include "events/EventManager.h"
 
@@ -24,21 +22,22 @@ namespace Atlas {
         public:
             RayCasting();
 
-            RayIntersection MouseRayIntersection(Viewport *viewport, Camera *camera, 
-                Terrain::Terrain *terrain, vec2 mouseOffset = vec2(0.0f));
+            RayIntersection MouseRayIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
+                const CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
 
-            RayIntersection MouseRayTerrainIntersection(Viewport *viewport,
-                Camera *camera, Terrain::Terrain *terrain, vec2 mouseOffset = vec2(0.0f));
+            RayIntersection MouseRayTerrainIntersection(Ref<Viewport> viewport, Ref<Terrain::Terrain> terrain,
+                const CameraComponent& camera, vec2 mouseOffset = vec2(0.0f));
 
         private:
-            RayIntersection BinarySearch(Volume::Ray ray, Terrain::Terrain *terrain, float start,
+            RayIntersection BinarySearch(Volume::Ray ray, Ref<Terrain::Terrain>& terrain, float start,
                                          float finish, int count);
 
-            bool IntersectionInRange(Volume::Ray ray, Terrain::Terrain *terrin, float start, float finish);
+            bool IntersectionInRange(Volume::Ray ray, Ref<Terrain::Terrain>& terrain, float start, float finish);
 
-            bool IsUnderground(vec3 position, Terrain::Terrain *terrain);
+            bool IsUnderground(vec3 position, Ref<Terrain::Terrain>& terrain);
 
-            Volume::Ray CalculateRay(Viewport *viewport, Camera *camera, vec2 mouseOffset);
+            Volume::Ray CalculateRay(const Ref<Viewport>& viewport,
+                const CameraComponent& camera, vec2 mouseOffset);
 
             void MouseEventHandler(Events::MouseMotionEvent event);
 
@@ -50,5 +49,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_VOLUMETRICCLOUDRENDERER_H
-#define AE_VOLUMETRICCLOUDRENDERER_H
+#pragma once
 
 #include "Renderer.h"
 
@@ -16,13 +15,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void RenderShadow(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void RenderShadow(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void GenerateTextures(Scene::Scene* scene, Graphics::CommandList* commandList);
+            void GenerateTextures(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) VolumetricCloudUniforms {
@@ -56,18 +53,20 @@ namespace Atlas {
                 uint32_t frameSeed;
 
                 int32_t sampleCount;
-                int32_t shadowSampleCount;
+                int32_t occlusionSampleCount;
 
                 float darkEdgeDirect;
                 float darkEdgeDetail;
 
                 vec4 extinctionCoefficients;
+                vec4 planetCenter;
             };
 
             struct alignas(16) CloudShadowUniforms {
                 mat4 ivMatrix;
                 mat4 ipMatrix;
                 vec4 lightDirection;
+                int32_t shadowSampleFraction;
             };
 
             void GenerateShapeTexture(Graphics::CommandList* commandList,
@@ -76,8 +75,8 @@ namespace Atlas {
             void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
 
-            VolumetricCloudUniforms GetUniformStructure(Camera* camera,
-                Scene::Scene* scene);
+            VolumetricCloudUniforms GetUniformStructure(Ref<Scene::Scene> scene,
+                Scene::Entity mainLightEntity);
 
             PipelineConfig shapeNoisePipelineConfig;
             PipelineConfig detailNoisePipelineConfig;
@@ -101,5 +100,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

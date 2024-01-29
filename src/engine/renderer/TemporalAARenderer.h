@@ -1,8 +1,8 @@
-#ifndef AE_TEMPORALAARENDERER_H
-#define AE_TEMPORALAARENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
+#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -15,8 +15,9 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct PushConstants {
@@ -25,14 +26,14 @@ namespace Atlas {
                 vec2 jitter;
             };
 
-            PipelineConfig pipelineConfig;
+            void Render(const Texture::Texture2D* outputTexture, const Texture::Texture2D* currentTexture, const Texture::Texture2D* historyTexture,
+                const Texture::Texture2D* velocityTexture, const Texture::Texture2D* historyVelocityTexture, const Texture::Texture2D* depthTexture,
+                const Texture::Texture2D* stencilTexture, PushConstants& constants, Graphics::CommandList* commandList);
 
-            mat4 pvMatrixPrev = mat4(1.0f);
+            PipelineConfig pipelineConfig;
 
         };
 
     }
 
 }
-
-#endif

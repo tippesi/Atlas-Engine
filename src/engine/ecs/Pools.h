@@ -1,5 +1,4 @@
-#ifndef AE_ECSPOOLS_H
-#define AE_ECSPOOLS_H
+#pragma once
 
 #include "Pool.h"
 #include "TypeIndex.h"
@@ -23,10 +22,12 @@ namespace Atlas {
         private:
             struct PoolData {
                 uint64_t idx;
-                std::unique_ptr<Storage> storage;
+                std::shared_ptr<Storage> storage;
             };
 
             std::vector<PoolData> data;
+
+            friend class EntityManager;
 
         };
 
@@ -45,7 +46,8 @@ namespace Atlas {
             else {
 
                 // https://stackoverflow.com/questions/15783342/should-i-use-c11-emplace-back-with-pointers-containters
-                data.emplace_back(PoolData{ idx, std::make_unique<Pool<Comp>>() });
+                // Need shared_ptr here such that destructor of Pool is called, not destructor of Storage
+                data.emplace_back(PoolData{ idx, std::make_shared<Pool<Comp>>() });
                 storage = data.back().storage.get();
 
             }
@@ -57,5 +59,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

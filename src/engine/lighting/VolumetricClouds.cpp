@@ -26,13 +26,13 @@ namespace Atlas {
 
         }
 
-        void VolumetricClouds::GetShadowMatrices(Camera* camera, glm::vec3 lightDirection,
+        void VolumetricClouds::GetShadowMatrices(const CameraComponent& camera, glm::vec3 lightDirection,
             glm::mat4 &viewMatrix, glm::mat4 &projectionMatrix) {
 
-            auto cameraLocation = camera->GetLocation();
+            auto cameraLocation = camera.GetLocation();
 
-            auto cascadeCenter = cameraLocation + camera->direction *
-                (camera->nearPlane + camera->farPlane * 0.5f);
+            auto cascadeCenter = cameraLocation + camera.direction *
+                (camera.nearPlane + camera.farPlane * 0.5f);
 
             // A near enough up vector. This is because if the light location is
             // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
@@ -40,7 +40,7 @@ namespace Atlas {
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
             viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-            std::vector<vec3> corners = camera->GetFrustumCorners(camera->nearPlane, camera->farPlane);
+            std::vector<vec3> corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
 
             vec3 maxProj = vec3(viewMatrix * vec4(corners.at(0), 1.0f));
             vec3 minProj = maxProj;

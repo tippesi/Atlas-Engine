@@ -1,5 +1,4 @@
-#ifndef AE_ECSSUBSET_H
-#define AE_ECSSUBSET_H
+#pragma once
 
 #include "Pool.h"
 
@@ -32,7 +31,7 @@ namespace Atlas {
                 Iterator(const Storage* mainStorage, OtherStorage otherStorages, size_t idx) :
                     mainStorage(mainStorage), otherStorages(otherStorages), idx(idx) {
 
-                    if (idx <= mainStorage->Size() - 1 && !HasAllComponents()) {
+                    if (idx < mainStorage->Size() && !HasAllComponents()) {
                         operator++();
                     }
 
@@ -40,7 +39,7 @@ namespace Atlas {
 
                 Iterator& operator++() {
 
-                    while (++idx < mainStorage->Size() - 1 && !HasAllComponents());
+                    while (++idx < mainStorage->Size() && !HasAllComponents());
                     return *this;
 
                 }
@@ -64,7 +63,7 @@ namespace Atlas {
 
                 }
 
-            private:
+            protected:
                 inline bool HasAllComponents() {
 
                     entity = (*mainStorage)[idx];
@@ -115,14 +114,24 @@ namespace Atlas {
             }
 
             template<typename... Component>
-            decltype(auto) Get(const Entity entity) const {
+            decltype(auto) Get(const Entity entity) {
 
-                return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
-                /*
-                if constexpr (sizeof...(Component) == 1) {
-                    return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                if constexpr (sizeof...(Component) == 0) {
+                    if constexpr (sizeof...(Comp) == 1) {
+                        return (std::get<Pool<Comp>*>(pools)->Get(entity), ...);
+                    }
+                    else {
+                        return std::tuple_cat(std::forward_as_tuple(std::get<Pool<Comp>*>(pools)->Get(entity))...);
+                    }
                 }
-                 */
+                else {
+                    if constexpr (sizeof...(Component) == 1) {
+                        return (std::get<Pool<Component>*>(pools)->Get(entity), ...);
+                    }
+                    else {
+                        return std::tuple_cat(std::forward_as_tuple(std::get<Pool<Component>*>(pools)->Get(entity))...);
+                    }
+                }
 
             }
 
@@ -138,7 +147,33 @@ namespace Atlas {
 
             }
 
+            bool Any() const {
+
+                size_t idx = 0;
+                while (idx < mainStorage->Size()) {
+                    if (HasAllComponents(idx))
+                        return true;
+                    idx++;
+                }
+
+                return false;
+
+            }
+
         public:
+            inline bool HasAllComponents(size_t idx) const {
+
+                auto entity = (*mainStorage)[idx];
+                bool valid = true;
+
+                for (auto& storage : otherStorages) {
+                    valid &= storage->Contains(entity);
+                }
+
+                return valid;
+
+            }
+
             std::tuple<Pool<Comp>*...> pools;
 
             const Storage* mainStorage = nullptr;
@@ -150,5 +185,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

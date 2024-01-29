@@ -1,5 +1,4 @@
-#ifndef AE_RENDERTARGET_H
-#define AE_RENDERTARGET_H
+#pragma once
 
 #include "System.h"
 #include "texture/Texture2D.h"
@@ -97,13 +96,13 @@ namespace Atlas {
          * Returns the width of the render target.
          * @return The width of the render target.
          */
-        int32_t GetWidth();
+        int32_t GetWidth() const;
 
         /**
          * Returns the width of the render target.
          * @return The width of the render target.
          */
-        int32_t GetHeight();
+        int32_t GetHeight() const;
 
         /**
          * Swaps the history textures.
@@ -116,6 +115,16 @@ namespace Atlas {
          * @param resolution The resolution "factor" for the relative resolution
          */
         ivec2 GetRelativeResolution(RenderResolution resolution);
+
+        /*
+         * Sets the render resolution for screen space global illumination
+         */
+        void SetGIResolution(RenderResolution resolution);
+
+        /*
+         * Gets the render resolution for screen space global illumination
+         */
+        RenderResolution GetGIResolution();
 
         /*
          * Sets the render resolution for screen space ambient occlusion
@@ -168,7 +177,16 @@ namespace Atlas {
         Ref<Graphics::FrameBuffer> lightingFrameBuffer;
         Ref<Graphics::FrameBuffer> lightingFrameBufferWithStencil;
 
+        Ref<Graphics::RenderPass> oceanRenderPass;
+        Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;
+
         Texture::Texture2D postProcessTexture;
+
+        Texture::Texture2D giTexture;
+        Texture::Texture2D swapGiTexture;
+        Texture::Texture2D historyGiTexture;
+        Texture::Texture2D giLengthTexture;
+        Texture::Texture2D historyGiLengthTexture;
 
         Texture::Texture2D aoTexture;
         Texture::Texture2D swapAoTexture;
@@ -177,6 +195,9 @@ namespace Atlas {
         Texture::Texture2D historyAoLengthTexture;
 
         Texture::Texture2D sssTexture;
+
+        Texture::Texture2D oceanDepthTexture;
+        Texture::Texture2D oceanStencilTexture;
 
         Texture::Texture2D volumetricTexture;
         Texture::Texture2D swapVolumetricTexture;
@@ -207,6 +228,7 @@ namespace Atlas {
         int32_t width = 0;
         int32_t height = 0;
 
+        RenderResolution giResolution;
         RenderResolution aoResolution;
         RenderResolution volumetricResolution;
         RenderResolution reflectionResolution;
@@ -217,6 +239,3 @@ namespace Atlas {
     };
 
 }
-
-
-#endif

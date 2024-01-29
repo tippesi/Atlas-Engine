@@ -1,5 +1,4 @@
-#ifndef AE_TEXTURE2DARRAY_H
-#define AE_TEXTURE2DARRAY_H
+#pragma once
 
 #include "../System.h"
 #include "Texture.h"
@@ -108,12 +107,10 @@ namespace Atlas {
              * @param filename The name of the file
              * @param layer
              */
-            void SaveToPNG(std::string filename, int32_t layer);
+            void SaveToPNG(const std::string& filename, int32_t layer);
 
         };
 
     }
 
 }
-
-#endif

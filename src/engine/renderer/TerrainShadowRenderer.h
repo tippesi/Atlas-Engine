@@ -1,5 +1,4 @@
-#ifndef AE_TERRAINSHADOWRENDERER_H
-#define AE_TERRAINSHADOWRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -15,11 +14,10 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
+            using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
 
             struct alignas(16) PushConstants {
 
@@ -42,7 +40,7 @@ namespace Atlas {
             PipelineConfig GeneratePipelineConfig(Ref<Graphics::FrameBuffer>& framebuffer,
                 Ref<Terrain::Terrain>& terrain);
 
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             LightMap lightMap;
 
@@ -53,5 +51,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

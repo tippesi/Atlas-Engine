@@ -12,8 +12,7 @@ namespace Atlas {
             terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
         }
 
-        void TerrainRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList,
+        void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
             if (!scene->terrain)
@@ -21,15 +20,16 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Terrain");
 
+            auto& camera = scene->GetMainCamera();
             auto terrain = scene->terrain;
 
-            terrain->UpdateRenderlist(&camera->frustum, camera->GetLocation());
+            terrain->UpdateRenderlist(camera.frustum, camera.GetLocation());
 
             std::vector<Terrain::TerrainNode*> detailDisplacementNodes;
             std::vector<Terrain::TerrainNode*> detailNodes;
             std::vector<Terrain::TerrainNode*> distanceNodes;
 
-            vec3 cameraLocation = camera->GetLocation();
+            vec3 cameraLocation = camera.GetLocation();
 
             for (auto node : terrain->renderList) {
                 if (node->cell->LoD >= terrain->LoDCount - terrain->detailNodeIdx) {
@@ -40,10 +40,15 @@ namespace Atlas {
                     auto dy = glm::max(glm::max(nodeMin.y - cameraLocation.z, cameraLocation.z - nodeMax.y), 0.0f);
                     auto dist = glm::sqrt(dx * dx + dy * dy);
 
+#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+                    // Bindless and tesselation on Mac with MoltenVK don't seem to properly work and cause crashes
+                    detailNodes.push_back(node);
+#else
                     if (dist < terrain->displacementDistance)
                         detailDisplacementNodes.push_back(node);
                     else
                         detailNodes.push_back(node);
+#endif
                 }
                 else {
                     distanceNodes.push_back(node);
@@ -85,7 +90,7 @@ namespace Atlas {
                 .maxTessellationLevel = terrain->maxTessellationLevel
             };
 
-            auto frustumPlanes = camera->frustum.GetPlanes();
+            auto frustumPlanes = camera.frustum.GetPlanes();
             for (int32_t i = 0; i < 6; i++)
                 uniforms.frustumPlanes[i] = frustumPlanes[i];
 
@@ -161,7 +166,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig TerrainRenderer::GeneratePipelineConfig(RenderTarget *target,
+        PipelineConfig TerrainRenderer::GeneratePipelineConfig(Ref<RenderTarget> target,
             Ref<Terrain::Terrain>& terrain, bool detailConfig, bool materialMappingConfig) {
 
             if (detailConfig) {

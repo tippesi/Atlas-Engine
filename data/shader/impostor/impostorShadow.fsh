@@ -22,7 +22,7 @@ layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
 layout(set = 3, binding = 1) uniform sampler2DArray depthMap;
 #endif
 
-layout(std430, set = 1, binding = 2) buffer Matrices {
+layout(std430, set = 1, binding = 3) buffer Matrices {
     mat4 matrices[];
 };
 

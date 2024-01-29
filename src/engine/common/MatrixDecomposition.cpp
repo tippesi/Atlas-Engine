@@ -7,22 +7,23 @@ namespace Atlas {
 
     namespace Common {
 
-        MatrixDecomposition::MatrixDecomposition(mat4 matrix) {
+        MatrixDecomposition::MatrixDecomposition(const mat4& matrix) {
 
             Decompose(matrix);
 
         }
 
-        void MatrixDecomposition::Decompose(mat4 matrix) {
+        void MatrixDecomposition::Decompose(const mat4& matrix) {
 
-            glm::quat rot;
             glm::vec3 skew;
             glm::vec4 perspective;
 
-            glm::decompose(matrix, scale, rot, translation, skew, perspective);
+            glm::decompose(matrix, scale, quaternion, translation, skew, perspective);
 
-            rot = glm::conjugate(rot);
-            rotation = glm::eulerAngles(rot);
+            quaternion = glm::conjugate(quaternion);
+            rotation = glm::eulerAngles(quaternion);
+
+            quaternion = glm::normalize(quaternion);
 
         }
 

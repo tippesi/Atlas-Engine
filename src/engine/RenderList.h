@@ -1,10 +1,8 @@
-#ifndef AE_RENDERLIST_H
-#define AE_RENDERLIST_H
+#pragma once
 
 #include "System.h"
-#include "actor/MeshActor.h"
-#include "actor/DecalActor.h"
-#include "lighting/Light.h"
+#include "scene/Entity.h"
+#include "scene/components/LightComponent.h"
 
 #include "graphics/Buffer.h"
 
@@ -12,6 +10,10 @@
 #include <vector>
 
 namespace Atlas {
+
+    namespace Scene {
+        class Scene;
+    }
 
     class RenderList {
 
@@ -32,34 +34,36 @@ namespace Atlas {
         struct Pass {
             RenderPassType type;
 
-            Lighting::Light* light;
+            ECS::Entity lightEntity;
             uint32_t layer;
 
-            std::map<size_t, std::vector<Actor::MeshActor*>> meshToActorMap;
+            std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
             std::map<size_t, MeshInstances> meshToInstancesMap;
             std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
 
         RenderList();
 
-        void NewFrame();
+        void NewFrame(Ref<Scene::Scene> scene);
 
         void NewMainPass();
 
-        void NewShadowPass(Lighting::Light* light, uint32_t layer);
+        void NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
 
         Pass* GetMainPass();
 
-        Pass* GetShadowPass(const Lighting::Light* light, const uint32_t layer);
+        Pass* GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
-        void Add(Actor::MeshActor *actor);
+        void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 
-        void Update(Camera* camera);
+        void Update(vec3 cameraLocation);
 
         void FillBuffers();
 
-        std::vector<mat3x4> currentActorMatrices;
-        std::vector<mat3x4> lastActorMatrices;
+        Ref<Scene::Scene> scene = nullptr;
+
+        std::vector<mat3x4> currentEntityMatrices;
+        std::vector<mat3x4> lastEntityMatrices;
         std::vector<mat3x4> impostorMatrices;
 
         Ref<Graphics::MultiBuffer> currentMatricesBuffer;
@@ -71,5 +75,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

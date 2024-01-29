@@ -2,6 +2,7 @@
 #include "AudioManager.h"
 
 #include "../Log.h"
+#include "../resource/ResourceLoadException.h"
 #include "../loader/AssetLoader.h"
 
 #include <SDL_audio.h>
@@ -16,7 +17,7 @@ namespace Atlas {
 
         }
 
-        AudioData::AudioData(std::string filename) : filename(filename) {
+        AudioData::AudioData(const std::string& filename) : filename(filename) {
 
             uint8_t* data;
             uint32_t length;
@@ -24,8 +25,7 @@ namespace Atlas {
             auto stream = Loader::AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!stream.is_open()) {
-                Log::Error("Error loading audio file " + filename);
-                return;
+                throw ResourceLoadException(filename, "Couldn't open file stream");
             }
 
             auto filedata = Loader::AssetLoader::GetFileContent(stream);
@@ -33,13 +33,11 @@ namespace Atlas {
             auto rw = SDL_RWFromMem(filedata.data(), (int32_t)filedata.size());
 
             if (!rw) {
-                Log::Error("Error getting RWOPS interface " + filename);
-                return;
+                throw ResourceLoadException(filename, "Couldn't get RWOPS interface");
             }
 
             if (!SDL_LoadWAV_RW(rw, 1, &spec, &data, &length)) {
-                Log::Error("Error loading audio data " + filename);
-                return;
+                throw ResourceLoadException(filename, "Couldn't load audio data");
             }
 
             this->data.resize(length / 2);
@@ -48,16 +46,19 @@ namespace Atlas {
 
             SDL_FreeWAV(data);
 
+            // Automatically apply format on load
+            isValid = ApplyFormat(AudioManager::audioSpec);
+
         }
 
-        void AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
+        bool AudioData::ApplyFormat(const SDL_AudioSpec& formatSpec) {
 
             if (formatSpec.channels == spec.channels &&  formatSpec.format == spec.format &&
                 formatSpec.freq == spec.freq) {
-                return;
+                return true;
             }
 
-            Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
+            return Convert(formatSpec.freq, formatSpec.channels, formatSpec.format);
 
         }
 
@@ -87,6 +88,8 @@ namespace Atlas {
                 return true;
 
             }
+
+            Log::Warning("Couldn't convert audio data from " + filename + " internally");
 
             return false;
 

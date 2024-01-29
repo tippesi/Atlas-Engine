@@ -1,9 +1,9 @@
-#ifndef AE_VEGETATIONHELPER_H
-#define AE_VEGETATIONHELPER_H
+#pragma once
 
-#include "../../System.h"
-#include "../../scene/Vegetation.h"
-#include "../../buffer/Buffer.h"
+#include "System.h"
+#include "scene/Vegetation.h"
+#include "buffer/Buffer.h"
+#include "scene/components/CameraComponent.h"
 
 #include <map>
 
@@ -19,7 +19,7 @@ namespace Atlas {
                 VegetationHelper();
 
                 void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
-                    Camera* camera, Graphics::CommandList* commandList);
+                    const CameraComponent& camera, Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetCommandBuffer();
 
@@ -76,5 +76,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_PIECEWISE_H
-#define AE_PIECEWISE_H
+#pragma once
 
 #include "../System.h"
 
@@ -79,6 +78,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

@@ -1,9 +1,12 @@
-#define SHADOW_FILTER_1x1
+#define SHADOW_FILTER_3x3
 
+#include <common.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
+#include <../common/normalencode.hsh>
 #include <../clouds/shadow.hsh>
+#include <../volumetric/volumetric.hsh>
 #include <../structures>
 
 #include <shoreInteraction.hsh>
@@ -14,7 +17,6 @@ layout (location = 0) out vec3 color;
 layout (location = 1) out vec2 velocity;
 layout (location = 2) out uint stencil;
 
-layout(set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform sampler2D foamTexture;
 layout (set = 3, binding = 3) uniform samplerCube skyEnvProbe;
 layout (set = 3, binding = 4) uniform sampler2D refractionTexture;
@@ -22,25 +24,19 @@ layout (set = 3, binding = 5) uniform sampler2D depthTexture;
 layout (set = 3, binding = 7) uniform sampler2D volumetricTexture;
 layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
-layout(set = 3, binding = 13) uniform sampler2D perlinNoiseMap;
-layout(set = 3, binding = 15) uniform sampler2D cloudMap;
+layout(set = 3, binding = 15) uniform sampler2D cloudShadowMap;
+layout(set = 3, binding = 16) uniform sampler2D volumetricCloudTexture;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
 layout(location=2) in vec3 fModelCoord;
 layout(location=3) in vec3 fOriginalCoord;
-layout(location=4) in vec2 fTexCoord;
 // layout(location=5) in float waterDepth;
 layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
 layout(location=8) in vec3 ndcLast;
 layout(location=9) in vec3 normalShoreWave;
 layout(location=10) in float perlinScale;
-
-const vec3 waterBodyColor = pow(vec3(0.1, 1.0, 0.7), vec3(2.2));
-const vec3 deepWaterBodyColor = pow(vec3(0.1,0.15, 0.5), vec3(2.2));
-const vec3 scatterColor = pow(vec3(0.3,0.7,0.6), vec3(2.2));
-const vec2 waterColorIntensity = pow(vec2(0.1, 0.3), vec2(2.2));
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;
@@ -61,32 +57,35 @@ void main() {
 
     Light light = LightUniforms.light;
     
-    // Retrieve precalculated normals and wave folding information
-    //vec3 fNormal = normalize(2.0 * texture(normalMap, fTexCoord).rgb - 1.0);
-    float fold = texture(normalMap, fTexCoord).a;
+    vec2 fTexCoord = fOriginalCoord.xz / Uniforms.tiling;
 
-    vec2 gradientDisplacement = texture(normalMap, fTexCoord).rg;
+    float fold;
+    vec2 gradientDisplacement;
+    GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz),
+        fold, gradientDisplacement);
 
-    vec2 gradient = perlinScale * gradientDisplacement;
+    vec2 gradient = gradientDisplacement;
     float tileSize = Uniforms.tiling / float(Uniforms.N);
-    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
     vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
+    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
     
-    float shadowFactor = max(CalculateCascadedShadow(light.shadow,
-        cascadeMaps, fPosition, fNormal, 0.0), 0.01);
+    float shadowFactor = CalculateCascadedShadow(light.shadow,
+        cascadeMaps, fPosition, fNormal, 1.0);
 
 #ifdef CLOUD_SHADOWS
-    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudMap);
+    float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudShadowMap);
     shadowFactor = min(shadowFactor, cloudShadowFactor);
 #endif
 
     shadowFactor = max(shadowFactor, 0.01);
 
+#ifdef TERRAIN
     fNormal = mix(normalShoreWave, fNormal, shoreScaling);
+#endif
 
     // Create TBN matrix for normal mapping
     vec3 norm = fNormal;
@@ -99,12 +98,12 @@ void main() {
     // Normal mapping normal (offsets actual normal)
     vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
-    if (Uniforms.hasRippleTexture > 0) {
+#ifdef RIPPLE_TEXTURE
         rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2)).rgb - 1.0);
         rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05)).rgb - 1.0);
         // Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
         norm = normalize(tbn * rippleNormal);
-    }
+#endif
     
     // Scale ripples based on actual (not view) depth of water
     float rippleScaling = clamp(1.0 - shoreScaling, 0.05, 0.1);
@@ -120,7 +119,7 @@ void main() {
     
     // Calculate reflection vector    
     vec3 reflectionVec = normalize(reflect(eyeDir, norm));
-    reflectionVec.y = max(0.0, reflectionVec.y);
+    //reflectionVec.y = max(0.0, reflectionVec.y);
     
     // Calculate sun spot
     float specularFactor = shadowFactor * fresnel * pow(max(dot(normalize(reflectionVec),
@@ -131,16 +130,15 @@ void main() {
     float scatterFactor = scatterIntensity * max(0.0, waveHeight
          * scatterCrestScale + scatterCrestOffset);
 
-    scatterFactor *= shadowFactor * pow(max(0.0, dot(normalize(vec3(-light.direction.x,
-        0.0, -light.direction.z)), eyeDir)), 2.0);
+    scatterFactor *= shadowFactor * pow(max(0.0, dot(-light.direction.xyz, eyeDir)), 8.0);
     
-    scatterFactor *= pow(max(0.0, 1.0 - nDotL), 8.0);
+    scatterFactor *= pow(clamp(1.0 - nDotL, 0.0, 1.1), 16.0);
 
     /*
-    scatterFactor += shadowFactor * waterColorIntensity.y
+    scatterFactor += shadowFactor * Uniforms.waterColorIntensity.y
          * max(0.0, waveHeight) * max(0.0, nDotE) * 
-         max(0.0, 1.0 + eyeDir.y) * dot(-light.direction, -eyeDir);
-         */
+         max(0.0, 1.0 + eyeDir.y) * dot(-light.direction.xyz, -eyeDir);
+    */
 
     // Calculate water depth based on the viewer (ray from camera to ground)
     float waterViewDepth = max(0.0, fPosition.z - depthPos.z);
@@ -155,8 +153,8 @@ void main() {
     vec3 reflectionColor = textureLod(skyEnvProbe, reflectionVec, 0).rgb;
 
     // Calculate water color
-    vec3 depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
-    float diffuseFactor = waterColorIntensity.x + waterColorIntensity.y * 
+    vec3 depthFog = mix(Uniforms.deepWaterBodyColor.rgb, Uniforms.waterBodyColor.rgb, min(1.0 , exp(-waterViewDepth / 10.0)));
+    float diffuseFactor = Uniforms.waterColorIntensity.x + Uniforms.waterColorIntensity.y * 
         max(0.0, nDotL) * shadowFactor;
     vec3 waterColor = diffuseFactor * light.intensity * light.color.rgb * depthFog;
     
@@ -165,11 +163,14 @@ void main() {
 
     // Update refraction color based on water depth (exponential falloff)
     refractionColor = mix(waterColor, refractionColor, min(1.0 , exp(-waterViewDepth / 2.0)));
-    
-    vec2 shoreInteraction = CalculateShoreInteraction(fModelCoord);
+
+    vec2 shoreInteraction = vec2(0.0);
+#ifdef TERRAIN
+    shoreInteraction = CalculateShoreInteraction(fModelCoord);
+#endif
 
     // Calculate foam based on folding of wave and fade it out near shores
-    float foam = 0.0;
+    float foam = fold;
     foam += shoreInteraction.x;
     foam = min(foam, 1.0);
 
@@ -179,29 +180,41 @@ void main() {
     // Mix relection and refraction and add sun spot
     color = mix(refractionColor, reflectionColor, fresnel);
     color += specularIntensity * fresnel * specularFactor * light.color.rgb;
-    color += scatterColor * scatterFactor;
+    color += Uniforms.scatterColor.rgb * scatterFactor;
 
-    vec3 foamColor = vec3(texture(foamTexture, fOriginalCoord.xz / 8.0).r) * 
-        nDotL * light.intensity;
-    
-    color = mix(color, vec3(mix(scatterColor * 0.1, vec3(1.0), 
-        foamColor)), foam);
+    vec3 foamShadowFactor = mix(vec3(0.1),
+        vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7);
 
-    vec3 breakingColor = mix(vec3(0.1),
-        vec3(0.5) * max(0.0, nDotL) * shadowFactor, 0.7) * light.intensity * light.color.rgb;
+    vec3 foamColor = vec3(1.0);
+#ifdef FOAM_TEXTURE
+    foamColor = foamShadowFactor * light.intensity * light.color.rgb;
+#endif
+    color = mix(color, foamColor, foam * texture(foamTexture, fOriginalCoord.xz / 8.0).r);
+
+    vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);
 
-    /*
-        if (dot(norm, -eyeDir) < 0.0) {
-        float waterViewDepth = max(0.0, -fPosition.z);
-        depthFog = mix(deepWaterBodyColor, waterBodyColor, min(1.0 , exp(-waterViewDepth / 10.0)));
-        color = mix(depthFog, textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb, min(1.0 , exp(-waterViewDepth / 2.0)));
-    }
-    */
+    StencilFeatures features = CreateStencilFeatures();
 
-    //color = vec3(mod(fTexCoord, 1.0), 0.0);
-    //color = vec3(reflectionVec.y);
-    //color = vec3(perlinDisplacement);
+    if (!gl_FrontFacing) {
+        fresnel = 0.02 + (1.0 - 0.02) * pow(1.0 - saturate(dot(fNormal, eyeDir)), 5.0);
+        disturbance = (mat3(globalData.vMatrix) * -vec3(norm.x, 0.0, norm.z)).xz;
+
+        refractionDisturbance = vec2(disturbance.x, -disturbance.y) * 0.1;
+        refractionDisturbance *= min(2.0, waterViewDepth);
+        color = textureLod(refractionTexture, ndcCoord + refractionDisturbance, 0).rgb * (1.0 - fresnel);
+        features.underWaterPixel = true;
+    }
+    else {
+        features.underWaterPixel = false;
+        vec4 volumetricFog = textureLod(volumetricTexture, ndcCoord, 0.0);
+        vec4 volumetricClouds = vec4(0.0, 0.0, 0.0, 1.0);
+#ifdef CLOUDS
+        volumetricClouds = textureLod(volumetricCloudTexture, ndcCoord, 0.0);
+#endif
+        color = ApplyVolumetrics(Uniforms.fog, color, volumetricFog, volumetricClouds,
+            eyeDir, globalData.planetCenter.xyz, Uniforms.innerCloudRadius);
+    }
 
     // Calculate velocity
     vec2 ndcL = ndcLast.xy / ndcLast.z;
@@ -212,8 +225,8 @@ void main() {
 
     velocity = (ndcL - ndcC) * 0.5;
 
-    StencilFeatures features;
     features.responsivePixel = true;
+    features.waterPixel = true;
     stencil = EncodeStencilFeatures(features);
 
 }

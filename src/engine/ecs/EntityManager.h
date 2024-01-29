@@ -1,9 +1,10 @@
-#ifndef AE_ECSENTITYMANAGER_H
-#define AE_ECSENTITYMANAGER_H
+#pragma once
 
 #include "Entity.h"
 #include "Pools.h"
 #include "Subset.h"
+
+#include <optional>
 
 namespace Atlas {
 
@@ -22,6 +23,11 @@ namespace Atlas {
             EntityManager() = default;
 
             /**
+             * Constructs an EntityManager object with userData.
+             */
+            explicit EntityManager(void* userData) : userData(userData) {}
+
+            /**
              * Creates a new entity
              * @return The new entity.
              */
@@ -34,6 +40,11 @@ namespace Atlas {
              * The current entity handle will be invalid.
              */
             void Destroy(Entity entity);
+
+            /**
+             * Destroys all data inside the entity manager
+             */
+            void Clear();
 
             /**
              * Checks whether an entity is valid.
@@ -59,13 +70,13 @@ namespace Atlas {
              * on the maximum number of entities created. For
              * now it will not shrink.
              */
-            size_t Size();
+            size_t Size() const;
 
             /**
              * Returns the number of entities which are alive.
              * @return The number of entities which are alive.
              */
-            size_t Alive();
+            size_t Alive() const;
 
             /**
              * Creates a component and associates it with an entity.
@@ -77,6 +88,16 @@ namespace Atlas {
              */
             template<typename Comp, typename ...Args>
             Comp& Emplace(Entity entity, Args&&... args);
+
+            /**
+             * Creates a component and associates it with an entity.
+             * @tparam Comp The component type
+             * @param entity The entity which is associated with the component
+             * @param comp The component to add
+             * @return Returns a reference to the newly created component
+             */
+            template<typename Comp>
+            Comp& Add(Entity entity, const Comp comp);
 
             /**
              * Erases a component.
@@ -105,6 +126,16 @@ namespace Atlas {
             Comp& Get(Entity entity);
 
             /**
+             * Returns the component which is associated with the entity if the entity has the component.
+             * @tparam Comp The component type
+             * @param entity The entity
+             * @return A pointer to the component if valid, nullptr if it wasn't found.
+             * @note The pointer is only valid temporarily
+             */
+            template<typename Comp>
+            Comp* TryGet(Entity entity);
+
+            /**
              * Returns a subset of entities which have all Comp types.
              * @tparam Comp The component types on which entities are selected
              * @return A subset of entities.
@@ -112,6 +143,23 @@ namespace Atlas {
              */
             template<typename... Comp>
             Subset<Comp...> GetSubset();
+
+            template<typename Comp>
+            size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
+
+            std::vector<Entity>::const_iterator begin() const {
+
+                return entities.begin();
+
+            }
+
+            std::vector<Entity>::const_iterator end() const {
+
+                return entities.end();
+
+            }
+
+            void* userData;
 
         private:
             Pools pools;
@@ -124,9 +172,18 @@ namespace Atlas {
         template<typename Comp, typename ...Args>
         Comp& EntityManager::Emplace(Entity entity, Args&&... args) {
 
-            const auto& pool = pools.Get<Comp>();
+            auto& pool = pools.Get<Comp>();
 
             return pool.Emplace(entity, std::forward<Args>(args)...);
+
+        }
+
+        template<typename Comp>
+        Comp& EntityManager::Add(Entity entity, const Comp comp) {
+
+            auto& pool = pools.Get<Comp>();
+
+            return pool.Emplace(entity, comp);
 
         }
 
@@ -155,6 +212,15 @@ namespace Atlas {
 
         }
 
+        template<typename Comp>
+        Comp* EntityManager::TryGet(Entity entity) {
+
+            auto& pool = pools.Get<Comp>();
+
+            return pool.TryGet(entity);
+
+        }
+
         template<typename... Comp>
         Subset<Comp...> EntityManager::GetSubset() {
 
@@ -171,8 +237,16 @@ namespace Atlas {
 
         }
 
+        template<typename Comp>
+        size_t EntityManager::SubscribeToTopic(const Topic topic,
+            std::function<void(const Entity, Comp&)> function) {
+
+            auto& pool = pools.Get<Comp>();
+
+            return pool.Subscribe(topic, function);
+
+        }
+
     }
 
 }
-
-#endif

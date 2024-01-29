@@ -8,6 +8,10 @@
 
 layout (local_size_x = 8, local_size_y = 8) in;
 
+#ifdef REALTIME
+layout (set = 3, binding = 1, r32ui) writeonly uniform uimage2DArray frameAccumImage;
+#endif
+
 layout(set = 3, binding = 4) uniform UniformBuffer {
     vec4 origin;
     vec4 right;
@@ -28,13 +32,17 @@ void main() {
         // Apply a subpixel jitter to get supersampling
         float jitterX = random(vec2(float(Uniforms.sampleCount), 0.0));
         float jitterY = random(vec2(float(Uniforms.sampleCount), 1.0));
-
+#ifndef REALTIME
         vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
+#else
+        vec2 coord = globalData.jitterCurrent * 0.25 + (vec2(pixel) + vec2(0.5)) /
+            vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
+#endif
         
         Ray ray;
         
-        ray.ID = Flatten2D(pixel, Uniforms.resolution);
+        ray.ID = Flatten2D(pixel, Uniforms.resolution) * int(gl_NumWorkGroups.z) + int(gl_WorkGroupID.z);
         
         ray.direction = normalize(Uniforms.origin.xyz + Uniforms.right.xyz * coord.x 
             + Uniforms.bottom.xyz * coord.y - globalData.cameraLocation.xyz);
@@ -69,7 +77,16 @@ void main() {
             index = Flatten2D(localID.yx, overlappingPixels.yx) + offset;
         }
 
-        WriteRay(ray, uint(index));
+        WriteRay(ray, uint(index) * gl_NumWorkGroups.z + gl_WorkGroupID.z);
+        
+#ifdef REALTIME
+        if (gl_WorkGroupID.z == 0u) {
+            imageStore(frameAccumImage, ivec3(pixel, 0), uvec4(0u));
+            imageStore(frameAccumImage, ivec3(pixel, 1), uvec4(0u));
+            imageStore(frameAccumImage, ivec3(pixel, 2), uvec4(0u));
+        }
+#endif
+
     }
 
 }

@@ -1,5 +1,4 @@
-#ifndef RAYTRACINGHELPER_H
-#define RAYTRACINGHELPER_H
+#pragma once
 
 #include "../../System.h"
 #include "../../scene/Scene.h"
@@ -15,12 +14,10 @@ namespace Atlas {
 
             class RayTracingHelper {
 
-                friend Scene::RTData;
-
             public:
                 RayTracingHelper();
 
-                void SetScene(Scene::Scene* scene, int32_t textureDownscale = 1,
+                void SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale = 1,
                     bool useEmissivesAsLights = false);
 
                 void SetRayBufferSize(size_t rayCount);
@@ -59,7 +56,7 @@ namespace Atlas {
                     int32_t useRayBinning;
                 };
 
-                Scene::Scene* scene;
+                Ref<Scene::Scene> scene;
                 
                 std::vector<GPULight> lights;
                 std::vector<GPULight> selectedLights;
@@ -99,5 +96,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

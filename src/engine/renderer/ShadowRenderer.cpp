@@ -2,9 +2,6 @@
 
 #include "../Clock.h"
 
-#include "../lighting/DirectionalLight.h"
-#include "../lighting/PointLight.h"
-
 namespace Atlas {
 
     namespace Renderer {
@@ -17,31 +14,22 @@ namespace Atlas {
 
         }
 
-        void ShadowRenderer::Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-            Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList) {
+        void ShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList) {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
-            auto lights = scene->GetLights();
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
+            auto lightSubset = scene->GetSubset<LightComponent>();
 
             LightMap usedLightMap;
+            for (auto& lightEntity : lightSubset) {
 
-            for (auto& light : lights) {
-
-                if (!light->GetShadow()) {
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || !light.shadow->update)
                     continue;
-                }
 
-                if (!light->GetShadow()->update) {
-                    continue;
-                }
-
-                auto shadow = light->GetShadow();
-                auto frameBuffer = GetOrCreateFrameBuffer(light);
-                usedLightMap[light] = frameBuffer;
+                auto shadow = light.shadow;
+                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+                usedLightMap[lightEntity] = frameBuffer;
 
                 if (frameBuffer->depthAttachment.layer != 0) {
                     frameBuffer->depthAttachment.layer = 0;
@@ -49,19 +37,17 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = light->GetShadow()->componentCount;
+                auto componentCount = shadow->componentCount;
 
                 bool isDirectionalLight = false;
                 vec3 lightLocation;
 
-                if (light->type == AE_DIRECTIONAL_LIGHT) {
-                    auto directionLight = static_cast<Lighting::DirectionalLight*>(light);
-                    lightLocation = 1000000.0f * -normalize(directionLight->direction);
+                if (light.type == LightType::DirectionalLight) {
+                    lightLocation = 1000000.0f * -normalize(light.transformedProperties.directional.direction);
                     isDirectionalLight = true;
                 }
-                else if (light->type == AE_POINT_LIGHT) {
-                    auto pointLight = static_cast<Lighting::PointLight*>(light);
-                    lightLocation = pointLight->location;
+                else if (light.type == LightType::PointLight) {
+                    lightLocation = light.transformedProperties.point.position;
                 }
 
                 for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
@@ -73,16 +59,9 @@ namespace Atlas {
                         frameBuffer->Refresh();
                     }
 
-                    auto shadowPass = renderList->GetShadowPass(light, i);
+                    auto shadowPass = renderList->GetShadowPass(lightEntity, i);
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
-
-                    // For long range we just begin a render pass to clear the texture
-                    // and transition into the correct layout. Kinda dirty
-                    if (light->GetShadow()->longRange && i == light->GetShadow()->componentCount - 1) {
-                        commandList->EndRenderPass();
-                        continue;
-                    }
 
                     auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
@@ -132,10 +111,15 @@ namespace Atlas {
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
 
+                        scene->wind.noiseMap.Bind(commandList, 3, 1);
+
                         auto pushConstants = PushConstants {
                             .lightSpaceMatrix = lightSpaceMatrix,
                             .vegetation = mesh->vegetation ? 1u : 0u,
-                            .invertUVs = mesh->invertUVs ? 1u : 0u
+                            .invertUVs = mesh->invertUVs ? 1u : 0u,
+                            .windTextureLod = mesh->windNoiseTextureLod,
+                            .windBendScale = mesh->windBendScale,
+                            .windWiggleScale = mesh->windWiggleScale
                         };
                         commandList->PushConstants("constants", &pushConstants);
 
@@ -160,37 +144,42 @@ namespace Atlas {
 
         }
 
-        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Lighting::Light* light) {
+        Ref<Graphics::FrameBuffer> ShadowRenderer::GetOrCreateFrameBuffer(Scene::Entity entity) {
 
-            auto shadow = light->GetShadow();
-            if (lightMap.contains(light)) {
-                return lightMap[light];
-            }
-            else {
-                Graphics::RenderPassDepthAttachment attachment = {
-                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
-                                   shadow->maps.format,
-                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                    .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                };
-                Graphics::RenderPassDesc renderPassDesc = {
-                    .depthAttachment = { attachment }
-                };
-                auto renderPass = device->CreateRenderPass(renderPassDesc);
+            auto& light = entity.GetComponent<LightComponent>();
+            auto& shadow = light.shadow;
 
-                Graphics::FrameBufferDesc frameBufferDesc = {
-                    .renderPass = renderPass,
-                    .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
-                    .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
-                };
-                return device->CreateFrameBuffer(frameBufferDesc);
+            if (lightMap.contains(entity)) {
+                auto frameBuffer = lightMap[entity];
+                if (frameBuffer->extent.width == shadow->resolution ||
+                    frameBuffer->extent.height == shadow->resolution) {
+                    return frameBuffer;
+                }
             }
+
+            Graphics::RenderPassDepthAttachment attachment = {
+                .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
+                               shadow->maps.format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+            Graphics::RenderPassDesc renderPassDesc = {
+                .depthAttachment = { attachment }
+            };
+            auto renderPass = device->CreateRenderPass(renderPassDesc);
+
+            Graphics::FrameBufferDesc frameBufferDesc = {
+                .renderPass = renderPass,
+                .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
+            };
+            return device->CreateFrameBuffer(frameBufferDesc);
 
         }
 
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+            const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 
@@ -203,7 +192,7 @@ namespace Atlas {
                 .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
             };
 
-            if (!material->twoSided && mesh->cullBackFaces) {
+            if (material->twoSided || !mesh->cullBackFaces) {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 

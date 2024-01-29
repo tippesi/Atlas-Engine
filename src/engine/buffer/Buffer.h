@@ -1,5 +1,4 @@
-#ifndef AE_BUFFER_H
-#define AE_BUFFER_H
+#pragma once
 
 #include "../System.h"
 
@@ -163,5 +162,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_SHADOWRENDERER_H
-#define AE_SHADOWRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../RenderList.h"
@@ -20,21 +19,23 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList, RenderList* renderList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
-            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Lighting::Light* light);
+            Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
-            using LightMap = std::map<Lighting::Light*, Ref<Graphics::FrameBuffer>>;
+            using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
 
             struct PushConstants {
                 mat4 lightSpaceMatrix;
                 uint32_t vegetation;
                 uint32_t invertUVs;
+                float windTextureLod;
+                float windBendScale;
+                float windWiggleScale;
             };
 
             LightMap lightMap;
@@ -46,5 +47,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

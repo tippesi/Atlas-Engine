@@ -13,8 +13,6 @@ namespace Atlas {
             const bool orthoProjection = false;
 
             Renderer::ImpostorRenderer renderer;
-            Viewport viewport(0, 0, resolution, resolution);
-
             auto impostor = CreateRef<Mesh::Impostor>(views, resolution);
 
             std::vector<mat4> viewMatrices;
@@ -72,7 +70,7 @@ namespace Atlas {
             }
 
             // Distance to center is center offset + one unit vector
-            renderer.Generate(&viewport, viewMatrices, projectionMatrix, dist + 1.0f, mesh.Get().get(), impostor.get());
+            renderer.Generate(viewMatrices, projectionMatrix, dist + 1.0f, mesh.Get().get(), impostor.get());
 
             impostor->center = center;
             impostor->radius = radius;
@@ -81,13 +79,15 @@ namespace Atlas {
 
             // Approximate transmission
             for (auto& material : mesh->data.materials) {
-                impostor->transmissiveColor += material.transmissiveColor / (float)mesh->data.materials.size();
+                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
             }
 
             impostor->baseColorTexture.GenerateMipmap();
             impostor->roughnessMetalnessAoTexture.GenerateMipmap();
             impostor->normalTexture.GenerateMipmap();
             impostor->depthTexture.GenerateMipmap();
+
+            
 
             return impostor;
 

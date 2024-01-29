@@ -13,9 +13,9 @@ namespace Atlas {
         public:
             Skybox() = default;
 
-            explicit Skybox(Texture::Cubemap* cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
+            explicit Skybox(Texture::Cubemap cubemap, mat4 matrix = mat4(1.0f)) : cubemap(cubemap), matrix(matrix) {};
 
-            Texture::Cubemap * cubemap;
+            Texture::Cubemap cubemap;
             mat4 matrix;
 
         };

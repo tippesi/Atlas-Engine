@@ -1,18 +1,17 @@
-#ifndef AE_SHADOW_H
-#define AE_SHADOW_H
+#pragma once
 
 #include "../System.h"
-#include "../Camera.h"
 #include "../texture/Cubemap.h"
 #include "../texture/Texture2DArray.h"
+#include "scene/components/CameraComponent.h"
 
-#define MAX_SHADOW_CASCADE_COUNT 5
+#define MAX_SHADOW_VIEW_COUNT 5
 
 namespace Atlas {
 
     namespace Lighting {
 
-        struct ShadowComponent {
+        struct ShadowView {
 
             float nearDistance;
             float farDistance;
@@ -32,7 +31,11 @@ namespace Atlas {
 
             Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
 
+            void SetResolution(int32_t resolution);
+
             void Update();
+
+            vec3 center = vec3(0.0f);
 
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
@@ -43,12 +46,13 @@ namespace Atlas {
 
             int32_t resolution;
 
-            std::vector<ShadowComponent> components;
+            std::vector<ShadowView> components;
             int32_t componentCount;
 
             Texture::Texture2DArray maps;
             Texture::Cubemap cubemap;
 
+            bool isCascaded = false;
             bool useCubemap = false;
             bool allowDynamicActors = false;
             bool allowTerrain = false;
@@ -60,6 +64,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

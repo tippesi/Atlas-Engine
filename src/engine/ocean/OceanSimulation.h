@@ -1,9 +1,9 @@
-#ifndef AE_OCEANSIMULATION_H
-#define AE_OCEANSIMULATION_H
+#pragma once
 
 #include "../System.h"
 #include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
+#include "../texture/Texture2DArray.h"
 #include "../pipeline/PipelineConfig.h"
 #include "../graphics/CommandList.h"
 
@@ -18,7 +18,7 @@ namespace Atlas {
         public:
             OceanSimulation() = default;
 
-            OceanSimulation(int32_t N, int32_t L);
+            OceanSimulation(int32_t N, int32_t L, int32_t C = 4);
 
             void Update(float deltaTime);
 
@@ -26,8 +26,8 @@ namespace Atlas {
 
             void Compute(Graphics::CommandList* commandList);
 
-            Texture::Texture2D displacementMap;
-            Texture::Texture2D normalMap;
+            Texture::Texture2DArray displacementMap;
+            Texture::Texture2DArray normalMap;
             Texture::Texture2D perlinNoiseMap;
 
             Texture::Texture2D twiddleIndices;
@@ -36,22 +36,27 @@ namespace Atlas {
 
             int32_t N;
             int32_t L;
+            int32_t C;
 
             float choppinessScale = 3.0f;
             float displacementScale = 4.0f;
-            float tiling = 64.0f;
+            float tiling = 20.0f;
 
-            float waveAmplitude = 1.0f;
+            vec4 spectrumTilingFactors = vec4(1.0f, 3.0f, 6.0f, 9.0f);
+            vec4 spectrumWeights = vec4(1.0f, 0.5f, 0.25f, 0.125f);
+            vec4 spectrumFadeoutDistances = vec4(200.0f, 400.0f, 1000.0f, 4000.0f);
+
+            float waveAmplitude = 0.45e-3f;
             float waveSurpression = 0.001f;
 
             vec2 windDirection = vec2(0.8f, 0.6f);
-            float windSpeed = 60.0f;
+            float windSpeed = 100.0f;
             float windDependency = 0.9f;
 
             float foamTemporalWeight = 0.985f;
             float foamTemporalThreshold = 0.6f;
 
-            float foamOffset = 0.85f;
+            float foamOffset = 0.0f;
             float foamScale = 1.5f;
             float foamSize = 4.0f;
 
@@ -87,39 +92,13 @@ namespace Atlas {
             Texture::Texture2D noise2;
             Texture::Texture2D noise3;
 
-            Texture::Texture2D h0K;
+            Texture::Texture2DArray h0K;
 
-            Texture::Texture2D hTD;
-            Texture::Texture2D hTDPingpong;
-
-            /*
-            OldShader::Uniform* htNUniform;
-            OldShader::Uniform* htLUniform;
-            OldShader::Uniform* htTimeUniform;
-
-            OldShader::Uniform* butterflyStageUniform;
-            OldShader::Uniform* butterflyPingpongUniform;
-            OldShader::Uniform* butterflyNUniform;
-            OldShader::Uniform* butterflyPreTwiddleUniform;
-
-            OldShader::Uniform* inversionNUniform;
-            OldShader::Uniform* inversionPingpongUniform;
-
-            OldShader::Uniform* normalNUniform;
-            OldShader::Uniform* normalLUniform;
-            OldShader::Uniform* normalChoppyScaleUniform;
-            OldShader::Uniform* normalDisplacementScaleUniform;
-            OldShader::Uniform* normalTilingUniform;
-            OldShader::Uniform* normalFoamTemporalWeightUniform;
-            OldShader::Uniform* normalFoamTemporalThresholdUniform;
-            OldShader::Uniform* normalFoamOffsetUniform;
-            */
+            Texture::Texture2DArray hTD;
+            Texture::Texture2DArray hTDPingpong;
 
         };
 
     }
 
 }
-
-
-#endif

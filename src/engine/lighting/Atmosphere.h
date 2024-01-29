@@ -1,5 +1,4 @@
-#ifndef AE_ATMOSPHERE_H
-#define AE_ATMOSPHERE_H
+#pragma once
 
 #include "../System.h"
 
@@ -15,13 +14,10 @@ namespace Atlas {
 
             float height = 100000.0f;
 
-            EnvironmentProbe probe;
+            Ref<EnvironmentProbe> probe;
 
         };
 
     }
 
 }
-
-
-#endif

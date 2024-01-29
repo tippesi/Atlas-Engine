@@ -1,5 +1,4 @@
-#ifndef AE_FOG_H
-#define AE_FOG_H
+#pragma once
 
 #include "../System.h"
 
@@ -14,18 +13,20 @@ namespace Atlas {
 
             bool enable = true;
 
-            vec3 color = vec3(0.5, 0.6, 0.7);
+            vec3 color = vec3(0.73, 0.79, 0.85) * 0.2f;
 
             float density = 0.05f;
             float height = 0.0f;
             float heightFalloff = 0.005f;
 
-            float scatteringAnisotropy = 0.0f;
+            float scatteringAnisotropy = -0.6f;
+
+            bool rayMarching = true;
+            int32_t rayMarchStepCount = 10;
+
 
         };
 
     }
 
 }
-
-#endif

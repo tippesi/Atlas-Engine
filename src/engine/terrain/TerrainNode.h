@@ -1,9 +1,8 @@
-#ifndef AE_TERRAINNODE_H
-#define AE_TERRAINNODE_H
+#pragma once
 
 #include "../System.h"
 #include "TerrainStorage.h"
-#include "Camera.h"
+#include "scene/components/CameraComponent.h"
 
 #include <vector>
 
@@ -20,7 +19,7 @@ namespace Atlas {
 
             ~TerrainNode();
 
-            void Update(Camera* camera, std::vector<float>& LoDDistances, 
+            void Update(const CameraComponent& camera, std::vector<float>& LoDDistances,
                 std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage);
 
             void CheckNeighbourLoD(Common::Image<uint8_t>& LoDImage);
@@ -57,5 +56,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

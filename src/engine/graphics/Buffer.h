@@ -1,5 +1,4 @@
-#ifndef AE_GRAPHICSBUFFER_H
-#define AE_GRAPHICSBUFFER_H
+#pragma once
 
 #include "Common.h"
 
@@ -117,5 +116,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

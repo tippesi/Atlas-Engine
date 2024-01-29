@@ -1,7 +1,7 @@
-#ifndef AE_RESOURCE_H
-#define AE_RESOURCE_H
+#pragma once
 
 #include "System.h"
+#include "ResourceLoadException.h"
 #include "../common/Hash.h"
 
 #include <vector>
@@ -55,7 +55,7 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const std::exception& exception) {
+            catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
             }
@@ -90,7 +90,7 @@ namespace Atlas {
             data = nullptr;
         }
 
-        size_t ID = 0;
+        Hash ID = 0;
 
         ResourceOrigin origin = System;
 
@@ -117,11 +117,11 @@ namespace Atlas {
 
         ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
 
-        inline bool IsValid() {
+        inline bool IsValid() const {
             return resource != nullptr;
         }
 
-        inline bool IsLoaded() {
+        inline bool IsLoaded() const {
             return IsValid() && resource->isLoaded;
         }
 
@@ -134,7 +134,7 @@ namespace Atlas {
             }
         }
 
-        inline size_t GetID() {
+        inline size_t GetID() const {
             if (!IsValid()) return 0;
 
             return resource->ID;
@@ -184,5 +184,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef AE_CLOCKEVENT_H
-#define AE_CLOCKEVENT_H
+#pragma once
 
 #include "../System.h"
 
@@ -31,5 +30,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

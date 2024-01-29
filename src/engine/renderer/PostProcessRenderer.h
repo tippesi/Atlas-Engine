@@ -1,8 +1,8 @@
-#ifndef AE_POSTPROCESSRENDERER_H
-#define AE_POSTPROCESSRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
+#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -15,14 +15,16 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) Uniforms {
                 float exposure;
                 float whitePoint;
                 float saturation;
+                float contrast;
                 float filmGrainStrength;
                 int32_t bloomPasses;
                 float aberrationStrength;
@@ -33,7 +35,7 @@ namespace Atlas {
                 vec4 vignetteColor;
             };
 
-            void SetUniforms(Camera* camera, Scene::Scene* scene);
+            void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);
 
             PipelineConfig GetMainPipelineConfig();
 
@@ -48,5 +50,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

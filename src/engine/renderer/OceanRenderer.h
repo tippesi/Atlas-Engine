@@ -1,5 +1,4 @@
-#ifndef AE_OCEANRENDERER_H
-#define AE_OCEANRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -17,12 +16,26 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+
+            void RenderDepthOnly(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) Uniforms {
+                Fog fog;
+
+                vec4 waterBodyColor;
+                vec4 deepWaterBodyColor;
+                vec4 scatterColor;
+
                 vec4 translation;
+                vec4 terrainTranslation;
+
+                vec4 waterColorIntensity;
+
+                vec4 spectrumTilingFactors;
+                vec4 spectrumWeights;
+                vec4 spectrumFadeoutDistances;
 
                 float displacementScale;
                 float choppyScale;
@@ -39,53 +52,10 @@ namespace Atlas {
                 float shoreWaveLength;
                 float terrainSideLength;
 
-                vec4 terrainTranslation;
-
                 float terrainHeightScale;
                 int32_t N;
-            };
-
-            struct alignas(16) Cascade {
-                float distance;
-                float texelSize;
-                float aligment0;
-                float aligment1;
-                mat4 cascadeSpace;
-            };
-
-            struct alignas(16) Shadow {
-                float distance;
-                float bias;
-
-                float cascadeBlendDistance;
-
-                int cascadeCount;
-
-                float aligment0;
-                float aligment1;
-
-                vec2 resolution;
-
-                mat4 cloudViewMatrix;
-                mat4 cloudProjectionMatrix;
-
-                Cascade cascades[6];
-            };
-
-            struct alignas(16) Light {
-                vec4 location;
-                vec4 direction;
-
-                vec4 color;
-                float intensity;
-
-                float scatteringFactor;
-
-                float radius;
-
-                float alignment;
-
-                Shadow shadow;
+                int32_t spectrumCount;
+                float innerCloudRadius;
             };
 
             struct alignas(16) PushConstants {
@@ -102,16 +72,19 @@ namespace Atlas {
                 vec2 nodeLocation;
             };
 
-            PipelineConfig GeneratePipelineConfig(RenderTarget* target, bool wireframe);
+            PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target, bool depthOnly, bool wireframe);
 
             PipelineConfig causticPipelineConfig;
+            PipelineConfig underWaterPipelineConfig;
 
             Buffer::VertexArray vertexArray;
 
             Texture::Texture2D refractionTexture;
             Texture::Texture2D depthTexture;
+            Texture::Texture2D dummyTexture;
 
             Buffer::UniformBuffer uniformBuffer;
+            Buffer::UniformBuffer depthUniformBuffer;
             Buffer::UniformBuffer lightUniformBuffer;
             Buffer::UniformBuffer cloudShadowUniformBuffer;
 
@@ -123,6 +96,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

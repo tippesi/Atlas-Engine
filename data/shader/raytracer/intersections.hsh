@@ -2,8 +2,8 @@
 
 bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax) {
     
-    vec3 t0 = (aabb.min - ray.origin) * ray.inverseDirection;
-    vec3 t1 = (aabb.max - ray.origin) * ray.inverseDirection;
+    vec3 t0 = (aabb.min - ray.origin) / ray.direction;
+    vec3 t1 = (aabb.max - ray.origin) / ray.direction;
     
     vec3 tsmall = min(t0, t1);
     vec3 tbig = max(t0, t1);
@@ -17,8 +17,8 @@ bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax) {
 
 bool IntersectAABB(Ray ray, AABB aabb, float tmin, float tmax, out float dist) {
 
-    vec3 t0 = (aabb.min - ray.origin) * ray.inverseDirection;
-    vec3 t1 = (aabb.max - ray.origin) * ray.inverseDirection;
+    vec3 t0 = (aabb.min - ray.origin) / ray.direction;
+    vec3 t1 = (aabb.max - ray.origin) / ray.direction;
     
     vec3 tsmall = min(t0, t1);
     vec3 tbig = max(t0, t1);

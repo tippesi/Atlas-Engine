@@ -126,3 +126,7 @@ vec2 Spherical(vec3 cartesian) {
 bool isnan3(vec3 value) {
     return isnan(value.x) || isnan(value.y) || isnan(value.z);
 }
+
+bool isinf3(vec3 value) {
+    return isinf(value.x) || isinf(value.y) || isinf(value.z);
+}

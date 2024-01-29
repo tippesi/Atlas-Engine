@@ -116,7 +116,7 @@ namespace Atlas {
                 mainFrameBuffer = device->CreateFrameBuffer(frameBufferDesc);
             }
             {
-                auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetResourceWithLoader(
+                mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
                     "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
                 );
 
@@ -163,13 +163,15 @@ namespace Atlas {
             }
         }
 
-        void ExampleRenderer::Render(Camera* camera) {
+        void ExampleRenderer::Render(const CameraComponent& camera) {
+
+            auto swapChain = device->swapChain;
+            if (!swapChain->isComplete) return;
 
             auto blue = abs(sin(Clock::Get()));
 
             auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
-            auto swapChain = device->swapChain;
-
+            
             Graphics::Profiler::BeginThread("Main thread", commandList);
 
             commandList->BeginCommands();
@@ -187,13 +189,13 @@ namespace Atlas {
                 commandList->BindPipeline(meshPipeline);
 
                 auto pushConstants = PushConstants {
-                    .vMatrix = camera->viewMatrix,
-                    .pMatrix = camera->projectionMatrix
+                    .vMatrix = camera.viewMatrix,
+                    .pMatrix = camera.projectionMatrix
                 };
 
                 auto uniforms = Uniforms{
-                    .vMatrix = camera->viewMatrix,
-                    .pMatrix = camera->projectionMatrix
+                    .vMatrix = camera.viewMatrix,
+                    .pMatrix = camera.projectionMatrix
                 };
                 uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
 

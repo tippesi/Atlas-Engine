@@ -1,5 +1,4 @@
-#ifndef AE_SYSTEM_H
-#define AE_SYSTEM_H
+#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -31,6 +30,8 @@
 
 #endif
 
+#define AE_ASSERT assert
+
 // SDL
 #ifdef AE_NO_APP
 #define SDL_MAIN_HANDLED
@@ -61,8 +62,12 @@ namespace Atlas {
     using glm::mat4x3;
     using glm::mat3x4;
 
+    using glm::quat;
+
     typedef short float16;
 
-}
+    namespace Scene::Components {}
 
-#endif
+    using namespace Scene::Components;
+
+}

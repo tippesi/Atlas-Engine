@@ -1,5 +1,4 @@
-#ifndef AE_CONTROLLERDEVICEEVENT_H
-#define AE_CONTROLLERDEVICEEVENT_H
+#pragma once
 
 #include "../System.h"
 #include "EventDelegate.h"
@@ -40,6 +39,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

@@ -9,7 +9,10 @@
 
 #ifdef AE_OS_WINDOWS
 #include <direct.h>
+#include <Windows.h>
 #endif
+
+extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
 
@@ -24,6 +27,13 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
+#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
+    setenv("MVK_DEBUG", "0", 1);
+#endif
+
+    // SetEnvironmentVariable("VK_ICD_FILENAMES", "C:\\Users\\tippe\\Documents\\Repos\\swiftshader\\build\\Windows\\vk_swiftshader_icd.json");
+
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
@@ -34,7 +44,9 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    auto engineInstance = Atlas::EngineInstance::GetInstance();
+    // Only then create engine instance. This makes sure that the engine instance already
+    // has access to all graphics functionality and all other functionality on construction
+    auto engineInstance = GetEngineInstance();
     if (!engineInstance) {
         Atlas::Log::Warning("Shutdown of application");
         Atlas::Engine::Shutdown();

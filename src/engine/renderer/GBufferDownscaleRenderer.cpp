@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(RenderTarget* target, Graphics::CommandList* commandList) {
+        void GBufferDownscaleRenderer::Downscale(Ref<RenderTarget> target, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Downsample GBuffer");
 
@@ -29,7 +29,7 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::DownscaleDepthOnly(RenderTarget* target, Graphics::CommandList* commandList) {
+        void GBufferDownscaleRenderer::DownscaleDepthOnly(Ref<RenderTarget> target, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Downsample GBuffer depth only");
 

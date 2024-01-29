@@ -8,7 +8,7 @@
 [code-quality-image]: https://app.codacy.com/project/badge/Grade/0b8608dc5cb349a38b8d64c7fbcbcda6
 [code-quality-url]: https://app.codacy.com/gh/tippesi/Atlas-Engine/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 
-![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with software raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
+![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
 ## Requirements
@@ -54,6 +54,9 @@ asset directory is correct.
 initialize the engine yourself
 - **ATLAS_IMGUI** Enables the [ImGui](https://github.com/ocornut/imgui) integration. Is enabled by default if the demo project is build.
 - **ATLAS_ASSIMP** Enables the [Assimp](https://github.com/assimp/assimp) integration. Is enabled by default.
+- **ATLAS_HEADLESS** Enables the headless support, which means no window needs to be created. Is disabled by default.
+- **ATLAS_BINDLESS** Enables support for bindless resources. Might be problematic on MacOS. Enabled by default.
+- **ATLAS_TESTS** Generates the testing project and allows to target it.
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
 ## License

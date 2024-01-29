@@ -1,5 +1,4 @@
-#ifndef AE_VOLUMETRICRENDERER_H
-#define AE_VOLUMETRICRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "../Filter.h"
@@ -16,23 +15,15 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera,
-                Scene::Scene* scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) Fog {
-                float density;
-                float heightFalloff;
-                float height;
-                float scatteringAnisotropy;
-                vec4 color;
-            };
-
             struct alignas(16) VolumetricUniforms {
                 int sampleCount;
                 float intensity;
-                float seed;
                 int fogEnabled;
+                float oceanHeight;
+                vec4 planetCenterAndRadius;
                 Fog fog;
                 Light light;
                 CloudShadow cloudShadow;
@@ -44,6 +35,7 @@ namespace Atlas {
 
             struct alignas(16) ResolveUniforms {
                 Fog fog;
+                vec4 planetCenter;
                 int downsampled2x;
                 int cloudsEnabled;
                 int fogEnabled;
@@ -72,5 +64,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -1,8 +1,7 @@
-#ifndef AE_VIEWPORT_H
-#define AE_VIEWPORT_H
+#pragma once
 
 #include "System.h"
-#include "Camera.h"
+#include "scene/components/CameraComponent.h"
 
 namespace Atlas {
 
@@ -35,7 +34,7 @@ namespace Atlas {
          */
         void Set(int32_t x, int32_t y, int32_t width, int32_t height);
 
-        vec3 Project(vec3 point, Camera* camera) const;
+        vec3 Project(vec3 point, const CameraComponent& camera) const;
 
         /**
          * Transforms a point from screen space pixel coordinates into world space.
@@ -47,7 +46,7 @@ namespace Atlas {
          * If z is equal to zero the point will be in the exact depth as the near plane of the camera.
          * If z is equal to one the point will be in the exact depth as the far plane of the camera.
          */
-        vec3 Unproject(vec3 point, Camera *camera) const;
+        vec3 Unproject(vec3 point, const CameraComponent& camera) const;
 
         int32_t x = 0;
         int32_t y = 0;
@@ -58,5 +57,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

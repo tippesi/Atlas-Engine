@@ -1,5 +1,4 @@
 #include "VolumetricRenderer.h"
-#include "../lighting/DirectionalLight.h"
 #include "../common/RandomHelper.h"
 
 namespace Atlas {
@@ -16,9 +15,9 @@ namespace Atlas {
             volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
 
             horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
-                {"HORIZONTAL", "BLUR_RGB", "DEPTH_WEIGHT"});
+                {"HORIZONTAL", "BLUR_RGBA", "DEPTH_WEIGHT"});
             verticalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
-                {"VERTICAL", "BLUR_RGB", "DEPTH_WEIGHT"});
+                {"VERTICAL", "BLUR_RGBA", "DEPTH_WEIGHT"});
 
             resolvePipelineConfig = PipelineConfig("volumetric/volumetricResolve.csh");
 
@@ -35,10 +34,12 @@ namespace Atlas {
 
         }
 
-        void VolumetricRenderer::Render(Viewport* viewport, RenderTarget* target,
-            Camera* camera, Scene::Scene* scene, Graphics::CommandList* commandList) {
+        void VolumetricRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Render volumetric");
+
+            auto& camera = scene->GetMainCamera();
+            auto volumetric = scene->volumetric;
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -49,16 +50,21 @@ namespace Atlas {
             commandList->BindImage(target->volumetricTexture.image, 3, 0);
             commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 1);
 
-            auto lights = scene->GetLights();
-            if (scene->sky.sun) {
-                lights.push_back(scene->sky.sun.get());
-            }
-
             ivec2 res = ivec2(target->volumetricTexture.width, target->volumetricTexture.height);
 
             Graphics::Profiler::BeginQuery("Ray marching");
 
-            for (auto& light : lights) {
+            auto mainLightEntity = GetMainLightEntity(scene);
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            for (auto& lightEntity : lightSubset) {
+
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || light.type != LightType::DirectionalLight || !light.volumetric || !volumetric)
+                    continue;
+
+                auto shadow = light.shadow;
+
                 const int32_t groupSize = 8;
 
                 res = ivec2(target->GetWidth(), target->GetHeight());
@@ -67,38 +73,43 @@ namespace Atlas {
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                auto volumetric = light->GetVolumetric();
-                auto shadow = light->GetShadow();
-
-                if (light->type != AE_DIRECTIONAL_LIGHT || !volumetric || !shadow) continue;
-
-                auto directionalLight = (Lighting::DirectionalLight*)light;
-                vec3 direction = normalize(vec3(camera->viewMatrix * vec4(directionalLight->direction, 0.0f)));
+                vec3 direction = normalize(vec3(camera.viewMatrix *
+                    vec4(light.transformedProperties.directional.direction, 0.0f)));
 
                 VolumetricUniforms uniforms;
                 uniforms.sampleCount = volumetric->sampleCount;
-                uniforms.intensity = volumetric->intensity * light->intensity;
-                uniforms.seed = Common::Random::SampleFastUniformFloat();
+                uniforms.intensity = volumetric->intensity * light.intensity;
 
                 uniforms.light.direction = vec4(direction, 0.0);
-                uniforms.light.color = vec4(light->color, 0.0);
+                uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
                 uniforms.light.shadow.cascadeCount = shadow->componentCount;
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
 
                 auto& shadowUniform = uniforms.light.shadow;
-                for (int32_t i = 0; i < MAX_SHADOW_CASCADE_COUNT + 1; i++) {
+                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     auto& cascadeUniform = shadowUniform.cascades[i];
                     auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
                     if (i < shadow->componentCount) {
                         auto cascade = &shadow->components[i];
                         cascadeUniform.distance = cascade->farDistance;
                         cascadeUniform.cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera->invViewMatrix;
+                            cascade->viewMatrix * camera.invViewMatrix;
                     }
                     else {
-                        cascadeUniform.distance = camera->farPlane;
+                        cascadeUniform.distance = camera.farPlane;
                     }
+                }
+
+                auto ocean = scene->ocean;
+                bool oceanEnabled = ocean && ocean->enable;
+
+                if (oceanEnabled) {
+                    // This is the full res depth buffer..
+                    uniforms.oceanHeight = ocean->translation.y;
+                    target->oceanDepthTexture.Bind(commandList, 3, 4);
+                    // Needs barrier
+                    target->oceanStencilTexture.Bind(commandList, 3, 5);
                 }
 
                 auto fog = scene->fog;
@@ -108,7 +119,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 1.0f);
+                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
@@ -116,26 +127,36 @@ namespace Atlas {
                 }
 
                 auto clouds = scene->sky.clouds;
-                bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
+                bool cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
+                bool cloudShadowsEnabled = cloudsEnabled && clouds->castShadow;
+
+                if (cloudsEnabled) {
+                    target->volumetricCloudsTexture.Bind(commandList, 3, 6);
+
+                    float cloudInnerRadius = scene->sky.planetRadius + clouds->minHeight;
+                    uniforms.planetCenterAndRadius = vec4(scene->sky.planetCenter, cloudInnerRadius);
+                }
 
                 if (cloudShadowsEnabled) {
                     auto& cloudShadowUniform = uniforms.cloudShadow;
 
                     clouds->shadowTexture.Bind(commandList, 3, 3);
 
-                    clouds->GetShadowMatrices(camera, directionalLight->direction,
+                    clouds->GetShadowMatrices(camera, normalize(light.transformedProperties.directional.direction),
                         cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
 
-                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera->invViewMatrix;
+                    cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
 
                     cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                     cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
                 }
 
                 volumetricUniformBuffer.SetData(&uniforms, 0);
-                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 4);
+                commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
+                volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
+                volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
                 auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
 
                 commandList->BindPipeline(volumetricPipeline);
@@ -148,7 +169,7 @@ namespace Atlas {
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
 
-            {
+            if (volumetric) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
@@ -226,13 +247,16 @@ namespace Atlas {
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
                 auto clouds = scene->sky.clouds;
-                auto cloudsEnabled = clouds && clouds->enable;
+                auto cloudsEnabled = clouds && clouds->enable && mainLightEntity.IsValid();
 
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
+                bool rayMarchedFog = volumetric != nullptr;
+
                 resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 resolvePipelineConfig.ManageMacro("FOG", fogEnabled);
+                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", rayMarchedFog);
 
                 auto resolvePipeline = PipelineManager::GetPipeline(resolvePipelineConfig);
                 commandList->BindPipeline(resolvePipeline);
@@ -249,7 +273,7 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(fog->color, 1.0f);
+                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
@@ -260,6 +284,7 @@ namespace Atlas {
                     uniforms.innerCloudRadius = scene->sky.planetRadius + clouds->minHeight;
                     uniforms.planetRadius = scene->sky.planetRadius;
                     uniforms.cloudDistanceLimit = clouds->distanceLimit;
+                    uniforms.planetCenter = vec4(scene->sky.planetCenter, 1.0f);
                     commandList->BindImage(target->volumetricCloudsTexture.image, target->volumetricCloudsTexture.sampler, 3, 3);
                 }
 

@@ -1,9 +1,7 @@
-#ifndef AE_ENGINE_H
-#define AE_ENGINE_H
+#pragma once
 
 #include "System.h"
 #include "Window.h"
-#include "Camera.h"
 #include "Clock.h"
 #include "Log.h"
 #include "resource/ResourceManager.h"
@@ -12,8 +10,6 @@
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"
-#include "lighting/DirectionalLight.h"
-#include "lighting/PointLight.h"
 #include "loader/AssetLoader.h"
 #include "common/RandomHelper.h"
 
@@ -30,6 +26,11 @@ namespace Atlas {
          * @note This path must be relative to the asset directory
          */
         std::string shaderDirectory = "shader";
+
+        /**
+         * Configures which messages of the validation layers to log
+         */
+        Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
     };
 
     class Engine {
@@ -64,5 +65,3 @@ namespace Atlas {
     };
 
 }
-
-#endif

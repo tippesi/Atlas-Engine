@@ -1,5 +1,4 @@
-#ifndef AE_MATERIALLOADER_H
-#define AE_MATERIALLOADER_H
+#pragma once
 
 #include "../System.h"
 #include "../Material.h"
@@ -33,6 +32,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

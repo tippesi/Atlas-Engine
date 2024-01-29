@@ -40,6 +40,8 @@ namespace Atlas {
 
             void GetData(std::vector<T>& data) const;
 
+            void Sort();
+
             bool IsSubdivided() const;
 
             std::vector<Octree<T>> GetChildren() const;
@@ -49,6 +51,8 @@ namespace Atlas {
             std::vector<T> octreeData;
 
             AABB aabb;
+
+            size_t dataCount = 0;
 
         private:
             void Subdivide();
@@ -103,6 +107,7 @@ namespace Atlas {
         template <class T>
         bool Octree<T>::Insert(T data, AABB aabb) {
 
+            dataCount++;
             auto center = aabb.min + 0.5f * (aabb.max - aabb.min);
 
             return InsertInternal(data, aabb, center);
@@ -112,6 +117,7 @@ namespace Atlas {
         template <class T>
         void Octree<T>::Remove(T data, AABB aabb) {
 
+            dataCount--;
             auto center = aabb.min + 0.5f * (aabb.max - aabb.min);
 
             RemoveInternal(data, aabb, center);
@@ -186,6 +192,17 @@ namespace Atlas {
 
             for (auto& child : children)
                 child.GetData(data);
+
+        }
+
+        template <class T>
+        void Octree<T>::Sort() {
+
+            if (octreeData.size() > 1)
+                std::sort(octreeData.begin(), octreeData.end());
+
+            for (auto& child : children)
+                child.Sort();
 
         }
 

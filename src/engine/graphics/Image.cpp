@@ -1,4 +1,5 @@
 #include "Image.h"
+#include "Format.h"
 #include "GraphicsDevice.h"
 
 namespace Atlas {
@@ -13,6 +14,8 @@ namespace Atlas {
             imageExtent.width = desc.width;
             imageExtent.height = desc.height;
             imageExtent.depth = desc.depth;
+
+            bitDepth = GetFormatSize(desc.format) / GetFormatChannels(desc.format);
 
             VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(desc.format,
                 desc.usageFlags, imageExtent, GetImageType());
@@ -122,6 +125,7 @@ namespace Atlas {
                 case ImageType::ImageCube:
                 case ImageType::Image2DArray: return VK_IMAGE_TYPE_2D;
                 case ImageType::Image3D: return VK_IMAGE_TYPE_3D;
+                default: return VK_IMAGE_TYPE_2D;
             }
 
         }

@@ -1,5 +1,4 @@
-#ifndef AE_DECALRENDERER_H
-#define AE_DECALRENDERER_H
+#pragma once
 
 #include "../System.h"
 #include "Renderer.h"
@@ -13,7 +12,7 @@ namespace Atlas {
         public:
             DecalRenderer();
 
-            void Render(Viewport* viewport, RenderTarget* target, Camera* camera, Scene::Scene* scene);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene);
 
             static std::string vertexPath;
             static std::string fragmentPath;
@@ -45,5 +44,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

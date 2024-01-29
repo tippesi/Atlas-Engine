@@ -1,5 +1,7 @@
 #include <sharedUniforms.hsh>
 
+#include <../common/utility.hsh>
+
 layout(set = 3, binding = 9) uniform sampler2D terrainHeight;
 
 vec3 CalculateGerstner(vec3 position) {
