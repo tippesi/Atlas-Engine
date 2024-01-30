@@ -8,6 +8,7 @@ namespace Atlas::Editor::UI {
         static void Render();
 
         static bool isNewScenePopupVisible;
+        static bool isAddComponentPopupVisible;
 
     private:
         static void RenderNewScenePopup();

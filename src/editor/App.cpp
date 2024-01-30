@@ -1,4 +1,6 @@
 #include "App.h"
+#include "FileImporter.h"
+#include "Singletons.h"
 #include "ui/panels/PopupPanels.h"
 
 #include <chrono>
@@ -24,7 +26,7 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        imguiWrapper.Load(&window);
+        Singletons::ImguiWrapper.Load(&window);
 
         SubscribeToResourceEvents();
 
@@ -32,7 +34,9 @@ namespace Atlas::Editor {
 
     void App::UnloadContent() {
 
-        imguiWrapper.Unload();
+        Singletons::ImguiWrapper.Unload();
+
+        Singletons::Destruct();
 
     }
 
@@ -40,7 +44,7 @@ namespace Atlas::Editor {
 
         const ImGuiIO &io = ImGui::GetIO();
 
-        imguiWrapper.Update(&window, deltaTime);
+        Singletons::ImguiWrapper.Update(&window, deltaTime);
 
         if (io.WantCaptureMouse) {
 
@@ -58,6 +62,8 @@ namespace Atlas::Editor {
         }
 
         ImGui::NewFrame();
+
+        // ImGui::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -148,7 +154,7 @@ namespace Atlas::Editor {
         ImGui::End();
 
         ImGui::Render();
-        imguiWrapper.Render(true);
+        Singletons::ImguiWrapper.Render(true);
 
     }
 
@@ -181,6 +187,12 @@ namespace Atlas::Editor {
 
         ImGui::DockBuilderFinish(dsID);
 
+        contentBrowserWindow.resetDockingLayout = true;
+        logWindow.resetDockingLayout = true;
+        for (auto& sceneWindow : sceneWindows) {
+            sceneWindow.resetDockingLayout = true;
+        }
+
         resetDockspaceLayout = false;
 
     }
@@ -191,6 +203,12 @@ namespace Atlas::Editor {
             sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene));
 
             windowsToAddToNode.emplace_back(sceneWindows.back().GetNameID());
+        });
+
+        // Also kind of a resource event
+        Events::EventManager::DropEventDelegate.Subscribe([](Events::DropEvent event) {
+            if (!event.file.empty())
+                FileImporter::ImportFile(event.file);
         });
 
     }

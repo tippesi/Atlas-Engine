@@ -63,6 +63,8 @@ void ImguiWrapper::Unload() {
     // Unsubscribe from all events
     ImGui_ImplVulkan_Shutdown();
 
+    pool.reset();
+
     initialized = false;
 
 }

@@ -39,8 +39,6 @@ namespace Atlas::Editor {
 
         void SubscribeToResourceEvents();
 
-        ImguiWrapper imguiWrapper;
-
         UI::LogWindow logWindow;
         UI::ContentBrowserWindow contentBrowserWindow;
 
@@ -49,7 +47,7 @@ namespace Atlas::Editor {
 
         ImGuiID upperDockNodeID;
 
-        // Enable right now, with that all new scenes will be docked correctly
+        // Enable right now, with that all new scenes will be docked correctly (but layout will be reset)
         bool resetDockspaceLayout = true;
 
     };

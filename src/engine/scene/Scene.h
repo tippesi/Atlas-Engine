@@ -65,6 +65,8 @@ namespace Atlas {
 
             size_t GetEntityCount() const;
 
+            Entity GetEntityByName(const std::string& name);
+
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 

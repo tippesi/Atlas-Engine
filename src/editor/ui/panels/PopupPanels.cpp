@@ -4,7 +4,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
-#include "scene/Scene.h"
+#include "DataCreator.h"
 
 namespace Atlas::Editor::UI {
 
@@ -47,7 +47,7 @@ namespace Atlas::Editor::UI {
             ImGui::SameLine();
 
             if (ImGui::Button("Ok")) {
-                auto scene = CreateRef<Scene::Scene>(name, minSize, maxSize, octreeDepth);
+                auto scene = DataCreator::CreateScene(name, minSize, maxSize, octreeDepth);
 
                 bool alreadyExisted;
                 Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);

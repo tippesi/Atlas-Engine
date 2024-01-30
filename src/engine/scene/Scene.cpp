@@ -32,6 +32,20 @@ namespace Atlas {
 
         }
 
+        Entity Scene::GetEntityByName(const std::string &name) {
+
+            auto nameSubset = entityManager.GetSubset<NameComponent>();
+            for (auto entity : nameSubset) {
+                auto& nameComponent = nameSubset.Get(entity);
+
+                if (nameComponent.name == name)
+                    return { entity, &entityManager };
+            }
+
+            return { ECS::EntityConfig::InvalidEntity, &entityManager };
+
+        }
+
         void Scene::Timestep(float deltaTime) {
 
             this->deltaTime = deltaTime;
