@@ -20,6 +20,8 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
             auto mainPass = renderList->GetMainPass();
+            if (!mainPass)
+                return;
 
             // Retrieve all possible materials
             std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;

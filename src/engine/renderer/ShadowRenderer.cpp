@@ -60,6 +60,12 @@ namespace Atlas {
                     }
 
                     auto shadowPass = renderList->GetShadowPass(lightEntity, i);
+                    if (!shadowPass) {
+                        // Need to go through render passes to make sure images have transitioned
+                        commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+                        commandList->EndRenderPass();
+                        continue;
+                    }
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 

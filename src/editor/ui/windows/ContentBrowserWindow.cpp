@@ -17,7 +17,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin(GetNameID());
 
-        ImGuiID dsID = ImGui::GetID("ContentBrowserDockspace");
+        ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
         ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
 
         auto viewport = ImGui::GetWindowViewport();

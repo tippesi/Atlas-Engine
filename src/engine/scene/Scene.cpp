@@ -285,7 +285,7 @@ namespace Atlas {
 
         bool Scene::HasMainCamera() const {
 
-            return mainCameraEntity.HasComponent<CameraComponent>();
+            return mainCameraEntity.IsValid() && mainCameraEntity.HasComponent<CameraComponent>();
 
         }
 

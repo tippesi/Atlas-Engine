@@ -21,7 +21,8 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void PostProcessRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+            Graphics::CommandList* commandList, Texture::Texture2D* texture) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
 
@@ -76,9 +77,18 @@ namespace Atlas {
 
                 // We can't return here because of the queries
                 if (device->swapChain->isComplete) {
-                    commandList->BeginRenderPass(device->swapChain, true);
+                    PipelineConfig pipelineConfig;
 
-                    auto pipelineConfig = GetMainPipelineConfig();
+                    if (!texture) {
+                        commandList->BeginRenderPass(device->swapChain, true);
+                        pipelineConfig = GetMainPipelineConfig();
+                    }
+                    else {
+                        commandList->BeginRenderPass(target->postProcessRenderPass,
+                            target->postProcessFrameBuffer, true);
+                        pipelineConfig = GetMainPipelineConfig(target->postProcessFrameBuffer);
+                    }
+
                     pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
                     pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
@@ -105,6 +115,10 @@ namespace Atlas {
                     commandList->Draw(6, 1, 0, 0);
 
                     commandList->EndRenderPass();
+
+                    if (texture) {
+                        CopyToTexture(target, texture, commandList);
+                    }
                 }
 
                 Graphics::Profiler::EndQuery();
@@ -114,7 +128,8 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void PostProcessRenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
+            Graphics::CommandList* commandList, Texture::Texture2D* texture) {
 
             Graphics::Profiler::BeginQuery("Postprocessing");
 
@@ -207,6 +222,33 @@ namespace Atlas {
 
         }
 
+        void PostProcessRenderer::CopyToTexture(Ref<RenderTarget> &target, Texture::Texture2D *texture,
+            Graphics::CommandList* commandList) {
+
+            auto& srcImage = target->postProcessTexture.image;
+            auto& dstImage = texture->image;
+
+            std::vector<Graphics::ImageBarrier> imageBarriers;
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+            imageBarriers = {
+                {srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                {dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            commandList->BlitImage(srcImage, dstImage);
+
+            imageBarriers = {
+                {srcImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {dstImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
+        }
+
         void PostProcessRenderer::SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene) {
 
             const auto& postProcessing = scene->postProcessing;
@@ -255,6 +297,25 @@ namespace Atlas {
                 .swapChain = device->swapChain
             };
 
+            return PipelineConfig(shaderConfig, pipelineDesc, GetMacros());
+
+        }
+
+        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer) {
+
+            auto shaderConfig = ShaderConfig {
+                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
+                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
+            };
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = frameBuffer
+            };
+            return PipelineConfig(shaderConfig, pipelineDesc, GetMacros());
+
+        }
+
+        std::vector<std::string> PostProcessRenderer::GetMacros() const {
+
             std::vector<std::string> macros;
             if (device->swapChain->IsHDR()) {
                 if (device->swapChain->colorSpace == Graphics::HDR10_HLG) {
@@ -270,20 +331,7 @@ namespace Atlas {
                 macros.push_back("GAMMA_CORRECTION");
             }
 
-            return PipelineConfig(shaderConfig, pipelineDesc, macros);
-
-        }
-
-        PipelineConfig PostProcessRenderer::GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer) {
-
-            auto shaderConfig = ShaderConfig {
-                { "postprocessing.vsh", VK_SHADER_STAGE_VERTEX_BIT },
-                { "postprocessing.fsh", VK_SHADER_STAGE_FRAGMENT_BIT }
-            };
-            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = frameBuffer
-            };
-            return PipelineConfig(shaderConfig, pipelineDesc);
+            return macros;
 
         }
 

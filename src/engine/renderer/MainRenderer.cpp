@@ -341,7 +341,7 @@ namespace Atlas {
 
                 target->Swap();
 
-                postProcessRenderer.Render(target, scene, commandList);
+                postProcessRenderer.Render(target, scene, commandList, texture);
             }
 
             Graphics::Profiler::EndQuery();

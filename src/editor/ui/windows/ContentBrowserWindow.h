@@ -55,12 +55,12 @@ namespace Atlas::Editor::UI {
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-                auto set = Singletons::ImguiWrapper.GetTextureDescriptorSet(fileIcon);
+                auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(fileIcon);
                 if (ImGui::ImageButton(set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), int32_t(padding))) {
 
                 }
 
-                ImGui::TextWrapped(filename.c_str());
+                ImGui::TextWrapped("%s", filename.c_str());
 
                 ImGui::PopID();
 

@@ -26,7 +26,10 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        Singletons::ImguiWrapper.Load(&window);
+        Singletons::ImguiWrapper = CreateRef<ImguiWrapper>();
+        Singletons::ImguiWrapper->Load(&window);
+        Singletons::RenderTarget = CreateRef<RenderTarget>(1280, 720);
+        Singletons::MainRenderer = mainRenderer;
 
         SubscribeToResourceEvents();
 
@@ -34,7 +37,7 @@ namespace Atlas::Editor {
 
     void App::UnloadContent() {
 
-        Singletons::ImguiWrapper.Unload();
+        Singletons::ImguiWrapper->Unload();
 
         Singletons::Destruct();
 
@@ -44,13 +47,16 @@ namespace Atlas::Editor {
 
         const ImGuiIO &io = ImGui::GetIO();
 
-        Singletons::ImguiWrapper.Update(&window, deltaTime);
+        Singletons::ImguiWrapper->Update(&window, deltaTime);
 
         if (io.WantCaptureMouse) {
 
         } else {
 
         }
+
+        for (auto& sceneWindow : sceneWindows)
+            sceneWindow.Update(deltaTime);
 
     }
 
@@ -154,7 +160,7 @@ namespace Atlas::Editor {
         ImGui::End();
 
         ImGui::Render();
-        Singletons::ImguiWrapper.Render(true);
+        Singletons::ImguiWrapper->Render(true);
 
     }
 

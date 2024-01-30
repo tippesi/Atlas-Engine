@@ -2,6 +2,10 @@
 
 #include "Window.h"
 
+#include "../panels/SceneHierarchyPanel.h"
+#include "../panels/ViewportPanel.h"
+#include "../panels/EntityPropertiesPanel.h"
+
 #include "resource/Resource.h"
 #include "scene/Scene.h"
 
@@ -15,9 +19,17 @@ namespace Atlas::Editor::UI {
 
         bool IsValid() const { return scene.IsLoaded(); }
 
+        void Update(float deltaTime);
+
         void Render();
 
+        SceneHierarchyPanel sceneHierarchyPanel;
+        ViewportPanel viewportPanel;
+        EntityPropertiesPanel entityPropertiesPanel;
+
         ResourceHandle<Scene::Scene> scene;
+
+        Scene::Entity cameraEntity;
 
     };
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ImguiExtension/ImguiWrapper.h"
+#include "RenderTarget.h"
+#include "renderer/MainRenderer.h"
 
 namespace Atlas::Editor {
 
@@ -9,7 +11,9 @@ namespace Atlas::Editor {
     public:
         static void Destruct();
 
-        static ImguiWrapper ImguiWrapper;
+        static Ref<ImguiWrapper> ImguiWrapper;
+        static Ref<RenderTarget> RenderTarget;
+        static Ref<Renderer::MainRenderer> MainRenderer;
 
     };
 

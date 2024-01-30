@@ -180,6 +180,9 @@ namespace Atlas {
         Ref<Graphics::RenderPass> oceanRenderPass;
         Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;
 
+        Ref<Graphics::RenderPass> postProcessRenderPass;
+        Ref<Graphics::FrameBuffer> postProcessFrameBuffer;
+
         Texture::Texture2D postProcessTexture;
 
         Texture::Texture2D giTexture;

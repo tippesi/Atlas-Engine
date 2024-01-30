@@ -92,7 +92,7 @@ namespace Atlas {
 
         Graphics::Surface* surface = nullptr;
 
-        Scope<Renderer::MainRenderer> mainRenderer = nullptr;
+        Ref<Renderer::MainRenderer> mainRenderer = nullptr;
 
         std::vector<Display> displays;
 
