@@ -13,6 +13,7 @@ namespace Atlas::Editor {
         auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
 
         auto directionalLightEntity = scene->CreateEntity();
+        directionalLightEntity.AddComponent<NameComponent>("Directional light");
         auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
@@ -53,6 +54,8 @@ namespace Atlas::Editor {
         scene->sky.clouds->castShadow = false;
 
         scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+        scene->physicsWorld->pauseSimulation = true;
+
         scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
 
         return scene;

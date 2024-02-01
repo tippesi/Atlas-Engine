@@ -29,11 +29,11 @@ namespace Atlas {
                 float falloffFactor = 1.0f;
                 float cutoff = 0.0001f;
 
+                Ref<Audio::AudioStream> stream;
+
             private:
                 void Update(float deltaTime, const TransformComponent& transformComponent,
                     vec3 listenerLocation, vec3 lastListenerLocation, vec3 listenerRight);
-
-                Ref<Audio::AudioStream> stream;
 
                 bool initialState = true;
 

@@ -4,7 +4,7 @@
 
 #include "../panels/SceneHierarchyPanel.h"
 #include "../panels/ViewportPanel.h"
-#include "../panels/EntityPropertiesPanel.h"
+#include "../panels/ScenePropertiesPanel.h"
 
 #include "resource/Resource.h"
 #include "scene/Scene.h"
@@ -17,6 +17,8 @@ namespace Atlas::Editor::UI {
         explicit SceneWindow(ResourceHandle<Scene::Scene> scene) :
             Window(scene.IsLoaded() ? scene->name : "No scene"), scene(scene) {}
 
+        ~SceneWindow();
+
         bool IsValid() const { return scene.IsLoaded(); }
 
         void Update(float deltaTime);
@@ -25,7 +27,7 @@ namespace Atlas::Editor::UI {
 
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
-        EntityPropertiesPanel entityPropertiesPanel;
+        ScenePropertiesPanel entityPropertiesPanel;
 
         ResourceHandle<Scene::Scene> scene;
 

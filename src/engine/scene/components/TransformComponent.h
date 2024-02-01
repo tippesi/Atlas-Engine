@@ -29,6 +29,8 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
+                bool IsStatic() const;
+
                 void Translate(glm::vec3 translation);
                 void Rotate(glm::vec3 rotation);
                 void Scale(glm::vec3 scale);

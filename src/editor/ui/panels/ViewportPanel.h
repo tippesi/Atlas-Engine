@@ -11,7 +11,7 @@ namespace Atlas::Editor::UI {
     public:
         ViewportPanel();
 
-        void Render(Ref<Scene::Scene>& scene);
+        void Render(Ref<Scene::Scene>& scene, bool isParentFocused);
 
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;

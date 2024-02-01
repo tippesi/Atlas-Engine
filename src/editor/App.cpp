@@ -69,7 +69,7 @@ namespace Atlas::Editor {
 
         ImGui::NewFrame();
 
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -105,17 +105,17 @@ namespace Atlas::Editor {
         if (ImGui::BeginMainMenuBar()) {
             static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
             if (ImGui::BeginMenu("File")) {
-                ImGui::MenuItem("Open project", NULL, &openProject);
-                ImGui::MenuItem("Save project", NULL, &saveProject);
+                ImGui::MenuItem("Open project", nullptr, &openProject);
+                ImGui::MenuItem("Save project", nullptr, &saveProject);
                 ImGui::Separator();
-                ImGui::MenuItem("New scene", NULL, &newScene);
+                ImGui::MenuItem("New scene", nullptr, &newScene);
                 ImGui::Separator();
-                ImGui::MenuItem("Import files", NULL, &importFiles);
+                ImGui::MenuItem("Import files", nullptr, &importFiles);
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Reset layout", NULL, &resetDockspaceLayout);
+                ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
                 ImGui::EndMenu();
             }
 

@@ -77,16 +77,16 @@ namespace Atlas {
                 auto& shadowUniform = lightUniform.shadow;
                 shadowUniform.distance = distance;
                 shadowUniform.bias = shadow->bias;
-                shadowUniform.cascadeCount = shadow->componentCount;
+                shadowUniform.cascadeCount = shadow->viewCount;
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
 
-                auto componentCount = shadow->componentCount;
+                auto componentCount = shadow->viewCount;
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     if (i < componentCount) {
-                        auto cascade = &shadow->components[i];
+                        auto cascade = &shadow->views[i];
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);
                         auto corners = frustum.GetCorners();
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
@@ -97,7 +97,7 @@ namespace Atlas {
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
-                        auto cascade = &shadow->components[componentCount - 1];
+                        auto cascade = &shadow->views[componentCount - 1];
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                     }
                 }

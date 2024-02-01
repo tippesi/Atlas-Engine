@@ -82,7 +82,7 @@ namespace Atlas {
 
                 uniforms.light.direction = vec4(direction, 0.0);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
-                uniforms.light.shadow.cascadeCount = shadow->componentCount;
+                uniforms.light.shadow.cascadeCount = shadow->viewCount;
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
 
@@ -90,8 +90,8 @@ namespace Atlas {
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     auto& cascadeUniform = shadowUniform.cascades[i];
                     auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
-                    if (i < shadow->componentCount) {
-                        auto cascade = &shadow->components[i];
+                    if (i < shadow->viewCount) {
+                        auto cascade = &shadow->views[i];
                         cascadeUniform.distance = cascade->farDistance;
                         cascadeUniform.cascadeSpace = cascade->projectionMatrix *
                             cascade->viewMatrix * camera.invViewMatrix;

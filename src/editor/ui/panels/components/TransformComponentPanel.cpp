@@ -1,5 +1,7 @@
-//
-// Created by Simon Tippe on 29.01.24.
-//
-
 #include "TransformComponentPanel.h"
+
+namespace Atlas::Editor::UI {
+
+
+
+}

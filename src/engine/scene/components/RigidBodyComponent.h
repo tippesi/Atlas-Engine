@@ -45,6 +45,7 @@ namespace Atlas {
 
                 Physics::ShapeRef shape = nullptr;
                 JPH::ObjectLayer layer;
+                Physics::Body bodyId;
 
             private:
                 void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
@@ -52,7 +53,6 @@ namespace Atlas {
 
                 void RemoveFromPhysicsWorld();
 
-                Physics::Body bodyId;
                 Physics::PhysicsWorld* physicsWorld = nullptr;
 
                 friend Scene;

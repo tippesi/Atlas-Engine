@@ -13,6 +13,8 @@ namespace Atlas::Editor::UI {
 
         std::string name;
 
+        bool isFocused = false;
+
     protected:
         int32_t ID = GetID();
 

@@ -1071,10 +1071,10 @@ namespace Atlas {
                 auto& shadow = light.shadow;
 
                 auto componentCount = shadow->longRange ?
-                    shadow->componentCount - 1 : shadow->componentCount;
+                                      shadow->viewCount - 1 : shadow->viewCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
-                    auto component = &shadow->components[i];
+                    auto component = &shadow->views[i];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
                     renderList.NewShadowPass(lightEntity, i);

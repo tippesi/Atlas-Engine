@@ -1,8 +1,21 @@
 #include "SceneWindow.h"
 
+#include "scene/SceneSerializer.h"
+
 #include <imgui_internal.h>
 
 namespace Atlas::Editor::UI {
+
+    SceneWindow::~SceneWindow() {
+
+        if (!scene.IsLoaded())
+            return;
+
+        Scene::SceneSerializer serializer(scene.Get());
+
+        serializer.SerializeScene("scenes/" + std::string(GetNameID()) + ".aescene");
+
+    }
 
     void SceneWindow::Update(float deltaTime) {
 
@@ -49,8 +62,6 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
-        ImGui::End();
-
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
 
         if (refScene != nullptr && !cameraEntity.IsValid()) {
@@ -60,9 +71,15 @@ namespace Atlas::Editor::UI {
             camera.isMain = true;
         }
 
+        // Due to docking it doesn't register child windows as focused as well, need to check in child itself
+        inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
+            sceneHierarchyPanel.isFocused || entityPropertiesPanel.isFocused || viewportPanel.isFocused;
+
         sceneHierarchyPanel.Render(refScene);
-        viewportPanel.Render(refScene);
-        entityPropertiesPanel.Render({ ECS::EntityConfig::InvalidEntity, nullptr});
+        entityPropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
+        viewportPanel.Render(refScene, inFocus);
+
+        ImGui::End();
 
     }
 

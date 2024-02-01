@@ -1,7 +1,8 @@
 #include "SceneSerializer.h"
 #include "Entity.h"
-#include "components/Components.h"
+#include "EntitySerializer.h"
 
+#include "../common/SerializationHelper.h"
 #include "../common/SerializationHelper.h"
 #include "../loader/AssetLoader.h"
 #include "../loader/TerrainLoader.h"
@@ -10,15 +11,31 @@ namespace Atlas {
 
     namespace Scene {
 
-        using namespace Components;
-
         void SceneSerializer::SerializeScene(const std::string& filename) {
 
-            for (auto entity : scene->entityManager) {
-                //SerializeEntity(Entity { entity, scene.get() });
+            auto path = Loader::AssetLoader::GetFullPath(filename);
+            auto fileStream = Loader::AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
+
+            if (!fileStream.is_open()) {
+                Log::Error("Couldn't write scene file " + filename);
+                return;
             }
 
+            json j;
 
+            std::vector<json> entities;
+            for (auto entity : *scene) {
+                entities.emplace_back();
+                EntityToJson(entities.back(), entity, scene);
+            }
+
+            j["name"] = scene->name;
+            j["aabb"] = scene->aabb;
+            j["entities"] = entities;
+
+            fileStream << to_string(j);
+
+            fileStream.close();
 
         }
 
@@ -37,27 +54,7 @@ namespace Atlas {
 
         void SceneSerializer::SerializeEntity(Entity entity) {
 
-            if (entity.HasComponent<NameComponent>()) {
 
-            }
-            if (entity.HasComponent<TransformComponent>()) {
-
-            }
-            if (entity.HasComponent<MeshComponent>()) {
-
-            }
-            if (entity.HasComponent<LightComponent>()) {
-
-            }
-            if (entity.HasComponent<CameraComponent>()) {
-
-            }
-            if (entity.HasComponent<AudioComponent>()) {
-
-            }
-            if (entity.HasComponent<HierarchyComponent>()) {
-
-            }
 
         }
 

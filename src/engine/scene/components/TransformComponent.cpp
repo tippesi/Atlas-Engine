@@ -35,6 +35,12 @@ namespace Atlas {
 
 			}
 
+            bool TransformComponent::IsStatic() const {
+
+                return isStatic;
+
+            }
+
 		}
 
 	}

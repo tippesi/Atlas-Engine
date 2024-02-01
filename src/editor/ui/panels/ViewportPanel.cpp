@@ -12,9 +12,11 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::Render(Ref<Scene::Scene> &scene) {
+    void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isParentFocused) {
 
         ImGui::Begin(GetNameID());
+
+        isFocused = ImGui::IsWindowFocused();
 
         auto region = ImGui::GetContentRegionAvail();
 
@@ -26,7 +28,7 @@ namespace Atlas::Editor::UI {
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
         }
 
-        if (ImGui::IsWindowFocused() && scene != nullptr && validRegion) {
+        if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
             auto& renderTarget = Singletons::RenderTarget;
 
             if (renderTarget->GetWidth() != viewportTexture.width ||
@@ -35,7 +37,9 @@ namespace Atlas::Editor::UI {
             }
 
             Singletons::MainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
+        }
 
+        if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(viewportTexture);
             ImGui::Image(set, region);
         }

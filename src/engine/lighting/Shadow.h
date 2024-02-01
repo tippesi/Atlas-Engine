@@ -46,8 +46,8 @@ namespace Atlas {
 
             int32_t resolution;
 
-            std::vector<ShadowView> components;
-            int32_t componentCount;
+            std::vector<ShadowView> views;
+            int32_t viewCount;
 
             Texture::Texture2DArray maps;
             Texture::Cubemap cubemap;
