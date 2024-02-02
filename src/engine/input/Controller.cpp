@@ -19,7 +19,7 @@ namespace Atlas {
 
         }
 
-        ControllerHandler::ControllerHandler(CameraComponent& camera, float sensibility, float speed, float reactivity,
+        ControllerHandler::ControllerHandler(float sensibility, float speed, float reactivity,
                 float threshold, int32_t device) :
                 sensibility(sensibility), speed(speed), reactivity(reactivity),
                 threshold(threshold), controllerDevice(device) {

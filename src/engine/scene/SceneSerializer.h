@@ -9,22 +9,13 @@ namespace Atlas {
         class SceneSerializer {
 
         public:
-            SceneSerializer() = default;
-            SceneSerializer(const SceneSerializer& that) = default;
-            explicit SceneSerializer(Ref<Scene> scene) : scene(scene) {}
+            static void SerializeScene(Ref<Scene> scene, const std::string& filename);
 
-            void SerializeScene(const std::string& filename);
+            static Ref<Scene> DeserializeScene(const std::string& filename);
 
-            void DeserializeScene(const std::string& filename);
+            static void SerializeEntity(Ref<Scene> scene, Entity entity, const std::string& filename);
 
-            Ref<Scene> GetScene() const;
-
-        private:
-            void SerializeEntity(Entity entity);
-
-            void DeserializeEntity();
-
-            Ref<Scene> scene;
+            static Entity DeserializeEntity(Ref<Scene> scene, const std::string& filename);
 
         };
 

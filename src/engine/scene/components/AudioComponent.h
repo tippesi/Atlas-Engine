@@ -19,12 +19,8 @@ namespace Atlas {
 
 			public:
 				AudioComponent() = default;
-				AudioComponent(const AudioComponent& that) = delete;
-                AudioComponent(AudioComponent&&) noexcept = default;
                 explicit AudioComponent(ResourceHandle<Audio::AudioData> audioData,
                     float falloffFactor = 1.0f, bool loop = false);
-
-                AudioComponent& operator=(AudioComponent&&) noexcept = default;
 
                 float falloffFactor = 1.0f;
                 float cutoff = 0.0001f;

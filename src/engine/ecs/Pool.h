@@ -18,6 +18,8 @@ namespace Atlas {
             template<typename... Args>
             Comp& Emplace(const Entity entity, Args&&... args);
 
+            Comp& Replace(const Entity entity, Comp& args);
+
             void Erase(const Entity entity) override;
 
             Comp& Get(const Entity entity);
@@ -45,6 +47,21 @@ namespace Atlas {
             NotifySubscribers(entity, comp, emplaceSubscribers);
 
             return comp;
+
+        }
+
+        template<typename Comp>
+        Comp& Pool<Comp>::Replace(const Entity entity, Comp& comp) {
+
+            auto idx = Storage::GetIndex(entity);
+
+            NotifySubscribers(entity, components[idx], eraseSubscribers);
+
+            components[idx] = std::move(comp);
+
+            NotifySubscribers(entity, comp, emplaceSubscribers);
+
+            return components[idx];
 
         }
 

@@ -40,9 +40,9 @@ void App::LoadContent() {
     auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 8.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 5.0f);
-    controllerHandler = Atlas::Input::ControllerHandler(camera, 1.0f, 5.0f, 10.0f, 5000.0f);
+    mouseHandler = Atlas::Input::MouseHandler(1.5f, 8.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(7.0f, 5.0f);
+    controllerHandler = Atlas::Input::ControllerHandler(1.0f, 5.0f, 10.0f, 5000.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {

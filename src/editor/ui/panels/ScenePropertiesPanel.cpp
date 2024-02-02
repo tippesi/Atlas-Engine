@@ -12,7 +12,7 @@ namespace Atlas::Editor::UI {
 
         if (entity.IsValid()) {
 
-
+            entityPropertiesPanel.Render(entity);
 
         }
 

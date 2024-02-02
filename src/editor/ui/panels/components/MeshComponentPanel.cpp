@@ -1,7 +1,36 @@
 #include "MeshComponentPanel.h"
+#include "resource/ResourceManager.h"
+
+#include <imgui.h>
 
 namespace Atlas::Editor::UI {
 
+    bool MeshComponentPanel::Render(MeshComponent &meshComponent) {
 
+        bool resourceChanged = false;
+
+        auto buttonName = meshComponent.mesh.IsValid() ? meshComponent.mesh.GetResource()->path :
+            "Drop resource here";
+        ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Mesh::Mesh).name())) {
+                Resource<Mesh::Mesh>* resource;
+                std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
+                // We know this mesh is loaded, so we can just request a handle without loading
+                auto resources = ResourceManager<Mesh::Mesh>::GetResources();
+                meshComponent.mesh = ResourceManager<Mesh::Mesh>::GetResource(resource->path);
+                resourceChanged = true;
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::Checkbox("Visible", &meshComponent.visible);
+        ImGui::Checkbox("Don't cull", &meshComponent.dontCull);
+
+        return resourceChanged;
+
+    }
 
 }

@@ -18,7 +18,7 @@ namespace Atlas {
 
         }
 
-        TouchHandler::TouchHandler(CameraComponent& camera, float sensibility, float speed, float reactivity)
+        TouchHandler::TouchHandler(float sensibility, float speed, float reactivity)
             : sensibility(sensibility), speed(speed), reactivity(reactivity) {
 
             RegisterEvent();

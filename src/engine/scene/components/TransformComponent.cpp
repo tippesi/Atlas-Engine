@@ -41,6 +41,12 @@ namespace Atlas {
 
             }
 
+            Common::MatrixDecomposition TransformComponent::Decompose() const {
+
+                return Common::MatrixDecomposition(matrix);
+
+            }
+
 		}
 
 	}

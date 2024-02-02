@@ -20,6 +20,11 @@ namespace Atlas {
 
             CheckInitialization();
 
+            for (auto& res : resources) {
+                Log::Message("Resource id: " + res.first);
+                Log::Message("Resource path: " + res.second->path);
+            }
+
             std::lock_guard lock(mutex);
             if (resources.contains(path)) {
                 auto& resource = resources[path];

@@ -90,14 +90,14 @@ namespace Atlas {
             Comp& Emplace(Entity entity, Args&&... args);
 
             /**
-             * Creates a component and associates it with an entity.
+             * Replaces a component and associates it with an entity.
              * @tparam Comp The component type
              * @param entity The entity which is associated with the component
              * @param comp The component to add
              * @return Returns a reference to the newly created component
              */
             template<typename Comp>
-            Comp& Add(Entity entity, const Comp comp);
+            Comp& Replace(Entity entity, Comp& comp);
 
             /**
              * Erases a component.
@@ -179,11 +179,11 @@ namespace Atlas {
         }
 
         template<typename Comp>
-        Comp& EntityManager::Add(Entity entity, const Comp comp) {
+        Comp& EntityManager::Replace(Entity entity, Comp& comp) {
 
             auto& pool = pools.Get<Comp>();
 
-            return pool.Emplace(entity, comp);
+            return pool.Replace(entity, comp);
 
         }
 

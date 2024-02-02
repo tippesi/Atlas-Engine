@@ -14,29 +14,25 @@ namespace Atlas::Editor::UI {
 
             auto root = scene->GetEntityByName("Root");
 
-            TraverseHierarchy(root);
+            if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+                // Unselect entity in this case, since this popup could only be opened by clicking on emtpy space
+                selectedEntity = Scene::Entity();
 
-            if (ImGui::BeginPopupContextWindow()) {
                 Scene::Entity entity;
-                bool addEntity = false;
-                ImGui::MenuItem("Add entity", nullptr, &addEntity);
-
-                if (addEntity) {
+                if (ImGui::MenuItem("Add emtpy entity"))
                     entity = scene->CreateEntity();
-                }
 
-                if (entity.IsValid() && selectedEntity.IsValid() &&
-                    selectedEntity.HasComponent<HierarchyComponent>()) {
-                    auto& hierarchyComponent = selectedEntity.GetComponent<HierarchyComponent>();
+                if (entity.IsValid()) {
+                    auto &hierarchyComponent = root.GetComponent<HierarchyComponent>();
                     hierarchyComponent.entities.push_back(entity);
-                }
-                else if (entity.IsValid()) {
-                    auto& hierarchyComponent = root.GetComponent<HierarchyComponent>();
-                    hierarchyComponent.entities.push_back(entity);
+
+                    selectedEntity = entity;
                 }
 
                 ImGui::EndPopup();
             }
+
+            TraverseHierarchy(scene, root);
 
         }
 
@@ -44,13 +40,17 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::TraverseHierarchy(Scene::Entity entity) {
+    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity) {
 
-        static ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
-            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+        ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
+            ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-        auto& hierarchyComponent = entity.GetComponent<HierarchyComponent>();
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
         auto nameComponent = entity.TryGetComponent<NameComponent>();
+
+        if (!hierarchyComponent) {
+            baseFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        }
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
@@ -61,33 +61,46 @@ namespace Atlas::Editor::UI {
             ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())
             selectedEntity = entity;
 
-        if (nodeOpen) {
+        if (nodeOpen && hierarchyComponent) {
 
-            for (auto childEntity : hierarchyComponent.entities) {
+            for (auto childEntity : hierarchyComponent->entities) {
 
-                nameComponent = childEntity.TryGetComponent<NameComponent>();
-
-                nodeFlags = baseFlags;
-
-                if (childEntity.HasComponent<HierarchyComponent>()) {
-                    TraverseHierarchy(childEntity);
-                }
-                else {
-                    nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(childEntity);
-
-                    nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-                    nodeFlags |= childEntity == selectedEntity ? ImGuiTreeNodeFlags_Selected : 0;
-
-                    ImGui::TreeNodeEx((void*)(size_t)childEntity, nodeFlags, "%s", nodeName.c_str());
-                    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
-                        ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())
-                        selectedEntity = childEntity;
-                }
+                TraverseHierarchy(scene, childEntity);
 
             }
 
             ImGui::TreePop();
 
+        }
+
+
+        bool deleteEntity = false;
+        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight)) {
+            Scene::Entity newEntity;
+
+            if (ImGui::MenuItem("Delete entity"))
+                deleteEntity = true;
+
+            if (ImGui::MenuItem("Add emtpy entity"))
+                newEntity = scene->CreateEntity();
+
+            if (newEntity.IsValid()) {
+                // No hierarchy component, so create one
+                if (!hierarchyComponent) {
+                    entity.AddComponent<HierarchyComponent>();
+                    hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+                }
+
+                hierarchyComponent->entities.push_back(newEntity);
+
+                selectedEntity = newEntity;
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (deleteEntity) {
+            scene->DestroyEntity(entity);
         }
 
     }

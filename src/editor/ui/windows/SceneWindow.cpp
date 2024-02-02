@@ -11,9 +11,7 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded())
             return;
 
-        Scene::SceneSerializer serializer(scene.Get());
-
-        serializer.SerializeScene("scenes/" + std::string(GetNameID()) + ".aescene");
+        Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(GetNameID()) + ".aescene");
 
     }
 

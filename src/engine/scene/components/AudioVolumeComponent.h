@@ -19,12 +19,8 @@ namespace Atlas {
 
             public:
                 AudioVolumeComponent() = default;
-                AudioVolumeComponent(const AudioVolumeComponent& that) = delete;
-                AudioVolumeComponent(AudioVolumeComponent&&) noexcept = default;
                 explicit AudioVolumeComponent(ResourceHandle<Audio::AudioData> audioData,
                     Volume::AABB aabb, float falloffFactor = 1.0f);
-
-                AudioVolumeComponent& operator=(AudioVolumeComponent&&) noexcept = default;
 
                 Volume::AABB aabb;
 

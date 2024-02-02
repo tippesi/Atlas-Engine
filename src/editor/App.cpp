@@ -15,7 +15,7 @@ namespace Atlas::Editor {
 
     void App::LoadContent() {
 
-        // Create a
+        // Create a default scene
         sceneWindows.emplace_back(ResourceHandle<Scene::Scene>());
 
         auto icon = Atlas::Texture::Texture2D("icon.png");
@@ -30,6 +30,9 @@ namespace Atlas::Editor {
         Singletons::ImguiWrapper->Load(&window);
         Singletons::RenderTarget = CreateRef<RenderTarget>(1280, 720);
         Singletons::MainRenderer = mainRenderer;
+
+        mouseHandler = Input::MouseHandler(1.5f, 8.0f);
+        keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
         SubscribeToResourceEvents();
 
@@ -51,12 +54,21 @@ namespace Atlas::Editor {
 
         if (io.WantCaptureMouse) {
 
-        } else {
+        }
+        else {
 
         }
 
-        for (auto& sceneWindow : sceneWindows)
+        for (auto& sceneWindow : sceneWindows) {
+            auto cameraEntity = sceneWindow.cameraEntity;
+
+            if (cameraEntity.IsValid() && sceneWindow.viewportPanel.isFocused) {
+                auto& camera = cameraEntity.GetComponent<CameraComponent>();
+                mouseHandler.Update(camera, deltaTime);
+                keyboardHandler.Update(camera, deltaTime);
+            }
             sceneWindow.Update(deltaTime);
+        }
 
     }
 
@@ -136,27 +148,6 @@ namespace Atlas::Editor {
         contentBrowserWindow.Render();
         logWindow.Render();
 
-        /*
-        if (ImGui::Begin("Viewer", nullptr, 0)) {
-            static float x = 0.0f;
-            ImGui::SliderFloat("Testtest", &x, 0.0f, 1.0f);
-
-            auto region = ImGui::GetContentRegionAvail();
-            auto ratio = float(map->width) / float(map->height);
-            region.x /= ratio;
-            if (region.x > region.y) {
-                region.x = region.y * ratio;
-            } else {
-                region.y = region.x;
-                region.x = region.x * ratio;
-            }
-
-            ImGui::Image(texture, region);
-        }
-
-                 ImGui::End();
-        */
-
         ImGui::End();
 
         ImGui::Render();
@@ -206,6 +197,9 @@ namespace Atlas::Editor {
     void App::SubscribeToResourceEvents() {
 
         ResourceManager<Scene::Scene>::Subscribe([&](Ref<Resource<Scene::Scene>>& scene) {
+            if (!sceneWindows.back().scene.IsLoaded())
+                sceneWindows.pop_back();
+
             sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene));
 
             windowsToAddToNode.emplace_back(sceneWindows.back().GetNameID());

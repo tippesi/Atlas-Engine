@@ -11,7 +11,7 @@ namespace Atlas::Scene {
             j["name"] = p.GetComponent<NameComponent>();
         }
         if (p.HasComponent<TransformComponent>()) {
-            j["transform"] = p.GetComponent<NameComponent>();
+            j["transform"] = p.GetComponent<TransformComponent>();
         }
         if (p.HasComponent<MeshComponent>()) {
             j["mesh"] = p.GetComponent<MeshComponent>();

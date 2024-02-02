@@ -132,20 +132,26 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const MeshComponent& p) {
         j = json {
             {"visible", p.visible},
-            {"dontCull", p.dontCull},
-            {"resourcePath", p.mesh.GetResource()->path}
+            {"dontCull", p.dontCull}
         };
+
+        if (p.mesh.IsValid())
+            j["resourcePath"] = p.mesh.GetResource()->path;
     }
 
     void from_json(const json& j, MeshComponent& p) {
-        std::string resourcePath;
         j.at("visible").get_to(p.visible);
         j.at("dontCull").get_to(p.dontCull);
-        j.at("resourcePath").get_to(resourcePath);
 
-        // Scaled meshes are currently unsupported
-        p.mesh = Atlas::ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-            ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            // Scaled meshes are currently unsupported
+            p.mesh = Atlas::ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
+        }
+
     }
 
     void to_json(json& j, const NameComponent& p) {
@@ -158,6 +164,14 @@ namespace Atlas::Scene::Components {
         j.at("name").get_to(p.name);
     }
 
+    void to_json(json& j, const TransformComponent& p) {
+        j = json {
+            {"matrix", p.matrix},
+        };
+    }
 
+    void from_json(const json& j, TransformComponent& p) {
+        j.at("matrix").get_to(p.matrix);
+    }
 
 }

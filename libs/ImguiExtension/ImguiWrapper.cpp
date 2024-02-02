@@ -89,6 +89,13 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 
     UpdateMouseCursor();
 
+    for (auto& [_, descSet] : imageViewToDescriptorSetMap) {
+        // Pool needs to be created with VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+        // ImGui_ImplVulkan_RemoveTexture(descSet);
+    }
+
+    // imageViewToDescriptorSetMap.clear();
+
 }
 
 void ImguiWrapper::Render(bool clearSwapChain) {

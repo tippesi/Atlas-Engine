@@ -15,7 +15,7 @@ namespace Atlas::Editor::UI {
         Scene::Entity selectedEntity;
 
     private:
-        void TraverseHierarchy(Scene::Entity entity);
+        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity);
 
     };
 

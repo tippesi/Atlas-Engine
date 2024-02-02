@@ -8,6 +8,8 @@
 #include "components/MeshComponentPanel.h"
 #include "components/LightComponentPanel.h"
 
+#include <imgui.h>
+
 namespace Atlas::Editor::UI {
 
     class EntityPropertiesPanel : public Panel {
@@ -22,6 +24,22 @@ namespace Atlas::Editor::UI {
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
         LightComponentPanel lightComponentPanel;
+
+        template<class S, class T>
+        bool RenderComponentPanel(const std::string& name, S& panel, T& component) {
+            bool resourceChanged = false;
+
+            ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
+                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+
+            if (ImGui::TreeNodeEx(name.c_str(), nodeFlags)) {
+                resourceChanged = panel.Render(component);
+
+                ImGui::TreePop();
+            }
+
+            return resourceChanged;
+        }
 
     };
 

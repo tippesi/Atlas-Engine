@@ -39,6 +39,9 @@ namespace Atlas::Editor {
 
         void SubscribeToResourceEvents();
 
+        Input::MouseHandler mouseHandler;
+        Input::KeyboardHandler keyboardHandler;
+
         UI::LogWindow logWindow;
         UI::ContentBrowserWindow contentBrowserWindow;
 

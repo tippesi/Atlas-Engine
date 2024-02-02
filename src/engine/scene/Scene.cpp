@@ -292,9 +292,9 @@ namespace Atlas {
         void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
-            auto subset = entityManager.GetSubset<MeshComponent>();
+            auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto& entity : subset) {
-                auto& comp = subset.Get(entity);
+                auto& comp = subset.Get<MeshComponent>(entity);
 
                 if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
                     renderList.Add(entity, comp);

@@ -56,9 +56,23 @@ namespace Atlas::Editor::UI {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
                 auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(fileIcon);
+
                 if (ImGui::ImageButton(set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), int32_t(padding))) {
 
                 }
+
+                if (ImGui::BeginDragDropSource()) {
+                    auto addr = static_cast<const void*>(resource.get());
+                    std::stringstream ss;
+                    ss << addr;
+                    Log::Message(ss.str());
+                    ImGui::SetDragDropPayload(typeid(T).name(), &addr, sizeof(Resource<T>*));
+                    ImGui::Text("Drag to entity component");
+
+                    ImGui::EndDragDropSource();
+                }
+
+                ImGui::PopStyleColor();
 
                 ImGui::TextWrapped("%s", filename.c_str());
 

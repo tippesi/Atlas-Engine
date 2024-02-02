@@ -11,10 +11,10 @@ namespace Atlas {
 
     namespace Scene {
 
-        void SceneSerializer::SerializeScene(const std::string& filename) {
+        void SceneSerializer::SerializeScene(Ref<Scene> scene, const std::string& filename) {
 
             auto path = Loader::AssetLoader::GetFullPath(filename);
-            auto fileStream = Loader::AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
+            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
 
             if (!fileStream.is_open()) {
                 Log::Error("Couldn't write scene file " + filename);
@@ -39,26 +39,49 @@ namespace Atlas {
 
         }
 
-        void SceneSerializer::DeserializeScene(const std::string& filename) {
+        Ref<Scene> SceneSerializer::DeserializeScene(const std::string& filename) {
 
             Loader::AssetLoader::UnpackFile(filename);
-            Loader::AssetLoader::GetFullPath(filename);
+            auto path = Loader::AssetLoader::GetFullPath(filename);
+
+            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
+
+            if (!fileStream.is_open()) {
+                throw ResourceLoadException(filename, "Couldn't open scene file stream");
+            }
+
+            json j;
+
+            /*
+            j << fileStream;
+
+            std::vector<json> entities;
+            for (auto entity : *scene) {
+                entities.emplace_back();
+                EntityToJson(entities.back(), entity, scene);
+            }
+
+            j["name"] = scene->name;
+            j["aabb"] = scene->aabb;
+            j["depth"] = scene->d;
+            j["entities"] = entities;
+
+            auto scene = CreateRef<Scene>();
+
+            fileStream << to_string(j);
+
+            fileStream.close();
+            */
 
         }
 
-        Ref<Scene> SceneSerializer::GetScene() const {
-
-            return scene;
-
-        }
-
-        void SceneSerializer::SerializeEntity(Entity entity) {
+        void SceneSerializer::SerializeEntity(Ref<Scene> scene, Entity entity, const std::string& filename) {
 
 
 
         }
 
-        void SceneSerializer::DeserializeEntity() {
+        Entity SceneSerializer::DeserializeEntity(Ref<Scene> scene, const std::string& filename) {
 
 
 
