@@ -73,6 +73,8 @@ namespace Atlas {
             fileStream.close();
             */
 
+            return nullptr;
+
         }
 
         void SceneSerializer::SerializeEntity(Ref<Scene> scene, Entity entity, const std::string& filename) {
@@ -83,7 +85,7 @@ namespace Atlas {
 
         Entity SceneSerializer::DeserializeEntity(Ref<Scene> scene, const std::string& filename) {
 
-
+            return Entity();
 
         }
 

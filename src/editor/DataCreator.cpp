@@ -18,8 +18,9 @@ namespace Atlas::Editor {
 
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 1024, 3, 0.95f, true);
-        directionalLight.isMain = true;
+        glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+        directionalLight.isMain = false;
 
         mainHierarchy.entities.push_back(directionalLightEntity);
 
