@@ -29,6 +29,14 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Visible", &meshComponent.visible);
         ImGui::Checkbox("Don't cull", &meshComponent.dontCull);
 
+        if (meshComponent.mesh.IsLoaded()) {
+            auto& mesh = meshComponent.mesh;
+            ImGui::Separator();
+            ImGui::Text("Mesh settings");
+            ImGui::Checkbox("Invert UVs", &mesh->invertUVs);
+            ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
+        }        
+
         return resourceChanged;
 
     }

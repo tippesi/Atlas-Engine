@@ -2,6 +2,7 @@
 #include "FileImporter.h"
 #include "Singletons.h"
 #include "ui/panels/PopupPanels.h"
+#include <ImGuizmo.h>
 
 #include <chrono>
 #include <thread>
@@ -59,16 +60,32 @@ namespace Atlas::Editor {
 
         }
 
-        for (auto& sceneWindow : sceneWindows) {
-            auto cameraEntity = sceneWindow.cameraEntity;
+        // Disable each frame, if a sceneWindow needs it, it will enable the gizmo again
+        //
 
-            if (cameraEntity.IsValid() && sceneWindow.viewportPanel.isFocused) {
-                auto& camera = cameraEntity.GetComponent<CameraComponent>();
-                mouseHandler.Update(camera, deltaTime);
-                keyboardHandler.Update(camera, deltaTime);
-            }
+        size_t sceneCounter = 0;
+        for (auto& sceneWindow : sceneWindows) {
+
+            if (sceneWindow.viewportPanel.isFocused)
+                activeSceneIdx = sceneCounter;
+
+            sceneCounter++;
+            
             sceneWindow.Update(deltaTime);
         }
+
+        activeSceneIdx = std::min(activeSceneIdx, sceneWindows.size() - 1);
+
+        auto& activeSceneWindow = sceneWindows[activeSceneIdx];
+
+        auto cameraEntity = activeSceneWindow.cameraEntity;
+        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused && !ImGuizmo::IsUsing()) {
+            auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            mouseHandler.Update(camera, deltaTime);
+            keyboardHandler.Update(camera, deltaTime);
+        }
+
+        ImGuizmo::Enable(activeSceneWindow.needGuizmoEnabled);
 
     }
 
@@ -80,6 +97,7 @@ namespace Atlas::Editor {
         }
 
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
         ImGui::ShowDemoWindow();
 

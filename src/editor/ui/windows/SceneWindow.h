@@ -14,8 +14,7 @@ namespace Atlas::Editor::UI {
     class SceneWindow : public Window {
 
     public:
-        explicit SceneWindow(ResourceHandle<Scene::Scene> scene) :
-            Window(scene.IsLoaded() ? scene->name : "No scene"), scene(scene) {}
+        explicit SceneWindow(ResourceHandle<Scene::Scene> scene);
 
         ~SceneWindow();
 
@@ -25,6 +24,8 @@ namespace Atlas::Editor::UI {
 
         void Render();
 
+        void RegisterViewportAndGizmoOverlay();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel entityPropertiesPanel;
@@ -32,6 +33,9 @@ namespace Atlas::Editor::UI {
         ResourceHandle<Scene::Scene> scene;
 
         Scene::Entity cameraEntity;
+
+        int32_t guizmoMode = 7;
+        bool needGuizmoEnabled = false;
 
     };
 

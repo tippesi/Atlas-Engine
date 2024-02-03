@@ -30,7 +30,7 @@ namespace Atlas::Editor::UI {
             bool resourceChanged = false;
 
             ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
-                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
             if (ImGui::TreeNodeEx(name.c_str(), nodeFlags)) {
                 resourceChanged = panel.Render(component);

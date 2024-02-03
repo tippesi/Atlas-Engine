@@ -59,7 +59,7 @@ namespace Atlas {
 
             components[idx] = std::move(comp);
 
-            NotifySubscribers(entity, comp, emplaceSubscribers);
+            NotifySubscribers(entity, components[idx], emplaceSubscribers);
 
             return components[idx];
 

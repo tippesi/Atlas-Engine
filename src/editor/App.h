@@ -48,6 +48,8 @@ namespace Atlas::Editor {
         std::vector<UI::SceneWindow> sceneWindows;
         std::vector<std::string> windowsToAddToNode;
 
+        size_t activeSceneIdx = 0;
+
         ImGuiID upperDockNodeID;
 
         // Enable right now, with that all new scenes will be docked correctly (but layout will be reset)

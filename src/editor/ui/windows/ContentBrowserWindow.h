@@ -34,7 +34,7 @@ namespace Atlas::Editor::UI {
             const float padding = 8.0f;
             const float iconSize = 64.f;
 
-            const float itemSize = iconSize + padding;
+            const float itemSize = iconSize + 2.0f * padding;
 
             float totalWidth = ImGui::GetContentRegionAvail().x;
             auto columnItemCount = int32_t(totalWidth / itemSize);
@@ -63,9 +63,6 @@ namespace Atlas::Editor::UI {
 
                 if (ImGui::BeginDragDropSource()) {
                     auto addr = static_cast<const void*>(resource.get());
-                    std::stringstream ss;
-                    ss << addr;
-                    Log::Message(ss.str());
                     ImGui::SetDragDropPayload(typeid(T).name(), &addr, sizeof(Resource<T>*));
                     ImGui::Text("Drag to entity component");
 

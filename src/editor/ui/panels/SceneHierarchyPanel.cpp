@@ -61,21 +61,8 @@ namespace Atlas::Editor::UI {
             ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())
             selectedEntity = entity;
 
-        if (nodeOpen && hierarchyComponent) {
-
-            for (auto childEntity : hierarchyComponent->entities) {
-
-                TraverseHierarchy(scene, childEntity);
-
-            }
-
-            ImGui::TreePop();
-
-        }
-
-
         bool deleteEntity = false;
-        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight)) {
+        if (ImGui::BeginPopupContextItem()) {
             Scene::Entity newEntity;
 
             if (ImGui::MenuItem("Delete entity"))
@@ -97,6 +84,18 @@ namespace Atlas::Editor::UI {
             }
 
             ImGui::EndPopup();
+        }
+
+        if (nodeOpen && hierarchyComponent) {
+
+            for (auto childEntity : hierarchyComponent->entities) {
+
+                TraverseHierarchy(scene, childEntity);
+
+            }
+
+            ImGui::TreePop();
+
         }
 
         if (deleteEntity) {

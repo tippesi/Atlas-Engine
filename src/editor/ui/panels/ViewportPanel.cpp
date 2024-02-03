@@ -12,6 +12,12 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void ViewportPanel::DrawOverlay(std::function<void()> func) {
+
+        drawOverlayFunc = func;
+
+    }
+
     void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isParentFocused) {
 
         ImGui::Begin(GetNameID());
@@ -19,12 +25,13 @@ namespace Atlas::Editor::UI {
         isFocused = ImGui::IsWindowFocused();
 
         auto region = ImGui::GetContentRegionAvail();
+        auto windowPos = ImGui::GetWindowPos();
 
         bool validRegion = region.x > 0.0f && region.y > 0.0f;
 
         if ((viewportTexture.width != int32_t(region.x) ||
             viewportTexture.height != int32_t(region.y)) && validRegion) {
-            viewport->Set(0, 0, int32_t(region.x), int32_t(region.y));
+            viewport->Set(int32_t(windowPos.x), int32_t(windowPos.y), int32_t(region.x), int32_t(region.y));
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
         }
 
@@ -37,12 +44,19 @@ namespace Atlas::Editor::UI {
             }
 
             Singletons::MainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
+
+
         }
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(viewportTexture);
             ImGui::Image(set, region);
         }
+
+        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+
+        if (drawOverlayFunc)
+            drawOverlayFunc();
 
         ImGui::End();
 
