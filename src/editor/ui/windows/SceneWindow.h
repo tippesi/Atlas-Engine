@@ -34,6 +34,7 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity cameraEntity;
 
+        // Imguizmo translate mode
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
 

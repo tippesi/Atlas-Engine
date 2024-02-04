@@ -76,6 +76,7 @@ namespace Atlas {
             catch (const std::exception& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
+                Log::Error("Exception on load: " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;

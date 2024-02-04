@@ -2,7 +2,9 @@
 #include "Entity.h"
 #include "EntitySerializer.h"
 
-#include "../common/SerializationHelper.h"
+#include "lighting/LightingSerializer.h"
+#include "postprocessing/PostProcessingSerializer.h"
+
 #include "../common/SerializationHelper.h"
 #include "../loader/AssetLoader.h"
 #include "../loader/TerrainLoader.h"
@@ -45,10 +47,29 @@ namespace Atlas {
                 EntityToJson(entities.back(), entity, scene, insertedEntities);
             }
 
+            // Parse all mandatory members
             j["name"] = scene->name;
             j["aabb"] = scene->aabb;
             j["depth"] = scene->depth;
             j["entities"] = entities;
+            j["sky"] = scene->sky;
+            j["postProcessing"] = scene->postProcessing;
+
+            // Parse all optional members
+            if (scene->fog)
+                j["fog"] = *scene->fog;
+            if (scene->volumetric)
+                j["volumetric"] = *scene->volumetric;
+            if (scene->irradianceVolume)
+                j["irradianceVolume"] = *scene->irradianceVolume;
+            if (scene->ao)
+                j["ao"] = *scene->ao;
+            if (scene->reflection)
+                j["reflection"] = *scene->reflection;
+            if (scene->sss)
+                j["sss"] = *scene->sss;
+            if (scene->ssgi)
+                j["ssgi"] = *scene->ssgi;
 
             fileStream << to_string(j);
 
@@ -80,6 +101,38 @@ namespace Atlas {
             for (auto jEntity : j["entities"]) {
                 auto entity = scene->CreateEntity();
                 EntityFromJson(jEntity, entity, scene);
+            }
+
+            scene->sky = j["sky"];
+            scene->postProcessing = j["postProcessing"];
+
+            if (j.contains("fog")) {
+                scene->fog = CreateRef<Lighting::Fog>();
+                *scene->fog = j["fog"];
+            }
+            if (j.contains("volumetric")) {
+                scene->volumetric = CreateRef<Lighting::Volumetric>();
+                *scene->volumetric = j["volumetric"];
+            }
+            if (j.contains("irradianceVolume")) {
+                scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();
+                *scene->irradianceVolume = j["irradianceVolume"];
+            }
+            if (j.contains("ao")) {
+                scene->ao = CreateRef<Lighting::AO>();
+                *scene->ao = j["ao"];
+            }
+            if (j.contains("reflection")) {
+                scene->reflection = CreateRef<Lighting::Reflection>();
+                *scene->reflection = j["reflection"];
+            }
+            if (j.contains("sss")) {
+                scene->sss = CreateRef<Lighting::SSS>();
+                *scene->sss = j["sss"];
+            }
+            if (j.contains("ssgi")) {
+                scene->ssgi = CreateRef<Lighting::SSGI>();
+                *scene->ssgi = j["ssgi"];
             }
 
             return scene;

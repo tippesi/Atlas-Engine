@@ -4,6 +4,8 @@
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
 
+#include "scene/SceneSerializer.h"
+
 #include <chrono>
 #include <thread>
 

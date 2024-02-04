@@ -21,7 +21,7 @@ namespace Atlas::Editor {
         directionalLight.intensity = 10.0f;
         glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
         directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
-        directionalLight.isMain = false;
+        directionalLight.isMain = true;
 
         mainHierarchy.entities.push_back(directionalLightEntity);
 

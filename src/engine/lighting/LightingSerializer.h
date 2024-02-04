@@ -18,7 +18,7 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, AO& p) {
-        p = AO(j["sampleCount"]);
+        p = AO(j["sampleCount"].get<int32_t>());
         j.at("radius").get_to(p.radius);
         j.at("strength").get_to(p.strength);
         j.at("enable").get_to(p.enable);
@@ -34,7 +34,8 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, EnvironmentProbe& p) {
-        p = EnvironmentProbe(j["resolution"], j["position"]);
+        p = EnvironmentProbe(j["resolution"].get<int32_t>(),
+            j["position"].get<vec3>());
     }
 
     void to_json(json& j, const Atmosphere& p) {
@@ -45,7 +46,8 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, Atmosphere& p) {
-        p = Atmosphere(j["height"], j["probeResolution"]);
+        p = Atmosphere(j["height"].get<float>(),
+            j["probeResolution"].get<int32_t>());
     }
 
     void to_json(json& j, const Fog& p) {
@@ -93,7 +95,8 @@ namespace Atlas::Lighting {
     }
 
     void from_json(const json& j, IrradianceVolume& p) {
-        p = IrradianceVolume(j["aabb"], j["probeCount"], j["lowerResMoments"]);
+        p = IrradianceVolume(j["aabb"].get<Volume::AABB>(),
+            j["probeCount"].get<ivec3>(), j["lowerResMoments"].get<bool>());
         j.at("enable").get_to(p.enable);
         j.at("rayCount").get_to(p.rayCount);
         j.at("rayCountInactive").get_to(p.rayCountInactive);
@@ -198,6 +201,167 @@ namespace Atlas::Lighting {
         p.SetResolution(p.resolution);
     }
 
+    void to_json(json& j, const SSGI& p) {
+        j = json {
+            {"enable", p.enable},
+            {"enableAo", p.enableAo},
+            {"radius", p.radius},
+            {"rayCount", p.rayCount},
+            {"sampleCount", p.sampleCount},
+            {"irradianceLimit", p.irradianceLimit},
+            {"aoStrength", p.aoStrength},
+            {"rt", p.rt},
+            {"opacityCheck", p.opacityCheck},
+        };
+    }
 
+    void from_json(const json& j, SSGI& p) {
+        j.at("enable").get_to(p.enable);
+        j.at("enableAo").get_to(p.enableAo);
+        j.at("radius").get_to(p.radius);
+        j.at("rayCount").get_to(p.rayCount);
+        j.at("sampleCount").get_to(p.sampleCount);
+        j.at("irradianceLimit").get_to(p.irradianceLimit);
+        j.at("aoStrength").get_to(p.aoStrength);
+        j.at("rt").get_to(p.rt);
+        j.at("opacityCheck").get_to(p.opacityCheck);
+    }
+
+    void to_json(json& j, const SSS& p) {
+        j = json {
+            {"sampleCount", p.sampleCount},
+            {"maxLength", p.maxLength},
+            {"thickness", p.thickness},
+            {"enable", p.enable},
+        };
+    }
+
+    void from_json(const json& j, SSS& p) {
+        j.at("sampleCount").get_to(p.sampleCount);
+        j.at("maxLength").get_to(p.maxLength);
+        j.at("thickness").get_to(p.thickness);
+        j.at("enable").get_to(p.enable);
+    }
+
+    void to_json(json& j, const Volumetric& p) {
+        j = json {
+            {"sampleCount", p.sampleCount},
+            {"intensity", p.intensity},
+        };
+    }
+
+    void from_json(const json& j, Volumetric& p) {
+        j.at("sampleCount").get_to(p.sampleCount);
+        j.at("intensity").get_to(p.intensity);
+    }
+
+    void to_json(json& j, const VolumetricClouds::Scattering& p) {
+        j = json {
+            {"extinctionFactor", p.extinctionFactor},
+            {"scatteringFactor", p.scatteringFactor},
+            {"extinctionCoefficients", p.extinctionCoefficients},
+            {"eccentricityFirstPhase", p.eccentricityFirstPhase},
+            {"eccentricitySecondPhase", p.eccentricitySecondPhase},
+            {"phaseAlpha", p.phaseAlpha},
+        };
+    }
+
+    void from_json(const json& j, VolumetricClouds::Scattering& p) {
+        j.at("extinctionFactor").get_to(p.extinctionFactor);
+        j.at("scatteringFactor").get_to(p.scatteringFactor);
+        j.at("extinctionCoefficients").get_to(p.extinctionCoefficients);
+        j.at("eccentricityFirstPhase").get_to(p.eccentricityFirstPhase);
+        j.at("eccentricitySecondPhase").get_to(p.eccentricitySecondPhase);
+        j.at("phaseAlpha").get_to(p.phaseAlpha);
+    }
+
+    void to_json(json& j, const VolumetricClouds& p) {
+        j = json {
+            {"coverageResolution", p.coverageTexture.width},
+            {"shapeResolution", p.shapeTexture.width},
+            {"detailResolution", p.detailTexture.width},
+            {"shadowResolution", p.shadowTexture.width},
+            {"sampleCount", p.sampleCount},
+            {"occlusionSampleCount", p.occlusionSampleCount},
+            {"shadowSampleFraction", p.shadowSampleFraction},
+            {"minHeight", p.minHeight},
+            {"maxHeight", p.maxHeight},
+            {"distanceLimit", p.distanceLimit},
+            {"coverageScale", p.coverageScale},
+            {"shapeScale", p.shapeScale},
+            {"detailScale", p.detailScale},
+            {"coverageSpeed", p.coverageSpeed},
+            {"shapeSpeed", p.shapeSpeed},
+            {"detailSpeed", p.detailSpeed},
+            {"detailStrength", p.detailStrength},
+            {"densityMultiplier", p.densityMultiplier},
+            {"heightStretch", p.heightStretch},
+            {"darkEdgeFocus", p.darkEdgeFocus},
+            {"darkEdgeAmbient", p.darkEdgeAmbient},
+            {"scattering", p.scattering},
+            {"enable", p.enable},
+            {"castShadow", p.castShadow},
+            {"stochasticOcclusionSampling", p.stochasticOcclusionSampling},
+        };
+    }
+
+    void from_json(const json& j, VolumetricClouds& p) {
+        p = VolumetricClouds(j["coverageResolution"].get<int32_t>(), j["shapeResolution"].get<int32_t>(),
+            j["detailResolution"].get<int32_t>(), j["shadowResolution"].get<int32_t>());
+
+        j.at("sampleCount").get_to(p.sampleCount);
+        j.at("occlusionSampleCount").get_to(p.occlusionSampleCount);
+        j.at("shadowSampleFraction").get_to(p.shadowSampleFraction);
+        j.at("minHeight").get_to(p.minHeight);
+        j.at("maxHeight").get_to(p.maxHeight);
+        j.at("distanceLimit").get_to(p.distanceLimit);
+        j.at("coverageScale").get_to(p.coverageScale);
+        j.at("shapeScale").get_to(p.shapeScale);
+        j.at("detailScale").get_to(p.detailScale);
+        j.at("coverageSpeed").get_to(p.coverageSpeed);
+        j.at("shapeSpeed").get_to(p.shapeSpeed);
+        j.at("detailSpeed").get_to(p.detailSpeed);
+        j.at("detailStrength").get_to(p.detailStrength);
+        j.at("densityMultiplier").get_to(p.densityMultiplier);
+        j.at("heightStretch").get_to(p.heightStretch);
+        j.at("darkEdgeFocus").get_to(p.darkEdgeFocus);
+        j.at("darkEdgeAmbient").get_to(p.darkEdgeAmbient);
+        j.at("scattering").get_to(p.scattering);
+        j.at("enable").get_to(p.enable);
+        j.at("castShadow").get_to(p.castShadow);
+        j.at("stochasticOcclusionSampling").get_to(p.stochasticOcclusionSampling);
+    }
+
+    void to_json(json& j, const Sky& p) {
+        j = json {
+            {"planetCenter", p.planetCenter},
+            {"planetRadius", p.planetRadius}
+        };
+
+        if (p.atmosphere)
+            j["atmosphere"] = *p.atmosphere;
+        if (p.clouds)
+            j["clouds"] = *p.clouds;
+        if (p.probe)
+            j["probe"] = *p.probe;
+    }
+
+    void from_json(const json& j, Sky& p) {
+        j.at("planetCenter").get_to(p.planetCenter);
+        j.at("planetRadius").get_to(p.planetRadius);
+
+        if (j.contains("atmosphere")) {
+            p.atmosphere = CreateRef<Atmosphere>();
+            *p.atmosphere = j["atmosphere"];
+        }
+        if (j.contains("clouds")) {
+            p.clouds = CreateRef<VolumetricClouds>();
+            *p.clouds = j["clouds"];
+        }
+        if (j.contains("probe")) {
+            p.probe = CreateRef<EnvironmentProbe>();
+            *p.probe = j["probe"];
+        }
+    }
 
 }
