@@ -36,20 +36,20 @@ namespace Atlas::Editor::UI {
         }
 
         if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
-            auto& renderTarget = Singletons::RenderTarget;
+            auto& renderTarget = Singletons::renderTarget;
 
             if (renderTarget->GetWidth() != viewportTexture.width ||
                 renderTarget->GetHeight() != viewportTexture.height) {
                 renderTarget->Resize(viewportTexture.width, viewportTexture.height);
             }
 
-            Singletons::MainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
+            Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
 
 
         }
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(viewportTexture);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(viewportTexture);
             ImGui::Image(set, region);
         }
 

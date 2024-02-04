@@ -2,15 +2,17 @@
 
 namespace Atlas::Editor {
 
-    Ref<ImguiWrapper> Singletons::ImguiWrapper;
-    Ref<RenderTarget> Singletons::RenderTarget;
-    Ref<Renderer::MainRenderer> Singletons::MainRenderer;
+    Ref<ImguiWrapper> Singletons::imguiWrapper;
+    Ref<RenderTarget> Singletons::renderTarget;
+    Ref<Renderer::MainRenderer> Singletons::mainRenderer;
+    Ref<Icons> Singletons::icons;
 
     void Singletons::Destruct() {
 
-        ImguiWrapper.reset();
-        RenderTarget.reset();
-        MainRenderer.reset();
+        imguiWrapper.reset();
+        renderTarget.reset();
+        mainRenderer.reset();
+        icons.reset();
 
     }
 

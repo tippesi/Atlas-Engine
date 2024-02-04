@@ -11,11 +11,8 @@ namespace Atlas {
         class Reflection {
 
         public:
-            Reflection(int32_t sampleCount = 1);
+            Reflection() = default;
 
-            void SetSampleCount(int32_t sampleCount);
-
-            int32_t sampleCount = 1;
             int32_t textureLevel = 3;
             float radianceLimit = 10.0f;
             float bias = 0.15f;
@@ -26,7 +23,7 @@ namespace Atlas {
             float currentClipFactor = 2.0f;
 
             bool enable = true;
-            bool rt = false;
+            bool rt = true;
             bool gi = true;
             bool useShadowMap = false;
             bool opacityCheck = false;

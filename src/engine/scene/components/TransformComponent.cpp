@@ -23,6 +23,7 @@ namespace Atlas {
 			void TransformComponent::Update(const TransformComponent& parentTransform, bool parentChanged) {
 
 				lastGlobalMatrix = globalMatrix;
+                wasStatic = isStatic;
 
 				if (changed || parentChanged) {
 

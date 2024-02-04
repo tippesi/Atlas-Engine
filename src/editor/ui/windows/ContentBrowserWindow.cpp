@@ -9,7 +9,7 @@ namespace Atlas::Editor::UI {
 
     ContentBrowserWindow::ContentBrowserWindow() : Window("Object browser") {
 
-        fileIcon = Texture::Texture2D("editor/icons/document.png");
+
 
     }
 
@@ -66,13 +66,13 @@ namespace Atlas::Editor::UI {
 
         switch(currentSelection) {
             case 0:
-                RenderResourceType<Audio::AudioData>();
+                RenderResourceType<Audio::AudioData>(IconType::Audio);
                 break;
             case 1:
-                RenderResourceType<Mesh::Mesh>();
+                RenderResourceType<Mesh::Mesh>(IconType::Mesh);
                 break;
             case 3:
-                RenderResourceType<Scene::Scene>();
+                RenderResourceType<Scene::Scene>(IconType::Scene);
             default:
                 break;
         }

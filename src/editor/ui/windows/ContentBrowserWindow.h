@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "Singletons.h"
+#include "Icons.h"
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
@@ -19,7 +20,7 @@ namespace Atlas::Editor::UI {
 
     private:
         template<class T>
-        void RenderResourceType() {
+        void RenderResourceType(IconType iconType) {
 
             auto resources = ResourceManager<T>::GetResources();
 
@@ -55,7 +56,8 @@ namespace Atlas::Editor::UI {
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-                auto set = Singletons::ImguiWrapper->GetTextureDescriptorSet(fileIcon);
+                auto& icon = Singletons::icons->Get(iconType);
+                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(icon);
 
                 if (ImGui::ImageButton(set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), int32_t(padding))) {
 
@@ -80,9 +82,6 @@ namespace Atlas::Editor::UI {
             }
 
         }
-
-        Texture::Texture2D folderIcon;
-        Texture::Texture2D fileIcon;
 
     };
 

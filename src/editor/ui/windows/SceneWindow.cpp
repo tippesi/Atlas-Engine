@@ -19,6 +19,8 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded())
             return;
 
+        scene->DestroyEntity(cameraEntity);
+
         Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(GetNameID()) + ".aescene");
 
     }

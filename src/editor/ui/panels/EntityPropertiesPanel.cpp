@@ -9,30 +9,27 @@ namespace Atlas::Editor::UI {
 
         auto nameComponent = entity.TryGetComponent<NameComponent>();
         if (nameComponent) {
-            nameComponentPanel.Render(*nameComponent);
+            nameComponentPanel.Render(entity, *nameComponent);
         }
 
         // General components
         {
             if (entity.HasComponent<TransformComponent>()) {
-                RenderComponentPanel("Transform component", transformComponentPanel,
-                    entity.GetComponent<TransformComponent>());
+                RenderComponentPanel("Transform component", entity,
+                    transformComponentPanel, entity.GetComponent<TransformComponent>());
             }
 
             if (entity.HasComponent<MeshComponent>()) {
                 // Create a copy here to be able to change the resource
                 auto comp = entity.GetComponent<MeshComponent>();
-                bool resourceChanged = RenderComponentPanel("Mesh component", meshComponentPanel,
-                    comp);
-                // We need to replace the component such that the scene is informed about the resource change
-                if (resourceChanged) {
-                    entity.ReplaceComponent<MeshComponent>(comp);
-                }
+                RenderComponentPanel("Mesh component",  entity,
+                    meshComponentPanel, comp);
+                entity.ReplaceComponent<MeshComponent>(comp);
             }
 
             if (entity.HasComponent<LightComponent>()) {
-                RenderComponentPanel("Light component", lightComponentPanel,
-                    entity.GetComponent<LightComponent>());
+                RenderComponentPanel("Light component", entity,
+                    lightComponentPanel, entity.GetComponent<LightComponent>());
             }
         }
 

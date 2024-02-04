@@ -3,6 +3,7 @@
 #include "ImguiExtension/ImguiWrapper.h"
 #include "RenderTarget.h"
 #include "renderer/MainRenderer.h"
+#include "Icons.h"
 
 namespace Atlas::Editor {
 
@@ -11,9 +12,10 @@ namespace Atlas::Editor {
     public:
         static void Destruct();
 
-        static Ref<ImguiWrapper> ImguiWrapper;
-        static Ref<RenderTarget> RenderTarget;
-        static Ref<Renderer::MainRenderer> MainRenderer;
+        static Ref<ImguiWrapper> imguiWrapper;
+        static Ref<RenderTarget> renderTarget;
+        static Ref<Renderer::MainRenderer> mainRenderer;
+        static Ref<Icons> icons;
 
     };
 

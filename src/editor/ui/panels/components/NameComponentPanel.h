@@ -11,7 +11,7 @@ namespace Atlas::Editor::UI {
     public:
         NameComponentPanel() : Panel("Name component") {}
 
-        bool Render(NameComponent& nameComponent);
+        bool Render(Scene::Entity entity, NameComponent& nameComponent);
 
     };
 

@@ -9,6 +9,13 @@
 
 namespace Atlas {
 
+    namespace Renderer {
+
+        class DDGIRenderer;
+        class MainRenderer;
+
+    }
+
     namespace Lighting {
 
         class InternalIrradianceVolume {
@@ -78,9 +85,6 @@ namespace Atlas {
             vec3 size;
             vec3 cellSize;
 
-            const int32_t irrRes = 6;
-            const int32_t momRes = 14;
-
             uint32_t rayCount = 100;
             uint32_t rayCountInactive = 32;
 
@@ -102,6 +106,13 @@ namespace Atlas {
             bool opacityCheck = false;
 
             InternalIrradianceVolume internal;
+
+        private:
+            friend Renderer::DDGIRenderer;
+            friend Renderer::MainRenderer;
+
+            int32_t irrRes = 6;
+            int32_t momRes = 14;
 
         };
 

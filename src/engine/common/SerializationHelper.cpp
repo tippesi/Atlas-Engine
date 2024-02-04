@@ -2,6 +2,42 @@
 
 namespace glm {
 
+    void to_json(json &j, const ivec2 &p) {
+        j = json{{"x", p.x},
+                 {"y", p.y}};
+    }
+
+    void from_json(const json &j, ivec2 &p) {
+        j.at("x").get_to(p.x);
+        j.at("y").get_to(p.y);
+    }
+
+    void to_json(json &j, const ivec3 &p) {
+        j = json{{"x", p.x},
+                 {"y", p.y},
+                 {"z", p.z}};
+    }
+
+    void from_json(const json &j, ivec3 &p) {
+        j.at("x").get_to(p.x);
+        j.at("y").get_to(p.y);
+        j.at("z").get_to(p.z);
+    }
+
+    void to_json(json &j, const ivec4 &p) {
+        j = json{{"x", p.x},
+                 {"y", p.y},
+                 {"z", p.z},
+                 {"w", p.w}};
+    }
+
+    void from_json(const json &j, ivec4 &p) {
+        j.at("x").get_to(p.x);
+        j.at("y").get_to(p.y);
+        j.at("z").get_to(p.z);
+        j.at("w").get_to(p.w);
+    }
+
     void to_json(json &j, const vec2 &p) {
         j = json{{"x", p.x},
                  {"y", p.y}};
@@ -35,7 +71,7 @@ namespace glm {
         j.at("x").get_to(p.x);
         j.at("y").get_to(p.y);
         j.at("z").get_to(p.z);
-        j.at("w").get_to(p.z);
+        j.at("w").get_to(p.w);
     }
 
     void to_json(json &j, const mat3 &p) {

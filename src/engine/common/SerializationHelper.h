@@ -9,6 +9,18 @@ using json = nlohmann::json;
 
 namespace glm {
 
+    void to_json(json& j, const ivec2& p);
+
+    void from_json(const json& j, ivec2& p);
+
+    void to_json(json& j, const ivec3& p);
+
+    void from_json(const json& j, ivec3& p);
+
+    void to_json(json& j, const ivec4& p);
+
+    void from_json(const json& j, ivec4& p);
+
     void to_json(json& j, const vec2& p);
 
     void from_json(const json& j, vec2& p);

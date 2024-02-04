@@ -27,6 +27,8 @@ namespace Atlas {
         class Shadow {
 
         public:
+            Shadow() = default;
+
             Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
             Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);

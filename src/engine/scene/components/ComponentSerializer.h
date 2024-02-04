@@ -95,8 +95,8 @@ namespace Atlas::Scene::Components {
         int mobility = static_cast<int>(p.mobility);
 
         j = json {
-            {"type", p.type},
-            {"mobility", p.mobility},
+            {"type", type},
+            {"mobility", mobility},
             {"color", p.color},
             {"intensity", p.intensity},
             {"properties", typeProperties},
@@ -110,14 +110,19 @@ namespace Atlas::Scene::Components {
         json typeProperties;
         int type, mobility;
 
-        j.at("type").get_to(p.type);
-        j.at("mobility").get_to(p.mobility);
+        p.shadow = CreateRef<Lighting::Shadow>();
+
+        j.at("type").get_to(type);
+        j.at("mobility").get_to(mobility);
         j.at("color").get_to(p.color);
         j.at("intensity").get_to(p.intensity);
         j.at("properties").get_to(typeProperties);
         j.at("shadow").get_to(*p.shadow);
         j.at("isMain").get_to(p.isMain);
         j.at("volumetric").get_to(p.volumetric);
+
+        p.type = static_cast<LightType>(type);
+        p.mobility = static_cast<LightMobility>(type);
 
         if (p.type == LightType::DirectionalLight) {
             typeProperties.at("direction").get_to(p.properties.directional.direction);
@@ -167,11 +172,13 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const TransformComponent& p) {
         j = json {
             {"matrix", p.matrix},
+            {"isStatic", p.isStatic},
         };
     }
 
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
+        j.at("isStatic").get_to(p.isStatic);
     }
 
 }

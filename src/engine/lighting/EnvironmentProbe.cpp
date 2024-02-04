@@ -49,7 +49,7 @@ namespace Atlas {
 
         }
 
-        vec3 EnvironmentProbe::GetPosition() {
+        vec3 EnvironmentProbe::GetPosition() const {
 
             return position;
 

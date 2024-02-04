@@ -11,7 +11,7 @@ namespace Atlas::Editor::UI {
     public:
         LightComponentPanel() : Panel("Light component") {}
 
-        bool Render(LightComponent& lightComponent);
+        bool Render(Scene::Entity entity, LightComponent& lightComponent);
 
     };
 

@@ -53,19 +53,34 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            TransformComponent rootTransform = {};
+
+            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
             // Update hierarchy and their entities
-            for (auto entity : hierarchySubset) {
-                const auto& [hierarchyComponent, transformComponent] = hierarchySubset.Get(entity);
+            for (auto entity : hierarchyTransformSubset) {
+                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
 
                 if (hierarchyComponent.root) {
-                    hierarchyComponent.Update(transformComponent, false);
+                    auto parentChanged = transformComponent.changed;
+                    transformComponent.Update(rootTransform, false);
+                    hierarchyComponent.Update(transformComponent, parentChanged);
+                }
+            }
+
+            // Update hierarchy components which are not part of a root hierarchy that also has a transform component
+            // This might be the case if there is an entity that has just a hierarchy without a tranform for, e.g. grouping entities
+            for (auto entity : hierarchyTransformSubset) {
+                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
+
+                if (!hierarchyComponent.updated) {
+                    auto parentChanged = transformComponent.changed;
+                    transformComponent.Update(rootTransform, false);
+                    hierarchyComponent.Update(transformComponent, parentChanged);
                 }
             }
 
             auto transformSubset = entityManager.GetSubset<TransformComponent>();
 
-            TransformComponent rootTransform = {};
             // Update all other transforms not affected by the hierarchy (entities don't need to be in hierarchy)
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
@@ -143,6 +158,14 @@ namespace Atlas {
 
                 transformComponent.changed = false;
                 transformComponent.updated = false;
+            }
+
+            // We also need to reset the hierarchy components as well
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
+            for (auto entity : hierarchySubset) {
+                auto& hierarchyComponent = hierarchySubset.Get(entity);
+
+                hierarchyComponent.updated = false;
             }
 
             auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();

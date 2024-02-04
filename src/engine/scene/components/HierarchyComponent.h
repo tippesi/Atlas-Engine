@@ -27,6 +27,8 @@ namespace Atlas {
             protected:
                 void Update(const TransformComponent& transform, bool parentChanged);
 
+                bool updated = false;
+
             };
 
 		}

@@ -27,10 +27,11 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        Singletons::ImguiWrapper = CreateRef<ImguiWrapper>();
-        Singletons::ImguiWrapper->Load(&window);
-        Singletons::RenderTarget = CreateRef<RenderTarget>(1280, 720);
-        Singletons::MainRenderer = mainRenderer;
+        Singletons::imguiWrapper = CreateRef<ImguiWrapper>();
+        Singletons::imguiWrapper->Load(&window);
+        Singletons::renderTarget = CreateRef<RenderTarget>(1280, 720);
+        Singletons::mainRenderer = mainRenderer;
+        Singletons::icons = CreateRef<Icons>();
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
@@ -41,7 +42,7 @@ namespace Atlas::Editor {
 
     void App::UnloadContent() {
 
-        Singletons::ImguiWrapper->Unload();
+        Singletons::imguiWrapper->Unload();
 
         Singletons::Destruct();
 
@@ -51,7 +52,7 @@ namespace Atlas::Editor {
 
         const ImGuiIO &io = ImGui::GetIO();
 
-        Singletons::ImguiWrapper->Update(&window, deltaTime);
+        Singletons::imguiWrapper->Update(&window, deltaTime);
 
         if (io.WantCaptureMouse) {
 
@@ -59,9 +60,6 @@ namespace Atlas::Editor {
         else {
 
         }
-
-        // Disable each frame, if a sceneWindow needs it, it will enable the gizmo again
-        //
 
         size_t sceneCounter = 0;
         for (auto& sceneWindow : sceneWindows) {
@@ -169,7 +167,7 @@ namespace Atlas::Editor {
         ImGui::End();
 
         ImGui::Render();
-        Singletons::ImguiWrapper->Render(true);
+        Singletons::imguiWrapper->Render(true);
 
     }
 

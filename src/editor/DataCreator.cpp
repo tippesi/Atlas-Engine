@@ -29,7 +29,7 @@ namespace Atlas::Editor {
         scene->ao->rt = true;
         // Use SSGI by default
         scene->ao->enable = false;
-        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
+        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
         scene->reflection->useShadowMap = true;
 
         scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();

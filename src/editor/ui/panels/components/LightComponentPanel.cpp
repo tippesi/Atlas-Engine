@@ -6,7 +6,7 @@
 
 namespace Atlas::Editor::UI {
 
-    bool LightComponentPanel::Render(LightComponent &lightComponent) {
+    bool LightComponentPanel::Render(Scene::Entity entity, LightComponent &lightComponent) {
 
         return false;
 

@@ -2,6 +2,7 @@
 
 #include "../Panel.h"
 
+#include "scene/Entity.h"
 #include "scene/components/MeshComponent.h"
 
 namespace Atlas::Editor::UI {
@@ -11,7 +12,7 @@ namespace Atlas::Editor::UI {
     public:
         MeshComponentPanel() : Panel("Mesh component") {}
 
-        bool Render(MeshComponent& meshComponent);
+        bool Render(Scene::Entity entity, MeshComponent& meshComponent);
 
     };
 

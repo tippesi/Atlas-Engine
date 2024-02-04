@@ -9,6 +9,7 @@
 #include "audio/AudioData.h"
 
 #include "loader/ModelLoader.h"
+#include "scene/SceneSerializer.h"
 
 namespace Atlas::Editor {
 
@@ -41,6 +42,11 @@ namespace Atlas::Editor {
                     auto handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
                         ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
                     handle.GetResource()->permanent = true;
+                }
+                break;
+            case FileType::Scene: {
+                    auto handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
+                        ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
                 }
                 break;
             default:

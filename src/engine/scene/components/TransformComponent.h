@@ -40,6 +40,8 @@ namespace Atlas {
 
                 glm::mat4 matrix = mat4{ 1.0f };
 
+                bool isStatic = true;
+
                 mat4 globalMatrix = mat4{ 1.0f };
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
@@ -49,8 +51,7 @@ namespace Atlas {
 
                 bool changed = true;
                 bool updated = false;
-
-                bool isStatic = true;
+                bool wasStatic = true;
 
             };
 
