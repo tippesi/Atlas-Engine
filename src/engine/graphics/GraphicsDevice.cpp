@@ -310,9 +310,9 @@ namespace Atlas {
 
         }
 
-        Ref<DescriptorPool> GraphicsDevice::CreateDescriptorPool() {
+        Ref<DescriptorPool> GraphicsDevice::CreateDescriptorPool(DescriptorPoolDesc desc) {
 
-            auto pool = std::make_shared<DescriptorPool>(this);
+            auto pool = std::make_shared<DescriptorPool>(this, desc);
 
             std::lock_guard<std::mutex> guard(descriptorPools.mutex);
             descriptorPools.data.push_back(pool);

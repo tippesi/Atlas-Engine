@@ -120,7 +120,7 @@ namespace Atlas {
 
             Ref<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc);
 
-            Ref<DescriptorPool> CreateDescriptorPool();
+            Ref<DescriptorPool> CreateDescriptorPool(DescriptorPoolDesc desc);
 
             Ref<QueryPool> CreateQueryPool(QueryPoolDesc desc);
 

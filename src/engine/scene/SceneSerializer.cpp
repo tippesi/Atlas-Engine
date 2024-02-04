@@ -28,6 +28,10 @@ namespace Atlas {
 
             auto hierarchySubset = scene->GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
+                auto hierarchy = hierarchySubset.Get(entity);
+                // Serialize from root recursively. Also means free hierarchies without a
+                // root will be ignored.
+                if (!hierarchy.root) continue;
                 entities.emplace_back();
                 EntityToJson(entities.back(), entity, scene, insertedEntities);
             }

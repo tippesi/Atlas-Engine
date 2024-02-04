@@ -371,7 +371,7 @@ namespace Atlas {
             CleanupUnusedResources();
 
             // Clean up stuff that components haven't done by themselves (should not happen, inform in debug mode)
-                AE_ASSERT(registeredMeshes.empty() && "Registered meshes should be emtpy after cleanup");
+            AE_ASSERT(registeredMeshes.empty() && "Registered meshes should be emtpy after cleanup");
             registeredMeshes.clear();
 
         }

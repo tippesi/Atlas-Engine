@@ -1,4 +1,5 @@
 #include "SceneWindow.h"
+#include "../../Singletons.h"
 
 #include "scene/SceneSerializer.h"
 
@@ -29,6 +30,13 @@ namespace Atlas::Editor::UI {
 
         if (!scene.IsLoaded())
             return;
+
+        if (!cameraEntity.IsValid()) {
+            cameraEntity = scene->CreateEntity();
+            auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
+                glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+            camera.isMain = true;
+        }
 
         scene->Timestep(deltaTime);
         scene->Update();
@@ -70,18 +78,11 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
-        Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
-
-        if (refScene != nullptr && !cameraEntity.IsValid()) {
-            cameraEntity = scene->CreateEntity();
-            auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
-                glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
-            camera.isMain = true;
-        }
-
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
         inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
             sceneHierarchyPanel.isFocused || entityPropertiesPanel.isFocused || viewportPanel.isFocused;
+
+        Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
 
         sceneHierarchyPanel.Render(refScene);
         entityPropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
@@ -93,7 +94,9 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::RegisterViewportAndGizmoOverlay() {
 
-        viewportPanel.DrawOverlay([&]() {
+        viewportPanel.DrawMenuBar([&]() {
+            ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+
             if (ImGui::RadioButton("T", &guizmoMode, ImGuizmo::OPERATION::TRANSLATE)) {
                 guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
             }
@@ -106,10 +109,41 @@ namespace Atlas::Editor::UI {
                 guizmoMode = ImGuizmo::OPERATION::SCALE;
             }
 
+            auto region = ImGui::GetContentRegionAvail();
+            auto height = ImGui::GetTextLineHeight();
+            auto buttonSize = ImVec2(height, height);
+            auto uvMin = ImVec2(0.25, 0.25);
+            auto uvMax = ImVec2(0.75, 0.75);
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+            auto& playIcon = Singletons::icons->Get(IconType::Play);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
+
+            auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
+            ImGui::SetCursorPos(ImVec2(offset, 0.0f));
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+
+            }
+
+            auto& stopIcon = Singletons::icons->Get(IconType::Stop);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(stopIcon);
+
+            offset = region.x / 2.0f + 8.0f;
+            ImGui::SetCursorPos(ImVec2(offset, 0.0f));
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+
+            }
+
+            ImGui::PopStyleColor();
+
+            });
+
+        viewportPanel.DrawOverlay([&]() {
             needGuizmoEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
-            if (cameraEntity.IsValid() && selectedEntity.IsValid() && 
+            if (cameraEntity.IsValid() && selectedEntity.IsValid() &&
                 selectedEntity.HasComponent<TransformComponent>() && inFocus) {
 
                 needGuizmoEnabled = true;
@@ -131,7 +165,7 @@ namespace Atlas::Editor::UI {
                 auto& transform = selectedEntity.GetComponent<TransformComponent>();
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
                 ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                    static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::LOCAL, 
+                    static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::LOCAL,
                     glm::value_ptr(transform.matrix));
                 transform.Set(transform.matrix);
             }

@@ -12,6 +12,13 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void ViewportPanel::DrawMenuBar(std::function<void()> func) {
+
+        drawMenuBarFunc = func;
+
+    }
+
+
     void ViewportPanel::DrawOverlay(std::function<void()> func) {
 
         drawOverlayFunc = func;
@@ -21,6 +28,11 @@ namespace Atlas::Editor::UI {
     void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isParentFocused) {
 
         ImGui::Begin(GetNameID());
+
+        if (drawMenuBarFunc)
+            drawMenuBarFunc();
+
+        ImGui::BeginChild("Viewport area");
 
         isFocused = ImGui::IsWindowFocused();
 
@@ -45,7 +57,6 @@ namespace Atlas::Editor::UI {
 
             Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
 
-
         }
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
@@ -57,6 +68,8 @@ namespace Atlas::Editor::UI {
 
         if (drawOverlayFunc)
             drawOverlayFunc();
+
+        ImGui::EndChild();
 
         ImGui::End();
 

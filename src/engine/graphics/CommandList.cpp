@@ -31,7 +31,8 @@ namespace Atlas {
                 semaphores.push_back(semaphore);
             }
 
-            descriptorPool = new DescriptorPool(device);
+            auto descriptorPoolDesc = DescriptorPoolDesc();
+            descriptorPool = new DescriptorPool(device, descriptorPoolDesc);
 
             CreatePlaceholders(device);
 

@@ -89,12 +89,21 @@ void ImguiWrapper::Update(Atlas::Window* window, float deltaTime) {
 
     UpdateMouseCursor();
 
-    for (auto& [_, descSet] : imageViewToDescriptorSetMap) {
-        // Pool needs to be created with VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
-        // ImGui_ImplVulkan_RemoveTexture(descSet);
+    // Need to delete old descriptor set, especially when for each frame
+    // there are new textures to be rendered
+    std::vector<VkImageView> deletedKeys;
+    for (auto& [key, handle] : imageViewToDescriptorSetMap) {
+        if (handle.lastAccess <= FRAME_DATA_COUNT) {
+            handle.lastAccess++;
+            continue;
+        }
+
+        ImGui_ImplVulkan_RemoveTexture(handle.set);
+        deletedKeys.push_back(key);
     }
 
-    // imageViewToDescriptorSetMap.clear();
+    for (auto key : deletedKeys)
+        imageViewToDescriptorSetMap.erase(key);
 
 }
 
@@ -138,7 +147,11 @@ void ImguiWrapper::RecreateImGuiResources() {
 
     auto instance = Atlas::Graphics::Instance::DefaultInstance;
     auto device = instance->GetGraphicsDevice();
-    pool = device->CreateDescriptorPool();
+
+    auto desc = Atlas::Graphics::DescriptorPoolDesc {
+        .freeDescriptorSets = true
+    };
+    pool = device->CreateDescriptorPool(desc);
 
     auto queue = device->GetAndLockQueue(Atlas::Graphics::GraphicsQueue);
 
@@ -174,11 +187,17 @@ VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Text
     VkImageLayout layout) {
 
     if (!imageViewToDescriptorSetMap.contains(texture.image->view)) {
-        imageViewToDescriptorSetMap[texture.image->view] =
-            ImGui_ImplVulkan_AddTexture(texture.sampler->sampler, texture.image->view, layout);
+        auto set = ImGui_ImplVulkan_AddTexture(texture.sampler->sampler, texture.image->view, layout);
+        imageViewToDescriptorSetMap[texture.image->view] = {
+            .set = set,
+            .lastAccess = 0,
+        };
     }
 
-    return imageViewToDescriptorSetMap[texture.image->view];
+    auto& handle = imageViewToDescriptorSetMap[texture.image->view];
+    handle.lastAccess = 0;
+
+    return handle.set;
 
 }
 

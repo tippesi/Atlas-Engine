@@ -212,7 +212,8 @@ namespace Atlas::Editor {
 
     void App::SubscribeToResourceEvents() {
 
-        ResourceManager<Scene::Scene>::Subscribe([&](Ref<Resource<Scene::Scene>>& scene) {
+        ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
+            [&](Ref<Resource<Scene::Scene>>& scene) {
             if (!sceneWindows.back().scene.IsLoaded())
                 sceneWindows.pop_back();
 

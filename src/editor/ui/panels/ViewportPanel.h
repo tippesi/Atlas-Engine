@@ -11,6 +11,8 @@ namespace Atlas::Editor::UI {
     public:
         ViewportPanel();
 
+        void DrawMenuBar(std::function<void()> func);
+
         void DrawOverlay(std::function<void()> func);
 
         void Render(Ref<Scene::Scene>& scene, bool isParentFocused);
@@ -18,6 +20,7 @@ namespace Atlas::Editor::UI {
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;
 
+        std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;
 
     };

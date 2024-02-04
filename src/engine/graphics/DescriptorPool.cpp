@@ -5,7 +5,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        DescriptorPool::DescriptorPool(GraphicsDevice* device) : device(device) {
+        DescriptorPool::DescriptorPool(GraphicsDevice* device, const DescriptorPoolDesc& desc) :
+            device(device), freeDescriptorSets(desc.freeDescriptorSets) {
 
             DescriptorSetSize size = {};
             pools.push_back(InitPool(size));
@@ -125,6 +126,9 @@ namespace Atlas {
             poolInfo.maxSets = uint32_t(sizes.size()) * DESCRIPTOR_POOL_SIZE;
             poolInfo.poolSizeCount = uint32_t(sizes.size());
             poolInfo.pPoolSizes = sizes.data();
+
+            if (freeDescriptorSets)
+                poolInfo.flags |= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
             VkDescriptorPool pool;
             VK_CHECK(vkCreateDescriptorPool(device->device, &poolInfo, nullptr, &pool))
