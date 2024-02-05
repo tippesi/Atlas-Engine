@@ -50,6 +50,8 @@ namespace Atlas::Editor {
 
         size_t activeSceneIdx = 0;
 
+        std::future<void> bvhBuilderFuture;
+
         ImGuiID upperDockNodeID;
 
         // Enable right now, with that all new scenes will be docked correctly (but layout will be reset)

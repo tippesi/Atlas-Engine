@@ -84,9 +84,9 @@ namespace Atlas {
                         pipelineConfig = GetMainPipelineConfig();
                     }
                     else {
-                        commandList->BeginRenderPass(target->postProcessRenderPass,
-                            target->postProcessFrameBuffer, true);
-                        pipelineConfig = GetMainPipelineConfig(target->postProcessFrameBuffer);
+                        commandList->BeginRenderPass(target->outputRenderPass,
+                            target->outputFrameBuffer, true);
+                        pipelineConfig = GetMainPipelineConfig(target->outputFrameBuffer);
                     }
 
                     pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
@@ -117,7 +117,7 @@ namespace Atlas {
                     commandList->EndRenderPass();
 
                     if (texture) {
-                        CopyToTexture(target, texture, commandList);
+                        CopyToTexture(&target->outputTexture, texture, commandList);
                     }
                 }
 
@@ -184,9 +184,18 @@ namespace Atlas {
 
                 // We can't return here because of the queries
                 if (device->swapChain->isComplete) {
-                    commandList->BeginRenderPass(device->swapChain, true);
+                    PipelineConfig pipelineConfig;
 
-                    auto pipelineConfig = GetMainPipelineConfig();
+                    if (!texture) {
+                        commandList->BeginRenderPass(device->swapChain, true);
+                        pipelineConfig = GetMainPipelineConfig();
+                    }
+                    else {
+                        commandList->BeginRenderPass(target->outputRenderPass,
+                            target->outputFrameBuffer, true);
+                        pipelineConfig = GetMainPipelineConfig(target->outputFrameBuffer);
+                    }
+
                     pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
                     pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
@@ -213,6 +222,10 @@ namespace Atlas {
                     commandList->Draw(6, 1, 0, 0);
 
                     commandList->EndRenderPass();
+
+                    if (texture) {
+                        CopyToTexture(&target->outputTexture, texture, commandList);
+                    }
                 }
 
                 Graphics::Profiler::EndQuery();
@@ -222,10 +235,10 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::CopyToTexture(Ref<RenderTarget> &target, Texture::Texture2D *texture,
+        void PostProcessRenderer::CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D *texture,
             Graphics::CommandList* commandList) {
 
-            auto& srcImage = target->postProcessTexture.image;
+            auto& srcImage = sourceTexture->image;
             auto& dstImage = texture->image;
 
             std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -335,6 +348,4 @@ namespace Atlas {
 
         }
 
-    }
-
-}
+    }}

@@ -429,7 +429,7 @@ namespace Atlas {
             if (pathTracingRenderer.realTime) {
                 taaRenderer.Render(target, scene, commandList);
 
-                postProcessRenderer.Render(target, scene, commandList);
+                postProcessRenderer.Render(target, scene, commandList, texture);
             }
             else {
                 Graphics::Profiler::BeginQuery("Post processing");

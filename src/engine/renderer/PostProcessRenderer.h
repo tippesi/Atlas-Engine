@@ -37,7 +37,7 @@ namespace Atlas {
                 vec4 vignetteColor;
             };
 
-            void CopyToTexture(Ref<RenderTarget>& target, Texture::Texture2D* texture,
+            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
                 Graphics::CommandList* commandList);
 
             void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);

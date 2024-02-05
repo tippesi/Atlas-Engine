@@ -139,7 +139,7 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Windows ${{ matrix.build-type }}
+          name: Atlas Engine Windows ${{ matrix.build-type }}
           path: |
             data
             README.md
@@ -269,7 +269,7 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Linux ${{ matrix.build-type }}
+          name: Atlas Engine Linux ${{ matrix.build-type }}
           path: |
             data
             README.md
@@ -398,7 +398,7 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo MacOS ${{ matrix.build-type }}
+          name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
             data
             README.md

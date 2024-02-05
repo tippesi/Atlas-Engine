@@ -22,7 +22,7 @@ void App::LoadContent() {
         //audioStreams.back()->SetVolume(0.0001);
     }
 
-    renderTarget = Atlas::CreateRef<Atlas::RenderTarget>(1920, 1080);
+    renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
@@ -311,7 +311,7 @@ void App::Render(float deltaTime) {
             }
             else if (debugMotion) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
-                    renderTarget->GetData(Atlas::FULL_RES)->velocityTexture.get(),
+                    renderTarget->GetData(Atlas::Renderer::FULL_RES)->velocityTexture.get(),
                     0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 10.0f, false, true);
             }
 

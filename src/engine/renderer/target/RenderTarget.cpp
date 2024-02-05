@@ -1,7 +1,7 @@
 #include "RenderTarget.h"
 #include "graphics/GraphicsDevice.h"
 
-namespace Atlas {
+namespace Atlas::Renderer {
 
     RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
 
@@ -22,7 +22,7 @@ namespace Atlas {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        postProcessTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         oceanDepthTexture = Texture::Texture2D(width, height, VK_FORMAT_D32_SFLOAT,
@@ -112,7 +112,7 @@ namespace Atlas {
 
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = postProcessTexture.format}
+                {.imageFormat = outputTexture.format}
             };
             for (auto &attachment: colorAttachments) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -120,10 +120,10 @@ namespace Atlas {
                 attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
-            auto postProcessPassDesc = Graphics::RenderPassDesc {
+            auto outputPassDesc = Graphics::RenderPassDesc {
                 .colorAttachments = {colorAttachments[0]}
             };
-            postProcessRenderPass = graphicsDevice->CreateRenderPass(postProcessPassDesc);
+            outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
         }
 
         CreateFrameBuffers();
@@ -150,7 +150,7 @@ namespace Atlas {
         swapHistoryTexture.Resize(width, height);
         lightingTexture.Resize(width, height);
         hdrTexture.Resize(width, height);
-        postProcessTexture.Resize(width, height);
+        outputTexture.Resize(width, height);
         sssTexture.Resize(width, height);
         oceanDepthTexture.Resize(width, height);
         oceanStencilTexture.Resize(width, height);
@@ -420,14 +420,14 @@ namespace Atlas {
         };
         oceanDepthOnlyFrameBuffer = graphicsDevice->CreateFrameBuffer(oceanDepthOnlyFrameBufferDesc);
 
-        auto postProcessFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = postProcessRenderPass,
+        auto outputFrameBufferDesc = Graphics::FrameBufferDesc{
+            .renderPass = outputRenderPass,
             .colorAttachments = {
-                {postProcessTexture.image, 0, true}
+                {outputTexture.image, 0, true}
             },
             .extent = {uint32_t(width), uint32_t(height)}
         };
-        postProcessFrameBuffer = graphicsDevice->CreateFrameBuffer(postProcessFrameBufferDesc);
+        outputFrameBuffer = graphicsDevice->CreateFrameBuffer(outputFrameBufferDesc);
 
     }
 

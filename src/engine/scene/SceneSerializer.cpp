@@ -135,6 +135,8 @@ namespace Atlas {
                 *scene->ssgi = j["ssgi"];
             }
 
+            scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+
             return scene;
 
         }

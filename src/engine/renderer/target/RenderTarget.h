@@ -5,7 +5,7 @@
 #include "graphics/RenderPass.h"
 #include "graphics/Framebuffer.h"
 
-namespace Atlas {
+namespace Atlas::Renderer {
 
     enum RenderResolution {
         FULL_RES = 0,
@@ -180,10 +180,10 @@ namespace Atlas {
         Ref<Graphics::RenderPass> oceanRenderPass;
         Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;
 
-        Ref<Graphics::RenderPass> postProcessRenderPass;
-        Ref<Graphics::FrameBuffer> postProcessFrameBuffer;
+        Ref<Graphics::RenderPass> outputRenderPass;
+        Ref<Graphics::FrameBuffer> outputFrameBuffer;
 
-        Texture::Texture2D postProcessTexture;
+        Texture::Texture2D outputTexture;
 
         Texture::Texture2D giTexture;
         Texture::Texture2D swapGiTexture;

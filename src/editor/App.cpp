@@ -31,9 +31,11 @@ namespace Atlas::Editor {
 
         Singletons::imguiWrapper = CreateRef<ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
-        Singletons::renderTarget = CreateRef<RenderTarget>(1280, 720);
+        Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
+        Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
         Singletons::icons = CreateRef<Icons>();
+        Singletons::config = CreateRef<Config>();
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
@@ -63,6 +65,7 @@ namespace Atlas::Editor {
 
         }
 
+        // Find active scene
         size_t sceneCounter = 0;
         for (auto& sceneWindow : sceneWindows) {
 
@@ -74,6 +77,7 @@ namespace Atlas::Editor {
             sceneWindow.Update(deltaTime);
         }
 
+        // Update active scene with input
         activeSceneIdx = std::min(activeSceneIdx, sceneWindows.size() - 1);
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
@@ -85,7 +89,39 @@ namespace Atlas::Editor {
             keyboardHandler.Update(camera, deltaTime);
         }
 
+        // Update all scenes after input was applied
+        for (auto& sceneWindow : sceneWindows) {
+
+            if (sceneWindow.viewportPanel.isFocused)
+                activeSceneIdx = sceneCounter;
+
+            sceneCounter++;
+
+            sceneWindow.Update(deltaTime);
+        }
+
         ImGuizmo::Enable(activeSceneWindow.needGuizmoEnabled);
+
+        // Launch BVH builds asynchonously 
+        auto buildRTStructure = [&]() {
+            auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
+
+            for (const auto& mesh : sceneMeshes) {
+                if (!mesh.IsLoaded())
+                    continue;
+                if (mesh->IsBVHBuilt())
+                    continue;
+                mesh->BuildBVH();
+            }
+            };
+
+        if (!bvhBuilderFuture.valid()) {
+            bvhBuilderFuture = std::async(std::launch::async, buildRTStructure);
+            return;
+        }
+        else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
+            bvhBuilderFuture.get();
+        }
 
     }
 
@@ -99,7 +135,7 @@ namespace Atlas::Editor {
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -146,6 +182,12 @@ namespace Atlas::Editor {
 
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Renderer")) {
+                auto& config = Singletons::config;
+                ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
                 ImGui::EndMenu();
             }
 

@@ -7,7 +7,7 @@ namespace Atlas::Editor {
 
     Ref<Scene::Scene> DataCreator::CreateScene(const std::string &name, vec3 min, vec3 max, int32_t depth) {
 
-        auto scene = Atlas::CreateRef<Scene::Scene>(name, min, max, depth);
+        auto scene = CreateRef<Scene::Scene>(name, min, max, depth);
 
         auto mainGroup = scene->CreatePrefab<Group>("Root");
         auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
@@ -25,40 +25,42 @@ namespace Atlas::Editor {
 
         mainHierarchy.entities.push_back(directionalLightEntity);
 
-        scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
+        scene->ao = CreateRef<Lighting::AO>(16);
         scene->ao->rt = true;
         // Use SSGI by default
         scene->ao->enable = false;
-        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
+        scene->reflection = CreateRef<Lighting::Reflection>();
         scene->reflection->useShadowMap = true;
 
-        scene->fog = Atlas::CreateRef<Atlas::Lighting::Fog>();
+        scene->fog = CreateRef<Lighting::Fog>();
         scene->fog->enable = true;
         scene->fog->density = 0.0002f;
         scene->fog->heightFalloff = 0.0284f;
         scene->fog->height = 0.0f;
 
-        scene->sky.atmosphere = Atlas::CreateRef<Atlas::Lighting::Atmosphere>();
+        scene->sky.atmosphere = CreateRef<Lighting::Atmosphere>();
 
-        scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
+        scene->postProcessing.taa = PostProcessing::TAA(0.99f);
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
 
-        scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+        scene->sss = CreateRef<Lighting::SSS>();
 
-        scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
+        scene->ssgi = CreateRef<Lighting::SSGI>();
 
-        scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
+        scene->volumetric = CreateRef<Lighting::Volumetric>();
+
+        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
         scene->sky.clouds->maxHeight = 1700.0f;
         scene->sky.clouds->castShadow = false;
 
-        scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
         scene->physicsWorld->pauseSimulation = true;
 
-        scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
+        scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         return scene;
 

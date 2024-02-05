@@ -29,12 +29,14 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin(GetNameID());
 
+        isFocused = ImGui::IsWindowFocused();
+
         if (drawMenuBarFunc)
             drawMenuBarFunc();
 
         ImGui::BeginChild("Viewport area");
 
-        isFocused = ImGui::IsWindowFocused();
+        isFocused |= ImGui::IsWindowFocused();
 
         auto region = ImGui::GetContentRegionAvail();
         auto windowPos = ImGui::GetWindowPos();
@@ -49,13 +51,27 @@ namespace Atlas::Editor::UI {
 
         if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
             auto& renderTarget = Singletons::renderTarget;
+            auto& pathTraceRenderTarget = Singletons::pathTraceRenderTarget;
+            auto& config = Singletons::config;
 
-            if (renderTarget->GetWidth() != viewportTexture.width ||
-                renderTarget->GetHeight() != viewportTexture.height) {
-                renderTarget->Resize(viewportTexture.width, viewportTexture.height);
+            if (config->pathTrace) {
+                if (pathTraceRenderTarget->GetWidth() != viewportTexture.width ||
+                    pathTraceRenderTarget->GetHeight() != viewportTexture.height) {
+                    pathTraceRenderTarget->Resize(viewportTexture.width, viewportTexture.height);
+                }
+
+                Singletons::mainRenderer->PathTraceScene(viewport, pathTraceRenderTarget, scene, &viewportTexture);
+            }
+            else {
+                if (renderTarget->GetWidth() != viewportTexture.width ||
+                    renderTarget->GetHeight() != viewportTexture.height) {
+                    renderTarget->Resize(viewportTexture.width, viewportTexture.height);
+                }
+
+                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
             }
 
-            Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
+            
 
         }
 

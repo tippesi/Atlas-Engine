@@ -17,7 +17,7 @@ void App::LoadContent(AppConfiguration config) {
     this->config = config;
 
     // Use lower resolution, we care only about correctness
-    renderTarget =  Atlas::CreateRef<Atlas::RenderTarget>(320, 240);
+    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
     pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());

@@ -22,7 +22,7 @@ namespace Atlas::Editor::UI {
 
         scene->DestroyEntity(cameraEntity);
 
-        Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(GetNameID()) + ".aescene");
+        Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
 
     }
 
