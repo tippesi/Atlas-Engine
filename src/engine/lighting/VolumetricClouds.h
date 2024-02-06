@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../texture/Texture3D.h"
+#include "../texture/Texture2D.h"
 
 #include "scene/components/CameraComponent.h"
 

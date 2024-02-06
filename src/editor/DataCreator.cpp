@@ -23,7 +23,7 @@ namespace Atlas::Editor {
         directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
         directionalLight.isMain = true;
 
-        mainHierarchy.entities.push_back(directionalLightEntity);
+        mainHierarchy.AddChild(directionalLightEntity);
 
         scene->ao = CreateRef<Lighting::AO>(16);
         scene->ao->rt = true;

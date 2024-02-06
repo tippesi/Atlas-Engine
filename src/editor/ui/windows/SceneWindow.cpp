@@ -174,12 +174,26 @@ namespace Atlas::Editor::UI {
 
                 auto viewport = viewportPanel.viewport;
 
+                auto parentEntity = scene->GetParentEntity(selectedEntity);
+
                 auto& transform = selectedEntity.GetComponent<TransformComponent>();
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
                 ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                    static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::LOCAL,
-                    glm::value_ptr(transform.matrix));
-                transform.Set(transform.matrix);
+                    static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
+                    glm::value_ptr(transform.globalMatrix));
+
+
+                if (parentEntity.IsValid() && parentEntity.HasComponent<TransformComponent>()) {
+                    auto& parentTransform = parentEntity.GetComponent<TransformComponent>();
+                    auto inverseParentTransform = glm::inverse(parentTransform.globalMatrix);
+                    auto localMatrix = inverseParentTransform * transform.globalMatrix;
+                    transform.Set(localMatrix);
+                }
+                else {
+                    transform.Set(transform.globalMatrix);
+                }
+
+                
             }
             });
            

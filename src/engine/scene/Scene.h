@@ -61,11 +61,15 @@ namespace Atlas {
             template<typename T, typename ...Args>
             T CreatePrefab(Args&&... args);
 
-            void DestroyEntity(Entity entity);
+            void DestroyEntity(Entity entity, bool removeRecursively = true);
+
+            Entity DuplicateEntity(Entity entity);
 
             size_t GetEntityCount() const;
 
             Entity GetEntityByName(const std::string& name);
+
+            Entity GetParentEntity(Entity entity);
 
             template<typename... Comp>
             Subset<Comp...> GetSubset();
@@ -128,6 +132,8 @@ namespace Atlas {
 
             void CleanupUnusedResources();
 
+            void DuplicateEntityComponents(Entity srcEntity, Entity dstEntity, std::unordered_map<ECS::Entity, Entity>* mapper);
+
             template<class T>
             void RegisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
 
@@ -139,6 +145,7 @@ namespace Atlas {
 
             ECS::EntityManager entityManager = ECS::EntityManager(this);
 
+            std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
 
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
@@ -154,7 +161,7 @@ namespace Atlas {
             friend class SceneSerializer;
             friend class SpacePartitioning;
             friend class RayTracing::RayTracingWorld;
-            friend class MeshComponent;
+            friend class HierarchyComponent;
             friend RenderList;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;

@@ -45,7 +45,7 @@ namespace Atlas::Scene {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
             std::vector<json> entities;
-            for (auto entity : hierarchyComponent.entities) {
+            for (auto entity : hierarchyComponent.GetChildren()) {
                 entities.emplace_back();
                 EntityToJson(entities.back(), entity, scene, insertedEntites);
             }
@@ -89,15 +89,22 @@ namespace Atlas::Scene {
 
         }
         if (j.contains("entities")) {
-            HierarchyComponent comp;
-            comp.root = j["root"];
-            std::vector<json> entities = j["entities"];
-            for (auto jEntity : entities) {
+            // We need to first push back to a temporary vector to not invalidate
+            // component references (i.e. when directly getting the hierarchy component).
+            // That way all children will have components created before the parent creates its own
+            std::vector<json> jEntities = j["entities"];
+            std::vector<Entity> entities;
+            for (auto jEntity : jEntities) {
                 auto entity = scene->CreateEntity();
                 EntityFromJson(jEntity, entity, scene);
-                comp.entities.push_back(entity);
+                entities.push_back(entity);
             }
-            p.AddComponent<HierarchyComponent>(comp);
+
+            auto& comp = p.AddComponent<HierarchyComponent>();
+            comp.root = j["root"];
+            for (auto entity : entities) {
+                comp.AddChild(entity);
+            }
         }
     }
 

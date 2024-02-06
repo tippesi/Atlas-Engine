@@ -99,7 +99,7 @@ private:
 
     int32_t frameCount = 0;
 
-    ImguiWrapper imguiWrapper;
+    Atlas::ImguiExtension::ImguiWrapper imguiWrapper;
 
     AppConfiguration config;
 

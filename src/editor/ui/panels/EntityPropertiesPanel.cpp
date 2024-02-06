@@ -24,7 +24,8 @@ namespace Atlas::Editor::UI {
                 auto comp = entity.GetComponent<MeshComponent>();
                 RenderComponentPanel("Mesh component",  entity,
                     meshComponentPanel, comp);
-                entity.ReplaceComponent<MeshComponent>(comp);
+                entity.RemoveComponent<MeshComponent>();
+                entity.AddComponent<MeshComponent>(comp);
             }
 
             if (entity.HasComponent<LightComponent>()) {

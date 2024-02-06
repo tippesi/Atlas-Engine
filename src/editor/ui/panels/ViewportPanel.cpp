@@ -10,6 +10,8 @@ namespace Atlas::Editor::UI {
         viewport = CreateRef<Viewport>();
         viewportTexture = Texture::Texture2D(1, 1, VK_FORMAT_R16G16B16A16_SFLOAT);
 
+        primitiveBatchWrapper.primitiveBatch->testDepth = false;
+
     }
 
     void ViewportPanel::DrawMenuBar(std::function<void()> func) {

@@ -111,7 +111,7 @@ private:
     float shootSpawnRate = 0.1f;
     float shootVelocity = 5.0f;
 
-    ImguiWrapper imguiWrapper;
+    Atlas::ImguiExtension::ImguiWrapper imguiWrapper;
 
     std::vector<Ref<Atlas::Audio::AudioStream>> audioStreams;
 

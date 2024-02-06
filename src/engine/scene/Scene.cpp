@@ -20,9 +20,35 @@ namespace Atlas {
 
         }
 
-        void Scene::DestroyEntity(Entity entity) {
+        void Scene::DestroyEntity(Entity entity, bool removeRecursively) {
+
+            auto parentEntity = GetParentEntity(entity);
+
+            if (parentEntity.IsValid()) {
+                auto& hierarchyComponent = parentEntity.GetComponent<HierarchyComponent>();
+                hierarchyComponent.RemoveChild(entity);
+            }
+
+            if (removeRecursively) {
+                auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+                if (hierarchyComponent) {
+                    for (auto childEntity : hierarchyComponent->GetChildren()) {
+                        DestroyEntity(childEntity, removeRecursively);
+                    }
+                }
+            }
 
             entityManager.Destroy(entity);
+
+        }
+
+        Entity Scene::DuplicateEntity(Entity entity) {
+
+            auto newEntity = CreateEntity();
+
+            DuplicateEntityComponents(entity, newEntity, nullptr);
+
+            return newEntity;
 
         }
 
@@ -40,6 +66,18 @@ namespace Atlas {
 
                 if (nameComponent.name == name)
                     return { entity, &entityManager };
+            }
+
+            return { ECS::EntityConfig::InvalidEntity, &entityManager };
+
+        }
+
+        Entity Scene::GetParentEntity(Entity entity) {
+
+            auto iter = childToParentMap.find(entity);
+
+            if (iter != childToParentMap.end()) {
+                return { iter->second, &entityManager };
             }
 
             return { ECS::EntityConfig::InvalidEntity, &entityManager };
@@ -378,13 +416,13 @@ namespace Atlas {
 
         SceneIterator Scene::begin() {
 
-            return { &entityManager, 0 };
+            return { &entityManager, entityManager.begin() };
 
         }
 
         SceneIterator Scene::end() {
 
-            return { &entityManager, size_t(entityManager.end() - entityManager.begin()) };
+            return { &entityManager, entityManager.end() };
 
         }
 
@@ -508,44 +546,95 @@ namespace Atlas {
             for (auto entity : *other) {
                 auto newEntity = entityToEntityMap[entity];
 
-                if (entity.HasComponent<HierarchyComponent>()) {
-                    // This is not trivially copiable, need to preserve new entity relationships
-                    auto& otherComp = entity.GetComponent<HierarchyComponent>();
-                    auto& comp = newEntity.AddComponent<HierarchyComponent>();
-
-                    comp.root = otherComp.root;
-                    for (auto compEntity : otherComp.entities) {
-                        comp.entities.push_back(entityToEntityMap[compEntity]);
-                    }
-                }
-                if (entity.HasComponent<TransformComponent>()) {
-                    // Can just be copied
-                    auto& otherComp = entity.GetComponent<TransformComponent>();
-                    newEntity.AddComponent<TransformComponent>(otherComp);
-                }
-
-                // Resource components need extra attention (resources need to be registered in this scene)
-                if (entity.HasComponent<MeshComponent>()) {
-                    auto& otherComp = entity.GetComponent<MeshComponent>();
-                    auto& comp = newEntity.AddComponent<MeshComponent>(otherComp.mesh);
-                    comp.visible = otherComp.visible;
-                    comp.dontCull = otherComp.dontCull;
-                }
-                if (entity.HasComponent<AudioComponent>()) {
-                    auto& otherComp = entity.GetComponent<AudioComponent>();
-                    auto& comp = newEntity.AddComponent<AudioComponent>(otherComp.stream->data);
-                    comp.falloffFactor = otherComp.falloffFactor;
-                    comp.cutoff = otherComp.cutoff;
-                }
-                if (entity.HasComponent<AudioVolumeComponent>()) {
-                    auto& otherComp = entity.GetComponent<AudioVolumeComponent>();
-                    auto& comp = newEntity.AddComponent<AudioVolumeComponent>(otherComp.stream->data, otherComp.aabb);
-                    comp.falloffFactor = otherComp.falloffFactor;
-                    comp.cutoff = otherComp.cutoff;
-                }
+                DuplicateEntityComponents(entity, newEntity, &entityToEntityMap);
             }
 
             return entityToEntityMap;
+
+        }
+
+        void Scene::DuplicateEntityComponents(Entity srcEntity, Entity dstEntity, std::unordered_map<ECS::Entity, Entity>* mapper) {
+
+            // This method is called both by the merge and the entity duplication methods
+            // To handle both cases the only difference is the hierarchy component, where we either
+            // need to map entities from the other scene in a merge or in case of the duplication need
+            // to create new entities. 
+            if (srcEntity.HasComponent<HierarchyComponent>()) {
+                // This is not trivially copiable, need to preserve new entity relationships
+                auto otherComp = srcEntity.GetComponent<HierarchyComponent>();
+                auto& comp = dstEntity.AddComponent<HierarchyComponent>();
+
+                comp.root = otherComp.root;
+
+                // If we have a mapping table we can use that, otherwise create new entities
+                if (mapper) {
+                    for (auto compEntity : otherComp.entities) {
+                        comp.AddChild((*mapper)[compEntity]);
+                    }
+                }
+                else {
+                    std::vector<Entity> childEntities;
+                    childEntities.reserve(otherComp.GetChildren().size());
+
+                    for (auto compEntity : otherComp.entities) {
+                        auto newEntity = CreateEntity();
+
+                        DuplicateEntityComponents(compEntity, newEntity, nullptr);
+
+                        childEntities.push_back(newEntity);
+                    }
+
+                    // Comp might be dereferenced already
+                    comp = dstEntity.GetComponent<HierarchyComponent>();
+                    for (auto entity : childEntities)
+                        comp.AddChild(entity);
+                }
+            }
+
+            // NOTE: The reason we copy entities instead of taking a reference is simply because otherwise we might
+            // get dereferenced due to new components being added, which could lead to crashes
+            
+            // Normal components without resources which are not a hierarchy that needs special treatment
+            if (srcEntity.HasComponent<NameComponent>()) {
+                auto& otherComp = srcEntity.GetComponent<NameComponent>();
+                dstEntity.AddComponent<NameComponent>(otherComp);
+            }
+            if (srcEntity.HasComponent<TransformComponent>()) {
+                auto& otherComp = srcEntity.GetComponent<TransformComponent>();
+                dstEntity.AddComponent<TransformComponent>(otherComp);
+            }
+            if (srcEntity.HasComponent<CameraComponent>()) {
+                auto& otherComp = srcEntity.GetComponent<CameraComponent>();
+                auto& comp = dstEntity.AddComponent<CameraComponent>(otherComp);
+                // Set isMain to false by default
+                comp.isMain = false;
+            }
+            if (srcEntity.HasComponent<LightComponent>()) {
+                auto otherComp = srcEntity.GetComponent<LightComponent>();
+                auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
+                // Need to copy the reference as well, create new textures afterwards with SetResolution 
+                *comp.shadow = *otherComp.shadow;
+                comp.shadow->SetResolution(comp.shadow->resolution);
+                comp.isMain = false;
+            }
+
+            // Resource components need extra attention (resources need to be registered in this scene)
+            // We can do a straight copy afterwards, to get around copying every field
+            if (srcEntity.HasComponent<MeshComponent>()) {
+                auto otherComp = srcEntity.GetComponent<MeshComponent>();
+                auto& comp = dstEntity.AddComponent<MeshComponent>(otherComp.mesh);
+                comp = otherComp;
+            }
+            if (srcEntity.HasComponent<AudioComponent>()) {
+                auto otherComp = srcEntity.GetComponent<AudioComponent>();
+                auto& comp = dstEntity.AddComponent<AudioComponent>(otherComp.stream->data);
+                comp = otherComp;
+            }
+            if (srcEntity.HasComponent<AudioVolumeComponent>()) {
+                auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
+                auto& comp = dstEntity.AddComponent<AudioVolumeComponent>(otherComp.stream->data, otherComp.aabb);
+                comp = otherComp;
+            }
 
         }
 

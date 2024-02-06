@@ -24,7 +24,7 @@ namespace Atlas::Editor::UI {
 
                 if (entity.IsValid()) {
                     auto &hierarchyComponent = root.GetComponent<HierarchyComponent>();
-                    hierarchyComponent.entities.push_back(entity);
+                    hierarchyComponent.AddChild(entity);
 
                     selectedEntity = entity;
                 }
@@ -65,7 +65,8 @@ namespace Atlas::Editor::UI {
         if (ImGui::BeginPopupContextItem()) {
             Scene::Entity newEntity;
 
-            if (ImGui::MenuItem("Delete entity"))
+            // We shouldn't allow the user to delete the root entity
+            if (ImGui::MenuItem("Delete entity") && (!nameComponent || nameComponent->name != "Root"))
                 deleteEntity = true;
 
             if (ImGui::MenuItem("Add emtpy entity"))
@@ -78,9 +79,33 @@ namespace Atlas::Editor::UI {
                     hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
                 }
 
-                hierarchyComponent->entities.push_back(newEntity);
+                hierarchyComponent->AddChild(newEntity);
 
                 selectedEntity = newEntity;
+            }
+
+            if (ImGui::MenuItem("Duplicate entity")) {
+                auto parentEntity = scene->GetParentEntity(entity);
+
+                // Create new hierarchy before retrieving other components since they might become
+                // invalid when internal ECS storage resizes
+                auto newEntity = scene->DuplicateEntity(entity);
+
+                HierarchyComponent* component;
+                if (parentEntity.IsValid()) {
+                    component = parentEntity.TryGetComponent<HierarchyComponent>();
+                }
+                else {
+                    auto root = scene->GetEntityByName("Root");
+                    component = root.TryGetComponent<HierarchyComponent>();
+                }
+
+                AE_ASSERT(component != nullptr);
+
+                if (component != nullptr) {
+                    
+                    component->AddChild(newEntity);
+                }
             }
 
             ImGui::EndPopup();
@@ -88,7 +113,7 @@ namespace Atlas::Editor::UI {
 
         if (nodeOpen && hierarchyComponent) {
 
-            for (auto childEntity : hierarchyComponent->entities) {
+            for (auto childEntity : hierarchyComponent->GetChildren()) {
 
                 TraverseHierarchy(scene, childEntity);
 

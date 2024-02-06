@@ -98,7 +98,8 @@ namespace Atlas {
             Volume::AABB aabb = j["aabb"];
             auto scene = CreateRef<Scene>(j["name"], aabb.min, aabb.max, j["depth"]);
 
-            for (auto jEntity : j["entities"]) {
+            std::vector<json> jEntities = j["entities"];
+            for (auto jEntity : jEntities) {
                 auto entity = scene->CreateEntity();
                 EntityFromJson(jEntity, entity, scene);
             }
