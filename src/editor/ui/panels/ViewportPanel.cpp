@@ -68,10 +68,11 @@ namespace Atlas::Editor::UI {
                     renderTarget->Resize(viewportTexture.width, viewportTexture.height);
                 }
 
-                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene, nullptr, &viewportTexture);
+                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
+                    primitiveBatchWrapper.primitiveBatch, &viewportTexture);
             }
 
-            
+            primitiveBatchWrapper.primitiveBatch->Clear();
 
         }
 

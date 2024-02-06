@@ -250,6 +250,24 @@ namespace Atlas {
 
         }
 
+        void CommandList::BeginDebugMarker(const std::string &name, glm::vec4 color) {
+
+            VkDebugMarkerMarkerInfoEXT markerInfo = {};
+            markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
+
+            memcpy(markerInfo.color, glm::value_ptr(color), sizeof(vec4));
+            markerInfo.pMarkerName = name.c_str();
+
+            vkCmdDebugMarkerBeginEXT(commandBuffer, &markerInfo);
+
+        }
+
+        void CommandList::EndDebugMarker() {
+
+            vkCmdDebugMarkerEndEXT(commandBuffer);
+
+        }
+
         void CommandList::BindPipeline(const Ref<Pipeline>& pipeline) {
 
             // Reset previous descriptor data such that a new descriptor
@@ -313,6 +331,15 @@ namespace Atlas {
             scissor.extent.height = height;
 
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        }
+
+        void CommandList::SetLineWidth(float width) {
+
+            AE_ASSERT(pipelineInUse && "No pipeline is bound");
+            if (!pipelineInUse) return;
+
+            vkCmdSetLineWidth(commandBuffer, width);
 
         }
 

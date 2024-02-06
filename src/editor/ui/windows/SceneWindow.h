@@ -38,6 +38,9 @@ namespace Atlas::Editor::UI {
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
 
+    private:
+        void RenderEntityAABB(Scene::Entity entity);
+
     };
 
 }

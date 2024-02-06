@@ -14,7 +14,7 @@ namespace Atlas::Editor {
     public:
         static void Destruct();
 
-        static Ref<ImguiWrapper> imguiWrapper;
+        static Ref<ImguiExtension::ImguiWrapper> imguiWrapper;
         static Ref<Renderer::RenderTarget> renderTarget;
         static Ref<Renderer::PathTracerRenderTarget> pathTraceRenderTarget;
         static Ref<Renderer::MainRenderer> mainRenderer;

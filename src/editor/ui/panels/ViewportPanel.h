@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panel.h"
+#include "tools/PrimitiveBatchWrapper.h"
 #include "scene/Scene.h"
 #include "Viewport.h"
 
@@ -19,6 +20,8 @@ namespace Atlas::Editor::UI {
 
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;
+
+        PrimitiveBatchWrapper primitiveBatchWrapper;
 
         std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;

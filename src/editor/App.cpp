@@ -29,7 +29,7 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        Singletons::imguiWrapper = CreateRef<ImguiWrapper>();
+        Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
@@ -102,7 +102,7 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow.needGuizmoEnabled);
 
-        // Launch BVH builds asynchonously 
+        // Launch BVH builds asynchronously
         auto buildRTStructure = [&]() {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
 
@@ -122,7 +122,7 @@ namespace Atlas::Editor {
         else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
             bvhBuilderFuture.get();
         }
-
+        
     }
 
     void App::Render(float deltaTime) {

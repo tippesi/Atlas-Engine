@@ -81,11 +81,11 @@ namespace Atlas::Renderer {
                 .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
 
-            auto lightingRenderPassDesc = Graphics::RenderPassDesc{
+            auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
                 .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
                 .depthAttachment = depthAttachment
             };
-            lightingRenderPass = graphicsDevice->CreateRenderPass(lightingRenderPassDesc);          
+            afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
         }
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
@@ -189,8 +189,8 @@ namespace Atlas::Renderer {
         gBufferFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 5);
         gBufferFrameBuffer->Refresh();
 
-        lightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
-        lightingFrameBuffer->Refresh();
+        afterLightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
+        afterLightingFrameBuffer->Refresh();
 
         hasHistory = true;
         swap = !swap;
@@ -386,8 +386,8 @@ namespace Atlas::Renderer {
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
 
-        auto lightingFrameBufferDesc = Graphics::FrameBufferDesc{
-               .renderPass = lightingRenderPass,
+        auto afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
+               .renderPass = afterLightingRenderPass,
                .colorAttachments = {
                    {lightingTexture.image, 0, true},
                    {targetData.velocityTexture->image, 0, true},
@@ -396,10 +396,10 @@ namespace Atlas::Renderer {
                .depthAttachment = {targetData.depthTexture->image, 0, true},
                .extent = {uint32_t(width), uint32_t(height)}
         };
-        lightingFrameBuffer = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+        afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
 
-        lightingFrameBufferDesc = Graphics::FrameBufferDesc{
-            .renderPass = lightingRenderPass,
+        afterLightingFrameBufferDesc = Graphics::FrameBufferDesc{
+            .renderPass = afterLightingRenderPass,
             .colorAttachments = {
                 {lightingTexture.image, 0, true},
                 {targetData.velocityTexture->image, 0, true},
@@ -408,7 +408,7 @@ namespace Atlas::Renderer {
             .depthAttachment = {targetData.depthTexture->image, 0, true},
             .extent = {uint32_t(width), uint32_t(height)}
         };
-        lightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(lightingFrameBufferDesc);
+        afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
 
         auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
             .renderPass = oceanRenderPass,

@@ -2,7 +2,7 @@
 
 namespace Atlas::Editor {
 
-    Ref<ImguiWrapper> Singletons::imguiWrapper;
+    Ref<ImguiExtension::ImguiWrapper> Singletons::imguiWrapper;
     Ref<Renderer::RenderTarget> Singletons::renderTarget;
     Ref<Renderer::PathTracerRenderTarget> Singletons::pathTraceRenderTarget;
     Ref<Renderer::MainRenderer> Singletons::mainRenderer;

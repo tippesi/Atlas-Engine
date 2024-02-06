@@ -72,7 +72,7 @@ namespace Atlas {
         }
 
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-            Ref<PrimitiveBatch> batch, Texture::Texture2D* texture) {
+            Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
 
             if (!device->swapChain->isComplete || !scene->HasMainCamera()) 
                 return;
@@ -328,6 +328,9 @@ namespace Atlas {
             // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
             // downscaleRenderer.Downscale(target, commandList);
 
+            if (primitiveBatch)
+                RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
+
             {
                 volumetricCloudRenderer.Render(target, scene, commandList);
 
@@ -445,7 +448,6 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
             }
-            
 
             Graphics::Profiler::EndThread();
 
@@ -455,38 +457,60 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::RenderBatched(Ref<Viewport> viewport, Ref<PrimitiveBatch> batch, const CameraComponent& camera) {
+        void MainRenderer::RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
+            Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList) {
 
-            /*
+            bool localCommandList = !commandList;
+
+            if (localCommandList) {
+                commandList = device->GetCommandList(Graphics::GraphicsQueue);
+
+                commandList->BeginCommands();
+            }
+
             batch->TransferData();
 
-            if (viewport)
-                glViewport(viewport->x, viewport->y,
-                    viewport->width, viewport->height);
-
-            lineShader.Bind();
-
-            lineViewMatrix->SetValue(camera->viewMatrix);
-            lineProjectionMatrix->SetValue(camera->projectionMatrix);
+            commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
             if (batch->GetLineCount()) {
 
-                glLineWidth(batch->GetLineWidth());
+                auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+                    batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, batch->testDepth);
 
-                batch->BindLineBuffer();
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-                glDrawArrays(GL_LINES, 0, (GLsizei)batch->GetLineCount() * 2);
+                commandList->BindPipeline(pipeline);
+                batch->lineVertexArray.Bind(commandList);
 
-                glLineWidth(1.0f);
+                commandList->SetLineWidth(batch->GetLineWidth());
+
+                commandList->Draw(batch->GetLineCount() * 2);
 
             }
+
 
             if (batch->GetTriangleCount()) {
-                batch->BindTriangleBuffer();
 
-                glDrawArrays(GL_TRIANGLES, 0, GLsizei(batch->GetTriangleCount() * 3));
+                auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+                    batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, batch->testDepth);
+
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+                commandList->BindPipeline(pipeline);
+                batch->triangleVertexArray.Bind(commandList);
+
+                commandList->Draw(batch->GetTriangleCount() * 3);
+
             }
-            */
+
+
+            commandList->EndRenderPass();
+
+            if (localCommandList) {
+                commandList->EndCommands();
+
+                device->SubmitCommandList(commandList);
+            }
 
         }
 
@@ -1119,6 +1143,28 @@ namespace Atlas {
 
             commandList->EndCommands();
             device->FlushCommandList(commandList);
+
+        }
+
+        PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer> &frameBuffer,
+            Buffer::VertexArray &vertexArray, VkPrimitiveTopology topology, bool testDepth) {
+
+            const auto shaderConfig = ShaderConfig {
+                { "primitive.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+                { "primitive.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+            };
+
+            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
+                .frameBuffer = frameBuffer,
+                .vertexInputInfo = vertexArray.GetVertexInputState(),
+            };
+
+            pipelineDesc.assemblyInputInfo.topology = topology;
+            pipelineDesc.depthStencilInputInfo.depthTestEnable = testDepth;
+            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+            pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+
+            return PipelineConfig(shaderConfig, pipelineDesc);
 
         }
 

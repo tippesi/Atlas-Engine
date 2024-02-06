@@ -8,7 +8,7 @@ namespace Atlas::Editor::UI {
     class SceneHierarchyPanel : public Panel {
 
     public:
-        SceneHierarchyPanel() : Panel("Entity properties") {}
+        SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
         void Render(Ref<Scene::Scene>& scene);
 

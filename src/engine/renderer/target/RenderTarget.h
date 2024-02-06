@@ -173,9 +173,9 @@ namespace Atlas::Renderer {
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
-        Ref<Graphics::RenderPass> lightingRenderPass;
-        Ref<Graphics::FrameBuffer> lightingFrameBuffer;
-        Ref<Graphics::FrameBuffer> lightingFrameBufferWithStencil;
+        Ref<Graphics::RenderPass> afterLightingRenderPass;
+        Ref<Graphics::FrameBuffer> afterLightingFrameBuffer;
+        Ref<Graphics::FrameBuffer> afterLightingFrameBufferWithStencil;
 
         Ref<Graphics::RenderPass> oceanRenderPass;
         Ref<Graphics::FrameBuffer> oceanDepthOnlyFrameBuffer;

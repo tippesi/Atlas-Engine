@@ -145,8 +145,8 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
-                auto depthImage = target->lightingFrameBuffer->GetDepthImage();
+                auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
 
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
                 commandList->BindImage(lightingImage, 3, 1);
@@ -160,7 +160,7 @@ namespace Atlas {
 
             // Update local texture copies
             {
-                auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+                auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
                 if (refractionTexture.width != colorImage->width ||
                     refractionTexture.height != colorImage->height ||
                     refractionTexture.format != colorImage->format) {
@@ -168,7 +168,7 @@ namespace Atlas {
                         colorImage->format);
                 }
 
-                auto& depthImage = target->lightingFrameBuffer->GetDepthImage();
+                auto& depthImage = target->afterLightingFrameBuffer->GetDepthImage();
                 if (depthTexture.width != depthImage->width ||
                     depthTexture.height != depthImage->height ||
                     depthTexture.format != depthImage->format) {
@@ -204,8 +204,8 @@ namespace Atlas {
             {
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
-                commandList->BeginRenderPass(target->lightingFrameBufferWithStencil->renderPass,
-                    target->lightingFrameBufferWithStencil);
+                commandList->BeginRenderPass(target->afterLightingFrameBufferWithStencil->renderPass,
+                    target->afterLightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
                 if (cloudsEnabled) config.AddMacro("CLOUDS");
@@ -352,7 +352,7 @@ namespace Atlas {
                 if (ocean->underwaterShader) {
                     Graphics::Profiler::EndAndBeginQuery("Underwater");
 
-                    auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+                    auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
 
                     std::vector<Graphics::ImageBarrier> imageBarriers;
                     std::vector<Graphics::BufferBarrier> bufferBarriers;
@@ -385,9 +385,9 @@ namespace Atlas {
 
                     commandList->BindPipeline(pipeline);
 
-                    auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
-                    auto stencilImage = target->lightingFrameBuffer->GetColorImage(2);
-                    auto depthImage = target->lightingFrameBuffer->GetDepthImage();
+                    auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                    auto stencilImage = target->afterLightingFrameBuffer->GetColorImage(2);
+                    auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
 
                     refractionTexture.Bind(commandList, 3, 4);
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
@@ -534,7 +534,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->lightingFrameBufferWithStencil,
+                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->afterLightingFrameBufferWithStencil,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

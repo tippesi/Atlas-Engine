@@ -117,10 +117,17 @@ namespace Atlas {
             auto renderPass = graphicsPipelineDesc.frameBuffer ?
                               graphicsPipelineDesc.frameBuffer->renderPass->renderPass
                               : graphicsPipelineDesc.swapChain->renderPass;
+
+            // To get correct results we would need to hash all the state, but that doesn't
+            // really work well in terms of performance
             HashCombine(variantHash, renderPass);
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);
+            HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthTestEnable);
+            HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthCompareOp);
+            HashCombine(variantHash, graphicsPipelineDesc.depthStencilInputInfo.depthWriteEnable);
+            HashCombine(variantHash, graphicsPipelineDesc.assemblyInputInfo.topology);
 
             for (int32_t i = 0; i < graphicsPipelineDesc.vertexInputInfo.vertexAttributeDescriptionCount; i++) {
                 auto& vertexAttributeDesc = graphicsPipelineDesc.vertexInputInfo.pVertexAttributeDescriptions[i];

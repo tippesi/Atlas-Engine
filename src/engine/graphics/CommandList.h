@@ -63,11 +63,17 @@ namespace Atlas {
 
             void Timestamp(const Ref<QueryPool>& queryPool, uint32_t queryIdx);
 
+            void BeginDebugMarker(const std::string& name, vec4 color = vec4(1.0f));
+
+            void EndDebugMarker();
+
             void BindPipeline(const Ref<Pipeline>& pipeline);
 
             void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
             void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+
+            void SetLineWidth(float width);
 
             void ClearAttachments();
 

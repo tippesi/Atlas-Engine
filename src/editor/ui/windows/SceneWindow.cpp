@@ -62,12 +62,15 @@ namespace Atlas::Editor::UI {
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.15f, &dockIdLeft, &dockIdMiddle);
             ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.8f, &dockIdMiddle, &dockIdRight);
 
+            /*
+            // This locks it all into a fixed window layout
             ImGuiDockNode *leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
             ImGuiDockNode *middleNode = ImGui::DockBuilderGetNode(dockIdMiddle);
             ImGuiDockNode *rightNode = ImGui::DockBuilderGetNode(dockIdRight);
             leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
             middleNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
             rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
+            */
 
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow(sceneHierarchyPanel.GetNameID(), dockIdLeft);
@@ -86,6 +89,9 @@ namespace Atlas::Editor::UI {
 
         sceneHierarchyPanel.Render(refScene);
         entityPropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
+
+        RenderEntityAABB(sceneHierarchyPanel.selectedEntity);
+
         viewportPanel.Render(refScene, inFocus);
 
         ImGui::End();
@@ -95,6 +101,11 @@ namespace Atlas::Editor::UI {
     void SceneWindow::RegisterViewportAndGizmoOverlay() {
 
         viewportPanel.DrawMenuBar([&]() {
+
+            auto height = ImGui::GetTextLineHeight();
+
+            ImGui::BeginChild("Menu bar area", ImVec2(0.0f, height + 8.0f));
+
             ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
             if (ImGui::RadioButton("T", &guizmoMode, ImGuizmo::OPERATION::TRANSLATE)) {
@@ -110,7 +121,6 @@ namespace Atlas::Editor::UI {
             }
 
             auto region = ImGui::GetContentRegionAvail();
-            auto height = ImGui::GetTextLineHeight();
             auto buttonSize = ImVec2(height, height);
             auto uvMin = ImVec2(0.25, 0.25);
             auto uvMax = ImVec2(0.75, 0.75);
@@ -136,6 +146,8 @@ namespace Atlas::Editor::UI {
             }
 
             ImGui::PopStyleColor();
+
+            ImGui::EndChild();
 
             });
 
@@ -171,6 +183,26 @@ namespace Atlas::Editor::UI {
             }
             });
            
+    }
+
+    void SceneWindow::RenderEntityAABB(Scene::Entity entity) {
+
+        if (!entity.IsValid())
+            return;
+
+        bool foundAABB = false;
+        Volume::AABB aabb;
+
+        if (entity.HasComponent<MeshComponent>()) {
+            auto meshComponent = entity.GetComponent<MeshComponent>();
+            aabb = meshComponent.aabb;
+            foundAABB = true;
+        }
+
+        if (foundAABB) {
+            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
+        }
+
     }
 
 }

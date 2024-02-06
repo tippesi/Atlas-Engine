@@ -28,7 +28,8 @@ namespace Atlas {
                 VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-                VK_KHR_RAY_QUERY_EXTENSION_NAME
+                VK_KHR_RAY_QUERY_EXTENSION_NAME,
+                VK_EXT_DEBUG_MARKER_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #endif
@@ -924,7 +925,6 @@ namespace Atlas {
 
         void GraphicsDevice::GetPhysicalDeviceProperties(VkPhysicalDevice device) {
 
-
             StructureChainBuilder propertiesBuilder(deviceProperties);
 
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
@@ -989,12 +989,18 @@ namespace Atlas {
                 support.shaderPrintf = true;
             }
 
+            if (supportedExtensions.contains(VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+                support.debugMarker = true;
+            }
+
 #ifdef AE_BINDLESS
             if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
                 features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
                 support.bindless = true;
             }
 #endif
+
+            support.wideLines = features.features.wideLines;
 
 #ifdef AE_OS_MACOS
             VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};

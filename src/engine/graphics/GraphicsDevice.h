@@ -36,6 +36,8 @@ namespace Atlas {
             bool hardwareRayTracing = false;
             bool shaderPrintf = false;
             bool bindless = false;
+            bool debugMarker = false;
+            bool wideLines = false;
         };
 
         struct CommandListSubmission {
