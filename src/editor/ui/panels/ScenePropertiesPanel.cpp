@@ -4,20 +4,6 @@
 
 namespace Atlas::Editor::UI {
 
-    void ScenePropertiesPanel::Render(Scene::Entity entity) {
 
-        ImGui::Begin(GetNameID());
-
-        isFocused = ImGui::IsWindowFocused();
-
-        if (entity.IsValid()) {
-
-            entityPropertiesPanel.Render(entity);
-
-        }
-
-        ImGui::End();
-
-    }
 
 }

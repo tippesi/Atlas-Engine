@@ -75,7 +75,7 @@ namespace Atlas::Editor::UI {
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow(sceneHierarchyPanel.GetNameID(), dockIdLeft);
             ImGui::DockBuilderDockWindow(viewportPanel.GetNameID(), dockIdMiddle);
-            ImGui::DockBuilderDockWindow(entityPropertiesPanel.GetNameID(), dockIdRight);
+            ImGui::DockBuilderDockWindow(scenePropertiesPanel.GetNameID(), dockIdRight);
             ImGui::DockBuilderFinish(dsID);
 
             resetDockingLayout = false;
@@ -83,12 +83,20 @@ namespace Atlas::Editor::UI {
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
         inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
-            sceneHierarchyPanel.isFocused || entityPropertiesPanel.isFocused || viewportPanel.isFocused;
+            sceneHierarchyPanel.isFocused || scenePropertiesPanel.isFocused || viewportPanel.isFocused;
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
 
         sceneHierarchyPanel.Render(refScene);
-        entityPropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
+
+        if (sceneHierarchyPanel.selectedProperty.fog)
+            scenePropertiesPanel.Render(scene->fog);
+        else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
+            scenePropertiesPanel.Render(scene->sky.clouds);
+        else if (sceneHierarchyPanel.selectedProperty.postProcessing)
+            scenePropertiesPanel.Render(scene->postProcessing);
+        else
+            scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
 
         RenderEntityAABB(sceneHierarchyPanel.selectedEntity);
 

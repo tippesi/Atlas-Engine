@@ -10,6 +10,7 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 
 using namespace Atlas::Scene::Components;
 using namespace Atlas::Scene::Prefabs;
+using namespace Atlas::ImguiExtension;
 
 void App::LoadContent() {
 
@@ -100,8 +101,6 @@ void App::LoadContent() {
     scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
-
-    scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -331,14 +330,13 @@ void App::Render(float deltaTime) {
 
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
         auto& light = directionalLightEntity.GetComponent<LightComponent>();
-        const auto& volume = scene->irradianceVolume;
-        const auto& ao = scene->ao;
-        const auto& fog = scene->fog;
-        const auto& reflection = scene->reflection;
-        const auto& clouds = scene->sky.clouds;
-        const auto& sss = scene->sss;
-        const auto& ssgi = scene->ssgi;
-        const auto& volumetric = scene->volumetric;
+        auto& volume = scene->irradianceVolume;
+        auto& ao = scene->ao;
+        auto& fog = scene->fog;
+        auto& reflection = scene->reflection;
+        auto& clouds = scene->sky.clouds;
+        auto& sss = scene->sss;
+        auto& ssgi = scene->ssgi;
         auto& postProcessing = scene->postProcessing;
 
         bool openSceneNotFoundPopup = false;
@@ -542,8 +540,6 @@ void App::Render(float deltaTime) {
                 ImGui::ColorEdit3("Color", &light.color[0]);
                 ImGui::SliderFloat("Intensity##Light", &light.intensity, 0.0, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
                 ImGui::Separator();
-                ImGui::Text("Volumetric");
-                ImGui::SliderFloat("Intensity##Volumetric", &volumetric->intensity, 0.0f, 1.0f);
                 ImGui::Text("Shadow");
                 auto shadow = light.shadow;
                 const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
@@ -627,81 +623,13 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Rotate camera", &rotateCamera);
             }
             if (ImGui::CollapsingHeader("Fog")) {
-                ImGui::Checkbox("Enable##Fog", &fog->enable);
-                fog->color = glm::pow(fog->color, 1.0f / glm::vec3(2.2f));
-                ImGui::ColorEdit3("Color##Fog", &fog->color[0]);
-                fog->color = glm::pow(fog->color, glm::vec3(2.2f));
-
-                ImGui::SliderFloat("Density##Fog", &fog->density, 0.0f, 0.5f, "%.4f", 4.0f);
-                ImGui::SliderFloat("Height##Fog", &fog->height, 0.0f, 300.0f, "%.3f", 4.0f);
-                ImGui::SliderFloat("Height falloff##Fog", &fog->heightFalloff, 0.0f, 0.5f,
-                    "%.4f", ImGuiSliderFlags_Logarithmic);
-                ImGui::SliderFloat("Scattering anisotropy##Fog", &fog->scatteringAnisotropy, -1.0f, 1.0f,
-                    "%.3f", ImGuiSliderFlags_Logarithmic);
+                fogPanel.Render(fog);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
-                ImGui::Checkbox("Enable##Clouds", &clouds->enable);
-                ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
-                ImGui::Checkbox("Stochastic occlusion sampling##Clouds", &clouds->stochasticOcclusionSampling);
-                ImGui::Checkbox("Debug##Clouds", &debugClouds);
-                ImGui::Text("Quality");
-                ImGui::SliderInt("Sample count##Clouds", &clouds->sampleCount, 1, 128);
-                ImGui::SliderInt("Shadow sample count##Clouds", &clouds->occlusionSampleCount, 1, 16);
-                ImGui::SliderInt("Shadow sample fraction count##Clouds", &clouds->shadowSampleFraction, 1, 4);
-                ImGui::Text("Shape");
-                ImGui::SliderFloat("Density multiplier##Clouds", &clouds->densityMultiplier, 0.0f, 1.0f);
-                ImGui::SliderFloat("Height stretch##Clouds", &clouds->heightStretch, 0.0f, 1.0f);
-                if (ImGui::Button("Update noise textures##Clouds")) {
-                    clouds->needsNoiseUpdate = true;
-                }
-                ImGui::Separator();
-                ImGui::Text("Dimensions");
-                ImGui::SliderFloat("Min height##Clouds", &clouds->minHeight, 0.0f, 2000.0f);
-                ImGui::SliderFloat("Max height##Clouds", &clouds->maxHeight, 0.0f, 4000.0f);
-                ImGui::SliderFloat("GetDistance limit##Clouds", &clouds->distanceLimit, 0.0f, 10000.0f);
-                ImGui::Separator();
-                ImGui::Text("Scattering");
-                ImGui::ColorPicker3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);
-                ImGui::SliderFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 10.0f);
-                ImGui::SliderFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 10.0f);
-                ImGui::SliderFloat("Eccentricity first phase", &clouds->scattering.eccentricityFirstPhase, -1.0f, 1.0f);
-                ImGui::SliderFloat("Eccentricity second phase", &clouds->scattering.eccentricitySecondPhase, -1.0f, 1.0f);
-                ImGui::SliderFloat("Phase alpha", &clouds->scattering.phaseAlpha, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::Text("Noise texture behaviour");
-                ImGui::SliderFloat("Shape scale##Clouds", &clouds->shapeScale, 0.0f, 100.0f);
-                ImGui::SliderFloat("Detail scale##Clouds", &clouds->detailScale, 0.0f, 100.0f);
-                ImGui::SliderFloat("Shape speed##Clouds", &clouds->shapeSpeed, 0.0f, 10.0f);
-                ImGui::SliderFloat("Detail speed##Clouds", &clouds->detailSpeed, 0.0f, 10.0f);
-                ImGui::SliderFloat("Detail strength##Clouds", &clouds->detailStrength, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::Text("Silver lining");
-                ImGui::SliderFloat("Dark edge strength##Clouds", &clouds->darkEdgeFocus, 0.0f, 1025.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-                ImGui::SliderFloat("Dark edge ambient##Clouds", &clouds->darkEdgeAmbient, 0.0f, 1.0f);
+                volumetricCloudsPanel.Render(clouds);
             }
             if (ImGui::CollapsingHeader("Postprocessing")) {
-                ImGui::Text("Temporal anti-aliasing");
-                ImGui::Checkbox("Enable##TAA", &postProcessing.taa.enable);
-                ImGui::Checkbox("Enable slow mode##SlowMode", &slowMode);
-                ImGui::SliderFloat("Jitter range##TAA", &postProcessing.taa.jitterRange, 0.001f, 0.999f);
-                ImGui::Separator();
-                ImGui::Text("Sharpen filter");
-                ImGui::Checkbox("Enable##Sharpen", &postProcessing.sharpen.enable);
-                ImGui::SliderFloat("Sharpness", &postProcessing.sharpen.factor, 0.0f, 1.0f);
-                ImGui::Separator();
-                ImGui::Text("Image effects");
-                ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
-                ImGui::SliderFloat("Saturation##Postprocessing", &postProcessing.saturation, 0.0f, 2.0f);
-                ImGui::SliderFloat("Contrast##Postprocessing", &postProcessing.contrast, 0.0f, 2.0f);
-                ImGui::SliderFloat("White point##Postprocessing", &postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
-                ImGui::Separator();
-                ImGui::Text("Chromatic aberration");
-                ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);
-                ImGui::Checkbox("Colors reversed##Chromatic aberration", &postProcessing.chromaticAberration.colorsReversed);
-                ImGui::SliderFloat("Strength##Chromatic aberration", &postProcessing.chromaticAberration.strength, 0.0f, 4.0f);
-                ImGui::Text("Film grain");
-                ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
-                ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
+                postProcessingPanel.Render(postProcessing);
             }
             if (ImGui::CollapsingHeader("Physics")) {
                 ImGui::Checkbox("Pause simulation##Phyiscs", &scene->physicsWorld->pauseSimulation);
@@ -974,7 +902,7 @@ bool App::LoadScene() {
         camera.rotation = glm::vec2(-3.14f, -0.1f);
 
         scene->fog->enable = false;
-        scene->volumetric->intensity = 0.0f;
+        scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == SPONZA) {
         meshes.reserve(1);
@@ -1002,7 +930,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.28f;
+        scene->fog->volumetricIntensity = 0.28f;
     }
     else if (sceneSelection == BISTRO) {
         meshes.reserve(1);
@@ -1022,7 +950,7 @@ bool App::LoadScene() {
         camera.exposure = 0.125f;
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.28f;
+        scene->fog->volumetricIntensity = 0.28f;
     }
     else if (sceneSelection == SANMIGUEL) {
         meshes.reserve(1);
@@ -1043,7 +971,7 @@ bool App::LoadScene() {
         camera.exposure = 2.5f;
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.28f;
+        scene->fog->volumetricIntensity = 0.28f;
     }
     else if (sceneSelection == MEDIEVAL) {
         meshes.reserve(1);
@@ -1064,7 +992,7 @@ bool App::LoadScene() {
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == PICAPICA) {
         meshes.reserve(1);
@@ -1084,7 +1012,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == SUBWAY) {
         meshes.reserve(1);
@@ -1103,7 +1031,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == MATERIALS) {
         meshes.reserve(1);
@@ -1129,7 +1057,7 @@ bool App::LoadScene() {
         scene->fog->enable = false;
         scene->sky.clouds->enable = false;
         scene->sss->enable = true;
-        scene->volumetric->intensity = 0.0f;
+        scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
@@ -1146,7 +1074,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
@@ -1163,7 +1091,7 @@ bool App::LoadScene() {
         camera.exposure = 1.0f;
 
         scene->fog->enable = false;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == FLYINGWORLD) {
         meshes.reserve(1);
@@ -1190,7 +1118,7 @@ bool App::LoadScene() {
         scene->sky.clouds->heightStretch = 1.0f;
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.08f;
+        scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == NEWSPONZA) {
         meshes.reserve(4);
@@ -1222,7 +1150,7 @@ bool App::LoadScene() {
         camera.rotation = glm::vec2(-3.14f / 2.0f, 0.0f);
 
         scene->fog->enable = true;
-        scene->volumetric->intensity = 0.28f;
+        scene->fog->volumetricIntensity = 0.28f;
     }
 
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);

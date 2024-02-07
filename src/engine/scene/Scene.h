@@ -9,7 +9,6 @@
 #include "../physics/PhysicsWorld.h"
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
-#include "../lighting/Volumetric.h"
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
@@ -115,7 +114,6 @@ namespace Atlas {
             Wind wind;
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
-            Ref<Lighting::Volumetric> volumetric = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;

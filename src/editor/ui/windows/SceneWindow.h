@@ -28,7 +28,7 @@ namespace Atlas::Editor::UI {
 
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
-        ScenePropertiesPanel entityPropertiesPanel;
+        ScenePropertiesPanel scenePropertiesPanel;
 
         ResourceHandle<Scene::Scene> scene;
 

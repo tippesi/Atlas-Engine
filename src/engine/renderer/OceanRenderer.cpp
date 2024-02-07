@@ -51,7 +51,6 @@ namespace Atlas {
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
             auto fog = scene->fog;
-            auto volumetric = scene->volumetric;
 
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid())
@@ -66,7 +65,7 @@ namespace Atlas {
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
             lightUniform.intensity = light.intensity;
 
-            if (volumetric) {
+            if (fog->rayMarching) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
@@ -290,10 +289,13 @@ namespace Atlas {
                     target->volumetricTexture.Bind(commandList, 3, 7);
 
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
+                    fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
+                    fogUniform.scatteringFactor = fog->scatteringFactor;
+                    fogUniform.extinctionFactor = fog->extinctionFactor;
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
+                    fogUniform.ambientFactor = fog->ambientFactor;
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 

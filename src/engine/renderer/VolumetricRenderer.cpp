@@ -39,7 +39,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Render volumetric");
 
             auto& camera = scene->GetMainCamera();
-            auto volumetric = scene->volumetric;
+            auto fog = scene->fog;
 
             auto lowResDepthTexture = target->GetData(target->GetVolumetricResolution())->depthTexture;
             auto depthTexture = target->GetData(FULL_RES)->depthTexture;
@@ -60,7 +60,8 @@ namespace Atlas {
             for (auto& lightEntity : lightSubset) {
 
                 auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || light.type != LightType::DirectionalLight || !light.volumetric || !volumetric)
+                if (!light.shadow || light.type != LightType::DirectionalLight ||
+                    !light.volumetric || !fog || !fog->rayMarching)
                     continue;
 
                 auto shadow = light.shadow;
@@ -77,8 +78,8 @@ namespace Atlas {
                     vec4(light.transformedProperties.directional.direction, 0.0f)));
 
                 VolumetricUniforms uniforms;
-                uniforms.sampleCount = volumetric->sampleCount;
-                uniforms.intensity = volumetric->intensity * light.intensity;
+                uniforms.sampleCount = fog->rayMarchStepCount;
+                uniforms.intensity = fog->volumetricIntensity * light.intensity;
 
                 uniforms.light.direction = vec4(direction, 0.0);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
@@ -119,10 +120,13 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
+                    fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
+                    fogUniform.scatteringFactor = fog->scatteringFactor;
+                    fogUniform.extinctionFactor = fog->extinctionFactor;
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
+                    fogUniform.ambientFactor = fog->ambientFactor;
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
@@ -169,7 +173,7 @@ namespace Atlas {
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
 
-            if (volumetric) {
+            if (fog->rayMarching) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
@@ -252,11 +256,9 @@ namespace Atlas {
                 auto fog = scene->fog;
                 bool fogEnabled = fog && fog->enable;
 
-                bool rayMarchedFog = volumetric != nullptr;
-
                 resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 resolvePipelineConfig.ManageMacro("FOG", fogEnabled);
-                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", rayMarchedFog);
+                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", fog->rayMarching && fogEnabled);
 
                 auto resolvePipeline = PipelineManager::GetPipeline(resolvePipelineConfig);
                 commandList->BindPipeline(resolvePipeline);
@@ -273,10 +275,13 @@ namespace Atlas {
 
                 if (fogEnabled) {
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
+                    fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
+                    fogUniform.scatteringFactor = fog->scatteringFactor;
+                    fogUniform.extinctionFactor = fog->extinctionFactor;
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
+                    fogUniform.ambientFactor = fog->ambientFactor;
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 

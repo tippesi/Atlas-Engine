@@ -50,8 +50,6 @@ namespace Atlas::Editor {
 
         scene->ssgi = CreateRef<Lighting::SSGI>();
 
-        scene->volumetric = CreateRef<Lighting::Volumetric>();
-
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
         scene->sky.clouds->maxHeight = 1700.0f;

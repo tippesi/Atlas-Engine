@@ -55,7 +55,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::Text("Shadow");
 
-
+            ImGui::SliderFloat("Bias##Shadow", &lightComponent.shadow->bias, 0.0f, 3.0f);
 
         }
 

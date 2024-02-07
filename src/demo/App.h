@@ -6,7 +6,9 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 #include <loader/ModelLoader.h>
+
 #include <ImguiExtension/ImguiWrapper.h>
+#include <ImguiExtension/Panels.h>
 
 #include <renderer/PathTracingRenderer.h>
 
@@ -81,6 +83,10 @@ private:
     Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
+
+    Atlas::ImguiExtension::FogPanel fogPanel;
+    Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
+    Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     bool renderUI = true;
     bool renderEnvProbe = true;

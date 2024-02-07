@@ -58,8 +58,6 @@ namespace Atlas {
             // Parse all optional members
             if (scene->fog)
                 j["fog"] = *scene->fog;
-            if (scene->volumetric)
-                j["volumetric"] = *scene->volumetric;
             if (scene->irradianceVolume)
                 j["irradianceVolume"] = *scene->irradianceVolume;
             if (scene->ao)
@@ -110,10 +108,6 @@ namespace Atlas {
             if (j.contains("fog")) {
                 scene->fog = CreateRef<Lighting::Fog>();
                 *scene->fog = j["fog"];
-            }
-            if (j.contains("volumetric")) {
-                scene->volumetric = CreateRef<Lighting::Volumetric>();
-                *scene->volumetric = j["volumetric"];
             }
             if (j.contains("irradianceVolume")) {
                 scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();

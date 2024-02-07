@@ -53,25 +53,33 @@ namespace Atlas::Lighting {
     void to_json(json& j, const Fog& p) {
         j = json {
             {"enable", p.enable},
-            {"color", p.color},
+            {"scatteringFactor", p.scatteringFactor},
+            {"extinctionFactor", p.extinctionFactor},
+            {"extinctionCoefficients", p.extinctionCoefficients},
+            {"ambientFactor", p.ambientFactor},
             {"density", p.density},
             {"height", p.height},
             {"heightFalloff", p.heightFalloff},
             {"scatteringAnisotropy", p.scatteringAnisotropy},
             {"rayMarching", p.rayMarching},
             {"rayMarchStepCount", p.rayMarchStepCount},
+            {"volumetricIntensity", p.volumetricIntensity},
         };
     }
 
     void from_json(const json& j, Fog& p) {
         j.at("enable").get_to(p.enable);
-        j.at("color").get_to(p.color);
+        j.at("scatteringFactor").get_to(p.scatteringFactor);
+        j.at("extinctionFactor").get_to(p.extinctionFactor);
+        j.at("extinctionCoefficients").get_to(p.extinctionCoefficients);
+        j.at("ambientFactor").get_to(p.ambientFactor);
         j.at("density").get_to(p.density);
         j.at("height").get_to(p.height);
         j.at("heightFalloff").get_to(p.heightFalloff);
         j.at("scatteringAnisotropy").get_to(p.scatteringAnisotropy);
         j.at("rayMarching").get_to(p.rayMarching);
         j.at("rayMarchStepCount").get_to(p.rayMarchStepCount);
+        j.at("volumetricIntensity").get_to(p.volumetricIntensity);
     }
 
     void to_json(json& j, const IrradianceVolume& p) {
@@ -241,18 +249,6 @@ namespace Atlas::Lighting {
         j.at("maxLength").get_to(p.maxLength);
         j.at("thickness").get_to(p.thickness);
         j.at("enable").get_to(p.enable);
-    }
-
-    void to_json(json& j, const Volumetric& p) {
-        j = json {
-            {"sampleCount", p.sampleCount},
-            {"intensity", p.intensity},
-        };
-    }
-
-    void from_json(const json& j, Volumetric& p) {
-        j.at("sampleCount").get_to(p.sampleCount);
-        j.at("intensity").get_to(p.intensity);
     }
 
     void to_json(json& j, const VolumetricClouds::Scattering& p) {

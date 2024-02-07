@@ -83,8 +83,8 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
     vec3 stepVector = rayDirection * stepLength;
  
     vec3 foginess = vec3(0.0);
-    float extinction = 1.0;
-    float extinctionWithClouds = 1.0;
+    vec4 extinction = vec4(1.0);
+    vec4 extinctionWithClouds = vec4(1.0);
     
     vec2 interleavedTexCoords = (0.5 * texCoords + 0.5) * resolution;
 
@@ -155,38 +155,44 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
         shadowValue = min(shadowValue, cloudShadowValue);
 #endif
 
+        float density = uniforms.fog.density * GetVolumetricFogDensity(uniforms.fog, worldPosition);
+
+        vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
+            uniforms.fog.extinctionCoefficients.rgb * density;
+        vec4 extinctionCoefficient = uniforms.fog.extinctionFactor *
+            uniforms.fog.extinctionCoefficients * density;
+
         float NdotL = dot(rayDirection, uniforms.light.direction.xyz);
 
-        float density = uniforms.fog.density * GetVolumetricFogDensity(uniforms.fog, viewPosition, worldPosition);
-
-        float clampedExtinction = max(density, 0.0000001);
-        float stepExtinction = exp(-density * stepLength);
+        vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
+        vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);
 
         float phaseFunction = uniforms.fogEnabled > 0 ?
             ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL) : 1.0;
-        vec3 stepScattering = density * (shadowValue * phaseFunction * uniforms.light.color.rgb + uniforms.fog.color.rgb);
+        vec3 stepScattering = scatteringCoefficient * (shadowValue * phaseFunction * uniforms.light.color.rgb
+            + vec3(uniforms.fog.ambientFactor));
 
-        vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction) / clampedExtinction;
+        vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction.rgb) / clampedExtinction.rgb;
 #ifdef CLOUDS
-        foginess += luminanceIntegral * extinctionWithClouds;
+        foginess += luminanceIntegral * extinctionWithClouds.rgb;
 
         if (distToPlanetCenter > cloudInnerRadius && !receivedCloudExtinction) {
-            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction * cloudExtinction : 1.0;
+            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction * cloudExtinction : vec4(1.0);
             receivedCloudExtinction = true;
         }
         else {
-            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction : 1.0;
+            extinctionWithClouds *= uniforms.fogEnabled > 0 ? stepExtinction : vec4(1.0);
         }
 #else
-        foginess += luminanceIntegral * extinction;
+        foginess += luminanceIntegral * extinction.rgb;
 #endif
 
-        extinction *= uniforms.fogEnabled > 0 ? stepExtinction : 1.0;
+        extinction *= uniforms.fogEnabled > 0 ? stepExtinction : vec4(1.0);
 
         currentPosition += stepVector;
 
     }
 
-    return vec4(foginess * uniforms.intensity, extinction);
+    return vec4(foginess * uniforms.intensity, extinction.a);
 
 }

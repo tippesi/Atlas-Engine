@@ -114,7 +114,10 @@ void App::LoadContent(AppConfiguration config) {
     }
 
     if (config.volumetric) {
-        scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
+        scene->fog->rayMarching = true;
+    }
+    else {
+        scene->fog->rayMarching = false;
     }
 
     if (config.ocean) {
