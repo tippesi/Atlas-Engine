@@ -4,6 +4,7 @@
 #include "ShapesManager.h"
 
 #include "InterfaceImplementations.h"
+#include <Jolt/Physics/StateRecorderImpl.h>
 
 namespace Atlas {
 
@@ -62,6 +63,10 @@ namespace Atlas {
 
             void OptimizeBroadphase();
 
+            void SaveState();
+
+            void RestoreState();
+
             JPH::PhysicsSystem system;
 
             int32_t simulationStepsPerSecond = 60;
@@ -72,6 +77,8 @@ namespace Atlas {
             Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr;
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
             Ref<JPH::ContactListener> contactListener = nullptr;
+
+            JPH::StateRecorderImpl state;
 
             friend class Scene::Scene;
             friend class RigidBodyComponent;

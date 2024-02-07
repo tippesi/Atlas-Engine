@@ -171,6 +171,19 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::SaveState() {
+
+            system.SaveState(state);
+
+        }
+
+        void PhysicsWorld::RestoreState() {
+
+            system.RestoreState(state);
+            state.Clear();
+
+        }
+
     }
 
 }

@@ -645,6 +645,14 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Enable##PhysicsShoot", &shootSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsShoot", &shootSpawnRate, 0.001f, 1.0f);
                 ImGui::SliderFloat("Velocity##PhysicsShoot", &shootVelocity, 0.0f, 100.0f);
+                
+                if (ImGui::Button("Save state##Physics")) {
+                    scene->physicsWorld->SaveState();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Restore state##Physics")) {
+                    scene->physicsWorld->RestoreState();
+                }
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
