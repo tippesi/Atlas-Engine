@@ -8,11 +8,6 @@ namespace Atlas {
 
         using namespace Common;
 
-        Reflection::Reflection(int32_t sampleCount) : sampleCount(sampleCount) {
-
-
-        }
-
     }
 
 }

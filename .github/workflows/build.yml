@@ -102,7 +102,7 @@ jobs:
           cc: "cl"
           cxx: "cl"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -139,13 +139,14 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Windows ${{ matrix.build-type }}
+          name: Atlas Engine Windows ${{ matrix.build-type }}
           path: |
             data
             README.md
             LICENSE.md
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo.exe
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor.exe
             ${{ github.workspace }}/bin/**/*.dll
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
@@ -234,7 +235,7 @@ jobs:
           cc: "gcc"
           cxx: "g++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -268,13 +269,14 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Linux ${{ matrix.build-type }}
+          name: Atlas Engine Linux ${{ matrix.build-type }}
           path: |
             data
             README.md
             LICENSE.md
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
@@ -362,7 +364,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -396,7 +398,7 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo MacOS ${{ matrix.build-type }}
+          name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
             data
             README.md

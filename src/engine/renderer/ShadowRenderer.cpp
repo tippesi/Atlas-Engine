@@ -37,7 +37,7 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = shadow->componentCount;
+                auto componentCount = shadow->viewCount;
 
                 bool isDirectionalLight = false;
                 vec3 lightLocation;
@@ -52,7 +52,7 @@ namespace Atlas {
 
                 for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
 
-                    auto component = &shadow->components[i];
+                    auto component = &shadow->views[i];
 
                     if (frameBuffer->depthAttachment.layer != i) {
                         frameBuffer->depthAttachment.layer = i;
@@ -60,6 +60,12 @@ namespace Atlas {
                     }
 
                     auto shadowPass = renderList->GetShadowPass(lightEntity, i);
+                    if (!shadowPass) {
+                        // Need to go through render passes to make sure images have transitioned
+                        commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+                        commandList->EndRenderPass();
+                        continue;
+                    }
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 

@@ -3,6 +3,7 @@
 #include "System.h"
 #include "ResourceLoadException.h"
 #include "../common/Hash.h"
+#include "../common/Path.h"
 
 #include <vector>
 #include <mutex>
@@ -76,6 +77,7 @@ namespace Atlas {
             catch (const std::exception& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
+                Log::Error("Exception on load: " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
@@ -88,6 +90,12 @@ namespace Atlas {
             isLoaded = false;
             errorOnLoad = false;
             data = nullptr;
+        }
+
+        std::string GetFileName() const {
+
+            return Common::Path::GetFileName(path);
+
         }
 
         Hash ID = 0;

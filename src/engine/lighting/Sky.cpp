@@ -4,12 +4,6 @@ namespace Atlas {
 
     namespace Lighting {
 
-        Sky::Sky() {
-
-
-
-        }
-
         Ref<EnvironmentProbe> Sky::GetProbe() {
 
             // Prioritize user loaded cubemaps

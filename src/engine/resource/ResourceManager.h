@@ -12,6 +12,11 @@
 
 namespace Atlas {
 
+    enum class ResourceTopic {
+        ResourceCreate = 0,
+        ResourceDestroy
+    };
+
     template<typename T>
     class ResourceManager {
 
@@ -50,7 +55,7 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->Load(std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
                 handle = ResourceHandle<T>(resources[path]);
             }
 
@@ -91,7 +96,7 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResource(path, origin);
             if (!handle.IsValid()) {
                 resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
                 handle = ResourceHandle<T>(resources[path]);
             }
 
@@ -120,7 +125,7 @@ namespace Atlas {
                 resources[path]->future = std::async(std::launch::async,
                     &Resource<T>::template Load<Args...>,
                     resources[path].get(), std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
                 handle = ResourceHandle<T>(resources[path]);
             }
 
@@ -163,7 +168,7 @@ namespace Atlas {
                 resources[path]->future = std::async(std::launch::async,
                     &Resource<T>::template LoadWithExternalLoader<Args...>,
                     resources[path].get(), loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(resources[path]);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
                 handle = ResourceHandle<T>(resources[path]);
             }
 
@@ -195,7 +200,7 @@ namespace Atlas {
                 resources[path] = resource;
             }
 
-            NotifyAllSubscribers(resource);
+            NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
             return ResourceHandle<T>(resource);
 
         }
@@ -255,11 +260,13 @@ namespace Atlas {
 
         }
 
-        static int32_t Subscribe(std::function<void(Ref<Resource<T>>&)> function) {
+        static int32_t Subscribe(const ResourceTopic topic, std::function<void(Ref<Resource<T>>&)> function) {
 
             std::lock_guard lock(subscriberMutex);
 
-            subscribers.emplace_back(ResourceSubscriber<T>{
+            auto subscribers = GetSubscribers(topic);
+
+            subscribers->emplace_back(ResourceSubscriber<T>{
                 .ID = subscriberCount,
                 .function = function
             });
@@ -268,17 +275,19 @@ namespace Atlas {
 
         }
 
-        static void Unsubscribe(int32_t subscriptionID) {
+        static void Unsubscribe(const ResourceTopic topic, int32_t subscriptionID) {
 
             std::lock_guard lock(subscriberMutex);
 
-            auto item = std::find_if(subscribers.begin(), subscribers.end(),
+            auto subscribers = GetSubscribers(topic);
+
+            auto item = std::find_if(subscribers->begin(), subscribers->end(),
                 [&](ResourceSubscriber<T> subscriber) {
                     return subscriber.ID == subscriptionID;
             });
 
-            if (item != subscribers.end()) {
-                subscribers.erase(item);
+            if (item != subscribers->end()) {
+                subscribers->erase(item);
             }
 
         }
@@ -291,7 +300,8 @@ namespace Atlas {
 
         static std::atomic_bool isInitialized;
 
-        static std::vector<ResourceSubscriber<T>> subscribers;
+        static std::vector<ResourceSubscriber<T>> createSubscribers;
+        static std::vector<ResourceSubscriber<T>> destroySubscribers;
 
         static std::atomic_int subscriberCount;
 
@@ -338,6 +348,9 @@ namespace Atlas {
 
                 // Delete if all conditions are met
                 if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
+                    NotifyAllSubscribers(ResourceTopic::ResourceDestroy, resource);
+                    AE_ASSERT(resource.use_count() == 1 &&
+                        "Subscribers shouldn't claim ownership of to be deleted resources");
                     resource->Unload();
                     it = resources.erase(it);
                 }
@@ -353,14 +366,29 @@ namespace Atlas {
 
         }
 
-        static void NotifyAllSubscribers(Ref<Resource<T>>& resource) {
+        static void NotifyAllSubscribers(const ResourceTopic topic, Ref<Resource<T>>& resource) {
 
             std::lock_guard lock(subscriberMutex);
 
-            for (auto& subscriber : subscribers) {
+            auto subscribers = GetSubscribers(topic);
+
+            for (auto& subscriber : *subscribers) {
                 subscriber.function(resource);
             }
 
+        }
+
+        static std::vector<ResourceSubscriber<T>>* GetSubscribers(const ResourceTopic topic) {
+            std::vector<ResourceSubscriber<T>>* subscribers;
+
+            if (topic == ResourceTopic::ResourceCreate) {
+                subscribers = &createSubscribers;
+            }
+            else {
+                subscribers = &destroySubscribers;
+            }
+
+            return subscribers;
         }
 
     };
@@ -378,7 +406,10 @@ namespace Atlas {
     std::atomic_bool ResourceManager<T>::isInitialized = false;
 
     template<typename T>
-    std::vector<ResourceSubscriber<T>> ResourceManager<T>::subscribers;
+    std::vector<ResourceSubscriber<T>> ResourceManager<T>::createSubscribers;
+
+    template<typename T>
+    std::vector<ResourceSubscriber<T>> ResourceManager<T>::destroySubscribers;
 
     template<typename T>
     std::atomic_int ResourceManager<T>::subscriberCount = 0;

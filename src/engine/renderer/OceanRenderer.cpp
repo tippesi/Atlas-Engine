@@ -51,7 +51,6 @@ namespace Atlas {
             auto ocean = scene->ocean;
             auto clouds = scene->sky.clouds;
             auto fog = scene->fog;
-            auto volumetric = scene->volumetric;
 
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid())
@@ -66,7 +65,7 @@ namespace Atlas {
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
             lightUniform.intensity = light.intensity;
 
-            if (volumetric) {
+            if (fog && fog->enable && fog->rayMarching) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
@@ -77,16 +76,16 @@ namespace Atlas {
                 auto& shadowUniform = lightUniform.shadow;
                 shadowUniform.distance = distance;
                 shadowUniform.bias = shadow->bias;
-                shadowUniform.cascadeCount = shadow->componentCount;
+                shadowUniform.cascadeCount = shadow->viewCount;
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
                 commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
 
-                auto componentCount = shadow->componentCount;
+                auto componentCount = shadow->viewCount;
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
                     if (i < componentCount) {
-                        auto cascade = &shadow->components[i];
+                        auto cascade = &shadow->views[i];
                         auto frustum = Volume::Frustum(cascade->frustumMatrix);
                         auto corners = frustum.GetCorners();
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
@@ -97,7 +96,7 @@ namespace Atlas {
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
-                        auto cascade = &shadow->components[componentCount - 1];
+                        auto cascade = &shadow->views[componentCount - 1];
                         shadowUniform.cascades[i].distance = cascade->farDistance;
                     }
                 }
@@ -109,6 +108,7 @@ namespace Atlas {
             lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
 
+            bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
 
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
@@ -145,8 +145,8 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
-                auto depthImage = target->lightingFrameBuffer->GetDepthImage();
+                auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
 
                 commandList->BindImage(depthImage, nearestSampler, 3, 0);
                 commandList->BindImage(lightingImage, 3, 1);
@@ -160,7 +160,7 @@ namespace Atlas {
 
             // Update local texture copies
             {
-                auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+                auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
                 if (refractionTexture.width != colorImage->width ||
                     refractionTexture.height != colorImage->height ||
                     refractionTexture.format != colorImage->format) {
@@ -168,7 +168,7 @@ namespace Atlas {
                         colorImage->format);
                 }
 
-                auto& depthImage = target->lightingFrameBuffer->GetDepthImage();
+                auto& depthImage = target->afterLightingFrameBuffer->GetDepthImage();
                 if (depthTexture.width != depthImage->width ||
                     depthTexture.height != depthImage->height ||
                     depthTexture.format != depthImage->format) {
@@ -204,10 +204,11 @@ namespace Atlas {
             {
                 Graphics::Profiler::EndAndBeginQuery("Surface");
 
-                commandList->BeginRenderPass(target->lightingFrameBufferWithStencil->renderPass,
-                    target->lightingFrameBufferWithStencil);
+                commandList->BeginRenderPass(target->afterLightingFrameBufferWithStencil->renderPass,
+                    target->afterLightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
+                if (fogEnabled) config.AddMacro("FOG");
                 if (cloudsEnabled) config.AddMacro("CLOUDS");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
@@ -286,14 +287,17 @@ namespace Atlas {
                     }
                 }
 
-                if (fog && fog->enable) {
+                if (fogEnabled) {
                     target->volumetricTexture.Bind(commandList, 3, 7);
 
                     auto& fogUniform = uniforms.fog;
-                    fogUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(fog->color), 1.0f);
+                    fogUniform.extinctionCoefficient = fog->extinctionCoefficients;
+                    fogUniform.scatteringFactor = fog->scatteringFactor;
+                    fogUniform.extinctionFactor = fog->extinctionFactor;
                     fogUniform.density = fog->density;
                     fogUniform.heightFalloff = fog->heightFalloff;
                     fogUniform.height = fog->height;
+                    fogUniform.ambientFactor = fog->ambientFactor;
                     fogUniform.scatteringAnisotropy = glm::clamp(fog->scatteringAnisotropy, -0.999f, 0.999f);
                 }
 
@@ -352,7 +356,7 @@ namespace Atlas {
                 if (ocean->underwaterShader) {
                     Graphics::Profiler::EndAndBeginQuery("Underwater");
 
-                    auto& colorImage = target->lightingFrameBuffer->GetColorImage(0);
+                    auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
 
                     std::vector<Graphics::ImageBarrier> imageBarriers;
                     std::vector<Graphics::BufferBarrier> bufferBarriers;
@@ -385,9 +389,9 @@ namespace Atlas {
 
                     commandList->BindPipeline(pipeline);
 
-                    auto lightingImage = target->lightingFrameBuffer->GetColorImage(0);
-                    auto stencilImage = target->lightingFrameBuffer->GetColorImage(2);
-                    auto depthImage = target->lightingFrameBuffer->GetDepthImage();
+                    auto lightingImage = target->afterLightingFrameBuffer->GetColorImage(0);
+                    auto stencilImage = target->afterLightingFrameBuffer->GetColorImage(2);
+                    auto depthImage = target->afterLightingFrameBuffer->GetDepthImage();
 
                     refractionTexture.Bind(commandList, 3, 4);
                     commandList->BindImage(depthImage, nearestSampler, 3, 16);
@@ -534,7 +538,7 @@ namespace Atlas {
             };
 
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->lightingFrameBufferWithStencil,
+                .frameBuffer = depthOnly ? target->oceanDepthOnlyFrameBuffer : target->afterLightingFrameBufferWithStencil,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
             };
 

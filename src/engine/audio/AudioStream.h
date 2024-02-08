@@ -27,31 +27,33 @@ namespace Atlas {
 
             AudioStream& operator=(const AudioStream& that) = delete;
 
+            void ChangeData(ResourceHandle<AudioData> data);
+
             double GetDuration();
 
             void SetTime(double time);
 
-            double GetTime();
+            double GetTime() const;
 
             void SetVolume(float volume);
 
-            float GetVolume();
+            float GetVolume() const;
 
             void SetChannelVolume(Channel channel, float volume);
 
-            float GetChannelVolume(Channel channel);
+            float GetChannelVolume(Channel channel) const;
 
             void SetPitch(double pitch);
 
-            double GetPitch();
+            double GetPitch() const;
 
             void Pause();
 
             void Resume();
 
-            bool IsPaused();
+            bool IsPaused() const;
 
-            bool IsValid();
+            bool IsValid() const;
 
             bool GetChunk(std::vector<int16_t>& chunk);
 

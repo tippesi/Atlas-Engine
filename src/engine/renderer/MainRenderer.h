@@ -44,12 +44,13 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-                Ref<PrimitiveBatch> batch = nullptr, Texture::Texture2D* texture = nullptr);
+                Ref<PrimitiveBatch> primitiveBatch = nullptr, Texture::Texture2D* texture = nullptr);
 
             void PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
                 Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
 
-            void RenderBatched(Ref<Viewport> viewport, Ref<PrimitiveBatch> batch, const CameraComponent& camera);
+            void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
+                Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList = nullptr);
 
             void RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene);
 
@@ -142,6 +143,9 @@ namespace Atlas {
             void FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera);
 
             void PreintegrateBRDF();
+
+            PipelineConfig GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer>& frameBuffer,
+                Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth);
 
             Graphics::GraphicsDevice* device = nullptr;
 

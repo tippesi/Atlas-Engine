@@ -48,8 +48,6 @@ public:
 
     virtual void Render(float deltaTime) final;
 
-
-
 private:
     void DisplayLoadingScreen(float deltaTime);
 
@@ -60,7 +58,7 @@ private:
     void SetResolution(int32_t width, int32_t height);
 
     Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
-    Ref<Atlas::RenderTarget> renderTarget;
+    Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
     Ref<Atlas::Font> font;
@@ -101,7 +99,7 @@ private:
 
     int32_t frameCount = 0;
 
-    ImguiWrapper imguiWrapper;
+    Atlas::ImguiExtension::ImguiWrapper imguiWrapper;
 
     AppConfiguration config;
 

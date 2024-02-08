@@ -25,6 +25,7 @@ namespace Atlas {
 			void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
             const Volume::AABB aabb;
+            const float depth;
 
 		private:
 			Scene* scene;

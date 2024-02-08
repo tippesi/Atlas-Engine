@@ -11,6 +11,13 @@ namespace Atlas {
 
         }
 
+        void AudioStream::ChangeData(ResourceHandle<AudioData> data) {
+
+            this->data = data;
+            progress = 0.0;
+
+        }
+
         double AudioStream::GetDuration() {
 
             std::lock_guard<std::mutex> lock(mutex);
@@ -23,14 +30,20 @@ namespace Atlas {
 
             std::lock_guard<std::mutex> lock(mutex);
 
+            if (!data.IsValid())
+                return;
+
             progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
             progress = progress >= 0.0 ? progress : 0.0;
 
         }
 
-        double AudioStream::GetTime() {
+        double AudioStream::GetTime() const {
 
             std::lock_guard<std::mutex> lock(mutex);
+
+            if (!data.IsValid())
+                return 0.0;
 
             return 2.0 * progress * (double)data->GetChannelCount() / 
                 (double)(data->GetFrequency() * data->GetSampleSize());
@@ -45,7 +58,7 @@ namespace Atlas {
 
         }
         
-        float AudioStream::GetVolume() {
+        float AudioStream::GetVolume() const {
 
             std::lock_guard<std::mutex> lock(mutex);
 
@@ -61,7 +74,7 @@ namespace Atlas {
 
         }
 
-        float AudioStream::GetChannelVolume(Channel channel) {
+        float AudioStream::GetChannelVolume(Channel channel) const {
 
             std::lock_guard<std::mutex> lock(mutex);
 
@@ -77,7 +90,7 @@ namespace Atlas {
 
         }
 
-        double AudioStream::GetPitch() {
+        double AudioStream::GetPitch() const {
 
             std::lock_guard<std::mutex> lock(mutex);
 
@@ -97,13 +110,13 @@ namespace Atlas {
 
         }
 
-        bool AudioStream::IsPaused() {
+        bool AudioStream::IsPaused() const {
 
             return pause;
 
         }
 
-        bool AudioStream::IsValid() {
+        bool AudioStream::IsValid() const {
 
             return data.IsLoaded() && data->isValid;
 

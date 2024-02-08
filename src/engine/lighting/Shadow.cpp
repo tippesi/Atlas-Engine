@@ -8,7 +8,7 @@ namespace Atlas {
                 distance(distance), bias(bias), resolution(resolution) {
 
             splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
-            componentCount = cascadeCount;
+            viewCount = cascadeCount;
             this->splitCorrection = splitCorrection;
 
             isCascaded = true;
@@ -17,7 +17,7 @@ namespace Atlas {
             maps = Texture::Texture2DArray(resolution, resolution, cascadeCount, 
                 VK_FORMAT_D16_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-            components = std::vector<ShadowView>(cascadeCount);
+            views = std::vector<ShadowView>(cascadeCount);
 
             update = true;
 
@@ -30,19 +30,19 @@ namespace Atlas {
             isCascaded = false;
 
             if (useCubemap) {
-                componentCount = 6;
+                viewCount = 6;
 
                 cubemap  = Texture::Cubemap(resolution, resolution, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
             else {
-                componentCount = 1;
+                viewCount = 1;
 
                 maps = Texture::Texture2DArray(resolution, resolution, 1, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 
-            components = std::vector<ShadowView>(componentCount);
+            views = std::vector<ShadowView>(viewCount);
 
             update = true;
 
@@ -57,7 +57,7 @@ namespace Atlas {
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
             else {
-                maps = Texture::Texture2DArray(resolution, resolution, componentCount, VK_FORMAT_D16_UNORM,
+                maps = Texture::Texture2DArray(resolution, resolution, viewCount, VK_FORMAT_D16_UNORM,
                     Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             }
 

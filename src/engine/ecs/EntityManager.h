@@ -17,6 +17,56 @@ namespace Atlas {
         class EntityManager {
 
         public:
+            class Iterator {
+
+            public:
+                Iterator() = delete;
+
+                Iterator(const std::vector<Entity>* entities, size_t idx) : entities(entities), idx(idx) {
+
+                    if (idx < entities->size() && !ValidEntity()) {
+                        operator++();
+                    }
+
+                }
+
+                Iterator& operator++() {
+
+                    while (++idx < entities->size() && !ValidEntity());
+                    return *this;
+
+                }
+
+                Iterator& operator--() {
+
+                    while (--idx > 0 && !ValidEntity());
+                    return *this;
+
+                }
+
+                inline bool operator!=(const Iterator& iterator) const {
+
+                    return idx != iterator.idx;
+
+                }
+
+                inline const Entity& operator*() const {
+
+                    return (*entities)[idx];
+
+                }
+
+            protected:
+                bool ValidEntity() const {
+                    return (*entities)[idx] != EntityConfig::InvalidEntity;
+                }
+               
+                size_t idx = 0;
+
+                const std::vector<Entity>* entities;
+
+            };
+
             /**
              * Constructs an EntityManager object.
              */
@@ -90,14 +140,14 @@ namespace Atlas {
             Comp& Emplace(Entity entity, Args&&... args);
 
             /**
-             * Creates a component and associates it with an entity.
+             * Replaces a component and associates it with an entity.
              * @tparam Comp The component type
              * @param entity The entity which is associated with the component
              * @param comp The component to add
              * @return Returns a reference to the newly created component
              */
             template<typename Comp>
-            Comp& Add(Entity entity, const Comp comp);
+            Comp& Replace(Entity entity, Comp& comp);
 
             /**
              * Erases a component.
@@ -147,15 +197,15 @@ namespace Atlas {
             template<typename Comp>
             size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
-            std::vector<Entity>::const_iterator begin() const {
+            Iterator begin() const {
 
-                return entities.begin();
+                return { &entities, 0 };
 
             }
 
-            std::vector<Entity>::const_iterator end() const {
+            Iterator end() const {
 
-                return entities.end();
+                return { &entities, entities.size() };
 
             }
 
@@ -179,11 +229,11 @@ namespace Atlas {
         }
 
         template<typename Comp>
-        Comp& EntityManager::Add(Entity entity, const Comp comp) {
+        Comp& EntityManager::Replace(Entity entity, Comp& comp) {
 
             auto& pool = pools.Get<Comp>();
 
-            return pool.Emplace(entity, comp);
+            return pool.Replace(entity, comp);
 
         }
 

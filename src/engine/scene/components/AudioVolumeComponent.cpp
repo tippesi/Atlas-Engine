@@ -2,14 +2,26 @@
 
 #include "../../audio/AudioManager.h"
 
+#include "../Scene.h"
+
 namespace Atlas {
 
     namespace Scene {
 
         namespace Components {
 
-            AudioVolumeComponent::AudioVolumeComponent(ResourceHandle<Audio::AudioData> audioData,
-                Volume::AABB aabb, float falloffFactor) : aabb(aabb), falloffFactor(falloffFactor) {
+            AudioVolumeComponent::AudioVolumeComponent(Scene *scene, const AudioVolumeComponent &that) {
+
+                if (this != &that) {
+                    *this = that;
+                }
+
+                this->scene = scene;
+
+            }
+
+            AudioVolumeComponent::AudioVolumeComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
+                Volume::AABB aabb, float falloffFactor) : aabb(aabb), falloffFactor(falloffFactor), scene(scene) {
 
                 stream = Audio::AudioManager::CreateStream(audioData, 0.0f);
 
@@ -17,18 +29,46 @@ namespace Atlas {
 
             }
 
+            void AudioVolumeComponent::ChangeResource(ResourceHandle<Audio::AudioData> audioData) {
+
+                AE_ASSERT(scene != nullptr && "Component needs to be added to entity before changing data");
+
+                if (stream) {
+                    scene->UnregisterResource(scene->registeredAudios, stream->data);
+
+                    stream->ChangeData(audioData);
+                }
+                else {
+                    stream = Audio::AudioManager::CreateStream(audioData, 0.0f);
+
+                    stream->loop = true;
+                }
+
+                scene->RegisterResource(scene->registeredAudios, audioData);
+
+            }
+
+            Volume::AABB AudioVolumeComponent::GetTransformedAABB() const {
+
+                return transformedAABB;
+
+            }
+
             void AudioVolumeComponent::Update(const TransformComponent &transformComponent, vec3 listenerLocation) {
+
+                if (!stream)
+                    return;
 
                 const float epsilon = 0.00001f;
 
-                auto distance = glm::max(epsilon, aabb.Transform(transformComponent.globalMatrix).GetDistance(listenerLocation));
-
+                transformedAABB = aabb.Transform(transformComponent.globalMatrix);
+                auto distance = glm::max(epsilon, transformedAABB.GetDistance(listenerLocation));
                 float distanceVolume = glm::min(1.0f, falloffFactor / distance);
 
                 auto audible = distanceVolume > cutoff;
 
                 if (audible) {
-                    stream->SetVolume(distanceVolume);
+                    stream->SetVolume(distanceVolume * volume);
                 }
                 else {
                     stream->SetVolume(0.0f);

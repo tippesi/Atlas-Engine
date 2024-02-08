@@ -23,8 +23,11 @@ namespace Atlas {
 			void TransformComponent::Update(const TransformComponent& parentTransform, bool parentChanged) {
 
 				lastGlobalMatrix = globalMatrix;
+                wasStatic = isStatic;
 
-				if (changed || parentChanged) {
+				changed |= parentChanged;
+
+				if (changed) {
 
 					globalMatrix = parentTransform.globalMatrix * matrix;
 					inverseGlobalMatrix = mat4x3(glm::inverse(globalMatrix));
@@ -34,6 +37,18 @@ namespace Atlas {
 				}
 
 			}
+
+            bool TransformComponent::IsStatic() const {
+
+                return isStatic;
+
+            }
+
+            Common::MatrixDecomposition TransformComponent::Decompose() const {
+
+                return Common::MatrixDecomposition(matrix);
+
+            }
 
 		}
 

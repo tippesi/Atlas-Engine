@@ -13,7 +13,7 @@ namespace Atlas {
         class Sky {
 
         public:
-            Sky();
+            Sky() = default;
 
             Ref<EnvironmentProbe> GetProbe();
 

@@ -425,7 +425,7 @@ namespace Atlas {
 
         template<typename T>
         template<typename S>
-        void Image<T>::SetData(int32_t x, int32_t y, S data) {
+        void Image<T>::SetData(int32_t x, int32_t y, S value) {
 
             AE_ASSERT(sizeof(S) / 4 == size_t(channels) && "Data can't be fitted into channels");
 
@@ -435,7 +435,7 @@ namespace Atlas {
                 auto index = (y * width + x) * channels;
 
                 for (int32_t i = 0; i < min; i++) {
-                    mipLevels[0].data[index + i] = T(data[i]);
+                    mipLevels[0].data[index + i] = T(value[i]);
                 }
             }
             else if constexpr ((!std::is_integral_v<T> && (std::is_same_v<S, glm::vec2>
@@ -444,7 +444,7 @@ namespace Atlas {
                 auto index = (y * width + x) * channels;
 
                 for (int32_t i = 0; i < min; i++) {
-                    mipLevels[0].data[index + i]= T(data[i]);
+                    mipLevels[0].data[index + i]= T(value[i]);
                 }
             }
             else if constexpr (!std::is_integral_v<T> && std::is_same_v<S, float>) {
@@ -452,7 +452,7 @@ namespace Atlas {
                 auto index = (y * width + x) * channels;
 
                 for (int32_t i = 0; i < min; i++) {
-                    mipLevels[0].data[index + i]= T(data);
+                    mipLevels[0].data[index + i]= T(value);
                 }
             }
             else {

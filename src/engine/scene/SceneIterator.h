@@ -7,35 +7,21 @@ namespace Atlas {
 
     namespace Scene {
 
-        class SceneIterator {
+        class SceneIterator : public ECS::EntityManager::Iterator {
         public:
-            SceneIterator() = delete;
+            using ECS::EntityManager::Iterator::Iterator;
 
-            SceneIterator(ECS::EntityManager* entityManager, size_t idx)
-                : entityManager(entityManager), idx(idx) {}
+            SceneIterator(ECS::EntityManager* entityManager, const ECS::EntityManager::Iterator& iterator) 
+                : entityManager(entityManager), ECS::EntityManager::Iterator(iterator) {}
 
-            SceneIterator& operator++() {
-                idx++;
-                return *this;
-            }
+            inline const Entity operator*() const {
 
-            SceneIterator& operator--() {
-                idx--;
-                return *this;
-            }
+                return { ECS::EntityManager::Iterator::operator*(), entityManager };
 
-            inline bool operator!=(const SceneIterator& iterator) const {
-                return idx != iterator.idx;
-            }
-
-            inline Entity operator*() const {
-                return Entity(*(entityManager->begin() + idx), entityManager);
             }
 
         protected:
             ECS::EntityManager* entityManager = nullptr;
-
-            size_t idx = 0;
 
         };
 

@@ -23,8 +23,12 @@ namespace Atlas {
             if (objectVsBroadPhaseLayerFilter == nullptr)
                 this->objectVsBroadPhaseLayerFilter = CreateRef<ObjectVsBroadPhaseLayerFilterImpl>();
 
-            system.Init(maxBodyCount, bodyMutexesCount, maxBodyPairCount, maxContactConstraintCount,
+            system = CreateRef<JPH::PhysicsSystem>();
+
+            system->Init(maxBodyCount, bodyMutexesCount, maxBodyPairCount, maxContactConstraintCount,
                 *this->broadPhaseLayerInterface, *this->objectVsBroadPhaseLayerFilter, *this->objectLayerFilter);
+
+            state = CreateRef<JPH::StateRecorderImpl>();
 
             //contactListener = CreateRef<MyContactListener>();
             //system.SetContactListener(contactListener.get());
@@ -42,7 +46,7 @@ namespace Atlas {
         Body PhysicsWorld::CreateBody(const ShapeRef &shape, JPH::ObjectLayer objectLayer,
             MotionQuality motionQuality, const mat4& matrix, vec3 veloctiy) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
 
             JPH::Vec3 pos;
             JPH::Quat quat;
@@ -67,7 +71,7 @@ namespace Atlas {
 
         void PhysicsWorld::DestroyBody(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
 
             bodyInterface.RemoveBody(bodyId);
             bodyInterface.DestroyBody(bodyId);
@@ -80,14 +84,14 @@ namespace Atlas {
             JPH::Quat quat;
             MatrixToJPHPosAndRot(matrix, pos, quat);
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetPositionAndRotation(bodyId, pos, quat, JPH::EActivation::Activate);
 
         }
 
         mat4 PhysicsWorld::GetBodyMatrix(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
 
             auto transform = bodyInterface.GetWorldTransform(bodyId);
 
@@ -111,63 +115,76 @@ namespace Atlas {
 
         void PhysicsWorld::SetMotionQuality(Body bodyId, MotionQuality quality) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetMotionQuality(bodyId, quality);
 
         }
 
         MotionQuality PhysicsWorld::GetMotionQuality(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetMotionQuality(bodyId);
 
         }
 
         void PhysicsWorld::SetLinearVelocity(Body bodyId, glm::vec3 velocity) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
 
         }
 
         vec3 PhysicsWorld::GetLinearVelocity(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
 
         }
 
         void PhysicsWorld::SetRestitution(Body bodyId, float restitution) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetRestitution(bodyId, restitution);
 
         }
 
         float PhysicsWorld::GetRestitution(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetRestitution(bodyId);
 
         }
 
         void PhysicsWorld::SetFriction(Body bodyId, float friction) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetFriction(bodyId, friction);
 
         }
 
         float PhysicsWorld::GetFriction(Body bodyId) {
 
-            auto& bodyInterface = system.GetBodyInterface();
+            auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetFriction(bodyId);
 
         }
 
         void PhysicsWorld::OptimizeBroadphase() {
 
-            system.OptimizeBroadPhase();
+            system->OptimizeBroadPhase();
+
+        }
+
+        void PhysicsWorld::SaveState() {
+
+            system->SaveState(*state);
+
+        }
+
+        void PhysicsWorld::RestoreState() {
+
+            system->RestoreState(*state);
+            state->Clear();
 
         }
 

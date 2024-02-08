@@ -41,11 +41,11 @@ namespace Atlas {
                 }
 
                 // We don't want to render to the long range component if it exists
-                auto componentCount = shadow->componentCount;
+                auto componentCount = shadow->viewCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
 
-                    auto component = &shadow->components[i];
+                    auto component = &shadow->views[i];
 
                     if (frameBuffer->depthAttachment.layer != i) {
                         frameBuffer->depthAttachment.layer = i;

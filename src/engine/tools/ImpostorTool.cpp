@@ -1,5 +1,4 @@
 #include "ImpostorTool.h"
-#include "../RenderTarget.h"
 #include "../renderer/ImpostorRenderer.h"
 #include "../scene/Scene.h"
 

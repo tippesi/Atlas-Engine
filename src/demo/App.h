@@ -6,7 +6,9 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 #include <loader/ModelLoader.h>
+
 #include <ImguiExtension/ImguiWrapper.h>
+#include <ImguiExtension/Panels.h>
 
 #include <renderer/PathTracingRenderer.h>
 
@@ -58,7 +60,7 @@ private:
     SceneSelection sceneSelection = SPONZA;
 
     Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
-    Ref<Atlas::RenderTarget> renderTarget;
+    Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
     Ref<Atlas::Font> font;
@@ -81,6 +83,12 @@ private:
     Atlas::Input::ControllerHandler controllerHandler;
 
     Ref<Atlas::Texture::Texture2D> loadingTexture;
+
+    Atlas::ImguiExtension::FogPanel fogPanel;
+    Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
+    Atlas::ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
+    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
+    Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     bool renderUI = true;
     bool renderEnvProbe = true;
@@ -111,7 +119,7 @@ private:
     float shootSpawnRate = 0.1f;
     float shootVelocity = 5.0f;
 
-    ImguiWrapper imguiWrapper;
+    Atlas::ImguiExtension::ImguiWrapper imguiWrapper;
 
     std::vector<Ref<Atlas::Audio::AudioStream>> audioStreams;
 

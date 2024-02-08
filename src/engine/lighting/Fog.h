@@ -13,7 +13,10 @@ namespace Atlas {
 
             bool enable = true;
 
-            vec3 color = vec3(0.73, 0.79, 0.85) * 0.2f;
+            float extinctionFactor = 0.16f;
+            float scatteringFactor = 2.00f;
+
+            vec4 extinctionCoefficients = vec4(0.93f, 0.965f, 1.0f, 1.0f);
 
             float density = 0.05f;
             float height = 0.0f;
@@ -21,9 +24,12 @@ namespace Atlas {
 
             float scatteringAnisotropy = -0.6f;
 
+            float ambientFactor = 0.01f;
+
             bool rayMarching = true;
             int32_t rayMarchStepCount = 10;
 
+            float volumetricIntensity = 1.0f;
 
         };
 

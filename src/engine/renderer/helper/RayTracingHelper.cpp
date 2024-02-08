@@ -117,7 +117,7 @@ namespace Atlas {
 
                 // Bind textures and buffers
                 {
-                    auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->rayTracingWorld;
 
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
@@ -236,10 +236,10 @@ namespace Atlas {
 
                 if (!scene->IsRtDataValid()) return;
 
-                auto& rtData = scene->rayTracingWorld;
-
                 // Bind textures and buffers
                 {
+                    const auto& rtData = scene->rayTracingWorld;
+
                     if (scene->sky.GetProbe())
                         commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
                             scene->sky.GetProbe()->cubemap.sampler, 2, 6);
@@ -482,7 +482,7 @@ namespace Atlas {
                 }
 
                 if (useEmissivesAsLights && scene->IsRtDataValid()) {
-                    auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                     

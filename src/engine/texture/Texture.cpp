@@ -30,8 +30,7 @@ namespace Atlas {
 
         bool Texture::IsValid() const {
 
-            return width > 0 && height > 0 &&
-                   channels > 0 && depth > 0 && image != nullptr;
+            return width > 0 && height > 0 && channels > 0 && depth > 0 && image != nullptr;
 
         }
 

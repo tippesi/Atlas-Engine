@@ -29,6 +29,8 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
+                bool IsStatic() const;
+
                 void Translate(glm::vec3 translation);
                 void Rotate(glm::vec3 rotation);
                 void Scale(glm::vec3 scale);
@@ -37,6 +39,8 @@ namespace Atlas {
                 void Compose(Common::MatrixDecomposition composition);
 
                 glm::mat4 matrix = mat4{ 1.0f };
+
+                bool isStatic = true;
 
                 mat4 globalMatrix = mat4{ 1.0f };
                 mat4 lastGlobalMatrix = mat4{ 1.0f };
@@ -47,8 +51,7 @@ namespace Atlas {
 
                 bool changed = true;
                 bool updated = false;
-
-                bool isStatic = true;
+                bool wasStatic = true;
 
             };
 

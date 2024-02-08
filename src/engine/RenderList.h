@@ -3,6 +3,7 @@
 #include "System.h"
 #include "scene/Entity.h"
 #include "scene/components/LightComponent.h"
+#include "scene/components/MeshComponent.h"
 
 #include "graphics/Buffer.h"
 

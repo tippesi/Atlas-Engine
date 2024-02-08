@@ -20,10 +20,14 @@ namespace Atlas {
             uint32_t bufferArraySize[BINDINGS_PER_DESCRIPTOR_SET] = {};
         };
 
+        struct DescriptorPoolDesc {
+            bool freeDescriptorSets = false;
+        };
+
         class DescriptorPool {
 
         public:
-            explicit DescriptorPool(GraphicsDevice* device);
+            explicit DescriptorPool(GraphicsDevice* device, const DescriptorPoolDesc& desc);
 
             ~DescriptorPool();
 
@@ -50,6 +54,8 @@ namespace Atlas {
             std::unordered_map<Ref<DescriptorSetLayout>, LayoutAllocations> layoutAllocationsMap;
 
             uint32_t poolIdx = 0;
+
+            bool freeDescriptorSets = false;
 
         };
 

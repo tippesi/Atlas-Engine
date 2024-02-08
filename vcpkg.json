@@ -33,7 +33,8 @@
     "spirv-tools",
     "nlohmann-json",
     "gtest",
-    "joltphysics"
+    "joltphysics",
+    "imguizmo"
   ],
   "overrides": [
     {

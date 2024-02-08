@@ -21,7 +21,7 @@ namespace Atlas {
 
         }
 
-        MouseHandler::MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse) :
+        MouseHandler::MouseHandler(float sensibility, float reactivity, bool hideMouse) :
                 sensibility(sensibility), reactivity(reactivity), hideMouse(hideMouse) {
 
             RegisterEvents();
