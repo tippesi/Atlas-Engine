@@ -86,6 +86,8 @@ private:
 
     Atlas::ImguiExtension::FogPanel fogPanel;
     Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
+    Atlas::ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
+    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     bool renderUI = true;

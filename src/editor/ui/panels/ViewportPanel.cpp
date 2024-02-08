@@ -33,8 +33,15 @@ namespace Atlas::Editor::UI {
 
         isFocused = ImGui::IsWindowFocused();
 
-        if (drawMenuBarFunc)
+        if (drawMenuBarFunc) {
+            ImGui::BeginChild("Viewport area");
+
+            isFocused |= ImGui::IsWindowFocused();
+
             drawMenuBarFunc();
+
+            ImGui::EndChild();
+        }
 
         ImGui::BeginChild("Viewport area");
 

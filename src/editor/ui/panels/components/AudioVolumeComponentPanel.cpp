@@ -17,10 +17,10 @@ namespace Atlas::Editor::UI {
 
         if (ImGui::BeginDragDropTarget()) {
             if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Audio::AudioData).name())) {
-                Resource<Audio::AudioData>* resource;
-                std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
+                Resource<Audio::AudioData>* dropResource;
+                std::memcpy(&dropResource, dropPayload->Data, dropPayload->DataSize);
                 // We know this resource is loaded, so we can just request a handle without loading
-                audioVolumeComponent.ChangeResource(ResourceManager<Audio::AudioData>::GetResource(resource->path));
+                audioVolumeComponent.ChangeResource(ResourceManager<Audio::AudioData>::GetResource(dropResource->path));
                 resourceChanged = true;
             }
 

@@ -39,7 +39,7 @@ namespace Atlas::Editor::UI {
         bool needGuizmoEnabled = false;
 
     private:
-        void RenderEntityAABB(Scene::Entity entity);
+        void RenderEntityBoundingVolumes(Scene::Entity entity);
 
     };
 

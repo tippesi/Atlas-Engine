@@ -189,8 +189,14 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        RenderExtendedItem("Fog", &selectedProperty.fog);
-        RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds);
+        if (scene->fog)
+            RenderExtendedItem("Fog", &selectedProperty.fog);
+        if (scene->sky.clouds)
+            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds);
+        if (scene->irradianceVolume)
+            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
+        if (scene->reflection)
+            RenderExtendedItem("Reflection", &selectedProperty.reflection);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
 
     }

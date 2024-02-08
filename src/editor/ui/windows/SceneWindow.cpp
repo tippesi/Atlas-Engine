@@ -89,16 +89,21 @@ namespace Atlas::Editor::UI {
 
         sceneHierarchyPanel.Render(refScene);
 
+        // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (sceneHierarchyPanel.selectedProperty.fog)
             scenePropertiesPanel.Render(scene->fog);
         else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
             scenePropertiesPanel.Render(scene->sky.clouds);
+        else if (sceneHierarchyPanel.selectedProperty.irradianceVolume)
+            scenePropertiesPanel.Render(scene->irradianceVolume);
+        else if (sceneHierarchyPanel.selectedProperty.reflection)
+            scenePropertiesPanel.Render(scene->reflection);
         else if (sceneHierarchyPanel.selectedProperty.postProcessing)
             scenePropertiesPanel.Render(scene->postProcessing);
         else
             scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
 
-        RenderEntityAABB(sceneHierarchyPanel.selectedEntity);
+        RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
         viewportPanel.Render(refScene, inFocus);
 
@@ -111,8 +116,6 @@ namespace Atlas::Editor::UI {
         viewportPanel.DrawMenuBar([&]() {
 
             auto height = ImGui::GetTextLineHeight();
-
-            ImGui::BeginChild("Menu bar area", ImVec2(0.0f, height + 8.0f));
 
             ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
@@ -154,8 +157,6 @@ namespace Atlas::Editor::UI {
             }
 
             ImGui::PopStyleColor();
-
-            ImGui::EndChild();
 
             });
 
@@ -207,7 +208,7 @@ namespace Atlas::Editor::UI {
            
     }
 
-    void SceneWindow::RenderEntityAABB(Scene::Entity entity) {
+    void SceneWindow::RenderEntityBoundingVolumes(Scene::Entity entity) {
 
         if (!entity.IsValid())
             return;

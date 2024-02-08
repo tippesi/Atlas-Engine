@@ -36,6 +36,14 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Clouds");
                 volumetricCloudsPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::IrradianceVolume>>) {
+                RenderHeading("Irradiance volume");
+                irradianceVolumePanel.Render(t);
+            }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
+                RenderHeading("Reflection");
+                reflectionPanel.Render(t);
+            }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
@@ -58,6 +66,8 @@ namespace Atlas::Editor::UI {
 
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
+        ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
+        ImguiExtension::ReflectionPanel reflectionPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };

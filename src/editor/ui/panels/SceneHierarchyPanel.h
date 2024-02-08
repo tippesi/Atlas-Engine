@@ -9,6 +9,8 @@ namespace Atlas::Editor::UI {
     struct SelectedProperty {
         bool fog = false;
         bool volumetricClouds = false;
+        bool reflection = false;
+        bool irradianceVolume = false;
         bool postProcessing = false;
     };
 
