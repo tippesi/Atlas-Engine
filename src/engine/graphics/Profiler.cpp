@@ -17,6 +17,8 @@ namespace Atlas {
         std::unordered_map<std::string, Profiler::ThreadHistory> Profiler::queryHistory;
         size_t Profiler::frameIdx = -1;
 
+        bool Profiler::supportsDebugMarkers = false;
+
 #ifndef AE_OS_MACOS
         std::atomic_bool Profiler::enable = true;
 #else
@@ -66,6 +68,8 @@ namespace Atlas {
             }
 
             queryHistory = newHistory;
+
+            supportsDebugMarkers = GraphicsDevice::DefaultDevice->support.debugMarker;
 
         }
 
@@ -139,6 +143,9 @@ namespace Atlas {
             AE_ASSERT(context.commandList && "A command list must be set before \
                 the first BeginQuery() call in the current thread");
 
+            if (supportsDebugMarkers)
+                context.commandList->BeginDebugMarker(name);
+
             Query query;
 
             query.name = name;
@@ -161,6 +168,9 @@ namespace Atlas {
 
             AE_ASSERT(context.stack.size() && "Stack was empty. Maybe called EndQuery too many \
                 times or code misses a BeginQuery.");
+
+            if (supportsDebugMarkers)
+                context.commandList->EndDebugMarker();
 
             auto query = context.stack.back();
             context.commandList->Timestamp(context.queryPool, query.timer.endId);

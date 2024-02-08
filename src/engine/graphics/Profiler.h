@@ -183,6 +183,8 @@ namespace Atlas {
             static std::unordered_map<std::string, ThreadHistory> queryHistory;
             static size_t frameIdx;
 
+            static bool supportsDebugMarkers;
+
         };
 
     }

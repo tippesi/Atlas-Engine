@@ -31,15 +31,17 @@ namespace Atlas {
 
             void TransferData();
 
-            void BindLineBuffer();
-
-            void BindTriangleBuffer();
-
             void Clear();
 
-        private:
-            // Line data
+            bool testDepth = true;
+
             Buffer::VertexArray lineVertexArray;
+            Buffer::VertexArray triangleVertexArray;
+
+        private:
+            void UpdateVertexArrays();
+
+            // Line data
             Buffer::VertexBuffer lineVertices;
             Buffer::VertexBuffer lineColors;
 
@@ -51,7 +53,6 @@ namespace Atlas {
             bool lineDataValid = true;
 
             // Triangle data
-            Buffer::VertexArray triangleVertexArray;
             Buffer::VertexBuffer triangleVertices;
             Buffer::VertexBuffer triangleColors;
 

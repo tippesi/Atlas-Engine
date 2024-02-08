@@ -148,6 +148,13 @@ void main() {
 
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 
+#ifndef RAYMARCHED_FOG
+    vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
+    volumetricFog.a = ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition);
+
+    volumetricFog.rgb = uniforms.fog.extinctionCoefficients.rgb * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
+#endif
+
     resolve = ApplyVolumetrics(uniforms.fog, resolve, volumetricFog, volumetricClouds,
         worldDirection, planetCenter, uniforms.innerCloudRadius);
 

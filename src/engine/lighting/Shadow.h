@@ -27,6 +27,8 @@ namespace Atlas {
         class Shadow {
 
         public:
+            Shadow() = default;
+
             Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
 
             Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
@@ -46,8 +48,8 @@ namespace Atlas {
 
             int32_t resolution;
 
-            std::vector<ShadowView> components;
-            int32_t componentCount;
+            std::vector<ShadowView> views;
+            int32_t viewCount;
 
             Texture::Texture2DArray maps;
             Texture::Cubemap cubemap;

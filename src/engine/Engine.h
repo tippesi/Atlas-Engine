@@ -6,7 +6,6 @@
 #include "Log.h"
 #include "resource/ResourceManager.h"
 #include "scene/Scene.h"
-#include "RenderTarget.h"
 #include "renderer/MainRenderer.h"
 #include "events/EventManager.h"
 #include "audio/AudioManager.h"

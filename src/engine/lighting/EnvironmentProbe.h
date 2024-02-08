@@ -20,7 +20,7 @@ namespace Atlas {
 
             void SetPosition(vec3 position);
 
-            vec3 GetPosition();
+            vec3 GetPosition() const;
 
             int32_t resolution;
 

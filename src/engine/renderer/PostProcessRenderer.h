@@ -15,9 +15,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
 
-            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
+                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
 
         private:
             struct alignas(16) Uniforms {
@@ -35,11 +37,16 @@ namespace Atlas {
                 vec4 vignetteColor;
             };
 
+            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
+                Graphics::CommandList* commandList);
+
             void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);
 
             PipelineConfig GetMainPipelineConfig();
 
             PipelineConfig GetMainPipelineConfig(const Ref<Graphics::FrameBuffer> frameBuffer);
+
+            std::vector<std::string> GetMacros() const;
 
             PipelineConfig sharpenPipelineConfig;
 

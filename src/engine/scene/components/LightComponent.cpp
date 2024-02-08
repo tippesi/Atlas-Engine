@@ -29,10 +29,10 @@ namespace Atlas {
                 shadow->allowTerrain = true;
 
                 if (longRange) {
-                    auto& component = shadow->components.back();
+                    auto& component = shadow->views.back();
 
                     component.farDistance = longRangeDistance;
-                    component.nearDistance = shadow->components[shadow->components.size() - 1].farDistance;
+                    component.nearDistance = shadow->views[shadow->views.size() - 1].farDistance;
 
                     shadow->longRangeDistance = longRangeDistance;
                     shadow->longRange = true;
@@ -51,13 +51,13 @@ namespace Atlas {
 
                 shadow->allowTerrain = true;
 
-                shadow->components[0].nearDistance = 0.0f;
-                shadow->components[0].farDistance = distance;
-                shadow->components[0].projectionMatrix = clipMatrix * orthoProjection;
-                shadow->components[0].frustumMatrix = clipMatrix * orthoProjection;
-                shadow->components[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
-                shadow->components[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
-                    properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
+                shadow->views[0].nearDistance = 0.0f;
+                shadow->views[0].farDistance = distance;
+                shadow->views[0].projectionMatrix = clipMatrix * orthoProjection;
+                shadow->views[0].frustumMatrix = clipMatrix * orthoProjection;
+                shadow->views[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
+                shadow->views[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
+                                                                        properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
 
             }
 
@@ -90,26 +90,26 @@ namespace Atlas {
 
                 if (shadow->isCascaded && type == LightType::DirectionalLight) {
                     auto distance = shadow->distance;
-                    auto componentCount = shadow->longRange ? shadow->componentCount - 1
-                        : shadow->componentCount;
+                    auto componentCount = shadow->longRange ? shadow->viewCount - 1
+                        : shadow->viewCount;
 
                     // We want cascaded shadow mapping for directional lights
                     for (int32_t i = 0; i < componentCount; i++) {
-                        shadow->components[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection,
+                        shadow->views[i].nearDistance = FrustumSplitFormula(shadow->splitCorrection,
                             camera.nearPlane, distance,
                             (float)i, (float)componentCount);
-                        shadow->components[i].farDistance = FrustumSplitFormula(shadow->splitCorrection,
+                        shadow->views[i].farDistance = FrustumSplitFormula(shadow->splitCorrection,
                             camera.nearPlane, distance,
                             (float)i + 1, (float)componentCount);
                     }
 
-                    for (int32_t i = 0; i < shadow->componentCount; i++) {
-                        UpdateShadowCascade(shadow->components[i], camera);
+                    for (int32_t i = 0; i < shadow->viewCount; i++) {
+                        UpdateShadowCascade(shadow->views[i], camera);
                     }
 
                 }
                 else if (!shadow->isCascaded && type == LightType::DirectionalLight) {
-                    shadow->components[0].viewMatrix = glm::lookAt(shadow->center,
+                    shadow->views[0].viewMatrix = glm::lookAt(shadow->center,
                         shadow->center + transformedProperties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
                 }
                 else if (type == LightType::PointLight) {
@@ -126,9 +126,9 @@ namespace Atlas {
 
                     for (uint8_t i = 0; i < 6; i++) {
                         auto viewMatrix = glm::lookAt(position, position + faces[i], ups[i]);
-                        shadow->components[i].projectionMatrix = projectionMatrix;
-                        shadow->components[i].viewMatrix = viewMatrix;
-                        shadow->components[i].frustumMatrix = projectionMatrix * viewMatrix;
+                        shadow->views[i].projectionMatrix = projectionMatrix;
+                        shadow->views[i].viewMatrix = viewMatrix;
+                        shadow->views[i].frustumMatrix = projectionMatrix * viewMatrix;
                     }
                 }
 

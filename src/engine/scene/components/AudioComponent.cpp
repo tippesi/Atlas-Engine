@@ -1,21 +1,45 @@
 #include "AudioComponent.h"
 #include "../../audio/AudioManager.h"
 
+#include "../Scene.h"
+
 namespace Atlas {
 
     namespace Scene {
 
         namespace Components {
 
-            AudioComponent::AudioComponent(ResourceHandle<Audio::AudioData> audioData,
-                float falloffFactor, bool loop) : falloffFactor(falloffFactor) {
+            AudioComponent::AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
+                float falloffFactor, bool loop) : falloffFactor(falloffFactor), scene(scene) {
 
                 stream = Audio::AudioManager::CreateStream(audioData, 0.0f, loop);
 
             }
 
+            void AudioComponent::ChangeResource(ResourceHandle<Audio::AudioData> audioData) {
+
+                AE_ASSERT(scene != nullptr && "Component needs to be added to entity before changing data");
+
+                if (stream) {
+                    scene->UnregisterResource(scene->registeredAudios, stream->data);
+
+                    stream->ChangeData(audioData);
+                }
+                else {
+                    stream = Audio::AudioManager::CreateStream(audioData, 0.0f);
+
+                    stream->loop = true;
+                }
+
+                scene->RegisterResource(scene->registeredAudios, audioData);
+
+            }
+
             void AudioComponent::Update(float deltaTime, const TransformComponent &transformComponent,
                 vec3 listenerLocation, vec3 lastListenerLocation, vec3 listenerRight) {
+
+                if (!stream)
+                    return;
 
                 const float epsilon = 0.00001f;
 
@@ -54,7 +78,7 @@ namespace Atlas {
                     auto pitch = 1.0 + velocity / 333.3;
                     pitch = pitch >= 0.0 ? pitch : 0.0;
 
-                    stream->SetVolume(distanceVolume);
+                    stream->SetVolume(distanceVolume * volume);
 
                     stream->SetChannelVolume(Audio::Channel::Left, mix);
                     stream->SetChannelVolume(Audio::Channel::Right, 1.0f - mix);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../System.h"
-#include "../RenderTarget.h"
 #include "../texture/Texture3D.h"
+#include "../texture/Texture2D.h"
 
 #include "scene/components/CameraComponent.h"
 

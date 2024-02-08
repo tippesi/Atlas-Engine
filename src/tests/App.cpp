@@ -17,7 +17,7 @@ void App::LoadContent(AppConfiguration config) {
     this->config = config;
 
     // Use lower resolution, we care only about correctness
-    renderTarget =  Atlas::CreateRef<Atlas::RenderTarget>(320, 240);
+    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
     pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
@@ -35,8 +35,8 @@ void App::LoadContent(AppConfiguration config) {
     auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
         glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
 
-    mouseHandler = Atlas::Input::MouseHandler(camera, 1.5f, 6.0f);
-    keyboardHandler = Atlas::Input::KeyboardHandler(camera, 7.0f, 6.0f);
+    mouseHandler = Atlas::Input::MouseHandler(1.5f, 6.0f);
+    keyboardHandler = Atlas::Input::KeyboardHandler(7.0f, 6.0f);
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
@@ -59,7 +59,7 @@ void App::LoadContent(AppConfiguration config) {
     directionalLightEntity = scene->CreateEntity();
     auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
@@ -68,7 +68,7 @@ void App::LoadContent(AppConfiguration config) {
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
 
     if (config.reflection) {
-        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>(1);
+        scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
         scene->reflection->useShadowMap = true;
     }
 
@@ -113,8 +113,12 @@ void App::LoadContent(AppConfiguration config) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
     }
 
-    if (config.volumetric) {
-        scene->volumetric = Atlas::CreateRef<Atlas::Lighting::Volumetric>();
+    if (config.fog) {
+        if (config.volumetric) {
+            scene->fog->rayMarching = true;
+        } else {
+            scene->fog->rayMarching = false;
+        }
     }
 
     if (config.ocean) {

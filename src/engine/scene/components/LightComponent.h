@@ -38,6 +38,11 @@ namespace Atlas {
 			};
 
 			union TypeProperties {
+                TypeProperties() {
+                    // Default to directional light
+                    directional = DirectionalLightProperties();
+                }
+
 				TypeProperties(LightType type) {
 					switch (type) {
 					case LightType::PointLight: point = PointLightProperties(); break;
@@ -52,6 +57,7 @@ namespace Atlas {
 			class LightComponent {
 
 			public:
+                LightComponent() = default;
 				LightComponent(const LightComponent& that) = default;
 				LightComponent(LightType type, LightMobility mobility = LightMobility::MovableLight);
 

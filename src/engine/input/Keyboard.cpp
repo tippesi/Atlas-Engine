@@ -22,7 +22,7 @@ namespace Atlas {
 
         }
 
-        KeyboardHandler::KeyboardHandler(CameraComponent& camera, float speed, float reactivity) :
+        KeyboardHandler::KeyboardHandler(float speed, float reactivity) :
                 speed(speed), reactivity(reactivity) {
 
             RegisterEvent();

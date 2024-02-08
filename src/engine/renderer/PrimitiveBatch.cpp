@@ -6,37 +6,16 @@ namespace Atlas {
 
         PrimitiveBatch::PrimitiveBatch() {
 
-            /*
-            lineVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-            lineColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
+            lineVertices = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, 0, nullptr, true);
+            lineColors = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, 0, nullptr, true);
 
-            lineVertexArray.Bind();
-
-            lineVertexArray.AddComponent(0, &lineVertices);
-            lineVertexArray.AddComponent(1, &lineColors);
-
-            lineVertexArray.Unbind();
-
-            triangleVertices = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-            triangleColors = Atlas::Buffer::VertexBuffer(GL_FLOAT,
-                3, sizeof(vec3), 0, nullptr, AE_BUFFER_DYNAMIC_STORAGE);
-
-            triangleVertexArray.Bind();
-
-            triangleVertexArray.AddComponent(0, &triangleVertices);
-            triangleVertexArray.AddComponent(1, &triangleColors);
-
-            triangleVertexArray.Unbind();
-             */
+            triangleVertices = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, 0, nullptr, true);
+            triangleColors = Buffer::VertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, 0, nullptr, true);
 
         }
 
         void PrimitiveBatch::AddLine(vec3 from, vec3 to, vec3 fromColor, vec3 toColor) {
 
-            /*
             lineVertexData.push_back(from);
             lineVertexData.push_back(to);
 
@@ -44,7 +23,6 @@ namespace Atlas {
             lineColorData.push_back(toColor);
 
             lineDataValid = false;
-             */
 
         }
 
@@ -111,17 +89,7 @@ namespace Atlas {
 
             }
 
-        }
-
-        void PrimitiveBatch::BindLineBuffer() {
-
-            // lineVertexArray.Bind();
-
-        }
-
-        void PrimitiveBatch::BindTriangleBuffer() {
-
-            // triangleVertexArray.Bind();
+            UpdateVertexArrays();
 
         }
 
@@ -129,6 +97,20 @@ namespace Atlas {
 
             lineVertexData.clear();
             lineColorData.clear();
+
+        }
+
+        void PrimitiveBatch::UpdateVertexArrays() {
+
+            if (lineVertices.elementCount)
+                lineVertexArray.AddComponent(0, lineVertices);
+            if (lineColors.elementCount)
+                lineVertexArray.AddComponent(1, lineColors);
+
+            if (triangleVertices.elementCount)
+                triangleVertexArray.AddComponent(0, triangleVertices);
+            if (triangleColors.elementCount)
+                triangleVertexArray.AddComponent(1, triangleColors);
 
         }
 

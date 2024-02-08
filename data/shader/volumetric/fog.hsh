@@ -1,9 +1,12 @@
 struct Fog {
+    vec4 extinctionCoefficients;
     float density;
     float heightFalloff;
     float height;
     float scatteringAnisotropy;
-    vec4 color;
+    float scatteringFactor;
+    float extinctionFactor;
+    float ambientFactor;
 };
 
 // https://developer.amd.com/wordpress/media/2012/10/Wenzel-Real-time_Atmospheric_Effects_in_Games.pdf
@@ -24,11 +27,11 @@ float ComputeVolumetricFog(Fog fog, vec3 viewPos, vec3 worldPos) {
     return exp(-fog.density * fogIntegration);
 }
 
-float GetVolumetricFogDensity(Fog fog, vec3 viewPos, vec3 worldPos) {
+float GetVolumetricFogDensity(Fog fog, vec3 worldPos) {
 
-    viewPos.y -= fog.height;
+    worldPos.y -= fog.height;
 
-    return exp(-fog.heightFalloff * viewPos.y);;
+    return exp(-fog.heightFalloff * worldPos.y);
 
 }
 

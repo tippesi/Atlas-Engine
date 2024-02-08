@@ -36,6 +36,8 @@ namespace Atlas {
             bool hardwareRayTracing = false;
             bool shaderPrintf = false;
             bool bindless = false;
+            bool debugMarker = false;
+            bool wideLines = false;
         };
 
         struct CommandListSubmission {
@@ -120,7 +122,7 @@ namespace Atlas {
 
             Ref<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutDesc desc);
 
-            Ref<DescriptorPool> CreateDescriptorPool();
+            Ref<DescriptorPool> CreateDescriptorPool(DescriptorPoolDesc desc);
 
             Ref<QueryPool> CreateQueryPool(QueryPoolDesc desc);
 

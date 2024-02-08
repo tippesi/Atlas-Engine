@@ -15,7 +15,7 @@ namespace Atlas {
 
             MouseHandler(const MouseHandler& that);
 
-            MouseHandler(CameraComponent& camera, float sensibility, float reactivity, bool hideMouse = false);
+            MouseHandler(float sensibility, float reactivity, bool hideMouse = false);
 
             ~MouseHandler();
 

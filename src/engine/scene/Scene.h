@@ -9,7 +9,6 @@
 #include "../physics/PhysicsWorld.h"
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
-#include "../lighting/Volumetric.h"
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
@@ -61,9 +60,15 @@ namespace Atlas {
             template<typename T, typename ...Args>
             T CreatePrefab(Args&&... args);
 
-            void DestroyEntity(Entity entity);
+            void DestroyEntity(Entity entity, bool removeRecursively = true);
+
+            Entity DuplicateEntity(Entity entity);
 
             size_t GetEntityCount() const;
+
+            Entity GetEntityByName(const std::string& name);
+
+            Entity GetParentEntity(Entity entity);
 
             template<typename... Comp>
             Subset<Comp...> GetSubset();
@@ -109,7 +114,6 @@ namespace Atlas {
             Wind wind;
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
-            Ref<Lighting::Volumetric> volumetric = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
@@ -126,6 +130,8 @@ namespace Atlas {
 
             void CleanupUnusedResources();
 
+            void DuplicateEntityComponents(Entity srcEntity, Entity dstEntity, std::unordered_map<ECS::Entity, Entity>* mapper);
+
             template<class T>
             void RegisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
 
@@ -137,7 +143,9 @@ namespace Atlas {
 
             ECS::EntityManager entityManager = ECS::EntityManager(this);
 
+            std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
+            std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
@@ -148,12 +156,15 @@ namespace Atlas {
             bool hasChanged = true;
             bool rtDataValid = false;
 
-            friend class Entity;
-            friend class SceneSerializer;
-            friend class SpacePartitioning;
-            friend class RayTracing::RayTracingWorld;
-            friend class MeshComponent;
+            friend Entity;
+            friend SpacePartitioning;
+            friend RayTracing::RayTracingWorld;
+            friend HierarchyComponent;
+            friend MeshComponent;
+            friend AudioVolumeComponent;
+            friend AudioComponent;
             friend RenderList;
+            friend class SceneSerializer;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
 

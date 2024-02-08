@@ -1,13 +1,25 @@
-#ifndef AE_SERIALIZERHELPER_H
-#define AE_SERIALIZERHELPER_H
+#pragma once
 
 #include "../System.h"
+#include "../volume/AABB.h"
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
-namespace Atlas {
+namespace glm {
+
+    void to_json(json& j, const ivec2& p);
+
+    void from_json(const json& j, ivec2& p);
+
+    void to_json(json& j, const ivec3& p);
+
+    void from_json(const json& j, ivec3& p);
+
+    void to_json(json& j, const ivec4& p);
+
+    void from_json(const json& j, ivec4& p);
 
     void to_json(json& j, const vec2& p);
 
@@ -31,4 +43,10 @@ namespace Atlas {
 
 }
 
-#endif
+namespace Atlas::Volume {
+
+    void to_json(json& j, const Volume::AABB& p);
+
+    void from_json(const json& j, Volume::AABB& p);
+
+}

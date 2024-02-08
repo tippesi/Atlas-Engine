@@ -55,11 +55,14 @@ namespace Atlas {
         };
 
         struct alignas(16) Fog {
+            vec4 extinctionCoefficient;
             float density;
             float heightFalloff;
             float height;
             float scatteringAnisotropy;
-            vec4 color;
+            float scatteringFactor;
+            float extinctionFactor;
+            float ambientFactor;
         };
 
     }

@@ -21,11 +21,7 @@ namespace Atlas {
 
             public:
                 MeshComponent() = default;
-                MeshComponent(const MeshComponent&) = delete;
-                MeshComponent(MeshComponent&&) noexcept = default;
                 explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {};
-
-                MeshComponent& operator=(MeshComponent&&) noexcept = default;
 
                 ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
 
