@@ -4,6 +4,8 @@ namespace Atlas::ImguiExtension {
 
     void PostProcessingPanel::Render(PostProcessing::PostProcessing &postProcessing) {
 
+        ImGui::BeginChild(GetNameID());
+
         ImGui::Text("Temporal anti-aliasing");
         ImGui::Checkbox("Enable##TAA", &postProcessing.taa.enable);
         ImGui::SliderFloat("Jitter range##TAA", &postProcessing.taa.jitterRange, 0.001f, 0.999f);
@@ -25,6 +27,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Film grain");
         ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
         ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
+
+        ImGui::EndChild();
 
     }
 

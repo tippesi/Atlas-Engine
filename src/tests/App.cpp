@@ -59,7 +59,7 @@ void App::LoadContent(AppConfiguration config) {
     directionalLightEntity = scene->CreateEntity();
     auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
     glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
     directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
@@ -113,11 +113,12 @@ void App::LoadContent(AppConfiguration config) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
     }
 
-    if (config.volumetric) {
-        scene->fog->rayMarching = true;
-    }
-    else {
-        scene->fog->rayMarching = false;
+    if (config.fog) {
+        if (config.volumetric) {
+            scene->fog->rayMarching = true;
+        } else {
+            scene->fog->rayMarching = false;
+        }
     }
 
     if (config.ocean) {

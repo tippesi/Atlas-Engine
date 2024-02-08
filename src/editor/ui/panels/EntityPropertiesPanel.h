@@ -7,6 +7,7 @@
 #include "components/TransformComponentPanel.h"
 #include "components/MeshComponentPanel.h"
 #include "components/LightComponentPanel.h"
+#include "components/AudioVolumeComponentPanel.h"
 
 #include <imgui.h>
 
@@ -24,6 +25,7 @@ namespace Atlas::Editor::UI {
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
         LightComponentPanel lightComponentPanel;
+        AudioVolumeComponentPanel audioVolumeComponentPanel;
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name,

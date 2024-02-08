@@ -48,7 +48,7 @@ namespace Atlas::Editor::UI {
     private:
         void RenderHeading(const std::string& heading) {
 
-            ImGui::Text(heading.c_str());
+            ImGui::Text("%s", heading.c_str());
 
             ImGui::Separator();
 

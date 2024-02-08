@@ -65,7 +65,7 @@ namespace Atlas {
             lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
             lightUniform.intensity = light.intensity;
 
-            if (fog->rayMarching) {
+            if (fog && fog->enable && fog->rayMarching) {
                 target->volumetricTexture.Bind(commandList, 3, 7);
             }
 
@@ -108,6 +108,7 @@ namespace Atlas {
             lightUniformBuffer.SetData(&lightUniform, 0);
             lightUniformBuffer.Bind(commandList, 3, 12);
 
+            bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
 
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
@@ -207,6 +208,7 @@ namespace Atlas {
                     target->afterLightingFrameBufferWithStencil);
 
                 auto config = GeneratePipelineConfig(target, false, ocean->wireframe);
+                if (fogEnabled) config.AddMacro("FOG");
                 if (cloudsEnabled) config.AddMacro("CLOUDS");
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
@@ -285,7 +287,7 @@ namespace Atlas {
                     }
                 }
 
-                if (fog && fog->enable) {
+                if (fogEnabled) {
                     target->volumetricTexture.Bind(commandList, 3, 7);
 
                     auto& fogUniform = uniforms.fog;

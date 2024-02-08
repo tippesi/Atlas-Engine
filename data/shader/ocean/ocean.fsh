@@ -207,7 +207,11 @@ void main() {
     }
     else {
         features.underWaterPixel = false;
+#ifdef FOG
         vec4 volumetricFog = textureLod(volumetricTexture, ndcCoord, 0.0);
+#else
+        vec4 volumetricFog = vec4(0.0, 0.0, 0.0, 0.0);
+#endif
         vec4 volumetricClouds = vec4(0.0, 0.0, 0.0, 1.0);
 #ifdef CLOUDS
         volumetricClouds = textureLod(volumetricCloudTexture, ndcCoord, 0.0);

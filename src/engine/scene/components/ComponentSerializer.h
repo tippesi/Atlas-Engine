@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "common/SerializationHelper.h"
 #include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
 
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
@@ -14,38 +15,50 @@ namespace Atlas::Scene::Components {
         j = json {
             {"falloffFactor", p.falloffFactor},
             {"cutoff", p.cutoff},
-            {"resourcePath", p.stream->data->filename}
+            {"volume", p.volume},
         };
+
+        if (p.stream) {
+            j["stream"] = *p.stream;
+        }
     }
 
     void from_json(const json& j, AudioComponent& p) {
-        std::string resourcePath;
+        p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
+
         j.at("falloffFactor").get_to(p.falloffFactor);
         j.at("cutoff").get_to(p.cutoff);
-        j.at("resourcePath").get_to(resourcePath);
+        j.at("volume").get_to(p.volume);
 
-        auto handle = Atlas::ResourceManager<Audio::AudioData>::GetOrLoadResourceAsync(resourcePath);
-        p.stream = Audio::AudioManager::CreateStream(handle);
+        if (j.contains("stream")) {
+            j.at("stream").get_to(*p.stream);
+        }
     }
 
     void to_json(json& j, const AudioVolumeComponent& p) {
         j = json {
             {"falloffFactor", p.falloffFactor},
             {"cutoff", p.cutoff},
-            {"aabb", p.aabb},
-            {"resourcePath", p.stream->data->filename}
+            {"volume", p.volume},
+            {"aabb", p.aabb}
         };
+
+        if (p.stream) {
+            j["stream"] = *p.stream;
+        }
     }
 
     void from_json(const json& j, AudioVolumeComponent& p) {
-        std::string resourcePath;
+        p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
+
         j.at("falloffFactor").get_to(p.falloffFactor);
         j.at("cutoff").get_to(p.cutoff);
-        j.at("aabb").get_to(p.cutoff);
-        j.at("resourcePath").get_to(resourcePath);
+        j.at("aabb").get_to(p.aabb);
+        j.at("volume").get_to(p.volume);
 
-        auto handle = Atlas::ResourceManager<Audio::AudioData>::GetOrLoadResourceAsync(resourcePath);
-        p.stream = Audio::AudioManager::CreateStream(handle);
+        if (j.contains("stream")) {
+            j.at("stream").get_to(*p.stream);
+        }
     }
 
     void to_json(json& j, const CameraComponent& p) {
@@ -153,7 +166,7 @@ namespace Atlas::Scene::Components {
             j.at("resourcePath").get_to(resourcePath);
 
             // Scaled meshes are currently unsupported
-            p.mesh = Atlas::ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+            p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
                 ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
         }
 

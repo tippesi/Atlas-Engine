@@ -3,6 +3,7 @@
 #include "System.h"
 #include "ResourceLoadException.h"
 #include "../common/Hash.h"
+#include "../common/Path.h"
 
 #include <vector>
 #include <mutex>
@@ -89,6 +90,12 @@ namespace Atlas {
             isLoaded = false;
             errorOnLoad = false;
             data = nullptr;
+        }
+
+        std::string GetFileName() const {
+
+            return Common::Path::GetFileName(path);
+
         }
 
         Hash ID = 0;

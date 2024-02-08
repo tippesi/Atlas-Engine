@@ -122,7 +122,7 @@ namespace Atlas::Editor {
         else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
             bvhBuilderFuture.get();
         }
-        
+
     }
 
     void App::Render(float deltaTime) {
@@ -225,8 +225,6 @@ namespace Atlas::Editor {
 
         ImGuiID dsIdUp, dsIdDown;
         ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.8f, &dsIdUp, &dsIdDown);
-
-        ImGuiDockNode* upperNode = ImGui::DockBuilderGetNode(dsIdUp);
 
         for (auto& sceneWindow : sceneWindows) {
             ImGui::DockBuilderDockWindow(sceneWindow.GetNameID(), dsIdUp);

@@ -173,7 +173,7 @@ namespace Atlas {
             std::vector<Graphics::BufferBarrier> bufferBarriers;
             std::vector<Graphics::ImageBarrier> imageBarriers;
 
-            if (fog->rayMarching) {
+            if (fog && fog->enable && fog->rayMarching) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
@@ -258,7 +258,7 @@ namespace Atlas {
 
                 resolvePipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 resolvePipelineConfig.ManageMacro("FOG", fogEnabled);
-                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", fog->rayMarching && fogEnabled);
+                resolvePipelineConfig.ManageMacro("RAYMARCHED_FOG", fogEnabled && fog->rayMarching);
 
                 auto resolvePipeline = PipelineManager::GetPipeline(resolvePipelineConfig);
                 commandList->BindPipeline(resolvePipeline);

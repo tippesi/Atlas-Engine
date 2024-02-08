@@ -52,11 +52,11 @@ namespace Atlas::Editor::UI {
         }
 
         if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
-            auto& renderTarget = Singletons::renderTarget;
-            auto& pathTraceRenderTarget = Singletons::pathTraceRenderTarget;
             auto& config = Singletons::config;
 
             if (config->pathTrace) {
+                auto& pathTraceRenderTarget = Singletons::pathTraceRenderTarget;
+
                 if (pathTraceRenderTarget->GetWidth() != viewportTexture.width ||
                     pathTraceRenderTarget->GetHeight() != viewportTexture.height) {
                     pathTraceRenderTarget->Resize(viewportTexture.width, viewportTexture.height);
@@ -65,6 +65,8 @@ namespace Atlas::Editor::UI {
                 Singletons::mainRenderer->PathTraceScene(viewport, pathTraceRenderTarget, scene, &viewportTexture);
             }
             else {
+                auto& renderTarget = Singletons::renderTarget;
+
                 if (renderTarget->GetWidth() != viewportTexture.width ||
                     renderTarget->GetHeight() != viewportTexture.height) {
                     renderTarget->Resize(viewportTexture.width, viewportTexture.height);

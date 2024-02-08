@@ -4,6 +4,8 @@ namespace Atlas::ImguiExtension {
 
     void VolumetricCloudsPanel::Render(Ref<Lighting::VolumetricClouds> &clouds) {
 
+        ImGui::BeginChild(GetNameID());
+
         ImGui::Checkbox("Enable##Clouds", &clouds->enable);
         ImGui::Checkbox("Cast shadow##Clouds", &clouds->castShadow);
         ImGui::Checkbox("Stochastic occlusion sampling##Clouds", &clouds->stochasticOcclusionSampling);
@@ -42,6 +44,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Silver lining");
         ImGui::SliderFloat("Dark edge strength##Clouds", &clouds->darkEdgeFocus, 0.0f, 1025.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Dark edge ambient##Clouds", &clouds->darkEdgeAmbient, 0.0f, 1.0f);
+
+        ImGui::EndChild();
 
     }
 

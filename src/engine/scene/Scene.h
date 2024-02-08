@@ -145,6 +145,7 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
+            std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
             std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
@@ -155,12 +156,15 @@ namespace Atlas {
             bool hasChanged = true;
             bool rtDataValid = false;
 
-            friend class Entity;
-            friend class SceneSerializer;
-            friend class SpacePartitioning;
-            friend class RayTracing::RayTracingWorld;
-            friend class HierarchyComponent;
+            friend Entity;
+            friend SpacePartitioning;
+            friend RayTracing::RayTracingWorld;
+            friend HierarchyComponent;
+            friend MeshComponent;
+            friend AudioVolumeComponent;
+            friend AudioComponent;
             friend RenderList;
+            friend class SceneSerializer;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
 

@@ -30,12 +30,7 @@ vec3 ApplyVolumetrics(Fog fog, vec3 inputColor, vec4 volumetricFog, vec4 volumet
     vec2 intersectDists = IntersectSphere(globalData.cameraLocation.xyz, worldViewDirection,
         planetCenter, innerCloudRadius);
 
-#ifdef RAYMARCHED_FOG
     float fogExtinction = volumetricFog.a;
-#else
-    volumetricFog.rgb = fog.color.rgb;
-    float fogExtinction = 1.0;
-#endif
 
 #ifdef CLOUDS
     float alpha = volumetricClouds.a;

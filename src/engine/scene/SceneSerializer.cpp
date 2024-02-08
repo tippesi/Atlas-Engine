@@ -4,6 +4,7 @@
 
 #include "lighting/LightingSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
+#include "physics/PhysicsSerializer.h"
 
 #include "../common/SerializationHelper.h"
 #include "../loader/AssetLoader.h"
@@ -69,6 +70,9 @@ namespace Atlas {
             if (scene->ssgi)
                 j["ssgi"] = *scene->ssgi;
 
+            if (scene->physicsWorld)
+                j["physicsWorld"] = *scene->physicsWorld;
+
             fileStream << to_string(j);
 
             fileStream.close();
@@ -128,6 +132,10 @@ namespace Atlas {
             if (j.contains("ssgi")) {
                 scene->ssgi = CreateRef<Lighting::SSGI>();
                 *scene->ssgi = j["ssgi"];
+            }
+            if (j.contains("physicsWorld")) {
+                scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+                *scene->physicsWorld = j["physicsWorld"];
             }
 
             scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();

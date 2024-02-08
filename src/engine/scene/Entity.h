@@ -22,13 +22,13 @@ namespace Atlas {
                 AE_ASSERT(IsValid() && "Entity is not valid and doesn't belong to any scene");
                 AE_ASSERT(!HasComponent<Comp>() && "Entity already has this component");
 
-                if constexpr (std::is_constructible_v<Comp, Scene*, Args...>) {
-                    return entityManager->Emplace<Comp>(entity,
-                        static_cast<Scene*>(entityManager->userData), std::forward<Args>(args)...);
-                }
-                else if constexpr (std::is_constructible_v<Comp, Scene*, Entity, Args...>) {
+                if constexpr (std::is_constructible_v<Comp, Scene*, Entity, Args...>) {
                     return entityManager->Emplace<Comp>(entity,
                         static_cast<Scene*>(entityManager->userData), *this, std::forward<Args>(args)...);
+                }
+                else if constexpr (std::is_constructible_v<Comp, Scene*, Args...>) {
+                    return entityManager->Emplace<Comp>(entity,
+                        static_cast<Scene*>(entityManager->userData), std::forward<Args>(args)...);
                 }
                 else {
                     return entityManager->Emplace<Comp>(entity, std::forward<Args>(args)...);

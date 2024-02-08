@@ -32,6 +32,14 @@ namespace Atlas::Editor::UI {
                 RenderComponentPanel("Light component", entity,
                     lightComponentPanel, entity.GetComponent<LightComponent>());
             }
+
+            if (entity.HasComponent<AudioVolumeComponent>()) {
+                auto comp = entity.GetComponent<AudioVolumeComponent>();
+                RenderComponentPanel("Audio volume component", entity,
+                    audioVolumeComponentPanel, comp);
+                entity.RemoveComponent<AudioVolumeComponent>();
+                entity.AddComponent<AudioVolumeComponent>(comp);
+            }
         }
 
         // Add components
@@ -46,6 +54,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Add mesh component"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
+                    entity.AddComponent<AudioVolumeComponent>();
 
                 ImGui::EndPopup();
             }

@@ -62,7 +62,7 @@ namespace Atlas {
 
             auto nameSubset = entityManager.GetSubset<NameComponent>();
             for (auto entity : nameSubset) {
-                auto& nameComponent = nameSubset.Get(entity);
+                const auto& nameComponent = nameSubset.Get(entity);
 
                 if (nameComponent.name == name)
                     return { entity, &entityManager };
@@ -408,9 +408,8 @@ namespace Atlas {
 
             CleanupUnusedResources();
 
-            // Clean up stuff that components haven't done by themselves (should not happen, inform in debug mode)
-           // AE_ASSERT(registeredMeshes.empty() && "Registered meshes should be emtpy after cleanup");
             registeredMeshes.clear();
+            registeredAudios.clear();
 
         }
 

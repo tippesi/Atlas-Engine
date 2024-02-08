@@ -212,17 +212,15 @@ namespace Atlas::Editor::UI {
         if (!entity.IsValid())
             return;
 
-        bool foundAABB = false;
-        Volume::AABB aabb;
-
         if (entity.HasComponent<MeshComponent>()) {
             auto meshComponent = entity.GetComponent<MeshComponent>();
-            aabb = meshComponent.aabb;
-            foundAABB = true;
-        }
-
-        if (foundAABB) {
+            auto aabb = meshComponent.aabb;
             viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
+        }
+        if (entity.HasComponent<AudioVolumeComponent>()) {
+            auto audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
+            auto aabb = audioVolumeComponent.GetTransformedAABB();
+            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f));
         }
 
     }

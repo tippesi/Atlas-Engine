@@ -19,18 +19,30 @@ namespace Atlas {
 
             public:
                 AudioVolumeComponent() = default;
-                explicit AudioVolumeComponent(ResourceHandle<Audio::AudioData> audioData,
-                    Volume::AABB aabb, float falloffFactor = 1.0f);
+                explicit AudioVolumeComponent(Scene* scene) : scene(scene) {}
+                explicit AudioVolumeComponent(Scene* scene, const AudioVolumeComponent& that);
+                explicit AudioVolumeComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
+                    Volume::AABB aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f)), float falloffFactor = 1.0f);
 
-                Volume::AABB aabb;
+                void ChangeResource(ResourceHandle<Audio::AudioData> audioData);
+
+                Volume::AABB GetTransformedAABB() const;
 
                 float falloffFactor = 1.0f;
                 float cutoff = 0.0001f;
 
-                Ref<Audio::AudioStream> stream;
+                float volume = 1.0f;
+
+                Volume::AABB aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f));
+
+                Ref<Audio::AudioStream> stream = nullptr;
 
             private:
                 void Update(const TransformComponent& transformComponent, vec3 listenerLocation);
+
+                Scene* scene = nullptr;
+
+                Volume::AABB transformedAABB;
 
                 friend Scene;
 

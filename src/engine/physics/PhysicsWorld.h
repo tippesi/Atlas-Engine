@@ -67,7 +67,7 @@ namespace Atlas {
 
             void RestoreState();
 
-            JPH::PhysicsSystem system;
+            Ref<JPH::PhysicsSystem> system = nullptr;
 
             int32_t simulationStepsPerSecond = 60;
             bool pauseSimulation = false;
@@ -78,10 +78,11 @@ namespace Atlas {
             Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr;
             Ref<JPH::ContactListener> contactListener = nullptr;
 
-            JPH::StateRecorderImpl state;
+            Ref<JPH::StateRecorderImpl> state = nullptr;
 
             friend class Scene::Scene;
             friend class RigidBodyComponent;
+            friend class PhysicsSerializer;
 
         };
 
