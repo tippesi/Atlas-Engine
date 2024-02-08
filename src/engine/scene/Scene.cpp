@@ -32,7 +32,8 @@ namespace Atlas {
             if (removeRecursively) {
                 auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
                 if (hierarchyComponent) {
-                    for (auto childEntity : hierarchyComponent->GetChildren()) {
+                    auto children = hierarchyComponent->GetChildren();
+                    for (auto childEntity : children) {
                         DestroyEntity(childEntity, removeRecursively);
                     }
                 }

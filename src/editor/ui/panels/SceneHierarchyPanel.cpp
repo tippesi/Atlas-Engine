@@ -179,6 +179,7 @@ namespace Atlas::Editor::UI {
         }
 
         // If the hierarchy is emtpy after movements or deletions, also remove the hierarchy
+        hierarchyComponent = deleteEntity ? nullptr : entity.TryGetComponent<HierarchyComponent>();
         if (hierarchyComponent && hierarchyComponent->GetChildren().empty()) {
             entity.RemoveComponent<HierarchyComponent>();
         }
