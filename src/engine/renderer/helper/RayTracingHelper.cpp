@@ -482,7 +482,7 @@ namespace Atlas {
                 }
 
                 if (useEmissivesAsLights && scene->IsRtDataValid()) {
-                    auto& rtData = scene->rayTracingWorld;
+                    const auto& rtData = scene->rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
                     

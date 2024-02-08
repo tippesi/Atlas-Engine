@@ -185,7 +185,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedHierarchy(Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene) {
 
         ImGui::Separator();
 

@@ -27,7 +27,7 @@ namespace Atlas::Editor::UI {
     private:
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity);
 
-        void RenderExtendedHierarchy(Ref<Scene::Scene>& scene);
+        void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene);
 
         void RenderExtendedItem(const std::string& name, bool* selected);
 
