@@ -35,6 +35,15 @@ namespace Atlas {
 
         }
 
+        PhysicsWorld::~PhysicsWorld() {
+
+            for (auto [_, shape] : bodyToShapeMap)
+                shape->settings.reset();
+
+            bodyToShapeMap.clear();
+
+        }
+
         void PhysicsWorld::Update(float deltaTime) {
 
             if (pauseSimulation) return;
@@ -43,8 +52,7 @@ namespace Atlas {
 
         }
 
-        Body PhysicsWorld::CreateBody(const ShapeRef &shape, JPH::ObjectLayer objectLayer,
-            MotionQuality motionQuality, const mat4& matrix, vec3 veloctiy) {
+        Body PhysicsWorld::CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
@@ -52,26 +60,23 @@ namespace Atlas {
             JPH::Quat quat;
             MatrixToJPHPosAndRot(matrix, pos, quat);
 
-            JPH::EMotionType motionType;
-            switch(objectLayer) {
-                case Layers::STATIC: motionType = JPH::EMotionType::Static; break;
-                case Layers::MOVABLE: motionType = JPH::EMotionType::Dynamic; break;
-                default: motionType = JPH::EMotionType::Static; break;
-            }
+            auto settings = bodyCreationSettings.GetSettings();
 
-            JPH::BodyCreationSettings bodyCreationSettings(shape, pos, quat, motionType, objectLayer);
-            bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
-            bodyCreationSettings.mFriction = 1.0f;
-            bodyCreationSettings.mRestitution = 0.2f;
-            bodyCreationSettings.mMotionQuality = motionQuality;
+            settings.mPosition = pos;
+            settings.mRotation = quat;
 
-            return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
+            auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+            bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
+
+            return bodyId;
 
         }
 
         void PhysicsWorld::DestroyBody(Body bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
+
+            bodyToShapeMap.erase(bodyId);
 
             bodyInterface.RemoveBody(bodyId);
             bodyInterface.DestroyBody(bodyId);
@@ -166,6 +171,27 @@ namespace Atlas {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetFriction(bodyId);
+
+        }
+
+        BodyCreationSettings PhysicsWorld::GetBodyCreationSettings(Body bodyId) {
+
+            auto& bodyLockInterface = system->GetBodyLockInterface();
+
+            JPH::BodyLockRead lock(bodyLockInterface, bodyId);
+            if (lock.Succeeded()) {
+                const auto& body = lock.GetBody();
+
+                if (body.IsRigidBody()) {
+                    JPH::BodyCreationSettings settings = body.GetBodyCreationSettings();
+                    BodyCreationSettings bodyCreationSettings;
+                    bodyCreationSettings.SetSettings(settings);
+                    bodyCreationSettings.shape = bodyToShapeMap[bodyId];
+                    return bodyCreationSettings;
+                }
+            }
+
+            return {};
 
         }
 

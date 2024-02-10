@@ -201,9 +201,19 @@ void App::Update(float deltaTime) {
 
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
-            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
-                glm::vec3(sphereScale), sphereDensity);
-            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
+            auto shapeSettings = Atlas::Physics::SphereShapeSettings {
+                .radius = meshes.back()->data.radius,
+                .density = sphereDensity,
+                .scale = glm::vec3(sphereScale),
+            };
+            auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
+
+            auto bodySettings = Atlas::Physics::BodyCreationSettings {
+                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+                .restitution = sphereRestitution,
+                .shape = shape,
+            };
+            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
             entity.AddComponent<AudioComponent>(audio);
 
@@ -219,18 +229,27 @@ void App::Update(float deltaTime) {
         
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
-            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromSphere(meshes.back()->data.radius,
-                glm::vec3(sphereScale), sphereDensity);
+            auto shapeSettings = Atlas::Physics::SphereShapeSettings {
+                .radius = meshes.back()->data.radius,
+                .density = sphereDensity,
+                .scale = glm::vec3(sphereScale),
+            };
+            auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             entity.AddComponent<AudioComponent>(audio);
-            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::MOVABLE);
-            rigidBodyComponent.SetLinearVelocity(camera.direction * shootVelocity);
-            rigidBodyComponent.SetMotionQuality(Atlas::Physics::MotionQuality::LinearCast);
-            rigidBodyComponent.SetRestitution(sphereRestitution);
+
+            auto bodySettings = Atlas::Physics::BodyCreationSettings {
+                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+                .motionQuality = Atlas::Physics::MotionQuality::LinearCast,
+                .linearVelocity = camera.direction * shootVelocity,
+                .restitution = sphereRestitution,
+                .shape = shape,
+            };
+            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -1278,12 +1297,28 @@ void App::CheckLoadScene() {
     for (auto& entity : entities) {
         auto& meshComponent = entity.GetComponent<MeshComponent>();
         if (entityCount++ == 0) {
-            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromMesh(meshComponent.mesh.Get());
-            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+            Atlas::Physics::MeshShapeSettings settings = {
+                .mesh = meshComponent.mesh
+            };
+            auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
+
+            auto bodySettings = Atlas::Physics::BodyCreationSettings {
+                .objectLayer = Atlas::Physics::Layers::STATIC,
+                .shape = shape,
+            };
+            entity.AddComponent<RigidBodyComponent>(bodySettings);
         }
         else {
-            auto shape = Atlas::Physics::ShapesManager::CreateShapeFromAABB(meshComponent.mesh->data.aabb);
-            entity.AddComponent<RigidBodyComponent>(shape, Atlas::Physics::Layers::STATIC);
+            Atlas::Physics::BoundingBoxShapeSettings settings = {
+                .aabb = meshComponent.mesh->data.aabb,
+            };
+            auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
+
+            auto bodySettings = Atlas::Physics::BodyCreationSettings {
+                .objectLayer = Atlas::Physics::Layers::STATIC,
+                .shape = shape,
+            };
+            entity.AddComponent<RigidBodyComponent>(bodySettings);
         }
     }
 

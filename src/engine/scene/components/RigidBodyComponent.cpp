@@ -76,18 +76,32 @@ namespace Atlas {
 
             }
 
+            Physics::BodyCreationSettings RigidBodyComponent::GetBodyCreationSettings() {
+
+                if (bodyCreationSettings)
+                    return *bodyCreationSettings;
+
+                AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+                return physicsWorld->GetBodyCreationSettings(bodyId);
+
+            }
+
             void RigidBodyComponent::InsertIntoPhysicsWorld(const TransformComponent &transformComponent,
                 Physics::PhysicsWorld* physicsWorld) {
 
-                if (!shape || Valid())
+                if (!bodyCreationSettings || !bodyCreationSettings->shape)
                     return;
+
+                if (!bodyCreationSettings->shape->IsValid())
+                    if (!bodyCreationSettings->shape->TryCreate())
+                        return;
 
                 this->physicsWorld = physicsWorld;
 
-
-                bodyId = physicsWorld->CreateBody(shape, layer, Physics::MotionQuality::Discrete,
-                    transformComponent.globalMatrix);
+                bodyId = physicsWorld->CreateBody(*bodyCreationSettings, transformComponent.globalMatrix);
                 AE_ASSERT(!bodyId.IsInvalid() && "Body id is invalid");
+
+                bodyCreationSettings = nullptr;
 
             }
 

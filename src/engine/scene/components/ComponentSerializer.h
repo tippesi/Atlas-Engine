@@ -4,6 +4,7 @@
 #include "common/SerializationHelper.h"
 #include "lighting/LightingSerializer.h"
 #include "audio/AudioSerializer.h"
+#include "physics/PhysicsSerializer.h"
 
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
@@ -192,6 +193,34 @@ namespace Atlas::Scene::Components {
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+    }
+
+    void to_json(json& j, const RigidBodyComponent& p) {
+        j = json {
+            {"bodyIndex", p.bodyId.GetIndex()},
+            {"layer", p.layer},
+        };
+
+        if (p.bodyCreationSettings != nullptr)
+            j["bodyCreationSettings"] = *p.bodyCreationSettings;
+    }
+
+    void from_json(const json& j, RigidBodyComponent& p) {
+        // This whole thing works because only components with physics world are considered valid,
+        // so the body id will be overriden at some point.
+        uint32_t bodyIndex;
+        j.at("bodyIndex").get_to(bodyIndex);
+        j.at("layer").get_to(p.layer);
+
+        if (j.contains("bodyCreationSettings")) {
+            p.bodyCreationSettings = CreateRef<Physics::BodyCreationSettings>();
+            *p.bodyCreationSettings = j["bodyCreationSettings"];
+        }
+
+        // We can use the index here since when loading nothing but the loading thread
+        // will access the physics system (in multithreaded scenarios we would need to use
+        // the sequence number as well
+        p.bodyId = Physics::Body(bodyIndex);
     }
 
 }

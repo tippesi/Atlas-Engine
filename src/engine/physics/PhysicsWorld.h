@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "ShapesManager.h"
+#include "BodyCreation.h"
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>
@@ -24,8 +25,6 @@ namespace Atlas {
 
         using Body = JPH::BodyID;
 
-        using MotionQuality = JPH::EMotionQuality;
-
         class PhysicsWorld {
 
         public:
@@ -34,10 +33,11 @@ namespace Atlas {
                 Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr,
                 Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr);
 
+            ~PhysicsWorld();
+
             void Update(float deltaTime);
 
-            Body CreateBody(const ShapeRef& shape, JPH::ObjectLayer objectLayer, MotionQuality motionQuality,
-                const mat4& matrix, vec3 velocity = vec3(0.0f));
+            Body CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix);
 
             void DestroyBody(Body bodyId);
 
@@ -61,6 +61,8 @@ namespace Atlas {
 
             float GetFriction(Body bodyId);
 
+            BodyCreationSettings GetBodyCreationSettings(Body bodyId);
+
             void OptimizeBroadphase();
 
             void SaveState();
@@ -71,6 +73,8 @@ namespace Atlas {
 
             int32_t simulationStepsPerSecond = 60;
             bool pauseSimulation = false;
+
+            std::unordered_map<Body, Ref<Shape>> bodyToShapeMap;
 
         private:
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;

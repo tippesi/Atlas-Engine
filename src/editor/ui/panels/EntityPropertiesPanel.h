@@ -8,6 +8,7 @@
 #include "components/MeshComponentPanel.h"
 #include "components/LightComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
+#include "components/RigidBodyComponentPanel.h"
 
 #include <imgui.h>
 
@@ -18,7 +19,7 @@ namespace Atlas::Editor::UI {
     public:
         EntityPropertiesPanel() : Panel("Entity properties") {}
 
-        void Render(Scene::Entity entity);
+        void Render(Ref<Scene::Scene>& scene, Scene::Entity entity);
 
     private:
         NameComponentPanel nameComponentPanel;
@@ -26,9 +27,10 @@ namespace Atlas::Editor::UI {
         MeshComponentPanel meshComponentPanel;
         LightComponentPanel lightComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
+        RigidBodyComponentPanel rigidBodyComponentPanel;
 
         template<class S, class T>
-        bool RenderComponentPanel(const std::string& name,
+        bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,
             Scene::Entity entity, S& panel, T& component) {
             bool resourceChanged = false;
 
@@ -36,7 +38,7 @@ namespace Atlas::Editor::UI {
                 ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
             if (ImGui::TreeNodeEx(name.c_str(), nodeFlags)) {
-                resourceChanged = panel.Render(entity, component);
+                resourceChanged = panel.Render(scene, entity, component);
 
                 ImGui::TreePop();
             }

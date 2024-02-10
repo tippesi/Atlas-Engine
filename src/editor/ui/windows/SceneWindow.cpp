@@ -90,18 +90,24 @@ namespace Atlas::Editor::UI {
         sceneHierarchyPanel.Render(refScene);
 
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
-        if (sceneHierarchyPanel.selectedProperty.fog)
-            scenePropertiesPanel.Render(scene->fog);
-        else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
-            scenePropertiesPanel.Render(scene->sky.clouds);
-        else if (sceneHierarchyPanel.selectedProperty.irradianceVolume)
-            scenePropertiesPanel.Render(scene->irradianceVolume);
-        else if (sceneHierarchyPanel.selectedProperty.reflection)
-            scenePropertiesPanel.Render(scene->reflection);
-        else if (sceneHierarchyPanel.selectedProperty.postProcessing)
-            scenePropertiesPanel.Render(scene->postProcessing);
-        else
-            scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity);
+        if (scene.IsLoaded()) {
+            if (sceneHierarchyPanel.selectedProperty.fog)
+                scenePropertiesPanel.Render(scene->fog);
+            else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
+                scenePropertiesPanel.Render(scene->sky.clouds);
+            else if (sceneHierarchyPanel.selectedProperty.irradianceVolume)
+                scenePropertiesPanel.Render(scene->irradianceVolume);
+            else if (sceneHierarchyPanel.selectedProperty.reflection)
+                scenePropertiesPanel.Render(scene->reflection);
+            else if (sceneHierarchyPanel.selectedProperty.postProcessing)
+                scenePropertiesPanel.Render(scene->postProcessing);
+            else
+                scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
+        }
+        else {
+            // Render with invalid entity and invalid scene (will just return, but with window created)
+            scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
+        }
 
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
@@ -144,7 +150,11 @@ namespace Atlas::Editor::UI {
             auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-
+                scene->physicsWorld->SaveState();
+                scene->physicsWorld->pauseSimulation = false;
+                // Unselect when starting the simulation/scene (otherwise some physics settings might not
+                // be reverted after stopping
+                sceneHierarchyPanel.selectedEntity = Scene::Entity();
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
@@ -153,7 +163,8 @@ namespace Atlas::Editor::UI {
             offset = region.x / 2.0f + 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-
+                scene->physicsWorld->RestoreState();
+                scene->physicsWorld->pauseSimulation = true;
             }
 
             ImGui::PopStyleColor();

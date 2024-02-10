@@ -4,7 +4,8 @@
 
 namespace Atlas::Editor::UI {
 
-    bool TransformComponentPanel::Render(Scene::Entity entity, TransformComponent &transform) {
+    bool TransformComponentPanel::Render(Ref<Scene::Scene>& scene,
+        Scene::Entity entity, TransformComponent &transform) {
 
         // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,
