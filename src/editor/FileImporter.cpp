@@ -7,6 +7,7 @@
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "scripting/Script.h"
 
 #include "loader/ModelLoader.h"
 #include "scene/SceneSerializer.h"
@@ -49,6 +50,12 @@ namespace Atlas::Editor {
                         ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
                 }
                 break;
+            case FileType::Script: {
+                    auto handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
+                        filename, ResourceOrigin::User);
+                    handle.GetResource()->permanent = true;
+                }
+                break;
             default:
                 break;
         }
@@ -63,6 +70,7 @@ namespace Atlas::Editor {
         { "fbx", FileType::Mesh },
         { "aeterrain", FileType::Terrain },
         { "aescene", FileType::Scene },
+        { "lua", FileType::Script },
     };
 
 }

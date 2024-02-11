@@ -18,7 +18,8 @@ namespace Atlas::Editor {
             Audio = 0,
             Mesh,
             Terrain,
-            Scene
+            Scene,
+            Script
         };
 
         static const std::map<const std::string, FileType> fileTypeMapping;

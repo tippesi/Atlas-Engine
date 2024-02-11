@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../../System.h"
+#include "../../scripting/Script.h"
+#include "../../resource/Resource.h"
 #include "../Entity.h"
 
 #include <sol/sol.hpp>
@@ -21,7 +23,7 @@ namespace Atlas::Scene
             LuaScriptComponent(Scene *scene, Entity entity);
             LuaScriptComponent(const LuaScriptComponent &that) = default;
 
-            std::string code;
+            ResourceHandle<Scripting::Script> script;
 
         protected:
             void Update(float deltaTime);

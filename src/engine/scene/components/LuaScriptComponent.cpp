@@ -15,6 +15,17 @@ namespace Atlas::Scene::Components
         AE_ASSERT(scene != nullptr);
         AE_ASSERT(scene->physicsWorld != nullptr);
 
+        if (!script.IsLoaded())
+            return;
+
+        auto resource = script.GetResource();
+        if (resource->WasModified()) {
+            // Do reload here, adjust modified time beforehand to be conservative
+            resource->UpdateModifiedTime();
+            script->Reload();
+            // Proceed to do more here.... in case we need it
+        }
+
         if (scene->physicsWorld->pauseSimulation)
         {
             // the instance is not running, discard the state
@@ -45,6 +56,6 @@ namespace Atlas::Scene::Components
         luaState->set_function("log", [&](std::string msg)
                                { Log::Message(msg); });
 
-        luaState->script(code);
+        luaState->script(script->code);
     }
 }

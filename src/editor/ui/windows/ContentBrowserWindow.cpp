@@ -47,7 +47,7 @@ namespace Atlas::Editor::UI {
         ImGui::End();
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
-        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene"};
+        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script"};
         static int currentSelection = 0;
         ImGui::BeginListBox("##Listbox", ImVec2(-FLT_MIN, 9 * ImGui::GetTextLineHeightWithSpacing()));
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
@@ -73,6 +73,9 @@ namespace Atlas::Editor::UI {
                 break;
             case 3:
                 RenderResourceType<Scene::Scene>(IconType::Scene);
+                break;
+            case 4:
+                RenderResourceType<Scripting::Script>(IconType::Document);
             default:
                 break;
         }
