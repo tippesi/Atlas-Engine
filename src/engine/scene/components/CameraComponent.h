@@ -69,6 +69,9 @@ namespace Atlas {
 
                 bool isMain = true;
 
+                bool useEntityTranslation = true;
+                bool useEntityRotation = true;
+
             private:
                 void UpdateView(mat4 transform);
 

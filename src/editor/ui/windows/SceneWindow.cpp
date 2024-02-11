@@ -33,8 +33,7 @@ namespace Atlas::Editor::UI {
 
         if (!cameraEntity.IsValid()) {
             cameraEntity = scene->CreateEntity();
-            auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 400.0f,
-                glm::vec3(30.0f, 25.0f, 0.0f), glm::vec2(-3.14f / 2.0f, 0.0f));
+            auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 2000.0f);
             camera.isMain = true;
         }
 
@@ -42,7 +41,7 @@ namespace Atlas::Editor::UI {
         std::map<ECS::Entity, bool> cameraMainMap;
         auto cameraSubset = scene->GetSubset<CameraComponent>();
         for (auto entity : cameraSubset) {
-            if (entity == cameraEntity)
+            if (entity == cameraEntity || isPlaying)
                 continue;
             
             auto& comp = cameraSubset.Get(entity);
@@ -55,7 +54,7 @@ namespace Atlas::Editor::UI {
 
         // Restore all previous camera main values
         for (auto entity : cameraSubset) {
-            if (entity == cameraEntity)
+            if (entity == cameraEntity || isPlaying)
                 continue;
             
             auto& comp = cameraSubset.Get(entity);
@@ -168,14 +167,33 @@ namespace Atlas::Editor::UI {
             auto& playIcon = Singletons::icons->Get(IconType::Play);
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
 
+            hasMainCamera = false;
+            if (scene.IsLoaded()) {
+                auto cameraSubset = scene->GetSubset<CameraComponent>();
+                for (auto entity : cameraSubset) {
+                    if (entity == cameraEntity)
+                        continue;
+                    
+                    auto& comp = cameraSubset.Get(entity);
+                    hasMainCamera |= comp.isMain;
+                }
+            }
+
             auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+                if (hasMainCamera) {
+                    auto camera = cameraEntity.GetComponent<CameraComponent>();
+                    camera.isMain = false;
+                }
+                
                 scene->physicsWorld->SaveState();
                 scene->physicsWorld->pauseSimulation = false;
                 // Unselect when starting the simulation/scene (otherwise some physics settings might not
                 // be reverted after stopping
                 sceneHierarchyPanel.selectedEntity = Scene::Entity();
+
+                isPlaying = true;
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
@@ -183,9 +201,15 @@ namespace Atlas::Editor::UI {
 
             offset = region.x / 2.0f + 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
+                // Set camera to main in any case
+                auto camera = cameraEntity.GetComponent<CameraComponent>();
+                camera.isMain = true;  
+
                 scene->physicsWorld->RestoreState();
                 scene->physicsWorld->pauseSimulation = true;
+
+                isPlaying = false;
             }
 
             ImGui::PopStyleColor();

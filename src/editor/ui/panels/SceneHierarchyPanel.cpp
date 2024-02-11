@@ -181,8 +181,6 @@ namespace Atlas::Editor::UI {
                 component->AddChild(newEntity);
             }
 
-            Log::Message("Duplicate entity " + std::to_string(entity));
-
             selectedEntity = newEntity;
         }
 
@@ -229,7 +227,8 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected) {
 
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        ImGuiTreeNodeFlags nodeFlags =  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
         nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
         ImGui::TreeNodeEx(name.c_str(), nodeFlags);

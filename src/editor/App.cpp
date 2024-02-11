@@ -29,6 +29,13 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+        // Add font with enlarged size and scale it down again
+        // This means we can use scaled text up to 2x the size
+        io.Fonts->AddFontFromFileTTF(
+            Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
+            32.0f
+        )->Scale = 0.5f;
+
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
@@ -135,7 +142,7 @@ namespace Atlas::Editor {
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);

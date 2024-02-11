@@ -74,6 +74,8 @@ namespace Atlas::Scene::Components {
             {"thirdPerson", p.thirdPerson},
             {"thirdPersonDistance", p.thirdPersonDistance},
             {"isMain", p.isMain},
+            {"useEntityTranslation", p.useEntityTranslation},
+            {"useEntityRotation", p.useEntityRotation}
         };
     }
 
@@ -88,6 +90,8 @@ namespace Atlas::Scene::Components {
         j.at("thirdPerson").get_to(p.thirdPerson);
         j.at("thirdPersonDistance").get_to(p.thirdPersonDistance);
         j.at("isMain").get_to(p.isMain);
+        j.at("useEntityTranslation").get_to(p.useEntityTranslation);
+        j.at("useEntityRotation").get_to(p.useEntityRotation);
     }
 
     void to_json(json& j, const LightComponent& p) {
