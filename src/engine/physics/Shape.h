@@ -30,13 +30,18 @@ namespace Atlas::Physics {
     struct SphereShapeSettings : ShapeSettings {
         float radius = 1.0f;
         float density = 1.0f;
+        // Needs to be uniform, maybe make this a float?
         vec3 scale = vec3(1.0f);
     };
 
     struct BoundingBoxShapeSettings : ShapeSettings {
-        Volume::AABB aabb;
+        Volume::AABB aabb = Volume::AABB(vec3(-1.0f), vec3(1.0f));
         float density = 1.0f;
         vec3 scale = vec3(1.0f);
+    };
+
+    struct CapsuleShapeSettings : ShapeSettings {
+
     };
 
     struct HeightFieldShapeSettings : ShapeSettings {

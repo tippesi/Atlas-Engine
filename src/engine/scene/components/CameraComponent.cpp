@@ -10,12 +10,12 @@ namespace Atlas {
                 vec2 rotation) : fieldOfView(fieldOfView), aspectRatio(aspectRatio), nearPlane(nearPlane),
                 farPlane(farPlane), location(location), rotation(rotation) {
 
-                UpdateView();
+                UpdateView(mat4 {1.0f});
                 UpdateProjection();
 
             }
 
-            void CameraComponent::UpdateView() {
+            void CameraComponent::UpdateView(mat4 transform) {
 
                 lastViewMatrix = viewMatrix;
 
@@ -28,9 +28,9 @@ namespace Atlas {
                 up = cross(right, direction);
 
                 if (!thirdPerson)
-                    viewMatrix = lookAt(location, location + direction, up);
+                    viewMatrix = lookAt(location, location + direction, up) * glm::inverse(transform);
                 else
-                    viewMatrix = lookAt(location - direction * thirdPersonDistance, location, up);
+                    viewMatrix = lookAt(location - direction * thirdPersonDistance, location, up) * glm::inverse(transform);
 
                 invViewMatrix = inverse(viewMatrix);
 
@@ -55,9 +55,9 @@ namespace Atlas {
 
             }
 
-            void CameraComponent::Update() {
+            void CameraComponent::Update(mat4 transform) {
 
-                UpdateView();
+                UpdateView(transform);
                 UpdateProjection();
 
             }

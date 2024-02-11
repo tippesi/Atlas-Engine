@@ -5,9 +5,6 @@ namespace Atlas::Physics {
 
     bool Shape::TryCreate() {
 
-        if (IsValid())
-            return true;
-
         if (type == ShapeType::Mesh) {
             auto meshSettings = static_cast<MeshShapeSettings*>(settings.get());
             return ShapesManager::TryCreateShapeFromMesh(this, *meshSettings);

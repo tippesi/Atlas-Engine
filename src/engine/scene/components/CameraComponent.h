@@ -70,11 +70,11 @@ namespace Atlas {
                 bool isMain = true;
 
             private:
-                void UpdateView();
+                void UpdateView(mat4 transform);
 
                 void UpdateProjection();
 
-                void Update();
+                void Update(mat4 transform);
 
                 vec2 jitterVector = vec2{ 0.0f };
                 vec2 lastJitterVector = vec2{ 0.0f };

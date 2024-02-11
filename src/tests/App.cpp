@@ -289,24 +289,24 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
+    std::vector<glm::mat4> transforms;
+    transforms.reserve(3);
     meshes.reserve(3);
-    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
     auto sponzaMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
+        "sponza/sponza.obj", ModelLoader::LoadMesh, false, 2048
     );
     meshes.push_back(sponzaMesh);
 
-    transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto wallMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-        false, transform, 2048
+        "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(wallMesh);
 
-    transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto sphereMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-        false, transform, 2048
+        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(sphereMesh);
 
@@ -317,7 +317,7 @@ bool App::LoadScene() {
             continue;
         }
         
-        auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+        auto entity = scene->CreatePrefab<MeshInstance>(mesh, transforms[meshCount]);
         entities.push_back(entity);
 
         meshCount++;

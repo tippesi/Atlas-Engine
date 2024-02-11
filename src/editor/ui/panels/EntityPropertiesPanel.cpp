@@ -51,6 +51,12 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<RigidBodyComponent>(*comp.bodyCreationSettings);
                 }
             }
+
+            if (entity.HasComponent<CameraComponent>()) {
+                auto& comp = entity.GetComponent<CameraComponent>();
+                RenderComponentPanel("Camera component", scene,
+                    entity, cameraComponentPanel, comp);
+            }
         }
 
         // Add components
@@ -67,6 +73,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<MeshComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
                     entity.AddComponent<AudioVolumeComponent>();
+                if (!entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Add camera component"))
+                    entity.AddComponent<CameraComponent>();
 
                 // Just make the rigid body component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&
@@ -76,7 +84,7 @@ namespace Atlas::Editor::UI {
                     vec3 scale = vec3(1.0f);
                     scale = entity.GetComponent<TransformComponent>().Decompose().scale;
 
-                    auto shape = Physics::ShapesManager::CreateShape(Physics::SphereShapeSettings { .scale = scale });
+                    auto shape = Physics::ShapesManager::CreateShape(Physics::BoundingBoxShapeSettings { .scale = scale });
                     auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::MOVABLE, .shape = shape };
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }

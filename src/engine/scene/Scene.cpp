@@ -245,9 +245,14 @@ namespace Atlas {
             for (auto entity : cameraSubset) {
                 auto& camera = cameraSubset.Get(entity);
 
-                if (camera.isMain) {
-                    camera.Update();
+                mat4 transformMatrix = mat4(1.0f);
+                auto transform = entityManager.TryGet<TransformComponent>(entity);
+                if (transform) {
+                    transformMatrix = transform->globalMatrix;
+                }
 
+                camera.Update(transformMatrix);
+                if (camera.isMain) {
                     mainCameraEntity = { entity, &entityManager };
                     break;
                 }
@@ -616,6 +621,10 @@ namespace Atlas {
                 *comp.shadow = *otherComp.shadow;
                 comp.shadow->SetResolution(comp.shadow->resolution);
                 comp.isMain = false;
+            }
+            if (srcEntity.HasComponent<RigidBodyComponent>()) {
+                auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
+                auto& comp = dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)

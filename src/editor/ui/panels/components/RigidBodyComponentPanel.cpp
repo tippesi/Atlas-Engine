@@ -112,7 +112,8 @@ namespace Atlas::Editor::UI {
             ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, 0.0f);
         }
 
-        shape->TryCreate();
+        if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
+            shape->TryCreate();
 
     }
 

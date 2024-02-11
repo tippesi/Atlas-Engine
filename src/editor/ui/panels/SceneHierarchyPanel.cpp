@@ -1,10 +1,11 @@
 #include "SceneHierarchyPanel.h"
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace Atlas::Editor::UI {
 
-    void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene) {
+    void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
 
         ImGui::Begin(GetNameID());
 
@@ -34,7 +35,7 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            TraverseHierarchy(scene, root);
+            TraverseHierarchy(scene, root, inFocus);
 
             RenderExtendedHierarchy(scene);
 
@@ -44,7 +45,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity) {
+    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool inFocus) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -93,13 +94,13 @@ namespace Atlas::Editor::UI {
         bool duplicateEntity = false;
         if (ImGui::BeginPopupContextItem()) {
             // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Delete entity") && (!nameComponent || nameComponent->name != "Root"))
+            if (ImGui::MenuItem("Delete entity"))
                 deleteEntity = true;
 
             if (ImGui::MenuItem("Add emtpy entity"))
                 createEntity = true;
 
-            if (ImGui::MenuItem("Duplicate entity") && (!nameComponent || nameComponent->name != "Root"))
+            if (ImGui::MenuItem("Duplicate entity"))
                 duplicateEntity = true;
 
             ImGui::EndPopup();
@@ -110,12 +111,33 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity);
+                TraverseHierarchy(scene, childEntity, inFocus);
 
             }
 
             ImGui::TreePop();
 
+        }
+
+        auto& io = ImGui::GetIO();
+
+        bool controlDown;
+#ifdef AE_OS_MACOS
+        controlDown = io.KeyAlt;
+#else
+        controlDown = io.KeyCtrl;
+#endif
+
+        if (selectedEntity == entity) {
+            if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_D))
+                duplicateEntity = true;
+            else if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_Delete))
+                deleteEntity = true;
+        }
+
+        if (nameComponent && nameComponent->name == "Root") {
+            duplicateEntity = false;
+            deleteEntity = false;
         }
 
         if (createEntity) {
@@ -153,12 +175,15 @@ namespace Atlas::Editor::UI {
                 component = root.TryGetComponent<HierarchyComponent>();
             }
 
-                AE_ASSERT(component != nullptr);
+            AE_ASSERT(component != nullptr);
 
             if (component != nullptr) {
-
                 component->AddChild(newEntity);
             }
+
+            Log::Message("Duplicate entity " + std::to_string(entity));
+
+            selectedEntity = newEntity;
         }
 
         if (dropEntity.IsValid()) {

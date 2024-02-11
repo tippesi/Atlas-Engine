@@ -117,7 +117,7 @@ namespace Atlas {
             }
             {
                 mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
-                    "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
+                    "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, 2048
                 );
 
                 auto shaderConfig = ShaderConfig {

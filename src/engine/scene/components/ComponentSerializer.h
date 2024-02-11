@@ -166,9 +166,8 @@ namespace Atlas::Scene::Components {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
 
-            // Scaled meshes are currently unsupported
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
+                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
         }
 
     }

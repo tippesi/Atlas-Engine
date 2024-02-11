@@ -24,6 +24,23 @@ namespace Atlas {
                 return;
             }
 
+            // Resolve all transformation which might have happened due to physics (set new local transforms)
+            // This might need to be moved into the main scene update code in the future
+            auto transformSubset = scene->GetSubset<TransformComponent>();
+            for (auto entity : transformSubset) {
+                auto& transform = transformSubset.Get(entity);
+
+                mat4 parentGlobalMatrix = mat4(1.0f);
+                auto parentEntity = scene->GetParentEntity(entity);
+                auto parentTransform = parentEntity.TryGetComponent<TransformComponent>();
+                if (parentTransform) {
+                    parentGlobalMatrix = parentTransform->globalMatrix;
+                }
+
+                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
+                transform.Set(inverseParentMatrix * transform.globalMatrix);
+            }
+
             json j;
 
             std::vector<json> entities;

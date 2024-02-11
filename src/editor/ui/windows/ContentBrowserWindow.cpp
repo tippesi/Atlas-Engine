@@ -47,19 +47,18 @@ namespace Atlas::Editor::UI {
         ImGui::End();
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+
         const char *items[] = {"Audio", "Mesh", "Terrain", "Scene"};
         static int currentSelection = 0;
-        ImGui::BeginListBox("##Listbox", ImVec2(-FLT_MIN, 9 * ImGui::GetTextLineHeightWithSpacing()));
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
-            const bool isSelected = (currentSelection == i);
-            if (ImGui::Selectable(items[i], isSelected))
+            auto selected = ImGui::TreeNodeEx(items[i], nodeFlags);
+            if (ImGui::IsItemClicked())
                 currentSelection = i;
-
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
+            if (selected)
+                ImGui::TreePop();
         }
 
-        ImGui::EndListBox();
         ImGui::End();
 
         ImGui::Begin("ResourceTypeOverview", nullptr);

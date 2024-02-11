@@ -9,6 +9,7 @@
 #include "components/LightComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
+#include "components/CameraComponentPanel.h"
 
 #include <imgui.h>
 
@@ -28,6 +29,7 @@ namespace Atlas::Editor::UI {
         LightComponentPanel lightComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
+        CameraComponentPanel cameraComponentPanel;
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,
@@ -35,7 +37,7 @@ namespace Atlas::Editor::UI {
             bool resourceChanged = false;
 
             ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
-                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+                ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
 
             if (ImGui::TreeNodeEx(name.c_str(), nodeFlags)) {
                 resourceChanged = panel.Render(scene, entity, component);

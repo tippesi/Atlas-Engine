@@ -174,6 +174,15 @@ namespace Atlas {
 
         }
 
+        void PhysicsWorld::ChangeShape(Body bodyId, Ref<Shape> shape) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.SetShape(bodyId, shape->ref, true, JPH::EActivation::Activate);
+
+            bodyToShapeMap[bodyId] = shape;
+
+        }
+
         BodyCreationSettings PhysicsWorld::GetBodyCreationSettings(Body bodyId) {
 
             auto& bodyLockInterface = system->GetBodyLockInterface();

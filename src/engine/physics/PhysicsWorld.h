@@ -61,6 +61,8 @@ namespace Atlas {
 
             float GetFriction(Body bodyId);
 
+            void ChangeShape(Body bodyId, Ref<Shape> shape);
+
             BodyCreationSettings GetBodyCreationSettings(Body bodyId);
 
             void OptimizeBroadphase();

@@ -67,7 +67,14 @@ namespace Atlas {
             JPH::BoxShapeSettings boxShapeSettings(VecToJPHVec(halfSize));
             boxShapeSettings.SetDensity(density);
 
-            auto boxShapeRef = boxShapeSettings.Create().Get();
+            auto boxShapeResult = boxShapeSettings.Create();
+            if (!boxShapeResult.IsValid()) {
+                auto error = boxShapeResult.GetError();
+                return false;
+            }
+
+
+            auto boxShapeRef = boxShapeResult.Get();
 
             auto translation = VecToJPHVec(aabb.min + halfSize);
             JPH::RotatedTranslatedShapeSettings translatedBox(translation, JPH::Quat::sIdentity(), boxShapeRef);

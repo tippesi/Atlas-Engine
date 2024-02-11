@@ -834,14 +834,13 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
+    std::vector<glm::mat4> transforms;
     if (sceneSelection == CORNELL) {
-        meshes.reserve(1);
-
-        glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, transform, 2048
+            "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 0.0f;
@@ -854,20 +853,17 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == SPONZA) {
-        meshes.reserve(1);
-
-        glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
+            "sponza/sponza.obj", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
- 
-        transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
+
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-            false, transform, 2048
+            "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(1.0f);
 
         // Other scene related settings apart from the mesh
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -882,13 +878,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.28f;
     }
     else if (sceneSelection == BISTRO) {
-        meshes.reserve(1);
-
-        auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(.015f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, transform, 2048
+            "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.015f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 100.0f;
@@ -902,13 +896,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.28f;
     }
     else if (sceneSelection == SANMIGUEL) {
-        meshes.reserve(1);
-
-        auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, transform, 2048
+            "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 100.0f;
@@ -926,9 +918,10 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "medieval/scene.fbx", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
+            "medieval/scene.fbx", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(1.0f);
 
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
@@ -944,13 +937,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == PICAPICA) {
-        meshes.reserve(1);
-
-        auto transform = glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.push_back(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 10.0f;
@@ -964,12 +955,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == SUBWAY) {
-        meshes.reserve(1);
-
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "subway/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(1.0f), 2048
+            "subway/scene.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(1.0f);
 
         // Other scene related settings apart from the mesh
         directionalLight.intensity = 10.0f;
@@ -983,13 +973,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == MATERIALS) {
-        meshes.reserve(1);
-
-        auto transform = glm::scale(glm::vec3(8.0f));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "material demo/materials.obj", ModelLoader::LoadMesh, false, transform, 2048
+            "material demo/materials.obj", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.push_back(glm::scale(glm::vec3(8.0f)));
 
         sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
         probe = Atlas::Lighting::EnvironmentProbe(sky);
@@ -1026,7 +1014,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, glm::mat4(1.0f), 1024);
+        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, 1024);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -1043,12 +1031,11 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == FLYINGWORLD) {
-        meshes.reserve(1);
-
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "flying world/scene.gltf", ModelLoader::LoadMesh, false, glm::mat4(0.01f), 2048
+            "flying world/scene.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(0.01f);
 
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
@@ -1070,25 +1057,26 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == NEWSPONZA) {
-        meshes.reserve(4);
-
-        auto transform = glm::mat4(glm::scale(glm::mat4(1.0f), glm::vec3(4.0f)));
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(4.0f);
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(4.0f);
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(4.0f);
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, transform, 2048
+            "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
+        transforms.emplace_back(4.0f);
 
         // Other scene related settings apart from the mesh
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -1105,12 +1093,11 @@ bool App::LoadScene() {
     // scene.sky.probe = std::make_shared<Atlas::Lighting::EnvironmentProbe>(sky);
 
     // Load chrome sphere for every scene in order to test physics
-    auto transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
     auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-        false, transform, 2048
+        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(mesh);
+    transforms.emplace_back(1.0f);
 
     if (sceneSelection != FOREST && sceneSelection != EMERALDSQUARE) {
         auto meshCount = 0;
@@ -1120,7 +1107,7 @@ bool App::LoadScene() {
                 continue;
 
             auto isStatic = meshCount == 0;
-            auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f), isStatic);
+            auto entity = scene->CreatePrefab<MeshInstance>(mesh, transforms[meshCount], isStatic);
             entities.push_back(entity);
 
             /*
