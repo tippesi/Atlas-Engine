@@ -9,6 +9,7 @@
 #include "components/LightComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
+#include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
 
 #include <imgui.h>
@@ -29,6 +30,7 @@ namespace Atlas::Editor::UI {
         LightComponentPanel lightComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
+        PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
 
         template<class S, class T>

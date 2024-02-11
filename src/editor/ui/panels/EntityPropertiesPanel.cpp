@@ -52,6 +52,15 @@ namespace Atlas::Editor::UI {
                 }
             }
 
+            if (entity.HasComponent<PlayerComponent>()) {
+                auto comp = entity.GetComponent<PlayerComponent>();
+                RenderComponentPanel("Player component", scene,
+                    entity, playerComponentPanel, comp);
+                // Only change if we have new settings
+                entity.RemoveComponent<PlayerComponent>();
+                entity.AddComponent<PlayerComponent>(*comp.playerCreationSettings);
+            }
+
             if (entity.HasComponent<CameraComponent>()) {
                 auto& comp = entity.GetComponent<CameraComponent>();
                 RenderComponentPanel("Camera component", scene,
@@ -75,6 +84,19 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<AudioVolumeComponent>();
                 if (!entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Add camera component"))
                     entity.AddComponent<CameraComponent>();
+
+                // Just make the player component addable if there is a transform component
+                if (entity.HasComponent<TransformComponent>() &&
+                    !entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Add player component")) {
+                    // Created standardized shapes/rigid body component as a default (we need to get the scale from
+                    // the transform component
+                    vec3 scale = vec3(1.0f);
+                    scale = entity.GetComponent<TransformComponent>().Decompose().scale;
+
+                    auto shape = Physics::ShapesManager::CreateShape(Physics::CapsuleShapeSettings{ .scale = scale });
+                    auto bodySettings = Physics::PlayerCreationSettings { .shape = shape };
+                    entity.AddComponent<PlayerComponent>(bodySettings);
+                }
 
                 // Just make the rigid body component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&

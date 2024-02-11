@@ -24,6 +24,7 @@ namespace Atlas::Physics {
         static bool TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings);
         static bool TryCreateShapeFromAABB(Shape* shape, const BoundingBoxShapeSettings& settings);
         static bool TryCreateShapeFromSphere(Shape* shape, const SphereShapeSettings& settings);
+        static bool TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings);
         static bool TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings);
 
         static bool CreateShapeScaled(Shape* shape, ShapeRef shapeRef, vec3 scale);
@@ -52,6 +53,11 @@ namespace Atlas::Physics {
             shape->type = ShapeType::Sphere;
             success = TryCreateShapeFromSphere(shape.get(), shapeSettings);
             shape->settings = CreateRef<SphereShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<CapsuleShapeSettings, T>) {
+            shape->type = ShapeType::Capsule;
+            success = TryCreateShapeFromCapsule(shape.get(), shapeSettings);
+            shape->settings = CreateRef<CapsuleShapeSettings>(shapeSettings);
         }
         else if constexpr (std::is_same_v<HeightFieldShapeSettings, T>) {
             shape->type = ShapeType::HeightField;

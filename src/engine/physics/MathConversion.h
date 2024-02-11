@@ -36,6 +36,18 @@ namespace Atlas {
 
         }
 
+        inline mat4 JPHMatToMat(const JPH::Mat44& mat) {
+
+            mat4 matrix;
+            for (int8_t i = 0; i < 4; i++) {
+                auto col = mat.GetColumn4(i);
+                matrix[i] = vec4(col.GetX(), col.GetY(), col.GetZ(), col.GetW());
+            }
+
+            return matrix;
+
+        }
+
     }
 
 }

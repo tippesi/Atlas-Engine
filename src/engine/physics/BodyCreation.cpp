@@ -17,6 +17,8 @@ namespace Atlas::Physics {
         linearDampening = settings.mLinearDamping;
         angularDampening = settings.mAngularDamping;
 
+        gravityFactor = settings.mGravityFactor;
+
         shapePtr = settings.GetShape();
 
     }
@@ -44,6 +46,8 @@ namespace Atlas::Physics {
 
         settings.mLinearDamping = linearDampening;
         settings.mAngularDamping = angularDampening;
+
+        settings.mGravityFactor = gravityFactor;
 
         settings.SetShape(shape->ref);
 

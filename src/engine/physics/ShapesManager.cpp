@@ -3,6 +3,7 @@
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
@@ -73,7 +74,6 @@ namespace Atlas {
                 return false;
             }
 
-
             auto boxShapeRef = boxShapeResult.Get();
 
             auto translation = VecToJPHVec(aabb.min + halfSize);
@@ -107,6 +107,38 @@ namespace Atlas {
 
             if (!result.IsValid())
                 return false;
+
+            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+                return CreateShapeScaled(shape, result.Get(), scale);
+            }
+
+            shape->ref = result.Get();
+
+            return true;
+
+        }
+
+        bool ShapesManager::TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings) {
+
+            auto halfHeight = settings.height / 2.0f;
+            auto radius = settings.radius;
+            auto density = settings.density;
+            auto& scale = settings.scale;
+
+            JPH::CapsuleShapeSettings capsuleShapeSettings(halfHeight, radius);
+            capsuleShapeSettings.SetDensity(density);
+
+            auto capsuleResult = capsuleShapeSettings.Create();
+
+            if (!capsuleResult.IsValid())
+                return false;
+
+            auto capsuleRef = capsuleResult.Get();
+
+            auto translation = VecToJPHVec(vec3(0.0f, halfHeight, 0.0f));
+            JPH::RotatedTranslatedShapeSettings translatedCapsule(translation, JPH::Quat::sIdentity(), capsuleRef);
+
+            auto result = translatedCapsule.Create();
 
             if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
                 return CreateShapeScaled(shape, result.Get(), scale);

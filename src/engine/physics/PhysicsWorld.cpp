@@ -100,11 +100,7 @@ namespace Atlas {
 
             auto transform = bodyInterface.GetWorldTransform(bodyId);
 
-            mat4 matrix;
-            for (int8_t i = 0; i < 4; i++) {
-                auto col = transform.GetColumn4(i);
-                matrix[i] = vec4(col.GetX(), col.GetY(), col.GetZ(), col.GetW());
-            }
+            auto matrix = JPHMatToMat(transform);
 
             auto shapeRef = bodyInterface.GetShape(bodyId);
             // Need to scale here since the tranform doesn't include scale
@@ -201,6 +197,18 @@ namespace Atlas {
             }
 
             return {};
+
+        }
+
+        void PhysicsWorld::SetGravity(vec3 gravity) {
+
+            system->SetGravity(VecToJPHVec(gravity));
+
+        }
+
+        vec3 PhysicsWorld::GetGravity() {
+
+            return JPHVecToVec(system->GetGravity());
 
         }
 

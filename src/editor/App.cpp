@@ -96,6 +96,20 @@ namespace Atlas::Editor {
             keyboardHandler.Update(camera, deltaTime);
         }
 
+        if (activeSceneWindow.isPlaying) {
+            auto playerSubset = activeSceneWindow.scene->GetSubset<PlayerComponent>();
+            for (auto entity : playerSubset) {
+                auto camera = entity.TryGetComponent<CameraComponent>();
+                if (!camera)
+                    continue;
+
+                auto player = entity.GetComponent<PlayerComponent>();
+
+                mouseHandler.Update(*camera, deltaTime);
+                keyboardHandler.Update(*camera, player, deltaTime);
+            }
+        }
+
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
 
@@ -142,7 +156,7 @@ namespace Atlas::Editor {
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);

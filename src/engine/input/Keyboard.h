@@ -3,6 +3,7 @@
 #include "System.h"
 #include "events/EventManager.h"
 #include "scene/components/CameraComponent.h"
+#include "scene/components/PlayerComponent.h"
 
 namespace Atlas {
 
@@ -22,6 +23,8 @@ namespace Atlas {
             KeyboardHandler& operator=(const KeyboardHandler& that);
 
             void Update(CameraComponent& camera, float deltaTime);
+
+            void Update(CameraComponent& camera, PlayerComponent& player, float deltaTime);
 
             float speed = 7.0f;
             float reactivity = 6.0f;

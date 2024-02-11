@@ -48,7 +48,7 @@ namespace Atlas::Editor::UI {
 
         if (shape->type == ShapeType::Mesh) {
             if (shapeTypeChanged)
-                shape->settings = std::make_unique<MeshShapeSettings>();
+                shape->settings = CreateRef<MeshShapeSettings>();
 
             auto meshSettings = static_cast<MeshShapeSettings*>(shape->settings.get());
             auto buttonName = meshSettings->mesh.IsValid() ? meshSettings->mesh.GetResource()->GetFileName() :
@@ -74,7 +74,7 @@ namespace Atlas::Editor::UI {
         }
         else if (shape->type == ShapeType::Sphere) {
             if (shapeTypeChanged)
-                shape->settings = std::make_unique<SphereShapeSettings>();
+                shape->settings = CreateRef<SphereShapeSettings>();
 
             auto sphereSettings = static_cast<SphereShapeSettings*>(shape->settings.get());
 
@@ -88,7 +88,7 @@ namespace Atlas::Editor::UI {
         }
         else if (shape->type == ShapeType::BoundingBox) {
             if (shapeTypeChanged)
-                shape->settings = std::make_unique<BoundingBoxShapeSettings>();
+                shape->settings = CreateRef<BoundingBoxShapeSettings>();
 
             auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(shape->settings.get());
 
@@ -100,6 +100,18 @@ namespace Atlas::Editor::UI {
 
             density = &boundingBoxSettings->density;
             scale = &boundingBoxSettings->scale;
+        }
+        else if (shape->type == ShapeType::Capsule) {
+            if (shapeTypeChanged)
+                shape->settings = CreateRef<CapsuleShapeSettings>();
+
+            auto capsuleSettings = static_cast<CapsuleShapeSettings*>(shape->settings.get());
+
+            ImGui::DragFloat("Radius", &capsuleSettings->radius, 0.1f, 0.01f, 100.0f);
+            ImGui::DragFloat("Height", &capsuleSettings->height, 0.1f, 0.01f, 100.0f);
+
+            density = &capsuleSettings->density;
+            scale = &capsuleSettings->scale;
         }
 
         if (density != nullptr) {
@@ -138,6 +150,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::DragFloat("Linear dampening", &settings.linearDampening, 0.01f, -0.0f, 1.0f);
         ImGui::DragFloat("Angular dampening", &settings.angularDampening, 0.01f, -0.0f, 1.0f);
+
+        ImGui::DragFloat("Gravity factor", &settings.gravityFactor, 0.01f, -0.0f, 1.0f);
 
     }
 

@@ -32,6 +32,8 @@ namespace Atlas::Physics {
         float linearDampening = 0.05f;
         float angularDampening = 0.05f;
 
+        float gravityFactor = 1.0f;
+
         const JPH::Shape* shapePtr = nullptr;
         Ref<Shape> shape = nullptr;
     };

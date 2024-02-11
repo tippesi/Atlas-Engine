@@ -65,6 +65,10 @@ namespace Atlas {
 
             BodyCreationSettings GetBodyCreationSettings(Body bodyId);
 
+            void SetGravity(vec3 gravity);
+
+            vec3 GetGravity();
+
             void OptimizeBroadphase();
 
             void SaveState();

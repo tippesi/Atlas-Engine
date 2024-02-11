@@ -66,6 +66,22 @@ namespace Atlas::Physics {
         j.at("scale").get_to(p.scale);
     }
 
+    void to_json(json& j, const CapsuleShapeSettings& p) {
+        j = json{
+            {"height", p.height},
+            {"radius", p.radius},
+            {"density", p.density},
+            {"scale", p.scale},
+        };
+    }
+
+    void from_json(const json& j, CapsuleShapeSettings& p) {
+        j.at("height").get_to(p.height);
+        j.at("radius").get_to(p.radius);
+        j.at("density").get_to(p.density);
+        j.at("scale").get_to(p.scale);
+    }
+
     void to_json(json& j, const HeightFieldShapeSettings& p) {
         j = json {
             {"heightData", p.heightData},
@@ -93,6 +109,10 @@ namespace Atlas::Physics {
             auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(p.settings.get());
             j["boundingBoxSettings"] = *boundingBoxSettings;
         }
+        else if (p.type == ShapeType::Capsule) {
+            auto capsuleShapeSettings = static_cast<CapsuleShapeSettings*>(p.settings.get());
+            j["capsuleShapeSettings"] = *capsuleShapeSettings;
+        }
         else if (p.type == ShapeType::HeightField) {
             auto heightFieldSettings = static_cast<HeightFieldShapeSettings*>(p.settings.get());
             j["heightFieldSettings"] = *heightFieldSettings;
@@ -110,6 +130,10 @@ namespace Atlas::Physics {
         }
         else if (j.contains("boundingBoxSettings")) {
             BoundingBoxShapeSettings settings = j["boundingBoxSettings"];
+            p = ShapesManager::CreateShape(settings);
+        }
+        else if (j.contains("capsuleShapeSettings")) {
+            CapsuleShapeSettings settings = j["capsuleShapeSettings"];
             p = ShapesManager::CreateShape(settings);
         }
         else if (j.contains("heightFieldSettings")) {
@@ -137,6 +161,8 @@ namespace Atlas::Physics {
             j["linearDampening"] = p.linearDampening;
         if (d.angularDampening != p.angularDampening)
             j["angularDampening"] = p.angularDampening;
+        if (d.gravityFactor != p.gravityFactor)
+            j["gravityFactor"] = p.gravityFactor;
         if (p.shape)
             j["shape"] = *p.shape;
     }
@@ -158,6 +184,8 @@ namespace Atlas::Physics {
             p.linearDampening = j["linearDampening"];
         if (j.contains("angularDampening"))
             p.angularDampening = j["angularDampening"];
+        if (j.contains("gravityFactor"))
+            p.gravityFactor = j["gravityFactor"];
         if (j.contains("shape")) {
             p.shape = j["shape"];
         }

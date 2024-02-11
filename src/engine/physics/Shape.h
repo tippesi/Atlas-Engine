@@ -17,6 +17,7 @@ namespace Atlas::Physics {
         Mesh = 0,
         Sphere,
         BoundingBox,
+        Capsule,
         HeightField
     };
 
@@ -41,7 +42,10 @@ namespace Atlas::Physics {
     };
 
     struct CapsuleShapeSettings : ShapeSettings {
-
+        float height = 2.0f;
+        float radius = 0.3f;
+        float density = 1.0f;
+        vec3 scale = vec3(1.0f);
     };
 
     struct HeightFieldShapeSettings : ShapeSettings {

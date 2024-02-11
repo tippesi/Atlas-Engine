@@ -62,6 +62,32 @@ namespace Atlas {
 
         }
 
+        void KeyboardHandler::Update(CameraComponent& camera, PlayerComponent& player, float deltaTime) {
+
+            linearVelocity = camera.direction * movement.x * deltaTime * speed;
+            linearVelocity += camera.right * movement.y * deltaTime * speed;
+
+            linearVelocity.y += movement.z * deltaTime * speed;
+
+            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+
+            interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
+
+            auto newVelocity = vec3(0.0f);
+            auto groundVelocity = player.GetGroundVelocity();
+            if (player.IsOnGround()) {
+                newVelocity += groundVelocity;
+            }
+            else {
+                newVelocity += player.GetLinearVelocity();
+            }
+
+            auto playerUp = player.GetUp();
+            auto gravity = vec3(0.0f, -9.81f, 0.0f);
+            player.SetLinearVelocity(interpolatedLinearVelocity + playerUp * gravity);
+
+        }
+
         void KeyboardHandler::RegisterEvent() {
 
             auto keyboardEventHandler = std::bind(&KeyboardHandler::KeyboardEventHandler, this, std::placeholders::_1);
