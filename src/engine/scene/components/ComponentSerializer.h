@@ -193,5 +193,24 @@ namespace Atlas::Scene::Components {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
     }
+    
+    void to_json(json& j, const LuaScriptComponent& p) {
+        j = json {};
+
+        if (p.script.IsValid())
+            j["resourcePath"] = p.script.GetResource()->path;
+    }
+
+    void from_json(const json& j, LuaScriptComponent& p) {
+        
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
+                        resourcePath, ResourceOrigin::User);
+        }
+
+    }
 
 }

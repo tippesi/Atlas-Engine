@@ -1,6 +1,7 @@
 #include "LuaScriptComponent.h"
 
 #include "../Scene.h"
+#include "TransformComponent.h"
 
 namespace Atlas::Scene::Components
 {
@@ -8,6 +9,10 @@ namespace Atlas::Scene::Components
     LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity) : scene(scene), entity(entity)
     {
         // TODO: implement
+    }
+
+    LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent &that) : scene(scene), entity(entity), script(that.script)
+    {
     }
 
     void LuaScriptComponent::Update(float deltaTime)
@@ -19,7 +24,8 @@ namespace Atlas::Scene::Components
             return;
 
         auto resource = script.GetResource();
-        if (resource->WasModified()) {
+        if (resource->WasModified())
+        {
             // Do reload here, adjust modified time beforehand to be conservative
             resource->UpdateModifiedTime();
             script->Reload();
@@ -29,6 +35,7 @@ namespace Atlas::Scene::Components
         if (scene->physicsWorld->pauseSimulation)
         {
             // the instance is not running, discard the state
+            scriptUpdate.reset();
             luaState = nullptr;
             return;
         }
@@ -41,21 +48,67 @@ namespace Atlas::Scene::Components
 
         // call the script function
         AE_ASSERT(luaState != nullptr);
-        auto &state = *luaState;
-        sol::protected_function updateFunction = state["update"];
-        AE_ASSERT(updateFunction.valid());
-        std::function<void(double)> stdUpdateFunction = updateFunction;
-        stdUpdateFunction(deltaTime);
+        if (scriptUpdate.has_value())
+        {
+            auto result = scriptUpdate.value()(deltaTime);
+            if (!result.valid())
+            {
+                // Call failed
+                // Note that if the handler was successfully called, this will include
+                // the additional appended error message information of
+                // "got_problems handler: " ...
+                sol::error err = result;
+                std::string what = err.what();
+                Log::Error("Error while executing update: " + what);
+            }
+        }
     }
 
     void LuaScriptComponent::InitLuaState()
     {
         AE_ASSERT(luaState == nullptr);
-        luaState = std::make_shared<sol::state>();
-        luaState->open_libraries(sol::lib::base);
-        luaState->set_function("log", [&](std::string msg)
-                               { Log::Message(msg); });
+        try
+        {
+            // create lua state
+            luaState = std::make_shared<sol::state>();
+            luaState->open_libraries(sol::lib::base);
+            auto &state = *luaState;
 
-        luaState->script(script->code);
+            // create bindings for script
+            auto ns = state["Atlas"].get_or_create<sol::table>();
+
+            ns.set_function("log", &Log::Message);
+
+            ns.new_usertype<glm::vec3>("Vec3",
+                                       "x", &glm::vec3::x,
+                                       "y", &glm::vec3::y,
+                                       "z", &glm::vec3::z);
+
+            auto entityType = ns.new_usertype<Entity>("Entity");
+            ns.set_function("get_this_entity", [&]()
+                            { return this->entity; });
+
+            auto transformUserType = ns.new_usertype<TransformComponent>("TransformComponent");
+            transformUserType["translate"] = &TransformComponent::Translate;
+
+            entityType.set_function("get_transform_component", [](Entity &entity) -> TransformComponent *
+                                    { return entity.TryGetComponent<TransformComponent>(); });
+
+            // load script
+            state.script(script->code);
+
+            // now load the script functions
+
+            sol::protected_function updateFunction = state["update"];
+            if (updateFunction.valid())
+            {
+                scriptUpdate = updateFunction;
+            }
+        }
+        catch (const std::exception &e)
+        {
+            luaState = nullptr;
+            Atlas::Log::Message("Error while compiling lua script: " + std::string(e.what()));
+        }
     }
 }

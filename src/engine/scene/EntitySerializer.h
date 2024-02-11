@@ -52,6 +52,9 @@ namespace Atlas::Scene {
             j["entities"] = entities;
             j["root"] = hierarchyComponent.root;
         }
+        if (p.HasComponent<LuaScriptComponent>()) {
+            j["luaScript"] = p.GetComponent<LuaScriptComponent>();
+        }
     }
 
     void EntityFromJson(const json& j, Entity& p, Ref<Scene>& scene) {
@@ -105,6 +108,10 @@ namespace Atlas::Scene {
             for (auto entity : entities) {
                 comp.AddChild(entity);
             }
+        }
+        if(j.contains("luaScript")){
+            LuaScriptComponent comp = j["luaScript"];
+            p.AddComponent<LuaScriptComponent>(comp);
         }
     }
 

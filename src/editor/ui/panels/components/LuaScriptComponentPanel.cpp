@@ -7,13 +7,14 @@ namespace Atlas::Editor::UI
 {
     bool LuaScriptComponentPanel::Render(Scene::Entity entity, LuaScriptComponent &luaScriptComponent)
     {
-        auto buttonName = luaScriptComponent.script.IsValid() ? luaScriptComponent.script.GetResource()->GetFileName() :
-            "Drop script resource here";
+        auto buttonName = luaScriptComponent.script.IsValid() ? luaScriptComponent.script.GetResource()->GetFileName() : "Drop script resource here";
         ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Scripting::Script).name())) {
-                Resource<Scripting::Script>* resource;
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Scripting::Script).name()))
+            {
+                Resource<Scripting::Script> *resource;
                 std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
                 // We know this mesh is loaded, so we can just request a handle without loading
                 luaScriptComponent.script = ResourceManager<Scripting::Script>::GetResource(resource->path);
@@ -27,7 +28,7 @@ namespace Atlas::Editor::UI
         if (!luaScriptComponent.script.IsLoaded())
             return false;
 
-        ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code);
+        ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code, ImVec2(0, 0), ImGuiInputTextFlags_ReadOnly);
 
         return false;
     }

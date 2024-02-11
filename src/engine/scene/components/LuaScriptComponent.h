@@ -21,7 +21,8 @@ namespace Atlas::Scene
 
         public:
             LuaScriptComponent(Scene *scene, Entity entity);
-            LuaScriptComponent(const LuaScriptComponent &that) = default;
+            LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent& that);
+            LuaScriptComponent() = default;
 
             ResourceHandle<Scripting::Script> script;
 
@@ -33,8 +34,9 @@ namespace Atlas::Scene
             Entity entity;
 
             Ref<sol::state> luaState;
-
             void InitLuaState();
+
+            std::optional<sol::protected_function> scriptUpdate;
         };
 
     }
