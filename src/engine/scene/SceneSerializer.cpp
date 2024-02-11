@@ -136,6 +136,7 @@ namespace Atlas {
             if (j.contains("physicsWorld")) {
                 scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
                 *scene->physicsWorld = j["physicsWorld"];
+                scene->physicsWorld->pauseSimulation = true;
             }
 
             scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();

@@ -144,7 +144,7 @@ namespace Atlas::Editor::UI {
             auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-
+                scene->physicsWorld->pauseSimulation = false;
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
@@ -153,7 +153,7 @@ namespace Atlas::Editor::UI {
             offset = region.x / 2.0f + 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-
+                scene->physicsWorld->pauseSimulation = true;
             }
 
             ImGui::PopStyleColor();

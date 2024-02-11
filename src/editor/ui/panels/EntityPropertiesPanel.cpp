@@ -40,6 +40,11 @@ namespace Atlas::Editor::UI {
                 entity.RemoveComponent<AudioVolumeComponent>();
                 entity.AddComponent<AudioVolumeComponent>(comp);
             }
+
+            if(entity.HasComponent<LuaScriptComponent>()){
+                RenderComponentPanel("Lua script component", entity, luaScriptComponentPanel,
+                    entity.GetComponent<LuaScriptComponent>());
+            }
         }
 
         // Add components
@@ -56,6 +61,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<MeshComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
                     entity.AddComponent<AudioVolumeComponent>();
+                if (!entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Add lua script component"))
+                    entity.AddComponent<LuaScriptComponent>();
 
                 ImGui::EndPopup();
             }

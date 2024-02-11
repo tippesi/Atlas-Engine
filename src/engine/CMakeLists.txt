@@ -41,7 +41,8 @@ if(WIN32)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt)
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
+            ${LUA_LIBRARIES} sol2)
 endif()
 
 if (MINGW)
@@ -56,13 +57,14 @@ if(APPLE)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
+            ${LUA_LIBRARIES} sol2)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -79,7 +81,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
-            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
+            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
 # Add source files ################################################################################
@@ -151,6 +153,7 @@ target_include_directories(${PROJECT_NAME}
     ${VULKAN_HEADERS_INCLUDE_DIRS}
     ${STB_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
+    ${LUA_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
 

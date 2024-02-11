@@ -91,6 +91,13 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
+            // Update scripting components
+            auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
+            for(auto entity : luaScriptComponentSubset){
+                auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
+                luaScriptComponent.Update(deltaTime);
+            }
+
             TransformComponent rootTransform = {};
 
             auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
