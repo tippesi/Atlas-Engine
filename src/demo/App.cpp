@@ -249,7 +249,7 @@ void App::Update(float deltaTime) {
                 .restitution = sphereRestitution,
                 .shape = shape,
             };
-            auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
+            entity.AddComponent<RigidBodyComponent>(bodySettings);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -1282,7 +1282,7 @@ void App::CheckLoadScene() {
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
     for (auto& entity : entities) {
-        auto& meshComponent = entity.GetComponent<MeshComponent>();
+        const auto& meshComponent = entity.GetComponent<MeshComponent>();
         if (entityCount++ == 0) {
             Atlas::Physics::MeshShapeSettings settings = {
                 .mesh = meshComponent.mesh

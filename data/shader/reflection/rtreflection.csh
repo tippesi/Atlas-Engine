@@ -108,7 +108,7 @@ void main() {
                 float pdf = 1.0;
                 BRDFSample brdfSample;
                 if (material.roughness > 0.02) {
-                    ImportanceSampleGGX(blueNoiseVec, N, V, alpha,
+                    ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
                         ray.direction, pdf);
                 }
                 else {

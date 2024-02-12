@@ -31,7 +31,7 @@ namespace Atlas::Editor {
 
 		std::vector<uint32_t> toBeRemoved;
 
-		auto textScale = 1.0f;
+		auto textScale = 1.15f;
 		auto notificationDist = 8.0f;
 		auto notificationWidth = viewportSize.x * 0.5f;
 		auto notificationHeight = ImGui::GetTextLineHeightWithSpacing() * textScale + 16.0f;
@@ -58,8 +58,8 @@ namespace Atlas::Editor {
 			HashCombine(hash, notification.message);
 			HashCombine(hash, notification.creationTime);
 
-			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, alpha));
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, alpha));
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, alpha * 0.9f));
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
 
 			auto windowName = "Notification##" + std::to_string(hash);
 			ImGui::Begin(windowName.c_str(), nullptr, notificationWindowFlags);
@@ -72,7 +72,7 @@ namespace Atlas::Editor {
 
 			ImGui::SetWindowFontScale(textScale);
 
-			auto textWidth = ImGui::CalcTextSize(notification.message.c_str()).x * textScale;
+			auto textWidth = ImGui::CalcTextSize(notification.message.c_str()).x;
 
 			ImGui::SetCursorPosX((notificationWidth - textWidth) * 0.5f);
 

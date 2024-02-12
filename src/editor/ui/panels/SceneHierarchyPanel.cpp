@@ -153,6 +153,8 @@ namespace Atlas::Editor::UI {
             hierarchyComponent->AddChild(newEntity);
 
             selectedEntity = newEntity;
+            // Reset other properties selection
+            selectedProperty = SelectedProperty();
         }
 
         if (deleteEntity) {
@@ -182,6 +184,8 @@ namespace Atlas::Editor::UI {
             }
 
             selectedEntity = newEntity;
+            // Reset other properties selection
+            selectedProperty = SelectedProperty();
         }
 
         if (dropEntity.IsValid()) {

@@ -127,7 +127,7 @@ float SampleRoughness(vec2 texCoords) {
 #ifdef METALNESS_MAP
 float SampleMetalness(vec2 texCoords) {
     #ifdef AE_BINDLESS
-    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.metalnessMao)], bindlessSampler), texCoords).r;
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.metalnessMap)], bindlessSampler), texCoords).r;
     #else
     return texture(metalnessMao, texCoords).r;
     #endif

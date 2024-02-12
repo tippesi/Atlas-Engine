@@ -22,7 +22,7 @@ namespace Atlas::Editor {
         const auto& config = Singletons::config;
 
         std::vector<std::string> scenePaths;
-        for (auto& scene : config->openedScenes)
+        for (const auto& scene : config->openedScenes)
             scenePaths.push_back(scene.GetResource()->path);
 
         json j = {
@@ -68,7 +68,7 @@ namespace Atlas::Editor {
             j.at("scenes").get_to(scenePaths);
 
         // No need to add it to the config, will be done through resource events
-        for (auto& path : scenePaths)
+        for (const auto& path : scenePaths)
             FileImporter::ImportFile(path);
 
     }

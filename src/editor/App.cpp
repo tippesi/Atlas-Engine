@@ -48,6 +48,9 @@ namespace Atlas::Editor {
 
         Serializer::DeserializeConfig();
 
+        Notifications::Push({ .message = "This is my first message" });
+        Notifications::Push({ .message = "This is my second message in red", .color = vec3(1.0f, 0.0f, 0.0f), .displayTime = 10.0f });
+
     }
 
     void App::UnloadContent() {

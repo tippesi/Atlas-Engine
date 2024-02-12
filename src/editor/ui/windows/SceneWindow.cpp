@@ -82,16 +82,6 @@ namespace Atlas::Editor::UI {
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.15f, &dockIdLeft, &dockIdMiddle);
             ImGui::DockBuilderSplitNode(dockIdMiddle, ImGuiDir_Left, 0.8f, &dockIdMiddle, &dockIdRight);
 
-            /*
-            // This locks it all into a fixed window layout
-            ImGuiDockNode *leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
-            ImGuiDockNode *middleNode = ImGui::DockBuilderGetNode(dockIdMiddle);
-            ImGuiDockNode *rightNode = ImGui::DockBuilderGetNode(dockIdRight);
-            leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-            middleNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-            rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
-            */
-
             // we now dock our windows into the docking node we made above
             ImGui::DockBuilderDockWindow(sceneHierarchyPanel.GetNameID(), dockIdLeft);
             ImGui::DockBuilderDockWindow(viewportPanel.GetNameID(), dockIdMiddle);
@@ -183,7 +173,7 @@ namespace Atlas::Editor::UI {
             Scene::Entity playerEntity;
             if (scene.IsLoaded()) {
                 auto playerSubset = scene->GetSubset<PlayerComponent>();
-                for (auto entity : playerSubset) {
+                for (const auto entity : playerSubset) {
                     hasPlayer = true;
                     playerEntity = entity;
                 }
@@ -195,11 +185,6 @@ namespace Atlas::Editor::UI {
                 if (hasMainCamera) {
                     auto& camera = cameraEntity.GetComponent<CameraComponent>();
                     camera.isMain = false;
-                }
-
-                if (hasPlayer) {
-                    auto& player = playerEntity.GetComponent<PlayerComponent>();
-                    //player.SetLinearVelocity(vec3(0.0f));
                 }
                 
                 scene->physicsWorld->SaveState();
@@ -247,7 +232,7 @@ namespace Atlas::Editor::UI {
                     0.0f, 0.0f, 0.5f, 1.0f);
                 const mat4 inverseClip = glm::inverse(clip);
 
-                auto& camera = cameraEntity.GetComponent<CameraComponent>();
+                const auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
                 auto vMatrix = camera.viewMatrix;
                 auto pMatrix = inverseClip * camera.unjitterdProjection;
@@ -264,7 +249,7 @@ namespace Atlas::Editor::UI {
 
 
                 if (parentEntity.IsValid() && parentEntity.HasComponent<TransformComponent>()) {
-                    auto& parentTransform = parentEntity.GetComponent<TransformComponent>();
+                    const auto& parentTransform = parentEntity.GetComponent<TransformComponent>();
                     auto inverseParentTransform = glm::inverse(parentTransform.globalMatrix);
                     auto localMatrix = inverseParentTransform * transform.globalMatrix;
                     transform.Set(localMatrix);
@@ -272,7 +257,6 @@ namespace Atlas::Editor::UI {
                 else {
                     transform.Set(transform.globalMatrix);
                 }
-
                 
             }
             });
@@ -285,17 +269,17 @@ namespace Atlas::Editor::UI {
             return;
 
         if (entity.HasComponent<MeshComponent>()) {
-            auto& meshComponent = entity.GetComponent<MeshComponent>();
+            const auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto aabb = meshComponent.aabb;
             viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
-            auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
+            const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
             viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<CameraComponent>()) {
-            auto& cameraComponent = entity.GetComponent<CameraComponent>();
+            const auto& cameraComponent = entity.GetComponent<CameraComponent>();
             viewportPanel.primitiveBatchWrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f));
         }
 
