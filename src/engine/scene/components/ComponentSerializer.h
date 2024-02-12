@@ -223,7 +223,7 @@ namespace Atlas::Scene::Components {
         // We can use the index here since when loading nothing but the loading thread
         // will access the physics system (in multithreaded scenarios we would need to use
         // the sequence number as well
-        p.bodyId = Physics::Body(bodyIndex);
+        p.bodyId = Physics::BodyID(bodyIndex);
     }
 
 }

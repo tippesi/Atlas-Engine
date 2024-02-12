@@ -68,22 +68,22 @@ namespace Atlas {
             auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
             bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
 
-            return bodyId;
+            return { bodyId, this };
 
         }
 
-        void PhysicsWorld::DestroyBody(Body bodyId) {
+        void PhysicsWorld::DestroyBody(Body body) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
-            bodyToShapeMap.erase(bodyId);
+            bodyToShapeMap.erase(body.bodyId);
 
-            bodyInterface.RemoveBody(bodyId);
-            bodyInterface.DestroyBody(bodyId);
+            bodyInterface.RemoveBody(body.bodyId);
+            bodyInterface.DestroyBody(body.bodyId);
 
         }
 
-        void PhysicsWorld::SetBodyMatrix(Body bodyId, const mat4& matrix) {
+        void PhysicsWorld::SetBodyMatrix(BodyID bodyId, const mat4& matrix) {
 
             JPH::Vec3 pos;
             JPH::Quat quat;
@@ -94,7 +94,7 @@ namespace Atlas {
 
         }
 
-        mat4 PhysicsWorld::GetBodyMatrix(Body bodyId) {
+        mat4 PhysicsWorld::GetBodyMatrix(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
@@ -114,63 +114,63 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::SetMotionQuality(Body bodyId, MotionQuality quality) {
+        void PhysicsWorld::SetMotionQuality(BodyID bodyId, MotionQuality quality) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetMotionQuality(bodyId, quality);
 
         }
 
-        MotionQuality PhysicsWorld::GetMotionQuality(Body bodyId) {
+        MotionQuality PhysicsWorld::GetMotionQuality(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetMotionQuality(bodyId);
 
         }
 
-        void PhysicsWorld::SetLinearVelocity(Body bodyId, glm::vec3 velocity) {
+        void PhysicsWorld::SetLinearVelocity(BodyID bodyId, glm::vec3 velocity) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
 
         }
 
-        vec3 PhysicsWorld::GetLinearVelocity(Body bodyId) {
+        vec3 PhysicsWorld::GetLinearVelocity(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
 
         }
 
-        void PhysicsWorld::SetRestitution(Body bodyId, float restitution) {
+        void PhysicsWorld::SetRestitution(BodyID bodyId, float restitution) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetRestitution(bodyId, restitution);
 
         }
 
-        float PhysicsWorld::GetRestitution(Body bodyId) {
+        float PhysicsWorld::GetRestitution(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetRestitution(bodyId);
 
         }
 
-        void PhysicsWorld::SetFriction(Body bodyId, float friction) {
+        void PhysicsWorld::SetFriction(BodyID bodyId, float friction) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetFriction(bodyId, friction);
 
         }
 
-        float PhysicsWorld::GetFriction(Body bodyId) {
+        float PhysicsWorld::GetFriction(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetFriction(bodyId);
 
         }
 
-        void PhysicsWorld::ChangeShape(Body bodyId, Ref<Shape> shape) {
+        void PhysicsWorld::ChangeShape(BodyID bodyId, Ref<Shape> shape) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetShape(bodyId, shape->ref, true, JPH::EActivation::Activate);
@@ -179,7 +179,7 @@ namespace Atlas {
 
         }
 
-        BodyCreationSettings PhysicsWorld::GetBodyCreationSettings(Body bodyId) {
+        BodyCreationSettings PhysicsWorld::GetBodyCreationSettings(BodyID bodyId) {
 
             auto& bodyLockInterface = system->GetBodyLockInterface();
 

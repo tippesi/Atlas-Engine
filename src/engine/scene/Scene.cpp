@@ -154,12 +154,12 @@ namespace Atlas {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
                     // Might happen if there was no transform at the creation of rigid body component
-                    if (!rigidBodyComponent.Valid()) {
+                    if (!rigidBodyComponent.IsValid()) {
                         rigidBodyComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && rigidBodyComponent.Valid()) {
+                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {
                         rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
                     }
                 }
@@ -169,7 +169,7 @@ namespace Atlas {
                 for (auto entity : rigidBodySubset) {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
-                    if (!rigidBodyComponent.Valid() || transformComponent.isStatic ||
+                    if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
                         rigidBodyComponent.layer == Physics::Layers::STATIC)
                         continue;
 

@@ -13,7 +13,7 @@ namespace Atlas {
 
         namespace Components {
 
-            class RigidBodyComponent {
+            class RigidBodyComponent : public Physics::Body {
 
             public:
                 RigidBodyComponent() = default;
@@ -21,33 +21,9 @@ namespace Atlas {
                 explicit RigidBodyComponent(const Physics::BodyCreationSettings& bodyCreationSettings)
                     : layer(bodyCreationSettings.objectLayer), bodyCreationSettings(CreateRef(bodyCreationSettings)) {}
 
-                inline const bool Valid() const { return physicsWorld != nullptr; }
-
-                void SetMatrix(mat4 matrix);
-
-                mat4 GetMatrix();
-
-                void SetMotionQuality(Physics::MotionQuality quality);
-
-                Physics::MotionQuality GetMotionQuality();
-
-                void SetLinearVelocity(vec3 velocity);
-
-                vec3 GetLinearVelocity();
-
-                void SetRestitution(float restitution);
-
-                float GetRestitution();
-
-                void SetFriction(float friction);
-
-                float GetFriction();
-
                 Physics::BodyCreationSettings GetBodyCreationSettings();
 
-                Physics::Body bodyId;
                 Physics::ObjectLayer layer = Physics::Layers::STATIC;
-
                 Ref<Physics::BodyCreationSettings> bodyCreationSettings = nullptr;
 
             private:
@@ -55,8 +31,6 @@ namespace Atlas {
                     Physics::PhysicsWorld* physicsWorld);
 
                 void RemoveFromPhysicsWorld();
-
-                Physics::PhysicsWorld* physicsWorld = nullptr;
 
                 friend Scene;
 
