@@ -1,4 +1,5 @@
 #include "PlayerComponentPanel.h"
+#include "Notifications.h"
 
 namespace Atlas::Editor::UI {
 
@@ -35,7 +36,8 @@ namespace Atlas::Editor::UI {
 		ImGui::DragFloat3("Scale", glm::value_ptr(capsuleSettings->scale), 0.01f, 0.0f);
 
 		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
-			shape->TryCreate();
+			if (!shape->TryCreate())
+				Notifications::Push({ .message = "Error creating player shape", .color = vec3(1.0f, 0.0f, 0.0f) });
 
 	}
 

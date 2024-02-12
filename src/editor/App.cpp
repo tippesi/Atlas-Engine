@@ -2,6 +2,7 @@
 #include "FileImporter.h"
 #include "Singletons.h"
 #include "Serializer.h"
+#include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
 
@@ -241,6 +242,8 @@ namespace Atlas::Editor {
 
         contentBrowserWindow.Render();
         logWindow.Render();
+
+        Notifications::Display();
 
         ImGui::End();
 
