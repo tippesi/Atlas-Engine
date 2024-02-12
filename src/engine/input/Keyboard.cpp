@@ -49,42 +49,52 @@ namespace Atlas {
 
         void KeyboardHandler::Update(CameraComponent& camera, float deltaTime) {
 
-            linearVelocity = camera.direction * movement.x * deltaTime * speed;
-            linearVelocity += camera.right * movement.y * deltaTime * speed;
+            linearVelocity = camera.direction * movement.x * speed;
+            linearVelocity += camera.right * movement.y * speed;
 
-            linearVelocity.y += movement.z * deltaTime * speed;
+            linearVelocity.y += movement.z * speed;
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
-            camera.location += interpolatedLinearVelocity;
+            camera.location += interpolatedLinearVelocity * deltaTime;
 
         }
 
         void KeyboardHandler::Update(CameraComponent& camera, PlayerComponent& player, float deltaTime) {
 
-            linearVelocity = camera.direction * movement.x * deltaTime * speed;
-            linearVelocity += camera.right * movement.y * deltaTime * speed;
+            linearVelocity = camera.direction * movement.x * speed;
+            linearVelocity += camera.right * movement.y * speed;
 
-            linearVelocity.y += movement.z * deltaTime * speed;
+            linearVelocity.y += movement.z * speed;
+            linearVelocity.y = 0.0f;
 
-            float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
+            float progress = glm::clamp(reactivity, 0.0f, 1.0f);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
+
+            auto playerUp = player.GetUp();
 
             auto newVelocity = vec3(0.0f);
             auto groundVelocity = player.GetGroundVelocity();
             if (player.IsOnGround()) {
                 newVelocity += groundVelocity;
+                if (jump) {
+                    newVelocity += playerUp * speed;
+                }
+                newVelocity += interpolatedLinearVelocity;
             }
             else {
                 newVelocity += player.GetLinearVelocity();
+                // Add reduced velocity such that jumping doesn't feel weird
+                newVelocity += interpolatedLinearVelocity * 0.01f;
             }
 
-            auto playerUp = player.GetUp();
             auto gravity = vec3(0.0f, -9.81f, 0.0f);
-            player.SetLinearVelocity(interpolatedLinearVelocity + playerUp * gravity);
+            newVelocity += playerUp * gravity * deltaTime;
+
+            player.SetLinearVelocity(newVelocity);
 
         }
 
@@ -145,6 +155,14 @@ namespace Atlas {
 
             if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_RELEASED) {
                 movement.z += 1.0f;
+            }
+
+            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_PRESSED) {
+                jump = true;
+            }
+
+            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_RELEASED) {
+                jump = false;
             }
             
 

@@ -1,3 +1,6 @@
+
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 #include <../globals.hsh>
@@ -9,6 +12,7 @@ layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
 
+#ifndef AE_BINDLESS
 #ifdef BASE_COLOR_MAP
 layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
 #endif
@@ -30,6 +34,7 @@ layout(set = 3, binding = 5) uniform sampler2D aoMap;
 #ifdef HEIGHT_MAP
 layout(set = 3, binding = 6) uniform sampler2D heightMap;
 #endif
+#endif
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec3 normalVS;
@@ -48,6 +53,7 @@ layout(location=5) in vec4 vertexColorsVS;
 layout(location=6) in mat3 TBN;
 #endif
 
+#ifndef AE_BINDLESS
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -60,6 +66,91 @@ layout(push_constant) uniform constants {
     float windBendScale;
     float windWiggleScale;
 } PushConstants;
+#else
+layout(push_constant) uniform constants {
+    uint vegetation;
+    uint invertUVs;
+    uint twoSided;
+    uint staticMesh;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
+    int baseColorMap;
+    int opacityMap;
+    int normalMap;
+    int roughnessMap;
+    int metalnessMap;
+    int aoMap;
+    int heightMap;
+} PushConstants;
+#endif
+
+#ifdef BASE_COLOR_MAP
+vec3 SampleBaseColor(vec2 texCoords) {
+#ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.baseColorMap)], bindlessSampler), texCoords).rgb;
+#else
+    return texture(baseColorMap, texCoords).rgb;
+#endif
+}
+#endif
+#ifdef OPACITY_MAP
+float SampleOpacity(vec2 texCoords) {
+    #ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.opacityMap)], bindlessSampler), texCoords).r;
+    #else
+    return texture(opacityMap, texCoords).r;
+    #endif
+}
+#endif
+#ifdef NORMAL_MAP
+vec3 SampleNormal(vec2 texCoords) {
+    #ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.normalMap)], bindlessSampler), texCoords).rgb;
+    #else
+    return texture(normalMap, texCoords).rgb;
+    #endif
+}
+#endif
+#ifdef ROUGHNESS_MAP
+float SampleRoughness(vec2 texCoords) {
+    #ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.roughnessMap)], bindlessSampler), texCoords).r;
+    #else
+    return texture(roughnessMap, texCoords).r;
+    #endif
+}
+#endif
+#ifdef METALNESS_MAP
+float SampleMetalness(vec2 texCoords) {
+    #ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.metalnessMao)], bindlessSampler), texCoords).r;
+    #else
+    return texture(metalnessMao, texCoords).r;
+    #endif
+}
+#endif
+#ifdef AO_MAP
+float SampleAo(vec2 texCoords) {
+    #ifdef AE_BINDLESS
+    return texture(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.aoMap)], bindlessSampler), texCoords).r;
+    #else
+    return texture(aoMap, texCoords).r;
+    #endif
+}
+#endif
+#ifdef HEIGHT_MAP
+float SampleHeight(vec2 texCoords, vec2 ddx, vec2 ddy) {
+    #ifdef AE_BINDLESS
+    return textureGrad(sampler2D(bindlessTextures[nonuniformEXT(PushConstants.heightMap)], bindlessSampler), texCoords, ddx, ddy).r;
+    #else
+    return textureGrad(heightMap, texCoords, ddx, ddy).r;
+    #endif
+}
+#endif
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 #ifdef HEIGHT_MAP
@@ -79,13 +170,13 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     vec2 ddx = dFdx(texCoords);
     vec2 ddy = dFdy(texCoords);
     
-    float currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;
+    float currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, ddx, ddy).r;
     
     while(currentLayerDepth < currentDepthMapValue) {
         // shift texture coordinates along direction of P
         currentTexCoords -= deltaTexCoords;
         // get depthmap value at current texture coordinates
-        currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;  
+        currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, ddx, ddy).r;
         // get depth of next layer
         currentLayerDepth += layerDepth;  
     }
@@ -94,7 +185,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
     // get depth after and before collision for linear interpolation
     float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = 1.0 - textureGrad(heightMap, prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
+    float beforeDepth = 1.0 - SampleHeight(prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
      
     // interpolation of texture coordinates
     float weight = afterDepth / (afterDepth - beforeDepth);
@@ -124,7 +215,7 @@ void main() {
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
 #ifdef OPACITY_MAP
-    opacity *= texture(opacityMap, texCoords).r;
+    opacity *= SampleOpacity(texCoords).r;
 #endif
 #ifdef VERTEX_COLORS
     // opacity *= vertexColorsVS.a;
@@ -134,7 +225,7 @@ void main() {
 #endif
 
 #ifdef BASE_COLOR_MAP
-    vec3 textureColor = texture(baseColorMap, texCoords).rgb;
+    vec3 textureColor = SampleBaseColor(texCoords);
     baseColorFS *= textureColor.rgb;
 #endif
 
@@ -145,7 +236,7 @@ void main() {
     vec3 geometryNormal = normalize(normalVS);
 
 #ifdef NORMAL_MAP
-    vec3 normalColor = texture(normalMap, texCoords).rgb;
+    vec3 normalColor = SampleNormal(texCoords);
     vec3 normal = mix(geometryNormal, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
     // We want the normal always to face the camera for two sided materials
     geometryNormal *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
@@ -163,15 +254,15 @@ void main() {
     float aoFactor = 1.0;
 
 #ifdef ROUGHNESS_MAP
-    roughnessFactor *= texture(roughnessMap, texCoords).r;
+    roughnessFactor *= SampleRoughness(texCoords).r;
     roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-    metalnessFactor *= texture(metalnessMap, texCoords).r;
+    metalnessFactor *= SampleMetalness(texCoords).r;
     roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-    aoFactor *= texture(aoMap, texCoords).r;
+    aoFactor *= SampleAo(texCoords).r;
     roughnessMetalnessAoFS.b = aoFactor;
 #endif
 

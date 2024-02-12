@@ -40,6 +40,7 @@ namespace Atlas {
             vec3 interpolatedLinearVelocity = vec3(0.0f);
 
             vec3 movement = vec3(0.0f);
+            bool jump = false;
 
             int32_t eventHandle = -1;
 

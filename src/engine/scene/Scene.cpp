@@ -280,6 +280,7 @@ namespace Atlas {
             mainCameraEntity = Entity();
 
             auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+
             // Attempt to find a main camera
             for (auto entity : cameraSubset) {
                 auto& camera = cameraSubset.Get(entity);
@@ -291,9 +292,9 @@ namespace Atlas {
                 }
 
                 camera.Update(transformMatrix);
-                if (camera.isMain) {
+
+                if (camera.isMain && !mainCameraEntity.IsValid()) {
                     mainCameraEntity = { entity, &entityManager };
-                    break;
                 }
             }
 

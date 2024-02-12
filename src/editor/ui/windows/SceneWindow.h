@@ -39,6 +39,7 @@ namespace Atlas::Editor::UI {
         bool needGuizmoEnabled = false;
 
         bool hasMainCamera = false;
+        bool hasPlayer = false;
         bool isPlaying = false;
 
     private:

@@ -1,10 +1,9 @@
 #include "App.h"
 #include "FileImporter.h"
 #include "Singletons.h"
+#include "Serializer.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
-
-#include "scene/SceneSerializer.h"
 
 #include <chrono>
 #include <thread>
@@ -17,9 +16,6 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Editor {
 
     void App::LoadContent() {
-
-        // Create a default scene
-        sceneWindows.emplace_back(ResourceHandle<Scene::Scene>());
 
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
@@ -49,11 +45,15 @@ namespace Atlas::Editor {
 
         SubscribeToResourceEvents();
 
+        Serializer::DeserializeConfig();
+
     }
 
     void App::UnloadContent() {
 
         Singletons::imguiWrapper->Unload();
+
+        Serializer::SerializeConfig();
 
         Singletons::Destruct();
 
@@ -65,16 +65,22 @@ namespace Atlas::Editor {
 
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
-        if (io.WantCaptureMouse) {
+        if (sceneWindows.empty())
+            return;
 
-        }
-        else {
+        auto& config = Singletons::config;
 
-        }
+        std::vector<size_t> toBeDeletedSceneWindows;
 
-        // Find active scene
+        // Find active scene and old scene windows
         size_t sceneCounter = 0;
         for (auto& sceneWindow : sceneWindows) {
+
+            if (std::find(config->openedScenes.begin(), config->openedScenes.end(),
+                sceneWindow.scene) == config->openedScenes.end()) {
+                toBeDeletedSceneWindows.push_back(sceneCounter++);
+                continue;
+            }
 
             if (sceneWindow.viewportPanel.isFocused)
                 activeSceneIdx = sceneCounter;
@@ -84,13 +90,20 @@ namespace Atlas::Editor {
             sceneWindow.Update(deltaTime);
         }
 
+        // Reverse such that indices remain valid
+        std::reverse(toBeDeletedSceneWindows.begin(), toBeDeletedSceneWindows.end());
+        for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
+            sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
+        }
+
         // Update active scene with input
         activeSceneIdx = std::min(activeSceneIdx, sceneWindows.size() - 1);
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
         auto cameraEntity = activeSceneWindow.cameraEntity;
-        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused && !ImGuizmo::IsUsing()) {
+        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused &&
+            !ImGuizmo::IsUsing() && !activeSceneWindow.isPlaying) {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             mouseHandler.Update(camera, deltaTime);
             keyboardHandler.Update(camera, deltaTime);
@@ -277,10 +290,8 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            if (!sceneWindows.back().scene.IsLoaded())
-                sceneWindows.pop_back();
-
             sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene));
+            Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
 
             windowsToAddToNode.emplace_back(sceneWindows.back().GetNameID());
         });

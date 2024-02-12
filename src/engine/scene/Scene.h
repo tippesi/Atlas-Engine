@@ -35,6 +35,10 @@
 
 namespace Atlas {
 
+    namespace Renderer {
+        class OpaqueRenderer;
+    }
+
     namespace Scene {
 
         class Scene : public SpacePartitioning {
@@ -167,6 +171,7 @@ namespace Atlas {
             friend class SceneSerializer;
             friend class Renderer::Helper::RayTracingHelper;
             friend class Renderer::MainRenderer;
+            friend class Renderer::OpaqueRenderer;
 
         };
 

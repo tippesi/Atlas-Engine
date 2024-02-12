@@ -66,6 +66,9 @@ namespace Atlas::Scene::Components {
 
         auto& system = physicsWorld->system;
 
+        if (physicsWorld->pauseSimulation)
+            return;
+
         auto gravityVector = -GetUp() * glm::length(physicsWorld->GetGravity());
         character->Update(deltaTime, Physics::VecToJPHVec(gravityVector),
             system->GetDefaultBroadPhaseLayerFilter(Physics::Layers::MOVABLE), 
@@ -86,8 +89,11 @@ namespace Atlas::Scene::Components {
 
         this->physicsWorld = physicsWorld;
 
+        auto translation = Physics::VecToJPHVec(transformComponent.Decompose().translation);
+
         JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings(playerCreationSettings->GetSettings());
-        character = CreateRef<JPH::CharacterVirtual>(settings, JPH::RVec3::sZero(), JPH::Quat::sIdentity(), physicsWorld->system.get());
+        character = CreateRef<JPH::CharacterVirtual>(settings, translation,
+            JPH::Quat::sIdentity(), physicsWorld->system.get());
 
     }
 

@@ -179,12 +179,27 @@ namespace Atlas::Editor::UI {
                 }
             }
 
+            hasPlayer = false;
+            Scene::Entity playerEntity;
+            if (scene.IsLoaded()) {
+                auto playerSubset = scene->GetSubset<PlayerComponent>();
+                for (auto entity : playerSubset) {
+                    hasPlayer = true;
+                    playerEntity = entity;
+                }
+            }
+
             auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 if (hasMainCamera) {
-                    auto camera = cameraEntity.GetComponent<CameraComponent>();
+                    auto& camera = cameraEntity.GetComponent<CameraComponent>();
                     camera.isMain = false;
+                }
+
+                if (hasPlayer) {
+                    auto& player = playerEntity.GetComponent<PlayerComponent>();
+                    //player.SetLinearVelocity(vec3(0.0f));
                 }
                 
                 scene->physicsWorld->SaveState();
@@ -203,7 +218,7 @@ namespace Atlas::Editor::UI {
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
                 // Set camera to main in any case
-                auto camera = cameraEntity.GetComponent<CameraComponent>();
+                auto& camera = cameraEntity.GetComponent<CameraComponent>();
                 camera.isMain = true;  
 
                 scene->physicsWorld->RestoreState();

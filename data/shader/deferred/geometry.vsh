@@ -53,6 +53,7 @@ layout(location=6) out mat3 TBN;
 
 layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
 
+#ifndef AE_BINDLESS
 layout(push_constant) uniform constants {
     uint vegetation;
     uint invertUVs;
@@ -65,6 +66,27 @@ layout(push_constant) uniform constants {
     float windBendScale;
     float windWiggleScale;
 } PushConstants;
+#else
+layout(push_constant) uniform constants {
+    uint vegetation;
+    uint invertUVs;
+    uint twoSided;
+    uint staticMesh;
+    uint materialIdx;
+    float normalScale;
+    float displacementScale;
+    float windTextureLod;
+    float windBendScale;
+    float windWiggleScale;
+    int baseColorMap;
+    int opacityMap;
+    int normalMap;
+    int roughnessMap;
+    int metalnessMap;
+    int aoMap;
+    int heightMap;
+} PushConstants;
+#endif
 
 // Functions
 void main() {
