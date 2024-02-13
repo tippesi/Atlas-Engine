@@ -30,6 +30,27 @@ namespace Atlas::Editor::UI
 
         ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code, ImVec2(0, 0), ImGuiInputTextFlags_ReadOnly);
 
+        ImGui::Separator();
+        ImGui::Text("Script defined properties:");
+        for (auto &property : luaScriptComponent.properties)
+        {
+            switch (property.type)
+            {
+            case LuaScriptComponent::PropertyType::Boolean:
+                ImGui::Checkbox(property.name.c_str(), &property.booleanValue);
+                break;
+            case LuaScriptComponent::PropertyType::Integer:
+                ImGui::InputInt(property.name.c_str(), &property.integerValue);
+                break;
+            case LuaScriptComponent::PropertyType::Double:
+                ImGui::InputDouble(property.name.c_str(), &property.doubleValue);
+                break;
+            case LuaScriptComponent::PropertyType::String:
+                ImGui::InputText(property.name.c_str(), &property.stringValue);
+                break;
+            }
+        }
+
         return false;
     }
 }
