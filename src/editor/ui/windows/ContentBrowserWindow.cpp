@@ -7,7 +7,7 @@
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow() : Window("Object browser") {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {
 
 
 
@@ -15,14 +15,13 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Render() {
 
-        ImGui::Begin(GetNameID());
+        if (!Begin())
+            return;
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
-
         auto viewport = ImGui::GetWindowViewport();
 
-        if (resetDockingLayout) {
+        if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
             ImGui::DockBuilderRemoveNode(dsID);
             ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
 
@@ -43,6 +42,8 @@ namespace Atlas::Editor::UI {
 
             resetDockingLayout = false;
         }
+
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
 
         ImGui::End();
 
@@ -75,7 +76,7 @@ namespace Atlas::Editor::UI {
                 break;
         }
 
-        ImGui::End();
+        End();
 
     }
 

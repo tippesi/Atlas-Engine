@@ -934,10 +934,10 @@ namespace Atlas {
 
             // For debugging purpose
             if (scene->irradianceVolume && scene->irradianceVolume->debug) {
-                sceneMaterials.push_back(&ddgiRenderer.probeDebugMaterial);
-                sceneMaterials.push_back(&ddgiRenderer.probeDebugActiveMaterial);
-                sceneMaterials.push_back(&ddgiRenderer.probeDebugInactiveMaterial);
-                sceneMaterials.push_back(&ddgiRenderer.probeDebugOffsetMaterial);
+                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugMaterial));
+                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugActiveMaterial));
+                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugInactiveMaterial));
+                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugOffsetMaterial));
             }
 
             uint16_t idx = 0;
@@ -983,7 +983,7 @@ namespace Atlas {
 
                 materials.push_back(packed);
 
-                materialMap[material] = idx++;
+                materialMap[material.get()] = idx++;
             }
             
             auto meshes = scene->GetMeshes();

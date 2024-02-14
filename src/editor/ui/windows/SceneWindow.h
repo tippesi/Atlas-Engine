@@ -14,7 +14,7 @@ namespace Atlas::Editor::UI {
     class SceneWindow : public Window {
 
     public:
-        explicit SceneWindow(ResourceHandle<Scene::Scene> scene);
+        explicit SceneWindow(ResourceHandle<Scene::Scene> scene, bool show);
 
         ~SceneWindow();
 

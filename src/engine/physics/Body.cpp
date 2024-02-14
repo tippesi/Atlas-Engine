@@ -75,7 +75,7 @@ namespace Atlas::Physics {
 
     Physics::BodyCreationSettings Body::GetBodyCreationSettings() {
 
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
         return world->GetBodyCreationSettings(bodyId);
 
     }

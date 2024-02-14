@@ -58,7 +58,7 @@ namespace Atlas::Editor::UI {
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
         }
 
-        if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
+        if (scene != nullptr && validRegion) {
             auto& config = Singletons::config;
 
             if (config->pathTrace) {

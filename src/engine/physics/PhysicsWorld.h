@@ -4,6 +4,7 @@
 #include "ShapesManager.h"
 #include "BodyCreation.h"
 #include "Body.h"
+#include "Player.h"
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>

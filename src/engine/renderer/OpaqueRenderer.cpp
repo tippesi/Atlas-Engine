@@ -65,6 +65,7 @@ namespace Atlas {
                 }
 
                 auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
+                if(!instance.count) continue;
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
@@ -114,8 +115,6 @@ namespace Atlas {
                 scene->wind.noiseMap.Bind(commandList, 3, 7);
 
                 commandList->PushConstants("constants", &pushConstants);
-
-                if(!instance.count) continue;
                 commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                     0, instance.offset);
 
@@ -147,12 +146,10 @@ namespace Atlas {
             if (material->HasBaseColorMap()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-#if !defined(AE_OS_MACOS) || !defined(AE_BINDLESS)
             // Some bindless issues here
             if (material->HasOpacityMap()) {
                 macros.push_back("OPACITY_MAP");
             }
-#endif
             if (material->HasNormalMap()) {
                 macros.push_back("NORMAL_MAP ");
             }
@@ -178,7 +175,6 @@ namespace Atlas {
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
-
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

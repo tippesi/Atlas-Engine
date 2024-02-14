@@ -8,8 +8,8 @@
 
 namespace Atlas::Editor::UI {
 
-    SceneWindow::SceneWindow(ResourceHandle<Scene::Scene> scene) :
-        Window(scene.IsLoaded() ? scene->name : "No scene"), scene(scene) {
+    SceneWindow::SceneWindow(ResourceHandle<Scene::Scene> scene, bool show) :
+        Window(scene.IsLoaded() ? scene->name : "No scene", show), scene(scene) {
     
         RegisterViewportAndGizmoOverlay();
 
@@ -65,14 +65,13 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::Render() {
 
-        ImGui::Begin(GetNameID());
+        if (!Begin())
+            return;
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
-
         auto viewport = ImGui::GetWindowViewport();
 
-        if (resetDockingLayout) {
+        if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
             ImGui::DockBuilderRemoveNode(dsID);
             ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
 
@@ -90,6 +89,8 @@ namespace Atlas::Editor::UI {
 
             resetDockingLayout = false;
         }
+
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
         inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
@@ -123,7 +124,7 @@ namespace Atlas::Editor::UI {
 
         viewportPanel.Render(refScene, inFocus);
 
-        ImGui::End();
+        End();
 
     }
 

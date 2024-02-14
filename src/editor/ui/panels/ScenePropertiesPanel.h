@@ -56,7 +56,7 @@ namespace Atlas::Editor::UI {
     private:
         void RenderHeading(const std::string& heading) {
 
-            ImGui::SetWindowFontScale(2.0f);
+            ImGui::SetWindowFontScale(1.5f);
 
             ImGui::Text("%s", heading.c_str());
 

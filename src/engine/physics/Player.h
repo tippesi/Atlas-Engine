@@ -7,6 +7,8 @@
 
 namespace Atlas::Physics {
 
+    class PhysicsWorld;
+
 	struct PlayerCreationSettings {
 		JPH::CharacterVirtualSettings GetSettings() const;
 
@@ -18,5 +20,14 @@ namespace Atlas::Physics {
 
 		Ref<Shape> shape;
 	};
+
+    class Player {
+
+    public:
+        Player(const PlayerCreationSettings& creationSettings, Ref<PhysicsWorld>& physicsWorld);
+
+
+
+    };
 
 }

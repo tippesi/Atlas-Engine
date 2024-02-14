@@ -196,13 +196,6 @@ namespace Atlas::Editor {
             SetupMainDockspace(mainDsId);
         }
 
-        if (!windowsToAddToNode.empty()) {
-            for (auto windowID : windowsToAddToNode)
-                ImGui::DockBuilderDockWindow(windowID.c_str(), upperDockNodeID);
-
-            windowsToAddToNode.clear();
-        }
-
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
         ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
 
@@ -220,6 +213,9 @@ namespace Atlas::Editor {
 
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
+                ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
+                ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
+                ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
                 ImGui::EndMenu();
             }
 
@@ -245,6 +241,7 @@ namespace Atlas::Editor {
 
         contentBrowserWindow.Render();
         logWindow.Render();
+        profilerWindow.Render();
 
         Notifications::Display();
 
@@ -282,10 +279,16 @@ namespace Atlas::Editor {
 
         ImGui::DockBuilderFinish(dsID);
 
+        profilerWindow.show = false;
+        contentBrowserWindow.show = true;
+        logWindow.show = true;
+        contentBrowserWindow.show = true;
+
         contentBrowserWindow.resetDockingLayout = true;
         logWindow.resetDockingLayout = true;
         for (auto& sceneWindow : sceneWindows) {
             sceneWindow.resetDockingLayout = true;
+            sceneWindow.show = true;
         }
 
         resetDockspaceLayout = false;
@@ -296,10 +299,8 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene));
+            sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene), true);
             Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
-
-            windowsToAddToNode.emplace_back(sceneWindows.back().GetNameID());
         });
 
         // Also kind of a resource event

@@ -636,75 +636,7 @@ void App::Render(float deltaTime) {
                 ImGui::Text("Use F11 to hide/unhide the UI");
             }
             if (ImGui::CollapsingHeader("Profiler")) {
-                bool enabled = Atlas::Graphics::Profiler::enable;
-                ImGui::Checkbox("Enable##Profiler", &enabled);
-                Atlas::Graphics::Profiler::enable = enabled;
-
-                const char* items[] = { "Chronologically", "Max time", "Min time" };
-                static int item = 0;
-                ImGui::Combo("Sort##Performance", &item, items, IM_ARRAYSIZE(items));
-
-                Atlas::Graphics::Profiler::OrderBy order;
-                switch (item) {
-                    case 1: order = Atlas::Graphics::Profiler::OrderBy::MAX_TIME; break;
-                    case 2: order = Atlas::Graphics::Profiler::OrderBy::MIN_TIME; break;
-                    default: order = Atlas::Graphics::Profiler::OrderBy::CHRONO; break;
-                }
-
-                std::function<void(Atlas::Graphics::Profiler::Query&)> displayQuery;
-                displayQuery = [&displayQuery](Atlas::Graphics::Profiler::Query& query) {
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-
-                    ImGuiTreeNodeFlags expandable = 0;
-                    if (!query.children.size()) expandable = ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                                                             ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
-
-                    bool open = ImGui::TreeNodeEx(query.name.c_str(), expandable | ImGuiTreeNodeFlags_SpanFullWidth);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%f", double(query.timer.elapsedTime) / 1000000.0);
-                    // ImGui::TableNextColumn();
-                    // ImGui::TextUnformatted(node->Type);
-
-                    if (open && query.children.size()) {
-                        for (auto& child : query.children)
-                            displayQuery(child);
-                        ImGui::TreePop();
-                    }
-
-                };
-
-                static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
-
-                if (ImGui::BeginTable("PerfTable", 2, flags))
-                {
-                    // The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
-                    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-                    ImGui::TableSetupColumn("Elapsed (ms)", ImGuiTableColumnFlags_NoHide);
-                    //ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_NoHide);
-                    ImGui::TableHeadersRow();
-
-                    auto threadData = Atlas::Graphics::Profiler::GetQueriesAverage(64, order);
-                    for (auto& thread : threadData) {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-
-                        ImGuiTreeNodeFlags expandable = 0;
-                        if (!thread.queries.size()) expandable = ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                                                                 ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
-
-                        bool open = ImGui::TreeNodeEx(thread.name.c_str(), expandable | ImGuiTreeNodeFlags_SpanFullWidth);
-
-                        if (open && thread.queries.size()) {
-                            for (auto &query: thread.queries)
-                                displayQuery(query);
-                            ImGui::TreePop();
-                        }
-                    }
-
-
-                    ImGui::EndTable();
-                }
+                gpuProfilerPanel.Render();
             }
 
             ImGui::End();
