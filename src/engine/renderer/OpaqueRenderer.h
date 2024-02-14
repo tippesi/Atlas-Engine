@@ -25,7 +25,6 @@ namespace Atlas {
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
 
-#ifndef AE_BINDLESS
             struct PushConstants {
                 uint32_t vegetation;
                 uint32_t invertUVs;
@@ -38,27 +37,6 @@ namespace Atlas {
                 float windBendScale;
                 float windWiggleScale;
             };
-#else
-            struct PushConstants {
-                uint32_t vegetation;
-                uint32_t invertUVs;
-                uint32_t twoSided;
-                uint32_t staticMesh;
-                uint32_t materialIdx;
-                float normalScale;
-                float displacementScale;
-                float windTextureLod;
-                float windBendScale;
-                float windWiggleScale;
-                int baseColorMap;
-                int opacityMap;
-                int normalMap;
-                int roughnessMap;
-                int metalnessMap;
-                int aoMap;
-                int heightMap;
-            };
-#endif
 
 
         };

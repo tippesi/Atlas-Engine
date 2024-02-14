@@ -65,22 +65,7 @@ namespace Atlas {
                 }
 
                 auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
-                if(!instance.count) continue;
 
-                auto pushConstants = PushConstants {
-                    .vegetation = mesh->vegetation ? 1u : 0u,
-                    .invertUVs = mesh->invertUVs ? 1u : 0u,
-                    .twoSided = material->twoSided ? 1u : 0u,
-                    .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
-                    .materialIdx = uint32_t(materialMap[material.get()]),
-                    .normalScale = material->normalScale,
-                    .displacementScale = material->displacementScale,
-                    .windTextureLod = mesh->windNoiseTextureLod,
-                    .windBendScale = mesh->windBendScale,
-                    .windWiggleScale = mesh->windWiggleScale
-                };
-
-#ifndef AE_BINDLESS
                 if (material->HasBaseColorMap())
                     material->baseColorMap->Bind(commandList, 3, 0);
                 if (material->HasOpacityMap())
@@ -95,26 +80,24 @@ namespace Atlas {
                     material->aoMap->Bind(commandList, 3, 5);
                 if (material->HasDisplacementMap())
                     material->displacementMap->Bind(commandList, 3, 6);
-#else
-                if (material->HasBaseColorMap())
-                    pushConstants.baseColorMap = scene->textureToBindlessIdx[material->baseColorMap];
-                if (material->HasOpacityMap())
-                    pushConstants.opacityMap = scene->textureToBindlessIdx[material->opacityMap];
-                if (material->HasNormalMap())
-                    pushConstants.normalMap = scene->textureToBindlessIdx[material->normalMap];
-                if (material->HasRoughnessMap())
-                    pushConstants.roughnessMap = scene->textureToBindlessIdx[material->roughnessMap];
-                if (material->HasMetalnessMap())
-                    pushConstants.metalnessMap = scene->textureToBindlessIdx[material->metalnessMap];
-                if (material->HasAoMap())
-                    pushConstants.aoMap = scene->textureToBindlessIdx[material->aoMap];
-                if (material->HasDisplacementMap())
-                    pushConstants.heightMap = scene->textureToBindlessIdx[material->displacementMap];
-#endif
 
                 scene->wind.noiseMap.Bind(commandList, 3, 7);
 
+                auto pushConstants = PushConstants {
+                    .vegetation = mesh->vegetation ? 1u : 0u,
+                    .invertUVs = mesh->invertUVs ? 1u : 0u,
+                    .twoSided = material->twoSided ? 1u : 0u,
+                    .staticMesh = mesh->mobility == Mesh::MeshMobility::Stationary ? 1u : 0u,
+                    .materialIdx = uint32_t(materialMap[material.get()]),
+                    .normalScale = material->normalScale,
+                    .displacementScale = material->displacementScale,
+                    .windTextureLod = mesh->windNoiseTextureLod,
+                    .windBendScale = mesh->windBendScale,
+                    .windWiggleScale = mesh->windWiggleScale
+                };
                 commandList->PushConstants("constants", &pushConstants);
+
+                if(!instance.count) continue;
                 commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                     0, instance.offset);
 
@@ -146,12 +129,11 @@ namespace Atlas {
             if (material->HasBaseColorMap()) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            // Some bindless issues here
             if (material->HasOpacityMap()) {
                 macros.push_back("OPACITY_MAP");
             }
             if (material->HasNormalMap()) {
-                macros.push_back("NORMAL_MAP ");
+                macros.push_back("NORMAL_MAP");
             }
             if (material->HasRoughnessMap()) {
                 macros.push_back("ROUGHNESS_MAP");
