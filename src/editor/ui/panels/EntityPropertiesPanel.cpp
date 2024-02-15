@@ -74,9 +74,9 @@ namespace Atlas::Editor::UI {
         // Add components
         {
             if (ImGui::Button("Add component", { -FLT_MIN, 0 }))
-                ImGui::OpenPopup("NewComponent");
+                ImGui::OpenPopup("AddComponent");
 
-            if (ImGui::BeginPopup("NewComponent")) {
+            if (ImGui::BeginPopup("AddComponent")) {
                 if (!entity.HasComponent<NameComponent>() && ImGui::MenuItem("Add name component"))
                     entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));
                 if (!entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Add transform component"))
@@ -113,6 +113,31 @@ namespace Atlas::Editor::UI {
                     auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::MOVABLE, .shape = shape };
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
+
+                ImGui::EndPopup();
+            }
+        }
+
+        // Remove components
+        {
+            if (ImGui::Button("Remove component", { -FLT_MIN, 0 }))
+                ImGui::OpenPopup("RemoveComponent");
+
+            if (ImGui::BeginPopup("RemoveComponent")) {
+                if (entity.HasComponent<NameComponent>() && ImGui::MenuItem("Remove name component"))
+                    entity.RemoveComponent<NameComponent>();
+                if (entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Remove transform component"))
+                    entity.RemoveComponent<TransformComponent>();
+                if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Remove mesh component"))
+                    entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Remove audio volume component"))
+                    entity.RemoveComponent<AudioVolumeComponent>();
+                if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Remove camera component"))
+                    entity.RemoveComponent<CameraComponent>();
+                if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
+                    entity.RemoveComponent<PlayerComponent>();
+                if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 
+                    entity.RemoveComponent<RigidBodyComponent>();
 
                 ImGui::EndPopup();
             }
