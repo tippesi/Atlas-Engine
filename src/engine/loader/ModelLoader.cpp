@@ -16,16 +16,16 @@ namespace Atlas {
     namespace Loader {
 
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
-            bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
+            bool forceTangents, int32_t maxTextureResolution) {
 
             return LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
-                transform, maxTextureResolution);
+                maxTextureResolution);
 
         }
 
         Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
             Mesh::MeshMobility mobility, bool forceTangents,
-            mat4 transform, int32_t maxTextureResolution) {
+            int32_t maxTextureResolution) {
 
             auto directoryPath = GetDirectoryPath(filename);
 
@@ -93,7 +93,7 @@ namespace Atlas {
                 }
             };
 
-            traverseNodeTree(scene->mRootNode, transform);
+            traverseNodeTree(scene->mRootNode, mat4(1.0f));
 
             hasTangents |= forceTangents;
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
@@ -293,7 +293,7 @@ namespace Atlas {
         }
 
         Ref<Scene::Scene> ModelLoader::LoadScene(const std::string& filename,
-            bool forceTangents, mat4 transform, int32_t maxTextureResolution) {
+            bool forceTangents, int32_t maxTextureResolution) {
 
             auto directoryPath = GetDirectoryPath(filename);
 
@@ -421,8 +421,8 @@ namespace Atlas {
                 float radius = 0.0f;
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
-                    vec3 vertex = vec3(transform * vec4(assimpMesh->mVertices[j].x,
-                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z, 1.0f));
+                    vec3 vertex = vec3(assimpMesh->mVertices[j].x,
+                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
 
                     vertices[j] = vertex;
 
@@ -430,20 +430,20 @@ namespace Atlas {
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
 
-                    vec3 normal = vec3(transform * vec4(assimpMesh->mNormals[j].x,
-                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z, 0.0f));
+                    vec3 normal = vec3(assimpMesh->mNormals[j].x,
+                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
                     normal = normalize(normal);
 
                     normals[j] = vec4(normal, 0.0f);
 
                     if (hasTangents && assimpMesh->mTangents != nullptr) {
-                        vec3 tangent = vec3(transform * vec4(assimpMesh->mTangents[j].x,
-                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z, 0.0f));
+                        vec3 tangent = vec3(assimpMesh->mTangents[j].x,
+                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z);
                         tangent = normalize(tangent - normal * dot(normal, tangent));
 
                         vec3 estimatedBitangent = normalize(cross(tangent, normal));
-                        vec3 correctBitangent = vec3(transform * vec4(assimpMesh->mBitangents[j].x,
-                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z, 0.0f));
+                        vec3 correctBitangent = vec3(assimpMesh->mBitangents[j].x,
+                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z);
                         correctBitangent = normalize(correctBitangent);
 
                         float dotProduct = dot(estimatedBitangent, correctBitangent);

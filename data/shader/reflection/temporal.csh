@@ -120,7 +120,9 @@ ivec2 FindNearest3x3(ivec2 pixel) {
     float depth = 1.0;
 
     for (int i = 0; i < 9; i++) {
-        float currDepth = texelFetch(depthTexture, pixel + offsets[i], 0).r;
+        ivec2 offsetPixel = clamp(pixel + offsets[i], ivec2(0), ivec2(resolution) - ivec2(1));
+
+        float currDepth = texelFetch(depthTexture, offsetPixel, 0).r;
         if (currDepth < depth) {
             depth = currDepth;
             offset = offsets[i];
@@ -172,6 +174,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
         float confidence = 1.0;
 
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
+
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
@@ -195,6 +199,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
         float confidence = 1.0;
+
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);

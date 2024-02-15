@@ -39,7 +39,10 @@ namespace Atlas::Scene {
             j["audioVolume"] = p.GetComponent<AudioVolumeComponent>();
         }
         if (p.HasComponent<RigidBodyComponent>()) {
-            // j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
+            j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
+        }
+        if (p.HasComponent<PlayerComponent>()) {
+            j["player"] = p.GetComponent<PlayerComponent>();
         }
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
@@ -86,7 +89,12 @@ namespace Atlas::Scene {
             p.AddComponent<AudioVolumeComponent>(comp);
         }
         if (j.contains("rigidBody")) {
-
+            RigidBodyComponent comp = j["rigidBody"];
+            p.AddComponent<RigidBodyComponent>(comp);
+        }
+        if (j.contains("player")) {
+            PlayerComponent comp = j["player"];
+            p.AddComponent<PlayerComponent>(comp);
         }
         if (j.contains("entities")) {
             // We need to first push back to a temporary vector to not invalidate

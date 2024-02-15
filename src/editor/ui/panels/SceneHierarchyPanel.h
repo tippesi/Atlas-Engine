@@ -19,13 +19,13 @@ namespace Atlas::Editor::UI {
     public:
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
-        void Render(Ref<Scene::Scene>& scene);
+        void Render(Ref<Scene::Scene>& scene, bool inFocus);
 
         Scene::Entity selectedEntity;
         SelectedProperty selectedProperty;
 
     private:
-        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity);
+        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool inFocus);
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene);
 

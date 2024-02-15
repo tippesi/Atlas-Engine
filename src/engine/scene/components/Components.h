@@ -10,3 +10,4 @@
 #include "TransformComponent.h"
 #include "ObjectComponent.h"
 #include "RigidBodyComponent.h"
+#include "PlayerComponent.h"

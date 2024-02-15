@@ -49,16 +49,39 @@ namespace Atlas {
 
         void KeyboardHandler::Update(CameraComponent& camera, float deltaTime) {
 
-            linearVelocity = camera.direction * movement.x * deltaTime * speed;
-            linearVelocity += camera.right * movement.y * deltaTime * speed;
+            linearVelocity = camera.direction * movement.x * speed;
+            linearVelocity += camera.right * movement.y * speed;
 
-            linearVelocity.y += movement.z * deltaTime * speed;
+            linearVelocity.y += movement.z * speed;
 
             float progress = glm::clamp(reactivity * deltaTime, 0.0f, 1.0f);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
-            camera.location += interpolatedLinearVelocity;
+            camera.location += interpolatedLinearVelocity * deltaTime;
+
+        }
+
+        void KeyboardHandler::Update(const CameraComponent& camera, PlayerComponent& player, float deltaTime) {
+
+            linearVelocity = camera.direction * movement.x;
+            linearVelocity += camera.right * movement.y;
+
+            // linearVelocity.y += movement.z * speed;
+            linearVelocity.y = 0.0f;
+
+            if (glm::length(linearVelocity) > 0.0f)
+                linearVelocity = glm::normalize(linearVelocity);
+            float progress = glm::clamp(reactivity, 0.0f, 1.0f);
+
+            interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
+
+            auto velocity = fast ? interpolatedLinearVelocity * player.fastVelocity : 
+                interpolatedLinearVelocity * player.slowVelocity;
+
+            player.SetInputVelocity(velocity);
+            if (jump)
+                player.Jump();
 
         }
 
@@ -119,6 +142,22 @@ namespace Atlas {
 
             if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_RELEASED) {
                 movement.z += 1.0f;
+            }
+
+            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_PRESSED) {
+                jump = true;
+            }
+
+            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_RELEASED) {
+                jump = false;
+            }
+
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+                fast = true;
+            }
+
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+                fast = false;
             }
             
 

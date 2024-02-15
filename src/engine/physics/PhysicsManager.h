@@ -20,10 +20,10 @@ namespace Atlas {
 
             static void ExecuteUpdate(PhysicsWorld* physicsWorld, float deltaTime);
 
-        private:
             static Ref<JPH::TempAllocatorImpl> tempAllocator;
             static Ref<JPH::JobSystemThreadPool> jobSystemThreadPool;
 
+        private:
             static std::mutex updateMutex;
 
         };

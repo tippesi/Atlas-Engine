@@ -6,7 +6,8 @@ namespace Atlas::Editor::UI {
 
     void LogWindow::Render() {
 
-        ImGui::Begin(GetNameID());
+        if (!Begin())
+            return;
 
         static size_t entriesCount = 0;
 
@@ -38,7 +39,7 @@ namespace Atlas::Editor::UI {
             entriesCount = entries.size();
         }
 
-        ImGui::End();
+        End();
 
     }
 

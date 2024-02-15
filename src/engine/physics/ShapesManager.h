@@ -1,35 +1,95 @@
 #pragma once
 
 #include "../System.h"
+#include "Shape.h"
 
 #include "../mesh/Mesh.h"
 #include "../volume/AABB.h"
 
-#include <Jolt/Jolt.h>
-#include <Jolt/Physics/Collision/Shape/Shape.h>
+#include <unordered_map>
+#include <mutex>
 
-namespace Atlas {
+namespace Atlas::Physics {
 
-    namespace Physics {
+    class ShapesManager {
 
-        using ShapeRef = JPH::ShapeRefC;
+    public:
+        template<class T>
+        static Ref<Shape> CreateShape(const T& shapeSettings);
 
-        class ShapesManager {
+        template<class T>
+        static T GetShapeSettings(ShapeRef shapeRef);
 
-        public:
-            static ShapeRef CreateShapeFromMesh(Ref<Mesh::Mesh> mesh, vec3 scale = vec3(1.0f));
+    private:
+        static bool TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings);
+        static bool TryCreateShapeFromAABB(Shape* shape, const BoundingBoxShapeSettings& settings);
+        static bool TryCreateShapeFromSphere(Shape* shape, const SphereShapeSettings& settings);
+        static bool TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings);
+        static bool TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings);
 
-            static ShapeRef CreateShapeFromAABB(const Volume::AABB& aabb, vec3 scale = vec3(1.0f), float density = 1.0f);
+        static bool CreateShapeScaled(Shape* shape, ShapeRef shapeRef, vec3 scale);
 
-            static ShapeRef CreateShapeFromSphere(float radius, vec3 scale = vec3(1.0f), float density = 1.0f);
+        friend Shape;
 
-            static ShapeRef CreateShapeFromHeightField(std::vector<float>& heightData, vec3 translation,
-                vec3 scale);
+    };
 
-        private:
-            static ShapeRef CreateShapeScaled(ShapeRef shape, vec3 scale);
+    template<class T>
+    Ref<Shape> ShapesManager::CreateShape(const T& shapeSettings) {
 
-        };
+        bool success;
+        auto shape = CreateRef<Shape>();
+
+        if constexpr (std::is_same_v<MeshShapeSettings, T>) {
+            shape->type = ShapeType::Mesh;
+            success = TryCreateShapeFromMesh(shape.get(), shapeSettings);
+            shape->settings = CreateRef<MeshShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<BoundingBoxShapeSettings, T>) {
+            shape->type = ShapeType::BoundingBox;
+            success = TryCreateShapeFromAABB(shape.get(), shapeSettings);
+            shape->settings = CreateRef<BoundingBoxShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<SphereShapeSettings, T>) {
+            shape->type = ShapeType::Sphere;
+            success = TryCreateShapeFromSphere(shape.get(), shapeSettings);
+            shape->settings = CreateRef<SphereShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<CapsuleShapeSettings, T>) {
+            shape->type = ShapeType::Capsule;
+            success = TryCreateShapeFromCapsule(shape.get(), shapeSettings);
+            shape->settings = CreateRef<CapsuleShapeSettings>(shapeSettings);
+        }
+        else if constexpr (std::is_same_v<HeightFieldShapeSettings, T>) {
+            shape->type = ShapeType::HeightField;
+            success = TryCreateShapeFromHeightField(shape.get(), shapeSettings);
+            shape->settings = CreateRef<HeightFieldShapeSettings>(shapeSettings);
+        }
+
+        /*
+        if (!success) {
+            shape->settings = std::make_unique<ShapeSettings>(shapeSettings);
+        }
+        */
+
+        return shape;
+
+    }
+
+    template<class T>
+    T ShapesManager::GetShapeSettings(ShapeRef shapeRef) {
+
+        if constexpr (std::is_same_v<MeshShapeSettings, T>) {
+
+        }
+        else if constexpr (std::is_same_v<BoundingBoxShapeSettings, T>) {
+
+        }
+        else if constexpr (std::is_same_v<SphereShapeSettings, T>) {
+
+        }
+        else if constexpr (std::is_same_v<HeightFieldShapeSettings, T>) {
+
+        }
 
     }
 

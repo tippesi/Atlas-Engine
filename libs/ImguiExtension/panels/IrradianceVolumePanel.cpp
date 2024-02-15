@@ -61,8 +61,8 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Strength", &volume->strength, 0.0f, 5.0f);
         ImGui::Separator();
         ImGui::Text("AABB");
-        ImGui::SliderFloat3("Min", (float*)&volume->aabb.min, -200.0f, 200.0f);
-        ImGui::SliderFloat3("Max", (float*)&volume->aabb.max, -200.0f, 200.0f);
+        ImGui::DragFloat3("Min", (float*)&volume->aabb.min, 0.5f, -2000.0f, 2000.0f);
+        ImGui::DragFloat3("Max", (float*)&volume->aabb.max, 0.5f, -2000.0f, 2000.0f);
         volume->SetAABB(volume->aabb);
         ImGui::Separator();
         ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");

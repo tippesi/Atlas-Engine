@@ -7,7 +7,7 @@
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow() : Window("Object browser") {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {
 
 
 
@@ -15,14 +15,13 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::Render() {
 
-        ImGui::Begin(GetNameID());
+        if (!Begin())
+            return;
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
-
         auto viewport = ImGui::GetWindowViewport();
 
-        if (resetDockingLayout) {
+        if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
             ImGui::DockBuilderRemoveNode(dsID);
             ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
 
@@ -44,22 +43,22 @@ namespace Atlas::Editor::UI {
             resetDockingLayout = false;
         }
 
+        ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
+
         ImGui::End();
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+
         const char *items[] = {"Audio", "Mesh", "Terrain", "Scene"};
         static int currentSelection = 0;
-        ImGui::BeginListBox("##Listbox", ImVec2(-FLT_MIN, 9 * ImGui::GetTextLineHeightWithSpacing()));
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
-            const bool isSelected = (currentSelection == i);
-            if (ImGui::Selectable(items[i], isSelected))
+            ImGui::TreeNodeEx(items[i], nodeFlags);
+            if (ImGui::IsItemClicked())
                 currentSelection = i;
-
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
         }
 
-        ImGui::EndListBox();
         ImGui::End();
 
         ImGui::Begin("ResourceTypeOverview", nullptr);
@@ -77,7 +76,7 @@ namespace Atlas::Editor::UI {
                 break;
         }
 
-        ImGui::End();
+        End();
 
     }
 

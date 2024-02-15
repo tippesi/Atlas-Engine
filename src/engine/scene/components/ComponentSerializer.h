@@ -4,6 +4,7 @@
 #include "common/SerializationHelper.h"
 #include "lighting/LightingSerializer.h"
 #include "audio/AudioSerializer.h"
+#include "physics/PhysicsSerializer.h"
 
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
@@ -73,6 +74,8 @@ namespace Atlas::Scene::Components {
             {"thirdPerson", p.thirdPerson},
             {"thirdPersonDistance", p.thirdPersonDistance},
             {"isMain", p.isMain},
+            {"useEntityTranslation", p.useEntityTranslation},
+            {"useEntityRotation", p.useEntityRotation}
         };
     }
 
@@ -87,6 +90,8 @@ namespace Atlas::Scene::Components {
         j.at("thirdPerson").get_to(p.thirdPerson);
         j.at("thirdPersonDistance").get_to(p.thirdPersonDistance);
         j.at("isMain").get_to(p.isMain);
+        j.at("useEntityTranslation").get_to(p.useEntityTranslation);
+        j.at("useEntityRotation").get_to(p.useEntityRotation);
     }
 
     void to_json(json& j, const LightComponent& p) {
@@ -165,9 +170,8 @@ namespace Atlas::Scene::Components {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
 
-            // Scaled meshes are currently unsupported
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
+                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
         }
 
     }
@@ -192,6 +196,58 @@ namespace Atlas::Scene::Components {
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+    }
+
+    void to_json(json& j, const RigidBodyComponent& p) {
+        j = json {
+            {"bodyIndex", p.bodyId.GetIndex()},
+            {"layer", p.layer},
+        };
+
+        // This is only relevant for not yet created bodies
+        if (p.creationSettings != nullptr)
+            j["creationSettings"] = *p.creationSettings;
+    }
+
+    void from_json(const json& j, RigidBodyComponent& p) {
+        // This whole thing works because only components with physics world are considered valid,
+        // so the body id will be overriden at some point.
+        uint32_t bodyIndex;
+        j.at("bodyIndex").get_to(bodyIndex);
+        j.at("layer").get_to(p.layer);
+
+        // This is only relevant for not yet created bodies
+        if (j.contains("creationSettings")) {
+            p.creationSettings = CreateRef<Physics::BodyCreationSettings>();
+            *p.creationSettings = j["creationSettings"];
+        }
+
+        // We can use the index here since when loading nothing but the loading thread
+        // will access the physics system (in multithreaded scenarios we would need to use
+        // the sequence number as well
+        p.bodyId = Physics::BodyID(bodyIndex);
+    }
+
+    void to_json(json& j, const PlayerComponent& p) {
+        j = json {
+            {"slowVelocity", p.slowVelocity},
+            {"fastVelocity", p.fastVelocity},
+            {"jumpVelocity", p.jumpVelocity},
+        };
+
+        if (p.creationSettings != nullptr)
+            j["creationSettings"] = *p.creationSettings;
+    }
+
+    void from_json(const json& j, PlayerComponent& p) {
+        j.at("slowVelocity").get_to(p.slowVelocity);
+        j.at("fastVelocity").get_to(p.fastVelocity);
+        j.at("jumpVelocity").get_to(p.jumpVelocity);
+
+        if (j.contains("creationSettings")) {
+            p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();
+            *p.creationSettings = j["creationSettings"];
+        }
     }
 
 }

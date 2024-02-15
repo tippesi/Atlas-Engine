@@ -8,7 +8,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::Checkbox("Enable", &fog->enable);
 
-        ImGui::ColorPicker3("Extinction coefficients", &fog->extinctionCoefficients[0]);
+        ImGui::ColorEdit3("Extinction coefficients", &fog->extinctionCoefficients[0]);
         ImGui::DragFloat("Extinction factor", &fog->extinctionFactor, 0.002f, 0.0001f, 4.0f);
         ImGui::DragFloat("Scattering factor", &fog->scatteringFactor, 0.002f, 0.0001f, 4.0f);
         ImGui::DragFloat("Ambient factor", &fog->ambientFactor, 0.001f, 0.0001f, 1.0f);

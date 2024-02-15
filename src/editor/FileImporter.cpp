@@ -40,7 +40,7 @@ namespace Atlas::Editor {
                 break;
             case FileType::Mesh: {
                     auto handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                        ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, glm::mat4(1.0f), 8192);
+                        ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
                     handle.GetResource()->permanent = true;
                 }
                 break;

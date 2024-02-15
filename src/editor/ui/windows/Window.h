@@ -10,15 +10,21 @@ namespace Atlas::Editor::UI {
     class Window {
 
     public:
-        explicit Window(const std::string& name) : name(name), nameID(name + "##" + std::to_string(ID)),
-            dockSpaceNameID(name + "dockSpace##" + std::to_string(ID)) {}
+        Window(const std::string& name, bool show) : name(name), nameID(name + "##" + std::to_string(ID)),
+            dockSpaceNameID(name + "dockSpace##" + std::to_string(ID)), show(show) {}
 
         const char* GetNameID() const { return nameID.c_str(); }
+
+        bool Begin(ImGuiWindowFlags flags = 0);
+
+        void End();
+
+        bool show = true;
 
         std::string name;
 
         bool inFocus = false;
-        bool resetDockingLayout = true;
+        bool resetDockingLayout = false;
 
     protected:
         int32_t ID = GetID();

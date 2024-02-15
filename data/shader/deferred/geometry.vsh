@@ -12,7 +12,7 @@
 
 // Per vertex attributes
 layout(location=0) in vec3 vPosition;
-layout(location=1) in vec3 vNormal;
+layout(location=1) in vec4 vNormal;
 #ifdef TEX_COORDS
 layout(location=2) in vec2 vTexCoord;
 #endif
@@ -105,7 +105,7 @@ void main() {
     // Only after ndc calculation apply the clip correction
     gl_Position = gl_Position;
     
-    normalVS = mat3(mvMatrix) * vNormal;    
+    normalVS = mat3(mvMatrix) * vNormal.xyz;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);

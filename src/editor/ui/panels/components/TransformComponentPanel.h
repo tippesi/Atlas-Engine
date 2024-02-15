@@ -2,6 +2,7 @@
 
 #include "../Panel.h"
 
+#include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/components/TransformComponent.h"
 
@@ -12,7 +13,7 @@ namespace Atlas::Editor::UI {
     public:
         TransformComponentPanel() : Panel("Transform component") {}
 
-        bool Render(Scene::Entity entity, TransformComponent& transform);
+        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, TransformComponent& transform);
 
     private:
         Scene::Entity lastEntity;
