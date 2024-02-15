@@ -62,12 +62,12 @@ namespace Atlas {
 
         }
 
-        void KeyboardHandler::Update(CameraComponent& camera, PlayerComponent& player, float deltaTime) {
+        void KeyboardHandler::Update(const CameraComponent& camera, PlayerComponent& player, float deltaTime) {
 
             linearVelocity = camera.direction * movement.x * speed;
             linearVelocity += camera.right * movement.y * speed;
 
-            linearVelocity.y += movement.z * speed;
+            // linearVelocity.y += movement.z * speed;
             linearVelocity.y = 0.0f;
 
             float progress = glm::clamp(reactivity, 0.0f, 1.0f);

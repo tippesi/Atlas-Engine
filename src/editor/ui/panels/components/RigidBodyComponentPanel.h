@@ -13,7 +13,7 @@ namespace Atlas::Editor::UI {
     public:
         RigidBodyComponentPanel() : Panel("Rigid body component") {}
 
-        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, RigidBodyComponent& rigidBodyComponent);
+        bool Render(const Ref<Scene::Scene>& scene, Scene::Entity entity, RigidBodyComponent& rigidBodyComponent);
 
     private:
         void RenderShapeSettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);

@@ -35,7 +35,7 @@ namespace Atlas::Physics {
 
         float GetFriction();
 
-        BodyCreationSettings GetBodyCreationSettings();
+        virtual BodyCreationSettings GetBodyCreationSettings();
 
         BodyID bodyId;
 

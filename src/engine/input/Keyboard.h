@@ -24,7 +24,7 @@ namespace Atlas {
 
             void Update(CameraComponent& camera, float deltaTime);
 
-            void Update(CameraComponent& camera, PlayerComponent& player, float deltaTime);
+            void Update(const CameraComponent& camera, PlayerComponent& player, float deltaTime);
 
             float speed = 7.0f;
             float reactivity = 6.0f;

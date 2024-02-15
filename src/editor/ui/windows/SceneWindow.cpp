@@ -165,7 +165,7 @@ namespace Atlas::Editor::UI {
                     if (entity == cameraEntity)
                         continue;
                     
-                    auto& comp = cameraSubset.Get(entity);
+                    const auto& comp = cameraSubset.Get(entity);
                     hasMainCamera |= comp.isMain;
                 }
             }

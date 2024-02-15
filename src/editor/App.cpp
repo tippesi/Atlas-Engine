@@ -297,7 +297,6 @@ namespace Atlas::Editor {
         profilerWindow.show = false;
         contentBrowserWindow.show = true;
         logWindow.show = true;
-        contentBrowserWindow.show = true;
 
         contentBrowserWindow.resetDockingLayout = true;
         logWindow.resetDockingLayout = true;

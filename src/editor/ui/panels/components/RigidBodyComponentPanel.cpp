@@ -4,7 +4,7 @@ namespace Atlas::Editor::UI {
 
     using namespace Physics;
 
-    bool RigidBodyComponentPanel::Render(Ref<Scene::Scene>& scene,
+    bool RigidBodyComponentPanel::Render(const Ref<Scene::Scene>& scene,
         Scene::Entity entity, RigidBodyComponent &rigidBodyComponent) {
 
         auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();

@@ -19,7 +19,7 @@ namespace Atlas {
                 return false;
 
             auto& mesh = settings.mesh;
-            auto& scale = settings.scale;
+            const auto& scale = settings.scale;
 
             JPH::VertexList vertexList;
             JPH::IndexedTriangleList triangleList;
@@ -59,9 +59,9 @@ namespace Atlas {
 
         bool ShapesManager::TryCreateShapeFromAABB(Shape* shape, const BoundingBoxShapeSettings& settings) {
 
-            auto& aabb = settings.aabb;
+            const auto& aabb = settings.aabb;
             auto density = settings.density;
-            auto& scale = settings.scale;
+            const auto& scale = settings.scale;
 
             auto halfSize = aabb.GetSize() / 2.0f;
 
@@ -98,7 +98,7 @@ namespace Atlas {
 
             auto radius = settings.radius;
             auto density = settings.density;
-            auto& scale = settings.scale;
+            const auto& scale = settings.scale;
 
             JPH::SphereShapeSettings sphereShapeSettings(radius);
             sphereShapeSettings.SetDensity(density);
@@ -123,7 +123,7 @@ namespace Atlas {
             auto halfHeight = settings.height / 2.0f;
             auto radius = settings.radius;
             auto density = settings.density;
-            auto& scale = settings.scale;
+            const auto& scale = settings.scale;
 
             JPH::CapsuleShapeSettings capsuleShapeSettings(halfHeight, radius);
             capsuleShapeSettings.SetDensity(density);
@@ -152,9 +152,9 @@ namespace Atlas {
 
         bool ShapesManager::TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings) {
 
-            auto& heightData = settings.heightData;
-            auto& translation = settings.translation;
-            auto& scale = settings.scale;
+            const auto& heightData = settings.heightData;
+            const auto& translation = settings.translation;
+            const auto& scale = settings.scale;
 
             auto sampleCount = std::sqrt(heightData.size());
 

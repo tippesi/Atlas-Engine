@@ -664,7 +664,7 @@ namespace Atlas {
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
-                auto& comp = dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
+                dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)

@@ -68,8 +68,8 @@ namespace Atlas::Editor {
             j.at("scenes").get_to(scenePaths);
 
         // No need to add it to the config, will be done through resource events
-        for (const auto& path : scenePaths)
-            FileImporter::ImportFile(path);
+        for (const auto& scenePath : scenePaths)
+            FileImporter::ImportFile(scenePath);
 
     }
 
