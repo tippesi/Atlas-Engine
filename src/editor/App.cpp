@@ -69,6 +69,17 @@ namespace Atlas::Editor {
 
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
+        // Create new windows for fully loaded scenes
+        for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
+            if (waitToLoadScenes[i].IsLoaded()) {
+                std::swap(waitToLoadScenes[i], waitToLoadScenes.back());
+                sceneWindows.emplace_back(waitToLoadScenes.back(), true);
+                waitToLoadScenes.pop_back();
+                i--;
+            }
+        }
+
+        // Quick quit
         if (sceneWindows.empty())
             return;
 
@@ -99,6 +110,10 @@ namespace Atlas::Editor {
         for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
         }
+
+        // Avoid crash when nothing is there anymore
+        if (sceneWindows.empty())
+            return;
 
         // Update active scene with input
         activeSceneIdx = std::min(activeSceneIdx, sceneWindows.size() - 1);
@@ -299,7 +314,7 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene), true);
+            waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
             Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
         });
 

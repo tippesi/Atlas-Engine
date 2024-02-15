@@ -1,0 +1,750 @@
+{
+    "aabb": {
+        "max": {
+            "x": 128.0,
+            "y": 128.0,
+            "z": 128.0
+        },
+        "min": {
+            "x": -128.0,
+            "y": -128.0,
+            "z": -128.0
+        }
+    },
+    "ao": {
+        "enable": false,
+        "opacityCheck": false,
+        "radius": 3.0,
+        "rt": true,
+        "sampleCount": 16,
+        "strength": 1.0
+    },
+    "depth": 5.0,
+    "entities": [
+        {
+            "entities": [
+                {
+                    "id": 1,
+                    "light": {
+                        "color": {
+                            "x": 1.0,
+                            "y": 0.9254902005195618,
+                            "z": 0.8196078538894653
+                        },
+                        "intensity": 10.0,
+                        "isMain": true,
+                        "mobility": 0,
+                        "properties": {
+                            "direction": {
+                                "x": 0.0,
+                                "y": -1.0,
+                                "z": 0.33500000834465027
+                            }
+                        },
+                        "shadow": {
+                            "allowDynamicActors": false,
+                            "allowTerrain": true,
+                            "bias": 3.0,
+                            "cascadeBlendDistance": 2.5,
+                            "center": {
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "distance": 200.0,
+                            "isCascaded": false,
+                            "longRange": false,
+                            "longRangeDistance": 1024.0,
+                            "resolution": 4096,
+                            "splitCorrection": 0.0,
+                            "useCubemap": false,
+                            "viewCount": 1,
+                            "views": [
+                                {
+                                    "farDistance": 200.0,
+                                    "frustumMatrix": {
+                                        "j0": {
+                                            "w": 0.0,
+                                            "x": 0.009999999776482582,
+                                            "y": 0.0,
+                                            "z": 0.0
+                                        },
+                                        "j1": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": -0.010526316240429878,
+                                            "z": 0.0
+                                        },
+                                        "j2": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": 0.0,
+                                            "z": -0.004166666883975267
+                                        },
+                                        "j3": {
+                                            "w": 1.0,
+                                            "x": 0.0,
+                                            "y": 0.2631579041481018,
+                                            "z": 0.5
+                                        }
+                                    },
+                                    "nearDistance": 0.0,
+                                    "projectionMatrix": {
+                                        "j0": {
+                                            "w": 0.0,
+                                            "x": 0.009999999776482582,
+                                            "y": 0.0,
+                                            "z": 0.0
+                                        },
+                                        "j1": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": -0.010526316240429878,
+                                            "z": 0.0
+                                        },
+                                        "j2": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": 0.0,
+                                            "z": -0.004166666883975267
+                                        },
+                                        "j3": {
+                                            "w": 1.0,
+                                            "x": 0.0,
+                                            "y": 0.2631579041481018,
+                                            "z": 0.5
+                                        }
+                                    },
+                                    "terrainFrustumMatrix": {
+                                        "j0": {
+                                            "w": 0.0,
+                                            "x": 0.009999999776482582,
+                                            "y": 0.0,
+                                            "z": 0.0
+                                        },
+                                        "j1": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": -0.010526316240429878,
+                                            "z": 0.0
+                                        },
+                                        "j2": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": 0.0,
+                                            "z": -0.004166666883975267
+                                        },
+                                        "j3": {
+                                            "w": 1.0,
+                                            "x": 0.0,
+                                            "y": 0.2631579041481018,
+                                            "z": 0.5
+                                        }
+                                    },
+                                    "viewMatrix": {
+                                        "j0": {
+                                            "w": 0.0,
+                                            "x": -1.0,
+                                            "y": 0.0,
+                                            "z": -0.0
+                                        },
+                                        "j1": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": 0.3176496922969818,
+                                            "z": 0.9482080340385437
+                                        },
+                                        "j2": {
+                                            "w": 0.0,
+                                            "x": 0.0,
+                                            "y": 0.9482080340385437,
+                                            "z": -0.3176496922969818
+                                        },
+                                        "j3": {
+                                            "w": 1.0,
+                                            "x": -0.0,
+                                            "y": -0.0,
+                                            "z": 0.0
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "type": 0,
+                        "volumetric": true
+                    },
+                    "name": {
+                        "name": "Directional light"
+                    }
+                },
+                {
+                    "id": 2,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/sponza/sponza.obj",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Sponza"
+                    },
+                    "rigidBody": {
+                        "bodyIndex": 4,
+                        "layer": 0
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 0.012193998321890831,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.012193998321890831,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 0.012193998321890831
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": 3,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/chromesphere.gltf",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Sphere"
+                    },
+                    "rigidBody": {
+                        "bodyIndex": 0,
+                        "layer": 1
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 1.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 1.0,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 1.0
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": 8.418530464172363,
+                                "y": 15.175365447998047,
+                                "z": 0.006242096424102783
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": 4,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/metallicwall.gltf",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Wall"
+                    },
+                    "rigidBody": {
+                        "bodyIndex": 1,
+                        "layer": 1
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 0.1481112539768219,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.17914418876171112,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 2.874448299407959
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": 3.019165277481079,
+                                "y": 12.013108253479004,
+                                "z": -0.3237189054489136
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": 5,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/chromesphere.gltf",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Sphere"
+                    },
+                    "rigidBody": {
+                        "bodyIndex": 2,
+                        "layer": 1
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 1.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 1.0,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 1.0
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": 5.330473899841309,
+                                "y": 15.175365447998047,
+                                "z": 0.0
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": 6,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/metallicwall.gltf",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Entity 7"
+                    },
+                    "rigidBody": {
+                        "bodyIndex": 3,
+                        "layer": 1
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 0.08226369321346283,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.10399212688207626,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 1.0
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": -0.8540120720863342,
+                                "y": 17.5692138671875,
+                                "z": -1.675362229347229
+                            }
+                        }
+                    }
+                },
+                {
+                    "id": 8,
+                    "mesh": {
+                        "dontCull": false,
+                        "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/capsule.gltf",
+                        "visible": true
+                    },
+                    "name": {
+                        "name": "Entity 8"
+                    },
+                    "transform": {
+                        "isStatic": false,
+                        "matrix": {
+                            "j0": {
+                                "w": 0.0,
+                                "x": 1.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            },
+                            "j1": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 1.0,
+                                "z": 0.0
+                            },
+                            "j2": {
+                                "w": 0.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 1.0
+                            },
+                            "j3": {
+                                "w": 1.0,
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 0.0
+                            }
+                        }
+                    }
+                }
+            ],
+            "id": 0,
+            "name": {
+                "name": "Root"
+            },
+            "root": false
+        }
+    ],
+    "fog": {
+        "ambientFactor": 0.009999999776482582,
+        "density": 0.00019999999494757503,
+        "enable": true,
+        "extinctionCoefficients": {
+            "w": 1.0,
+            "x": 0.9300000071525574,
+            "y": 0.9649999737739563,
+            "z": 1.0
+        },
+        "extinctionFactor": 0.1599999964237213,
+        "height": 0.0,
+        "heightFalloff": 0.0284000001847744,
+        "rayMarchStepCount": 10,
+        "rayMarching": true,
+        "scatteringAnisotropy": -0.6000000238418579,
+        "scatteringFactor": 2.0,
+        "volumetricIntensity": 1.0
+    },
+    "irradianceVolume": {
+        "aabb": {
+            "max": {
+                "x": 23.738000869750977,
+                "y": 18.340999603271484,
+                "z": 17.85099983215332
+            },
+            "min": {
+                "x": -38.63600158691406,
+                "y": -9.817999839782715,
+                "z": -21.163000106811523
+            }
+        },
+        "bias": 0.30000001192092896,
+        "enable": true,
+        "gamma": 5.0,
+        "hysteresis": 0.9800000190734863,
+        "lowerResMoments": true,
+        "opacityCheck": false,
+        "optimizeProbes": true,
+        "probeCount": {
+            "x": 20,
+            "y": 20,
+            "z": 20
+        },
+        "rayCount": 100,
+        "rayCountInactive": 32,
+        "sampleEmissives": false,
+        "sharpness": 50.0,
+        "strength": 1.0,
+        "useShadowMap": false
+    },
+    "name": "sponza",
+    "physicsWorld": {
+        "bodies": [
+            [
+                4,
+                {
+                    "angularDampening": 0.0,
+                    "linearDampening": 0.0,
+                    "shape": {
+                        "meshSettings": {
+                            "resourcePath": "/Users/tippes/Documents/Repos/Atlas-Engine/data/sponza/sponza.obj",
+                            "scale": {
+                                "x": 0.012193998321890831,
+                                "y": 0.012193998321890831,
+                                "z": 0.012193998321890831
+                            }
+                        }
+                    }
+                }
+            ],
+            [
+                3,
+                {
+                    "angularVelocity": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 3.9000000953674316
+                    },
+                    "motionQuality": 1,
+                    "objectLayer": 1,
+                    "shape": {
+                        "boundingBoxSettings": {
+                            "aabb": {
+                                "max": {
+                                    "x": 7.46401834487915,
+                                    "y": 15.011363983154297,
+                                    "z": 0.4019695222377777
+                                },
+                                "min": {
+                                    "x": -7.46401834487915,
+                                    "y": 0.0833272933959961,
+                                    "z": -0.4019695222377777
+                                }
+                            },
+                            "density": 1.0,
+                            "scale": {
+                                "x": 0.08226369321346283,
+                                "y": 0.10399212688207626,
+                                "z": 1.0
+                            }
+                        }
+                    }
+                }
+            ],
+            [
+                2,
+                {
+                    "angularVelocity": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 5.0
+                    },
+                    "objectLayer": 1,
+                    "restitution": 0.8999999761581421,
+                    "shape": {
+                        "sphereSettings": {
+                            "density": 1.0,
+                            "radius": 1.0000001192092896,
+                            "scale": {
+                                "x": 1.0,
+                                "y": 1.0,
+                                "z": 1.0
+                            }
+                        }
+                    }
+                }
+            ],
+            [
+                1,
+                {
+                    "angularVelocity": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -15.800000190734863
+                    },
+                    "objectLayer": 1,
+                    "shape": {
+                        "boundingBoxSettings": {
+                            "aabb": {
+                                "max": {
+                                    "x": 7.46401834487915,
+                                    "y": 15.011363983154297,
+                                    "z": 0.4019695222377777
+                                },
+                                "min": {
+                                    "x": -7.46401834487915,
+                                    "y": 0.0833272933959961,
+                                    "z": -0.4019695222377777
+                                }
+                            },
+                            "density": 1.0,
+                            "scale": {
+                                "x": 0.1481112539768219,
+                                "y": 0.17914418876171112,
+                                "z": 2.874448299407959
+                            }
+                        }
+                    }
+                }
+            ],
+            [
+                0,
+                {
+                    "angularVelocity": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 5.0
+                    },
+                    "objectLayer": 1,
+                    "restitution": 0.8999999761581421,
+                    "shape": {
+                        "sphereSettings": {
+                            "density": 1.0,
+                            "radius": 1.0000001192092896,
+                            "scale": {
+                                "x": 1.0,
+                                "y": 1.0,
+                                "z": 1.0
+                            }
+                        }
+                    }
+                }
+            ]
+        ]
+    },
+    "postProcessing": {
+        "chromaticAberration": {
+            "colorsReversed": false,
+            "enable": false,
+            "strength": 1.0
+        },
+        "contrast": 1.0,
+        "filmGrain": {
+            "enable": false,
+            "strength": 0.10000000149011612
+        },
+        "filmicTonemapping": false,
+        "saturation": 1.0,
+        "sharpen": {
+            "enable": true,
+            "factor": 0.15000000596046448
+        },
+        "taa": {
+            "enable": true,
+            "jitterRange": 0.9900000095367432
+        },
+        "vignette": {
+            "color": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "enable": false,
+            "offset": 0.0,
+            "power": 0.0,
+            "strength": 0.0
+        },
+        "whitePoint": 10.0
+    },
+    "reflection": {
+        "bias": 0.17299999296665192,
+        "currentClipFactor": 2.0,
+        "enable": true,
+        "gi": true,
+        "historyClipMax": 0.10000000149011612,
+        "opacityCheck": false,
+        "radianceLimit": 10.0,
+        "rt": true,
+        "spatialFilterStrength": 10.0,
+        "temporalWeight": 0.9520000219345093,
+        "textureLevel": 4,
+        "useShadowMap": true
+    },
+    "sky": {
+        "atmosphere": {
+            "height": 100000.0,
+            "probeResolution": 128
+        },
+        "clouds": {
+            "castShadow": false,
+            "coverageResolution": 512,
+            "coverageScale": 0.25,
+            "coverageSpeed": 5.0,
+            "darkEdgeAmbient": 0.10000000149011612,
+            "darkEdgeFocus": 2.0,
+            "densityMultiplier": 0.800000011920929,
+            "detailResolution": 32,
+            "detailScale": 16.0,
+            "detailSpeed": 10.0,
+            "detailStrength": 0.15000000596046448,
+            "distanceLimit": 8000.0,
+            "enable": true,
+            "heightStretch": 0.5,
+            "maxHeight": 1700.0,
+            "minHeight": 1400.0,
+            "occlusionSampleCount": 5,
+            "sampleCount": 64,
+            "scattering": {
+                "eccentricityFirstPhase": 0.0,
+                "eccentricitySecondPhase": -0.5,
+                "extinctionCoefficients": {
+                    "w": 1.0,
+                    "x": 0.9300000071525574,
+                    "y": 0.9649999737739563,
+                    "z": 1.0
+                },
+                "extinctionFactor": 0.1599999964237213,
+                "phaseAlpha": 0.5,
+                "scatteringFactor": 2.0
+            },
+            "shadowResolution": 512,
+            "shadowSampleFraction": 4,
+            "shapeResolution": 128,
+            "shapeScale": 2.0,
+            "shapeSpeed": 5.0,
+            "stochasticOcclusionSampling": true
+        },
+        "planetCenter": {
+            "x": 0.0,
+            "y": -650000.0,
+            "z": 0.0
+        },
+        "planetRadius": 649000.0
+    },
+    "ssgi": {
+        "aoStrength": 1.0,
+        "enable": true,
+        "enableAo": true,
+        "irradianceLimit": 10.0,
+        "opacityCheck": false,
+        "radius": 1.0,
+        "rayCount": 2,
+        "rt": false,
+        "sampleCount": 8
+    },
+    "sss": {
+        "enable": true,
+        "maxLength": 0.5,
+        "sampleCount": 8,
+        "thickness": 0.30000001192092896
+    }
+}

@@ -44,6 +44,7 @@ namespace Atlas::Editor {
         UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
 
+        std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<UI::SceneWindow> sceneWindows;
 
         size_t activeSceneIdx = 0;

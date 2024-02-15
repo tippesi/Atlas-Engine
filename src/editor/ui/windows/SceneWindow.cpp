@@ -221,8 +221,7 @@ namespace Atlas::Editor::UI {
             needGuizmoEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
-            if (cameraEntity.IsValid() && selectedEntity.IsValid() &&
-                selectedEntity.HasComponent<TransformComponent>() && inFocus) {
+            if (cameraEntity.IsValid() && inFocus) {
 
                 needGuizmoEnabled = true;
                 ImGuizmo::SetDrawlist();
@@ -240,25 +239,34 @@ namespace Atlas::Editor::UI {
 
                 auto viewport = viewportPanel.viewport;
 
-                auto parentEntity = scene->GetParentEntity(selectedEntity);
-
-                auto& transform = selectedEntity.GetComponent<TransformComponent>();
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
-                ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                    static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
-                    glm::value_ptr(transform.globalMatrix));
 
+                if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
+                    auto parentEntity = scene->GetParentEntity(selectedEntity);
 
-                if (parentEntity.IsValid() && parentEntity.HasComponent<TransformComponent>()) {
-                    const auto& parentTransform = parentEntity.GetComponent<TransformComponent>();
-                    auto inverseParentTransform = glm::inverse(parentTransform.globalMatrix);
-                    auto localMatrix = inverseParentTransform * transform.globalMatrix;
-                    transform.Set(localMatrix);
+                    auto& transform = selectedEntity.GetComponent<TransformComponent>();
+
+                    ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
+                        static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
+                        glm::value_ptr(transform.globalMatrix));
+
+                    if (parentEntity.IsValid() && parentEntity.HasComponent<TransformComponent>()) {
+                        const auto& parentTransform = parentEntity.GetComponent<TransformComponent>();
+                        auto inverseParentTransform = glm::inverse(parentTransform.globalMatrix);
+                        auto localMatrix = inverseParentTransform * transform.globalMatrix;
+                        transform.Set(localMatrix);
+                    }
+                    else {
+                        transform.Set(transform.globalMatrix);
+                    }
                 }
-                else {
-                    transform.Set(transform.globalMatrix);
-                }
-                
+
+                /*
+                const float gridSize = 10.0f;
+                auto gridMatrix = mat4(1.0f);
+                ImGuizmo::DrawGrid(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
+                    glm::value_ptr(gridMatrix), gridSize);
+                */
             }
             });
            

@@ -92,7 +92,7 @@ namespace Atlas::Editor::UI {
             ImGui::Image(set, region);
         }
 
-        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetCursorPos(ImVec2(0.0f, windowPos.y));
 
         if (drawOverlayFunc)
             drawOverlayFunc();
