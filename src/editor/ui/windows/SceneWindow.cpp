@@ -291,6 +291,14 @@ namespace Atlas::Editor::UI {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
             viewportPanel.primitiveBatchWrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f));
         }
+        if (entity.HasComponent<LightComponent>()) {
+            const auto& lightComponent = entity.GetComponent<LightComponent>();
+            if (lightComponent.shadow) {
+                for (const auto& component : lightComponent.shadow->views)
+                    viewportPanel.primitiveBatchWrapper.RenderLineFrustum(
+                        Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
+            }
+        }
 
     }
 

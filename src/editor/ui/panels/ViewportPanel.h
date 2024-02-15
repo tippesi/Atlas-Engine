@@ -26,6 +26,9 @@ namespace Atlas::Editor::UI {
         std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;
 
+    private:
+        bool firstFrame = true;
+
     };
 
 }

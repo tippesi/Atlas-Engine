@@ -29,9 +29,42 @@ namespace Atlas::Physics {
     class Player {
 
     public:
-        Player(const PlayerCreationSettings& creationSettings, Ref<PhysicsWorld>& physicsWorld);
+        Player(const PlayerCreationSettings& creationSettings, const Ref<PhysicsWorld>& physicsWorld);
 
+		bool IsValid() const { return world != nullptr; }
 
+		void SetPosition(vec3 position);
+
+		vec3 GetPosition() const;
+
+		void SetRotation(quat rotation);
+
+		quat GetRotation() const;
+
+		mat4 GetMatrix() const;
+
+		void SetLinearVelocity(vec3 velocity);
+
+		vec3 GetLinearVelocity() const;
+
+		vec3 GetGroundVelocity() const;
+
+		bool IsOnGround() const;
+
+		void SetUp(vec3 up);
+
+		vec3 GetUp() const;
+
+		void SetShape(const Ref<Shape>& shape);
+
+		virtual void Update(float deltaTime);
+
+		Ref<Physics::PlayerCreationSettings> playerCreationSettings = nullptr;
+
+	protected:
+		Ref<JPH::CharacterVirtual> character = nullptr;
+
+		PhysicsWorld* world = nullptr;
 
     };
 
