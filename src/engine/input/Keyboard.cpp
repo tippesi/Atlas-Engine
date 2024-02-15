@@ -76,10 +76,8 @@ namespace Atlas {
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
-            auto velocity = interpolatedLinearVelocity * player.slowVelocity;
-
-            if (glm::length(velocity) > 0.0f)
-                Log::Warning("Velocity greater zero: " + std::to_string(glm::length(velocity)));
+            auto velocity = fast ? interpolatedLinearVelocity * player.fastVelocity : 
+                interpolatedLinearVelocity * player.slowVelocity;
 
             player.SetInputVelocity(velocity);
             if (jump)
@@ -152,6 +150,14 @@ namespace Atlas {
 
             if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_RELEASED) {
                 jump = false;
+            }
+
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+                fast = true;
+            }
+
+            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+                fast = false;
             }
             
 

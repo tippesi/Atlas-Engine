@@ -69,9 +69,11 @@ namespace Atlas::Editor::UI {
             return;
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
-        auto viewport = ImGui::GetWindowViewport();
 
         if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
+            ImGui::SetWindowSize(ImVec2(640, 480), ImGuiCond_FirstUseEver);
+
+            auto viewport = ImGui::GetWindowViewport();
             ImGui::DockBuilderRemoveNode(dsID);
             ImGui::DockBuilderAddNode(dsID, ImGuiDockNodeFlags_DockSpace);
 
