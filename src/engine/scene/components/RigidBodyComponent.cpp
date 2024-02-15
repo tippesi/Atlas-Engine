@@ -8,8 +8,8 @@ namespace Atlas {
 
             Physics::BodyCreationSettings RigidBodyComponent::GetBodyCreationSettings() {
 
-                if (bodyCreationSettings)
-                    return *bodyCreationSettings;
+                if (creationSettings)
+                    return *creationSettings;
 
                 return Body::GetBodyCreationSettings();
 
@@ -18,22 +18,22 @@ namespace Atlas {
             void RigidBodyComponent::InsertIntoPhysicsWorld(const TransformComponent &transformComponent,
                 Physics::PhysicsWorld* physicsWorld) {
 
-                if (!bodyCreationSettings || !bodyCreationSettings->shape)
+                if (!creationSettings || !creationSettings->shape)
                     return;
 
-                if (!bodyCreationSettings->shape->IsValid())
-                    if (!bodyCreationSettings->shape->TryCreate())
+                if (!creationSettings->shape->IsValid())
+                    if (!creationSettings->shape->TryCreate())
                         return;
 
                 this->world = physicsWorld;
 
-                auto body = physicsWorld->CreateBody(*bodyCreationSettings, transformComponent.globalMatrix);
+                auto body = physicsWorld->CreateBody(*creationSettings, transformComponent.globalMatrix);
 
                 // Just copy the body id, fine afterwards
                 bodyId = body.bodyId;
                 AE_ASSERT(!bodyId.IsInvalid() && "Body id is invalid");
 
-                bodyCreationSettings = nullptr;
+                creationSettings = nullptr;
 
             }
 

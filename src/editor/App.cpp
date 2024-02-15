@@ -101,8 +101,6 @@ namespace Atlas::Editor {
                 activeSceneIdx = sceneCounter;
 
             sceneCounter++;
-            
-            sceneWindow.Update(deltaTime);
         }
 
         // Reverse such that indices remain valid
@@ -135,7 +133,7 @@ namespace Atlas::Editor {
                 if (!camera)
                     continue;
 
-                auto player = entity.GetComponent<PlayerComponent>();
+                auto& player = entity.GetComponent<PlayerComponent>();
 
                 mouseHandler.Update(*camera, deltaTime);
                 keyboardHandler.Update(*camera, player, deltaTime);
@@ -144,12 +142,6 @@ namespace Atlas::Editor {
 
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
-
-            if (sceneWindow.viewportPanel.isFocused)
-                activeSceneIdx = sceneCounter;
-
-            sceneCounter++;
-
             sceneWindow.Update(deltaTime);
         }
 

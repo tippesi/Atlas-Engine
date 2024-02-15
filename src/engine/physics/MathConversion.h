@@ -26,13 +26,25 @@ namespace Atlas {
 
         inline JPH::Vec3 VecToJPHVec(const vec3& vec) {
 
-            return JPH::Vec3(vec.x, vec.y, vec.z);
+            return { vec.x, vec.y, vec.z };
 
         }
 
         inline vec3 JPHVecToVec(const JPH::Vec3& vec) {
 
-            return vec3(vec.GetX(), vec.GetY(), vec.GetZ());
+            return { vec.GetX(), vec.GetY(), vec.GetZ() };
+
+        }
+
+        inline JPH::Quat QuatToJPHQuat(const quat& quat) {
+
+            return { quat.x, quat.y, quat.z, quat.w };
+
+        }
+
+        inline quat JPHQuatToQuat(const JPH::Quat& quat) {
+
+            return { quat.GetX(), quat.GetY(), quat.GetZ(), quat.GetW() };
 
         }
 

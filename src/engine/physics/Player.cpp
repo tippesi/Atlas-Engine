@@ -16,14 +16,21 @@ namespace Atlas::Physics {
 		settings.mMaxStrength = maxStrength;
 
         settings.mPredictiveContactDistance = predictiveContactDistance;
-        settings.mCharacterPadding = padding;
 
+        settings.mCharacterPadding = shapePadding;
         settings.mShapeOffset = VecToJPHVec(shapeOffset);
 		settings.mShape = shape->ref;
 		
 		return settings;
 
 	}
+
+    Player::Player(const Atlas::Physics::PlayerCreationSettings &creationSettings, const glm::vec3 &initialPosition,
+        const Ref<Atlas::Physics::PhysicsWorld> &physicsWorld) : creationSettings(CreateRef(creationSettings)) {
+
+        Init(physicsWorld.get(), initialPosition, quat());
+
+    }
 
     void Player::SetPosition(vec3 position) {
 
@@ -114,6 +121,18 @@ namespace Atlas::Physics {
 
         character->Update(deltaTime, VecToJPHVec(gravityVector), broadPhaseLayerFilter,
             defaultLayerFilter, {}, {}, *tempAllocator);
+
+    }
+
+    void Player::Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation) {
+
+        this->world = world;
+
+        JPH::Ref<JPH::CharacterVirtualSettings> settings = 
+            new JPH::CharacterVirtualSettings(creationSettings->GetSettings());
+
+        character = CreateRef<JPH::CharacterVirtual>(settings, VecToJPHVec(initialPosition),
+            QuatToJPHQuat(initialRotation), world->system.get());
 
     }
 

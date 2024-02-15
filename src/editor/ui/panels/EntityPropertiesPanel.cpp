@@ -46,9 +46,9 @@ namespace Atlas::Editor::UI {
                 RenderComponentPanel("Rigid body component", scene,
                     entity, rigidBodyComponentPanel, comp);
                 // Only change if we have new settings
-                if (comp.bodyCreationSettings) {
+                if (comp.creationSettings) {
                     entity.RemoveComponent<RigidBodyComponent>();
-                    entity.AddComponent<RigidBodyComponent>(*comp.bodyCreationSettings);
+                    entity.AddComponent<RigidBodyComponent>(*comp.creationSettings);
                 }
             }
 
@@ -58,7 +58,10 @@ namespace Atlas::Editor::UI {
                     entity, playerComponentPanel, comp);
                 // Only change if we have new settings
                 entity.RemoveComponent<PlayerComponent>();
-                entity.AddComponent<PlayerComponent>(*comp.playerCreationSettings);
+                auto& newComp = entity.AddComponent<PlayerComponent>(*comp.creationSettings);
+                newComp.slowVelocity = comp.slowVelocity;
+                newComp.fastVelocity = comp.fastVelocity;
+                newComp.jumpVelocity = comp.jumpVelocity;
             }
 
             if (entity.HasComponent<CameraComponent>()) {

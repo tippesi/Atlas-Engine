@@ -64,37 +64,26 @@ namespace Atlas {
 
         void KeyboardHandler::Update(const CameraComponent& camera, PlayerComponent& player, float deltaTime) {
 
-            linearVelocity = camera.direction * movement.x * speed;
-            linearVelocity += camera.right * movement.y * speed;
+            linearVelocity = camera.direction * movement.x;
+            linearVelocity += camera.right * movement.y;
 
             // linearVelocity.y += movement.z * speed;
             linearVelocity.y = 0.0f;
 
+            if (glm::length(linearVelocity) > 0.0f)
+                linearVelocity = glm::normalize(linearVelocity);
             float progress = glm::clamp(reactivity, 0.0f, 1.0f);
 
             interpolatedLinearVelocity = glm::mix(interpolatedLinearVelocity, linearVelocity, progress);
 
-            auto playerUp = player.GetUp();
+            auto velocity = interpolatedLinearVelocity * player.slowVelocity;
 
-            auto newVelocity = vec3(0.0f);
-            auto groundVelocity = player.GetGroundVelocity();
-            if (player.IsOnGround()) {
-                newVelocity += groundVelocity;
-                if (jump) {
-                    newVelocity += playerUp * speed;
-                }
-                newVelocity += interpolatedLinearVelocity;
-            }
-            else {
-                newVelocity += player.GetLinearVelocity();
-                // Add reduced velocity such that jumping doesn't feel weird
-                newVelocity += interpolatedLinearVelocity * 0.01f;
-            }
+            if (glm::length(velocity) > 0.0f)
+                Log::Warning("Velocity greater zero: " + std::to_string(glm::length(velocity)));
 
-            auto gravity = vec3(0.0f, -9.81f, 0.0f);
-            newVelocity += playerUp * gravity * deltaTime;
-
-            player.SetLinearVelocity(newVelocity);
+            player.SetInputVelocity(velocity);
+            if (jump)
+                player.Jump();
 
         }
 

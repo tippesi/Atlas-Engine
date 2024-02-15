@@ -16,7 +16,10 @@ namespace Atlas::Editor::UI {
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, PlayerComponent& playerComponent);
 
     private:
-        void RenderShapeSettings(Scene::Entity entity, Physics::PlayerCreationSettings& creationSettings);
+        void RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent, 
+            Physics::PlayerCreationSettings& creationSettings);
+
+        void RenderPlayerSettings(Scene::Entity, PlayerComponent& player);
 
     };
 

@@ -19,12 +19,12 @@ namespace Atlas {
                 RigidBodyComponent() = default;
                 RigidBodyComponent(const RigidBodyComponent& that) = default;
                 explicit RigidBodyComponent(const Physics::BodyCreationSettings& bodyCreationSettings)
-                    : layer(bodyCreationSettings.objectLayer), bodyCreationSettings(CreateRef(bodyCreationSettings)) {}
+                    : layer(bodyCreationSettings.objectLayer), creationSettings(CreateRef(bodyCreationSettings)) {}
 
-                virtual Physics::BodyCreationSettings GetBodyCreationSettings() override;
+                Physics::BodyCreationSettings GetBodyCreationSettings() override;
 
                 Physics::ObjectLayer layer = Physics::Layers::STATIC;
-                Ref<Physics::BodyCreationSettings> bodyCreationSettings = nullptr;
+                Ref<Physics::BodyCreationSettings> creationSettings = nullptr;
 
             private:
                 void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,

@@ -4,105 +4,78 @@
 
 namespace Atlas::Scene::Components {
 
-    void PlayerComponent::SetPosition(vec3 position) {
+    PlayerComponent::PlayerComponent(float mass, float maxStrength) {
 
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        character->SetPosition(Physics::VecToJPHVec(position));
-
-    }
-
-    mat4 PlayerComponent::GetMatrix() const {
-
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        return Physics::JPHMatToMat(character->GetWorldTransform());
+        creationSettings = CreateRef<Physics::PlayerCreationSettings>();
+        creationSettings->mass = mass;
+        creationSettings->maxStrength = maxStrength;
 
     }
 
-    void PlayerComponent::SetLinearVelocity(vec3 velocity) {
+    PlayerComponent::PlayerComponent(const Physics::PlayerCreationSettings &playerCreationSettings) {
 
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        character->SetLinearVelocity(Physics::VecToJPHVec(velocity));
-
-    }
-
-    vec3 PlayerComponent::GetLinearVelocity() const {
-
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        return Physics::JPHVecToVec(character->GetLinearVelocity());
+        creationSettings = CreateRef(playerCreationSettings);
 
     }
 
-    vec3 PlayerComponent::GetGroundVelocity() const {
+    void PlayerComponent::Update(float deltaTime) {
 
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
 
-        character->UpdateGroundVelocity();
-        return Physics::JPHVecToVec(character->GetGroundVelocity());
+        const auto& system = world->system;
 
-    }
-
-    bool PlayerComponent::IsOnGround() const {
-
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        return character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
-
-    }
-
-    void PlayerComponent::SetUp(vec3 up) {
-
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        character->SetUp(Physics::VecToJPHVec(up));
-
-    }
-
-    vec3 PlayerComponent::GetUp() const {
-
-        AE_ASSERT(physicsWorld != nullptr && "Physics world is invalid");
-        return Physics::JPHVecToVec(character->GetUp());
-
-    }
-
-    void PlayerComponent::Update(const TransformComponent& transformComponent, float deltaTime) {
-
-        auto& system = physicsWorld->system;
-
-        if (physicsWorld->pauseSimulation)
+        if (world->pauseSimulation)
             return;
+        
+        auto up = GetUp();
 
-        auto gravityVector = -GetUp() * glm::length(physicsWorld->GetGravity());
-        character->Update(deltaTime, Physics::VecToJPHVec(gravityVector),
-            system->GetDefaultBroadPhaseLayerFilter(Physics::Layers::MOVABLE), 
-            system->GetDefaultLayerFilter(Physics::Layers::MOVABLE),
-            {}, {}, *Physics::PhysicsManager::tempAllocator);
+        auto newVelocity = vec3(0.0f);
+        auto groundVelocity = GetGroundVelocity();
+        if (IsOnGround()) {
+            newVelocity += groundVelocity;
+            if (jump) {
+                newVelocity += up * jumpVelocity;
+            }
+            newVelocity += inputVelocity;
+        }
+        else {
+            newVelocity += GetLinearVelocity();
+            // Add reduced input velocity such that jumping doesn't feel weird
+            newVelocity += inputVelocity * 0.01f;
+        }
+        
+        jump = false;
 
+        newVelocity += up * world->GetGravity() * deltaTime;
+
+        SetLinearVelocity(newVelocity);
+
+        Player::Update(deltaTime);
+        
     }
 
     void PlayerComponent::InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
         Physics::PhysicsWorld* physicsWorld) {
 
-        if (!playerCreationSettings || !playerCreationSettings->shape)
+        if (!creationSettings || !creationSettings->shape)
             return;
 
-        if (!playerCreationSettings->shape->IsValid())
-            if (!playerCreationSettings->shape->TryCreate())
+        if (!creationSettings->shape->IsValid())
+            if (!creationSettings->shape->TryCreate())
                 return;
 
-        this->physicsWorld = physicsWorld;
-
-        auto translation = Physics::VecToJPHVec(transformComponent.Decompose().translation);
-
-        JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings(playerCreationSettings->GetSettings());
-        character = CreateRef<JPH::CharacterVirtual>(settings, translation,
-            JPH::Quat::sIdentity(), physicsWorld->system.get());
+        auto decomp = transformComponent.Decompose();
+        
+        Init(physicsWorld, decomp.translation, quat());
 
     }
 
     void PlayerComponent::RemoveFromPhysicsWorld() {
 
-        if (!Valid())
+        if (!IsValid())
             return;
 
-        physicsWorld = nullptr;
+        world = nullptr;
 
     }
 

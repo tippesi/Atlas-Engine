@@ -42,7 +42,7 @@ namespace Atlas::Physics {
     };
 
     struct CapsuleShapeSettings : ShapeSettings {
-        float height = 2.0f;
+        float height = 1.2f;
         float radius = 0.3f;
         float density = 1.0f;
         vec3 scale = vec3(1.0f);

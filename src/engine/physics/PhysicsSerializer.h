@@ -191,6 +191,47 @@ namespace Atlas::Physics {
         }
     }
 
+    void to_json(json& j, const PlayerCreationSettings& p) {
+        // Keep default value and compare, no need to write everything
+        PlayerCreationSettings d;
+        if (d.maxSlopeAngle != p.maxSlopeAngle)
+            j["maxSlopeAngle"] = p.maxSlopeAngle;
+        if (d.up != p.up)
+            j["up"] = p.up;
+        if (d.mass != p.mass)
+            j["mass"] = p.mass;
+        if (d.maxStrength != p.maxStrength)
+            j["maxStrength"] = p.maxStrength;
+        if (d.predictiveContactDistance != p.predictiveContactDistance)
+            j["predictiveContactDistance"] = p.predictiveContactDistance;
+        if (d.shapePadding != p.shapePadding)
+            j["shapePadding"] = p.shapePadding;
+        if (d.shapeOffset != p.shapeOffset)
+            j["shapeOffset"] = p.shapeOffset;
+        if (p.shape)
+            j["shape"] = *p.shape;
+    }
+
+    void from_json(const json& j, PlayerCreationSettings& p) {
+        if (j.contains("maxSlopeAngle"))
+            p.maxSlopeAngle = j["maxSlopeAngle"];
+        if (j.contains("up"))
+            p.up = j["up"];
+        if (j.contains("mass"))
+            p.mass = j["mass"];
+        if (j.contains("maxStrength"))
+            p.maxStrength = j["maxStrength"];
+        if (j.contains("predictiveContactDistance"))
+            p.predictiveContactDistance = j["predictiveContactDistance"];
+        if (j.contains("shapePadding"))
+            p.shapePadding = j["shapePadding"];
+        if (j.contains("shapeOffset"))
+            p.shapeOffset = j["shapeOffset"];
+        if (j.contains("shape")) {
+            p.shape = j["shape"];
+        }
+    }
+
     void SerializePhysicsWorld(json& j, Ref<PhysicsWorld>& physicsWorld) {
 
         auto& system = physicsWorld->system;

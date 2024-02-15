@@ -18,9 +18,9 @@ namespace Atlas::Physics {
 		float mass = 75.0f;
 		float maxStrength = 100.0f;
 
-        float predictiveContactDistance = 0.1f;
-        float padding = 0.02f;
+        float predictiveContactDistance = 0.01f;
 
+        float shapePadding = 0.02f;
         vec3 shapeOffset;
 
 		Ref<Shape> shape;
@@ -29,7 +29,10 @@ namespace Atlas::Physics {
     class Player {
 
     public:
-        Player(const PlayerCreationSettings& creationSettings, const Ref<PhysicsWorld>& physicsWorld);
+        Player() = default;
+
+        Player(const PlayerCreationSettings& creationSettings, const vec3& initialPosition,
+            const Ref<PhysicsWorld>& physicsWorld);
 
 		bool IsValid() const { return world != nullptr; }
 
@@ -59,9 +62,11 @@ namespace Atlas::Physics {
 
 		virtual void Update(float deltaTime);
 
-		Ref<Physics::PlayerCreationSettings> playerCreationSettings = nullptr;
+		Ref<PlayerCreationSettings> creationSettings = nullptr;
 
 	protected:
+		void Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation);
+
 		Ref<JPH::CharacterVirtual> character = nullptr;
 
 		PhysicsWorld* world = nullptr;

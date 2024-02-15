@@ -135,7 +135,7 @@ namespace Atlas {
 
             auto capsuleRef = capsuleResult.Get();
 
-            auto translation = VecToJPHVec(vec3(0.0f, halfHeight, 0.0f));
+            auto translation = VecToJPHVec(vec3(0.0f, halfHeight + radius, 0.0f));
             JPH::RotatedTranslatedShapeSettings translatedCapsule(translation, JPH::Quat::sIdentity(), capsuleRef);
 
             auto result = translatedCapsule.Create();

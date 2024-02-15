@@ -41,6 +41,9 @@ namespace Atlas::Scene {
         if (p.HasComponent<RigidBodyComponent>()) {
             j["rigidBody"] = p.GetComponent<RigidBodyComponent>();
         }
+        if (p.HasComponent<PlayerComponent>()) {
+            j["player"] = p.GetComponent<PlayerComponent>();
+        }
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
@@ -88,6 +91,10 @@ namespace Atlas::Scene {
         if (j.contains("rigidBody")) {
             RigidBodyComponent comp = j["rigidBody"];
             p.AddComponent<RigidBodyComponent>(comp);
+        }
+        if (j.contains("player")) {
+            PlayerComponent comp = j["player"];
+            p.AddComponent<PlayerComponent>(comp);
         }
         if (j.contains("entities")) {
             // We need to first push back to a temporary vector to not invalidate

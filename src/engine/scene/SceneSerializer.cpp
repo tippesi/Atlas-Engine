@@ -164,16 +164,16 @@ namespace Atlas {
                     auto& comp = rigidBodySubset.Get(entity);
 
                     // Probably bodies which couldn't be created before saving
-                    if (comp.bodyCreationSettings != nullptr)
+                    if (comp.creationSettings != nullptr)
                         continue;
 
                     // Something went entirely wrong here, create new empty setting
                     if (!bodyCreationMap.contains(comp.bodyId.GetIndex())) {
-                        comp.bodyCreationSettings = CreateRef<Physics::BodyCreationSettings>();
+                        comp.creationSettings = CreateRef<Physics::BodyCreationSettings>();
                         continue;
                     }
 
-                    comp.bodyCreationSettings = CreateRef(bodyCreationMap[comp.bodyId.GetIndex()]);
+                    comp.creationSettings = CreateRef(bodyCreationMap[comp.bodyId.GetIndex()]);
                 }
             }
 

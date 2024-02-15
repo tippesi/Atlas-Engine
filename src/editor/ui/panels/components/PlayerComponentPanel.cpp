@@ -9,7 +9,15 @@ namespace Atlas::Editor::UI {
 
 		ImGui::PushID(GetNameID());
 
-		RenderShapeSettings(entity, *playerComponent.playerCreationSettings);
+		ImGui::Text("Shape");
+
+		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);
+
+		ImGui::Separator();
+
+		ImGui::Text("Player");
+
+		RenderPlayerSettings(entity, playerComponent);
 
 		ImGui::PopID();
 
@@ -17,7 +25,8 @@ namespace Atlas::Editor::UI {
 
 	}
 
-	void PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, Physics::PlayerCreationSettings& creationSettings) {
+	void PlayerComponentPanel::RenderShapeSettings(Scene::Entity entity, PlayerComponent& playerComponent, 
+		Physics::PlayerCreationSettings& creationSettings) {
 
 		auto& shape = creationSettings.shape;
 
@@ -38,6 +47,21 @@ namespace Atlas::Editor::UI {
 		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
 			if (!shape->TryCreate())
 				Notifications::Push({ .message = "Error creating player shape", .color = vec3(1.0f, 0.0f, 0.0f) });
+			else
+				playerComponent.SetShape(shape);
+
+	}
+
+	void PlayerComponentPanel::RenderPlayerSettings(Scene::Entity, PlayerComponent& player) {
+
+		ImGui::DragFloat("Mass", &player.creationSettings->mass, 0.5f, 1.0f, 1000.0f);
+		ImGui::DragFloat("Max strength", &player.creationSettings->maxStrength, 0.5f, 1.0f, 1000.0f);
+
+		ImGui::Separator();
+
+		ImGui::DragFloat("Slow movement velocity", &player.slowVelocity, 0.1f, 0.0f, 100.0f);
+		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
+		ImGui::DragFloat("Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
 
 	}
 

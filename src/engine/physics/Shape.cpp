@@ -17,6 +17,10 @@ namespace Atlas::Physics {
             auto boundingBoxSettings = static_cast<BoundingBoxShapeSettings*>(settings.get());
             return ShapesManager::TryCreateShapeFromAABB(this, *boundingBoxSettings);
         }
+        else if (type == ShapeType::Capsule) {
+            auto capsuleSettings = static_cast<CapsuleShapeSettings*>(settings.get());
+            return ShapesManager::TryCreateShapeFromCapsule(this, *capsuleSettings);
+        }
         else if (type == ShapeType::HeightField) {
             auto heightFieldSettings = static_cast<HeightFieldShapeSettings*>(settings.get());
             return ShapesManager::TryCreateShapeFromHeightField(this, *heightFieldSettings);

@@ -12,47 +12,35 @@ namespace Atlas::Scene {
 
 	namespace Components {
 
-		class PlayerComponent {
+		class PlayerComponent : public Physics::Player {
 
 		public:
 			PlayerComponent() = default;
 			PlayerComponent(const PlayerComponent& that) = default;
-			explicit PlayerComponent(const Physics::PlayerCreationSettings& playerCreationSettings)
-				: playerCreationSettings(CreateRef(playerCreationSettings)) {}
+            explicit PlayerComponent(float mass, float maxStrength);
+			explicit PlayerComponent(const Physics::PlayerCreationSettings& playerCreationSettings);
 
-			inline const bool Valid() const { return physicsWorld != nullptr; }
+			void Jump() { jump = true; }
 
-			void SetPosition(vec3 position);
+			void SetInputVelocity(const vec3& velocity) { inputVelocity = velocity; }
 
-			vec3 GetPosition() const;
+			vec3 GetInputVelocity() const { return inputVelocity; }
 
-			mat4 GetMatrix() const;
-
-			void SetLinearVelocity(vec3 velocity);
-
-			vec3 GetLinearVelocity() const;
-
-			vec3 GetGroundVelocity() const;
-
-			bool IsOnGround() const;
-
-			void SetUp(vec3 up);
-
-			vec3 GetUp() const;
-
-			Ref<Physics::PlayerCreationSettings> playerCreationSettings = nullptr;
+            float slowVelocity = 1.6f;
+            float fastVelocity = 4.0f;
+            float jumpVelocity = 4.0f;
 
 		private:
-			void Update(const TransformComponent& transformComponent, float deltaTime);
+			void Update(float deltaTime);
 
 			void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
 				Physics::PhysicsWorld* physicsWorld);
 
 			void RemoveFromPhysicsWorld();
 
-			Ref<JPH::CharacterVirtual> character = nullptr;
+			bool jump = false;
 
-			Physics::PhysicsWorld* physicsWorld = nullptr;
+			vec3 inputVelocity = vec3(0.0f);
 
 			friend Scene;
 

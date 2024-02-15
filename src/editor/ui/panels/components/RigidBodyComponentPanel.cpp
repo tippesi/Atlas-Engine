@@ -21,7 +21,7 @@ namespace Atlas::Editor::UI {
 
         // Only change when simulation is paused (otherwise we can't restore the state properly)
         if (scene->physicsWorld->pauseSimulation)
-            rigidBodyComponent.bodyCreationSettings = CreateRef(creationSettings);
+            rigidBodyComponent.creationSettings = CreateRef(creationSettings);
 
         return false;
 

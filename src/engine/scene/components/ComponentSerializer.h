@@ -204,8 +204,9 @@ namespace Atlas::Scene::Components {
             {"layer", p.layer},
         };
 
-        if (p.bodyCreationSettings != nullptr)
-            j["bodyCreationSettings"] = *p.bodyCreationSettings;
+        // This is only relevant for not yet created bodies
+        if (p.creationSettings != nullptr)
+            j["creationSettings"] = *p.creationSettings;
     }
 
     void from_json(const json& j, RigidBodyComponent& p) {
@@ -215,15 +216,38 @@ namespace Atlas::Scene::Components {
         j.at("bodyIndex").get_to(bodyIndex);
         j.at("layer").get_to(p.layer);
 
-        if (j.contains("bodyCreationSettings")) {
-            p.bodyCreationSettings = CreateRef<Physics::BodyCreationSettings>();
-            *p.bodyCreationSettings = j["bodyCreationSettings"];
+        // This is only relevant for not yet created bodies
+        if (j.contains("creationSettings")) {
+            p.creationSettings = CreateRef<Physics::BodyCreationSettings>();
+            *p.creationSettings = j["creationSettings"];
         }
 
         // We can use the index here since when loading nothing but the loading thread
         // will access the physics system (in multithreaded scenarios we would need to use
         // the sequence number as well
         p.bodyId = Physics::BodyID(bodyIndex);
+    }
+
+    void to_json(json& j, const PlayerComponent& p) {
+        j = json {
+            {"slowVelocity", p.slowVelocity},
+            {"fastVelocity", p.fastVelocity},
+            {"jumpVelocity", p.jumpVelocity},
+        };
+
+        if (p.creationSettings != nullptr)
+            j["creationSettings"] = *p.creationSettings;
+    }
+
+    void from_json(const json& j, PlayerComponent& p) {
+        j.at("slowVelocity").get_to(p.slowVelocity);
+        j.at("fastVelocity").get_to(p.fastVelocity);
+        j.at("jumpVelocity").get_to(p.jumpVelocity);
+
+        if (j.contains("creationSettings")) {
+            p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();
+            *p.creationSettings = j["creationSettings"];
+        }
     }
 
 }

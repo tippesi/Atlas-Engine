@@ -136,16 +136,16 @@ namespace Atlas {
                     const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
 
                     // Might happen if there was no transform at the creation of rigid body component
-                    if (!playerComponent.Valid()) {
+                    if (!playerComponent.IsValid()) {
                         playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && playerComponent.Valid()) {
+                    if (transformComponent.changed && playerComponent.IsValid()) {
                         playerComponent.SetPosition(transformComponent.Decompose().translation);
                     }
 
-                    playerComponent.Update(transformComponent, deltaTime);
+                    playerComponent.Update(deltaTime);
                 }
 
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
@@ -192,7 +192,7 @@ namespace Atlas {
                 for (auto entity : playerSubset) {
                     const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
 
-                    if (!playerComponent.Valid())
+                    if (!playerComponent.IsValid())
                         continue;
 
                     // This happens if no change was triggered by the user, then we still need
@@ -571,6 +571,21 @@ namespace Atlas {
 
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentErase,
                 [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.RemoveFromPhysicsWorld();
+                });
+
+            entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentEmplace,
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                    auto transformComp = entityManager.TryGet<TransformComponent>(entity);
+                    if (!transformComp) return;
+
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                });
+
+            entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
