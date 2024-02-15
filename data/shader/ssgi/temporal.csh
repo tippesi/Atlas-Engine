@@ -188,6 +188,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
         float confidence = 1.0;
 
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
+
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
@@ -211,6 +213,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
         float confidence = 1.0;
+
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
@@ -287,9 +291,13 @@ void main() {
         historyLength = 0.0;
     }
 
-    factor = min(factor, historyLength / (historyLength + 1.0));
+    factor = min(factor, historyLength / max(1.0, (historyLength + 1.0)));
 
     vec4 resolve = mix(currentValue, historyValue, factor);
+
+    if (isnan(resolve.r) || isnan(resolve.b)) {
+        //resolve = vec4(1.0, 0.0, 0.0, 0.0);
+    }
 
     imageStore(resolveImage, pixel, vec4(resolve));
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));

@@ -2,6 +2,7 @@
 
 #include "../Panel.h"
 
+#include "scene/Scene.h"
 #include "scene/components/AudioVolumeComponent.h"
 
 namespace Atlas::Editor::UI {
@@ -11,7 +12,7 @@ namespace Atlas::Editor::UI {
     public:
         AudioVolumeComponentPanel() : Panel("Audio volume component") {}
 
-        bool Render(Scene::Entity entity, AudioVolumeComponent& audioVolumeComponent);
+        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, AudioVolumeComponent& audioVolumeComponent);
 
     };
 

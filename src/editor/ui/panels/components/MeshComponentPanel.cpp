@@ -5,7 +5,8 @@
 
 namespace Atlas::Editor::UI {
 
-    bool MeshComponentPanel::Render(Scene::Entity entity, MeshComponent &meshComponent) {
+    bool MeshComponentPanel::Render(Ref<Scene::Scene>& scene,
+        Scene::Entity entity, MeshComponent &meshComponent) {
 
         bool resourceChanged = false;
 

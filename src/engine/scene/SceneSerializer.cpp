@@ -24,6 +24,23 @@ namespace Atlas {
                 return;
             }
 
+            // Resolve all transformation which might have happened due to physics (set new local transforms)
+            // This might need to be moved into the main scene update code in the future
+            auto transformSubset = scene->GetSubset<TransformComponent>();
+            for (auto entity : transformSubset) {
+                auto& transform = transformSubset.Get(entity);
+
+                mat4 parentGlobalMatrix = mat4(1.0f);
+                auto parentEntity = scene->GetParentEntity(entity);
+                auto parentTransform = parentEntity.TryGetComponent<TransformComponent>();
+                if (parentTransform) {
+                    parentGlobalMatrix = parentTransform->globalMatrix;
+                }
+
+                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
+                transform.Set(inverseParentMatrix * transform.globalMatrix);
+            }
+
             json j;
 
             std::vector<json> entities;
@@ -71,7 +88,7 @@ namespace Atlas {
                 j["ssgi"] = *scene->ssgi;
 
             if (scene->physicsWorld)
-                j["physicsWorld"] = *scene->physicsWorld;
+                Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
 
             fileStream << to_string(j);
 
@@ -133,9 +150,31 @@ namespace Atlas {
                 scene->ssgi = CreateRef<Lighting::SSGI>();
                 *scene->ssgi = j["ssgi"];
             }
+
+            // Create physics world in any case
+            scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+            scene->physicsWorld->pauseSimulation = true;
+
             if (j.contains("physicsWorld")) {
-                scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
-                *scene->physicsWorld = j["physicsWorld"];
+                std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
+                Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
+
+                auto rigidBodySubset = scene->GetSubset<RigidBodyComponent>();
+                for (auto entity : rigidBodySubset) {
+                    auto& comp = rigidBodySubset.Get(entity);
+
+                    // Probably bodies which couldn't be created before saving
+                    if (comp.creationSettings != nullptr)
+                        continue;
+
+                    // Something went entirely wrong here, create new empty setting
+                    if (!bodyCreationMap.contains(comp.bodyId.GetIndex())) {
+                        comp.creationSettings = CreateRef<Physics::BodyCreationSettings>();
+                        continue;
+                    }
+
+                    comp.creationSettings = CreateRef(bodyCreationMap[comp.bodyId.GetIndex()]);
+                }
             }
 
             scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();

@@ -14,7 +14,7 @@ namespace Atlas::Editor::UI {
     class SceneWindow : public Window {
 
     public:
-        explicit SceneWindow(ResourceHandle<Scene::Scene> scene);
+        explicit SceneWindow(ResourceHandle<Scene::Scene> scene, bool show);
 
         ~SceneWindow();
 
@@ -37,6 +37,10 @@ namespace Atlas::Editor::UI {
         // Imguizmo translate mode
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
+
+        bool hasMainCamera = false;
+        bool hasPlayer = false;
+        bool isPlaying = false;
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);

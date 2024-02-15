@@ -4,7 +4,8 @@
 
 namespace Atlas::Editor::UI {
 
-    bool AudioVolumeComponentPanel::Render(Scene::Entity entity, AudioVolumeComponent &audioVolumeComponent) {
+    bool AudioVolumeComponentPanel::Render(Ref<Scene::Scene>& scene,
+        Scene::Entity entity, AudioVolumeComponent &audioVolumeComponent) {
 
         bool resourceChanged = false;
 

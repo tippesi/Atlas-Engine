@@ -5,7 +5,8 @@
 
 namespace Atlas::Editor::UI {
 
-    bool NameComponentPanel::Render(Scene::Entity entity, NameComponent &nameComponent) {
+    bool NameComponentPanel::Render(Ref<Scene::Scene>& scene,
+        Scene::Entity entity, NameComponent &nameComponent) {
 
         ImGui::InputText("Name", &nameComponent.name);
 

@@ -32,7 +32,8 @@ namespace Atlas {
             if (removeRecursively) {
                 auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
                 if (hierarchyComponent) {
-                    for (auto childEntity : hierarchyComponent->GetChildren()) {
+                    auto children = hierarchyComponent->GetChildren();
+                    for (auto childEntity : children) {
                         DestroyEntity(childEntity, removeRecursively);
                     }
                 }
@@ -130,18 +131,35 @@ namespace Atlas {
 
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
+                auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
+                for (auto entity : playerSubset) {
+                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                    // Might happen if there was no transform at the creation of rigid body component
+                    if (!playerComponent.IsValid()) {
+                        playerComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
+                    }
+
+                    // Apply update here (transform overwrite everything else in physics simulation for now)
+                    if (transformComponent.changed && playerComponent.IsValid()) {
+                        playerComponent.SetPosition(transformComponent.Decompose().translation);
+                    }
+
+                    playerComponent.Update(deltaTime);
+                }
+
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
 
                 for (auto entity : rigidBodySubset) {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
                     // Might happen if there was no transform at the creation of rigid body component
-                    if (!rigidBodyComponent.Valid()) {
+                    if (!rigidBodyComponent.IsValid()) {
                         rigidBodyComponent.InsertIntoPhysicsWorld(transformComponent, physicsWorld.get());
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && rigidBodyComponent.Valid()) {
+                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {
                         rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
                     }
                 }
@@ -151,7 +169,7 @@ namespace Atlas {
                 for (auto entity : rigidBodySubset) {
                     const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
-                    if (!rigidBodyComponent.Valid() || transformComponent.isStatic ||
+                    if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
                         rigidBodyComponent.layer == Physics::Layers::STATIC)
                         continue;
 
@@ -166,6 +184,28 @@ namespace Atlas {
 
                     // Physics are updated in global space, so we don't need the parent transform
                     transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
+                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                }
+
+                // Player update needs to be performed after normal rigid bodies, such that
+                // player can override rigid body behaviour
+                for (auto entity : playerSubset) {
+                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                    if (!playerComponent.IsValid())
+                        continue;
+
+                    // This happens if no change was triggered by the user, then we still need
+                    // to update the last global matrix, since it might have changed due to physics simulation
+                    if (!transformComponent.changed)
+                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+
+                    // Need to set changed to true such that the space partitioning is updated
+                    transformComponent.changed = true;
+                    transformComponent.updated = true;
+
+                    // Physics are updated in global space, so we don't need the parent transform
+                    transformComponent.globalMatrix = playerComponent.GetMatrix();
                     transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
                 }
             }
@@ -240,15 +280,21 @@ namespace Atlas {
             mainCameraEntity = Entity();
 
             auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+
             // Attempt to find a main camera
             for (auto entity : cameraSubset) {
                 auto& camera = cameraSubset.Get(entity);
 
-                if (camera.isMain) {
-                    camera.Update();
+                mat4 transformMatrix = mat4(1.0f);
+                auto transform = entityManager.TryGet<TransformComponent>(entity);
+                if (transform) {
+                    transformMatrix = transform->globalMatrix;
+                }
 
+                camera.Update(transformMatrix);
+
+                if (camera.isMain && !mainCameraEntity.IsValid()) {
                     mainCameraEntity = { entity, &entityManager };
-                    break;
                 }
             }
 
@@ -304,9 +350,9 @@ namespace Atlas {
 
         }
 
-        std::vector<Material*> Scene::GetMaterials() {
+        std::vector<Ref<Material>> Scene::GetMaterials() {
 
-            std::vector<Material*> materials;
+            std::vector<Ref<Material>> materials;
 
             if (terrain) {
                 auto terrainMaterials = terrain->storage.GetMaterials();
@@ -315,7 +361,7 @@ namespace Atlas {
                     if (!material)
                         continue;
 
-                    materials.push_back(material.get());
+                    materials.push_back(material);
                 }
 
             }
@@ -330,7 +376,7 @@ namespace Atlas {
                 if (!mesh.IsLoaded())
                     continue;
                 for (auto& material : mesh->data.materials) {
-                    materials.push_back(material.get());
+                    materials.push_back(material);
                 }
             }
 
@@ -529,6 +575,21 @@ namespace Atlas {
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
 
+            entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentEmplace,
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                    auto transformComp = entityManager.TryGet<TransformComponent>(entity);
+                    if (!transformComp) return;
+
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.InsertIntoPhysicsWorld(*transformComp, physicsWorld.get());
+                });
+
+            entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                    if (physicsWorld != nullptr)
+                        rigidBodyComponent.RemoveFromPhysicsWorld();
+                });
+
         }
 
         std::unordered_map<ECS::Entity, Entity> Scene::Merge(const Ref<Scene>& other) {
@@ -615,6 +676,10 @@ namespace Atlas {
                 *comp.shadow = *otherComp.shadow;
                 comp.shadow->SetResolution(comp.shadow->resolution);
                 comp.isMain = false;
+            }
+            if (srcEntity.HasComponent<RigidBodyComponent>()) {
+                auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
+                dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)

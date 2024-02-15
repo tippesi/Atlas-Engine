@@ -16,7 +16,7 @@ namespace Atlas::Editor::UI {
         ScenePropertiesPanel() : Panel("Scene properties") {}
 
         template<class T>
-        void Render(T& t) {
+        void Render(T& t, Ref<Scene::Scene> scene = nullptr) {
 
             ImGui::Begin(GetNameID());
 
@@ -25,7 +25,7 @@ namespace Atlas::Editor::UI {
             if constexpr (std::is_same_v<T, Scene::Entity>) {
                 if (t.IsValid()) {
                     RenderHeading("Entity");
-                    entityPropertiesPanel.Render(t);
+                    entityPropertiesPanel.Render(scene, t);
                 }
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
@@ -56,7 +56,11 @@ namespace Atlas::Editor::UI {
     private:
         void RenderHeading(const std::string& heading) {
 
+            ImGui::SetWindowFontScale(1.5f);
+
             ImGui::Text("%s", heading.c_str());
+
+            ImGui::SetWindowFontScale(1.0f);
 
             ImGui::Separator();
 

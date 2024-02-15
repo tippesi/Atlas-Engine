@@ -13,15 +13,13 @@
 #include "ui/windows/ContentBrowserWindow.h"
 #include "ui/windows/SceneWindow.h"
 #include "ui/windows/LogWindow.h"
+#include "ui/windows/ProfilerWindow.h"
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
 namespace Atlas::Editor {
 
-    class App : public Atlas::EngineInstance {
-
-        template<class T>
-        using Ref = Atlas::Ref<T>;
+    class App : public EngineInstance {
 
     public:
         App() : EngineInstance("Atlas Engine Editor", 1920, 1080, WINDOW_FLAGS) {}
@@ -42,11 +40,12 @@ namespace Atlas::Editor {
         Input::MouseHandler mouseHandler;
         Input::KeyboardHandler keyboardHandler;
 
-        UI::LogWindow logWindow;
-        UI::ContentBrowserWindow contentBrowserWindow;
+        UI::LogWindow logWindow = UI::LogWindow(true);
+        UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
+        UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
 
+        std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<UI::SceneWindow> sceneWindows;
-        std::vector<std::string> windowsToAddToNode;
 
         size_t activeSceneIdx = 0;
 
@@ -54,8 +53,7 @@ namespace Atlas::Editor {
 
         ImGuiID upperDockNodeID;
 
-        // Enable right now, with that all new scenes will be docked correctly (but layout will be reset)
-        bool resetDockspaceLayout = true;
+        bool resetDockspaceLayout = false;
 
     };
 

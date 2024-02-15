@@ -107,7 +107,7 @@ namespace Atlas {
                 return optimizedBinary;
             }
 
-            AddCacheEntry(shaderFile, macros, optimizedBinary);
+            AddCacheEntry(shaderFile, macros, spirvBinary);
             return spirvBinary;
 
         }

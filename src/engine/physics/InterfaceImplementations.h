@@ -11,6 +11,8 @@ namespace Atlas {
 
     namespace Physics {
 
+        using BodyID = JPH::BodyID;
+
         namespace Layers {
             static constexpr JPH::ObjectLayer STATIC = 0;
             static constexpr JPH::ObjectLayer MOVABLE = 1;

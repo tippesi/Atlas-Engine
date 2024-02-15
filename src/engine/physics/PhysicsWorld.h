@@ -2,6 +2,9 @@
 
 #include "../System.h"
 #include "ShapesManager.h"
+#include "BodyCreation.h"
+#include "Body.h"
+#include "Player.h"
 
 #include "InterfaceImplementations.h"
 #include <Jolt/Physics/StateRecorderImpl.h>
@@ -22,10 +25,6 @@ namespace Atlas {
 
     namespace Physics {
 
-        using Body = JPH::BodyID;
-
-        using MotionQuality = JPH::EMotionQuality;
-
         class PhysicsWorld {
 
         public:
@@ -34,32 +33,41 @@ namespace Atlas {
                 Ref<JPH::BroadPhaseLayerInterface> broadPhaseLayerInterface = nullptr,
                 Ref<JPH::ObjectVsBroadPhaseLayerFilter> objectVsBroadPhaseLayerFilter = nullptr);
 
+            ~PhysicsWorld();
+
             void Update(float deltaTime);
 
-            Body CreateBody(const ShapeRef& shape, JPH::ObjectLayer objectLayer, MotionQuality motionQuality,
-                const mat4& matrix, vec3 velocity = vec3(0.0f));
+            Body CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix);
 
-            void DestroyBody(Body bodyId);
+            void DestroyBody(Body body);
 
-            void SetBodyMatrix(Body bodyId, const mat4& matrix);
+            void SetBodyMatrix(BodyID bodyId, const mat4& matrix);
 
-            mat4 GetBodyMatrix(Body bodyId);
+            mat4 GetBodyMatrix(BodyID bodyId);
 
-            void SetMotionQuality(Body bodyId, MotionQuality quality);
+            void SetMotionQuality(BodyID bodyId, MotionQuality quality);
 
-            MotionQuality GetMotionQuality(Body bodyId);
+            MotionQuality GetMotionQuality(BodyID bodyId);
 
-            void SetLinearVelocity(Body bodyId, vec3 velocity);
+            void SetLinearVelocity(BodyID bodyId, vec3 velocity);
 
-            vec3 GetLinearVelocity(Body bodyId);
+            vec3 GetLinearVelocity(BodyID bodyId);
 
-            void SetRestitution(Body bodyId, float restitution);
+            void SetRestitution(BodyID bodyId, float restitution);
 
-            float GetRestitution(Body bodyId);
+            float GetRestitution(BodyID bodyId);
 
-            void SetFriction(Body bodyId, float friction);
+            void SetFriction(BodyID bodyId, float friction);
 
-            float GetFriction(Body bodyId);
+            float GetFriction(BodyID bodyId);
+
+            void ChangeShape(BodyID bodyId, Ref<Shape> shape);
+
+            BodyCreationSettings GetBodyCreationSettings(BodyID bodyId);
+
+            void SetGravity(vec3 gravity);
+
+            vec3 GetGravity();
 
             void OptimizeBroadphase();
 
@@ -71,6 +79,8 @@ namespace Atlas {
 
             int32_t simulationStepsPerSecond = 60;
             bool pauseSimulation = false;
+
+            std::unordered_map<BodyID, Ref<Shape>> bodyToShapeMap;
 
         private:
             Ref<JPH::ObjectLayerPairFilter> objectLayerFilter = nullptr;

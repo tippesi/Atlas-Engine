@@ -27,7 +27,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("GetDistance limit", &clouds->distanceLimit, 0.0f, 10000.0f);
         ImGui::Separator();
         ImGui::Text("Scattering");
-        ImGui::ColorPicker3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);
+        ImGui::ColorEdit3("Extinction coefficients", &clouds->scattering.extinctionCoefficients[0]);
         ImGui::SliderFloat("Extinction factor", &clouds->scattering.extinctionFactor, 0.0001f, 10.0f);
         ImGui::SliderFloat("Scattering factor", &clouds->scattering.scatteringFactor, 0.0001f, 10.0f);
         ImGui::SliderFloat("Eccentricity first phase", &clouds->scattering.eccentricityFirstPhase, -1.0f, 1.0f);

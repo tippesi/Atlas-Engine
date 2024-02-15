@@ -6,7 +6,8 @@
 
 namespace Atlas::Editor::UI {
 
-    bool LightComponentPanel::Render(Scene::Entity entity, LightComponent &lightComponent) {
+    bool LightComponentPanel::Render(Ref<Scene::Scene>& scene,
+        Scene::Entity entity, LightComponent &lightComponent) {
 
         const char* typeItems[] = { "Directional" };
         int currentItem = static_cast<int>(lightComponent.type);

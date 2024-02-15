@@ -65,6 +65,7 @@ namespace Atlas {
                 }
 
                 auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
+                if(!instance.count) continue;
 
                 if (material->HasBaseColorMap())
                     material->baseColorMap->Bind(commandList, 3, 0);
@@ -97,7 +98,6 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
-                if(!instance.count) continue;
                 commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                     0, instance.offset);
 

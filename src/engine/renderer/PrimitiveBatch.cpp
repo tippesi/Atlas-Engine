@@ -67,7 +67,7 @@ namespace Atlas {
 
         void PrimitiveBatch::TransferData() {
 
-            if (!lineDataValid) {
+            if (!lineDataValid && GetLineCount() > 0) {
 
                 lineVertices.SetSize(GetLineCount() * 2,
                     lineVertexData.data());
@@ -78,7 +78,7 @@ namespace Atlas {
 
             }
 
-            if (!triangleDataValid) {
+            if (!triangleDataValid && GetTriangleCount() > 0) {
 
                 triangleVertices.SetSize(GetTriangleCount() * 3,
                     triangleVertexData.data());

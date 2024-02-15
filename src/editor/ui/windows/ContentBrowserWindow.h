@@ -14,7 +14,7 @@ namespace Atlas::Editor::UI {
     class ContentBrowserWindow : public Window {
 
     public:
-        ContentBrowserWindow();
+        explicit ContentBrowserWindow(bool show);
 
         void Render();
 
