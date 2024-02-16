@@ -396,6 +396,56 @@ namespace Atlas {
 
         }
 
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray) {
+
+            Volume::RayResult<Entity> result;
+
+            // Most accurate method if it works
+            if (physicsWorld) {
+                auto bodyResult = physicsWorld->CastRay(ray);
+
+                if (bodyResult.valid) {
+                    auto userData = bodyResult.data.GetUserData();
+
+                    result.valid = true;
+                    result.hitDistance = bodyResult.hitDistance;
+                    result.normal = bodyResult.normal;
+                    result.data = { userData, &entityManager };
+                }
+            }
+
+            auto meshSubset = entityManager.GetSubset<MeshComponent>();
+
+            for (auto entity : meshSubset) {
+                auto& meshComp = meshSubset.Get(entity);
+
+                auto dist = 0.0f;
+                if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
+                    auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
+                    // This means we already found a more accurate hit
+                    if (result.valid && result.data != entity &&
+                        entityManager.Contains<RigidBodyComponent>(entity))
+                        continue;
+
+                    // Accept all hits greater equal if they were within the updated hit distance
+                    if (dist > 0.0f) {
+                        result.valid = true;
+                        result.data = { entity, &entityManager };
+                        result.hitDistance = dist;
+                    }
+                    
+                    // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
+                    if (!result.valid) {
+                        result.valid = true;
+                        result.data = { entity, &entityManager };
+                    }
+                }
+            }
+
+            return result;
+
+        }
+
         void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)

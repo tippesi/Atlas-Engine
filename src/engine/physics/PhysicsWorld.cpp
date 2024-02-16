@@ -4,6 +4,10 @@
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
 
 namespace Atlas {
 
@@ -52,7 +56,7 @@ namespace Atlas {
 
         }
 
-        Body PhysicsWorld::CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix) {
+        Body PhysicsWorld::CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix, uint64_t userData) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
@@ -64,6 +68,7 @@ namespace Atlas {
 
             settings.mPosition = pos;
             settings.mRotation = quat;
+            settings.mUserData = userData;
 
             auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
             bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
@@ -170,6 +175,13 @@ namespace Atlas {
 
         }
 
+        uint64_t PhysicsWorld::GetUserData(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            return bodyInterface.GetUserData(bodyId);
+
+        }
+
         void PhysicsWorld::ChangeShape(BodyID bodyId, Ref<Shape> shape) {
 
             auto& bodyInterface = system->GetBodyInterface();
@@ -209,6 +221,40 @@ namespace Atlas {
         vec3 PhysicsWorld::GetGravity() {
 
             return JPHVecToVec(system->GetGravity());
+
+        }
+
+        Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
+
+            const float farDist = 10e9f;
+
+            JPH::RayCastResult hit;
+            // Actually direction is not really a direction but one endpoint
+            JPH::RRayCast rayCast{ VecToJPHVec(ray.origin), VecToJPHVec(ray.direction * farDist) };
+
+            Volume::RayResult<Body> result;
+
+            JPH::RayCastSettings rayCastSettings = {
+                .mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces
+            };
+
+            if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit)) {
+                auto& bodyLockInterface = system->GetBodyLockInterface();
+
+                JPH::BodyLockRead lock(bodyLockInterface, hit.mBodyID);
+                if (lock.Succeeded()) {
+                    const auto& body = lock.GetBody();
+
+                    auto normal = body.GetWorldSpaceSurfaceNormal(hit.mSubShapeID2, rayCast.GetPointOnRay(hit.mFraction));
+                    result.normal = JPHVecToVec(normal);
+                }
+
+                result.valid = true;
+                result.hitDistance = hit.mFraction * farDist;
+                result.data = { hit.mBodyID, this };
+            }
+
+            return result;
 
         }
 

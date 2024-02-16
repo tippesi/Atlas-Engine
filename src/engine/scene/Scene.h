@@ -87,6 +87,8 @@ namespace Atlas {
 
             bool HasMainCamera() const;
 
+            Volume::RayResult<Entity> CastRay(Volume::Ray& ray);
+
             void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 
             void ClearRTStructures();

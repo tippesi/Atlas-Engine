@@ -223,7 +223,7 @@ namespace Atlas::Editor::UI {
             needGuizmoEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
-            if (cameraEntity.IsValid() && inFocus) {
+            if (cameraEntity.IsValid() && inFocus && !isPlaying) {
 
                 needGuizmoEnabled = true;
                 ImGuizmo::SetDrawlist();
@@ -265,6 +265,24 @@ namespace Atlas::Editor::UI {
                     }
                     else {
                         transform.Set(globalMatrix);
+                    }
+                }
+
+                const auto& io = ImGui::GetIO();
+
+                if (io.MouseDown[ImGuiMouseButton_Right]) {
+                    auto windowPos = ImGui::GetWindowPos();
+
+                    auto location = vec2(io.MousePos.x, io.MousePos.y);
+
+                    auto nearPoint = viewport->Unproject(vec3(location, 0.0f), camera);
+                    auto farPoint = viewport->Unproject(vec3(location, 1.0f), camera);
+
+                    Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
+
+                    auto rayCastResult = scene->CastRay(ray);
+                    if (rayCastResult.valid) {
+                        sceneHierarchyPanel.selectedEntity = rayCastResult.data;
                     }
                 }
 

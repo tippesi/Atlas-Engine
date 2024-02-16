@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../System.h"
+#include "../volume/Ray.h"
 #include "ShapesManager.h"
 #include "BodyCreation.h"
 #include "Body.h"
@@ -37,7 +38,7 @@ namespace Atlas {
 
             void Update(float deltaTime);
 
-            Body CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix);
+            Body CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix, uint64_t userData = 0);
 
             void DestroyBody(Body body);
 
@@ -61,6 +62,8 @@ namespace Atlas {
 
             float GetFriction(BodyID bodyId);
 
+            uint64_t GetUserData(BodyID bodyId);
+
             void ChangeShape(BodyID bodyId, Ref<Shape> shape);
 
             BodyCreationSettings GetBodyCreationSettings(BodyID bodyId);
@@ -68,6 +71,8 @@ namespace Atlas {
             void SetGravity(vec3 gravity);
 
             vec3 GetGravity();
+
+            Volume::RayResult<Body> CastRay(Volume::Ray& ray);
 
             void OptimizeBroadphase();
 

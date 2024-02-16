@@ -8,6 +8,16 @@ namespace Atlas {
 
     namespace Volume {
 
+        template<class T>
+        struct RayResult {
+            bool IsNormalValid() const { return normal.x != 0.0f || normal.y != 0.0f || normal.z != 0.0f; }
+
+            bool valid = false;
+            vec3 normal = vec3(0.0f);
+            float hitDistance = 10e12f;
+            T data;
+        };
+
         class Ray {
 
         public:
