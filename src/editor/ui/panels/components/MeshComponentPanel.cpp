@@ -35,6 +35,9 @@ namespace Atlas::Editor::UI {
             ImGui::Text("Mesh settings");
             ImGui::Checkbox("Invert UVs", &mesh->invertUVs);
             ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
+            ImGui::Separator();
+            ImGui::Text("Materials");
+            materialsPanel.Render(mesh->data.materials);
         }        
 
         return resourceChanged;

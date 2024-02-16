@@ -90,6 +90,7 @@ private:
     Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
     Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
+    Atlas::ImguiExtension::MaterialsPanel materialsPanel;
 
     bool renderUI = true;
     bool renderEnvProbe = true;

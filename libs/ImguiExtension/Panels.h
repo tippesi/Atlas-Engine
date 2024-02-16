@@ -6,4 +6,5 @@
 #include "panels/VolumetricCloudsPanel.h"
 #include "panels/IrradianceVolumePanel.h"
 #include "panels/MaterialPanel.h"
+#include "panels/MaterialsPanel.h"
 #include "panels/GPUProfilerPanel.h"

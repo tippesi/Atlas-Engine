@@ -598,37 +598,7 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
                 auto materials = scene->GetMaterials();
-                for (auto material : materials) {
-                    auto label = material->name + "##mat" + std::to_string(id++);
-
-                    if (ImGui::TreeNode(label.c_str())) {
-                        auto twoSidedLabel = "Two sided##" + label;
-                        auto baseColorLabel = "Base color##" + label;
-                        auto emissionColorLabel = "Emission color##" + label;
-                        auto emissionPowerLabel = "Emission power##" + label;
-                        auto transmissionColorLabel = "Transmission color##" + label;
-
-                        ImGui::Checkbox(twoSidedLabel.c_str(), &material->twoSided);
-                        ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
-                        ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
-                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &material->emissiveIntensity, 1.0f, 10000.0f,
-                            "%.3f", ImGuiSliderFlags_Logarithmic);
-
-                        auto roughnessLabel = "Roughness##" + label;
-                        auto metallicLabel = "Metallic##" + label;
-                        auto reflectanceLabel = "Reflectance##" + label;
-                        auto aoLabel = "Ao##" + label;
-                        auto opacityLabel = "Opacity##" + label;
-
-                        ImGui::SliderFloat(roughnessLabel.c_str(), &material->roughness, 0.0f, 1.0f);
-                        ImGui::SliderFloat(metallicLabel.c_str(), &material->metalness, 0.0f, 1.0f);
-                        ImGui::SliderFloat(reflectanceLabel.c_str(), &material->reflectance, 0.0f, 1.0f);
-                        ImGui::SliderFloat(aoLabel.c_str(), &material->ao, 0.0f, 1.0f);
-                        ImGui::SliderFloat(opacityLabel.c_str(), &material->opacity, 0.0f, 1.0f);
-
-                        ImGui::TreePop();
-                    }
-                }
+                materialsPanel.Render(materials);
             }
             if (ImGui::CollapsingHeader("Controls")) {
                 ImGui::Text("Use WASD for movement");

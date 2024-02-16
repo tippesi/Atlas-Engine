@@ -270,7 +270,7 @@ namespace Atlas::Editor::UI {
 
                 const auto& io = ImGui::GetIO();
 
-                if (io.MouseDown[ImGuiMouseButton_Right]) {
+                if (io.MouseDown[ImGuiMouseButton_Right] && viewportPanel.isFocused) {
                     auto windowPos = ImGui::GetWindowPos();
 
                     auto location = vec2(io.MousePos.x, io.MousePos.y);
