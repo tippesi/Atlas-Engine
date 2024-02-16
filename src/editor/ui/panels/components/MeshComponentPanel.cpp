@@ -11,7 +11,7 @@ namespace Atlas::Editor::UI {
         bool resourceChanged = false;
 
         auto buttonName = meshComponent.mesh.IsValid() ? meshComponent.mesh.GetResource()->GetFileName() :
-            "Drop resource here";
+            "Drop mesh resource here";
         ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
         if (ImGui::BeginDragDropTarget()) {

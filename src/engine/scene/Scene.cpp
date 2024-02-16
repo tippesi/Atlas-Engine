@@ -246,11 +246,20 @@ namespace Atlas {
                 hierarchyComponent.updated = false;
             }
 
+            // Everything below assumes that entities themselves have a transform
+            // Without it they won't be transformed when they are in a hierarchy
             auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
             for (auto entity : cameraSubset) {
                 const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
 
                 cameraComponent.parentTransform = transformComponent.globalMatrix;
+            }
+
+            auto textSubset = entityManager.GetSubset<TextComponent, TransformComponent>();
+            for (auto entity : textSubset) {
+                const auto& [textComponent, transformComponent] = textSubset.Get(entity);
+
+                textComponent.Update(transformComponent);
             }
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();

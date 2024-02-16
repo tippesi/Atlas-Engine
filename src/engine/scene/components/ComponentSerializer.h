@@ -198,6 +198,41 @@ namespace Atlas::Scene::Components {
         j.at("isStatic").get_to(p.isStatic);
     }
 
+    void to_json(json& j, const TextComponent& p) {
+        j = json {
+            {"text", p.text},
+            {"position", p.position},
+            {"rotation", p.rotation},
+            {"halfSize", p.halfSize},
+            {"textColor", p.textColor},
+            {"outlineColor", p.outlineColor},
+            {"outlineFactor", p.outlineFactor},
+            {"textScale", p.textScale},
+        };
+
+        if (p.font.IsValid())
+            j["resourcePath"] = p.font.GetResource()->path;
+    }
+
+    void from_json(const json& j, TextComponent& p) {
+        j.at("text").get_to(p.text);
+        j.at("position").get_to(p.position);
+        j.at("rotation").get_to(p.rotation);
+        j.at("halfSize").get_to(p.halfSize);
+        j.at("textColor").get_to(p.textColor);
+        j.at("outlineColor").get_to(p.outlineColor);
+        j.at("outlineFactor").get_to(p.outlineFactor);
+        j.at("textScale").get_to(p.textScale);
+
+        if (j.contains("resourcePath")) {
+            std::string resourcePath;
+            j.at("resourcePath").get_to(resourcePath);
+
+            p.font = ResourceManager<Font>::GetOrLoadResourceAsync(resourcePath,
+                ResourceOrigin::User, 22.0f, 10.0f, 127);
+        }
+    }
+
     void to_json(json& j, const RigidBodyComponent& p) {
         j = json {
             {"bodyIndex", p.bodyId.GetIndex()},

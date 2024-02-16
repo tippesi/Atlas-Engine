@@ -51,7 +51,7 @@ namespace Atlas::Editor::UI {
         ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
 
-        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene"};
+        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font"};
         static int currentSelection = 0;
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             ImGui::TreeNodeEx(items[i], nodeFlags);
@@ -72,6 +72,8 @@ namespace Atlas::Editor::UI {
                 break;
             case 3:
                 RenderResourceType<Scene::Scene>(IconType::Scene);
+            case 5:
+                RenderResourceType<Font>(IconType::Font);
             default:
                 break;
         }

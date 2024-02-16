@@ -16,7 +16,8 @@ namespace Atlas::Editor {
         Play,
         Stop,
         Scene,
-        Terrain
+        Terrain,
+        Font
     };
 
     class Icons {

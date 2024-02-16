@@ -49,6 +49,12 @@ namespace Atlas::Editor {
                         ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
                 }
                 break;
+            case FileType::Font: {
+                    auto handle = ResourceManager<Font>::GetOrLoadResourceAsync(filename,
+                        ResourceOrigin::User, 22.0f, 10, 127);
+                    handle.GetResource()->permanent = true;
+                }
+                break;
             default:
                 break;
         }
@@ -63,6 +69,8 @@ namespace Atlas::Editor {
         { "fbx", FileType::Mesh },
         { "aeterrain", FileType::Terrain },
         { "aescene", FileType::Scene },
+        { "lua", FileType::Script },
+        { "ttf", FileType::Font },
     };
 
 }

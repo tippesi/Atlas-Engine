@@ -11,6 +11,7 @@
 #include "components/RigidBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
+#include "components/TextComponentPanel.h"
 
 #include <imgui.h>
 
@@ -32,6 +33,7 @@ namespace Atlas::Editor::UI {
         RigidBodyComponentPanel rigidBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
+        TextComponentPanel textComponentPanel;
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,
