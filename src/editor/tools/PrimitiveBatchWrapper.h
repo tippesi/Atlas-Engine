@@ -3,6 +3,7 @@
 #include "renderer/PrimitiveBatch.h"
 #include "volume/AABB.h"
 #include "volume/Frustum.h"
+#include "volume/Rectangle.h"
 
 namespace Atlas::Editor {
 
@@ -17,7 +18,7 @@ namespace Atlas::Editor {
 
         void RenderLineSphere(vec3 point, float radius, vec3 color);
 
-        void RenderLineRectangle(vec3 point, vec3 right, vec3 down, vec3 color);
+        void RenderLineRectangle(const Volume::Rectangle& rect, vec3 color);
 
         Ref<Renderer::PrimitiveBatch> primitiveBatch;
 

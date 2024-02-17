@@ -11,7 +11,7 @@ namespace Atlas::ImguiExtension {
     public:
         MaterialPanel() : Panel("Material properties") {}
 
-        void Render(Ref<Material>& material);
+        void Render(Ref<ImguiWrapper>& wrapper, Ref<Material>& material);
 
     };
 

@@ -10,6 +10,8 @@ namespace Atlas::Editor::UI {
         bool fog = false;
         bool volumetricClouds = false;
         bool reflection = false;
+        bool ssgi = false;
+        bool sss = false;
         bool irradianceVolume = false;
         bool postProcessing = false;
     };

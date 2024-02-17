@@ -109,16 +109,18 @@ void App::LoadContent() {
 
     LoadScene();
 
+    imguiWrapper = Atlas::CreateRef<Atlas::ImguiExtension::ImguiWrapper>();
+
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    imguiWrapper.Load(&window);
+    imguiWrapper->Load(&window);
 
 }
 
 void App::UnloadContent() {
 
     UnloadScene();
-    imguiWrapper.Unload();
+    imguiWrapper->Unload();
 
 }
 
@@ -132,7 +134,7 @@ void App::Update(float deltaTime) {
 
     const ImGuiIO& io = ImGui::GetIO();
 
-    imguiWrapper.Update(&window, deltaTime);
+    imguiWrapper->Update(&window, deltaTime);
 
     if (io.WantCaptureMouse) {
         mouseHandler.lock = true;
@@ -437,7 +439,7 @@ void App::Render(float deltaTime) {
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, colorSpace);
                     vsyncMode = vsync;
                     hdrMode = hdr;
-                    imguiWrapper.RecreateImGuiResources();
+                    imguiWrapper->RecreateImGuiResources();
                     graphicsDevice->WaitForIdle();
                     recreateSwapchain = true;
                 }
@@ -516,23 +518,13 @@ void App::Render(float deltaTime) {
                 }
                 ImGui::SliderFloat("Bias##Shadow", &shadow->bias, 0.0f, 2.0f);
             }
-            if (ImGui::CollapsingHeader("Screen-space shadows (preview)")) {
+            if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
-                ImGui::Checkbox("Enable##SSS", &sss->enable);
-                ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
-                ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
-                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                sssPanel.Render(sss);
             }
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ImGui::Checkbox("Enable##SSGI", &ssgi->enable);
-                ImGui::Checkbox("Enable ambient occlusion##SSGI", &ssgi->enableAo);
-                ImGui::SliderInt("Ray count##SSGI", &ssgi->rayCount, 1, 8);
-                ImGui::SliderInt("Sample count##SSGI", &ssgi->sampleCount, 1, 16);
-                ImGui::SliderFloat("Radius##SSGI", &ssgi->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Ao strength##SSGI", &ssgi->aoStrength, 0.0f, 10.0f);
-                ImGui::SliderFloat("Irradiance limit##SSGI", &ssgi->irradianceLimit, 0.0f, 10.0f);
-                //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
+                ssgiPanel.Render(ssgi);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -598,7 +590,7 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
                 auto materials = scene->GetMaterials();
-                materialsPanel.Render(materials);
+                materialsPanel.Render(imguiWrapper, materials);
             }
             if (ImGui::CollapsingHeader("Controls")) {
                 ImGui::Text("Use WASD for movement");
@@ -635,7 +627,7 @@ void App::Render(float deltaTime) {
 #endif
 
         if (!recreateSwapchain) {
-            imguiWrapper.Render();
+            imguiWrapper->Render();
         }
 
         recreateSwapchain = false;

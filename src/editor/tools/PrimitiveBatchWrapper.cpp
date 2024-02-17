@@ -90,7 +90,11 @@ namespace Atlas::Editor {
 
     }
 
-    void PrimitiveBatchWrapper::RenderLineRectangle(vec3 point, vec3 right, vec3 down, vec3 color) {
+    void PrimitiveBatchWrapper::RenderLineRectangle(const Volume::Rectangle& rect, vec3 color) {
+
+        auto point = rect.point;
+        auto right = rect.s0;
+        auto down = rect.s1;
 
         primitiveBatch->AddLine(point, point + right, color, color);
         primitiveBatch->AddLine(point, point + down, color, color);

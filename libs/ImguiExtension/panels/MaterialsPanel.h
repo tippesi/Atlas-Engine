@@ -13,7 +13,7 @@ namespace Atlas::ImguiExtension {
     public:
         MaterialsPanel() : Panel("Materials properties") {}
 
-        void Render(std::vector<Ref<Material>>& materials);
+        void Render(Ref<ImguiWrapper>& wrapper, std::vector<Ref<Material>>& materials);
 
     private:
         MaterialPanel materialPanel;

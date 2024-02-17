@@ -6,7 +6,7 @@
 
 namespace Atlas::ImguiExtension {
 
-    void MaterialsPanel::Render(std::vector<Ref<Material>> &materials) {
+    void MaterialsPanel::Render(Ref<ImguiWrapper>& wrapper, std::vector<Ref<Material>> &materials) {
 
         ImGui::PushID(GetNameID());
 
@@ -27,7 +27,7 @@ namespace Atlas::ImguiExtension {
 
             if (ImGui::TreeNode(materialName.c_str())) {
 
-                materialPanel.Render(material);
+                materialPanel.Render(wrapper, material);
 
                 ImGui::TreePop();
 

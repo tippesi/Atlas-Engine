@@ -60,8 +60,6 @@ namespace Atlas::Editor::UI {
 
         }
 
-
-
         return false;
 
     }

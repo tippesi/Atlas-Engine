@@ -15,6 +15,7 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const AudioComponent& p) {
         j = json {
             {"falloffFactor", p.falloffFactor},
+            {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
         };
@@ -28,6 +29,7 @@ namespace Atlas::Scene::Components {
         p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
 
         j.at("falloffFactor").get_to(p.falloffFactor);
+        j.at("falloffPower").get_to(p.falloffPower);
         j.at("cutoff").get_to(p.cutoff);
         j.at("volume").get_to(p.volume);
 
@@ -39,6 +41,7 @@ namespace Atlas::Scene::Components {
     void to_json(json& j, const AudioVolumeComponent& p) {
         j = json {
             {"falloffFactor", p.falloffFactor},
+            {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
             {"aabb", p.aabb}
@@ -53,6 +56,7 @@ namespace Atlas::Scene::Components {
         p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
 
         j.at("falloffFactor").get_to(p.falloffFactor);
+        j.at("falloffPower").get_to(p.falloffPower);
         j.at("cutoff").get_to(p.cutoff);
         j.at("aabb").get_to(p.aabb);
         j.at("volume").get_to(p.volume);

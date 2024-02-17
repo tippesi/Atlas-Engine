@@ -37,6 +37,15 @@ namespace Atlas {
 
     namespace Scene {
 
+        typedef uint32_t SceneQueryComponents;
+
+        typedef enum SceneQueryComponentBits {
+            MeshComponentBit = (1 << 0),
+            RigidBodyComponentBit = (1 << 1),
+            TextComponentBit = (1 << 2),
+            AllComponentsBit = (1 << 3) - 1
+        } SceneQueryComponentBits;
+
         class Scene : public SpacePartitioning {
 
             template<typename T>
@@ -87,7 +96,8 @@ namespace Atlas {
 
             bool HasMainCamera() const;
 
-            Volume::RayResult<Entity> CastRay(Volume::Ray& ray);
+            Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
             void GetRenderList(Volume::Frustum frustum, RenderList& renderList);
 

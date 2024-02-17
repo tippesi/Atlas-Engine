@@ -33,8 +33,9 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat3("Max", glm::value_ptr(audioVolumeComponent.aabb.max), 0.1f, -10000.0f, 10000.0f);
 
         ImGui::DragFloat("Volume", &audioVolumeComponent.volume, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0f, 0.2f);
+        ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0001f, 0.2f);
         ImGui::DragFloat("Falloff factor", &audioVolumeComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
+        ImGui::DragFloat("Falloff power", &audioVolumeComponent.falloffPower, 1.0f, 0.0f, 100.0f);
 
         if (audioVolumeComponent.stream && audioVolumeComponent.stream->IsValid()) {
             ImGui::Checkbox("Loop stream", &audioVolumeComponent.stream->loop);

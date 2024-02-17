@@ -232,6 +232,10 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
         if (scene->reflection)
             RenderExtendedItem("Reflection", &selectedProperty.reflection);
+        if (scene->ssgi)
+            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
+        if (scene->sss)
+            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
 
     }

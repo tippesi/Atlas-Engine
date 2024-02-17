@@ -26,7 +26,8 @@ namespace Atlas {
 
                 void ChangeResource(ResourceHandle<Audio::AudioData> audioData);
 
-                float falloffFactor = 0.05f;
+                float falloffFactor = 0.5f;
+                float falloffPower = 2.0f;
                 float cutoff = 0.001f;
 
                 float volume = 1.0f;

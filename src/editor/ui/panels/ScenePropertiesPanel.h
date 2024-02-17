@@ -44,6 +44,14 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Reflection");
                 reflectionPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
+                RenderHeading("Screen-space global illumination");
+                ssgiPanel.Render(t);
+            }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::SSS>>) {
+                RenderHeading("Screen-space shadows");
+                sssPanel.Render(t);
+            }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
@@ -72,6 +80,8 @@ namespace Atlas::Editor::UI {
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
         ImguiExtension::ReflectionPanel reflectionPanel;
+        ImguiExtension::SSGIPanel ssgiPanel;
+        ImguiExtension::SSSPanel sssPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };

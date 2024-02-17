@@ -67,8 +67,17 @@ namespace Atlas {
 
                 transformedAABB = aabb.Transform(transformComponent.globalMatrix);
                 auto distance = glm::max(epsilon, transformedAABB.GetDistance(listenerLocation));
-                float distanceVolume = glm::min(1.0f, falloffFactor / distance);
 
+                // Use quick paths for "normal" powers and do nothing for the power=1 case
+                auto powerDistance = distance;
+                if (falloffPower == 2.0f)
+                    powerDistance *= powerDistance;
+                else if (falloffPower == 3.0f)
+                    powerDistance *= powerDistance * powerDistance;
+                else if (falloffPower != 1.0f)
+                    powerDistance = powf(powerDistance, falloffPower);
+
+                float distanceVolume = glm::min(1.0f, falloffFactor / powerDistance);
                 auto audible = distanceVolume > cutoff;
 
                 if (audible) {

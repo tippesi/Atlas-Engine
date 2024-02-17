@@ -1,6 +1,8 @@
 #include "MeshComponentPanel.h"
 #include "resource/ResourceManager.h"
 
+#include "../../../Singletons.h"
+
 #include <imgui.h>
 
 namespace Atlas::Editor::UI {
@@ -37,7 +39,7 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
             ImGui::Separator();
             ImGui::Text("Materials");
-            materialsPanel.Render(mesh->data.materials);
+            materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials);
         }        
 
         return resourceChanged;

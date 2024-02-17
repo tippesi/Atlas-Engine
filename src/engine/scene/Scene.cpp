@@ -247,9 +247,6 @@ namespace Atlas {
 
                 meshComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
 
-                Log::Warning("AABB update");
-                Log::Warning("Min " + VecToString(meshComponent.aabb.min) + ", Max " + VecToString(meshComponent.aabb.max));
-
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
             }
@@ -431,12 +428,12 @@ namespace Atlas {
 
         }
 
-        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray) {
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
 
             Volume::RayResult<Entity> result;
 
             // Most accurate method if it works
-            if (physicsWorld) {
+            if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
                 auto bodyResult = physicsWorld->CastRay(ray);
 
                 if (bodyResult.valid) {
@@ -449,30 +446,50 @@ namespace Atlas {
                 }
             }
 
-            auto meshSubset = entityManager.GetSubset<MeshComponent>();
+            // This isn't really optimized, we could use hierarchical data structures
+            if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
+                auto meshSubset = entityManager.GetSubset<MeshComponent>();
 
-            for (auto entity : meshSubset) {
-                auto& meshComp = meshSubset.Get(entity);
+                for (auto entity : meshSubset) {
+                    auto& meshComp = meshSubset.Get(entity);
 
-                auto dist = 0.0f;
-                if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
-                    auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
-                    // This means we already found a more accurate hit
-                    if (result.valid && result.data != entity &&
-                        entityManager.Contains<RigidBodyComponent>(entity))
-                        continue;
+                    auto dist = 0.0f;
+                    if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
+                        auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
+                        // This means we already found a more accurate hit
+                        if (result.valid && result.data != entity &&
+                            entityManager.Contains<RigidBodyComponent>(entity))
+                            continue;
 
-                    // Accept all hits greater equal if they were within the updated hit distance
-                    if (dist > 0.0f) {
+                        // Accept all hits greater equal if they were within the updated hit distance
+                        if (dist > 0.0f) {
+                            result.valid = true;
+                            result.data = { entity, &entityManager };
+                            result.hitDistance = dist;
+                        }
+                        
+                        // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
+                        if (!result.valid) {
+                            result.valid = true;
+                            result.data = { entity, &entityManager };
+                        }
+                    }
+                }
+            }
+
+            if (queryComponents & SceneQueryComponentBits::TextComponentBit) {
+                auto textSubset = entityManager.GetSubset<TextComponent>();
+
+                for (auto entity : textSubset) {
+                    auto& textComp = textSubset.Get(entity);
+
+                    auto dist = 0.0f;
+                    if (ray.Intersects(textComp.GetRectangle(), 0.0f, result.hitDistance, dist)) {
+
                         result.valid = true;
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
-                    }
-                    
-                    // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
-                    if (!result.valid) {
-                        result.valid = true;
-                        result.data = { entity, &entityManager };
+                        
                     }
                 }
             }

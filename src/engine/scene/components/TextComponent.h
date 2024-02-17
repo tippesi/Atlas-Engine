@@ -5,6 +5,7 @@
 #include "TransformComponent.h"
 
 #include "../../Font.h"
+#include "../../volume/Rectangle.h"
 #include "../../resource/Resource.h"
 
 namespace Atlas::Scene {
@@ -25,6 +26,8 @@ namespace Atlas::Scene {
             explicit TextComponent(const ResourceHandle<Font>& font, const std::string& text) : font(font), text(text) {}
 
             void ChangeResource(const ResourceHandle<Font>& font);
+
+            Volume::Rectangle GetRectangle() const;
 
             vec3 GetTransformedPosition() const { return transformedPosition; }
             quat GetTransformedRotation() const { return transformedRotation; }

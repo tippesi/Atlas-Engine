@@ -17,7 +17,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(AABB aabb, float tmin, float tmax) {
+        bool Ray::Intersects(const AABB& aabb, float tmin, float tmax) {
 
             auto t = 0.0f;
 
@@ -25,7 +25,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(AABB aabb, float tmin, float tmax, float& t) {
+        bool Ray::Intersects(const AABB& aabb, float tmin, float tmax, float& t) {
 
             auto t0 = (aabb.min - origin) * inverseDirection;
             auto t1 = (aabb.max - origin) * inverseDirection;
@@ -69,6 +69,34 @@ namespace Atlas {
 
                 return true;
 
+            }
+
+            return false;
+
+        }
+
+        bool Ray::Intersects(const Rectangle& rect, float tmin, float tmax, float& t) {
+
+            auto N = rect.GetNormal();
+
+            auto nDotD = glm::dot(N, direction);
+            if (nDotD >= 0.0f)
+                return false;
+
+            float dist = glm::dot(rect.point - origin, N) / nDotD;
+
+            if (dist <= tmin && dist > tmax)
+                return false;
+
+            auto point = Get(dist) - rect.point;
+
+            auto projS0 = glm::dot(rect.s0, point);
+            auto projS1 = glm::dot(rect.s1, point);
+
+            if (projS0 >= 0.0f && projS0 <= glm::dot(rect.s0, rect.s0) &&
+                projS1 >= 0.0f && projS1 <= glm::dot(rect.s1, rect.s1)) {
+                t = dist;
+                return true;
             }
 
             return false;

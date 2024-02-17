@@ -34,19 +34,15 @@ namespace Atlas::Editor::UI {
             }
 
             if (entity.HasComponent<AudioComponent>()) {
-                auto comp = entity.GetComponent<AudioComponent>();
+                auto& comp = entity.GetComponent<AudioComponent>();
                 RenderComponentPanel("Audio component", scene,
                     entity, audioComponentPanel, comp);
-                entity.RemoveComponent<AudioComponent>();
-                entity.AddComponent<AudioComponent>(comp);
             }
 
             if (entity.HasComponent<AudioVolumeComponent>()) {
-                auto comp = entity.GetComponent<AudioVolumeComponent>();
+                auto& comp = entity.GetComponent<AudioVolumeComponent>();
                 RenderComponentPanel("Audio volume component", scene,
                     entity, audioVolumeComponentPanel, comp);
-                entity.RemoveComponent<AudioVolumeComponent>();
-                entity.AddComponent<AudioVolumeComponent>(comp);
             }
 
             if (entity.HasComponent<CameraComponent>()) {

@@ -47,7 +47,7 @@ namespace Atlas::Editor {
         SubscribeToResourceEvents();
 
         Serializer::DeserializeConfig();
-        
+
     }
 
     void App::UnloadContent() {

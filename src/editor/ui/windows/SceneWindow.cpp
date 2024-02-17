@@ -112,6 +112,10 @@ namespace Atlas::Editor::UI {
                 scenePropertiesPanel.Render(scene->irradianceVolume);
             else if (sceneHierarchyPanel.selectedProperty.reflection)
                 scenePropertiesPanel.Render(scene->reflection);
+            else if (sceneHierarchyPanel.selectedProperty.ssgi)
+                scenePropertiesPanel.Render(scene->ssgi);
+            else if (sceneHierarchyPanel.selectedProperty.sss)
+                scenePropertiesPanel.Render(scene->sss);
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)
                 scenePropertiesPanel.Render(scene->postProcessing);
             else
@@ -315,7 +319,8 @@ namespace Atlas::Editor::UI {
             if (transformComponent)
                 position += transformComponent->Decompose().translation;
 
-            float radius = audioComponent.falloffFactor / 0.01f;
+            // After this the audio will be cutoff
+            float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
             viewportPanel.primitiveBatchWrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f));
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
@@ -337,14 +342,8 @@ namespace Atlas::Editor::UI {
         }
         if (entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
-            auto right = glm::mat3_cast(textComponent.GetTransformedRotation()) * glm::vec3(1.0f, 0.0f, 0.0f);
-            auto down = glm::mat3_cast(textComponent.GetTransformedRotation()) * glm::vec3(0.0f, -1.0f, 0.0f);
-            
-            right *= 2.0f * textComponent.halfSize.x;
-            down *= 2.0f * textComponent.halfSize.y;
-
-            auto position = textComponent.GetTransformedPosition() - right * 0.5f - down * 0.5f;
-            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(position, right, down, vec3(0.0f, 0.0f, 1.0f));
+            auto rectangle = textComponent.GetRectangle();
+            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
         }
 
     }

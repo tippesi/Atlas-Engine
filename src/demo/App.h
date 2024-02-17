@@ -88,6 +88,8 @@ private:
     Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
     Atlas::ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
     Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
+    Atlas::ImguiExtension::SSGIPanel ssgiPanel;
+    Atlas::ImguiExtension::SSSPanel sssPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
     Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
     Atlas::ImguiExtension::MaterialsPanel materialsPanel;
@@ -121,7 +123,7 @@ private:
     float shootSpawnRate = 0.1f;
     float shootVelocity = 5.0f;
 
-    Atlas::ImguiExtension::ImguiWrapper imguiWrapper;
+    Ref<Atlas::ImguiExtension::ImguiWrapper> imguiWrapper;
 
     std::vector<Ref<Atlas::Audio::AudioStream>> audioStreams;
 
