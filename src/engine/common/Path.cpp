@@ -16,6 +16,9 @@ namespace Atlas {
 
         std::string Path::GetRelative(std::string src, std::string dest) {
 
+            if (src == dest)
+                return "";
+
             std::string result;
 
             src = GetAbsolute(src);

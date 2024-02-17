@@ -16,6 +16,9 @@ namespace Atlas::Editor {
             { IconType::Scene, Texture::Texture2D("editor/icons/scene.png") },
             { IconType::Terrain, Texture::Texture2D("editor/icons/terrain.png") },
             { IconType::Font, Texture::Texture2D("editor/icons/font.png") },
+            { IconType::ArrowUp, Texture::Texture2D("editor/icons/arrowUp.png") },
+            { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft.png") },
+            { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight.png") },
         };
 
     }

@@ -96,8 +96,8 @@ namespace Atlas {
                 .characterColor = color,
                 .outlineColor = outlineColor,
                 .textOffset = vec2(x, y),
-                .textScale = scale,
                 .renderArea = vec2(width, height),
+                .textScale = scale,
                 .outlineScale = outlineScale,
                 .edgeValue = float(font->edgeValue) / 255.0f,
                 .smoothness = font->smoothness

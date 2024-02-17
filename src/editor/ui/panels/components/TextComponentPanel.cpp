@@ -2,9 +2,12 @@
 
 #include <imgui_stdlib.h>
 
+#include "../../../tools/ResourcePayloadHelper.h"
+
 namespace Atlas::Editor::UI {
 
-    bool TextComponentPanel::Render(Ref<Scene::Scene>& scene, Scene::Entity entity, TextComponent& textComponent) {
+    bool TextComponentPanel::Render(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+        TextComponent& textComponent) {
 
         ImGui::PushID(GetNameID());
 
@@ -12,16 +15,9 @@ namespace Atlas::Editor::UI {
             "Drop font resource here";
         ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Font).name())) {
-                Resource<Font>* resource;
-                std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
-
-                auto font = ResourceManager<Font>::GetResource(resource->path);
-                textComponent.ChangeResource(font);
-            }
-
-            ImGui::EndDragDropTarget();
+        auto handle = ResourcePayloadHelper::AcceptDropResource<Font>();
+        if (handle.IsValid()) {
+            textComponent.ChangeResource(handle);
         }
 
         ImGui::InputTextMultiline("Text", &textComponent.text);

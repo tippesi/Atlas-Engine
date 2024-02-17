@@ -17,7 +17,10 @@ namespace Atlas::Editor {
         Stop,
         Scene,
         Terrain,
-        Font
+        Font,
+        ArrowUp,
+        ArrowLeft,
+        ArrowRight
     };
 
     class Icons {

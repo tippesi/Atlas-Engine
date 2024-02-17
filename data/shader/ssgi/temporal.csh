@@ -281,7 +281,7 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    // historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
+    historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
@@ -294,10 +294,6 @@ void main() {
     factor = min(factor, historyLength / max(1.0, (historyLength + 1.0)));
 
     vec4 resolve = mix(currentValue, historyValue, factor);
-
-    if (isnan(resolve.r) || isnan(resolve.b)) {
-        //resolve = vec4(1.0, 0.0, 0.0, 0.0);
-    }
 
     imageStore(resolveImage, pixel, vec4(resolve));
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));

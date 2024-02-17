@@ -18,7 +18,7 @@ namespace Atlas {
             float spatialFilterStrength = 5.0f;
 
             float temporalWeight = 0.95f;
-            float historyClipMax = 0.1f;
+            float historyClipMax = 1.0f;
             float currentClipFactor = 2.0f;
 
             bool enable = true;

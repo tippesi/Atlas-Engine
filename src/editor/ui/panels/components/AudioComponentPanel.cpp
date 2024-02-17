@@ -1,6 +1,6 @@
 #include "AudioComponentPanel.h"
 
-#include "resource/ResourceManager.h"
+#include "../../../tools/ResourcePayloadHelper.h"
 
 namespace Atlas::Editor::UI {
 
@@ -16,16 +16,10 @@ namespace Atlas::Editor::UI {
 
         ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Audio::AudioData).name())) {
-                Resource<Audio::AudioData>* dropResource;
-                std::memcpy(&dropResource, dropPayload->Data, dropPayload->DataSize);
-                // We know this resource is loaded, so we can just request a handle without loading
-                audioComponent.ChangeResource(ResourceManager<Audio::AudioData>::GetResource(dropResource->path));
-                resourceChanged = true;
-            }
-
-            ImGui::EndDragDropTarget();
+        auto handle = ResourcePayloadHelper::AcceptDropResource<Audio::AudioData>();
+        if (handle.IsValid()) {
+            audioComponent.ChangeResource(handle);
+            resourceChanged = true;
         }
 
         ImGui::DragFloat("Volume", &audioComponent.volume, 0.005f, 0.0f, 1.0f);
