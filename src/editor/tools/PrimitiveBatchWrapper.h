@@ -15,6 +15,10 @@ namespace Atlas::Editor {
 
         void RenderLineFrustum(Volume::Frustum frustum, vec3 color);
 
+        void RenderLineSphere(vec3 point, float radius, vec3 color);
+
+        void RenderLineRectangle(vec3 point, vec3 right, vec3 down, vec3 color);
+
         Ref<Renderer::PrimitiveBatch> primitiveBatch;
 
     };

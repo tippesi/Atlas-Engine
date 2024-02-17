@@ -85,6 +85,24 @@ namespace Atlas {
 
         }
 
+        std::string NumberToString(auto number) {
+
+        auto str = std::to_string(number);
+        auto pos = str.find(".");
+        if (pos != std::string::npos)
+            return str.substr(0, pos + 4);
+        return str;
+
+    }
+
+    std::string VecToString(auto vector) {
+
+        return NumberToString(vector.x) + ", "
+               + NumberToString(vector.y) + ", "
+               + NumberToString(vector.z);
+
+    }
+
         void Scene::Timestep(float deltaTime) {
 
             this->deltaTime = deltaTime;
@@ -214,10 +232,13 @@ namespace Atlas {
             auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto entity : meshSubset) {
                 auto& meshComponent = entityManager.Get<MeshComponent>(entity);
-                if (!meshComponent.mesh.IsLoaded())
-                    continue;
-
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                if (!meshComponent.mesh.IsLoaded()) {
+                    // We can't update the transform yet
+                    transformComponent.updated = false;
+                    continue;
+                }
+
                 if (!transformComponent.changed && meshComponent.inserted)
                     continue;
 
@@ -225,6 +246,9 @@ namespace Atlas {
                     SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
 
                 meshComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
+
+                Log::Warning("AABB update");
+                Log::Warning("Min " + VecToString(meshComponent.aabb.min) + ", Max " + VecToString(meshComponent.aabb.max));
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
@@ -234,8 +258,10 @@ namespace Atlas {
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
 
-                transformComponent.changed = false;
-                transformComponent.updated = false;
+                if (transformComponent.updated) {
+                    transformComponent.changed = false;
+                    transformComponent.updated = false;
+                }
             }
 
             // We also need to reset the hierarchy components as well
@@ -731,14 +757,20 @@ namespace Atlas {
             if (srcEntity.HasComponent<LightComponent>()) {
                 auto otherComp = srcEntity.GetComponent<LightComponent>();
                 auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
-                // Need to copy the reference as well, create new textures afterwards with SetResolution 
-                *comp.shadow = *otherComp.shadow;
+                // Need to create a new shadow, since right now the memory is shared between components
+                comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
                 comp.shadow->SetResolution(comp.shadow->resolution);
                 comp.isMain = false;
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
                 dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
+            }
+            if (srcEntity.HasComponent<PlayerComponent>()) {
+                auto otherComp = srcEntity.GetComponent<PlayerComponent>();
+                auto& comp = dstEntity.AddComponent<PlayerComponent>(otherComp);
+                // Need to create a new creation settings, since right now the memory is shared between components
+                comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*otherComp.creationSettings);
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)
@@ -749,13 +781,18 @@ namespace Atlas {
                 comp = otherComp;
             }
             if (srcEntity.HasComponent<AudioComponent>()) {
+                // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioComponent>();
-                auto& comp = dstEntity.AddComponent<AudioComponent>(otherComp.stream->data);
-                comp = otherComp;
+                auto& comp = dstEntity.AddComponent<AudioComponent>(otherComp);
             }
             if (srcEntity.HasComponent<AudioVolumeComponent>()) {
+                // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
-                auto& comp = dstEntity.AddComponent<AudioVolumeComponent>(otherComp.stream->data, otherComp.aabb);
+                auto& comp = dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
+            }
+            if (srcEntity.HasComponent<TextComponent>()) {
+                auto otherComp = srcEntity.GetComponent<TextComponent>();
+                auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
             }
 

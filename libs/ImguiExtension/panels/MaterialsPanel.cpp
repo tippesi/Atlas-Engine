@@ -10,7 +10,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        ImGui::InputText("Search material", &materialSearch);
+        ImGui::InputTextWithHint("Search", "Type to search material", &materialSearch);
 
         auto matches = materials | std::views::filter(
             [&](const Ref<Material>& material) {

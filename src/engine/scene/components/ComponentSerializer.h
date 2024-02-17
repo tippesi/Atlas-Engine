@@ -229,7 +229,7 @@ namespace Atlas::Scene::Components {
             j.at("resourcePath").get_to(resourcePath);
 
             p.font = ResourceManager<Font>::GetOrLoadResourceAsync(resourcePath,
-                ResourceOrigin::User, 22.0f, 10.0f, 127);
+                ResourceOrigin::User, 32.0f, 7.0f, 127);
         }
     }
 
@@ -268,6 +268,7 @@ namespace Atlas::Scene::Components {
             {"slowVelocity", p.slowVelocity},
             {"fastVelocity", p.fastVelocity},
             {"jumpVelocity", p.jumpVelocity},
+            {"allowInput", p.allowInput},
         };
 
         if (p.creationSettings != nullptr)
@@ -278,6 +279,7 @@ namespace Atlas::Scene::Components {
         j.at("slowVelocity").get_to(p.slowVelocity);
         j.at("fastVelocity").get_to(p.fastVelocity);
         j.at("jumpVelocity").get_to(p.jumpVelocity);
+        j.at("allowInput").get_to(p.allowInput);
 
         if (j.contains("creationSettings")) {
             p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();

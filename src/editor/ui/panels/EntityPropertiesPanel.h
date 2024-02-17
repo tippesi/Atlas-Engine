@@ -7,6 +7,7 @@
 #include "components/TransformComponentPanel.h"
 #include "components/MeshComponentPanel.h"
 #include "components/LightComponentPanel.h"
+#include "components/AudioComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
@@ -29,6 +30,7 @@ namespace Atlas::Editor::UI {
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
         LightComponentPanel lightComponentPanel;
+        AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;

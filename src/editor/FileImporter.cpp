@@ -51,7 +51,7 @@ namespace Atlas::Editor {
                 break;
             case FileType::Font: {
                     auto handle = ResourceManager<Font>::GetOrLoadResourceAsync(filename,
-                        ResourceOrigin::User, 22.0f, 10, 127);
+                        ResourceOrigin::User, 32.0f, 8, 127);
                     handle.GetResource()->permanent = true;
                 }
                 break;

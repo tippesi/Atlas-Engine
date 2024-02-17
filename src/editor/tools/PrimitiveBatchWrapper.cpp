@@ -53,4 +53,50 @@ namespace Atlas::Editor {
 
     }
 
+    void PrimitiveBatchWrapper::RenderLineSphere(vec3 position, float radius, vec3 color) {
+
+        const int32_t verticalSubdivs = 20;
+        const int32_t horizontalSubdivs = 20;
+
+        vec3 lastPoint;
+
+        float alpha = 0.0f;
+
+        for (int32_t i = 0; i < horizontalSubdivs; i++) {
+
+            float ringRadius = sinf(alpha);
+            float ringHeight = cosf(alpha);
+            float beta = 0.0f;
+
+            for (int32_t j = 0; j < verticalSubdivs; j++) {
+
+                float x = sinf(beta) * ringRadius;
+                float z = cosf(beta) * ringRadius;
+                auto point = vec3(x, ringHeight, z) * radius + position;
+
+                if (j > 0) {
+                    primitiveBatch->AddLine(point, lastPoint, color, color);
+                }
+
+                beta += 2.0f * glm::pi<float>() / float(verticalSubdivs - 1);
+
+                lastPoint = point;
+
+            }
+
+            alpha += glm::pi<float>() / float(horizontalSubdivs);
+
+        } 
+
+    }
+
+    void PrimitiveBatchWrapper::RenderLineRectangle(vec3 point, vec3 right, vec3 down, vec3 color) {
+
+        primitiveBatch->AddLine(point, point + right, color, color);
+        primitiveBatch->AddLine(point, point + down, color, color);
+        primitiveBatch->AddLine(point + right, point + right + down, color, color);
+        primitiveBatch->AddLine(point + down, point + right + down, color, color);
+
+    }
+
 }

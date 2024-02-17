@@ -9,6 +9,20 @@ namespace Atlas {
 
         namespace Components {
 
+            AudioComponent::AudioComponent(Scene *scene, const AudioComponent &that) {
+
+                if (this != &that) {
+                    *this = that;
+                    // Need to create new stream
+                    if (stream) {
+                        stream = Audio::AudioManager::CreateStream(stream->data, 0.0f);
+                    }   
+                }
+
+                this->scene = scene;
+
+            }
+
             AudioComponent::AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
                 float falloffFactor, bool loop) : falloffFactor(falloffFactor), scene(scene) {
 

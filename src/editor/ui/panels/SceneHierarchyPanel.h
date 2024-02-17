@@ -31,6 +31,8 @@ namespace Atlas::Editor::UI {
 
         void RenderExtendedItem(const std::string& name, bool* selected);
 
+        std::string entitySearch;
+
     };
 
 }

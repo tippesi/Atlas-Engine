@@ -937,7 +937,7 @@ bool App::LoadScene() {
             "flying world/scene.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(0.01f);
+        transforms.emplace_back(glm::scale(glm::vec3(0.01f)));
 
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
@@ -963,22 +963,22 @@ bool App::LoadScene() {
             "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -1184,10 +1184,14 @@ void App::CheckLoadScene() {
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
     for (auto& entity : entities) {
+        const auto& transformComponent = entity.GetComponent<TransformComponent>();
         const auto& meshComponent = entity.GetComponent<MeshComponent>();
+
+        auto scale = transformComponent.Decompose().scale;
         if (entityCount++ == 0) {
             Atlas::Physics::MeshShapeSettings settings = {
-                .mesh = meshComponent.mesh
+                .mesh = meshComponent.mesh,
+                .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
@@ -1200,6 +1204,7 @@ void App::CheckLoadScene() {
         else {
             Atlas::Physics::BoundingBoxShapeSettings settings = {
                 .aabb = meshComponent.mesh->data.aabb,
+                .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 

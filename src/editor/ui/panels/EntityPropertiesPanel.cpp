@@ -33,6 +33,14 @@ namespace Atlas::Editor::UI {
                     lightComponentPanel, entity.GetComponent<LightComponent>());
             }
 
+            if (entity.HasComponent<AudioComponent>()) {
+                auto comp = entity.GetComponent<AudioComponent>();
+                RenderComponentPanel("Audio component", scene,
+                    entity, audioComponentPanel, comp);
+                entity.RemoveComponent<AudioComponent>();
+                entity.AddComponent<AudioComponent>(comp);
+            }
+
             if (entity.HasComponent<AudioVolumeComponent>()) {
                 auto comp = entity.GetComponent<AudioVolumeComponent>();
                 RenderComponentPanel("Audio volume component", scene,
@@ -89,6 +97,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Add mesh component"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Add audio component"))
+                    entity.AddComponent<AudioComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
                     entity.AddComponent<AudioVolumeComponent>();
                 if (!entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Add camera component"))
@@ -138,6 +148,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TransformComponent>();
                 if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Remove mesh component"))
                     entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Remove audio component"))
+                    entity.RemoveComponent<AudioComponent>();
                 if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Remove audio volume component"))
                     entity.RemoveComponent<AudioVolumeComponent>();
                 if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Remove camera component"))

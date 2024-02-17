@@ -14,6 +14,10 @@ namespace Atlas {
 
                 if (this != &that) {
                     *this = that;
+                    // Need to create new stream
+                    if (stream) {
+                        stream = Audio::AudioManager::CreateStream(stream->data, 0.0f);
+                    }   
                 }
 
                 this->scene = scene;

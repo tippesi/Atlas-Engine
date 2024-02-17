@@ -307,6 +307,17 @@ namespace Atlas::Editor::UI {
             auto aabb = meshComponent.aabb;
             viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
         }
+        if (entity.HasComponent<AudioComponent>()) {
+            const auto& audioComponent = entity.GetComponent<AudioComponent>();
+            const auto transformComponent = entity.TryGetComponent<TransformComponent>();
+
+            vec3 position = vec3(0.0f);
+            if (transformComponent)
+                position += transformComponent->Decompose().translation;
+
+            float radius = audioComponent.falloffFactor / 0.01f;
+            viewportPanel.primitiveBatchWrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f));
+        }
         if (entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
@@ -323,6 +334,17 @@ namespace Atlas::Editor::UI {
                     viewportPanel.primitiveBatchWrapper.RenderLineFrustum(
                         Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
             }
+        }
+        if (entity.HasComponent<TextComponent>()) {
+            const auto& textComponent = entity.GetComponent<TextComponent>();
+            auto right = glm::mat3_cast(textComponent.GetTransformedRotation()) * glm::vec3(1.0f, 0.0f, 0.0f);
+            auto down = glm::mat3_cast(textComponent.GetTransformedRotation()) * glm::vec3(0.0f, -1.0f, 0.0f);
+            
+            right *= 2.0f * textComponent.halfSize.x;
+            down *= 2.0f * textComponent.halfSize.y;
+
+            auto position = textComponent.GetTransformedPosition() - right * 0.5f - down * 0.5f;
+            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(position, right, down, vec3(0.0f, 0.0f, 1.0f));
         }
 
     }

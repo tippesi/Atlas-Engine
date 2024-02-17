@@ -63,6 +63,8 @@ namespace Atlas::Editor::UI {
 		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
 		ImGui::DragFloat("Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
 
+		ImGui::Checkbox("Allow input", &player.allowInput);
+
 	}
 
 }
