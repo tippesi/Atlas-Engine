@@ -451,7 +451,7 @@ namespace Atlas {
                 auto meshSubset = entityManager.GetSubset<MeshComponent>();
 
                 for (auto entity : meshSubset) {
-                    auto& meshComp = meshSubset.Get(entity);
+                    const auto& meshComp = meshSubset.Get(entity);
 
                     auto dist = 0.0f;
                     if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
@@ -481,7 +481,7 @@ namespace Atlas {
                 auto textSubset = entityManager.GetSubset<TextComponent>();
 
                 for (auto entity : textSubset) {
-                    auto& textComp = textSubset.Get(entity);
+                    const auto& textComp = textSubset.Get(entity);
 
                     auto dist = 0.0f;
                     if (ray.Intersects(textComp.GetRectangle(), 0.0f, result.hitDistance, dist)) {
@@ -758,15 +758,15 @@ namespace Atlas {
             
             // Normal components without resources which are not a hierarchy that needs special treatment
             if (srcEntity.HasComponent<NameComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<NameComponent>();
+                const auto& otherComp = srcEntity.GetComponent<NameComponent>();
                 dstEntity.AddComponent<NameComponent>(otherComp);
             }
             if (srcEntity.HasComponent<TransformComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<TransformComponent>();
+                const auto& otherComp = srcEntity.GetComponent<TransformComponent>();
                 dstEntity.AddComponent<TransformComponent>(otherComp);
             }
             if (srcEntity.HasComponent<CameraComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<CameraComponent>();
+                const auto& otherComp = srcEntity.GetComponent<CameraComponent>();
                 auto& comp = dstEntity.AddComponent<CameraComponent>(otherComp);
                 // Set isMain to false by default
                 comp.isMain = false;
@@ -800,12 +800,12 @@ namespace Atlas {
             if (srcEntity.HasComponent<AudioComponent>()) {
                 // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioComponent>();
-                auto& comp = dstEntity.AddComponent<AudioComponent>(otherComp);
+                dstEntity.AddComponent<AudioComponent>(otherComp);
             }
             if (srcEntity.HasComponent<AudioVolumeComponent>()) {
                 // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
-                auto& comp = dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
+                dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
             }
             if (srcEntity.HasComponent<TextComponent>()) {
                 auto otherComp = srcEntity.GetComponent<TextComponent>();

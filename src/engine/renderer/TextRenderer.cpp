@@ -141,8 +141,8 @@ namespace Atlas {
                 .down = vec4(down, 1.0f),
                 .characterColor = color,
                 .outlineColor = outlineColor,
-                .textScale = scale,
                 .renderHalfSize = halfSize,
+                .textScale = scale,
                 .outlineScale = outlineScale,
                 .edgeValue = float(font->edgeValue) / 255.0f,
                 .smoothness = font->smoothness
