@@ -20,13 +20,15 @@ namespace Atlas {
 			public:
 				AudioComponent() = default;
                 explicit AudioComponent(Scene* scene) : scene(scene) {}
+                explicit AudioComponent(Scene* scene, const AudioComponent& that);
                 explicit AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
                     float falloffFactor = 1.0f, bool loop = false);
 
                 void ChangeResource(ResourceHandle<Audio::AudioData> audioData);
 
-                float falloffFactor = 1.0f;
-                float cutoff = 0.0001f;
+                float falloffFactor = 0.5f;
+                float falloffPower = 2.0f;
+                float cutoff = 0.001f;
 
                 float volume = 1.0f;
 

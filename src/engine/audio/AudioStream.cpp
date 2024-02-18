@@ -30,7 +30,7 @@ namespace Atlas {
 
             std::lock_guard<std::mutex> lock(mutex);
 
-            if (!data.IsValid())
+            if (!data.IsLoaded())
                 return;
 
             progress = time * (double)(data->GetFrequency() * data->GetSampleSize() / data->GetChannelCount()) / 2.0;
@@ -42,7 +42,7 @@ namespace Atlas {
 
             std::lock_guard<std::mutex> lock(mutex);
 
-            if (!data.IsValid())
+            if (!data.IsLoaded())
                 return 0.0;
 
             return 2.0 * progress * (double)data->GetChannelCount() / 

@@ -130,13 +130,16 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 
         cascadeSpace.xy = cascadeSpace.xy * 0.5 + 0.5;
 
+        float shadowValue = 1.0;
+#ifdef SHADOWS        
 #ifdef AE_TEXTURE_SHADOW_LOD
         // This fixes issues that can occur at cascade borders
-        float shadowValue = textureLod(cascadeMaps,
+        shadowValue = textureLod(cascadeMaps,
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z), 0);
 #else
-        float shadowValue = texture(cascadeMaps,
+        shadowValue = texture(cascadeMaps,
             vec4(cascadeSpace.xy, cascadeIndex, cascadeSpace.z));
+#endif
 #endif
 
         //shadowValue = distance > uniforms.light.shadow.distance ? 1.0 : shadowValue;

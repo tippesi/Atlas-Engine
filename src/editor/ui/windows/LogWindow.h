@@ -11,6 +11,9 @@ namespace Atlas::Editor::UI {
 
         void Render();
 
+    private:
+        std::string logSearch;
+
     };
 
 }

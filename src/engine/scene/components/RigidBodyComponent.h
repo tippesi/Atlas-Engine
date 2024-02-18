@@ -3,6 +3,7 @@
 #include "../../System.h"
 #include "../../physics/PhysicsWorld.h"
 
+#include "../Entity.h"
 #include "TransformComponent.h"
 
 namespace Atlas {
@@ -17,9 +18,10 @@ namespace Atlas {
 
             public:
                 RigidBodyComponent() = default;
-                RigidBodyComponent(const RigidBodyComponent& that) = default;
-                explicit RigidBodyComponent(const Physics::BodyCreationSettings& bodyCreationSettings)
-                    : layer(bodyCreationSettings.objectLayer), creationSettings(CreateRef(bodyCreationSettings)) {}
+                RigidBodyComponent(Scene* scene, Entity entity) : entity(entity) {}
+                RigidBodyComponent(Scene* scene, Entity entity, const RigidBodyComponent& that);
+                explicit RigidBodyComponent(Scene* scene, Entity entity, const Physics::BodyCreationSettings& bodyCreationSettings)
+                    : entity(entity), layer(bodyCreationSettings.objectLayer), creationSettings(CreateRef(bodyCreationSettings)) {}
 
                 Physics::BodyCreationSettings GetBodyCreationSettings() override;
 
@@ -31,6 +33,8 @@ namespace Atlas {
                     Physics::PhysicsWorld* physicsWorld);
 
                 void RemoveFromPhysicsWorld();
+
+                ECS::Entity entity;
 
                 friend Scene;
 

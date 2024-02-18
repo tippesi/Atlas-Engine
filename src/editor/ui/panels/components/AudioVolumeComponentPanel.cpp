@@ -1,6 +1,6 @@
 #include "AudioVolumeComponentPanel.h"
 
-#include "resource/ResourceManager.h"
+#include "../../../tools/ResourcePayloadHelper.h"
 
 namespace Atlas::Editor::UI {
 
@@ -16,16 +16,10 @@ namespace Atlas::Editor::UI {
 
         ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Audio::AudioData).name())) {
-                Resource<Audio::AudioData>* dropResource;
-                std::memcpy(&dropResource, dropPayload->Data, dropPayload->DataSize);
-                // We know this resource is loaded, so we can just request a handle without loading
-                audioVolumeComponent.ChangeResource(ResourceManager<Audio::AudioData>::GetResource(dropResource->path));
-                resourceChanged = true;
-            }
-
-            ImGui::EndDragDropTarget();
+        auto handle = ResourcePayloadHelper::AcceptDropResource<Audio::AudioData>();
+        if (handle.IsValid()) {
+            audioVolumeComponent.ChangeResource(handle);
+            resourceChanged = true;
         }
 
         ImGui::Text("AABB");
@@ -33,8 +27,13 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat3("Max", glm::value_ptr(audioVolumeComponent.aabb.max), 0.1f, -10000.0f, 10000.0f);
 
         ImGui::DragFloat("Volume", &audioVolumeComponent.volume, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0f, 0.2f);
-        ImGui::DragFloat("Falloff factor", &audioVolumeComponent.falloffFactor, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Cutoff", &audioVolumeComponent.cutoff, 0.001f, 0.0001f, 0.2f);
+        ImGui::DragFloat("Falloff factor", &audioVolumeComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
+        ImGui::DragFloat("Falloff power", &audioVolumeComponent.falloffPower, 1.0f, 0.0f, 100.0f);
+
+        if (audioVolumeComponent.stream && audioVolumeComponent.stream->IsValid()) {
+            ImGui::Checkbox("Loop stream", &audioVolumeComponent.stream->loop);
+        }
 
         return resourceChanged;
 

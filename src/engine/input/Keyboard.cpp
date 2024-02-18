@@ -159,7 +159,7 @@ namespace Atlas {
             if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
                 fast = false;
             }
-            
+           
 
         }
 

@@ -9,6 +9,20 @@ namespace Atlas {
 
         namespace Components {
 
+            AudioComponent::AudioComponent(Scene *scene, const AudioComponent &that) {
+
+                if (this != &that) {
+                    *this = that;
+                    // Need to create new stream
+                    if (stream) {
+                        stream = Audio::AudioManager::CreateStream(stream->data, 0.0f);
+                    }   
+                }
+
+                this->scene = scene;
+
+            }
+
             AudioComponent::AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
                 float falloffFactor, bool loop) : falloffFactor(falloffFactor), scene(scene) {
 
@@ -50,7 +64,16 @@ namespace Atlas {
 
                 auto distance = glm::max(epsilon, glm::distance(objectLocation, listenerLocation));
 
-                float distanceVolume = glm::min(1.0f, falloffFactor / distance);
+                // Use quick paths for "normal" powers and do nothing for the power=1 case
+                auto powerDistance = distance;
+                if (falloffPower == 2.0f)
+                    powerDistance *= powerDistance;
+                else if (falloffPower == 3.0f)
+                    powerDistance *= powerDistance * powerDistance;
+                else if (falloffPower != 1.0f)
+                    powerDistance = powf(powerDistance, falloffPower);
+
+                float distanceVolume = glm::min(1.0f, falloffFactor / powerDistance);
 
                 auto audible = distanceVolume > cutoff;
 

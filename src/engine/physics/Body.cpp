@@ -73,6 +73,13 @@ namespace Atlas::Physics {
 
     }
 
+    uint64_t Body::GetUserData() const {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return world->GetUserData(bodyId);
+
+    }
+
     Physics::BodyCreationSettings Body::GetBodyCreationSettings() {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

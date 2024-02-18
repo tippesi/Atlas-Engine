@@ -57,7 +57,7 @@ namespace Atlas {
          * because 5 - 5 * 100/255 is approximately 3. Everything outside this area can be used
          * as the outline.
          */
-        Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue = 127);
+        Font(const std::string& filename, float pixelSize, int32_t padding, uint8_t edgeValue = 127);
 
         /**
          * Returns the glyph of a character

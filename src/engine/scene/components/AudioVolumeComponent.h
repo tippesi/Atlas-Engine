@@ -28,7 +28,8 @@ namespace Atlas {
 
                 Volume::AABB GetTransformedAABB() const;
 
-                float falloffFactor = 1.0f;
+                float falloffFactor = 0.5f;
+                float falloffPower = 2.0f;
                 float cutoff = 0.0001f;
 
                 float volume = 1.0f;

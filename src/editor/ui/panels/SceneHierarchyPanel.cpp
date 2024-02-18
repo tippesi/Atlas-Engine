@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <ImGuizmo.h>
 
 namespace Atlas::Editor::UI {
@@ -35,6 +36,8 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
+            ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+
             TraverseHierarchy(scene, root, inFocus);
 
             RenderExtendedHierarchy(scene);
@@ -58,6 +61,10 @@ namespace Atlas::Editor::UI {
         }
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+
+        // If we have a search term and the name doesn't match, return
+        if (nodeName != "Root" && !entitySearch.empty() && nodeName.find(entitySearch) == std::string::npos)
+            return;
 
         auto nodeFlags = baseFlags;
         nodeFlags |= entity == selectedEntity ? ImGuiTreeNodeFlags_Selected : 0;
@@ -225,6 +232,10 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
         if (scene->reflection)
             RenderExtendedItem("Reflection", &selectedProperty.reflection);
+        if (scene->ssgi)
+            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
+        if (scene->sss)
+            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
 
     }

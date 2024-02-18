@@ -3,10 +3,21 @@
 
 #include "../System.h"
 #include "AABB.h"
+#include "Rectangle.h"
 
 namespace Atlas {
 
     namespace Volume {
+
+        template<class T>
+        struct RayResult {
+            bool IsNormalValid() const { return normal.x != 0.0f || normal.y != 0.0f || normal.z != 0.0f; }
+
+            bool valid = false;
+            vec3 normal = vec3(0.0f);
+            float hitDistance = 10e12f;
+            T data;
+        };
 
         class Ray {
 
@@ -17,13 +28,15 @@ namespace Atlas {
 
             vec3 Get(float distance) const;
 
-            bool Intersects(AABB aabb, float tmin, float tmax);
+            bool Intersects(const AABB& aabb, float tmin, float tmax);
 
-            bool Intersects(AABB aabb, float tmin, float tmax, float& t);
+            bool Intersects(const AABB& aabb, float tmin, float tmax, float& t);
 
             bool Intersects(vec3 v0, vec3 v1, vec3 v2);
 
             bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection);
+
+            bool Intersects(const Rectangle& rect, float tmin, float tmax, float& t);
 
             vec3 Distance(Ray ray, float& distance);
 

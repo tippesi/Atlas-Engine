@@ -30,6 +30,8 @@ namespace Atlas::Scene {
             float fastVelocity = 4.0f;
             float jumpVelocity = 4.0f;
 
+			bool allowInput = true;
+
 		private:
 			void Update(float deltaTime);
 

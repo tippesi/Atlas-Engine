@@ -4,13 +4,6 @@
 
 #include "common/Path.h"
 
-#include "mesh/Mesh.h"
-#include "scene/Scene.h"
-#include "audio/AudioData.h"
-
-#include "loader/ModelLoader.h"
-#include "scene/SceneSerializer.h"
-
 namespace Atlas::Editor {
 
     void FileImporter::ImportFiles(const std::vector<std::string> &filenames) {
@@ -32,30 +25,16 @@ namespace Atlas::Editor {
 
         auto type = fileTypeMapping.at(fileType);
         switch(type) {
-            case FileType::Audio: {
-                    auto handle = ResourceManager<Audio::AudioData>::GetOrLoadResourceAsync(
-                        filename, ResourceOrigin::User);
-                    handle.GetResource()->permanent = true;
-                }
-                break;
-            case FileType::Mesh: {
-                    auto handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                        ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
-                    handle.GetResource()->permanent = true;
-                }
-                break;
-            case FileType::Scene: {
-                    auto handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
-                        ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
-                }
-                break;
-            default:
-                break;
+        case FileType::Audio: ImportFile<Audio::AudioData>(filename); break;
+        case FileType::Mesh: ImportFile<Mesh::Mesh>(filename); break;
+        case FileType::Scene: ImportFile<Scene::Scene>(filename); break;
+        case FileType::Font: ImportFile<Font>(filename); break;
+        default: break;
         }
 
     }
 
-    const std::map<const std::string, FileImporter::FileType> FileImporter::fileTypeMapping = {
+    const std::map<const std::string, FileType> FileImporter::fileTypeMapping = {
         { "wav", FileType::Audio },
         { "gltf", FileType::Mesh },
         { "glb", FileType::Mesh },
@@ -63,6 +42,8 @@ namespace Atlas::Editor {
         { "fbx", FileType::Mesh },
         { "aeterrain", FileType::Terrain },
         { "aescene", FileType::Scene },
+        { "lua", FileType::Script },
+        { "ttf", FileType::Font },
     };
 
 }

@@ -15,11 +15,6 @@ namespace Atlas::Editor::UI {
 
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, CameraComponent& cameraComponent);
 
-    private:
-        void RenderShapeSettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);
-
-        void RenderBodySettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);
-
     };
 
 }

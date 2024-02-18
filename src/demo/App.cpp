@@ -77,8 +77,7 @@ void App::LoadContent() {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = false;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
@@ -109,16 +108,18 @@ void App::LoadContent() {
 
     LoadScene();
 
+    imguiWrapper = Atlas::CreateRef<Atlas::ImguiExtension::ImguiWrapper>();
+
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    imguiWrapper.Load(&window);
+    imguiWrapper->Load(&window);
 
 }
 
 void App::UnloadContent() {
 
     UnloadScene();
-    imguiWrapper.Unload();
+    imguiWrapper->Unload();
 
 }
 
@@ -132,7 +133,7 @@ void App::Update(float deltaTime) {
 
     const ImGuiIO& io = ImGui::GetIO();
 
-    imguiWrapper.Update(&window, deltaTime);
+    imguiWrapper->Update(&window, deltaTime);
 
     if (io.WantCaptureMouse) {
         mouseHandler.lock = true;
@@ -437,7 +438,7 @@ void App::Render(float deltaTime) {
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, colorSpace);
                     vsyncMode = vsync;
                     hdrMode = hdr;
-                    imguiWrapper.RecreateImGuiResources();
+                    imguiWrapper->RecreateImGuiResources();
                     graphicsDevice->WaitForIdle();
                     recreateSwapchain = true;
                 }
@@ -516,23 +517,13 @@ void App::Render(float deltaTime) {
                 }
                 ImGui::SliderFloat("Bias##Shadow", &shadow->bias, 0.0f, 2.0f);
             }
-            if (ImGui::CollapsingHeader("Screen-space shadows (preview)")) {
+            if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
-                ImGui::Checkbox("Enable##SSS", &sss->enable);
-                ImGui::SliderInt("Sample count##SSS", &sss->sampleCount, 2.0, 16.0);
-                ImGui::SliderFloat("Max length##SSS", &sss->maxLength, 0.01f, 1.0f);
-                ImGui::SliderFloat("Thickness##SSS", &sss->thickness, 0.001f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+                sssPanel.Render(sss);
             }
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ImGui::Checkbox("Enable##SSGI", &ssgi->enable);
-                ImGui::Checkbox("Enable ambient occlusion##SSGI", &ssgi->enableAo);
-                ImGui::SliderInt("Ray count##SSGI", &ssgi->rayCount, 1, 8);
-                ImGui::SliderInt("Sample count##SSGI", &ssgi->sampleCount, 1, 16);
-                ImGui::SliderFloat("Radius##SSGI", &ssgi->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Ao strength##SSGI", &ssgi->aoStrength, 0.0f, 10.0f);
-                ImGui::SliderFloat("Irradiance limit##SSGI", &ssgi->irradianceLimit, 0.0f, 10.0f);
-                //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
+                ssgiPanel.Render(ssgi);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -598,37 +589,7 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;
                 auto materials = scene->GetMaterials();
-                for (auto material : materials) {
-                    auto label = material->name + "##mat" + std::to_string(id++);
-
-                    if (ImGui::TreeNode(label.c_str())) {
-                        auto twoSidedLabel = "Two sided##" + label;
-                        auto baseColorLabel = "Base color##" + label;
-                        auto emissionColorLabel = "Emission color##" + label;
-                        auto emissionPowerLabel = "Emission power##" + label;
-                        auto transmissionColorLabel = "Transmission color##" + label;
-
-                        ImGui::Checkbox(twoSidedLabel.c_str(), &material->twoSided);
-                        ImGui::ColorEdit3(baseColorLabel.c_str(), glm::value_ptr(material->baseColor));
-                        ImGui::ColorEdit3(emissionColorLabel.c_str(), glm::value_ptr(material->emissiveColor));
-                        ImGui::SliderFloat(emissionPowerLabel.c_str(), &material->emissiveIntensity, 1.0f, 10000.0f,
-                            "%.3f", ImGuiSliderFlags_Logarithmic);
-
-                        auto roughnessLabel = "Roughness##" + label;
-                        auto metallicLabel = "Metallic##" + label;
-                        auto reflectanceLabel = "Reflectance##" + label;
-                        auto aoLabel = "Ao##" + label;
-                        auto opacityLabel = "Opacity##" + label;
-
-                        ImGui::SliderFloat(roughnessLabel.c_str(), &material->roughness, 0.0f, 1.0f);
-                        ImGui::SliderFloat(metallicLabel.c_str(), &material->metalness, 0.0f, 1.0f);
-                        ImGui::SliderFloat(reflectanceLabel.c_str(), &material->reflectance, 0.0f, 1.0f);
-                        ImGui::SliderFloat(aoLabel.c_str(), &material->ao, 0.0f, 1.0f);
-                        ImGui::SliderFloat(opacityLabel.c_str(), &material->opacity, 0.0f, 1.0f);
-
-                        ImGui::TreePop();
-                    }
-                }
+                materialsPanel.Render(imguiWrapper, materials);
             }
             if (ImGui::CollapsingHeader("Controls")) {
                 ImGui::Text("Use WASD for movement");
@@ -665,7 +626,7 @@ void App::Render(float deltaTime) {
 #endif
 
         if (!recreateSwapchain) {
-            imguiWrapper.Render();
+            imguiWrapper->Render();
         }
 
         recreateSwapchain = false;
@@ -967,7 +928,7 @@ bool App::LoadScene() {
             "flying world/scene.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(0.01f);
+        transforms.emplace_back(glm::scale(glm::vec3(0.01f)));
 
         // Metalness is set to 0.9f
         //for (auto& material : mesh.data.materials) material.metalness = 0.0f;
@@ -993,22 +954,22 @@ bool App::LoadScene() {
             "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
             "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
-        transforms.emplace_back(4.0f);
+        transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
 
         // Other scene related settings apart from the mesh
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
@@ -1214,10 +1175,14 @@ void App::CheckLoadScene() {
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
     for (auto& entity : entities) {
+        const auto& transformComponent = entity.GetComponent<TransformComponent>();
         const auto& meshComponent = entity.GetComponent<MeshComponent>();
+
+        auto scale = transformComponent.Decompose().scale;
         if (entityCount++ == 0) {
             Atlas::Physics::MeshShapeSettings settings = {
-                .mesh = meshComponent.mesh
+                .mesh = meshComponent.mesh,
+                .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
@@ -1230,6 +1195,7 @@ void App::CheckLoadScene() {
         else {
             Atlas::Physics::BoundingBoxShapeSettings settings = {
                 .aabb = meshComponent.mesh->data.aabb,
+                .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 

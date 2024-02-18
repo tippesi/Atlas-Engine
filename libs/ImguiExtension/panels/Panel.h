@@ -3,6 +3,8 @@
 #include <string>
 #include <imgui.h>
 
+#include "../UiElements.h"
+
 namespace Atlas::ImguiExtension {
 
     class Panel {

@@ -12,242 +12,44 @@
 
 namespace Atlas::Scene::Components {
 
-    void to_json(json& j, const AudioComponent& p) {
-        j = json {
-            {"falloffFactor", p.falloffFactor},
-            {"cutoff", p.cutoff},
-            {"volume", p.volume},
-        };
+    void to_json(json& j, const AudioComponent& p);
 
-        if (p.stream) {
-            j["stream"] = *p.stream;
-        }
-    }
+    void from_json(const json& j, AudioComponent& p);
 
-    void from_json(const json& j, AudioComponent& p) {
-        p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
+    void to_json(json& j, const AudioVolumeComponent& p);
 
-        j.at("falloffFactor").get_to(p.falloffFactor);
-        j.at("cutoff").get_to(p.cutoff);
-        j.at("volume").get_to(p.volume);
+    void from_json(const json& j, AudioVolumeComponent& p);
 
-        if (j.contains("stream")) {
-            j.at("stream").get_to(*p.stream);
-        }
-    }
+    void to_json(json& j, const CameraComponent& p);
 
-    void to_json(json& j, const AudioVolumeComponent& p) {
-        j = json {
-            {"falloffFactor", p.falloffFactor},
-            {"cutoff", p.cutoff},
-            {"volume", p.volume},
-            {"aabb", p.aabb}
-        };
+    void from_json(const json& j, CameraComponent& p);
 
-        if (p.stream) {
-            j["stream"] = *p.stream;
-        }
-    }
+    void to_json(json& j, const LightComponent& p);
 
-    void from_json(const json& j, AudioVolumeComponent& p) {
-        p.stream = Audio::AudioManager::CreateStream(ResourceHandle<Audio::AudioData>());
+    void from_json(const json& j, LightComponent& p);
 
-        j.at("falloffFactor").get_to(p.falloffFactor);
-        j.at("cutoff").get_to(p.cutoff);
-        j.at("aabb").get_to(p.aabb);
-        j.at("volume").get_to(p.volume);
+    void to_json(json& j, const MeshComponent& p);
 
-        if (j.contains("stream")) {
-            j.at("stream").get_to(*p.stream);
-        }
-    }
+    void from_json(const json& j, MeshComponent& p);
 
-    void to_json(json& j, const CameraComponent& p) {
-        j = json {
-            {"location", p.location},
-            {"rotation", p.rotation},
-            {"exposure", p.exposure},
-            {"fieldOfView", p.fieldOfView},
-            {"aspectRatio", p.aspectRatio},
-            {"nearPlane", p.nearPlane},
-            {"farPlane", p.farPlane},
-            {"thirdPerson", p.thirdPerson},
-            {"thirdPersonDistance", p.thirdPersonDistance},
-            {"isMain", p.isMain},
-            {"useEntityTranslation", p.useEntityTranslation},
-            {"useEntityRotation", p.useEntityRotation}
-        };
-    }
+    void to_json(json& j, const NameComponent& p);
 
-    void from_json(const json& j, CameraComponent& p) {
-        j.at("location").get_to(p.location);
-        j.at("rotation").get_to(p.rotation);
-        j.at("exposure").get_to(p.exposure);
-        j.at("fieldOfView").get_to(p.fieldOfView);
-        j.at("aspectRatio").get_to(p.aspectRatio);
-        j.at("nearPlane").get_to(p.nearPlane);
-        j.at("farPlane").get_to(p.farPlane);
-        j.at("thirdPerson").get_to(p.thirdPerson);
-        j.at("thirdPersonDistance").get_to(p.thirdPersonDistance);
-        j.at("isMain").get_to(p.isMain);
-        j.at("useEntityTranslation").get_to(p.useEntityTranslation);
-        j.at("useEntityRotation").get_to(p.useEntityRotation);
-    }
+    void from_json(const json& j, NameComponent& p);
 
-    void to_json(json& j, const LightComponent& p) {
-        json typeProperties;
-        if (p.type == LightType::DirectionalLight) {
-            typeProperties = json {
-                {"direction", p.properties.directional.direction}
-            };
-        }
-        else if (p.type == LightType::PointLight) {
-            typeProperties = json {
-                {"position", p.properties.point.position},
-                {"radius", p.properties.point.radius},
-                {"attenuation", p.properties.point.attenuation},
-            };
-        }
+    void to_json(json& j, const TransformComponent& p);
 
-        int type = static_cast<int>(p.type);
-        int mobility = static_cast<int>(p.mobility);
+    void from_json(const json& j, TransformComponent& p);
 
-        j = json {
-            {"type", type},
-            {"mobility", mobility},
-            {"color", p.color},
-            {"intensity", p.intensity},
-            {"properties", typeProperties},
-            {"shadow", *p.shadow},
-            {"isMain", p.isMain},
-            {"volumetric", p.volumetric}
-        };
-    }
+    void to_json(json& j, const TextComponent& p);
 
-    void from_json(const json& j, LightComponent& p) {
-        json typeProperties;
-        int type, mobility;
+    void from_json(const json& j, TextComponent& p);
 
-        p.shadow = CreateRef<Lighting::Shadow>();
+    void to_json(json& j, const RigidBodyComponent& p);
 
-        j.at("type").get_to(type);
-        j.at("mobility").get_to(mobility);
-        j.at("color").get_to(p.color);
-        j.at("intensity").get_to(p.intensity);
-        j.at("properties").get_to(typeProperties);
-        j.at("shadow").get_to(*p.shadow);
-        j.at("isMain").get_to(p.isMain);
-        j.at("volumetric").get_to(p.volumetric);
+    void from_json(const json& j, RigidBodyComponent& p);
 
-        p.type = static_cast<LightType>(type);
-        p.mobility = static_cast<LightMobility>(type);
+    void to_json(json& j, const PlayerComponent& p);
 
-        if (p.type == LightType::DirectionalLight) {
-            typeProperties.at("direction").get_to(p.properties.directional.direction);
-        }
-        else if (p.type == LightType::PointLight) {
-            typeProperties.at("position").get_to(p.properties.point.position);
-            typeProperties.at("radius").get_to(p.properties.point.radius);
-            typeProperties.at("attenuation").get_to(p.properties.point.attenuation);
-        }
-    }
-
-    void to_json(json& j, const MeshComponent& p) {
-        j = json {
-            {"visible", p.visible},
-            {"dontCull", p.dontCull}
-        };
-
-        if (p.mesh.IsValid())
-            j["resourcePath"] = p.mesh.GetResource()->path;
-    }
-
-    void from_json(const json& j, MeshComponent& p) {
-        j.at("visible").get_to(p.visible);
-        j.at("dontCull").get_to(p.dontCull);
-
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
-        }
-
-    }
-
-    void to_json(json& j, const NameComponent& p) {
-        j = json {
-            {"name", p.name},
-        };
-    }
-
-    void from_json(const json& j, NameComponent& p) {
-        j.at("name").get_to(p.name);
-    }
-
-    void to_json(json& j, const TransformComponent& p) {
-        j = json {
-            {"matrix", p.matrix},
-            {"isStatic", p.isStatic},
-        };
-    }
-
-    void from_json(const json& j, TransformComponent& p) {
-        j.at("matrix").get_to(p.matrix);
-        j.at("isStatic").get_to(p.isStatic);
-    }
-
-    void to_json(json& j, const RigidBodyComponent& p) {
-        j = json {
-            {"bodyIndex", p.bodyId.GetIndex()},
-            {"layer", p.layer},
-        };
-
-        // This is only relevant for not yet created bodies
-        if (p.creationSettings != nullptr)
-            j["creationSettings"] = *p.creationSettings;
-    }
-
-    void from_json(const json& j, RigidBodyComponent& p) {
-        // This whole thing works because only components with physics world are considered valid,
-        // so the body id will be overriden at some point.
-        uint32_t bodyIndex;
-        j.at("bodyIndex").get_to(bodyIndex);
-        j.at("layer").get_to(p.layer);
-
-        // This is only relevant for not yet created bodies
-        if (j.contains("creationSettings")) {
-            p.creationSettings = CreateRef<Physics::BodyCreationSettings>();
-            *p.creationSettings = j["creationSettings"];
-        }
-
-        // We can use the index here since when loading nothing but the loading thread
-        // will access the physics system (in multithreaded scenarios we would need to use
-        // the sequence number as well
-        p.bodyId = Physics::BodyID(bodyIndex);
-    }
-
-    void to_json(json& j, const PlayerComponent& p) {
-        j = json {
-            {"slowVelocity", p.slowVelocity},
-            {"fastVelocity", p.fastVelocity},
-            {"jumpVelocity", p.jumpVelocity},
-        };
-
-        if (p.creationSettings != nullptr)
-            j["creationSettings"] = *p.creationSettings;
-    }
-
-    void from_json(const json& j, PlayerComponent& p) {
-        j.at("slowVelocity").get_to(p.slowVelocity);
-        j.at("fastVelocity").get_to(p.fastVelocity);
-        j.at("jumpVelocity").get_to(p.jumpVelocity);
-
-        if (j.contains("creationSettings")) {
-            p.creationSettings = CreateRef<Physics::PlayerCreationSettings>();
-            *p.creationSettings = j["creationSettings"];
-        }
-    }
+    void from_json(const json& j, PlayerComponent& p);
 
 }

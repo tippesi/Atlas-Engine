@@ -16,7 +16,12 @@ namespace Atlas::Editor {
         Play,
         Stop,
         Scene,
-        Terrain
+        Terrain,
+        Font,
+        Settings,
+        ArrowUp,
+        ArrowLeft,
+        ArrowRight
     };
 
     class Icons {
@@ -26,7 +31,11 @@ namespace Atlas::Editor {
         Texture::Texture2D& Get(IconType type);
 
     private:
+        void LoadIcons();
+
         std::map<IconType, Texture::Texture2D> icons;
+
+        bool darkModeIcons = true;
 
     };
 

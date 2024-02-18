@@ -90,6 +90,7 @@ namespace Atlas {
 
             uniformBuffer.SetData(&uniforms, 0);
 
+            pipelineConfig.ManageMacro("SHADOWS", light.shadow != nullptr);
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);

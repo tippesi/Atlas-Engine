@@ -154,7 +154,8 @@ namespace Atlas {
 
             auto& light = entity.GetComponent<LightComponent>();
             auto& shadow = light.shadow;
-
+            
+            /*
             if (lightMap.contains(entity)) {
                 auto frameBuffer = lightMap[entity];
                 if (frameBuffer->extent.width == shadow->resolution ||
@@ -162,6 +163,7 @@ namespace Atlas {
                     return frameBuffer;
                 }
             }
+            */
 
             Graphics::RenderPassDepthAttachment attachment = {
                 .imageFormat = shadow->useCubemap ? shadow->cubemap.format :

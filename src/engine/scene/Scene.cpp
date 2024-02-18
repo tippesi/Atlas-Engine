@@ -85,6 +85,24 @@ namespace Atlas {
 
         }
 
+        std::string NumberToString(auto number) {
+
+        auto str = std::to_string(number);
+        auto pos = str.find(".");
+        if (pos != std::string::npos)
+            return str.substr(0, pos + 4);
+        return str;
+
+    }
+
+    std::string VecToString(auto vector) {
+
+        return NumberToString(vector.x) + ", "
+               + NumberToString(vector.y) + ", "
+               + NumberToString(vector.z);
+
+    }
+
         void Scene::Timestep(float deltaTime) {
 
             this->deltaTime = deltaTime;
@@ -214,10 +232,13 @@ namespace Atlas {
             auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto entity : meshSubset) {
                 auto& meshComponent = entityManager.Get<MeshComponent>(entity);
-                if (!meshComponent.mesh.IsLoaded())
-                    continue;
-
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                if (!meshComponent.mesh.IsLoaded()) {
+                    // We can't update the transform yet
+                    transformComponent.updated = false;
+                    continue;
+                }
+
                 if (!transformComponent.changed && meshComponent.inserted)
                     continue;
 
@@ -234,8 +255,10 @@ namespace Atlas {
             for (auto entity : transformSubset) {
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
 
-                transformComponent.changed = false;
-                transformComponent.updated = false;
+                if (transformComponent.updated) {
+                    transformComponent.changed = false;
+                    transformComponent.updated = false;
+                }
             }
 
             // We also need to reset the hierarchy components as well
@@ -246,11 +269,20 @@ namespace Atlas {
                 hierarchyComponent.updated = false;
             }
 
+            // Everything below assumes that entities themselves have a transform
+            // Without it they won't be transformed when they are in a hierarchy
             auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
             for (auto entity : cameraSubset) {
                 const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
 
                 cameraComponent.parentTransform = transformComponent.globalMatrix;
+            }
+
+            auto textSubset = entityManager.GetSubset<TextComponent, TransformComponent>();
+            for (auto entity : textSubset) {
+                const auto& [textComponent, transformComponent] = textSubset.Get(entity);
+
+                textComponent.Update(transformComponent);
             }
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();
@@ -393,6 +425,76 @@ namespace Atlas {
         bool Scene::HasMainCamera() const {
 
             return mainCameraEntity.IsValid() && mainCameraEntity.HasComponent<CameraComponent>();
+
+        }
+
+        Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
+
+            Volume::RayResult<Entity> result;
+
+            // Most accurate method if it works
+            if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
+                auto bodyResult = physicsWorld->CastRay(ray);
+
+                if (bodyResult.valid) {
+                    auto userData = bodyResult.data.GetUserData();
+
+                    result.valid = true;
+                    result.hitDistance = bodyResult.hitDistance;
+                    result.normal = bodyResult.normal;
+                    result.data = { userData, &entityManager };
+                }
+            }
+
+            // This isn't really optimized, we could use hierarchical data structures
+            if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
+                auto meshSubset = entityManager.GetSubset<MeshComponent>();
+
+                for (auto entity : meshSubset) {
+                    const auto& meshComp = meshSubset.Get(entity);
+
+                    auto dist = 0.0f;
+                    if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
+                        auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
+                        // This means we already found a more accurate hit
+                        if (result.valid && result.data != entity &&
+                            entityManager.Contains<RigidBodyComponent>(entity))
+                            continue;
+
+                        // Accept all hits greater equal if they were within the updated hit distance
+                        if (dist > 0.0f) {
+                            result.valid = true;
+                            result.data = { entity, &entityManager };
+                            result.hitDistance = dist;
+                        }
+                        
+                        // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
+                        if (!result.valid) {
+                            result.valid = true;
+                            result.data = { entity, &entityManager };
+                        }
+                    }
+                }
+            }
+
+            if (queryComponents & SceneQueryComponentBits::TextComponentBit) {
+                auto textSubset = entityManager.GetSubset<TextComponent>();
+
+                for (auto entity : textSubset) {
+                    const auto& textComp = textSubset.Get(entity);
+
+                    auto dist = 0.0f;
+                    if (ray.Intersects(textComp.GetRectangle(), 0.0f, result.hitDistance, dist)) {
+
+                        result.valid = true;
+                        result.data = { entity, &entityManager };
+                        result.hitDistance = dist;
+                        
+                    }
+                }
+            }
+
+            return result;
 
         }
 
@@ -656,15 +758,15 @@ namespace Atlas {
             
             // Normal components without resources which are not a hierarchy that needs special treatment
             if (srcEntity.HasComponent<NameComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<NameComponent>();
+                const auto& otherComp = srcEntity.GetComponent<NameComponent>();
                 dstEntity.AddComponent<NameComponent>(otherComp);
             }
             if (srcEntity.HasComponent<TransformComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<TransformComponent>();
+                const auto& otherComp = srcEntity.GetComponent<TransformComponent>();
                 dstEntity.AddComponent<TransformComponent>(otherComp);
             }
             if (srcEntity.HasComponent<CameraComponent>()) {
-                auto& otherComp = srcEntity.GetComponent<CameraComponent>();
+                const auto& otherComp = srcEntity.GetComponent<CameraComponent>();
                 auto& comp = dstEntity.AddComponent<CameraComponent>(otherComp);
                 // Set isMain to false by default
                 comp.isMain = false;
@@ -672,14 +774,20 @@ namespace Atlas {
             if (srcEntity.HasComponent<LightComponent>()) {
                 auto otherComp = srcEntity.GetComponent<LightComponent>();
                 auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
-                // Need to copy the reference as well, create new textures afterwards with SetResolution 
-                *comp.shadow = *otherComp.shadow;
+                // Need to create a new shadow, since right now the memory is shared between components
+                comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
                 comp.shadow->SetResolution(comp.shadow->resolution);
                 comp.isMain = false;
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
                 dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
+            }
+            if (srcEntity.HasComponent<PlayerComponent>()) {
+                auto otherComp = srcEntity.GetComponent<PlayerComponent>();
+                auto& comp = dstEntity.AddComponent<PlayerComponent>(otherComp);
+                // Need to create a new creation settings, since right now the memory is shared between components
+                comp.creationSettings = CreateRef<Physics::PlayerCreationSettings>(*otherComp.creationSettings);
             }
 
             // Resource components need extra attention (resources need to be registered in this scene)
@@ -690,13 +798,18 @@ namespace Atlas {
                 comp = otherComp;
             }
             if (srcEntity.HasComponent<AudioComponent>()) {
+                // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioComponent>();
-                auto& comp = dstEntity.AddComponent<AudioComponent>(otherComp.stream->data);
-                comp = otherComp;
+                dstEntity.AddComponent<AudioComponent>(otherComp);
             }
             if (srcEntity.HasComponent<AudioVolumeComponent>()) {
+                // These have a proper copy constructor
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
-                auto& comp = dstEntity.AddComponent<AudioVolumeComponent>(otherComp.stream->data, otherComp.aabb);
+                dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
+            }
+            if (srcEntity.HasComponent<TextComponent>()) {
+                auto otherComp = srcEntity.GetComponent<TextComponent>();
+                auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
             }
 
