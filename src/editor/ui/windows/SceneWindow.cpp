@@ -37,6 +37,9 @@ namespace Atlas::Editor::UI {
             camera.isMain = true;
         }
 
+        auto& camera = cameraEntity.GetComponent<CameraComponent>();
+        camera.aspectRatio = float(viewportPanel.viewport->width) / float(viewportPanel.viewport->height);
+
         // Temporarily disable all scene cameras, only let editor camera be main
         std::map<ECS::Entity, bool> cameraMainMap;
         auto cameraSubset = scene->GetSubset<CameraComponent>();
@@ -138,6 +141,8 @@ namespace Atlas::Editor::UI {
 
         viewportPanel.DrawMenuBar([&]() {
 
+            const float padding = 8.0f;
+
             auto height = ImGui::GetTextLineHeight();
 
             ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
@@ -186,7 +191,7 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            auto offset = region.x / 2.0f - buttonSize.x - 8.0f;
+            auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 if (hasMainCamera) {
@@ -206,7 +211,7 @@ namespace Atlas::Editor::UI {
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
             set = Singletons::imguiWrapper->GetTextureDescriptorSet(stopIcon);
 
-            offset = region.x / 2.0f + 8.0f;
+            offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
                 // Set camera to main in any case
@@ -217,6 +222,17 @@ namespace Atlas::Editor::UI {
                 scene->physicsWorld->pauseSimulation = true;
 
                 isPlaying = false;
+            }
+
+            auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(settingsIcon);
+
+            uvMin = ImVec2(0.1f, 0.1f);
+            uvMax = ImVec2(0.9f, 0.9f);
+
+            ImGui::SetCursorPos(ImVec2(region.x - buttonSize.x - padding, 0.0f));
+            if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+                
             }
 
             ImGui::PopStyleColor();

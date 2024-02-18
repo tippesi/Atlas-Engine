@@ -33,6 +33,8 @@ namespace Atlas::Editor::UI {
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
+        int selectedFilter = -1;
+
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
         std::string assetSearch;
 

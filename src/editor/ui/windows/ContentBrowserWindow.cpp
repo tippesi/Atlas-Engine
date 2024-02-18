@@ -61,15 +61,14 @@ namespace Atlas::Editor::UI {
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
 
         const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font"};
-        static int currentSelection = -1;
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
-            bool isSelected = currentSelection == i;
+            bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
             if (isSelected) {
-                currentSelection = i;
+                selectedFilter = i;
             }
-            else if (!isSelected && currentSelection == i) {
-                currentSelection = -1;
+            else if (!isSelected && selectedFilter == i) {
+                selectedFilter = -1;
             }
         }
 
@@ -155,8 +154,6 @@ namespace Atlas::Editor::UI {
 
             auto path = dirEntry.path().string();
             auto assetPath = Common::Path::GetRelative(assetDirectory, path);
-            if (!isDirectory && !IsValidFileType(path))
-                continue;
 
             // Ignore 'invisible' directories
             if (isDirectory && assetPath.at(0) == '.')
@@ -260,10 +257,17 @@ namespace Atlas::Editor::UI {
 
         using dir_entry = std::filesystem::directory_entry;
 
+        FileType filterFileType;
+        if (selectedFilter >= 0)
+            filterFileType = static_cast<FileType>(selectedFilter);
+
         std::vector<dir_entry> entries;
-        if (assetSearch.empty()) {
-            for (const auto& dirEntry : std::filesystem::directory_iterator(currentDirectory))
-                entries.push_back(dirEntry);
+        if (assetSearch.empty() && selectedFilter < 0) {
+            for (const auto& dirEntry : std::filesystem::directory_iterator(currentDirectory)) {
+                auto path = dirEntry.path().string();
+                if (dirEntry.is_directory() || IsValidFileType(path))
+                    entries.push_back(dirEntry);
+            }
         }
         else {
             std::string searchQuery = assetSearch;
@@ -276,7 +280,21 @@ namespace Atlas::Editor::UI {
                 auto filename = Common::Path::GetFileName(path);
                 std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
 
-                if (filename.find(searchQuery) != std::string::npos)
+                if (!IsValidFileType(path))
+                    continue;
+
+                // Filter out by file type, if a filter is selected
+                if (selectedFilter >= 0) {
+                    std::string fileType = Common::Path::GetFileType(filename);
+                    std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
+
+                    auto type = FileImporter::fileTypeMapping.at(fileType);
+                    if (type != filterFileType)
+                        continue;
+                }
+
+                // Filter out by search query, if it is a valid (non-empty) query
+                if (searchQuery.empty() || filename.find(searchQuery) != std::string::npos)
                     entries.push_back(dirEntry);
             }
         }
