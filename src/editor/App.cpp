@@ -327,7 +327,7 @@ namespace Atlas::Editor {
 
         contentBrowserWindow.resetDockingLayout = true;
         logWindow.resetDockingLayout = true;
-        for (auto& sceneWindow : sceneWindows) {
+        for (const auto& sceneWindow : sceneWindows) {
             sceneWindow->resetDockingLayout = true;
             sceneWindow->show = true;
         }
