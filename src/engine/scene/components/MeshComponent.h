@@ -17,11 +17,13 @@ namespace Atlas {
 
             class MeshComponent {
 
-                friend Scene;
-
             public:
                 MeshComponent() = default;
-                explicit MeshComponent(ResourceHandle<Mesh::Mesh> mesh) : mesh(mesh) {};
+                explicit MeshComponent(Scene* scene) : scene(scene) {}
+                explicit MeshComponent(Scene* scene, ResourceHandle<Mesh::Mesh> mesh) : 
+                    scene(scene), mesh(mesh) {};
+
+                void ChangeResource(const ResourceHandle<Mesh::Mesh>& mesh);
 
                 ResourceHandle<Mesh::Mesh> mesh = ResourceHandle<Mesh::Mesh>();
 
@@ -31,7 +33,11 @@ namespace Atlas {
                 Volume::AABB aabb = Volume::AABB{ vec3{-1.0f}, vec3{1.0f} };
 
             protected:
+                Scene* scene = nullptr;
+
                 bool inserted = false;
+
+                friend Scene;
 
             };
 

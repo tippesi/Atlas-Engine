@@ -1,3 +1,5 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include <packing.hsh>
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
@@ -49,7 +51,7 @@ layout (std430, set = 1, binding = 14) buffer PackedMaterials {
 
 Material UnpackMaterial(uint idx) {
 
-    PackedMaterial compressed = packedMaterials[idx];
+    PackedMaterial compressed = packedMaterials[nonuniformEXT(idx)];
     
     Material material;
 

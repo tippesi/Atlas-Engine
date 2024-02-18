@@ -4,6 +4,7 @@
 #include "Resource.h"
 #include "Log.h"
 #include "events/EventManager.h"
+#include "loader/AssetLoader.h"
 
 #include <type_traits>
 #include <mutex>
@@ -24,10 +25,11 @@ namespace Atlas {
         static ResourceHandle<T> GetResource(const std::string& path) {
 
             CheckInitialization();
-
+            
+            auto relativePath = GetAssetDirectoryPath(path);
             std::lock_guard lock(mutex);
-            if (resources.contains(path)) {
-                auto& resource = resources[path];
+            if (resources.contains(relativePath)) {
+                auto& resource = resources[relativePath];
                 resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                 return ResourceHandle<T>(resource);
             }
@@ -52,11 +54,12 @@ namespace Atlas {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path, origin);
+            auto relativePath = GetAssetDirectoryPath(path);
+            auto handle = GetHandleOrCreateResource(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[path]->Load(std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
+                resources[relativePath]->Load(std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
+                handle = ResourceHandle<T>(resources[relativePath]);
             }
 
             return handle;
@@ -93,11 +96,12 @@ namespace Atlas {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path, origin);
+            auto relativePath = GetAssetDirectoryPath(path);
+            auto handle = GetHandleOrCreateResource(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[path]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
+                resources[relativePath]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
+                handle = ResourceHandle<T>(resources[relativePath]);
             }
 
             return handle;
@@ -120,13 +124,14 @@ namespace Atlas {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path, origin);
+            auto relativePath = GetAssetDirectoryPath(path);
+            auto handle = GetHandleOrCreateResource(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[path]->future = std::async(std::launch::async,
+                resources[relativePath]->future = std::async(std::launch::async,
                     &Resource<T>::template Load<Args...>,
-                    resources[path].get(), std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
+                    resources[relativePath].get(), std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
+                handle = ResourceHandle<T>(resources[relativePath]);
             }
 
             return handle;
@@ -163,13 +168,14 @@ namespace Atlas {
 
             CheckInitialization();
 
-            auto handle = GetHandleOrCreateResource(path, origin);
+            auto relativePath = GetAssetDirectoryPath(path);
+            auto handle = GetHandleOrCreateResource(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[path]->future = std::async(std::launch::async,
+                resources[relativePath]->future = std::async(std::launch::async,
                     &Resource<T>::template LoadWithExternalLoader<Args...>,
-                    resources[path].get(), loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[path]);
-                handle = ResourceHandle<T>(resources[path]);
+                    resources[relativePath].get(), loaderFunction, std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
+                handle = ResourceHandle<T>(resources[relativePath]);
             }
 
             return handle;
@@ -187,17 +193,18 @@ namespace Atlas {
 
             CheckInitialization();
 
+            auto relativePath = GetAssetDirectoryPath(path);
             {
                 std::lock_guard lock(mutex);
-                if (resources.contains(path)) {
-                    auto &resource = resources[path];
+                if (resources.contains(relativePath)) {
+                    auto &resource = resources[relativePath];
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                     alreadyExisted = true;
                     return ResourceHandle<T>(resource);
                 }
 
                 alreadyExisted = false;
-                resources[path] = resource;
+                resources[relativePath] = resource;
             }
 
             NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
@@ -329,6 +336,13 @@ namespace Atlas {
 
             resources[path] = std::make_shared<Resource<T>>(path, origin);
             return ResourceHandle<T>();
+        }
+
+        static inline std::string GetAssetDirectoryPath(const std::string& path) {
+
+            auto normalizedPath = Common::Path::Normalize(path);
+            return Loader::AssetLoader::GetRelativePath(normalizedPath);
+
         }
 
         static void UpdateHandler(Events::FrameEvent event) {

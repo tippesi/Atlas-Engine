@@ -3,6 +3,7 @@
 #include "System.h"
 #include "events/EventManager.h"
 #include "scene/components/CameraComponent.h"
+#include "scene/components/PlayerComponent.h"
 
 namespace Atlas {
 
@@ -23,6 +24,8 @@ namespace Atlas {
 
             void Update(CameraComponent& camera, float deltaTime);
 
+            void Update(const CameraComponent& camera, PlayerComponent& player, float deltaTime);
+
             float speed = 7.0f;
             float reactivity = 6.0f;
 
@@ -37,6 +40,8 @@ namespace Atlas {
             vec3 interpolatedLinearVelocity = vec3(0.0f);
 
             vec3 movement = vec3(0.0f);
+            bool jump = false;
+            bool fast = false;
 
             int32_t eventHandle = -1;
 

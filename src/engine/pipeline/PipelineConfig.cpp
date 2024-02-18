@@ -131,6 +131,7 @@ namespace Atlas {
 
             for (int32_t i = 0; i < graphicsPipelineDesc.vertexInputInfo.vertexAttributeDescriptionCount; i++) {
                 auto& vertexAttributeDesc = graphicsPipelineDesc.vertexInputInfo.pVertexAttributeDescriptions[i];
+                HashCombine(variantHash, vertexAttributeDesc.location);
                 HashCombine(variantHash, vertexAttributeDesc.format);
             }
         }

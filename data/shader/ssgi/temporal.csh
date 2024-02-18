@@ -188,6 +188,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
         float confidence = 1.0;
 
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
+
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
 
@@ -211,6 +213,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
         float confidence = 1.0;
+
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
@@ -277,7 +281,7 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    // historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
+    historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
@@ -287,7 +291,7 @@ void main() {
         historyLength = 0.0;
     }
 
-    factor = min(factor, historyLength / (historyLength + 1.0));
+    factor = min(factor, historyLength / max(1.0, (historyLength + 1.0)));
 
     vec4 resolve = mix(currentValue, historyValue, factor);
 

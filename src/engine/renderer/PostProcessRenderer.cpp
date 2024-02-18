@@ -309,6 +309,7 @@ namespace Atlas {
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .swapChain = device->swapChain
             };
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
             return PipelineConfig(shaderConfig, pipelineDesc, GetMacros());
 
@@ -323,6 +324,8 @@ namespace Atlas {
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .frameBuffer = frameBuffer
             };
+            pipelineDesc.assemblyInputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            
             return PipelineConfig(shaderConfig, pipelineDesc, GetMacros());
 
         }

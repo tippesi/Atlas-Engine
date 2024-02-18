@@ -1,10 +1,10 @@
 #include "App.h"
 #include "FileImporter.h"
 #include "Singletons.h"
+#include "Serializer.h"
+#include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
-
-#include "scene/SceneSerializer.h"
 
 #include <chrono>
 #include <thread>
@@ -18,9 +18,6 @@ namespace Atlas::Editor {
 
     void App::LoadContent() {
 
-        // Create a default scene
-        sceneWindows.emplace_back(ResourceHandle<Scene::Scene>());
-
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
 
@@ -29,24 +26,46 @@ namespace Atlas::Editor {
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+        // Add font with enlarged size and scale it down again
+        // This means we can use scaled text up to 2x the size
+        io.Fonts->AddFontFromFileTTF(
+            Loader::AssetLoader::GetFullPath("font/roboto.ttf").c_str(),
+            32.0f
+        )->Scale = 0.5f;
+
+        SubscribeToResourceEvents();
+
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
+        Singletons::config = CreateRef<Config>();
+
+        Serializer::DeserializeConfig();
+
+        // Everything that needs the config comes afterwards
+        Singletons::icons = CreateRef<Icons>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
-        Singletons::icons = CreateRef<Icons>();
-        Singletons::config = CreateRef<Config>();
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        SubscribeToResourceEvents();
+        if (Singletons::config->darkMode)
+            ImGui::StyleColorsDark();
+        else
+            ImGui::StyleColorsLight();
 
     }
 
     void App::UnloadContent() {
 
         Singletons::imguiWrapper->Unload();
+
+        for (const auto& sceneWindow : sceneWindows) {
+            Serializer::SerializeSceneWindow(sceneWindow);
+        }
+
+        Serializer::SerializeConfig();
 
         Singletons::Destruct();
 
@@ -58,49 +77,102 @@ namespace Atlas::Editor {
 
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
-        if (io.WantCaptureMouse) {
+        // Create new windows for fully loaded scenes
+        for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
+            if (waitToLoadScenes[i].IsLoaded()) {
+                std::swap(waitToLoadScenes[i], waitToLoadScenes.back());
 
+                // After the scene is loaded we can retrieve the window configuration and deserialize it
+                sceneWindows.emplace_back(Serializer::DeserializeSceneWindow(waitToLoadScenes.back()));
+                waitToLoadScenes.pop_back();
+                i--;
+            }
         }
-        else {
 
-        }
+        // Quick quit
+        if (sceneWindows.empty())
+            return;
 
-        // Find active scene
+        auto& config = Singletons::config;
+
+        std::vector<size_t> toBeDeletedSceneWindows;
+
+        // Find active scene and old scene windows
         size_t sceneCounter = 0;
-        for (auto& sceneWindow : sceneWindows) {
+        for (const auto& sceneWindow : sceneWindows) {
 
-            if (sceneWindow.viewportPanel.isFocused)
+            // Delete windows not opened in the config (don't know when this does happen)
+            if (std::find(config->openedScenes.begin(), config->openedScenes.end(),
+                sceneWindow->scene) == config->openedScenes.end()) {
+                toBeDeletedSceneWindows.push_back(sceneCounter++);
+                continue;
+            }
+
+            // Delete closed windows
+            if (!sceneWindow->show) {
+                auto iter = std::find(config->openedScenes.begin(), config->openedScenes.end(),
+                    sceneWindow->scene);
+                config->openedScenes.erase(iter);
+                toBeDeletedSceneWindows.push_back(sceneCounter++);
+                continue;
+            }
+
+            if (sceneWindow->viewportPanel.isFocused)
                 activeSceneIdx = sceneCounter;
 
             sceneCounter++;
-            
-            sceneWindow.Update(deltaTime);
         }
+
+        // Reverse such that indices remain valid
+        std::reverse(toBeDeletedSceneWindows.begin(), toBeDeletedSceneWindows.end());
+        for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
+            // Serialize window before erasing it
+            Serializer::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
+            sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
+        }
+
+        // Avoid crash when nothing is there anymore
+        if (sceneWindows.empty())
+            return;
 
         // Update active scene with input
         activeSceneIdx = std::min(activeSceneIdx, sceneWindows.size() - 1);
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
-        auto cameraEntity = activeSceneWindow.cameraEntity;
-        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused && !ImGuizmo::IsUsing()) {
+        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftAlt];
+
+        auto cameraEntity = activeSceneWindow->cameraEntity;
+        if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&
+            !ImGuizmo::IsUsing() && (!activeSceneWindow->isPlaying || !activeSceneWindow->hasPlayer)) {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            mouseHandler.sensibility = activeSceneWindow->cameraRotationSpeed;
+            keyboardHandler.speed = activeSceneWindow->cameraMovementSpeed;
+
             mouseHandler.Update(camera, deltaTime);
             keyboardHandler.Update(camera, deltaTime);
         }
 
-        // Update all scenes after input was applied
-        for (auto& sceneWindow : sceneWindows) {
+        if (activeSceneWindow->isPlaying) {
+            auto playerSubset = activeSceneWindow->scene->GetSubset<PlayerComponent>();
+            for (auto entity : playerSubset) {
+                auto camera = entity.TryGetComponent<CameraComponent>();
+                if (!camera)
+                    continue;
 
-            if (sceneWindow.viewportPanel.isFocused)
-                activeSceneIdx = sceneCounter;
+                auto& player = entity.GetComponent<PlayerComponent>();
 
-            sceneCounter++;
-
-            sceneWindow.Update(deltaTime);
+                mouseHandler.Update(*camera, deltaTime);
+                keyboardHandler.Update(*camera, player, deltaTime);
+            }
         }
 
-        ImGuizmo::Enable(activeSceneWindow.needGuizmoEnabled);
+        // Update all scenes after input was applied
+        for (auto& sceneWindow : sceneWindows) {
+            sceneWindow->Update(deltaTime);
+        }
+
+        ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&]() {
@@ -132,6 +204,8 @@ namespace Atlas::Editor {
             return;
         }
 
+        auto& config = Singletons::config;
+
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
@@ -158,13 +232,6 @@ namespace Atlas::Editor {
             SetupMainDockspace(mainDsId);
         }
 
-        if (!windowsToAddToNode.empty()) {
-            for (auto windowID : windowsToAddToNode)
-                ImGui::DockBuilderDockWindow(windowID.c_str(), upperDockNodeID);
-
-            windowsToAddToNode.clear();
-        }
-
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
         ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
 
@@ -181,12 +248,21 @@ namespace Atlas::Editor {
             }
 
             if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
+                    if (config->darkMode)
+                        ImGui::StyleColorsDark();
+                    else
+                        ImGui::StyleColorsLight();
+                }
+
                 ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
+                ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
+                ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
+                ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Renderer")) {
-                auto& config = Singletons::config;
                 ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
                 ImGui::EndMenu();
             }
@@ -202,11 +278,14 @@ namespace Atlas::Editor {
         UI::PopupPanels::Render();
 
         for (auto& sceneWindow : sceneWindows) {
-            sceneWindow.Render();
+            sceneWindow->Render();
         }
 
         contentBrowserWindow.Render();
         logWindow.Render();
+        profilerWindow.Render();
+
+        Notifications::Display();
 
         ImGui::End();
 
@@ -227,7 +306,7 @@ namespace Atlas::Editor {
         ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.8f, &dsIdUp, &dsIdDown);
 
         for (auto& sceneWindow : sceneWindows) {
-            ImGui::DockBuilderDockWindow(sceneWindow.GetNameID(), dsIdUp);
+            ImGui::DockBuilderDockWindow(sceneWindow->GetNameID(), dsIdUp);
         }
         upperDockNodeID = dsIdUp;
 
@@ -242,10 +321,15 @@ namespace Atlas::Editor {
 
         ImGui::DockBuilderFinish(dsID);
 
+        profilerWindow.show = false;
+        contentBrowserWindow.show = true;
+        logWindow.show = true;
+
         contentBrowserWindow.resetDockingLayout = true;
         logWindow.resetDockingLayout = true;
-        for (auto& sceneWindow : sceneWindows) {
-            sceneWindow.resetDockingLayout = true;
+        for (const auto& sceneWindow : sceneWindows) {
+            sceneWindow->resetDockingLayout = true;
+            sceneWindow->show = true;
         }
 
         resetDockspaceLayout = false;
@@ -256,12 +340,8 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            if (!sceneWindows.back().scene.IsLoaded())
-                sceneWindows.pop_back();
-
-            sceneWindows.emplace_back(ResourceHandle<Scene::Scene>(scene));
-
-            windowsToAddToNode.emplace_back(sceneWindows.back().GetNameID());
+            waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+            Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
         });
 
         // Also kind of a resource event

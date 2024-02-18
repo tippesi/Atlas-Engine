@@ -152,7 +152,7 @@ jobs:
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -282,7 +282,7 @@ jobs:
             !**/CMakeFiles
 
   macos-build:
-    runs-on: macos-12
+    runs-on: macos-13
     name: Build on MacOS
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -405,6 +405,7 @@ jobs:
             LICENSE.md
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor
             ${{ github.workspace }}/bin/**/*.dylib*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles

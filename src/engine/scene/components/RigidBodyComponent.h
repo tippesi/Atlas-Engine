@@ -3,6 +3,7 @@
 #include "../../System.h"
 #include "../../physics/PhysicsWorld.h"
 
+#include "../Entity.h"
 #include "TransformComponent.h"
 
 namespace Atlas {
@@ -13,39 +14,19 @@ namespace Atlas {
 
         namespace Components {
 
-            class RigidBodyComponent {
+            class RigidBodyComponent : public Physics::Body {
 
             public:
                 RigidBodyComponent() = default;
-                RigidBodyComponent(const RigidBodyComponent& that) = default;
-                explicit RigidBodyComponent(const Physics::ShapeRef shape, JPH::ObjectLayer layer)
-                    : shape(shape), layer(layer) {}
+                RigidBodyComponent(Scene* scene, Entity entity) : entity(entity) {}
+                RigidBodyComponent(Scene* scene, Entity entity, const RigidBodyComponent& that);
+                explicit RigidBodyComponent(Scene* scene, Entity entity, const Physics::BodyCreationSettings& bodyCreationSettings)
+                    : entity(entity), layer(bodyCreationSettings.objectLayer), creationSettings(CreateRef(bodyCreationSettings)) {}
 
-                inline const bool Valid() const { return physicsWorld != nullptr; }
+                Physics::BodyCreationSettings GetBodyCreationSettings() override;
 
-                void SetMatrix(mat4 matrix);
-
-                mat4 GetMatrix();
-
-                void SetMotionQuality(Physics::MotionQuality quality);
-
-                Physics::MotionQuality GetMotionQuality();
-
-                void SetLinearVelocity(vec3 velocity);
-
-                vec3 GetLinearVelocity();
-
-                void SetRestitution(float restitution);
-
-                float GetRestitution();
-
-                void SetFriction(float friction);
-
-                float GetFriction();
-
-                Physics::ShapeRef shape = nullptr;
-                JPH::ObjectLayer layer;
-                Physics::Body bodyId;
+                Physics::ObjectLayer layer = Physics::Layers::STATIC;
+                Ref<Physics::BodyCreationSettings> creationSettings = nullptr;
 
             private:
                 void InsertIntoPhysicsWorld(const TransformComponent& transformComponent,
@@ -53,7 +34,7 @@ namespace Atlas {
 
                 void RemoveFromPhysicsWorld();
 
-                Physics::PhysicsWorld* physicsWorld = nullptr;
+                ECS::Entity entity;
 
                 friend Scene;
 

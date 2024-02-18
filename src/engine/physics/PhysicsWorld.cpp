@@ -4,6 +4,10 @@
 
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
 
 namespace Atlas {
 
@@ -35,6 +39,15 @@ namespace Atlas {
 
         }
 
+        PhysicsWorld::~PhysicsWorld() {
+
+            for (auto [_, shape] : bodyToShapeMap)
+                shape->settings.reset();
+
+            bodyToShapeMap.clear();
+
+        }
+
         void PhysicsWorld::Update(float deltaTime) {
 
             if (pauseSimulation) return;
@@ -43,8 +56,7 @@ namespace Atlas {
 
         }
 
-        Body PhysicsWorld::CreateBody(const ShapeRef &shape, JPH::ObjectLayer objectLayer,
-            MotionQuality motionQuality, const mat4& matrix, vec3 veloctiy) {
+        Body PhysicsWorld::CreateBody(const BodyCreationSettings& bodyCreationSettings, const mat4& matrix, uint64_t userData) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
@@ -52,33 +64,31 @@ namespace Atlas {
             JPH::Quat quat;
             MatrixToJPHPosAndRot(matrix, pos, quat);
 
-            JPH::EMotionType motionType;
-            switch(objectLayer) {
-                case Layers::STATIC: motionType = JPH::EMotionType::Static; break;
-                case Layers::MOVABLE: motionType = JPH::EMotionType::Dynamic; break;
-                default: motionType = JPH::EMotionType::Static; break;
-            }
+            auto settings = bodyCreationSettings.GetSettings();
 
-            JPH::BodyCreationSettings bodyCreationSettings(shape, pos, quat, motionType, objectLayer);
-            bodyCreationSettings.mLinearVelocity = VecToJPHVec(veloctiy);
-            bodyCreationSettings.mFriction = 1.0f;
-            bodyCreationSettings.mRestitution = 0.2f;
-            bodyCreationSettings.mMotionQuality = motionQuality;
+            settings.mPosition = pos;
+            settings.mRotation = quat;
+            settings.mUserData = userData;
 
-            return bodyInterface.CreateAndAddBody(bodyCreationSettings, JPH::EActivation::Activate);
+            auto bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+            bodyToShapeMap[bodyId] = bodyCreationSettings.shape;
+
+            return { bodyId, this };
 
         }
 
-        void PhysicsWorld::DestroyBody(Body bodyId) {
+        void PhysicsWorld::DestroyBody(Body body) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
-            bodyInterface.RemoveBody(bodyId);
-            bodyInterface.DestroyBody(bodyId);
+            bodyToShapeMap.erase(body.bodyId);
+
+            bodyInterface.RemoveBody(body.bodyId);
+            bodyInterface.DestroyBody(body.bodyId);
 
         }
 
-        void PhysicsWorld::SetBodyMatrix(Body bodyId, const mat4& matrix) {
+        void PhysicsWorld::SetBodyMatrix(BodyID bodyId, const mat4& matrix) {
 
             JPH::Vec3 pos;
             JPH::Quat quat;
@@ -89,17 +99,13 @@ namespace Atlas {
 
         }
 
-        mat4 PhysicsWorld::GetBodyMatrix(Body bodyId) {
+        mat4 PhysicsWorld::GetBodyMatrix(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
 
             auto transform = bodyInterface.GetWorldTransform(bodyId);
 
-            mat4 matrix;
-            for (int8_t i = 0; i < 4; i++) {
-                auto col = transform.GetColumn4(i);
-                matrix[i] = vec4(col.GetX(), col.GetY(), col.GetZ(), col.GetW());
-            }
+            auto matrix = JPHMatToMat(transform);
 
             auto shapeRef = bodyInterface.GetShape(bodyId);
             // Need to scale here since the tranform doesn't include scale
@@ -113,59 +119,142 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::SetMotionQuality(Body bodyId, MotionQuality quality) {
+        void PhysicsWorld::SetMotionQuality(BodyID bodyId, MotionQuality quality) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetMotionQuality(bodyId, quality);
 
         }
 
-        MotionQuality PhysicsWorld::GetMotionQuality(Body bodyId) {
+        MotionQuality PhysicsWorld::GetMotionQuality(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetMotionQuality(bodyId);
 
         }
 
-        void PhysicsWorld::SetLinearVelocity(Body bodyId, glm::vec3 velocity) {
+        void PhysicsWorld::SetLinearVelocity(BodyID bodyId, glm::vec3 velocity) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
 
         }
 
-        vec3 PhysicsWorld::GetLinearVelocity(Body bodyId) {
+        vec3 PhysicsWorld::GetLinearVelocity(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
 
         }
 
-        void PhysicsWorld::SetRestitution(Body bodyId, float restitution) {
+        void PhysicsWorld::SetRestitution(BodyID bodyId, float restitution) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetRestitution(bodyId, restitution);
 
         }
 
-        float PhysicsWorld::GetRestitution(Body bodyId) {
+        float PhysicsWorld::GetRestitution(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetRestitution(bodyId);
 
         }
 
-        void PhysicsWorld::SetFriction(Body bodyId, float friction) {
+        void PhysicsWorld::SetFriction(BodyID bodyId, float friction) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetFriction(bodyId, friction);
 
         }
 
-        float PhysicsWorld::GetFriction(Body bodyId) {
+        float PhysicsWorld::GetFriction(BodyID bodyId) {
 
             auto& bodyInterface = system->GetBodyInterface();
             return bodyInterface.GetFriction(bodyId);
+
+        }
+
+        uint64_t PhysicsWorld::GetUserData(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            return bodyInterface.GetUserData(bodyId);
+
+        }
+
+        void PhysicsWorld::ChangeShape(BodyID bodyId, Ref<Shape> shape) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.SetShape(bodyId, shape->ref, true, JPH::EActivation::Activate);
+
+            bodyToShapeMap[bodyId] = shape;
+
+        }
+
+        BodyCreationSettings PhysicsWorld::GetBodyCreationSettings(BodyID bodyId) {
+
+            auto& bodyLockInterface = system->GetBodyLockInterface();
+
+            JPH::BodyLockRead lock(bodyLockInterface, bodyId);
+            if (lock.Succeeded()) {
+                const auto& body = lock.GetBody();
+
+                if (body.IsRigidBody()) {
+                    JPH::BodyCreationSettings settings = body.GetBodyCreationSettings();
+                    BodyCreationSettings bodyCreationSettings;
+                    bodyCreationSettings.SetSettings(settings);
+                    bodyCreationSettings.shape = bodyToShapeMap[bodyId];
+                    return bodyCreationSettings;
+                }
+            }
+
+            return {};
+
+        }
+
+        void PhysicsWorld::SetGravity(vec3 gravity) {
+
+            system->SetGravity(VecToJPHVec(gravity));
+
+        }
+
+        vec3 PhysicsWorld::GetGravity() {
+
+            return JPHVecToVec(system->GetGravity());
+
+        }
+
+        Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
+
+            const float farDist = 10e9f;
+
+            JPH::RayCastResult hit;
+            // Actually direction is not really a direction but one endpoint
+            JPH::RRayCast rayCast{ VecToJPHVec(ray.origin), VecToJPHVec(ray.direction * farDist) };
+
+            Volume::RayResult<Body> result;
+
+            JPH::RayCastSettings rayCastSettings = {
+                .mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces
+            };
+
+            if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit)) {
+                auto& bodyLockInterface = system->GetBodyLockInterface();
+
+                JPH::BodyLockRead lock(bodyLockInterface, hit.mBodyID);
+                if (lock.Succeeded()) {
+                    const auto& body = lock.GetBody();
+
+                    auto normal = body.GetWorldSpaceSurfaceNormal(hit.mSubShapeID2, rayCast.GetPointOnRay(hit.mFraction));
+                    result.normal = JPHVecToVec(normal);
+                }
+
+                result.valid = true;
+                result.hitDistance = hit.mFraction * farDist;
+                result.data = { hit.mBodyID, this };
+            }
+
+            return result;
 
         }
 

@@ -1,104 +1,49 @@
 #pragma once
 
-#include "common/SerializationHelper.h"
 #include "PhysicsWorld.h"
 
-#include <string>
+#include "common/SerializationHelper.h"
+#include "loader/ModelLoader.h"
 
-#include <Jolt/Physics/PhysicsScene.h>
-#include <Jolt/ObjectStream/ObjectStreamTextIn.h>
-#include <Jolt/ObjectStream/ObjectStreamTextOut.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/SoftBody/SoftBodyCreationSettings.h>
+#include <string>
+#include <unordered_map>
 
 namespace Atlas::Physics {
 
-    void SerializePhysicsSystem(std::stringstream& stream, const PhysicsWorld& physicsWorld);
+    void to_json(json& j, const MeshShapeSettings& p);
 
-    void DeserializePhysicsSystem(std::stringstream& stream, PhysicsWorld& physicsWorld);
+    void from_json(const json& j, MeshShapeSettings& p);
 
-    void to_json(json& j, const PhysicsWorld& p) {
-        std::stringstream stream;
-        SerializePhysicsSystem(stream, p);
+    void to_json(json& j, const SphereShapeSettings& p);
 
-        j = json {
-            {"system", stream.str()},
-        };
-    }
+    void from_json(const json& j, SphereShapeSettings& p);
 
-    void from_json(const json& j, PhysicsWorld& p) {
-        p = PhysicsWorld();
+    void to_json(json& j, const BoundingBoxShapeSettings& p);
 
-        std::stringstream stream(j["system"].get<std::string>());
-        DeserializePhysicsSystem(stream, p);
-    }
+    void from_json(const json& j, BoundingBoxShapeSettings& p);
 
-    void SerializePhysicsSystem(std::stringstream& stream, const PhysicsWorld& physicsWorld) {
+    void to_json(json& j, const CapsuleShapeSettings& p);
 
-        /*
-        JPH::PhysicsScene scene;
+    void from_json(const json& j, CapsuleShapeSettings& p);
 
-        auto& system = physicsWorld.system;
-        auto& bodyInterface = system->GetBodyInterface();
+    void to_json(json& j, const HeightFieldShapeSettings& p);
 
-        JPH::BodyIDVector bodyIds;
-        system->GetBodies(bodyIds);
+    void from_json(const json& j, HeightFieldShapeSettings& p);
 
-        auto& bodyLockInterface = system->GetBodyLockInterface();
+    void to_json(json& j, const Shape& p);
 
-        std::set<const JPH::Shape*> shapes;
+    void from_json(const json& j, Ref<Shape>& p);
 
-        for (auto bodyId : bodyIds) {
-            JPH::BodyLockRead lock(bodyLockInterface, bodyId);
-            if (lock.Succeeded()) {
-                const auto& body = lock.GetBody();
+    void to_json(json& j, const BodyCreationSettings& p);
 
-                if (body.IsRigidBody()) {
-                    JPH::BodyCreationSettings settings = body.GetBodyCreationSettings();
-                    std::memcpy(&settings.mUserData, &bodyId, sizeof(JPH::BodyID));
-                    scene.AddBody(settings);
-                    if (!shapes.contains(body.GetShape())) {
-                        shapes.insert(body.GetShape());
-                    }
-                }
-                else {
-                    JPH::SoftBodyCreationSettings settings = body.GetSoftBodyCreationSettings();
-                    std::memcpy(&settings.mUserData, &bodyId, sizeof(JPH::BodyID));
-                    scene.AddSoftBody(settings);
-                }
-            }
-        }
+    void from_json(const json& j, BodyCreationSettings& p);
 
-        // bodyInterface->
+    void to_json(json& j, const PlayerCreationSettings& p);
 
-        JPH::ObjectStreamOut::sWriteObject(stream, JPH::ObjectStream::EStreamType::Text, scene);
-         */
+    void from_json(const json& j, PlayerCreationSettings& p);
 
-    }
+    void SerializePhysicsWorld(json& j, Ref<PhysicsWorld>& physicsWorld) ;
 
-    void DeserializePhysicsSystem(std::stringstream& stream, PhysicsWorld& physicsWorld) {
-
-        /*
-        JPH::Ref<JPH::PhysicsScene> scene;
-        JPH::ObjectStreamIn::sReadObject(stream, scene);
-
-        auto& system = physicsWorld.system;
-        auto& bodyInterface = system->GetBodyInterface();
-
-        for (auto& bodySettings : scene->GetBodies()) {
-            JPH::BodyID bodyId;
-            std::memcpy(&bodyId, &bodySettings.mUserData, sizeof(JPH::BodyID));
-            bodyInterface.CreateBodyWithID(bodyId, bodySettings);
-        }
-
-        for (auto& bodySettings : scene->GetSoftBodies()) {
-            JPH::BodyID bodyId;
-            std::memcpy(&bodyId, &bodySettings.mUserData, sizeof(JPH::BodyID));
-            bodyInterface.CreateSoftBodyWithID(bodyId, bodySettings);
-        }
-         */
-
-    }
-
+    void DeserializePhysicsWorld(const json& j, std::unordered_map<uint32_t, BodyCreationSettings>& bodyCreationMap);
 
 }

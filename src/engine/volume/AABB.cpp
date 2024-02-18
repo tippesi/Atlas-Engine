@@ -40,23 +40,22 @@ namespace Atlas {
                 vec3(max.x, max.y, min.z), vec3(max.x, max.y, max.z) };
 
             for (uint8_t i = 0; i < 8; i++) {
-                auto homogeneous = matrix * vec4(cube[i], 1.0f);
-                cube[i] = vec3(homogeneous) / homogeneous.w;
+                cube[i] = matrix * vec4(cube[i], 1.0f);
             }
 
-            vec3 min = cube[0], max = cube[0];
+            vec3 newMin = cube[0], newMax = cube[0];
 
             for (uint8_t i = 1; i < 8; i++) {
-                min.x = glm::min(min.x, cube[i].x);
-                min.y = glm::min(min.y, cube[i].y);
-                min.z = glm::min(min.z, cube[i].z);
+                newMin.x = glm::min(newMin.x, cube[i].x);
+                newMin.y = glm::min(newMin.y, cube[i].y);
+                newMin.z = glm::min(newMin.z, cube[i].z);
 
-                max.x = glm::max(max.x, cube[i].x);
-                max.y = glm::max(max.y, cube[i].y);
-                max.z = glm::max(max.z, cube[i].z);
+                newMax.x = glm::max(newMax.x, cube[i].x);
+                newMax.y = glm::max(newMax.y, cube[i].y);
+                newMax.z = glm::max(newMax.z, cube[i].z);
             }
 
-            return AABB(min, max);
+            return AABB(newMin, newMax);
 
         }
 

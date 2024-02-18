@@ -7,9 +7,12 @@ namespace Atlas::Editor::UI {
     class LogWindow : public Window {
 
     public:
-        LogWindow() : Window("Log") {}
+        explicit LogWindow(bool show) : Window("Log", show) {}
 
         void Render();
+
+    private:
+        std::string logSearch;
 
     };
 

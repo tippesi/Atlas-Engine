@@ -1,12 +1,16 @@
 #include "LogWindow.h"
 
 #include "Log.h"
+#include "../../Singletons.h"
 
 namespace Atlas::Editor::UI {
 
     void LogWindow::Render() {
 
-        ImGui::Begin(GetNameID());
+        if (!Begin())
+            return;
+
+        auto darkMode = Singletons::config->darkMode;
 
         static size_t entriesCount = 0;
 
@@ -18,7 +22,10 @@ namespace Atlas::Editor::UI {
 
             switch (entry.type) {
                 case Atlas::Log::Type::TYPE_MESSAGE:
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                    if (darkMode)
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                    else
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
                     break;
                 case Atlas::Log::Type::TYPE_WARNING:
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -38,7 +45,7 @@ namespace Atlas::Editor::UI {
             entriesCount = entries.size();
         }
 
-        ImGui::End();
+        End();
 
     }
 

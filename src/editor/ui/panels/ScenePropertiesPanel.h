@@ -16,7 +16,7 @@ namespace Atlas::Editor::UI {
         ScenePropertiesPanel() : Panel("Scene properties") {}
 
         template<class T>
-        void Render(T& t) {
+        void Render(T& t, Ref<Scene::Scene> scene = nullptr) {
 
             ImGui::Begin(GetNameID());
 
@@ -25,7 +25,7 @@ namespace Atlas::Editor::UI {
             if constexpr (std::is_same_v<T, Scene::Entity>) {
                 if (t.IsValid()) {
                     RenderHeading("Entity");
-                    entityPropertiesPanel.Render(t);
+                    entityPropertiesPanel.Render(scene, t);
                 }
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
@@ -44,6 +44,14 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Reflection");
                 reflectionPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
+                RenderHeading("Screen-space global illumination");
+                ssgiPanel.Render(t);
+            }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::SSS>>) {
+                RenderHeading("Screen-space shadows");
+                sssPanel.Render(t);
+            }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
@@ -56,7 +64,11 @@ namespace Atlas::Editor::UI {
     private:
         void RenderHeading(const std::string& heading) {
 
+            ImGui::SetWindowFontScale(1.5f);
+
             ImGui::Text("%s", heading.c_str());
+
+            ImGui::SetWindowFontScale(1.0f);
 
             ImGui::Separator();
 
@@ -68,6 +80,8 @@ namespace Atlas::Editor::UI {
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
         ImguiExtension::ReflectionPanel reflectionPanel;
+        ImguiExtension::SSGIPanel ssgiPanel;
+        ImguiExtension::SSSPanel sssPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };

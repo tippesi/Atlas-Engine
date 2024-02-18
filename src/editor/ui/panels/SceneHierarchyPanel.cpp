@@ -1,10 +1,12 @@
 #include "SceneHierarchyPanel.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
+#include <ImGuizmo.h>
 
 namespace Atlas::Editor::UI {
 
-    void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene) {
+    void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
 
         ImGui::Begin(GetNameID());
 
@@ -34,7 +36,9 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            TraverseHierarchy(scene, root);
+            ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+
+            TraverseHierarchy(scene, root, inFocus);
 
             RenderExtendedHierarchy(scene);
 
@@ -44,7 +48,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity) {
+    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool inFocus) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -57,6 +61,10 @@ namespace Atlas::Editor::UI {
         }
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+
+        // If we have a search term and the name doesn't match, return
+        if (nodeName != "Root" && !entitySearch.empty() && nodeName.find(entitySearch) == std::string::npos)
+            return;
 
         auto nodeFlags = baseFlags;
         nodeFlags |= entity == selectedEntity ? ImGuiTreeNodeFlags_Selected : 0;
@@ -93,13 +101,13 @@ namespace Atlas::Editor::UI {
         bool duplicateEntity = false;
         if (ImGui::BeginPopupContextItem()) {
             // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Delete entity") && (!nameComponent || nameComponent->name != "Root"))
+            if (ImGui::MenuItem("Delete entity"))
                 deleteEntity = true;
 
             if (ImGui::MenuItem("Add emtpy entity"))
                 createEntity = true;
 
-            if (ImGui::MenuItem("Duplicate entity") && (!nameComponent || nameComponent->name != "Root"))
+            if (ImGui::MenuItem("Duplicate entity"))
                 duplicateEntity = true;
 
             ImGui::EndPopup();
@@ -110,12 +118,33 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity);
+                TraverseHierarchy(scene, childEntity, inFocus);
 
             }
 
             ImGui::TreePop();
 
+        }
+
+        auto& io = ImGui::GetIO();
+
+        bool controlDown;
+#ifdef AE_OS_MACOS
+        controlDown = io.KeyAlt;
+#else
+        controlDown = io.KeyCtrl;
+#endif
+
+        if (selectedEntity == entity) {
+            if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_D))
+                duplicateEntity = true;
+            else if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_Delete))
+                deleteEntity = true;
+        }
+
+        if (nameComponent && nameComponent->name == "Root") {
+            duplicateEntity = false;
+            deleteEntity = false;
         }
 
         if (createEntity) {
@@ -131,6 +160,8 @@ namespace Atlas::Editor::UI {
             hierarchyComponent->AddChild(newEntity);
 
             selectedEntity = newEntity;
+            // Reset other properties selection
+            selectedProperty = SelectedProperty();
         }
 
         if (deleteEntity) {
@@ -153,12 +184,15 @@ namespace Atlas::Editor::UI {
                 component = root.TryGetComponent<HierarchyComponent>();
             }
 
-                AE_ASSERT(component != nullptr);
+            AE_ASSERT(component != nullptr);
 
             if (component != nullptr) {
-
                 component->AddChild(newEntity);
             }
+
+            selectedEntity = newEntity;
+            // Reset other properties selection
+            selectedProperty = SelectedProperty();
         }
 
         if (dropEntity.IsValid()) {
@@ -179,6 +213,7 @@ namespace Atlas::Editor::UI {
         }
 
         // If the hierarchy is emtpy after movements or deletions, also remove the hierarchy
+        hierarchyComponent = deleteEntity ? nullptr : entity.TryGetComponent<HierarchyComponent>();
         if (hierarchyComponent && hierarchyComponent->GetChildren().empty()) {
             entity.RemoveComponent<HierarchyComponent>();
         }
@@ -197,13 +232,18 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
         if (scene->reflection)
             RenderExtendedItem("Reflection", &selectedProperty.reflection);
+        if (scene->ssgi)
+            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
+        if (scene->sss)
+            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
 
     }
 
     void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected) {
 
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        ImGuiTreeNodeFlags nodeFlags =  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
         nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
         ImGui::TreeNodeEx(name.c_str(), nodeFlags);

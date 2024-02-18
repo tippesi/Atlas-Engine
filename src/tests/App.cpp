@@ -61,8 +61,7 @@ void App::LoadContent(AppConfiguration config) {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    glm::mat4 orthoProjection = glm::ortho(-100.0f, 100.0f, -70.0f, 120.0f, -120.0f, 120.0f);
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), orthoProjection);
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
@@ -289,24 +288,24 @@ bool App::LoadScene() {
 
     using namespace Atlas::Loader;
 
+    std::vector<glm::mat4> transforms;
+    transforms.reserve(3);
     meshes.reserve(3);
-    glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(.05f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
     auto sponzaMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "sponza/sponza.obj", ModelLoader::LoadMesh, false, transform, 2048
+        "sponza/sponza.obj", ModelLoader::LoadMesh, false, 2048
     );
     meshes.push_back(sponzaMesh);
 
-    transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto wallMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-        false, transform, 2048
+        "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(wallMesh);
 
-    transform = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+    transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto sphereMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable,
-        false, transform, 2048
+        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(sphereMesh);
 
@@ -317,7 +316,7 @@ bool App::LoadScene() {
             continue;
         }
         
-        auto entity = scene->CreatePrefab<MeshInstance>(mesh, glm::mat4(1.0f));
+        auto entity = scene->CreatePrefab<MeshInstance>(mesh, transforms[meshCount]);
         entities.push_back(entity);
 
         meshCount++;

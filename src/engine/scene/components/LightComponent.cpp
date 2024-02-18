@@ -41,7 +41,7 @@ namespace Atlas {
 			}
 
             void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution,
-                vec3 shadowCenter, mat4 orthoProjection) {
+                vec3 shadowCenter, vec4 orthoSize) {
 
                 AE_ASSERT(type == LightType::DirectionalLight && "Component must be of type directional light");
 
@@ -51,6 +51,9 @@ namespace Atlas {
 
                 shadow->allowTerrain = true;
 
+                auto orthoProjection = glm::ortho(orthoSize.x, orthoSize.y, orthoSize.z, orthoSize.w, -2000.0f, 2000.0f);
+
+                shadow->views[0].orthoSize = orthoSize;
                 shadow->views[0].nearDistance = 0.0f;
                 shadow->views[0].farDistance = distance;
                 shadow->views[0].projectionMatrix = clipMatrix * orthoProjection;

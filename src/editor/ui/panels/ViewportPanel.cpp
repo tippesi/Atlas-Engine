@@ -31,19 +31,17 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin(GetNameID());
 
-        isFocused = ImGui::IsWindowFocused();
-
-        if (drawMenuBarFunc) {
-            ImGui::BeginChild("Viewport area");
-
-            isFocused |= ImGui::IsWindowFocused();
-
-            drawMenuBarFunc();
-
-            ImGui::EndChild();
+        // Workaround for offsetted Gizmo without resize after a restart
+        // Seems like some ImGuizmo or ImGui config isn't properly updated
+        if (firstFrame) {
+            auto size = ImGui::GetWindowPos();
+            ImGui::SetWindowPos(ImVec2(size.x + 1.0f, size.y));
+            firstFrame = false;
         }
 
-        ImGui::BeginChild("Viewport area");
+        isFocused = ImGui::IsWindowFocused();
+
+        ImGui::BeginChild("Viewport area", ImVec2(0.0f, 0.0f));
 
         isFocused |= ImGui::IsWindowFocused();
 
@@ -58,7 +56,7 @@ namespace Atlas::Editor::UI {
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
         }
 
-        if ((isParentFocused || isFocused) && scene != nullptr && validRegion) {
+        if (scene != nullptr && validRegion) {
             auto& config = Singletons::config;
 
             if (config->pathTrace) {
@@ -92,12 +90,23 @@ namespace Atlas::Editor::UI {
             ImGui::Image(set, region);
         }
 
-        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
-
         if (drawOverlayFunc)
             drawOverlayFunc();
 
         ImGui::EndChild();
+
+        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+
+        if (drawMenuBarFunc) {
+            ImGui::BeginChild("Viewport area");
+
+            isFocused |= ImGui::IsWindowFocused();            
+
+            drawMenuBarFunc();
+
+            ImGui::EndChild();        
+        }
+
 
         ImGui::End();
 

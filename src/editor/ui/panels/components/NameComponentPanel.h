@@ -2,6 +2,7 @@
 
 #include "../Panel.h"
 
+#include "scene/Scene.h"
 #include "scene/components/NameComponent.h"
 
 namespace Atlas::Editor::UI {
@@ -11,7 +12,7 @@ namespace Atlas::Editor::UI {
     public:
         NameComponentPanel() : Panel("Name component") {}
 
-        bool Render(Scene::Entity entity, NameComponent& nameComponent);
+        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, NameComponent& nameComponent);
 
     };
 

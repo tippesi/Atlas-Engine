@@ -74,6 +74,20 @@ namespace glm {
         j.at("w").get_to(p.w);
     }
 
+    void to_json(json &j, const quat &p) {
+        j = json{{"x", p.x},
+                 {"y", p.y},
+                 {"z", p.z},
+                 {"w", p.w}};
+    }
+
+    void from_json(const json &j, quat &p) {
+        j.at("x").get_to(p.x);
+        j.at("y").get_to(p.y);
+        j.at("z").get_to(p.z);
+        j.at("w").get_to(p.w);
+    }
+
     void to_json(json &j, const mat3 &p) {
         json j0, j1, j2;
         to_json(j0, p[0]);

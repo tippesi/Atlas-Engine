@@ -49,17 +49,17 @@ namespace Atlas {
 
     vec3 Viewport::Unproject(vec3 point, const CameraComponent& camera) const {
 
-        float fWidth = float(width) + float(x);
-        float fHeight = float(height) + float(y);
+        float fWidth = float(width);
+        float fHeight = float(height);
         float fX = float(x);
         float fY = float(y);
 
-        point.x = glm::clamp(point.x, fX, fWidth);
-        point.y = glm::clamp(point.y, fY, fHeight);
+        point.x = glm::clamp(point.x - fX, 0.0f, fWidth);
+        point.y = glm::clamp(point.y - fY, 0.0f, fHeight);
 
         point.z = glm::clamp(2.0f * point.z - 1.0f, -1.0f, 1.0f);
-        point.x = 2.0f * (point.x - fX) / (fWidth - fX) - 1.0f;
-        point.y = -2.0f * (point.y - fY) / (fHeight - fY) + 1.0f;
+        point.x = 2.0f * point.x / fWidth - 1.0f;
+        point.y = 2.0f * point.y / fHeight - 1.0f;
 
         vec4 transformed = camera.invViewMatrix * camera.invUnjitteredProjection * vec4(point, 1.0f);
 

@@ -27,11 +27,11 @@ namespace Atlas {
 
         void Profiler::BeginFrame() {
 
-            if (!enable) return;
-
             threadContextCount = 0;
             threadContexts.clear();
             threadContexts.resize(PROFILER_MAX_THREADS);
+
+            if (!enable) return;
 
             frameIdx++;
 

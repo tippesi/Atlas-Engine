@@ -9,5 +9,7 @@
 #include "NameComponent.h"
 #include "TransformComponent.h"
 #include "ObjectComponent.h"
-#include "RigidBodyComponent.h"
 #include "LuaScriptComponent.h"
+#include "RigidBodyComponent.h"
+#include "PlayerComponent.h"
+#include "TextComponent.h"

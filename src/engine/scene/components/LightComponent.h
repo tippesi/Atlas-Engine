@@ -65,7 +65,7 @@ namespace Atlas {
 					int32_t cascadeCount, float splitCorrection, bool longRange = false, float longRangeDistance = 0.0f);
 
                 void AddDirectionalShadow(float distance, float bias, int32_t resolution,
-                    vec3 shadowCenter, mat4 orthoProjection);
+                    vec3 shadowCenter, vec4 orthoSize);
 
                 void AddPointShadow(float bias, int32_t resolution);
 

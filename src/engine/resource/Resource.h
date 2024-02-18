@@ -198,6 +198,10 @@ namespace Atlas {
             return resource->data.get();
         }
 
+        inline bool operator==(const ResourceHandle<T>& that) const {
+            return that.resource == resource;
+        }
+
     private:
         Ref<Resource<T>> resource = nullptr;
 
