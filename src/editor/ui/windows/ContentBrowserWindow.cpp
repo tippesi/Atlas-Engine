@@ -305,7 +305,7 @@ namespace Atlas::Editor::UI {
         ShellExecute(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 #endif
 #if defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
-        auto command = "xdg-open " + path;
+        auto command = "open " + path;
         system(command.c_str());
 #endif
         

@@ -44,7 +44,7 @@ namespace Atlas::Editor {
     };
 
     template<class T>
-    static ResourceHandle<T> FileImporter::ImportFile(const std::string& filename) {
+    ResourceHandle<T> FileImporter::ImportFile(const std::string& filename) {
 
         ResourceHandle<T> handle;
 
@@ -76,7 +76,7 @@ namespace Atlas::Editor {
     }
 
     template<class T>
-    static bool FileImporter::AreCompatible(const std::string& filename) {
+    bool FileImporter::AreCompatible(const std::string& filename) {
 
         std::string fileType = Common::Path::GetFileType(filename);
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
