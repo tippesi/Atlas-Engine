@@ -52,24 +52,8 @@ namespace Atlas::Scene::Components {
 
     void from_json(const json& j, PlayerComponent& p);
 
-	void to_json(json& j, const LuaScriptComponent& p) {
-        j = json {};
+	void to_json(json& j, const LuaScriptComponent& p);
 
-        if (p.script.IsValid())
-            j["resourcePath"] = p.script.GetResource()->path;
-    }
-
-    void from_json(const json& j, LuaScriptComponent& p) {
-        
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
-                        resourcePath, ResourceOrigin::User);
-        }
-
-    }
-
+    void from_json(const json& j, LuaScriptComponent& p);
 
 }

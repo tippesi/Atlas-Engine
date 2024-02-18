@@ -13,7 +13,7 @@ namespace Atlas::Editor::UI
     public:
         LuaScriptComponentPanel() : Panel("Lua script component") {}
 
-        bool Render(Scene::Entity entity, LuaScriptComponent &luaScriptComponent);
+        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, LuaScriptComponent &luaScriptComponent);
     };
 
 }

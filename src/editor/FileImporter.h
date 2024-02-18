@@ -10,6 +10,7 @@
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "scripting/Script.h"
 #include "Font.h"
 
 #include "loader/ModelLoader.h"
@@ -36,7 +37,6 @@ namespace Atlas::Editor {
         template<class T>
         static ResourceHandle<T> ImportFile(const std::string& filename);
 
-        static const std::map<const std::string, FileType> fileTypeMapping;
         template<class T>
         static bool AreCompatible(const std::string& filename);
 
@@ -61,8 +61,9 @@ namespace Atlas::Editor {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
                 ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
         }
-        else if constexpr (std::is_same_v<T, bool>) {
-            // Load script here
+        else if constexpr (std::is_same_v<T, Scripting::Script>) {
+            handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
+                filename, ResourceOrigin::User);
         }
         else if constexpr (std::is_same_v<T, Font>) {
             handle = ResourceManager<Font>::GetOrLoadResourceAsync(filename,
@@ -96,7 +97,7 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             return type == FileType::Scene;
         }
-        else if constexpr (std::is_same_v<T, bool>) {
+        else if constexpr (std::is_same_v<T, Scripting::Script>) {
             return type == FileType::Script;
         }
         else if constexpr (std::is_same_v<T, Font>) {

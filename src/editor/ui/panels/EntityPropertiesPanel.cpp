@@ -57,6 +57,11 @@ namespace Atlas::Editor::UI {
                     entity, textComponentPanel, comp);
             }
 
+            if (entity.HasComponent<LuaScriptComponent>()) {
+                RenderComponentPanel("Lua script component", scene, 
+                    entity, luaScriptComponentPanel, entity.GetComponent<LuaScriptComponent>());
+            }
+
             if (entity.HasComponent<RigidBodyComponent>()) {
                 auto comp = entity.GetComponent<RigidBodyComponent>();
                 RenderComponentPanel("Rigid body component", scene,
@@ -78,11 +83,6 @@ namespace Atlas::Editor::UI {
                 newComp.slowVelocity = comp.slowVelocity;
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
-            }
-
-            if(entity.HasComponent<LuaScriptComponent>()){
-                RenderComponentPanel("Lua script component", entity, luaScriptComponentPanel,
-                    entity.GetComponent<LuaScriptComponent>());
             }
         }
 
@@ -159,6 +159,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<CameraComponent>();
                 if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Remove text component"))
                     entity.RemoveComponent<TextComponent>();
+                if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Remove lua script component"))
+                    entity.RemoveComponent<LuaScriptComponent>();
                 if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 
