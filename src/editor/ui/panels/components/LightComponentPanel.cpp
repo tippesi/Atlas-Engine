@@ -67,8 +67,8 @@ namespace Atlas::Editor::UI {
             auto prevItem = shadowResItem;
             ImGui::Combo("Resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
 
-            if (currentItem != prevItem) {
-                switch (currentItem) {
+            if (shadowResItem != prevItem) {
+                switch (shadowResItem) {
                 case 0: shadow->SetResolution(512); break;
                 case 1: shadow->SetResolution(1024); break;
                 case 2: shadow->SetResolution(2048); break;

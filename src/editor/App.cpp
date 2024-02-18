@@ -99,7 +99,7 @@ namespace Atlas::Editor {
 
         // Find active scene and old scene windows
         size_t sceneCounter = 0;
-        for (auto& sceneWindow : sceneWindows) {
+        for (const auto& sceneWindow : sceneWindows) {
 
             // Delete windows not opened in the config (don't know when this does happen)
             if (std::find(config->openedScenes.begin(), config->openedScenes.end(),

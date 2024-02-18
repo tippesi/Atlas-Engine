@@ -44,6 +44,6 @@ namespace Atlas::Physics {
 
     void SerializePhysicsWorld(json& j, Ref<PhysicsWorld>& physicsWorld) ;
 
-    void DeserializePhysicsWorld(json& j, std::unordered_map<uint32_t, BodyCreationSettings>& bodyCreationMap);
+    void DeserializePhysicsWorld(const json& j, std::unordered_map<uint32_t, BodyCreationSettings>& bodyCreationMap);
 
 }

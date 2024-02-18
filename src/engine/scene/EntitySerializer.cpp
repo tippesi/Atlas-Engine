@@ -56,8 +56,6 @@ namespace Atlas::Scene {
     }
 
     void EntityFromJson(const json& j, Entity& p, Ref<Scene>& scene) {
-        size_t id = j["id"];
-
         if (j.contains("name")) {
             NameComponent comp = j["name"];
             p.AddComponent<NameComponent>(comp);
