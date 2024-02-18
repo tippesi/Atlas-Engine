@@ -22,6 +22,8 @@ namespace Atlas {
             mat4 frustumMatrix;
             mat4 terrainFrustumMatrix;
 
+            vec4 orthoSize;
+
         };
 
         class Shadow {
@@ -55,8 +57,9 @@ namespace Atlas {
             Texture::Cubemap cubemap;
 
             bool isCascaded = false;
+            bool followMainCamera = false;
             bool useCubemap = false;
-            bool allowDynamicActors = false;
+            bool allowDynamicEntities = false;
             bool allowTerrain = false;
             bool longRange = false;
             bool update = true;

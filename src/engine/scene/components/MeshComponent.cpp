@@ -7,7 +7,7 @@ namespace Atlas {
 
         namespace Components {
 
-            void MeshComponent::ChangeResource(ResourceHandle<Mesh::Mesh> mesh) {
+            void MeshComponent::ChangeResource(const ResourceHandle<Mesh::Mesh>& mesh) {
 
                 AE_ASSERT(scene != nullptr && "Component needs to be added to entity before changing mesh");
 

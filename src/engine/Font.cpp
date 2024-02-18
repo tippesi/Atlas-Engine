@@ -11,7 +11,7 @@
 
 namespace Atlas {
 
-    Font::Font(std::string filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
+    Font::Font(const std::string& filename, float pixelSize, int32_t padding, uint8_t edgeValue) : edgeValue(edgeValue) {
 
         stbtt_fontinfo font;
 

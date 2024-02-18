@@ -69,6 +69,8 @@ namespace Atlas {
             textRenderer.Init(device);
             textureRenderer.Init(device);
 
+            font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
+
         }
 
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
@@ -328,8 +330,11 @@ namespace Atlas {
             // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
             // downscaleRenderer.Downscale(target, commandList);
 
-            if (primitiveBatch)
-                RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
+            commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+
+            textRenderer.Render(target, scene, commandList);
+            
+            commandList->EndRenderPass();
 
             {
                 volumetricCloudRenderer.Render(target, scene, commandList);
@@ -338,6 +343,9 @@ namespace Atlas {
             }
 
             oceanRenderer.Render(target, scene, commandList);
+
+            if (primitiveBatch)
+                RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
             {
                 taaRenderer.Render(target, scene, commandList);

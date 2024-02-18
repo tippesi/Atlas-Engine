@@ -38,6 +38,11 @@ namespace Atlas {
             static void SetAssetDirectory(const std::string& directory);
 
             /**
+             * Gets the asset directory 
+             */
+            static std::string GetAssetDirectory();
+
+            /**
              * Check whether a file exists in the asset directory
              * @return True if file exists, false otherwise
              */

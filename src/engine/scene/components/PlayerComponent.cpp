@@ -33,17 +33,18 @@ namespace Atlas::Scene::Components {
         auto groundVelocity = GetGroundVelocity();
         if (IsOnGround()) {
             newVelocity += groundVelocity;
-            if (jump) {
+            if (jump)
                 newVelocity += up * jumpVelocity;
-            }
-            newVelocity += inputVelocity;
+            if (allowInput)
+                newVelocity += inputVelocity;
         }
         else {
             newVelocity += GetLinearVelocity();
             // Add reduced input velocity such that jumping doesn't feel weird
-            newVelocity += inputVelocity * 0.01f;
+            if (allowInput)
+                newVelocity += inputVelocity * 0.01f;
         }
-        
+
         jump = false;
 
         newVelocity += up * world->GetGravity() * deltaTime;

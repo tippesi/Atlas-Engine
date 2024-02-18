@@ -63,6 +63,12 @@ namespace Atlas {
 
         }
 
+        std::string AssetLoader::GetAssetDirectory() {
+
+            return assetDirectory;
+
+        }
+
         bool AssetLoader::FileExists(const std::string& filename) {
 
             auto assetDir = Common::Path::GetAbsolute(assetDirectory);

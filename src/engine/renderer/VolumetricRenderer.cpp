@@ -60,7 +60,7 @@ namespace Atlas {
             for (auto& lightEntity : lightSubset) {
 
                 auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || light.type != LightType::DirectionalLight ||
+                if (light.type != LightType::DirectionalLight ||
                     !light.volumetric || !fog || !fog->rayMarching)
                     continue;
 
@@ -83,22 +83,25 @@ namespace Atlas {
 
                 uniforms.light.direction = vec4(direction, 0.0);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0);
-                uniforms.light.shadow.cascadeCount = shadow->viewCount;
 
-                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
+                if (light.shadow) {
+                    uniforms.light.shadow.cascadeCount = shadow->viewCount;
 
-                auto& shadowUniform = uniforms.light.shadow;
-                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                    auto& cascadeUniform = shadowUniform.cascades[i];
-                    auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
-                    if (i < shadow->viewCount) {
-                        auto cascade = &shadow->views[i];
-                        cascadeUniform.distance = cascade->farDistance;
-                        cascadeUniform.cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera.invViewMatrix;
-                    }
-                    else {
-                        cascadeUniform.distance = camera.farPlane;
+                    commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
+
+                    auto& shadowUniform = uniforms.light.shadow;
+                    for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
+                        auto& cascadeUniform = shadowUniform.cascades[i];
+                        auto cascadeString = "light.shadow.cascades[" + std::to_string(i) + "]";
+                        if (i < shadow->viewCount) {
+                            auto cascade = &shadow->views[i];
+                            cascadeUniform.distance = cascade->farDistance;
+                            cascadeUniform.cascadeSpace = cascade->projectionMatrix *
+                                cascade->viewMatrix * camera.invViewMatrix;
+                        }
+                        else {
+                            cascadeUniform.distance = camera.farPlane;
+                        }
                     }
                 }
 
@@ -158,6 +161,7 @@ namespace Atlas {
                 volumetricUniformBuffer.SetData(&uniforms, 0);
                 commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
+                volumetricPipelineConfig.ManageMacro("SHADOWS", light.shadow != nullptr);
                 volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
                 volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
                 volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);

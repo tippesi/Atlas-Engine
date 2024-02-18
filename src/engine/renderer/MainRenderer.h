@@ -64,6 +64,8 @@ namespace Atlas {
             AtmosphereRenderer atmosphereRenderer;
             PathTracingRenderer pathTracingRenderer;
 
+            Ref<Font> font;
+
         private:
             struct PackedMaterial {
 

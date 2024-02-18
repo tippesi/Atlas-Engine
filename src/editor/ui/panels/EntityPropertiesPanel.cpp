@@ -33,12 +33,28 @@ namespace Atlas::Editor::UI {
                     lightComponentPanel, entity.GetComponent<LightComponent>());
             }
 
+            if (entity.HasComponent<AudioComponent>()) {
+                auto& comp = entity.GetComponent<AudioComponent>();
+                RenderComponentPanel("Audio component", scene,
+                    entity, audioComponentPanel, comp);
+            }
+
             if (entity.HasComponent<AudioVolumeComponent>()) {
-                auto comp = entity.GetComponent<AudioVolumeComponent>();
+                auto& comp = entity.GetComponent<AudioVolumeComponent>();
                 RenderComponentPanel("Audio volume component", scene,
                     entity, audioVolumeComponentPanel, comp);
-                entity.RemoveComponent<AudioVolumeComponent>();
-                entity.AddComponent<AudioVolumeComponent>(comp);
+            }
+
+            if (entity.HasComponent<CameraComponent>()) {
+                auto& comp = entity.GetComponent<CameraComponent>();
+                RenderComponentPanel("Camera component", scene,
+                    entity, cameraComponentPanel, comp);
+            }
+
+            if (entity.HasComponent<TextComponent>()) {
+                auto& comp = entity.GetComponent<TextComponent>();
+                RenderComponentPanel("Text component", scene,
+                    entity, textComponentPanel, comp);
             }
 
             if (entity.HasComponent<RigidBodyComponent>()) {
@@ -63,12 +79,6 @@ namespace Atlas::Editor::UI {
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
             }
-
-            if (entity.HasComponent<CameraComponent>()) {
-                auto& comp = entity.GetComponent<CameraComponent>();
-                RenderComponentPanel("Camera component", scene,
-                    entity, cameraComponentPanel, comp);
-            }
         }
 
         // Add components
@@ -83,10 +93,14 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
                 if (!entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Add mesh component"))
                     entity.AddComponent<MeshComponent>();
+                if (!entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Add audio component"))
+                    entity.AddComponent<AudioComponent>();
                 if (!entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Add audio volume component"))
                     entity.AddComponent<AudioVolumeComponent>();
                 if (!entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Add camera component"))
                     entity.AddComponent<CameraComponent>();
+                if (!entity.HasComponent<TextComponent>() && ImGui::MenuItem("Add text component"))
+                    entity.AddComponent<TextComponent>();
 
                 // Just make the player component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&
@@ -130,10 +144,14 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TransformComponent>();
                 if (entity.HasComponent<MeshComponent>() && ImGui::MenuItem("Remove mesh component"))
                     entity.RemoveComponent<MeshComponent>();
+                if (entity.HasComponent<AudioComponent>() && ImGui::MenuItem("Remove audio component"))
+                    entity.RemoveComponent<AudioComponent>();
                 if (entity.HasComponent<AudioVolumeComponent>() && ImGui::MenuItem("Remove audio volume component"))
                     entity.RemoveComponent<AudioVolumeComponent>();
                 if (entity.HasComponent<CameraComponent>() && ImGui::MenuItem("Remove camera component"))
                     entity.RemoveComponent<CameraComponent>();
+                if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Remove text component"))
+                    entity.RemoveComponent<TextComponent>();
                 if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 
