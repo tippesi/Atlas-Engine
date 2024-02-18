@@ -1,4 +1,3 @@
-#define SHADOWS
 #define SHADOW_FILTER_7x7
 #define SHADOW_CASCADE_BLENDING
 

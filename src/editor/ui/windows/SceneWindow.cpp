@@ -2,6 +2,7 @@
 #include "../../Singletons.h"
 
 #include "scene/SceneSerializer.h"
+#include "Clock.h"
 
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
@@ -40,28 +41,10 @@ namespace Atlas::Editor::UI {
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
         camera.aspectRatio = float(viewportPanel.viewport->width) / float(viewportPanel.viewport->height);
 
-        // Temporarily disable all scene cameras, only let editor camera be main
-        std::map<ECS::Entity, bool> cameraMainMap;
-        auto cameraSubset = scene->GetSubset<CameraComponent>();
-        for (auto entity : cameraSubset) {
-            if (entity == cameraEntity || isPlaying)
-                continue;
-            
-            auto& comp = cameraSubset.Get(entity);
-            cameraMainMap[entity] = comp.isMain;
-            comp.isMain = false;
-        }
-
-        scene->Timestep(deltaTime);
-        scene->Update();
-
-        // Restore all previous camera main values
-        for (auto entity : cameraSubset) {
-            if (entity == cameraEntity || isPlaying)
-                continue;
-            
-            auto& comp = cameraSubset.Get(entity);
-            comp.isMain = cameraMainMap[entity];
+        // If we're playing we can update here since we don't expect values to change from the UI side
+        if (isPlaying) {
+            scene->Timestep(deltaTime);
+            scene->Update();
         }
 
     }
@@ -127,6 +110,33 @@ namespace Atlas::Editor::UI {
         else {
             // Render with invalid entity and invalid scene (will just return, but with window created)
             scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
+        }
+
+        // We want to update the scene after all panels have update their respective values/changed the scene
+        if (!isPlaying) {
+            // Temporarily disable all scene cameras, only let editor camera be main
+            std::map<ECS::Entity, bool> cameraMainMap;
+            auto cameraSubset = scene->GetSubset<CameraComponent>();
+            for (auto entity : cameraSubset) {
+                if (entity == cameraEntity)
+                    continue;
+
+                auto& comp = cameraSubset.Get(entity);
+                cameraMainMap[entity] = comp.isMain;
+                comp.isMain = false;
+            }
+
+            scene->Timestep(Clock::GetDelta());
+            scene->Update();
+
+            // Restore all previous camera main values
+            for (auto entity : cameraSubset) {
+                if (entity == cameraEntity)
+                    continue;
+
+                auto& comp = cameraSubset.Get(entity);
+                comp.isMain = cameraMainMap[entity];
+            }
         }
 
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
@@ -290,13 +300,15 @@ namespace Atlas::Editor::UI {
 
                 const auto& io = ImGui::GetIO();
 
-                if (io.MouseDown[ImGuiMouseButton_Right] && viewportPanel.isFocused) {
-                    auto windowPos = ImGui::GetWindowPos();
+                auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
+                auto windowPos = ImGui::GetWindowPos();
 
-                    auto location = vec2(io.MousePos.x, io.MousePos.y);
+                bool inViewport = mousePos.x > float(viewport->x) && mousePos.y > float(viewport->y)
+                    && mousePos.x < float(viewport->width) && mousePos.y < float(viewport->height);
+                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport) {
 
-                    auto nearPoint = viewport->Unproject(vec3(location, 0.0f), camera);
-                    auto farPoint = viewport->Unproject(vec3(location, 1.0f), camera);
+                    auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
+                    auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
 
                     Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
 

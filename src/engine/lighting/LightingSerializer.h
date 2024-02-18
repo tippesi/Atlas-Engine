@@ -159,6 +159,7 @@ namespace Atlas::Lighting {
             {"projectionMatrix", p.projectionMatrix},
             {"frustumMatrix", p.frustumMatrix},
             {"terrainFrustumMatrix", p.terrainFrustumMatrix},
+            {"orthoSize", p.orthoSize},
         };
     }
 
@@ -169,6 +170,7 @@ namespace Atlas::Lighting {
         j.at("projectionMatrix").get_to(p.projectionMatrix);
         j.at("frustumMatrix").get_to(p.frustumMatrix);
         j.at("terrainFrustumMatrix").get_to(p.terrainFrustumMatrix);
+        j.at("orthoSize").get_to(p.orthoSize);
     }
 
     void to_json(json& j, const Shadow& p) {
@@ -183,8 +185,9 @@ namespace Atlas::Lighting {
             {"views", p.views},
             {"viewCount", p.viewCount},
             {"isCascaded", p.isCascaded},
+            {"followMainCamera", p.followMainCamera},
             {"useCubemap", p.useCubemap},
-            {"allowDynamicActors", p.allowDynamicActors},
+            {"allowDynamicEntities", p.allowDynamicEntities},
             {"allowTerrain", p.allowTerrain},
             {"longRange", p.longRange}
         };
@@ -201,8 +204,9 @@ namespace Atlas::Lighting {
         j.at("views").get_to(p.views);
         j.at("viewCount").get_to(p.viewCount);
         j.at("isCascaded").get_to(p.isCascaded);
+        j.at("followMainCamera").get_to(p.followMainCamera);
         j.at("useCubemap").get_to(p.useCubemap);
-        j.at("allowDynamicActors").get_to(p.allowDynamicActors);
+        j.at("allowDynamicEntities").get_to(p.allowDynamicEntities);
         j.at("allowTerrain").get_to(p.allowTerrain);
         j.at("longRange").get_to(p.longRange);
 

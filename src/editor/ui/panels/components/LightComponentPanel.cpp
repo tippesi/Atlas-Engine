@@ -41,22 +41,89 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("Intensity", &lightComponent.intensity, 0.1f, 0.0f, 1000.0f);
 
         if (!lightComponent.shadow && castShadow) {
-            //lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 3, 0.95f, true, 2048.0f);
             if (lightComponent.type == LightType::DirectionalLight) {
                 lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 3, 0.95f, true, 2048.0f);
             }
         }
         else if (lightComponent.shadow && !castShadow) {
-            lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 3, 0.95f, true, 2048.0f);
+            lightComponent.shadow = nullptr;
         }
 
         if (castShadow) {
+
+            auto& shadow = lightComponent.shadow;
 
             ImGui::Separator();
 
             ImGui::Text("Shadow");
 
-            ImGui::SliderFloat("Bias##Shadow", &lightComponent.shadow->bias, 0.0f, 3.0f);
+            const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
+            int currentItem = 0;
+            if (shadow->resolution == 512) currentItem = 0;
+            if (shadow->resolution == 1024) currentItem = 1;
+            if (shadow->resolution == 2048) currentItem = 2;
+            if (shadow->resolution == 4096) currentItem = 3;
+            if (shadow->resolution == 8192) currentItem = 4;
+            auto prevItem = currentItem;
+            ImGui::Combo("Resolution", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
+
+            if (currentItem != prevItem) {
+                switch (currentItem) {
+                case 0: shadow->SetResolution(512); break;
+                case 1: shadow->SetResolution(1024); break;
+                case 2: shadow->SetResolution(2048); break;
+                case 3: shadow->SetResolution(4096); break;
+                case 4: shadow->SetResolution(8192); break;
+                }
+            }
+
+            ImGui::DragFloat("Bias", &shadow->bias, 0.05f, 0.0f, 10.0f);
+            ImGui::DragFloat("Distance", &shadow->distance, 1.0f, 0.0f, 10000.0f);
+
+            ImGui::Separator();
+
+            if (lightComponent.type == LightType::DirectionalLight) {
+                ImGui::Checkbox("Is cascaded", &shadow->isCascaded);
+
+                if (!shadow->isCascaded) {
+                    ImGui::Checkbox("Follow main camera", &shadow->followMainCamera);
+
+                    if (!shadow->followMainCamera) {
+                        ImGui::DragFloat3("Center point", glm::value_ptr(shadow->center), 0.5f, -10000.0f, 10000.0f);
+                    }
+
+                    auto orthoSize = shadow->views.front().orthoSize;
+                    if (orthoSize.x == 0.0f && orthoSize.y == 0.0f)
+                        orthoSize = vec4(-100.0f, 100.0f, -100.0f, 100.0f);
+
+                    ImGui::Text("Width");
+                    ImGui::DragFloat("Min##Width", &orthoSize.x, 1.0f, -10000.0f, 10000.0f);
+                    ImGui::DragFloat("Max##Width", &orthoSize.y, 1.0f, -10000.0f, 10000.0f);
+
+                    ImGui::Text("Height");
+                    ImGui::DragFloat("Min##Height", &orthoSize.z, 1.0f, -10000.0f, 10000.0f);
+                    ImGui::DragFloat("Max##Height", &orthoSize.w, 1.0f, -10000.0f, 10000.0f);
+
+                    auto matrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -120.0f, 120.0f);
+                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution,
+                        shadow->center, orthoSize);
+                }
+                else {
+                    ImGui::SliderInt("Cascade count", &shadow->viewCount, 1, 5);
+                    ImGui::DragFloat("Split correction", &shadow->splitCorrection, 0.01f, 0.0f, 1.0f);
+                    ImGui::Checkbox("Long range", &shadow->longRange);
+                    ImGui::DragFloat("Long range distance", &shadow->longRangeDistance, 10.0f, 10.0f, 10000.0f);
+
+                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution,
+                        shadow->viewCount, shadow->splitCorrection, shadow->longRange, shadow->longRangeDistance);
+                }
+            }
+            else if (lightComponent.type == LightType::PointLight) {
+
+
+            }
+
+            
 
         }
 

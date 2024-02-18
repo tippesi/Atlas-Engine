@@ -122,8 +122,10 @@ namespace Atlas::Editor {
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
+        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftAlt];
+
         auto cameraEntity = activeSceneWindow.cameraEntity;
-        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused &&
+        if (cameraEntity.IsValid() && activeSceneWindow.viewportPanel.isFocused && !lockMovement &&
             !ImGuizmo::IsUsing() && (!activeSceneWindow.isPlaying || !activeSceneWindow.hasPlayer)) {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             mouseHandler.Update(camera, deltaTime);
