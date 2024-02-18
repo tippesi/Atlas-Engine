@@ -16,9 +16,9 @@ namespace Atlas::Scene::Components {
         right *= 2.0f * halfSize.x;
         down *= 2.0f * halfSize.y;
 
-        auto position = transformedPosition - right * 0.5f - down * 0.5f;
+        auto rectOrigin = transformedPosition - right * 0.5f - down * 0.5f;
 
-        return Volume::Rectangle(position, right, down);
+        return Volume::Rectangle(rectOrigin, right, down);
 
     }
 

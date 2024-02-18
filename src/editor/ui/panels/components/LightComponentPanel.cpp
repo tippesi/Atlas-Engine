@@ -10,9 +10,9 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, LightComponent &lightComponent) {
 
         const char* typeItems[] = { "Directional" };
-        int currentItem = static_cast<int>(lightComponent.type);
-        ImGui::Combo("Light type", &currentItem, typeItems, IM_ARRAYSIZE(typeItems));
-        lightComponent.type = static_cast<LightType>(currentItem);
+        int typeItem = static_cast<int>(lightComponent.type);
+        ImGui::Combo("Light type", &typeItem, typeItems, IM_ARRAYSIZE(typeItems));
+        lightComponent.type = static_cast<LightType>(typeItem);
 
         bool isStatic = lightComponent.mobility == LightMobility::StationaryLight;
         ImGui::Checkbox("Static", &isStatic);
@@ -57,15 +57,15 @@ namespace Atlas::Editor::UI {
 
             ImGui::Text("Shadow");
 
-            const char* gridResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
-            int currentItem = 0;
-            if (shadow->resolution == 512) currentItem = 0;
-            if (shadow->resolution == 1024) currentItem = 1;
-            if (shadow->resolution == 2048) currentItem = 2;
-            if (shadow->resolution == 4096) currentItem = 3;
-            if (shadow->resolution == 8192) currentItem = 4;
-            auto prevItem = currentItem;
-            ImGui::Combo("Resolution", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
+            const char* shadowResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
+            int shadowResItem = 0;
+            if (shadow->resolution == 512) shadowResItem = 0;
+            if (shadow->resolution == 1024) shadowResItem = 1;
+            if (shadow->resolution == 2048) shadowResItem = 2;
+            if (shadow->resolution == 4096) shadowResItem = 3;
+            if (shadow->resolution == 8192) shadowResItem = 4;
+            auto prevItem = shadowResItem;
+            ImGui::Combo("Resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
 
             if (currentItem != prevItem) {
                 switch (currentItem) {

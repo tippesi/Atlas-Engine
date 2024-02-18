@@ -242,7 +242,25 @@ namespace Atlas::Editor::UI {
 
             ImGui::SetCursorPos(ImVec2(region.x - buttonSize.x - padding, 0.0f));
             if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
-                
+                ImGui::OpenPopup("Viewport settings");
+            }
+
+            if (ImGui::BeginPopup("Viewport settings")) {
+                ImGui::Text("Movement");
+
+                ImGui::DragFloat("Movement speed", &cameraMovementSpeed, 0.1f, 0.1f, 100.0f);
+                ImGui::DragFloat("Rotation speed", &cameraRotationSpeed, 0.1f, 0.1f, 10.0f);
+
+                auto& camera = cameraEntity.GetComponent<CameraComponent>();
+
+                ImGui::Text("Editor camera");
+
+                ImGui::DragFloat("Field of view", &camera.fieldOfView, 0.1f, 1.0f, 180.0f);
+
+                ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
+                ImGui::DragFloat("Far plane", &camera.farPlane, 1.0f, 1.0f, 20000.0f);
+
+                ImGui::EndPopup();
             }
 
             ImGui::PopStyleColor();

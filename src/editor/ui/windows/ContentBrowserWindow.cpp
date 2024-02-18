@@ -67,7 +67,7 @@ namespace Atlas::Editor::UI {
             if (isSelected) {
                 selectedFilter = i;
             }
-            else if (!isSelected && selectedFilter == i) {
+            else if (selectedFilter == i) {
                 selectedFilter = -1;
             }
         }
@@ -172,15 +172,29 @@ namespace Atlas::Editor::UI {
             auto& icon = GetIcon(dirEntry);
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(icon);
 
-            auto buttonFlags = isDirectory ? ImGuiButtonFlags_PressedOnDoubleClick : 0;            
+            std::string fileType = Common::Path::GetFileType(path);
+            std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
+
+            // Assign default value, which is not valid if this dir entry is a directory
+            auto type = FileType::Audio;
+            if (!dirEntry.is_directory())
+                type = FileImporter::fileTypeMapping.at(fileType);
+
+            auto assetRelativePath = Common::Path::GetRelative(assetDirectory, path);
+            assetRelativePath = Common::Path::Normalize(assetRelativePath);
+            if (assetRelativePath.starts_with('/'))
+                assetRelativePath.erase(assetRelativePath.begin());
+
+            auto buttonFlags = isDirectory || type == FileType::Scene ? ImGuiButtonFlags_PressedOnDoubleClick : 0;            
             if (ImGui::ImageButtonEx(ImGui::GetID("ImageButton"), set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
                 ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
                 if (isDirectory) 
                     nextDirectory = path;
+                if (type == FileType::Scene)
+                    FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
             }
 
             if (!isDirectory && ImGui::BeginDragDropSource()) {
-                auto assetRelativePath = Common::Path::GetRelative(assetDirectory, path);
                 ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.size());
                 ImGui::Text("Drag to entity component");
 
