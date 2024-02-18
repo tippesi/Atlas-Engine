@@ -33,20 +33,27 @@ namespace Atlas::Editor {
             32.0f
         )->Scale = 0.5f;
 
+        SubscribeToResourceEvents();
+
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
+        Singletons::config = CreateRef<Config>();
+
+        Serializer::DeserializeConfig();
+
+        // Everything that needs the config comes afterwards
+        Singletons::icons = CreateRef<Icons>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
-        Singletons::icons = CreateRef<Icons>();
-        Singletons::config = CreateRef<Config>();
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        SubscribeToResourceEvents();
-
-        Serializer::DeserializeConfig();
+        if (Singletons::config->darkMode)
+            ImGui::StyleColorsDark();
+        else
+            ImGui::StyleColorsLight();
 
     }
 
@@ -174,6 +181,8 @@ namespace Atlas::Editor {
             return;
         }
 
+        auto& config = Singletons::config;
+
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
@@ -216,6 +225,13 @@ namespace Atlas::Editor {
             }
 
             if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
+                    if (config->darkMode)
+                        ImGui::StyleColorsDark();
+                    else
+                        ImGui::StyleColorsLight();
+                }
+
                 ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
                 ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
                 ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);

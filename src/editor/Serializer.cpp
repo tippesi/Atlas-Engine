@@ -26,6 +26,7 @@ namespace Atlas::Editor {
             scenePaths.push_back(scene.GetResource()->path);
 
         json j = {
+            { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
             { "scenes", scenePaths }
         };
@@ -60,6 +61,9 @@ namespace Atlas::Editor {
         const auto& config = Singletons::config;
 
         std::vector<std::string> scenePaths;
+
+        if (j.contains("darkMode"))
+            j.at("darkMode").get_to(config->darkMode);
 
         if (j.contains("pathTrace"))
             j.at("pathTrace").get_to(config->pathTrace);

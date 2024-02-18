@@ -14,7 +14,6 @@
 #include <shellapi.h>
 #endif
 
-
 namespace Atlas::Editor::UI {
 
     ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {

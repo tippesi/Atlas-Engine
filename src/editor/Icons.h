@@ -18,6 +18,7 @@ namespace Atlas::Editor {
         Scene,
         Terrain,
         Font,
+        Settings,
         ArrowUp,
         ArrowLeft,
         ArrowRight
@@ -30,7 +31,11 @@ namespace Atlas::Editor {
         Texture::Texture2D& Get(IconType type);
 
     private:
+        void LoadIcons();
+
         std::map<IconType, Texture::Texture2D> icons;
+
+        bool darkModeIcons = true;
 
     };
 
