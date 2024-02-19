@@ -68,7 +68,6 @@ namespace Atlas {
             if (totalRayCount != rayHitBuffer.GetElementCount()) {
                 helper.SetRayBufferSize(totalRayCount);
                 rayHitBuffer.SetSize(totalRayCount);
-                helper.SetScene(scene, 8);
             }
 
             auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
@@ -79,8 +78,7 @@ namespace Atlas {
             auto& probeStateBuffer = internalVolume.probeStateBuffer;
             auto& probeOffsetBuffer = internalVolume.probeOffsetBuffer;
 
-            helper.SetScene(scene, 8, volume->sampleEmissives);
-            helper.UpdateLights();
+            helper.UpdateLights(scene, volume->sampleEmissives);
 
             commandList->BindBuffer(probeStateBuffer.Get(), 2, 19);
             commandList->BindBuffer(probeOffsetBuffer.Get(), 2, 20);
@@ -88,7 +86,7 @@ namespace Atlas {
             Graphics::Profiler::EndAndBeginQuery("Ray generation");
 
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
-            helper.DispatchRayGen(commandList, rayGenPipeline, volume->probeCount, false,
+            helper.DispatchRayGen(scene, commandList, rayGenPipeline, volume->probeCount, false,
                 [&]() {
                     using namespace Common;
 
@@ -121,7 +119,7 @@ namespace Atlas {
             commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 25);
 
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
-            helper.DispatchHitClosest(commandList, rayHitPipeline, false, volume->opacityCheck,
+            helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
                 [&]() {
                     RayHitUniforms uniforms;
                     uniforms.seed = Common::Random::SampleUniformFloat();

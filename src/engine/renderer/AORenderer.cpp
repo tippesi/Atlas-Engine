@@ -48,7 +48,6 @@ namespace Atlas {
             if (!ao || !ao->enable) return;
 
             if (!scene->IsRtDataValid() && ao->rt) return;
-            helper.SetScene(scene, 8);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
 
@@ -90,7 +89,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->swapAoTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(commandList, pipeline, ivec3(groupCount.x * groupCount.y, 1, 1),
+                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount.x * groupCount.y, 1, 1),
                     [=]() {
                         commandList->BindImage(target->swapAoTexture.image, 3, 0);
 

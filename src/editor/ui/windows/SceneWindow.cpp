@@ -39,7 +39,7 @@ namespace Atlas::Editor::UI {
         }
 
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        camera.aspectRatio = float(viewportPanel.viewport->width) / float(viewportPanel.viewport->height);
+        camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {

@@ -55,16 +55,6 @@ namespace Atlas {
 
             }
 
-
-            void RayTracingHelper::SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale,
-                bool useEmissivesAsLights) {
-
-                this->scene = scene;
-                this->textureDownscale = textureDownscale;
-                this->useEmissivesAsLights = useEmissivesAsLights;
-
-            }
-
             void RayTracingHelper::SetRayBufferSize(size_t size) {
 
                 // We use double buffering
@@ -73,7 +63,7 @@ namespace Atlas {
 
             }
 
-            void RayTracingHelper::DispatchAndHit(Graphics::CommandList* commandList,
+            void RayTracingHelper::DispatchAndHit(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                 glm::ivec3 dimensions, std::function<void(void)> prepare) {
 
@@ -153,9 +143,9 @@ namespace Atlas {
 
             }
 
-            void RayTracingHelper::DispatchRayGen(Graphics::CommandList* commandList,
-                const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
-                bool binning, std::function<void(void)> prepare) {
+            void RayTracingHelper::DispatchRayGen(Ref<Scene::Scene> scene, 
+                Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& rayGenPipeline, 
+                glm::ivec3 dimensions, bool binning, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -230,9 +220,9 @@ namespace Atlas {
                 commandList->Dispatch(dimensions.x, dimensions.y, dimensions.z);
             }
 
-            void RayTracingHelper::DispatchHitClosest(Graphics::CommandList* commandList,
-                const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
-                bool opacityCheck, std::function<void(void)> prepare) {
+            void RayTracingHelper::DispatchHitClosest(Ref<Scene::Scene> scene, 
+                Graphics::CommandList* commandList, const Ref<Graphics::Pipeline>& hitPipeline, 
+                bool binning, bool opacityCheck, std::function<void(void)> prepare) {
 
                 if (!scene->IsRtDataValid()) return;
 
@@ -441,7 +431,7 @@ namespace Atlas {
 
             }
 
-            void RayTracingHelper::UpdateLights() {
+            void RayTracingHelper::UpdateLights(Ref<Scene::Scene> scene, bool useEmissivesAsLights) {
 
                 lights.clear();
 

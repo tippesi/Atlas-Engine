@@ -361,6 +361,8 @@ namespace Atlas {
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
 
+            renderList.Clear();
+
         }
 
         void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,

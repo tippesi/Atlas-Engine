@@ -68,9 +68,6 @@ namespace Atlas::Editor {
                 ResourceOrigin::User, 32.0f, 8, 127);
         }
 
-        if (handle.IsValid())
-            handle.GetResource()->permanent = true;
-
         return handle;
 
     }
