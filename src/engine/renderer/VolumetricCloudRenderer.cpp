@@ -221,8 +221,16 @@ namespace Atlas {
             GenerateShapeTexture(commandList, &clouds->shapeTexture, clouds->shapeScale);
             GenerateDetailTexture(commandList, &clouds->detailTexture, clouds->detailScale);
 
-            clouds->shapeTexture.GenerateMipmap();
-            clouds->detailTexture.GenerateMipmap();
+            commandList->ImageMemoryBarrier(clouds->shapeTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            commandList->ImageMemoryBarrier(clouds->detailTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            commandList->GenerateMipMaps(clouds->shapeTexture.image);
+            commandList->GenerateMipMaps(clouds->detailTexture.image);
 
         }
 

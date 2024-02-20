@@ -79,6 +79,9 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
     float noiseOffset = 0.5;
 #endif
 
+    // Start with certain base lod to sampe one lod lower earlier
+    float lod = 0.5;
+
     vec4 extinctionAccumulation = vec4(0.0);
     for (int i = 0; i < lightSampleCount; i++) {
         if (extinctionAccumulation.a < logEpsilon) {
@@ -103,6 +106,8 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
                 cloudUniforms.extinctionCoefficients * density;
 
             extinctionAccumulation += extinctionCoefficient * delta * rayLength;
+
+            lod += 0.5;
         }
     }
 

@@ -59,6 +59,8 @@ namespace Atlas {
                 uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset = 0,
                 uint32_t layerCount = 1);
 
+            void GenerateMipMaps();
+
             VkImageType GetImageType() const;
 
             VkImage image;
