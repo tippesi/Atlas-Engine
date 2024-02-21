@@ -1,16 +1,16 @@
-#include "Vegetation.h"
+#include "Clutter.h"
 
 namespace Atlas {
 
     namespace Scene {
 
-        Vegetation::~Vegetation() {
+        Clutter::~Clutter() {
 
 
 
         }
 
-        void Vegetation::Add(Actor::VegetationActor* actor) {
+        void Clutter::Add(Actor::VegetationActor* actor) {
 
             auto iterator = meshToActorMap.find(&actor->mesh);
             if (iterator != meshToActorMap.end()) {
@@ -30,7 +30,7 @@ namespace Atlas {
 
         }
 
-        void Vegetation::UpdateActorData() {
+        void Clutter::UpdateActorData() {
 
             for (auto& [mesh, value] : meshToActorMap) {
                 UpdateActorData(mesh);
@@ -38,7 +38,7 @@ namespace Atlas {
 
         }
 
-        void Vegetation::UpdateActorData(Mesh::Mesh* mesh) {
+        void Clutter::UpdateActorData(Mesh::Mesh* mesh) {
 
             struct InstanceData {
                 glm::vec4 position;
@@ -62,13 +62,13 @@ namespace Atlas {
 
         }
 
-        std::vector<ResourceHandle<Mesh::Mesh>> Vegetation::GetMeshes() {
+        std::vector<ResourceHandle<Mesh::Mesh>> Clutter::GetMeshes() {
 
             return meshes;
 
         }
 
-        Vegetation::Buffers* Vegetation::GetBuffers(const ResourceHandle<Mesh::Mesh>& mesh) {
+        Clutter::Buffers* Clutter::GetBuffers(const ResourceHandle<Mesh::Mesh>& mesh) {
 
             return &meshToBufferMap[&mesh];
 

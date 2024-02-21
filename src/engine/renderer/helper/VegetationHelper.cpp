@@ -31,7 +31,7 @@ namespace Atlas {
 
             }
 
-            void VegetationHelper::PrepareInstanceBuffer(Scene::Vegetation& vegetation,
+            void VegetationHelper::PrepareInstanceBuffer(Scene::Clutter& vegetation,
                 const CameraComponent& camera, Graphics::CommandList* commandList) {
 
                 struct PushConstants {
@@ -231,7 +231,7 @@ namespace Atlas {
 
             }
 
-            void VegetationHelper::GenerateBuffers(Scene::Vegetation& vegetation, Graphics::CommandList* commandList) {
+            void VegetationHelper::GenerateBuffers(Scene::Clutter& vegetation, Graphics::CommandList* commandList) {
 
                 auto meshes = vegetation.GetMeshes();
 

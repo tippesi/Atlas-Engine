@@ -399,8 +399,8 @@ namespace Atlas {
             }
 
             auto meshes = GetMeshes();
-            if (vegetation) {
-                auto vegMeshes = vegetation->GetMeshes();
+            if (clutter) {
+                auto vegMeshes = clutter->GetMeshes();
                 meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
 

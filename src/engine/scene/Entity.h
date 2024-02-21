@@ -80,6 +80,12 @@ namespace Atlas {
 
             }
 
+            inline Scene* GetScene() const {
+
+                return static_cast<Scene*>(entityManager->userData);
+
+            }
+
             operator ECS::Entity() const { return entity; }
 
         private:

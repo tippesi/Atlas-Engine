@@ -139,8 +139,8 @@ namespace Atlas {
             auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 1, 14);
 
-            if (scene->vegetation)
-                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->vegetation, camera, commandList);
+            if (scene->clutter)
+                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
 
             if (scene->ocean && scene->ocean->enable)
                 scene->ocean->simulation.Compute(commandList);
@@ -397,7 +397,7 @@ namespace Atlas {
                  .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
                  .jitterLast = lastJitter,
                  .jitterCurrent = jitter,
-                 .cameraLocation = vec4(camera.location, 0.0f),
+                 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
                  .cameraDirection = vec4(camera.direction, 0.0f),
                  .cameraUp = vec4(camera.up, 0.0f),
                  .cameraRight = vec4(camera.right, 0.0f),
@@ -871,7 +871,7 @@ namespace Atlas {
                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
                 .jitterLast = camera.GetLastJitter(),
                 .jitterCurrent = camera.GetJitter(),
-                .cameraLocation = vec4(camera.location, 0.0f),
+                .cameraLocation = vec4(camera.GetLocation(), 0.0f),
                 .cameraDirection = vec4(camera.direction, 0.0f),
                 .cameraUp = vec4(camera.up, 0.0f),
                 .cameraRight = vec4(camera.right, 0.0f),

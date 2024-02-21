@@ -10,7 +10,7 @@ namespace Atlas {
 
     namespace Scene {
 
-        class Vegetation {
+        class Clutter {
 
         public:
             struct Buffers {
@@ -19,9 +19,9 @@ namespace Atlas {
                 Buffer::Buffer binnedInstanceData;
             };
 
-            Vegetation() = default;
+            Clutter() = default;
 
-            ~Vegetation();
+            ~Clutter();
 
             void Add(Actor::VegetationActor* actor);
 

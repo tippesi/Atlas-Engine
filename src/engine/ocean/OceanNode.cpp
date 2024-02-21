@@ -48,8 +48,7 @@ namespace Atlas {
 
             float calcHeight = 0.0f;
 
-            auto cameraLocation = camera.thirdPerson ? camera.location -
-                camera.direction * camera.thirdPersonDistance : camera.location;
+            auto cameraLocation = camera.GetLocation();
 
             if (cameraLocation.y > translation.y) {
                 calcHeight = translation.y;
@@ -59,7 +58,7 @@ namespace Atlas {
                     calcHeight = 0.0f;
                 }
                 else {
-                    calcHeight = camera.location.y;
+                    calcHeight = cameraLocation.y;
                 }
             }
 

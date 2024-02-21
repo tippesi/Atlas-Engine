@@ -83,6 +83,9 @@ namespace Atlas {
             if (jump)
                 player.Jump();
 
+            if (slide)
+                player.Slide();
+
         }
 
         void KeyboardHandler::RegisterEvent() {
@@ -159,8 +162,15 @@ namespace Atlas {
             if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
                 fast = false;
             }
-           
 
+            if (event.keyCode == AE_KEY_LCTRL && event.state == AE_BUTTON_PRESSED) {
+                slide = true;
+            }
+
+            if (event.keyCode == AE_KEY_LCTRL && event.state == AE_BUTTON_RELEASED) {
+                slide = false;
+            }
+           
         }
 
         void KeyboardHandler::DeepCopy(const KeyboardHandler& that) {

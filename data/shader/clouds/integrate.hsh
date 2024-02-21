@@ -101,7 +101,7 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
             CalculateTexCoords(samplePoint, shapeTexCoords, detailTexCoords, coverageTexCoords);
 
             float density = saturate(SampleDensity(samplePoint, shapeTexCoords, detailTexCoords,
-                coverageTexCoords, vec3(1.0), floor(0.0), true));
+                coverageTexCoords, vec3(1.0), floor(lod), true));
             vec4 extinctionCoefficient = cloudUniforms.extinctionFactor *
                 cloudUniforms.extinctionCoefficients * density;
 
@@ -151,6 +151,9 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
     vec4 extinction = vec4(1.0);
     vec3 scattering = vec3(0.0);
 
+    float lod = 0.0;
+    float lodOffset = 4.0 / float(raySampleCount);
+
     int noiseIdx = 0;
     for (int i = 0; i < raySampleCount; i++) {
 
@@ -174,7 +177,7 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
             }
 
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
-                coverageTexCoords, vec3(1.0), 0.0, true));
+                coverageTexCoords, vec3(1.0), floor(lod), true));
 
             if (density > 0.0) {
                 vec3 scatteringCoefficient = cloudUniforms.scatteringFactor *
@@ -192,7 +195,7 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
 
                 float lightDotView = dot(normalize(cloudUniforms.light.direction.xyz), normalize(rayDirection));
                 vec3 lightColor = cloudUniforms.light.color.rgb * cloudUniforms.light.intensity;
-                vec4 lightExtinction =  GetExtinctionToLight(rayPos, 1, noiseVector);
+                vec4 lightExtinction =  GetExtinctionToLight(rayPos, i % 4, noiseVector);
 
                 float phaseFunction = DualPhaseFunction(cloudUniforms.eccentricityFirstPhase,
                     cloudUniforms.eccentricitySecondPhase, cloudUniforms.phaseAlpha, lightDotView);
@@ -203,6 +206,9 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
                 scattering += luminanceIntegral * extinction.rgb;
                 extinction *= stepExtinction;
             }
+
+            lod += lodOffset;
+            lod = min(lod, 0.0);
         }
 
         rayPos += stepVector;
