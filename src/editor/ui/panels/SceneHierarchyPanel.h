@@ -33,6 +33,10 @@ namespace Atlas::Editor::UI {
 
         void RenderExtendedItem(const std::string& name, bool* selected);
 
+        void DeleteSelectedEntity(Ref<Scene::Scene>& scene);
+
+        void DuplicateSelectedEntity(Ref<Scene::Scene>& scene);
+
         std::string entitySearch;
 
     };

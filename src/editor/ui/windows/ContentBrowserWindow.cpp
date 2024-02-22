@@ -76,11 +76,46 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin("ResourceTypeOverview", nullptr);
 
+        // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
+        ImGui::BeginChild("ResourceTypeDropChild");
+
         RenderDirectoryControl();
 
         ImGui::Separator();
 
         RenderDirectoryContent();
+
+        ImGui::EndChild();
+
+        if (ImGui::BeginDragDropTarget()) {
+            auto dropPayload = ImGui::GetDragDropPayload();
+            if (ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name())) {
+                Scene::Entity entity;
+                std::memcpy(&entity, dropPayload->Data, dropPayload->DataSize);
+
+                if (entity.IsValid()) {
+                    auto scene = entity.GetScene();
+
+                    auto& config = Singletons::config;
+                    auto& scenes = config->openedScenes;
+
+                    // There must be a scene, otherwise we want to get a fatal error
+                    auto iter = std::find_if(scenes.begin(), scenes.end(),
+                        [&](const ResourceHandle<Scene::Scene>& item) -> bool { return item->name == scene->name; });
+                    auto sceneHandle = *iter;
+
+                    auto nameComponent = entity.TryGetComponent<NameComponent>();
+                    auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+
+                    auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
+                    auto entityPath = assetPath + entityName + ".aeentity";
+                    Scene::SceneSerializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
 
         ImGui::End();
 
@@ -108,8 +143,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::SameLine();
 
-        // Use some less padding due to font scale shift
-        ImGui::SetCursorPosY(6.0f);
+        // Being in a child window offsets everything, need to align the // slashes
+        ImGui::SetCursorPosY(-2.0f);
 
         auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
         assetPath = Common::Path::Normalize(assetPath);

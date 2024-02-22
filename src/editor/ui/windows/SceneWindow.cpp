@@ -292,37 +292,31 @@ namespace Atlas::Editor::UI {
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
 
                 if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
-                    auto parentEntity = scene->GetParentEntity(selectedEntity);
-                    TransformComponent* parentTransform = nullptr;
-                    if (parentEntity.IsValid())
-                        parentTransform = parentEntity.TryGetComponent<TransformComponent>();
-
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
 
-                    auto globalMatrix = parentTransform ? parentTransform->globalMatrix 
-                        * transform.matrix : transform.matrix;
+                    auto globalMatrix = transform.globalMatrix;
 
                     ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix));
 
-                    if (parentTransform) {
-                        auto inverseParentTransform = glm::inverse(parentTransform->globalMatrix);
-                        auto localMatrix = inverseParentTransform * globalMatrix;
-                        transform.Set(localMatrix);
-                    }
-                    else {
-                        transform.Set(globalMatrix);
-                    }
+                    // Update both the local and global matrix, since e.g. the transform component
+                    // panel recovers the local matrix from the global one (needs to do this after
+                    // e.g. physics only updated the global matrix
+                    transform.globalMatrix = globalMatrix;
+                    transform.ReconstructLocalMatrix(scene.Get());
                 }
 
                 const auto& io = ImGui::GetIO();
-
-                auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
+                
                 auto windowPos = ImGui::GetWindowPos();
+                auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
 
-                bool inViewport = mousePos.x > float(viewport->x) && mousePos.y > float(viewport->y)
-                    && mousePos.x < float(viewport->width) && mousePos.y < float(viewport->height);
+                bool inViewport = mousePos.x > float(viewport->x) 
+                    && mousePos.y > float(viewport->y)
+                    && mousePos.x < float(viewport->x + viewport->width)
+                    && mousePos.y < float(viewport->y + viewport->height);
+
                 if (io.MouseDown[ImGuiMouseButton_Right] && inViewport) {
 
                     auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
@@ -333,6 +327,7 @@ namespace Atlas::Editor::UI {
                     auto rayCastResult = scene->CastRay(ray);
                     if (rayCastResult.valid) {
                         sceneHierarchyPanel.selectedEntity = rayCastResult.data;
+                        sceneHierarchyPanel.selectedProperty = SelectedProperty();
                     }
                 }
 

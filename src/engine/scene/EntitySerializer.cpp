@@ -16,7 +16,10 @@ namespace Atlas::Scene {
             j["name"] = p.GetComponent<NameComponent>();
         }
         if (p.HasComponent<TransformComponent>()) {
-            j["transform"] = p.GetComponent<TransformComponent>();
+            // Create a copy and update local matrix (physics always just update global matrices)
+            auto transformComponent = p.GetComponent<TransformComponent>();
+            transformComponent.ReconstructLocalMatrix(scene);
+            j["transform"] = transformComponent;
         }
         if (p.HasComponent<MeshComponent>()) {
             j["mesh"] = p.GetComponent<MeshComponent>();

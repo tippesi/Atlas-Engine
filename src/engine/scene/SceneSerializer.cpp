@@ -24,23 +24,6 @@ namespace Atlas {
                 return;
             }
 
-            // Resolve all transformation which might have happened due to physics (set new local transforms)
-            // This might need to be moved into the main scene update code in the future
-            auto transformSubset = scene->GetSubset<TransformComponent>();
-            for (auto entity : transformSubset) {
-                auto& transform = transformSubset.Get(entity);
-
-                mat4 parentGlobalMatrix = mat4(1.0f);
-                auto parentEntity = scene->GetParentEntity(entity);
-                auto parentTransform = parentEntity.TryGetComponent<TransformComponent>();
-                if (parentTransform) {
-                    parentGlobalMatrix = parentTransform->globalMatrix;
-                }
-
-                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
-                transform.Set(inverseParentMatrix * transform.globalMatrix);
-            }
-
             json j;
 
             std::vector<json> entities;
@@ -49,7 +32,7 @@ namespace Atlas {
             auto hierarchySubset = scene->GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
                 auto hierarchy = hierarchySubset.Get(entity);
-                // Serialize from root recursively. Also means free hierarchies without a
+                // Serialize from root recursively. Also means free floating hierarchies without a
                 // root will be ignored.
                 if (!hierarchy.root) continue;
                 entities.emplace_back();
@@ -183,15 +166,63 @@ namespace Atlas {
 
         }
 
-        void SceneSerializer::SerializeEntity(Ref<Scene> scene, Entity entity, const std::string& filename) {
+        void SceneSerializer::SerializePrefab(Ref<Scene> scene, Entity entity, const std::string& filename) {
 
+            auto path = Loader::AssetLoader::GetFullPath(filename);
+            auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
 
+            if (!fileStream.is_open()) {
+                Log::Error("Couldn't write entity file " + filename);
+                return;
+            }
+
+            json j;
+
+            std::set<ECS::Entity> insertedEntities;
+            EntityToJson(j, entity, scene, insertedEntities);
+
+            auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
+
+            if (rigidBody) {
+                j["body"] = rigidBody->GetBodyCreationSettings();
+            }
+
+            fileStream << to_string(j);
+
+            fileStream.close();
 
         }
 
-        Entity SceneSerializer::DeserializeEntity(Ref<Scene> scene, const std::string& filename) {
+        Entity SceneSerializer::DeserializePrefab(Ref<Scene> scene, const std::string& filename) {
 
-            return Entity();
+            Loader::AssetLoader::UnpackFile(filename);
+            auto path = Loader::AssetLoader::GetFullPath(filename);
+
+            auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
+
+            if (!fileStream.is_open()) {
+                throw ResourceLoadException(filename, "Couldn't open entity file stream");
+            }
+
+            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
+                std::istreambuf_iterator<char>());
+
+            fileStream.close();
+
+            json j = json::parse(serialized);
+
+            auto entity = scene->CreateEntity();
+
+            EntityFromJson(j, entity, scene);
+
+            auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
+            rigidBody->creationSettings = CreateRef<Physics::BodyCreationSettings>();
+
+            if (rigidBody && j.contains("body")) {
+                *rigidBody->creationSettings = j["body"];
+            }
+
+            return entity;
 
         }
 

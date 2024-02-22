@@ -42,6 +42,18 @@ namespace Atlas::Editor::UI {
 
             RenderExtendedHierarchy(scene);
 
+            auto& io = ImGui::GetIO();
+            bool controlDown;
+#ifdef AE_OS_MACOS
+            controlDown = io.KeyMap[ImGuiKey_LeftSuper];
+#else
+            controlDown = io.KeyCtrl;
+#endif
+            if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_D))
+                DuplicateSelectedEntity(scene);
+            if (inFocus && ImGui::IsKeyReleased(ImGuiKey_Delete))
+                DeleteSelectedEntity(scene);
+
         }
 
         ImGui::End();
@@ -126,22 +138,6 @@ namespace Atlas::Editor::UI {
 
         }
 
-        auto& io = ImGui::GetIO();
-
-        bool controlDown;
-#ifdef AE_OS_MACOS
-        controlDown = io.KeyAlt;
-#else
-        controlDown = io.KeyCtrl;
-#endif
-
-        if (selectedEntity == entity) {
-            if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_D))
-                duplicateEntity = true;
-            else if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_Delete))
-                deleteEntity = true;
-        }
-
         if (nameComponent && nameComponent->name == "Root") {
             duplicateEntity = false;
             deleteEntity = false;
@@ -165,34 +161,11 @@ namespace Atlas::Editor::UI {
         }
 
         if (deleteEntity) {
-            scene->DestroyEntity(entity);
+            DeleteSelectedEntity(scene);
         }
 
         if (duplicateEntity) {
-            auto parentEntity = scene->GetParentEntity(entity);
-
-            // Create new hierarchy before retrieving other components since they might become
-            // invalid when internal ECS storage resizes
-            auto newEntity = scene->DuplicateEntity(entity);
-
-            HierarchyComponent* component;
-            if (parentEntity.IsValid()) {
-                component = parentEntity.TryGetComponent<HierarchyComponent>();
-            }
-            else {
-                auto root = scene->GetEntityByName("Root");
-                component = root.TryGetComponent<HierarchyComponent>();
-            }
-
-            AE_ASSERT(component != nullptr);
-
-            if (component != nullptr) {
-                component->AddChild(newEntity);
-            }
-
-            selectedEntity = newEntity;
-            // Reset other properties selection
-            selectedProperty = SelectedProperty();
+            DuplicateSelectedEntity(scene);
         }
 
         if (dropEntity.IsValid()) {
@@ -252,6 +225,49 @@ namespace Atlas::Editor::UI {
             selectedEntity = Scene::Entity();
             *selected = true;
         }
+
+    }
+
+    void SceneHierarchyPanel::DeleteSelectedEntity(Ref<Scene::Scene>& scene) {
+
+        if (selectedEntity.IsValid())
+            scene->DestroyEntity(selectedEntity);
+
+        selectedEntity = Scene::Entity();
+        // Reset other properties selection
+        selectedProperty = SelectedProperty();
+
+    }
+
+    void SceneHierarchyPanel::DuplicateSelectedEntity(Ref<Scene::Scene>& scene) {
+
+        if (!selectedEntity.IsValid())
+            return;
+
+        auto parentEntity = scene->GetParentEntity(selectedEntity);
+
+        // Create new hierarchy before retrieving other components since they might become
+        // invalid when internal ECS storage resizes
+        auto newEntity = scene->DuplicateEntity(selectedEntity);
+
+        HierarchyComponent* component;
+        if (parentEntity.IsValid()) {
+            component = parentEntity.TryGetComponent<HierarchyComponent>();
+        }
+        else {
+            auto root = scene->GetEntityByName("Root");
+            component = root.TryGetComponent<HierarchyComponent>();
+        }
+
+        AE_ASSERT(component != nullptr);
+
+        if (component != nullptr) {
+            component->AddChild(newEntity);
+        }
+
+        selectedEntity = newEntity;
+        // Reset other properties selection
+        selectedProperty = SelectedProperty();
 
     }
 
