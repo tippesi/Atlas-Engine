@@ -23,7 +23,8 @@ namespace Atlas::Editor {
         Terrain,
         Scene,
         Script,
-        Font
+        Font,
+        Prefab
     };
 
     class FileImporter {
@@ -97,6 +98,9 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Font>) {
             return type == FileType::Font;
+        }
+        else if constexpr (std::is_same_v<T, Scene::Entity>) {
+            return type == FileType::Prefab;
         }
         else {
             return false;

@@ -781,7 +781,12 @@ namespace Atlas {
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
-                dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
+                auto creationSettings = otherComp.GetBodyCreationSettings();
+                const auto otherShape = creationSettings.shape;
+                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
+                creationSettings.shape = CreateRef<Physics::Shape>();
+                *creationSettings.shape = *otherShape;
+                auto& comp = dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
             }
             if (srcEntity.HasComponent<PlayerComponent>()) {
                 auto otherComp = srcEntity.GetComponent<PlayerComponent>();

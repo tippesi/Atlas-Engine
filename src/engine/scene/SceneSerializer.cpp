@@ -216,11 +216,11 @@ namespace Atlas {
             EntityFromJson(j, entity, scene);
 
             auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
-            rigidBody->creationSettings = CreateRef<Physics::BodyCreationSettings>();
+            if (rigidBody)
+                rigidBody->creationSettings = CreateRef<Physics::BodyCreationSettings>();
 
-            if (rigidBody && j.contains("body")) {
+            if (rigidBody && j.contains("body"))
                 *rigidBody->creationSettings = j["body"];
-            }
 
             return entity;
 

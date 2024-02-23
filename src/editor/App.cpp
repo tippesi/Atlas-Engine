@@ -38,6 +38,14 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
+        
+        Physics::SphereShapeSettings settings {
+            .radius = 1.0f,
+            .scale = vec3(0.9f),
+        };
+        auto shape = Physics::ShapesManager::CreateShape(settings);
+        
+        shape->Scale(vec3(0.8f));
 
         Serializer::DeserializeConfig();
 
@@ -140,7 +148,7 @@ namespace Atlas::Editor {
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
-        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftAlt];
+        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftSuper];
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&

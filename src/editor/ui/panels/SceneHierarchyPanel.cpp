@@ -45,7 +45,7 @@ namespace Atlas::Editor::UI {
             auto& io = ImGui::GetIO();
             bool controlDown;
 #ifdef AE_OS_MACOS
-            controlDown = io.KeyMap[ImGuiKey_LeftSuper];
+            controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
 #else
             controlDown = io.KeyCtrl;
 #endif

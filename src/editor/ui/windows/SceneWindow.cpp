@@ -1,5 +1,6 @@
 #include "SceneWindow.h"
 #include "../../Singletons.h"
+#include "../../tools/ResourcePayloadHelper.h"
 
 #include "scene/SceneSerializer.h"
 #include "Clock.h"
@@ -142,6 +143,25 @@ namespace Atlas::Editor::UI {
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
         viewportPanel.Render(refScene, inFocus);
+
+        auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
+        if (!path.empty()) {
+            auto parentEntity = sceneHierarchyPanel.selectedEntity;
+
+            if (!parentEntity.IsValid())
+                parentEntity = scene->GetEntityByName("Root");
+
+            auto entity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), path);
+
+            if (!parentEntity.HasComponent<HierarchyComponent>())
+                parentEntity.AddComponent<HierarchyComponent>();
+
+            auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
+            hierarchy.AddChild(entity);
+
+            sceneHierarchyPanel.selectedEntity = entity;
+            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+        }
 
         End();
 
@@ -330,13 +350,6 @@ namespace Atlas::Editor::UI {
                         sceneHierarchyPanel.selectedProperty = SelectedProperty();
                     }
                 }
-
-                /*
-                const float gridSize = 10.0f;
-                auto gridMatrix = mat4(1.0f);
-                ImGuizmo::DrawGrid(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                    glm::value_ptr(gridMatrix), gridSize);
-                */
             }
             });
            

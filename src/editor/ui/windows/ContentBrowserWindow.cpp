@@ -60,7 +60,7 @@ namespace Atlas::Editor::UI {
         ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
 
-        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font"};
+        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font", "Prefab"};
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
@@ -109,7 +109,7 @@ namespace Atlas::Editor::UI {
 
                     auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
                     auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
-                    auto entityPath = assetPath + entityName + ".aeentity";
+                    auto entityPath = assetPath + entityName + ".aeprefab";
                     Scene::SceneSerializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
                 }
             }
@@ -225,7 +225,7 @@ namespace Atlas::Editor::UI {
                 ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
                 if (isDirectory) 
                     nextDirectory = path;
-                if (type == FileType::Scene)
+                else if (type == FileType::Scene)
                     FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
             }
 
@@ -297,6 +297,7 @@ namespace Atlas::Editor::UI {
         case FileType::Mesh: return icons->Get(IconType::Mesh);
         case FileType::Scene: return icons->Get(IconType::Scene);
         case FileType::Font: return icons->Get(IconType::Font);
+        case FileType::Prefab: return icons->Get(IconType::Prefab);
         default: return icons->Get(IconType::Document);
         }
 

@@ -126,6 +126,8 @@ namespace Atlas::Editor::UI {
 
         if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
             shape->TryCreate();
+        else
+            shape->Scale(*scale);
 
     }
 

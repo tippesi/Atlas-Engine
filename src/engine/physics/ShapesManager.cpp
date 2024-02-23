@@ -47,11 +47,11 @@ namespace Atlas {
             if (!result.IsValid())
                 return false;
 
-            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
-                return CreateShapeScaled(shape, result.Get(), scale);
-            }
-
             shape->ref = result.Get();
+
+            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+                return shape->Scale(scale);
+            }
 
             return true;
 
@@ -69,10 +69,8 @@ namespace Atlas {
             boxShapeSettings.SetDensity(density);
 
             auto boxShapeResult = boxShapeSettings.Create();
-            if (!boxShapeResult.IsValid()) {
-                auto error = boxShapeResult.GetError();
+            if (!boxShapeResult.IsValid()) 
                 return false;
-            }
 
             auto boxShapeRef = boxShapeResult.Get();
 
@@ -84,11 +82,11 @@ namespace Atlas {
             if (!result.IsValid())
                 return false;
 
-            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
-                return CreateShapeScaled(shape, result.Get(), scale);
-            }
-
             shape->ref = result.Get();
+
+            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+                return shape->Scale(scale);
+            }
 
             return true;
 
@@ -108,11 +106,11 @@ namespace Atlas {
             if (!result.IsValid())
                 return false;
 
-            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
-                return CreateShapeScaled(shape, result.Get(), scale);
-            }
-
             shape->ref = result.Get();
+
+            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+                return shape->Scale(scale);
+            }
 
             return true;
 
@@ -139,12 +137,14 @@ namespace Atlas {
             JPH::RotatedTranslatedShapeSettings translatedCapsule(translation, JPH::Quat::sIdentity(), capsuleRef);
 
             auto result = translatedCapsule.Create();
-
-            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
-                return CreateShapeScaled(shape, result.Get(), scale);
-            }
+            if (!result.IsValid())
+                return false;
 
             shape->ref = result.Get();
+
+            if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+                return shape->Scale(scale);
+            }
 
             return true;
 
@@ -162,20 +162,6 @@ namespace Atlas {
                 VecToJPHVec(scale), uint32_t(sampleCount));
 
             auto result = heightFieldShapeSettings.Create();
-
-            if (!result.IsValid())
-                return false;
-
-            shape->ref = result.Get();
-
-            return true;
-
-        }
-
-        bool ShapesManager::CreateShapeScaled(Shape* shape, ShapeRef shapeRef, vec3 scale) {
-
-            JPH::ScaledShapeSettings scaledShapeSettings(shapeRef, VecToJPHVec(scale));
-            auto result = scaledShapeSettings.Create();
 
             if (!result.IsValid())
                 return false;
