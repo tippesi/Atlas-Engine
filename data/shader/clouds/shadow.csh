@@ -68,8 +68,9 @@ vec2 ComputeVolumetricClouds(vec3 minDepthPos, vec3 maxDepthPos) {
             vec3 shapeTexCoords, detailTexCoords;
             CalculateTexCoords(rayPos, shapeTexCoords, detailTexCoords, coverageTexCoords);
 
+            // Use lower lod (2.0) for shadows
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
-                coverageTexCoords, vec3(1.0), 0.0, false));
+                coverageTexCoords, vec3(1.0), 2.0, false));
 
             float extinctionCoefficient = cloudUniforms.extinctionFactor *
             cloudUniforms.extinctionCoefficients.a * density;

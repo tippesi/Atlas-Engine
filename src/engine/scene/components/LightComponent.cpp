@@ -32,7 +32,7 @@ namespace Atlas {
                     auto& component = shadow->views.back();
 
                     component.farDistance = longRangeDistance;
-                    component.nearDistance = shadow->views[shadow->views.size() - 1].farDistance;
+                    component.nearDistance = cascadeCount > 1 ? shadow->views[shadow->views.size() - 2].farDistance : 0.0f;
 
                     shadow->longRangeDistance = longRangeDistance;
                     shadow->longRange = true;
