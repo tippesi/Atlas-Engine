@@ -24,7 +24,8 @@ namespace Atlas {
         private:
             struct alignas(16) Uniforms {
                 float exposure;
-                float whitePoint;
+                float paperWhiteLuminance;
+                float maxScreenLuminance;
                 float saturation;
                 float contrast;
                 float filmGrainStrength;

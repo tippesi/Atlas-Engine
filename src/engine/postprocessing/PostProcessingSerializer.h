@@ -76,7 +76,8 @@ namespace Atlas::PostProcessing {
         j = json {
             {"saturation", p.saturation},
             {"contrast", p.contrast},
-            {"whitePoint", p.whitePoint},
+            {"paperWhiteLuminance", p.paperWhiteLuminance},
+            {"screenMaxLuminance", p.screenMaxLuminance},
             {"filmicTonemapping", p.filmicTonemapping},
             {"taa", p.taa},
             {"vignette", p.vignette},
@@ -89,7 +90,8 @@ namespace Atlas::PostProcessing {
     void from_json(const json& j, PostProcessing& p) {
         j.at("saturation").get_to(p.saturation);
         j.at("contrast").get_to(p.contrast);
-        j.at("whitePoint").get_to(p.whitePoint);
+        j.at("paperWhiteLuminance").get_to(p.paperWhiteLuminance);
+        j.at("screenMaxLuminance").get_to(p.screenMaxLuminance);
         j.at("filmicTonemapping").get_to(p.filmicTonemapping);
         j.at("taa").get_to(p.taa);
         j.at("vignette").get_to(p.vignette);
