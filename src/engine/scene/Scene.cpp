@@ -457,8 +457,7 @@ namespace Atlas {
                     if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
                         auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
                         // This means we already found a more accurate hit
-                        if (result.valid && result.data != entity &&
-                            entityManager.Contains<RigidBodyComponent>(entity))
+                        if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
                             continue;
 
                         // Accept all hits greater equal if they were within the updated hit distance

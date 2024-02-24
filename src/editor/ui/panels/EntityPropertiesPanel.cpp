@@ -121,7 +121,9 @@ namespace Atlas::Editor::UI {
                     // Created standardized shapes/rigid body component as a default (we need to get the scale from
                     // the transform component
                     vec3 scale = vec3(1.0f);
-                    scale = entity.GetComponent<TransformComponent>().Decompose().scale;
+                    auto& globalMatrix = entity.GetComponent<TransformComponent>().globalMatrix;
+                    // Need scale from global matrix decomposition
+                    scale = Common::MatrixDecomposition(globalMatrix).scale;
 
                     auto shape = Physics::ShapesManager::CreateShape(Physics::BoundingBoxShapeSettings { .scale = scale });
                     auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::MOVABLE, .shape = shape };

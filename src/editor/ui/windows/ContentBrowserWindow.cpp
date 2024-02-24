@@ -9,12 +9,11 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
-/*
 #ifdef AE_OS_WINDOWS
 #include <Windows.h>
 #include <shellapi.h>
 #endif
-*/
+
 namespace Atlas::Editor::UI {
 
     ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {
@@ -371,7 +370,7 @@ namespace Atlas::Editor::UI {
     void ContentBrowserWindow::OpenExternally(const std::string& path, bool isDirectory) {
 
 #ifdef AE_OS_WINDOWS
-        // ShellExecute(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+        ShellExecute(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 #endif
 #if defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
         auto command = "open " + path;

@@ -149,21 +149,8 @@ namespace Atlas::Editor::UI {
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
-            auto parentEntity = sceneHierarchyPanel.selectedEntity;
-
-            if (!parentEntity.IsValid())
-                parentEntity = scene->GetEntityByName("Root");
-
             auto entity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), path);
-
-            if (!parentEntity.HasComponent<HierarchyComponent>())
-                parentEntity.AddComponent<HierarchyComponent>();
-
-            auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
-            hierarchy.AddChild(entity);
-
-            sceneHierarchyPanel.selectedEntity = entity;
-            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+            PushEntityIntoSceneHierarchy(entity);
         }
 
         End();
@@ -340,7 +327,7 @@ namespace Atlas::Editor::UI {
                     && mousePos.x < float(viewport->x + viewport->width)
                     && mousePos.y < float(viewport->y + viewport->height);
 
-                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport) {
+                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport && !lockSelection) {
 
                     auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
                     auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
@@ -403,6 +390,24 @@ namespace Atlas::Editor::UI {
             viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
         }
 
+    }
+
+    void SceneWindow::PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection) {
+        auto parentEntity = sceneHierarchyPanel.selectedEntity;
+
+        if (!parentEntity.IsValid())
+            parentEntity = scene->GetEntityByName("Root");
+
+        if (!parentEntity.HasComponent<HierarchyComponent>())
+            parentEntity.AddComponent<HierarchyComponent>();
+
+        auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
+        hierarchy.AddChild(entity);
+
+        if (changeSelection) {
+            sceneHierarchyPanel.selectedEntity = entity;
+            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+        }
     }
 
 }

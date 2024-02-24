@@ -181,7 +181,9 @@ namespace Atlas::Editor {
                 sceneWindow->isActiveWindow = true;
             else
                 sceneWindow->isActiveWindow = false;
-
+            
+            // Need to reset this each frame in order to reenable selection
+            sceneWindow->lockSelection = false;
             sceneWindow->Update(deltaTime);
         }
 
@@ -291,14 +293,14 @@ namespace Atlas::Editor {
 
         UI::PopupPanels::Render();
 
-        for (auto& sceneWindow : sceneWindows) {
-            sceneWindow->Render();
-        }
-
         contentBrowserWindow.Render();
         logWindow.Render();
         profilerWindow.Render();
-        geometryBrushWindow.Render();
+        geometryBrushWindow.Render(sceneWindows[activeSceneIdx]);
+
+        for (auto& sceneWindow : sceneWindows) {
+            sceneWindow->Render();
+        }
 
         Notifications::Display();
 

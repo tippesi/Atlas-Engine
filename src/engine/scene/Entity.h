@@ -92,6 +92,8 @@ namespace Atlas {
             ECS::Entity entity = ECS::EntityConfig::InvalidEntity;
             ECS::EntityManager* entityManager = nullptr;
 
+            friend Scene;
+
         };
 
     }
