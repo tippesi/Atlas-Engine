@@ -191,7 +191,7 @@ namespace Atlas {
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
-                    -maxProj.z - 1250.0f, // We need to render stuff behind the camera
+                    -maxProj.z - 2500.0f, // We need to render stuff behind the camera
                     -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
                 maxLength = glm::ceil(maxLength);

@@ -145,6 +145,8 @@ void main() {
     // Apply the tone mapping because we want the colors to be back in
     // normal range
 #ifdef HDR
+    // Interesting approach to make bright parts look more white using luma: https://github.com/libretro/RetroArch/blob/14ce660a38f99d448b32ed752ddaf1f250dcf669/gfx/drivers/d3d_shaders/hdr_sm5.hlsl.h
+    
     // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
     // Haven't tested with Dolby Vision
 #ifdef HYBRID_LOG_GAMMA_EOTF

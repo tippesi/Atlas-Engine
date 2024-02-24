@@ -295,10 +295,33 @@ namespace Atlas {
 
             auto clouds = scene->sky.clouds;
 
+            /*
+            auto& camera = scene->GetMainCamera();
+            float cloudsInnerRadius = scene->sky.planetRadius + clouds->minHeight;
+            float cloudsOuterRadius = scene->sky.planetRadius + clouds->maxHeight;
+
+            // This is an option for the future to make the clouds wrap down at the distance limit into the horizon
+            float radiusDiff = cloudsOuterRadius - cloudsInnerRadius;
+
+            float outerRadius = 5.0f * clouds->distanceLimit;
+            float innerRadius = 5.0f * clouds->distanceLimit - radiusDiff;
+
+            float innerHeight = cloudsInnerRadius - scene->sky.planetRadius;
+
+            vec3 planetCenterDir = normalize(camera.GetLocation() - scene->sky.planetCenter);
+            vec3 surfacePos = scene->sky.planetCenter + planetCenterDir * scene->sky.planetRadius;
+
+            vec3 cloudCenter = surfacePos - (innerRadius - innerHeight) * planetCenterDir;
+            */        
+
+            float innerRadius = scene->sky.planetRadius + clouds->minHeight;
+            float outerRadius = scene->sky.planetRadius + clouds->maxHeight;
+            vec3 cloudCenter = scene->sky.planetCenter;
+
             VolumetricCloudUniforms uniforms{
                 .planetRadius = scene->sky.planetRadius,
-                .innerRadius = scene->sky.planetRadius + clouds->minHeight,
-                .outerRadius = scene->sky.planetRadius + clouds->maxHeight,
+                .innerRadius = innerRadius,
+                .outerRadius = outerRadius,
                 .distanceLimit = clouds->distanceLimit,
 
                 .heightStretch = clouds->heightStretch,
@@ -330,7 +353,7 @@ namespace Atlas {
                 .darkEdgeDetail = clouds->darkEdgeAmbient,
 
                 .extinctionCoefficients = clouds->scattering.extinctionCoefficients,
-                .planetCenter = vec4(scene->sky.planetCenter, 1.0f)
+                .planetCenter = vec4(cloudCenter, 1.0f)
             };
 
             if (mainLightEntity.IsValid()) {

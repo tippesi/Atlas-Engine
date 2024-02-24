@@ -229,7 +229,7 @@ namespace Atlas {
                 ThreadData data;
                 data.name = name;
                 for (uint64_t i = 0; i < uint64_t(frameCount); i++)
-                    data.queries = AddQueriesToAverage(data.queries,
+                    AddQueriesToAverage(data.queries,
                         threadHistory.history[i], i, uint64_t(frameCount));
 
                 if (order != OrderBy::CHRONO)
@@ -277,8 +277,8 @@ namespace Atlas {
 
         }
 
-        std::vector<Profiler::Query> Profiler::AddQueriesToAverage(std::vector<Query> average,
-            std::vector<Query> queries,    uint64_t frameIdx, uint64_t frameCount) {
+        void Profiler::AddQueriesToAverage(std::vector<Query>& average,
+            const std::vector<Query>& queries, uint64_t frameIdx, uint64_t frameCount) {
 
             if (!frameIdx) {
                 average = queries;
@@ -287,8 +287,8 @@ namespace Atlas {
                     auto& query = queries[i];
 
                     avgQuery.timer.elapsedTime /= frameCount;
-
-                    avgQuery.children = AddQueriesToAverage(avgQuery.children,
+                    
+                    AddQueriesToAverage(avgQuery.children,
                         query.children, frameIdx, frameCount);
                 }
             }
@@ -310,12 +310,10 @@ namespace Atlas {
                     }
 
                     // Doesn't matter if the queries don't match up
-                    avgQuery.children = AddQueriesToAverage(avgQuery.children,
+                    AddQueriesToAverage(avgQuery.children,
                         query.children, frameIdx, frameCount);
                 }
             }
-
-            return average;
 
         }
 

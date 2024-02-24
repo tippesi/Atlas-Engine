@@ -225,7 +225,7 @@ void main() {
          || uv.y > 1.0) ? 0.0 : factor;
 
     ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
-    float maxWeight = 0.0;
+    float minWeight = 1.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
     for (int i = 0; i < 9; i++) {
@@ -241,11 +241,11 @@ void main() {
 
             float weight = min(1.0 , exp(-abs(historyLinearDepth - sampleLinearDepth)));
 
-            maxWeight = max(maxWeight, weight);
+            minWeight = min(minWeight, weight);
         }
     }
     
-    factor *= maxWeight;
+    factor *= minWeight;
 
     vec4 resolve = mix(currentValue, historyValue, factor);
 
