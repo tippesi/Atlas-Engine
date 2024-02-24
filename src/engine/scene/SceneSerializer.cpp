@@ -141,23 +141,6 @@ namespace Atlas {
             if (j.contains("physicsWorld")) {
                 std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
                 Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
-
-                auto rigidBodySubset = scene->GetSubset<RigidBodyComponent>();
-                for (auto entity : rigidBodySubset) {
-                    auto& comp = rigidBodySubset.Get(entity);
-
-                    // Probably bodies which couldn't be created before saving
-                    if (comp.creationSettings != nullptr)
-                        continue;
-
-                    // Something went entirely wrong here, create new empty setting
-                    if (!bodyCreationMap.contains(comp.bodyId.GetIndex())) {
-                        comp.creationSettings = CreateRef<Physics::BodyCreationSettings>();
-                        continue;
-                    }
-
-                    comp.creationSettings = CreateRef(bodyCreationMap[comp.bodyId.GetIndex()]);
-                }
             }
 
             scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();

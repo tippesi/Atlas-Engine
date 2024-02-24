@@ -16,7 +16,7 @@ namespace Atlas::Editor::UI {
 
         void DrawOverlay(std::function<void()> func);
 
-        void Render(Ref<Scene::Scene>& scene, bool isParentFocused);
+        void Render(Ref<Scene::Scene>& scene, bool isActiveWindow);
 
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;

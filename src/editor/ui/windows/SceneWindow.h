@@ -44,6 +44,7 @@ namespace Atlas::Editor::UI {
         bool hasMainCamera = false;
         bool hasPlayer = false;
         bool isPlaying = false;
+        bool isActiveWindow = false;
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);

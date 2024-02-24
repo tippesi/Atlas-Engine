@@ -23,7 +23,7 @@ namespace Atlas {
                 explicit RigidBodyComponent(Scene* scene, Entity entity, const Physics::BodyCreationSettings& bodyCreationSettings)
                     : entity(entity), layer(bodyCreationSettings.objectLayer), creationSettings(CreateRef(bodyCreationSettings)) {}
 
-                Physics::BodyCreationSettings GetBodyCreationSettings() override;
+                Physics::BodyCreationSettings GetBodyCreationSettings() const override;
 
                 Physics::ObjectLayer layer = Physics::Layers::STATIC;
                 Ref<Physics::BodyCreationSettings> creationSettings = nullptr;

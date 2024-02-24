@@ -125,7 +125,7 @@ namespace Atlas::Editor {
                 continue;
             }
 
-            if (sceneWindow->viewportPanel.isFocused)
+            if (sceneWindow->inFocus)
                 activeSceneIdx = sceneCounter;
 
             sceneCounter++;
@@ -177,6 +177,11 @@ namespace Atlas::Editor {
 
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
+            if (sceneWindow == activeSceneWindow)
+                sceneWindow->isActiveWindow = true;
+            else
+                sceneWindow->isActiveWindow = false;
+
             sceneWindow->Update(deltaTime);
         }
 
@@ -267,6 +272,7 @@ namespace Atlas::Editor {
                 ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
                 ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
                 ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
+                ImGui::MenuItem("Show geometry brush", nullptr, &geometryBrushWindow.show);
                 ImGui::EndMenu();
             }
 
@@ -292,6 +298,7 @@ namespace Atlas::Editor {
         contentBrowserWindow.Render();
         logWindow.Render();
         profilerWindow.Render();
+        geometryBrushWindow.Render();
 
         Notifications::Display();
 

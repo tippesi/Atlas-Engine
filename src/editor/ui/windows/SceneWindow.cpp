@@ -15,6 +15,9 @@ namespace Atlas::Editor::UI {
     
         RegisterViewportAndGizmoOverlay();
 
+        // Overwrite the window name, there should only be one scene with the same name
+        nameID = scene->name;
+
     }
 
     SceneWindow::~SceneWindow() {
@@ -82,7 +85,7 @@ namespace Atlas::Editor::UI {
         ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
-        inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
+        inFocus = ImGui::IsWindowFocused() ||
             sceneHierarchyPanel.isFocused || scenePropertiesPanel.isFocused || viewportPanel.isFocused;
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
@@ -142,7 +145,7 @@ namespace Atlas::Editor::UI {
 
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
-        viewportPanel.Render(refScene, inFocus);
+        viewportPanel.Render(refScene, isActiveWindow);
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
@@ -291,7 +294,7 @@ namespace Atlas::Editor::UI {
             needGuizmoEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
-            if (cameraEntity.IsValid() && inFocus && !isPlaying) {
+            if (cameraEntity.IsValid() && isActiveWindow && !isPlaying) {
 
                 needGuizmoEnabled = true;
                 ImGuizmo::SetDrawlist();
