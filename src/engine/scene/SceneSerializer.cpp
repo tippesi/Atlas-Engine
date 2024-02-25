@@ -73,7 +73,7 @@ namespace Atlas {
             if (scene->physicsWorld)
                 Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
 
-            fileStream << to_string(j);
+            fileStream << j.dump(2);
 
             fileStream.close();
 
@@ -170,7 +170,7 @@ namespace Atlas {
                 j["body"] = rigidBody->GetBodyCreationSettings();
             }
 
-            fileStream << to_string(j);
+            fileStream << j.dump(2);
 
             fileStream.close();
 

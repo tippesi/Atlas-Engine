@@ -50,7 +50,7 @@ if (MINGW)
 endif()
 
 if(APPLE)
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_MACOS )
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
@@ -83,6 +83,13 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
+
+# Due to lua bindings we need more addressable functions
+if (MSVC)
+  add_compile_options(/bigobj)
+else ()
+  add_compile_options(-Wa,-mbig-obj)
+endif ()
 
 # Add source files ################################################################################
 file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
@@ -139,6 +146,9 @@ endif()
 if (ATLAS_BINDLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
 endif()
+
+# We want the better/safer usertypes, such that we don't crash everything
+set(ATLAS_ENGINE_COMPILE_DEFINITIONS  ${ATLAS_ENGINE_COMPILE_DEFINITIONS} SOL_SAFE_USERTYPE)
 
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})

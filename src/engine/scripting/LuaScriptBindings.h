@@ -12,6 +12,8 @@ namespace Atlas::Scripting
         void GenerateBindings();
 
     private:
+        void GenerateSceneBindings(sol::table* ns);
+
         void GenerateEntityBindings(sol::table* ns);
 
         void GenerateComponentBindings(sol::table* ns);

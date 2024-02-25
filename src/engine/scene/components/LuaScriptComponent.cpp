@@ -111,14 +111,17 @@ namespace Atlas::Scene::Components
             scriptEnvironment = scriptEnv;
 
             // create environment based functions
-            scriptEnv.set_function("get_this_entity", [&]()
+            scriptEnv.set_function("GetThisEntity", [&]()
                                    { return this->entity; });
+
+            scriptEnv.set_function("GetThisScene", [&]()
+                { return this->scene; });
 
             // load script
             state.script(script->code, scriptEnv);
 
             // load the script functions
-            sol::protected_function updateFunction = scriptEnv["update"];
+            sol::protected_function updateFunction = scriptEnv["Update"];
             if (updateFunction.valid())
             {
                 this->updateFunction = updateFunction;
@@ -142,7 +145,7 @@ namespace Atlas::Scene::Components
 
         auto &state = scriptEnvironment.value();
 
-        sol::optional<sol::table> scriptProperties = state["script_properties"];
+        sol::optional<sol::table> scriptProperties = state["ScriptProperties"];
         if (!scriptProperties.has_value())
         {
             return {};
@@ -176,19 +179,22 @@ namespace Atlas::Scene::Components
             if (!type.has_value())
                 continue;
 
-            if (type.value() == "string")
+            auto typeValue = type.value();
+            std::transform(typeValue.begin(), typeValue.end(), typeValue.begin(), ::tolower);
+
+            if (typeValue == "string")
             {
                 scriptProperty.type = PropertyType::String;
             }
-            else if (type.value() == "double")
+            else if (typeValue == "double")
             {
                 scriptProperty.type = PropertyType::Double;
             }
-            else if (type.value() == "integer")
+            else if (typeValue == "integer")
             {
                 scriptProperty.type = PropertyType::Integer;
             }
-            else if (type.value() == "boolean")
+            else if (typeValue == "boolean")
             {
                 scriptProperty.type = PropertyType::Boolean;
             }
@@ -291,16 +297,16 @@ namespace Atlas::Scene::Components
             switch (property.type)
             {
             case PropertyType::String:
-                state["script_properties"][property.name]["value"] = property.stringValue;
+                state["ScriptProperties"][property.name]["value"] = property.stringValue;
                 break;
             case PropertyType::Double:
-                state["script_properties"][property.name]["value"] = property.doubleValue;
+                state["ScriptProperties"][property.name]["value"] = property.doubleValue;
                 break;
             case PropertyType::Integer:
-                state["script_properties"][property.name]["value"] = property.integerValue;
+                state["ScriptProperties"][property.name]["value"] = property.integerValue;
                 break;
             case PropertyType::Boolean:
-                state["script_properties"][property.name]["value"] = property.booleanValue;
+                state["ScriptProperties"][property.name]["value"] = property.booleanValue;
                 break;
             }
         }

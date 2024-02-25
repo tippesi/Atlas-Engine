@@ -5,6 +5,7 @@
 #include "../common/Ref.h"
 
 #include <sol/sol.hpp>
+
 namespace Atlas::Scripting
 {
     class LuaScriptManager
