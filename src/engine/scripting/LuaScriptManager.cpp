@@ -22,14 +22,15 @@ namespace Atlas::Scripting
 
         // create lua state
         luaState = std::make_shared<sol::state>();
-        luaState->open_libraries(sol::lib::base);
+        luaState->open_libraries(sol::lib::base, sol::lib::math, sol::lib::string);
         auto &state = *luaState;
 
         // create atlas namespace
         sol::table atlasNs = state["Atlas"].get_or_create<sol::table>();
+        sol::table glmNs = state["Glm"].get_or_create<sol::table>();
 
         // generate bindings
-        LuaScriptBindings bindingGenerator(luaState, &atlasNs);
+        LuaScriptBindings bindingGenerator(luaState, &atlasNs, &glmNs);
         bindingGenerator.GenerateBindings();
     }
 }

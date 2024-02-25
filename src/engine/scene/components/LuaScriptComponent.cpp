@@ -56,7 +56,9 @@ namespace Atlas::Scene::Components
             scriptEnvironment.reset();
 
             // reload the properties, therefore init the state
-            InitScriptEnvironment();
+            if (!InitScriptEnvironment())
+                return;
+
             // and then get or update the properties from the script
             GetOrUpdatePropertiesFromScript();
         }
@@ -72,7 +74,8 @@ namespace Atlas::Scene::Components
             // the instance is running, create a state if not existing
             if (!scriptEnvironment.has_value())
             {
-                InitScriptEnvironment();
+                if (!InitScriptEnvironment())
+                    return;
             }
 
             // process the script
@@ -97,7 +100,7 @@ namespace Atlas::Scene::Components
         }
     }
 
-    void LuaScriptComponent::InitScriptEnvironment()
+    bool LuaScriptComponent::InitScriptEnvironment()
     {
         AE_ASSERT(!scriptEnvironment.has_value());
         try
@@ -126,7 +129,11 @@ namespace Atlas::Scene::Components
             updateFunction.reset();
             scriptEnvironment.reset();
             Atlas::Log::Message("Error while compiling lua script: " + std::string(e.what()));
+
+            return false;
         }
+
+        return true;
     }
 
     std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript()

@@ -60,7 +60,7 @@ namespace Atlas::Scene
             std::optional<sol::protected_function> updateFunction;
             std::optional<sol::environment> scriptEnvironment;
             
-            void InitScriptEnvironment();
+            bool InitScriptEnvironment();
             std::vector<ScriptProperty> GetPropertiesFromScript();
             void GetOrUpdatePropertiesFromScript();
             void LoadScriptAndFetchProperties();

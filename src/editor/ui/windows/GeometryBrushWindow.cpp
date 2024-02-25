@@ -52,7 +52,7 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropTarget();
         }
 
-        if (brushEntity.IsValid() && parentEntity.IsValid()) {
+        if (brushEntity.IsValid() && parentEntity.IsValid() && activeSceneWindow != nullptr) {
             RenderBrushSettings();
 
             if (brushEnabled) {

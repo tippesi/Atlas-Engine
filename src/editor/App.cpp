@@ -296,7 +296,8 @@ namespace Atlas::Editor {
         contentBrowserWindow.Render();
         logWindow.Render();
         profilerWindow.Render();
-        geometryBrushWindow.Render(sceneWindows[activeSceneIdx]);
+
+        geometryBrushWindow.Render(sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx]);
 
         for (auto& sceneWindow : sceneWindows) {
             sceneWindow->Render();
