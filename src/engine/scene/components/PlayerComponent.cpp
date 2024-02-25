@@ -9,6 +9,7 @@ namespace Atlas::Scene::Components {
         creationSettings = CreateRef<Physics::PlayerCreationSettings>();
         creationSettings->mass = mass;
         creationSettings->maxStrength = maxStrength;
+        creationSettings->shape = Physics::ShapesManager::CreateShape(Physics::CapsuleShapeSettings {});
 
     }
 
@@ -29,14 +30,38 @@ namespace Atlas::Scene::Components {
         
         auto up = GetUp();
 
+        if (!jumped)
+            StickToGround(-up * stickToGroundDistance);
+
         auto newVelocity = vec3(0.0f);
         auto groundVelocity = GetGroundVelocity();
+
         if (IsOnGround()) {
+            jumped = false;
             newVelocity += groundVelocity;
-            if (jump)
+            if (jump) {
                 newVelocity += up * jumpVelocity;
-            if (allowInput)
+                jumped = true;
+            }
+            if (allowInput && !slide)
                 newVelocity += inputVelocity;
+
+            if (slide) {
+                // Get difference between ground velocity and actual velocty and dampen this over time
+                vec3 slideVelocity = GetLinearVelocity() - groundVelocity;
+                float slideVelocityLength = glm::min(glm::length(slideVelocity), slideVelocityMax);
+
+                vec3 deaccVelocity = slideDeacceleration * 1.0f * slideVelocity * deltaTime;
+
+                if (slideVelocityLength > slideCutoffVelocity && slideVelocityLength > glm::length(deaccVelocity)) {
+
+                    if (glm::dot(slideVelocity, slideVelocity) > 0.0f) {
+                        newVelocity += slideVelocity;
+                        newVelocity -= deaccVelocity;
+                    }
+                }
+                slide = false;
+            }
         }
         else {
             newVelocity += GetLinearVelocity();

@@ -13,9 +13,9 @@ namespace Atlas {
 
             static Ref<Scene> DeserializeScene(const std::string& filename);
 
-            static void SerializeEntity(Ref<Scene> scene, Entity entity, const std::string& filename);
+            static void SerializePrefab(Ref<Scene> scene, Entity entity, const std::string& filename);
 
-            static Entity DeserializeEntity(Ref<Scene> scene, const std::string& filename);
+            static Entity DeserializePrefab(Ref<Scene> scene, const std::string& filename);
 
         };
 

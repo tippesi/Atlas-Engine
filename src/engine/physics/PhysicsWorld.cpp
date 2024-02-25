@@ -112,7 +112,7 @@ namespace Atlas {
             if (shapeRef->GetSubType() == JPH::EShapeSubType::Scaled) {
                 auto shape = static_cast<const JPH::ScaledShape*>(shapeRef.GetPtr());
 
-                matrix = matrix * glm::scale(glm::mat4(1.0f), JPHVecToVec(shape->GetScale()));
+                matrix = glm::scale(glm::mat4(matrix), JPHVecToVec(shape->GetScale()));
             }
 
             return matrix;

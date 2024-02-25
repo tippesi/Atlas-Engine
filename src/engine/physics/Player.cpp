@@ -90,6 +90,22 @@ namespace Atlas::Physics {
 
     }
 
+    void Player::StickToGround(vec3 distVector) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+
+        auto system = world->system;
+
+        const auto& physicsSettings = system->GetPhysicsSettings();
+        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::MOVABLE);
+        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::MOVABLE);
+        const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
+
+        character->StickToFloor(VecToJPHVec(distVector), broadPhaseLayerFilter, defaultLayerFilter,
+            {}, {}, *tempAllocator);
+
+    }
+
     void Player::SetShape(const Ref<Shape>& shape) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

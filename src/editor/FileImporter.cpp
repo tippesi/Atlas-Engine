@@ -23,6 +23,7 @@ namespace Atlas::Editor {
             return;
         }
 
+        // Prefabs can't be imported via the resource manager (need to be created on scene by scene basis)
         auto type = fileTypeMapping.at(fileType);
         switch(type) {
         case FileType::Audio: ImportFile<Audio::AudioData>(filename); break;
@@ -45,6 +46,7 @@ namespace Atlas::Editor {
         { "aescene", FileType::Scene },
         { "lua", FileType::Script },
         { "ttf", FileType::Font },
+        { "aeprefab", FileType::Prefab },
     };
 
 }

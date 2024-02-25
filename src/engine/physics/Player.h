@@ -58,6 +58,8 @@ namespace Atlas::Physics {
 
 		vec3 GetUp() const;
 
+		void StickToGround(vec3 distVector);
+
 		void SetShape(const Ref<Shape>& shape);
 
 		virtual void Update(float deltaTime);

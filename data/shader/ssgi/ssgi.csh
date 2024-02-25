@@ -140,7 +140,7 @@ void main() {
                     float depthDelta = rayDepth - stepLinearDepth;
                     vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
 
-                    if (depthDelta > 0.0 && depthDelta < rayLength) {
+                    if (depthDelta > 0.0 && abs(depthDelta) < rayLength) {
                         float NdotL = dot(worldNorm, -ray.direction);
                         if (NdotL >= 0.0) {
                             vec3 rayIrradiance = texelFetch(directLightTexture, stepPixel * 2 + pixelOffset, 0).rgb;

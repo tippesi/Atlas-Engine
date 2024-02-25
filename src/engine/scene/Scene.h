@@ -28,7 +28,7 @@
 #include "prefabs/Prefabs.h"
 
 #include "raytracing/RayTracingWorld.h"
-#include "Vegetation.h"
+#include "Clutter.h"
 
 #include <type_traits>
 #include <map>
@@ -119,7 +119,7 @@ namespace Atlas {
 
             Ref<Ocean::Ocean> ocean = nullptr;
             Ref<Terrain::Terrain> terrain = nullptr;
-            Ref<Vegetation> vegetation = nullptr;
+            Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
 
@@ -167,6 +167,7 @@ namespace Atlas {
 
             bool hasChanged = true;
             bool rtDataValid = false;
+            bool vegetationChanged = false;
 
             friend Entity;
             friend SpacePartitioning;

@@ -116,6 +116,15 @@ namespace Atlas {
 
         }
 
+        void Image::GenerateMipMaps() {
+
+
+            if (domain == ImageDomain::Device) {
+                memoryManager->transferManager->GenerateMipMaps(this);
+            }
+
+        }
+
         VkImageType Image::GetImageType() const {
 
             switch(type) {

@@ -26,6 +26,8 @@ namespace Atlas::Editor::UI {
 
         void RegisterViewportAndGizmoOverlay();
 
+        void PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection = true);
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -44,6 +46,8 @@ namespace Atlas::Editor::UI {
         bool hasMainCamera = false;
         bool hasPlayer = false;
         bool isPlaying = false;
+        bool isActiveWindow = false;
+        bool lockSelection = false;
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);

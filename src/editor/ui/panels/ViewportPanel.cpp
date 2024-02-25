@@ -27,7 +27,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isParentFocused) {
+    void ViewportPanel::Render(Ref<Scene::Scene> &scene, bool isActiveWindow) {
 
         ImGui::Begin(GetNameID());
 
@@ -56,7 +56,7 @@ namespace Atlas::Editor::UI {
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
         }
 
-        if (scene != nullptr && validRegion) {
+        if (scene != nullptr && validRegion && isActiveWindow) {
             auto& config = Singletons::config;
 
             if (config->pathTrace) {

@@ -272,7 +272,8 @@ namespace Atlas {
 
             Uniforms uniforms = {
                 .exposure = camera.exposure,
-                .whitePoint = postProcessing.whitePoint,
+                .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
+                .maxScreenLuminance = postProcessing.screenMaxLuminance,
                 .saturation = postProcessing.saturation,
                 .contrast = postProcessing.contrast
             };

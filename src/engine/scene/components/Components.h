@@ -13,3 +13,4 @@
 #include "RigidBodyComponent.h"
 #include "PlayerComponent.h"
 #include "TextComponent.h"
+#include "ClutterComponent.h"

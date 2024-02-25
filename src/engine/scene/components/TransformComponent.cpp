@@ -1,10 +1,23 @@
 #include "TransformComponent.h"
 
+#include "../Scene.h"
+
 namespace Atlas {
 
 	namespace Scene {
 
 		namespace Components {
+
+            TransformComponent::TransformComponent(Scene* scene, Entity entity, const TransformComponent& that) {
+
+                if (this != &that) {
+                    *this = that;
+                    
+                }
+
+                this->entity = entity;
+
+            }
 
 			void TransformComponent::Set(const glm::mat4& matrix) {
 
@@ -19,7 +32,7 @@ namespace Atlas {
                 updated = false;
 
 			}
-
+			
 			void TransformComponent::Translate(glm::vec3 translation) {
 
                 AE_ASSERT(!isStatic && "Change of static transform component not allowed");
@@ -31,6 +44,24 @@ namespace Atlas {
 				this->matrix = glm::translate(matrix, translation);
 				changed = true;
                 updated = false;
+
+			}
+
+			void TransformComponent::ReconstructLocalMatrix(const Ref<Scene>& scene) {
+
+                mat4 parentGlobalMatrix = mat4(1.0f);
+                auto parentEntity = scene->GetParentEntity(entity);
+
+                TransformComponent* parentTransform = nullptr;
+                if (parentEntity.IsValid())
+                    parentTransform = parentEntity.TryGetComponent<TransformComponent>();
+
+                if (parentTransform) {
+                    parentGlobalMatrix = parentTransform->globalMatrix;
+                }
+
+                auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
+                Set(inverseParentMatrix * globalMatrix);
 
 			}
 

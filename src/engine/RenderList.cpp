@@ -30,8 +30,6 @@ namespace Atlas {
         impostorMatrices.clear();
         if (lastSize) impostorMatrices.reserve(lastSize);
 
-        passes.clear();
-
     }
 
     void RenderList::NewMainPass() {
@@ -223,6 +221,15 @@ namespace Atlas {
             lastMatricesBuffer->SetData(lastEntityMatrices.data(), 0, lastEntityMatrices.size() * sizeof(mat3x4));
         if (impostorMatrices.size() > 0)
             impostorMatricesBuffer->SetData(impostorMatrices.data(), 0, impostorMatrices.size() * sizeof(mat3x4));
+
+    }
+
+    void RenderList::Clear() {
+
+        // We can reset the scene now and delete the reference
+        scene = nullptr;
+
+        passes.clear();
 
     }
 

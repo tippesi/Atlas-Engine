@@ -236,6 +236,23 @@ namespace Atlas {
 
         }
 
+        void MemoryTransferManager::GenerateMipMaps(Image *image) {
+
+            // Need graphics queue for mip generation
+            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            VmaAllocator allocator = memoryManager->allocator;
+
+            commandList->BeginCommands();
+
+            AE_ASSERT(false && "Needs to be implemented if needed");
+
+            commandList->EndCommands();
+
+            device->FlushCommandList(commandList);
+            device->WaitForIdle();
+
+        }
+
         void MemoryTransferManager::GenerateMipMaps(Image *image, VkCommandBuffer cmd) {
 
             VkImageMemoryBarrier imageBarrier = {};

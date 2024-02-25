@@ -140,7 +140,7 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             // The cube map generating automatically transforms the image layout to read-only optimal
-            commandList->GenerateMipMap(probe->cubemap.image);
+            commandList->GenerateMipMaps(probe->cubemap.image);
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();

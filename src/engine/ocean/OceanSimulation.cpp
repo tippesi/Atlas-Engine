@@ -361,7 +361,7 @@ namespace Atlas {
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             // The cube map generating automatically transforms the image layout to read-only optimal
-            commandList->GenerateMipMap(normalMap.image);
+            commandList->GenerateMipMaps(normalMap.image);
 
             commandList->ImageMemoryBarrier(displacementMap.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,

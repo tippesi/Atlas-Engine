@@ -406,8 +406,8 @@ namespace Atlas {
             }
 
             auto meshes = GetMeshes();
-            if (vegetation) {
-                auto vegMeshes = vegetation->GetMeshes();
+            if (clutter) {
+                auto vegMeshes = clutter->GetMeshes();
                 meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
 
@@ -464,8 +464,7 @@ namespace Atlas {
                     if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
                         auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
                         // This means we already found a more accurate hit
-                        if (result.valid && result.data != entity &&
-                            entityManager.Contains<RigidBodyComponent>(entity))
+                        if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
                             continue;
 
                         // Accept all hits greater equal if they were within the updated hit distance
@@ -788,7 +787,12 @@ namespace Atlas {
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
-                dstEntity.AddComponent<RigidBodyComponent>(otherComp.GetBodyCreationSettings());
+                auto creationSettings = otherComp.GetBodyCreationSettings();
+                const auto otherShape = creationSettings.shape;
+                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
+                creationSettings.shape = CreateRef<Physics::Shape>();
+                *creationSettings.shape = *otherShape;
+                auto& comp = dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
             }
             if (srcEntity.HasComponent<PlayerComponent>()) {
                 auto otherComp = srcEntity.GetComponent<PlayerComponent>();

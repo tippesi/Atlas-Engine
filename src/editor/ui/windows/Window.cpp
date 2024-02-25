@@ -9,6 +9,7 @@ namespace Atlas::Editor::UI {
 
         if (!ImGui::Begin(GetNameID(), &show, flags)) {
             ImGui::End();
+            inFocus = false;
             return false;
         }
 

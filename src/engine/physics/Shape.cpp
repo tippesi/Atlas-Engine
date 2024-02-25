@@ -1,5 +1,8 @@
 #include "Shape.h"
 #include "ShapesManager.h"
+#include "MathConversion.h"
+
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 
 namespace Atlas::Physics {
 
@@ -27,6 +30,49 @@ namespace Atlas::Physics {
         }
 
         return false;
+
+    }
+
+    bool Shape::Scale(const vec3& scale) {
+        
+        if (!IsValid())
+            return false;
+
+        if (ref->GetSubType() == JPH::EShapeSubType::Scaled) {
+            // Use temp ref to own the memory
+            auto tmpRef = ref;
+            auto shape = static_cast<const JPH::ScaledShape*>(tmpRef.GetPtr());
+            // Kind of a scaled shape "reset"
+            ref = shape->GetInnerShape();
+        }
+
+        JPH::ScaledShapeSettings scaledShapeSettings(ref, VecToJPHVec(scale));
+        auto result = scaledShapeSettings.Create();
+
+        if (!result.IsValid())
+            return false;
+
+        ref = result.Get();
+
+        if (settings) {
+            if (type == ShapeType::Mesh) {
+                static_cast<MeshShapeSettings*>(settings.get())->scale = scale;
+            }
+            else if (type == ShapeType::Sphere) {
+                static_cast<SphereShapeSettings*>(settings.get())->scale = scale;
+            }
+            else if (type == ShapeType::BoundingBox) {
+                static_cast<BoundingBoxShapeSettings*>(settings.get())->scale = scale;
+            }
+            else if (type == ShapeType::Capsule) {
+                static_cast<CapsuleShapeSettings*>(settings.get())->scale = scale;
+            }
+            else if (type == ShapeType::HeightField) {
+                static_cast<HeightFieldShapeSettings*>(settings.get())->scale = scale;
+            }
+        }
+
+        return true;
 
     }
 

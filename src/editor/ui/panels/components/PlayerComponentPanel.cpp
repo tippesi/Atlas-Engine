@@ -44,11 +44,14 @@ namespace Atlas::Editor::UI {
 			capsuleSettings->scale = transformComponent->Decompose().scale;
 		ImGui::DragFloat3("Scale", glm::value_ptr(capsuleSettings->scale), 0.01f, 0.0f);
 
-		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
-			if (!shape->TryCreate())
+		if (ImGui::Button("Generate shape", { -FLT_MIN, 0 })) {
+			if (!shape->TryCreate()) {
 				Notifications::Push({ .message = "Error creating player shape", .color = vec3(1.0f, 0.0f, 0.0f) });
-			else
+			}
+			else {
 				playerComponent.SetShape(shape);
+			}
+		}
 
 	}
 

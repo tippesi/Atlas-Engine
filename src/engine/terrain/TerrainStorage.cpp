@@ -100,11 +100,11 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-            commandList->GenerateMipMap(baseColorMaps.image);
-            commandList->GenerateMipMap(roughnessMaps.image);
-            commandList->GenerateMipMap(aoMaps.image);
-            commandList->GenerateMipMap(normalMaps.image);
-            commandList->GenerateMipMap(displacementMaps.image);
+            commandList->GenerateMipMaps(baseColorMaps.image);
+            commandList->GenerateMipMaps(roughnessMaps.image);
+            commandList->GenerateMipMaps(aoMaps.image);
+            commandList->GenerateMipMaps(normalMaps.image);
+            commandList->GenerateMipMaps(displacementMaps.image);
 
             const auto dstLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             const auto dstAccess = VK_ACCESS_SHADER_READ_BIT;

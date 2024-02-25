@@ -27,8 +27,6 @@ namespace Atlas::Physics {
         static bool TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings);
         static bool TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings);
 
-        static bool CreateShapeScaled(Shape* shape, ShapeRef shapeRef, vec3 scale);
-
         friend Shape;
 
     };
