@@ -18,7 +18,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
         ImGui::SliderFloat("Saturation", &postProcessing.saturation, 0.0f, 2.0f);
         ImGui::SliderFloat("Contrast", &postProcessing.contrast, 0.0f, 2.0f);
-        ImGui::SliderFloat("White point", &postProcessing.whitePoint, 0.0f, 100.0f, "%.3f", 2.0f);
+        ImGui::SliderFloat("Paper white luminance", &postProcessing.paperWhiteLuminance, 0.0f, 300.0f, "%.3f", 2.0f);
+        ImGui::SliderFloat("Maximum screen luminance", &postProcessing.screenMaxLuminance, 0.0f, 2000.0f, "%.3f", 2.0f);
         ImGui::Separator();
         ImGui::Text("Chromatic aberration");
         ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);

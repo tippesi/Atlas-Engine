@@ -32,7 +32,7 @@ namespace Atlas {
                     auto& component = shadow->views.back();
 
                     component.farDistance = longRangeDistance;
-                    component.nearDistance = shadow->views[shadow->views.size() - 1].farDistance;
+                    component.nearDistance = cascadeCount > 1 ? shadow->views[shadow->views.size() - 2].farDistance : 0.0f;
 
                     shadow->longRangeDistance = longRangeDistance;
                     shadow->longRange = true;
@@ -191,7 +191,7 @@ namespace Atlas {
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
-                    -maxProj.z - 1250.0f, // We need to render stuff behind the camera
+                    -maxProj.z - 2500.0f, // We need to render stuff behind the camera
                     -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
                 maxLength = glm::ceil(maxLength);

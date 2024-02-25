@@ -168,7 +168,7 @@ namespace Atlas {
 
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageBlit blit);
 
-            void GenerateMipMap(const Ref<Image>& image);
+            void GenerateMipMaps(const Ref<Image>& image);
 
             void BuildBLAS(const Ref<BLAS>& blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
 

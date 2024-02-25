@@ -2,6 +2,7 @@
 #include <../common/normalencode.hsh>
 
 layout (location = 0) out vec4 baseColorFS;
+layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
@@ -90,6 +91,8 @@ void main() {
     geometryNormal *= -dot(geometryNormal, positionVS);
     geometryNormal = normalize(geometryNormal);
     geometryNormalFS = EncodeNormal(geometryNormal);
+
+    normalFS = geometryNormalFS;
 
 #ifdef INTERPOLATION
     vec3 matInfo0 = texture(roughnessMetalnessAoMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).rgb;

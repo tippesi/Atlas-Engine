@@ -68,6 +68,9 @@ int main(int argc, char* argv[]) {
 
     engineInstance->LoadContent();
 
+    // Update now such the first delta is actually valid and not skewed by the loading
+    Atlas::Clock::Update();
+
     while (!quit) {
 
         Atlas::Engine::Update();

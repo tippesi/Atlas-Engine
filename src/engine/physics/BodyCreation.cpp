@@ -19,7 +19,7 @@ namespace Atlas::Physics {
 
         gravityFactor = settings.mGravityFactor;
 
-        shapePtr = settings.GetShape();
+        //shapePtr = settings.GetShape();
 
     }
 

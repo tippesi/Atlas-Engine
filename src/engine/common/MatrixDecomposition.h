@@ -21,6 +21,9 @@ namespace Atlas {
             vec3 rotation = vec3(0.0f);
             vec3 scale = vec3(1.0f);
 
+            vec4 perspective = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            vec3 skew = vec3(0.0f);
+
             quat quaternion;
 
         };

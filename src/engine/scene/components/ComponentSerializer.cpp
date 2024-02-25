@@ -233,9 +233,7 @@ namespace Atlas::Scene::Components {
             {"layer", p.layer},
         };
 
-        // This is only relevant for not yet created bodies
-        if (p.creationSettings != nullptr)
-            j["creationSettings"] = *p.creationSettings;
+        j["creationSettings"] = p.GetBodyCreationSettings();
     }
 
     void from_json(const json& j, RigidBodyComponent& p) {

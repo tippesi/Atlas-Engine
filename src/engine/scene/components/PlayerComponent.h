@@ -22,6 +22,8 @@ namespace Atlas::Scene {
 
 			void Jump() { jump = true; }
 
+			void Slide() { slide = true; }
+
 			void SetInputVelocity(const vec3& velocity) { inputVelocity = velocity; }
 
 			vec3 GetInputVelocity() const { return inputVelocity; }
@@ -31,6 +33,12 @@ namespace Atlas::Scene {
             float jumpVelocity = 4.0f;
 
 			bool allowInput = true;
+			
+			float stickToGroundDistance = 0.1f;
+
+			float slideDeacceleration = 1.0f;
+			float slideCutoffVelocity = 0.1f;
+			float slideVelocityMax = 4.0f;
 
 		private:
 			void Update(float deltaTime);
@@ -41,6 +49,8 @@ namespace Atlas::Scene {
 			void RemoveFromPhysicsWorld();
 
 			bool jump = false;
+			bool slide = false;
+			bool jumped = false;
 
 			vec3 inputVelocity = vec3(0.0f);
 

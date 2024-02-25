@@ -21,7 +21,8 @@ namespace Atlas::Editor {
         Settings,
         ArrowUp,
         ArrowLeft,
-        ArrowRight
+        ArrowRight,
+        Prefab
     };
 
     class Icons {

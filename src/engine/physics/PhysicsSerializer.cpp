@@ -226,6 +226,7 @@ namespace Atlas::Physics {
 
     void SerializePhysicsWorld(json& j, Ref<PhysicsWorld>& physicsWorld) {
 
+        /*
         auto& system = physicsWorld->system;
         auto& bodyInterface = system->GetBodyInterface();
 
@@ -235,7 +236,7 @@ namespace Atlas::Physics {
         auto& bodyLockInterface = system->GetBodyLockInterface();
 
         std::unordered_map<uint32_t, BodyCreationSettings> bodyCreationSettings;
-
+       
         for (auto bodyId : bodyIds) {
             JPH::BodyLockRead lock(bodyLockInterface, bodyId);
             if (lock.Succeeded()) {
@@ -255,12 +256,14 @@ namespace Atlas::Physics {
         }
 
         j["bodies"] = bodyCreationSettings;
+        */
 
     }
 
     void DeserializePhysicsWorld(const json& j, std::unordered_map<uint32_t, BodyCreationSettings>& bodyCreationMap) {
 
-        bodyCreationMap = j["bodies"];
+        // Bodies are now saved in the enities
+        // bodyCreationMap = j["bodies"];
 
     }
 

@@ -34,7 +34,6 @@ namespace Atlas::Physics {
 
         float gravityFactor = 1.0f;
 
-        const JPH::Shape* shapePtr = nullptr;
         Ref<Shape> shape = nullptr;
     };
 

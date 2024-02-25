@@ -37,7 +37,7 @@ namespace Atlas::Physics {
 
         uint64_t GetUserData() const;
 
-        virtual BodyCreationSettings GetBodyCreationSettings();
+        virtual BodyCreationSettings GetBodyCreationSettings() const;
 
         BodyID bodyId;
 

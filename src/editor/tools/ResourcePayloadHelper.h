@@ -40,6 +40,37 @@ namespace Atlas::Editor {
 
 		}
 
+        template<class T>
+		static std::string AcceptDropResourceAndGetPath() {
+
+            std::string path;
+
+            if (ImGui::BeginDragDropTarget()) {
+                auto dropPayload = ImGui::GetDragDropPayload();
+
+                bool compatible = false;
+
+                std::string resourcePath;
+                if (dropPayload->IsDataType("ContentBrowserResource")) {
+                    resourcePath.resize(dropPayload->DataSize);
+
+                    // Pretty dangerous
+                    resourcePath = std::string(reinterpret_cast<const char*>(dropPayload->Data));
+
+                    compatible = FileImporter::AreCompatible<T>(resourcePath);
+                }                
+
+                if (compatible && ImGui::AcceptDragDropPayload("ContentBrowserResource")) {
+                    path = resourcePath;
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            return path;
+
+		}
+
 	};
 
 }

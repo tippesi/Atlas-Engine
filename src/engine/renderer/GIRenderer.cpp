@@ -46,8 +46,7 @@ namespace Atlas {
             if (!ssgi || !ssgi->enable) return;
 
             if (!scene->IsRtDataValid() && ssgi->rt) return;
-            helper.SetScene(scene, 8);
-
+            
             ivec2 res = ivec2(target->giTexture.width, target->giTexture.height);
 
             Graphics::Profiler::BeginQuery("Render SSGI");

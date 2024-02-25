@@ -215,6 +215,8 @@ void main() {
     vec4 historyValue = history;
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
 
+    float currentDepth = texelFetch(depthTexture, pixel, 0).r;
+
     historyValue = clamp(historyValue, localNeighbourhoodMin, localNeighbourhoodMax);
 
     // We don't want to do anything fancy here, just a bit of constant accumulation
@@ -223,23 +225,27 @@ void main() {
          || uv.y > 1.0) ? 0.0 : factor;
 
     ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
-    float minConfidence = 1.0;
+    float minWeight = 1.0;
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = historyPixel + offsets[i];
         float confidence = 1.0;
 
+        float sampleLinearDepth = ConvertDepthToViewSpaceDepth(currentDepth);
+
         if (offsetPixel.x < imageSize(resolveImage).x && offsetPixel.y < imageSize(resolveImage).y &&
             offsetPixel.x >= 0 && offsetPixel.y >= 0) {
-             float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-            confidence *= historyDepth < 1.0 ? 0.0 : 1.0;
+            float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
 
-            minConfidence = min(minConfidence, confidence);
+            float weight = min(1.0 , exp(-abs(historyLinearDepth - sampleLinearDepth)));
+
+            minWeight = min(minWeight, weight);
         }
     }
     
-    factor *= minConfidence;
+    factor *= minWeight;
 
     vec4 resolve = mix(currentValue, historyValue, factor);
 

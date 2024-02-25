@@ -43,8 +43,7 @@ namespace Atlas {
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
 
-            helper.SetScene(scene, 8, false);
-            helper.UpdateLights();
+            helper.UpdateLights(scene, false);
 
             ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
 
@@ -100,7 +99,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->reflectionTexture.image,
                     VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
-                helper.DispatchAndHit(commandList, pipeline, ivec3(groupCount, 1),
+                helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
                     [=]() {
                         commandList->BindImage(target->reflectionTexture.image, 3, 0);
 

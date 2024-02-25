@@ -16,7 +16,7 @@ namespace Atlas {
 
             }
 
-            Physics::BodyCreationSettings RigidBodyComponent::GetBodyCreationSettings() {
+            Physics::BodyCreationSettings RigidBodyComponent::GetBodyCreationSettings() const {
 
                 if (creationSettings)
                     return *creationSettings;

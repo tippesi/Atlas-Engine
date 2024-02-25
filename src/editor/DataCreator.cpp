@@ -11,6 +11,7 @@ namespace Atlas::Editor {
 
         auto mainGroup = scene->CreatePrefab<Group>("Root");
         auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
+        mainHierarchy.root = true;
 
         auto directionalLightEntity = scene->CreateEntity();
         directionalLightEntity.AddComponent<NameComponent>("Directional light");

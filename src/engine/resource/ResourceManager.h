@@ -10,6 +10,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <future>
+#include <typeinfo>
 
 namespace Atlas {
 

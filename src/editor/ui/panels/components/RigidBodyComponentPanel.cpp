@@ -119,13 +119,18 @@ namespace Atlas::Editor::UI {
         }
 
         if (scale != nullptr) {
-            if (transformComponent)
-                *scale = transformComponent->Decompose().scale;
+            if (transformComponent) {
+                auto& globalMatrix = transformComponent->globalMatrix;
+                // Need scale from global matrix decomposition
+                *scale = Common::MatrixDecomposition(globalMatrix).scale;
+            }
             ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, 0.0f);
         }
 
         if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
             shape->TryCreate();
+        else
+            shape->Scale(*scale);
 
     }
 

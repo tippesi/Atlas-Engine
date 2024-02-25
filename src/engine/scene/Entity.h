@@ -80,11 +80,19 @@ namespace Atlas {
 
             }
 
+            inline Scene* GetScene() const {
+
+                return static_cast<Scene*>(entityManager->userData);
+
+            }
+
             operator ECS::Entity() const { return entity; }
 
         private:
             ECS::Entity entity = ECS::EntityConfig::InvalidEntity;
             ECS::EntityManager* entityManager = nullptr;
+
+            friend Scene;
 
         };
 

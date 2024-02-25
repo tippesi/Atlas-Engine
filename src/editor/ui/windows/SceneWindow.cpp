@@ -1,5 +1,6 @@
 #include "SceneWindow.h"
 #include "../../Singletons.h"
+#include "../../tools/ResourcePayloadHelper.h"
 
 #include "scene/SceneSerializer.h"
 #include "Clock.h"
@@ -13,6 +14,9 @@ namespace Atlas::Editor::UI {
         Window(scene.IsLoaded() ? scene->name : "No scene", show), scene(scene) {
     
         RegisterViewportAndGizmoOverlay();
+
+        // Overwrite the window name, there should only be one scene with the same name
+        nameID = scene->name;
 
     }
 
@@ -39,7 +43,7 @@ namespace Atlas::Editor::UI {
         }
 
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        camera.aspectRatio = float(viewportPanel.viewport->width) / float(viewportPanel.viewport->height);
+        camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
@@ -81,7 +85,7 @@ namespace Atlas::Editor::UI {
         ImGui::DockSpace(dsID, ImVec2(0.0f, 0.0f), 0);
 
         // Due to docking it doesn't register child windows as focused as well, need to check in child itself
-        inFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow) ||
+        inFocus = ImGui::IsWindowFocused() ||
             sceneHierarchyPanel.isFocused || scenePropertiesPanel.isFocused || viewportPanel.isFocused;
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
@@ -141,7 +145,13 @@ namespace Atlas::Editor::UI {
 
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
-        viewportPanel.Render(refScene, inFocus);
+        viewportPanel.Render(refScene, isActiveWindow);
+
+        auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
+        if (!path.empty()) {
+            auto entity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), path);
+            PushEntityIntoSceneHierarchy(entity);
+        }
 
         End();
 
@@ -271,7 +281,7 @@ namespace Atlas::Editor::UI {
             needGuizmoEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
-            if (cameraEntity.IsValid() && inFocus && !isPlaying) {
+            if (cameraEntity.IsValid() && isActiveWindow && !isPlaying) {
 
                 needGuizmoEnabled = true;
                 ImGuizmo::SetDrawlist();
@@ -292,38 +302,32 @@ namespace Atlas::Editor::UI {
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
 
                 if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
-                    auto parentEntity = scene->GetParentEntity(selectedEntity);
-                    TransformComponent* parentTransform = nullptr;
-                    if (parentEntity.IsValid())
-                        parentTransform = parentEntity.TryGetComponent<TransformComponent>();
-
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
 
-                    auto globalMatrix = parentTransform ? parentTransform->globalMatrix 
-                        * transform.matrix : transform.matrix;
+                    auto globalMatrix = transform.globalMatrix;
 
                     ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix));
 
-                    if (parentTransform) {
-                        auto inverseParentTransform = glm::inverse(parentTransform->globalMatrix);
-                        auto localMatrix = inverseParentTransform * globalMatrix;
-                        transform.Set(localMatrix);
-                    }
-                    else {
-                        transform.Set(globalMatrix);
-                    }
+                    // Update both the local and global matrix, since e.g. the transform component
+                    // panel recovers the local matrix from the global one (needs to do this after
+                    // e.g. physics only updated the global matrix
+                    transform.globalMatrix = globalMatrix;
+                    transform.ReconstructLocalMatrix(scene.Get());
                 }
 
                 const auto& io = ImGui::GetIO();
-
-                auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
+                
                 auto windowPos = ImGui::GetWindowPos();
+                auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
 
-                bool inViewport = mousePos.x > float(viewport->x) && mousePos.y > float(viewport->y)
-                    && mousePos.x < float(viewport->width) && mousePos.y < float(viewport->height);
-                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport) {
+                bool inViewport = mousePos.x > float(viewport->x) 
+                    && mousePos.y > float(viewport->y)
+                    && mousePos.x < float(viewport->x + viewport->width)
+                    && mousePos.y < float(viewport->y + viewport->height);
+
+                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport && !lockSelection) {
 
                     auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
                     auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
@@ -333,15 +337,9 @@ namespace Atlas::Editor::UI {
                     auto rayCastResult = scene->CastRay(ray);
                     if (rayCastResult.valid) {
                         sceneHierarchyPanel.selectedEntity = rayCastResult.data;
+                        sceneHierarchyPanel.selectedProperty = SelectedProperty();
                     }
                 }
-
-                /*
-                const float gridSize = 10.0f;
-                auto gridMatrix = mat4(1.0f);
-                ImGuizmo::DrawGrid(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                    glm::value_ptr(gridMatrix), gridSize);
-                */
             }
             });
            
@@ -392,6 +390,24 @@ namespace Atlas::Editor::UI {
             viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
         }
 
+    }
+
+    void SceneWindow::PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection) {
+        auto parentEntity = sceneHierarchyPanel.selectedEntity;
+
+        if (!parentEntity.IsValid())
+            parentEntity = scene->GetEntityByName("Root");
+
+        if (!parentEntity.HasComponent<HierarchyComponent>())
+            parentEntity.AddComponent<HierarchyComponent>();
+
+        auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
+        hierarchy.AddChild(entity);
+
+        if (changeSelection) {
+            sceneHierarchyPanel.selectedEntity = entity;
+            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+        }
     }
 
 }

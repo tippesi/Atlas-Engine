@@ -19,8 +19,6 @@ namespace Atlas {
 
         BVH::BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
-            Log::Message("Started BVH build");
-
             Tools::PerformanceCounter perfCounter;
 
             if (aabbs.size() != data.size())
@@ -44,8 +42,6 @@ namespace Atlas {
             builder->Build(refs, data, parallelBuild);
             refs.reserve(data.size());
 
-            Log::Message("Build: " + std::to_string(perfCounter.StepStamp().delta));
-
             builder->Flatten(nodes, refs);
 
             this->aabbs.resize(refs.size());
@@ -59,16 +55,6 @@ namespace Atlas {
             }
 
             delete builder;
-
-            Log::Message("Flatten: " + std::to_string(perfCounter.StepStamp().delta));
-            Log::Message("Triangle count: " + std::to_string(refs.size()));
-            Log::Message("Node count: " + std::to_string(nodes.size()));
-            Log::Message("Max depth: " + std::to_string(BVHBuilder::maxDepth));
-            Log::Message("Min triangles: " + std::to_string(BVHBuilder::minTriangles));
-            Log::Message("Max triangles: " + std::to_string(BVHBuilder::maxTriangles));
-            Log::Message("Num spatial splits: " + std::to_string(BVHBuilder::spatialSplitCount));
-            Log::Message("Surface area: " + std::to_string(BVHBuilder::totalSurfaceArea));
-            Log::Message("Finished BVH build");
 
         }
 
