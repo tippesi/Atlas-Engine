@@ -42,7 +42,7 @@ namespace Atlas::Editor::UI {
 
             RenderExtendedHierarchy(scene);
 
-            auto& io = ImGui::GetIO();
+            const auto& io = ImGui::GetIO();
             bool controlDown;
 #ifdef AE_OS_MACOS
             controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
