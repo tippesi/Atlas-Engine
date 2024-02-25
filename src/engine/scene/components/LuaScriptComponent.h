@@ -4,6 +4,7 @@
 #include "../../scripting/Script.h"
 #include "../../resource/Resource.h"
 #include "../Entity.h"
+#include "scripting/LuaScriptManager.h"
 
 #include <sol/sol.hpp>
 
@@ -47,16 +48,19 @@ namespace Atlas::Scene
             std::vector<ScriptProperty> properties;
 
         protected:
-            void Update(float deltaTime);
+            void Update(Scripting::LuaScriptManager& scriptManager, float deltaTime);
 
         private:
             Scene *scene;
             Entity entity;
-            Ref<sol::state> luaState;
+            Scripting::LuaScriptManager* scriptManager = nullptr;
+            
             bool scriptWasModifiedInLastUpdate = false;
 
-            std::optional<sol::protected_function> scriptUpdate;
-            void InitLuaState();
+            std::optional<sol::protected_function> updateFunction;
+            std::optional<sol::environment> scriptEnvironment;
+            
+            void InitScriptEnvironment();
             std::vector<ScriptProperty> GetPropertiesFromScript();
             void GetOrUpdatePropertiesFromScript();
             void LoadScriptAndFetchProperties();

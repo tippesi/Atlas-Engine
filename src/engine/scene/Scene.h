@@ -30,6 +30,8 @@
 #include "raytracing/RayTracingWorld.h"
 #include "Clutter.h"
 
+#include "../scripting/LuaScriptManager.h"
+
 #include <type_traits>
 #include <map>
 
@@ -122,6 +124,7 @@ namespace Atlas {
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
             Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
+            
 
             Wind wind;
             Lighting::Sky sky;
@@ -168,6 +171,8 @@ namespace Atlas {
             bool hasChanged = true;
             bool rtDataValid = false;
             bool vegetationChanged = false;
+
+            Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
             friend Entity;
             friend SpacePartitioning;

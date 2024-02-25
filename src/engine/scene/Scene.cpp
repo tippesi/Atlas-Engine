@@ -114,7 +114,7 @@ namespace Atlas {
             auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
             for(auto entity : luaScriptComponentSubset){
                 auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
-                luaScriptComponent.Update(deltaTime);
+                luaScriptComponent.Update(luaScriptManager, deltaTime);
             }
 
             TransformComponent rootTransform = {};
