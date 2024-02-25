@@ -84,12 +84,10 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
             unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
-# Due to lua bindings we need more addressable functions
-if (MSVC)
-  add_compile_options(/bigobj)
-else ()
-  add_compile_options(-Wa,-mbig-obj)
-endif ()
+# Due to lua bindings we need more addressable functions (but not for clang)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/bigobj)
+endif()
 
 # Add source files ################################################################################
 file(GLOB_RECURSE ATLAS_ENGINE_SOURCE_FILES
