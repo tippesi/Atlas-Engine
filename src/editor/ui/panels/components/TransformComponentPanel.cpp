@@ -7,15 +7,22 @@ namespace Atlas::Editor::UI {
     bool TransformComponentPanel::Render(Ref<Scene::Scene>& scene,
         Scene::Entity entity, TransformComponent &transform) {
 
+        ImGui::PushID(GetNameID());
+
+        // Make sure the local matrix is updated from the global one
+        // This needs to happen when external system like physics just updated the globalMatrix
+        transform.ReconstructLocalMatrix(scene);
+
         // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,
         // but only decomposed when the entity changes. Note, that all
         // component panels are unique per scene window
-        if (lastEntity != entity) {
+        if (lastEntity != entity || lastTransform != transform.matrix) {
             auto decomposition = transform.Decompose();
             position = decomposition.translation;
             rotation = decomposition.rotation;
             scale = decomposition.scale;
+            lastEntity = entity;
         }
 
         vec3 localPosition = position, localRotation = rotation, localScale = scale;
@@ -32,7 +39,10 @@ namespace Atlas::Editor::UI {
             composition.rotation = rotation;
             composition.scale = scale;
             transform.Set(composition.Compose());
+            lastTransform = transform.matrix;
         }
+
+        ImGui::PopID();
 
         return false;
 

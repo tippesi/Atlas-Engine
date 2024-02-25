@@ -169,8 +169,8 @@ namespace Atlas {
 
             static void EvaluateHistory(ThreadHistory& history);
 
-            static std::vector<Query> AddQueriesToAverage(std::vector<Query> average,
-                std::vector<Query> queries,    uint64_t frameIdx, uint64_t frameCount);
+            static void AddQueriesToAverage(std::vector<Query>& average,
+                const std::vector<Query>& queries, uint64_t frameIdx, uint64_t frameCount);
 
             static ThreadContext& GetThreadContext();
 

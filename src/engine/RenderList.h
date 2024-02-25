@@ -61,6 +61,8 @@ namespace Atlas {
 
         void FillBuffers();
 
+        void Clear();
+
         Ref<Scene::Scene> scene = nullptr;
 
         std::vector<mat3x4> currentEntityMatrices;

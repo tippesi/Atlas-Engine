@@ -38,6 +38,14 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
+        
+        Physics::SphereShapeSettings settings {
+            .radius = 1.0f,
+            .scale = vec3(0.9f),
+        };
+        auto shape = Physics::ShapesManager::CreateShape(settings);
+        
+        shape->Scale(vec3(0.8f));
 
         Serializer::DeserializeConfig();
 
@@ -117,7 +125,7 @@ namespace Atlas::Editor {
                 continue;
             }
 
-            if (sceneWindow->viewportPanel.isFocused)
+            if (sceneWindow->inFocus)
                 activeSceneIdx = sceneCounter;
 
             sceneCounter++;
@@ -140,7 +148,7 @@ namespace Atlas::Editor {
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
-        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftAlt];
+        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftSuper];
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&
@@ -169,6 +177,13 @@ namespace Atlas::Editor {
 
         // Update all scenes after input was applied
         for (auto& sceneWindow : sceneWindows) {
+            if (sceneWindow == activeSceneWindow)
+                sceneWindow->isActiveWindow = true;
+            else
+                sceneWindow->isActiveWindow = false;
+            
+            // Need to reset this each frame in order to reenable selection
+            sceneWindow->lockSelection = false;
             sceneWindow->Update(deltaTime);
         }
 
@@ -259,6 +274,7 @@ namespace Atlas::Editor {
                 ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
                 ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
                 ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
+                ImGui::MenuItem("Show geometry brush", nullptr, &geometryBrushWindow.show);
                 ImGui::EndMenu();
             }
 
@@ -277,13 +293,14 @@ namespace Atlas::Editor {
 
         UI::PopupPanels::Render();
 
-        for (auto& sceneWindow : sceneWindows) {
-            sceneWindow->Render();
-        }
-
         contentBrowserWindow.Render();
         logWindow.Render();
         profilerWindow.Render();
+        geometryBrushWindow.Render(sceneWindows[activeSceneIdx]);
+
+        for (auto& sceneWindow : sceneWindows) {
+            sceneWindow->Render();
+        }
 
         Notifications::Display();
 

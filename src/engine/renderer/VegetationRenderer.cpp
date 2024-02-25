@@ -31,11 +31,11 @@ namespace Atlas {
                 float windWiggleScale;
             };
 
-            if (!scene->vegetation) return;
+            if (!scene->clutter) return;
 
             Graphics::Profiler::BeginQuery("Vegetation");
 
-            auto& vegetation = *scene->vegetation;
+            auto& vegetation = *scene->clutter;
 
             auto meshes = vegetation.GetMeshes();
 
@@ -102,7 +102,7 @@ namespace Atlas {
 
         }
 
-        void VegetationRenderer::DepthPrepass(Scene::Vegetation& vegetation, std::vector<Mesh::Mesh*>& meshes,
+        void VegetationRenderer::DepthPrepass(Scene::Clutter& vegetation, std::vector<Mesh::Mesh*>& meshes,
             const CameraComponent& camera, float time, float deltaTime) {
 
             /*

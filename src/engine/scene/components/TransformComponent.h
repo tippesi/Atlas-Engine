@@ -5,6 +5,8 @@
 #include "../../volume/AABB.h"
 #include "../../common/MatrixDecomposition.h"
 
+#include "../Entity.h"
+
 namespace Atlas {
 
 	namespace Scene {
@@ -24,10 +26,14 @@ namespace Atlas {
 
             public:
                 TransformComponent() = default;
-                TransformComponent(const TransformComponent& that) = default;
-                explicit TransformComponent(mat4 matrix, bool isStatic = true) : matrix(matrix), isStatic(isStatic) {}
+                TransformComponent(Scene* scene, Entity entity) : entity(entity) {}
+                TransformComponent(Scene* scene, Entity entity, const TransformComponent& that);
+                explicit TransformComponent(Scene* scene, Entity entity, 
+                    mat4 matrix, bool isStatic = true) : entity(entity), matrix(matrix), isStatic(isStatic) {}
 
                 void Set(const glm::mat4& matrix);
+
+                void ReconstructLocalMatrix(const Ref<Scene>& scene);
 
                 bool IsStatic() const;
 
@@ -48,6 +54,8 @@ namespace Atlas {
 
             protected:
                 void Update(const TransformComponent& parentTransform, bool parentChanged);
+
+                Entity entity;
 
                 bool changed = true;
                 bool updated = false;

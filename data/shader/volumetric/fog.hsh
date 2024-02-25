@@ -24,14 +24,14 @@ float ComputeVolumetricFog(Fog fog, vec3 viewPos, vec3 worldPos) {
         fogIntegration *= (1.0 - exp(-t)) / t;
     }
 
-    return exp(-fog.density * fogIntegration);
+    return max(exp(-fog.density * fogIntegration), 0.0);
 }
 
 float GetVolumetricFogDensity(Fog fog, vec3 worldPos) {
 
     worldPos.y -= fog.height;
 
-    return exp(-fog.heightFalloff * worldPos.y);
+    return clamp(exp(-fog.heightFalloff * worldPos.y), 0.0, 1.0);
 
 }
 

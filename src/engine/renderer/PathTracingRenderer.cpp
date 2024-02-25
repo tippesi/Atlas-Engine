@@ -62,11 +62,7 @@ namespace Atlas {
             rayGenPipelineConfig.ManageMacro("REALTIME", realTime);
             rayHitPipelineConfig.ManageMacro("REALTIME", realTime);
 
-            // Check if the scene has changed. A change might happen when an actor has been updated,
-            // new actors have been added or old actors have been removed. If this happens we update
-            // the data structures.
-            helper.SetScene(scene, 1, sampleEmissives);
-            helper.UpdateLights();
+            helper.UpdateLights(scene, sampleEmissives);
 
             ivec2 resolution = ivec2(width, height);
             ivec2 tileSize = resolution / imageSubdivisions;
@@ -155,7 +151,7 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Ray generation");
 
-            helper.DispatchRayGen(commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
+            helper.DispatchRayGen(scene, commandList, PipelineManager::GetPipeline(rayGenPipelineConfig),
                 ivec3(groupCount.x, groupCount.y, samplesPerFrame), false,
                 [=]() {
                     auto corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
@@ -187,7 +183,7 @@ namespace Atlas {
 
                 Graphics::Profiler::EndAndBeginQuery("Bounce " + std::to_string(i));
 
-                helper.DispatchHitClosest(commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
+                helper.DispatchHitClosest(scene, commandList, PipelineManager::GetPipeline(rayHitPipelineConfig), false, true,
                     [=]() {
                         commandList->BindBufferOffset(rayHitUniformBuffer.Get(),
                             rayHitUniformBuffer.GetAlignedOffset(i), 3, 4);

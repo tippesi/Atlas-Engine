@@ -42,6 +42,7 @@ namespace Atlas {
             vec3 movement = vec3(0.0f);
             bool jump = false;
             bool fast = false;
+            bool slide = false;
 
             int32_t eventHandle = -1;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "scene/Vegetation.h"
+#include "scene/Clutter.h"
 #include "buffer/Buffer.h"
 #include "scene/components/CameraComponent.h"
 
@@ -18,7 +18,7 @@ namespace Atlas {
             public:
                 VegetationHelper();
 
-                void PrepareInstanceBuffer(Scene::Vegetation& vegetation,
+                void PrepareInstanceBuffer(Scene::Clutter& vegetation,
                     const CameraComponent& camera, Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetCommandBuffer();
@@ -52,7 +52,7 @@ namespace Atlas {
                     uint32_t padding;
                 };
 
-                void GenerateBuffers(Scene::Vegetation& vegetation, Graphics::CommandList* commandList);
+                void GenerateBuffers(Scene::Clutter& vegetation, Graphics::CommandList* commandList);
 
                 void ResetCounterBuffers(Graphics::CommandList* commandList);
 

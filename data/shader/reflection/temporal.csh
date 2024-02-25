@@ -1,6 +1,7 @@
 //#define BICUBIC_FILTER
 
 #include <../common/utility.hsh>
+#include <../common/ycocg.hsh>
 #include <../common/convert.hsh>
 #include <../common/PI.hsh>
 #include <../common/stencil.hsh>
@@ -324,7 +325,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
+            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
@@ -371,11 +372,11 @@ void main() {
     history = success && valid ? catmullRomHistory : history;  
 #endif
 
-    vec3 historyColor = history.rgb;
-    vec3 currentColor = texelFetch(currentTexture, pixel, 0).rgb;
+    vec3 historyColor = RGBToYCoCg(history.rgb);
+    vec3 currentColor = RGBToYCoCg(texelFetch(currentTexture, pixel, 0).rgb);
 
     vec2 currentMoments;
-    currentMoments.r = Luma(currentColor);
+    currentMoments.r = currentColor.r;
     currentMoments.g = currentMoments.r * currentMoments.r;
 
     vec3 historyNeighbourhoodMin = mean - std;
@@ -390,6 +391,9 @@ void main() {
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
     //historyColor = mix(historyColor, currentColor, adjClipBlend);
+
+    historyColor = YCoCgToRGB(historyColor);
+    currentColor = YCoCgToRGB(currentColor);
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     Material material = UnpackMaterial(materialIdx);

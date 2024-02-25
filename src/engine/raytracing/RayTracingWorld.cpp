@@ -126,7 +126,7 @@ namespace Atlas {
             materials.clear();
 
             for (auto& mesh : meshes) {
-                if (!meshInfos.contains(mesh.GetID()))
+                if (!meshInfos.contains(mesh.GetID()) || !mesh.IsLoaded())
                     continue;
 
                 auto& meshInfo = meshInfos[mesh.GetID()];

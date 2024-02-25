@@ -25,7 +25,7 @@ void main() {
     float dist = distance(instance.position.xyz, globalData.cameraLocation.xyz);
     uint binIdx = min(GetBin(instance, meshInfo), PushConstants.binCount - 1u) + binOffset;
 
-    cull = !IsInstanceVisible(instance, meshInfo) || dist > 100.0;
+    cull = dist > 100.0 || !IsInstanceVisible(instance, meshInfo);
     //cull = dist > 25 ? idx % 2 == 0 ? cull : true : cull;
     //cull = dist > 50 ? idx % 4 == 0 ? cull : true : cull;
 

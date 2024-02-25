@@ -64,7 +64,7 @@ namespace Atlas::Physics {
 
         bool TryCreate();
 
-        bool Scale(vec3 scale);
+        bool Scale(const vec3& scale);
 
         ShapeRef ref = nullptr;
 

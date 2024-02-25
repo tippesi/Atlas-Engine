@@ -189,10 +189,10 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-                commandList->GenerateMipMap(impostor->baseColorTexture.image);
-                commandList->GenerateMipMap(impostor->normalTexture.image);
-                commandList->GenerateMipMap(impostor->roughnessMetalnessAoTexture.image);
-                commandList->GenerateMipMap(impostor->depthTexture.image);
+                commandList->GenerateMipMaps(impostor->baseColorTexture.image);
+                commandList->GenerateMipMaps(impostor->normalTexture.image);
+                commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture.image);
+                commandList->GenerateMipMaps(impostor->depthTexture.image);
 
                 imageBarriers = {
                     {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},

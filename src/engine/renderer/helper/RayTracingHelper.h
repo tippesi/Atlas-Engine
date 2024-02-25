@@ -17,34 +17,31 @@ namespace Atlas {
             public:
                 RayTracingHelper();
 
-                void SetScene(Ref<Scene::Scene> scene, int32_t textureDownscale = 1,
-                    bool useEmissivesAsLights = false);
-
                 void SetRayBufferSize(size_t rayCount);
 
-                void DispatchAndHit(Graphics::CommandList* commandList,
+                void DispatchAndHit(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& dispatchAndHitPipeline,
                     glm::ivec3 dimensions, std::function<void(void)> prepare);
 
-                void DispatchRayGen(Graphics::CommandList* commandList,
+                void DispatchRayGen(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& rayGenPipeline, glm::ivec3 dimensions,
                     bool binning, std::function<void(void)> prepare);
 
-                void DispatchHitClosest(Graphics::CommandList* commandList,
+                void DispatchHitClosest(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, bool binning,
                     bool opacityCheck, std::function<void(void)> prepare);
 
-                void DispatchHitAny(Graphics::CommandList* commandList,
+                void DispatchHitAny(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& hitPipeline, std::function<void(void)> prepare);
 
-                void DispatchGather(Graphics::CommandList* commandList,
+                void DispatchGather(Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                     const Ref<Graphics::Pipeline>& gatherPipeline, std::function<void(void)> prepare);
 
                 void InvalidateRayBuffer(Graphics::CommandList* commandList);
 
                 Buffer::Buffer* GetRayBuffer();
 
-                void UpdateLights();
+                void UpdateLights(Ref<Scene::Scene> scene, bool useEmissivesAsLights = false);
 
 
             private:
@@ -55,8 +52,6 @@ namespace Atlas {
                     uint32_t rayBufferSize;
                     int32_t useRayBinning;
                 };
-
-                Ref<Scene::Scene> scene;
                 
                 std::vector<GPULight> lights;
                 std::vector<GPULight> selectedLights;

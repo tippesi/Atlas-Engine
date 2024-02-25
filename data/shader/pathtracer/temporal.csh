@@ -1,5 +1,6 @@
 #include <../common/utility.hsh>
 #include <../common/convert.hsh>
+#include <../common/ycocg.hsh>
 #include <../common/PI.hsh>
 #include <../common/stencil.hsh>
 #include <../common/flatten.hsh>
@@ -334,7 +335,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
+            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
             float depthPhi = max(1.0, abs(0.025 * linearDepth));
@@ -384,6 +385,9 @@ void main() {
     bool success = SampleCatmullRom(pixel, historyUV, history);
     historyRadiance = success && valid ? history.rgb : historyRadiance;  
 
+    historyRadiance = RGBToYCoCg(historyRadiance);
+    currentRadiance = RGBToYCoCg(currentRadiance);
+
     vec3 historyNeighbourhoodMin = mean - std;
     vec3 historyNeighbourhoodMax = mean + std;
 
@@ -396,6 +400,9 @@ void main() {
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentRadiance = clamp(currentRadiance, currentNeighbourhoodMin, currentNeighbourhoodMax);
     //historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
+
+    historyRadiance = YCoCgToRGB(historyRadiance);
+    currentRadiance = YCoCgToRGB(currentRadiance);
 
     float temporalWeight = (pushConstants.maxHistoryLength - 1.0) / pushConstants.maxHistoryLength;
     float factor = mix(0.0, temporalWeight, 1.0 - adjClipBlend);

@@ -905,7 +905,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::GenerateMipMap(const Ref<Image> &image) {
+        void CommandList::GenerateMipMaps(const Ref<Image> &image) {
 
             memoryManager->transferManager->GenerateMipMaps(image.get(), commandBuffer);
 

@@ -22,6 +22,8 @@ namespace Atlas::Editor::UI {
         vec3 rotation;
         vec3 scale;
 
+        glm::mat4 lastTransform;
+
     };
 
 }

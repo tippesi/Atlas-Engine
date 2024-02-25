@@ -13,7 +13,8 @@ layout(set = 3, binding = 3) uniform sampler2D bloomThirdTexture;
 
 layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
-    float whitePoint;
+    float paperWhiteLuminance;
+    float maxScreenLuminance;
     float saturation;
     float contrast;
     float filmGrainStrength;
@@ -28,6 +29,8 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
+float screenMaxNits = Uniforms.maxScreenLuminance;
+float paperWhiteNits = Uniforms.paperWhiteLuminance;
 
 vec3 ACESToneMap(vec3 hdrColor) {
     float a = 2.51;
@@ -37,6 +40,15 @@ vec3 ACESToneMap(vec3 hdrColor) {
     float e = 0.14;
     return clamp((hdrColor*(a*hdrColor+b))/
         (hdrColor*(c*hdrColor+d)+e), 0.0, 1.0);
+}
+
+vec3 ACESFilmRec2020(vec3 hdrColor)  {
+    float a = 15.8;
+    float b = 2.12;
+    float c = 1.2;
+    float d = 5.92;
+    float e = 1.9;
+    return (hdrColor * (a * hdrColor + b)) / (hdrColor * (c * hdrColor + d) + e);
 }
 
 vec3 ToneMap(vec3 hdrColor) {
@@ -133,17 +145,26 @@ void main() {
     // Apply the tone mapping because we want the colors to be back in
     // normal range
 #ifdef HDR
+    // Interesting approach to make bright parts look more white using luma: https://github.com/libretro/RetroArch/blob/14ce660a38f99d448b32ed752ddaf1f250dcf669/gfx/drivers/d3d_shaders/hdr_sm5.hlsl.h
+    
     // Note: Tuned these two eotfs to be perceptually the same. Not sure how it turns out.
     // Haven't tested with Dolby Vision
 #ifdef HYBRID_LOG_GAMMA_EOTF
     // Dark regions are getting crushed too much, correct for that
     color = pow(color, vec3(0.9));
     color = Rec709ToRec2020(color);
+    // Made for 1000nits max brightness, so scale by this factor
+    color = ACESFilmRec2020(color) * screenMaxNits / 1000.0;
+
     color.rgb = InverseHybridLogGammeEotf(color);
 #endif
 
 #ifdef PERCEPTUAL_QUANTIZER_EOTF
     color = Rec709ToRec2020(color);
+    // Made for 1000nits max brightness, so scale by this factor
+    color = ACESFilmRec2020(color) * screenMaxNits / 1000.0;
+
+    color *= paperWhiteNits / 10000.0;
     color = InversePerceptualQuantizerEotf(color);
 #endif
     
@@ -169,7 +190,6 @@ void main() {
     
     color = mix(Uniforms.vignetteColor.rgb, color, Uniforms.vignetteFactor);
 #endif
-
     outColor = vec4(color, 1.0);
     
 }

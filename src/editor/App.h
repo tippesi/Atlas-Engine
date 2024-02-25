@@ -14,6 +14,7 @@
 #include "ui/windows/SceneWindow.h"
 #include "ui/windows/LogWindow.h"
 #include "ui/windows/ProfilerWindow.h"
+#include "ui/windows/GeometryBrushWindow.h"
 
 #define WINDOW_FLAGS AE_WINDOW_RESIZABLE | AE_WINDOW_HIGH_DPI
 
@@ -43,6 +44,7 @@ namespace Atlas::Editor {
         UI::LogWindow logWindow = UI::LogWindow(true);
         UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
+        UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
 
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;
