@@ -279,23 +279,87 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void to_json(json& j, const LuaScriptComponent& p) {
-        j = json {};
+    void to_json(json &j, const LuaScriptComponent &p)
+    {
+        j = json{};
 
         if (p.script.IsValid())
             j["resourcePath"] = p.script.GetResource()->path;
+
+        for (const auto &prop : p.properties)
+        {
+            switch (prop.type)
+            {
+            case LuaScriptComponent::PropertyType::Boolean:
+                j["scriptProperties"][prop.name]["type"] = "boolean";
+                j["scriptProperties"][prop.name]["value"] = prop.booleanValue;
+                break;
+            case LuaScriptComponent::PropertyType::Integer:
+                j["scriptProperties"][prop.name]["type"] = "integer";
+                j["scriptProperties"][prop.name]["value"] = prop.integerValue;
+                break;
+            case LuaScriptComponent::PropertyType::Double:
+                j["scriptProperties"][prop.name]["type"] = "double";
+                j["scriptProperties"][prop.name]["value"] = prop.doubleValue;
+                break;
+            case LuaScriptComponent::PropertyType::String:
+                j["scriptProperties"][prop.name]["type"] = "string";
+                j["scriptProperties"][prop.name]["value"] = prop.stringValue;
+                break;
+            default:
+                AE_ASSERT(false);
+            }
+        }
     }
 
-    void from_json(const json& j, LuaScriptComponent& p) {
-        
-        if (j.contains("resourcePath")) {
+    void from_json(const json &j, LuaScriptComponent &p)
+    {
+
+        if (j.contains("resourcePath"))
+        {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
 
             p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
-                        resourcePath, ResourceOrigin::User);
+                resourcePath, ResourceOrigin::User);
         }
 
-    }
+        if (j.contains("scriptProperties"))
+        {
+            for (const auto &v : j["scriptProperties"].items())
+            {
+                LuaScriptComponent::ScriptProperty scriptProperty;
+                scriptProperty.name = v.key();
+                const auto &value = v.value();
+                auto propertyTypeAsString = value["type"].get<std::string>();
+                if (propertyTypeAsString == "boolean")
+                {
+                    scriptProperty.type = LuaScriptComponent::PropertyType::Boolean;
+                    scriptProperty.booleanValue = value["value"].get<bool>();
+                }
+                else if (propertyTypeAsString == "integer")
+                {
+                    scriptProperty.type = LuaScriptComponent::PropertyType::Integer;
+                    scriptProperty.integerValue = value["value"].get<int>();
+                }
+                else if (propertyTypeAsString == "double")
+                {
+                    scriptProperty.type = LuaScriptComponent::PropertyType::Double;
+                    scriptProperty.doubleValue = value["value"].get<double>();
+                }
+                else if (propertyTypeAsString == "string")
+                {
+                    scriptProperty.type = LuaScriptComponent::PropertyType::String;
+                    scriptProperty.stringValue = value["value"].get<std::string>();
+                }
+                else
+                {
+                    // unknown type
+                    continue;
+                }
 
+                p.properties.push_back(scriptProperty);
+            }
+        }
+    }
 }

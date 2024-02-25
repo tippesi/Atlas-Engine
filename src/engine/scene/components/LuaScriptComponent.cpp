@@ -11,7 +11,7 @@ namespace Atlas::Scene::Components
         // TODO: implement
     }
 
-    LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent &that) : scene(scene), entity(entity), script(that.script)
+    LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent &that) : scene(scene), entity(entity), script(that.script), properties(that.properties)
     {
     }
 
@@ -76,7 +76,7 @@ namespace Atlas::Scene::Components
             }
 
             // process the script
-            AE_ASSERT(scriptEnvironment.hasValue());
+            AE_ASSERT(scriptEnvironment.has_value());
             SetPropertyValuesInLuaState();
 
             // call the update function
@@ -99,7 +99,7 @@ namespace Atlas::Scene::Components
 
     void LuaScriptComponent::InitScriptEnvironment()
     {
-        AE_ASSERT(!scriptEnvironment.hasValue());
+        AE_ASSERT(!scriptEnvironment.has_value());
         try
         {
             // create environment
@@ -131,7 +131,7 @@ namespace Atlas::Scene::Components
 
     std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript()
     {
-        AE_ASSERT(scriptEnvironment.hasValue());
+        AE_ASSERT(scriptEnvironment.has_value());
 
         auto &state = scriptEnvironment.value();
 
@@ -276,7 +276,7 @@ namespace Atlas::Scene::Components
 
     void LuaScriptComponent::SetPropertyValuesInLuaState()
     {
-        AE_ASSERT(scriptEnvironment.hasValue());
+        AE_ASSERT(scriptEnvironment.has_value());
         auto &state = scriptEnvironment.value();
 
         for (const auto &property : properties)
