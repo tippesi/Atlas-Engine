@@ -7,13 +7,15 @@ namespace Atlas::Editor::UI {
     public:
         static void Render();
 
+        static void SetupPopupSize(float horizontalFactor, float verticalFactor);
+
         static bool isNewScenePopupVisible;
         static bool isAddComponentPopupVisible;
 
     private:
         static void RenderNewScenePopup();
 
-        static void SetupPopupSize(float horizontalFactor, float verticalFactor);
+        
 
     };
 

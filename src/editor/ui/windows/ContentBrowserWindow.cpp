@@ -1,5 +1,6 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
+#include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
@@ -57,6 +58,15 @@ namespace Atlas::Editor::UI {
         End();
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
+
+        ImGui::SetWindowFontScale(1.5f);
+
+        ImGui::Text("Filters");
+
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Separator();
+
         ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
 
@@ -108,7 +118,10 @@ namespace Atlas::Editor::UI {
                     auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
                     auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
-                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
+                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory) + "/";
+                    if (assetPath.starts_with('/'))
+                        assetPath.erase(assetPath.begin());
+
                     auto entityPath = assetPath + entityName + ".aeprefab";
                     Scene::SceneSerializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
                 }
@@ -241,6 +254,15 @@ namespace Atlas::Editor::UI {
                 if (ImGui::MenuItem("Open externally"))
                     OpenExternally(std::filesystem::absolute(dirEntry.path()).string(), isDirectory);
 
+                if (ImGui::MenuItem("Rename")) {
+                    renamePopupVisible = true;
+                    renameString = dirEntry.path().filename();
+                    renameDirEntry = dirEntry;
+                }
+
+                if (ImGui::MenuItem("Delete"))
+                    std::filesystem::remove(dirEntry.path());
+
                 ImGui::EndPopup();
             }
 
@@ -262,6 +284,12 @@ namespace Atlas::Editor::UI {
 
             ImGui::NextColumn();
 
+        }
+
+        if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
+            auto newPath = renameDirEntry.path();
+            newPath.replace_filename(renameString);
+            std::filesystem::rename(renameDirEntry.path(), newPath);
         }
 
         if (!nextDirectory.empty()) {
@@ -377,6 +405,50 @@ namespace Atlas::Editor::UI {
         system(command.c_str());
 #endif
         
+    }
+
+    bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
+
+         if (!isVisible)
+            return false;
+
+        PopupPanels::SetupPopupSize(0.4f, 0.1f);
+
+        bool popupNew = false;
+
+        if (!ImGui::IsPopupOpen(name)) {
+            popupNew = true;
+            ImGui::OpenPopup(name);
+        }
+
+        bool success = false;
+
+        if (ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_NoResize)) {
+
+            if (popupNew)
+                ImGui::SetKeyboardFocusHere();
+                
+            ImGui::InputText("New name",  &input);
+
+            if (ImGui::Button("Cancel")) {
+                isVisible = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
+                success = true;
+                isVisible = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+
+        }
+
+        return success;
+
     }
 
 }

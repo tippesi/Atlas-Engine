@@ -14,7 +14,7 @@ namespace Atlas {
 
     namespace Scene {
 
-        void SceneSerializer::SerializeScene(Ref<Scene> scene, const std::string& filename) {
+        void SceneSerializer::SerializeScene(Ref<Scene> scene, const std::string& filename, bool binaryJson,  bool formatJson) {
 
             auto path = Loader::AssetLoader::GetFullPath(filename);
             auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
@@ -73,13 +73,19 @@ namespace Atlas {
             if (scene->physicsWorld)
                 Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
 
-            fileStream << j.dump(2);
+            if (binaryJson) {
+                auto data = json::to_bjdata(j);
+                fileStream.write((const char*)(data.data()), data.size());
+            }
+            else {
+                fileStream << (formatJson ? j.dump(2) : j.dump());
+            }
 
             fileStream.close();
 
         }
 
-        Ref<Scene> SceneSerializer::DeserializeScene(const std::string& filename) {
+        Ref<Scene> SceneSerializer::DeserializeScene(const std::string& filename, bool binaryJson) {
 
             Loader::AssetLoader::UnpackFile(filename);
             auto path = Loader::AssetLoader::GetFullPath(filename);
@@ -90,12 +96,18 @@ namespace Atlas {
                 throw ResourceLoadException(filename, "Couldn't open scene file stream");
             }
 
-            std::string serialized((std::istreambuf_iterator<char>(fileStream)),
-                std::istreambuf_iterator<char>());
-
+            json j;
+            if (binaryJson) {
+                auto data = Loader::AssetLoader::GetFileContent(fileStream);
+                j = json::from_bjdata(data);
+            }
+            else {
+                std::string serialized((std::istreambuf_iterator<char>(fileStream)),
+                    std::istreambuf_iterator<char>());
+                j = json::parse(serialized);
+            }
+            
             fileStream.close();
-
-            json j = json::parse(serialized);
 
             Volume::AABB aabb = j["aabb"];
             auto scene = CreateRef<Scene>(j["name"], aabb.min, aabb.max, j["depth"]);
@@ -149,7 +161,7 @@ namespace Atlas {
 
         }
 
-        void SceneSerializer::SerializePrefab(Ref<Scene> scene, Entity entity, const std::string& filename) {
+        void SceneSerializer::SerializePrefab(Ref<Scene> scene, Entity entity, const std::string& filename, bool formatJson) {
 
             auto path = Loader::AssetLoader::GetFullPath(filename);
             auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
@@ -170,7 +182,7 @@ namespace Atlas {
                 j["body"] = rigidBody->GetBodyCreationSettings();
             }
 
-            fileStream << j.dump(2);
+            fileStream << (formatJson ? j.dump(2) : j.dump());
 
             fileStream.close();
 

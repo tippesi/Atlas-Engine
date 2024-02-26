@@ -108,6 +108,10 @@ namespace Atlas {
             data = nullptr;
         }
 
+        void Swap(Ref<T>& newData) {
+            data.swap(newData);
+        }
+
         std::string GetFileName() const {
 
             return Common::Path::GetFileName(path);

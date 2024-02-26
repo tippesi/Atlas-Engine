@@ -94,7 +94,7 @@ namespace Atlas::Scene::Components
                     // "got_problems handler: " ...
                     sol::error err = result;
                     std::string what = err.what();
-                    Log::Error("Error while executing update: " + what);
+                    Log::Error("Error while executing update in " + script.GetResource()->GetFileName() + ": "  + what);
                 }
             }
         }
@@ -131,7 +131,7 @@ namespace Atlas::Scene::Components
         {
             updateFunction.reset();
             scriptEnvironment.reset();
-            Atlas::Log::Message("Error while compiling lua script: " + std::string(e.what()));
+            Atlas::Log::Message("Error while compiling lua script " + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
 
             return false;
         }

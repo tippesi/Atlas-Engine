@@ -85,24 +85,6 @@ namespace Atlas {
 
         }
 
-        std::string NumberToString(auto number) {
-
-        auto str = std::to_string(number);
-        auto pos = str.find(".");
-        if (pos != std::string::npos)
-            return str.substr(0, pos + 4);
-        return str;
-
-    }
-
-    std::string VecToString(auto vector) {
-
-        return NumberToString(vector.x) + ", "
-               + NumberToString(vector.y) + ", "
-               + NumberToString(vector.z);
-
-    }
-
         void Scene::Timestep(float deltaTime) {
 
             this->deltaTime = deltaTime;
@@ -156,6 +138,8 @@ namespace Atlas {
 
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
+
+                // This part (updating physics transforms) is required regardless of the simulation running
                 auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
                 for (auto entity : playerSubset) {
                     const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
@@ -167,7 +151,10 @@ namespace Atlas {
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed && playerComponent.IsValid()) {
-                        playerComponent.SetPosition(transformComponent.Decompose().translation);
+                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
+                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
+                        // In theory we have to apply the rotation here as well
+                        playerComponent.SetPosition(decomposition.translation);
                     }
 
                     playerComponent.Update(deltaTime);
@@ -189,49 +176,52 @@ namespace Atlas {
                     }
                 }
 
-                physicsWorld->Update(deltaTime);
+                // This part only needs to be executed if the simulation is running
+                if (!physicsWorld->pauseSimulation) {
+                    physicsWorld->Update(deltaTime);
 
-                for (auto entity : rigidBodySubset) {
-                    const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
+                    for (auto entity : rigidBodySubset) {
+                        const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
-                    if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
-                        rigidBodyComponent.layer == Physics::Layers::STATIC)
-                        continue;
+                        if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
+                            rigidBodyComponent.layer == Physics::Layers::STATIC)
+                            continue;
 
-                    // This happens if no change was triggered by the user, then we still need
-                    // to update the last global matrix, since it might have changed due to physics simulation
-                    if (!transformComponent.changed)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
-                    // Need to set changed to true such that the space partitioning is updated
-                    transformComponent.changed = true;
-                    transformComponent.updated = true;
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
 
-                    // Physics are updated in global space, so we don't need the parent transform
-                    transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
-                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
-                }
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
 
-                // Player update needs to be performed after normal rigid bodies, such that
-                // player can override rigid body behaviour
-                for (auto entity : playerSubset) {
-                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+                    // Player update needs to be performed after normal rigid bodies, such that
+                    // player can override rigid body behaviour
+                    for (auto entity : playerSubset) {
+                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
 
-                    if (!playerComponent.IsValid())
-                        continue;
+                        if (!playerComponent.IsValid())
+                            continue;
 
-                    // This happens if no change was triggered by the user, then we still need
-                    // to update the last global matrix, since it might have changed due to physics simulation
-                    if (!transformComponent.changed)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
-                    // Need to set changed to true such that the space partitioning is updated
-                    transformComponent.changed = true;
-                    transformComponent.updated = true;
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
 
-                    // Physics are updated in global space, so we don't need the parent transform
-                    transformComponent.globalMatrix = playerComponent.GetMatrix();
-                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = playerComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
                 }
             }
 

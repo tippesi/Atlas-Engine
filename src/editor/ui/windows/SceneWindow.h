@@ -28,6 +28,10 @@ namespace Atlas::Editor::UI {
 
         void PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection = true);
 
+        void SaveSceneState();
+
+        void RestoreSceneState();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -51,6 +55,9 @@ namespace Atlas::Editor::UI {
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
+
+        std::string sceneBackupFilename;
+        std::string cameraBackupFilename;
 
     };
 

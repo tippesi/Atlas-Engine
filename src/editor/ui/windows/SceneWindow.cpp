@@ -3,6 +3,7 @@
 #include "../../tools/ResourcePayloadHelper.h"
 
 #include "scene/SceneSerializer.h"
+#include "common/Hash.h"
 #include "Clock.h"
 
 #include <imgui_internal.h>
@@ -42,13 +43,14 @@ namespace Atlas::Editor::UI {
             camera.isMain = true;
         }
 
-        auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
-
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
             scene->Timestep(deltaTime);
             scene->Update();
+        }
+        else {
+            auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
         }
 
     }
@@ -214,12 +216,8 @@ namespace Atlas::Editor::UI {
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
-                if (hasMainCamera) {
-                    auto& camera = cameraEntity.GetComponent<CameraComponent>();
-                    camera.isMain = false;
-                }
-                
-                scene->physicsWorld->SaveState();
+                SaveSceneState();
+
                 scene->physicsWorld->pauseSimulation = false;
                 // Unselect when starting the simulation/scene (otherwise some physics settings might not
                 // be reverted after stopping
@@ -234,12 +232,7 @@ namespace Atlas::Editor::UI {
             offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
-                // Set camera to main in any case
-                auto& camera = cameraEntity.GetComponent<CameraComponent>();
-                camera.isMain = true;  
-
-                scene->physicsWorld->RestoreState();
-                scene->physicsWorld->pauseSimulation = true;
+                RestoreSceneState(); 
 
                 isPlaying = false;
             }
@@ -401,13 +394,54 @@ namespace Atlas::Editor::UI {
         if (!parentEntity.HasComponent<HierarchyComponent>())
             parentEntity.AddComponent<HierarchyComponent>();
 
-        auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
-        hierarchy.AddChild(entity);
+        auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+        parentHierarchy.AddChild(entity);
+
+        // We don't know where this entity came from, so disable root hierarchy in any case to
+        // avoid setting the matrices twice and getting unwanted movements
+        auto hierarchy = entity.TryGetComponent<HierarchyComponent>();
+        if (hierarchy)
+            hierarchy->root = false;
 
         if (changeSelection) {
             sceneHierarchyPanel.selectedEntity = entity;
             sceneHierarchyPanel.selectedProperty = SelectedProperty();
         }
+    }
+
+    void SceneWindow::SaveSceneState() {
+
+        Hash hash = 0;
+        HashCombine(hash, Clock::Get());
+
+        sceneBackupFilename = ".config/scene" + std::to_string(hash);
+        cameraBackupFilename = ".config/camera" + std::to_string(hash);
+
+        Scene::SceneSerializer::SerializePrefab(scene.Get(), cameraEntity, cameraBackupFilename);
+
+        scene->DestroyEntity(cameraEntity);
+        Scene::SceneSerializer::SerializeScene(scene.Get(), sceneBackupFilename, true);
+
+    }
+
+    void SceneWindow::RestoreSceneState() {
+
+        if (sceneBackupFilename.empty())
+            return;
+
+        auto backupScene = Scene::SceneSerializer::DeserializeScene(sceneBackupFilename, true);
+        scene.GetResource()->Swap(backupScene);
+
+        cameraEntity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), cameraBackupFilename);
+
+        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory() + "/";
+
+        std::filesystem::remove(assetDirectory + sceneBackupFilename);
+        std::filesystem::remove(assetDirectory + cameraBackupFilename);
+
+        sceneBackupFilename.clear();
+        cameraBackupFilename.clear();
+
     }
 
 }

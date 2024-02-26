@@ -52,12 +52,9 @@ namespace Atlas {
                 mat4 parentGlobalMatrix = mat4(1.0f);
                 auto parentEntity = scene->GetParentEntity(entity);
 
-                TransformComponent* parentTransform = nullptr;
-                if (parentEntity.IsValid())
-                    parentTransform = parentEntity.TryGetComponent<TransformComponent>();
-
-                if (parentTransform) {
-                    parentGlobalMatrix = parentTransform->globalMatrix;
+                if (parentEntity.IsValid()) {
+                    auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+                    parentGlobalMatrix = parentHierarchy.globalMatrix;
                 }
 
                 auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
@@ -92,6 +89,12 @@ namespace Atlas {
             Common::MatrixDecomposition TransformComponent::Decompose() const {
 
                 return Common::MatrixDecomposition(matrix);
+
+            }
+
+            Common::MatrixDecomposition TransformComponent::DecomposeGlobal() const {
+
+                return Common::MatrixDecomposition(globalMatrix);
 
             }
 

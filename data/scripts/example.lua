@@ -8,6 +8,7 @@ function Update(delta)
     entity = GetThisEntity()
 
     transform = entity:GetTransformComponent()
+    rigidBody = entity:GetRigidBodyComponent()
 
     local time = Atlas.Clock.Get()
 
@@ -17,4 +18,10 @@ function Update(delta)
     Atlas.Log.Warning(tostring(offset.y))
 
     transform:Set(matrix)
+
+    -- ~= is equal to != in most other languages
+    if rigidBody ~= nil then
+        rigidBody:SetLinearVelocity(Glm.Vec3(0.0))
+        rigidBody:SetAngularVelocity(Glm.Vec3(0.0))
+    end
 end

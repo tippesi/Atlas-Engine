@@ -28,13 +28,20 @@ namespace Atlas::Editor::UI {
 
         SetupPopupSize(0.6f, 0.3f);
 
+        bool popupNew = false;
+
         if (!ImGui::IsPopupOpen("New scene")) {
+            popupNew = true;
             ImGui::OpenPopup("New scene");
         }
 
         if (ImGui::BeginPopupModal("New scene", nullptr, ImGuiWindowFlags_NoResize)) {
 
+            if (popupNew)
+                ImGui::SetKeyboardFocusHere();
+                
             ImGui::InputTextWithHint("Name", "Type scene name here",  &name);
+
             ImGui::DragFloat3("Min size", &minSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::DragFloat3("Max size", &maxSize[0], 1.0f, -8192.0f, 8192.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderInt("Octree depth", &octreeDepth, 1, 12);
@@ -46,7 +53,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::SameLine();
 
-            if (ImGui::Button("Ok")) {
+            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
                 auto scene = DataCreator::CreateScene(name, minSize, maxSize, octreeDepth);
 
                 bool alreadyExisted;

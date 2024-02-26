@@ -133,7 +133,7 @@ namespace Atlas {
 
         }
 
-        void PhysicsWorld::SetLinearVelocity(BodyID bodyId, glm::vec3 velocity) {
+        void PhysicsWorld::SetLinearVelocity(BodyID bodyId, vec3 velocity) {
 
             auto& bodyInterface = system->GetBodyInterface();
             bodyInterface.SetLinearVelocity(bodyId, VecToJPHVec(velocity));
@@ -144,6 +144,20 @@ namespace Atlas {
 
             auto& bodyInterface = system->GetBodyInterface();
             return JPHVecToVec(bodyInterface.GetLinearVelocity(bodyId));
+
+        }
+
+        void PhysicsWorld::SetAngularVelocity(BodyID bodyId, vec3 velocity) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            bodyInterface.SetAngularVelocity(bodyId, VecToJPHVec(velocity));
+
+        }
+
+        vec3 PhysicsWorld::GetAngularVelocity(BodyID bodyId) {
+
+            auto& bodyInterface = system->GetBodyInterface();
+            return JPHVecToVec(bodyInterface.GetAngularVelocity(bodyId));
 
         }
 

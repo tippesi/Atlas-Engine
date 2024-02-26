@@ -85,6 +85,7 @@ namespace Atlas::Scripting
             "Translate", &TransformComponent::Translate,
             "Set", &TransformComponent::Set,
             "Decompose", &TransformComponent::Decompose,
+            "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
@@ -100,6 +101,8 @@ namespace Atlas::Scripting
             "GetMatrix", &RigidBodyComponent::GetMatrix,
             "SetLinearVelocity", &RigidBodyComponent::SetLinearVelocity,
             "GetLinearVelocity", &RigidBodyComponent::GetLinearVelocity,
+            "SetAngularVelocity", &RigidBodyComponent::SetAngularVelocity,
+            "GetAngularVelocity", &RigidBodyComponent::GetAngularVelocity,
             "SetRestitution", &RigidBodyComponent::SetRestitution,
             "GetRestitution", &RigidBodyComponent::GetRestitution,
             "SetFriction", &RigidBodyComponent::SetFriction,
@@ -132,6 +135,8 @@ namespace Atlas::Scripting
             "GetAverage", &Clock::GetAverage);
 
         ns->new_usertype<Common::MatrixDecomposition>("MatrixDecomposition",
+            sol::call_constructor,
+            sol::constructors<Common::MatrixDecomposition(glm::mat4)>(),
             "Compose", &Common::MatrixDecomposition::Compose,
             "Decompose", &Common::MatrixDecomposition::Decompose,
             "translation", &Common::MatrixDecomposition::translation,

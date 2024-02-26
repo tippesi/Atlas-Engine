@@ -45,6 +45,20 @@ namespace Atlas::Physics {
 
     }
 
+    void Body::SetAngularVelocity(glm::vec3 velocity) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        world->SetAngularVelocity(bodyId, velocity);
+
+    }
+
+    vec3 Body::GetAngularVelocity() {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return world->GetAngularVelocity(bodyId);
+
+    }
+
     void Body::SetRestitution(float restitution) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

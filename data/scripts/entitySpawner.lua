@@ -30,7 +30,7 @@ function Update(delta)
     local spawnFraction = 1.0 / ScriptProperties.spawnRate.value
 
     if time - lastSpawn > spawnFraction then
-        local decomp = transform:Decompose()
+        local decomp = Atlas.MatrixDecomposition(transform.globalMatrix)
 
         local spawnCenter = decomp.translation
 
