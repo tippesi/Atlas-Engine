@@ -100,6 +100,7 @@ namespace Atlas {
         Events::EventManager::Update();
         PipelineManager::Update();
         Audio::AudioManager::Update();
+        Physics::ShapesManager::Update();
 
     }
 

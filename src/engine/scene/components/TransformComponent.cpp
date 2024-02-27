@@ -47,10 +47,9 @@ namespace Atlas {
 
 			}
 
-			void TransformComponent::ReconstructLocalMatrix(const Ref<Scene>& scene) {
+			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
 
                 mat4 parentGlobalMatrix = mat4(1.0f);
-                auto parentEntity = scene->GetParentEntity(entity);
 
                 if (parentEntity.IsValid()) {
                     auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();

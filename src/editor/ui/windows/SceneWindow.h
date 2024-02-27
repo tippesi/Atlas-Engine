@@ -32,6 +32,8 @@ namespace Atlas::Editor::UI {
 
         void RestoreSceneState();
 
+        void SaveScene();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -56,8 +58,8 @@ namespace Atlas::Editor::UI {
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
 
-        std::string sceneBackupFilename;
-        std::string cameraBackupFilename;
+        std::vector<uint8_t> sceneState;
+        std::vector<uint8_t> cameraState;
 
     };
 

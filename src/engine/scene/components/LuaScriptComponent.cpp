@@ -3,23 +3,28 @@
 #include "../Scene.h"
 #include "TransformComponent.h"
 
-namespace Atlas::Scene::Components
-{
+namespace Atlas::Scene::Components {
 
-    LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity) : scene(scene), entity(entity)
-    {
-        // TODO: implement
+    LuaScriptComponent::LuaScriptComponent(Scene* scene, Entity entity) : scene(scene), entity(entity) {
+
+
+
     }
 
-    LuaScriptComponent::LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent &that) : scene(scene), entity(entity), script(that.script), properties(that.properties)
-    {
+    LuaScriptComponent::LuaScriptComponent(Scene* scene, Entity entity, const LuaScriptComponent& that) {
+
+        if (this != &that) {
+            *this = that;
+        }
+
+        this->scene = scene;
+        this->entity = entity;
+
     }
 
-    void LuaScriptComponent::Update(Scripting::LuaScriptManager &scriptManager, float deltaTime)
-    {
+    void LuaScriptComponent::Update(Scripting::LuaScriptManager& scriptManager, float deltaTime) {
         // set the script manager
-        if (this->scriptManager == nullptr)
-        {
+        if (this->scriptManager == nullptr) {
             this->scriptManager = &scriptManager;
         }
 
@@ -34,21 +39,18 @@ namespace Atlas::Scene::Components
         // check if script was modified the frame before
         {
             auto resource = script.GetResource();
-            if (scriptWasModifiedInLastUpdate && resource->WasModified())
-            {
+            if (scriptWasModifiedInLastUpdate && resource->WasModified()) {
                 resource->UpdateModifiedTime();
             }
             scriptWasModifiedInLastUpdate = false;
-            if (resource->WasModified())
-            {
+            if (resource->WasModified()) {
                 // Do reload here, adjust modified time beforehand to be conservative
                 script->Reload();
                 scriptWasModifiedInLastUpdate = true;
             }
         }
 
-        if (scriptWasModifiedInLastUpdate)
-        {
+        if (scriptWasModifiedInLastUpdate) {
             // the script was modified
 
             // reset the saved references
@@ -63,17 +65,14 @@ namespace Atlas::Scene::Components
             GetOrUpdatePropertiesFromScript();
         }
 
-        if (scene->physicsWorld->pauseSimulation)
-        {
+        if (scene->physicsWorld->pauseSimulation) {
             // the instance is not running, discard the state
             updateFunction.reset();
             scriptEnvironment.reset();
         }
-        else
-        {
+        else {
             // the instance is running, create a state if not existing
-            if (!scriptEnvironment.has_value())
-            {
+            if (!scriptEnvironment.has_value()) {
                 if (!InitScriptEnvironment())
                     return;
             }
@@ -83,52 +82,44 @@ namespace Atlas::Scene::Components
             SetPropertyValuesInLuaState();
 
             // call the update function
-            if (updateFunction.has_value())
-            {
+            if (updateFunction.has_value()) {
                 auto result = updateFunction.value()(deltaTime);
-                if (!result.valid())
-                {
+                if (!result.valid()) {
                     // Call failed
                     // Note that if the handler was successfully called, this will include
                     // the additional appended error message information of
                     // "got_problems handler: " ...
                     sol::error err = result;
                     std::string what = err.what();
-                    Log::Error("Error while executing update in " + script.GetResource()->GetFileName() + ": "  + what);
+                    Log::Error("Error while executing update in " + script.GetResource()->GetFileName() + ": " + what);
                 }
             }
         }
     }
 
-    bool LuaScriptComponent::InitScriptEnvironment()
-    {
+    bool LuaScriptComponent::InitScriptEnvironment() {
         AE_ASSERT(!scriptEnvironment.has_value());
-        try
-        {
+        try {
             // create environment
-            auto &state = scriptManager->state();
+            auto& state = scriptManager->state();
             sol::environment scriptEnv(state, sol::create, state.globals());
             scriptEnvironment = scriptEnv;
 
             // create environment based functions
-            scriptEnv.set_function("GetThisEntity", [&]()
-                                   { return this->entity; });
+            scriptEnv.set_function("GetThisEntity", [&]() { return this->entity; });
 
-            scriptEnv.set_function("GetThisScene", [&]()
-                { return this->scene; });
+            scriptEnv.set_function("GetThisScene", [&]() { return this->scene; });
 
             // load script
             state.script(script->code, scriptEnv);
 
             // load the script functions
             sol::protected_function updateFunction = scriptEnv["Update"];
-            if (updateFunction.valid())
-            {
+            if (updateFunction.valid()) {
                 this->updateFunction = updateFunction;
             }
         }
-        catch (const std::exception &e)
-        {
+        catch (const std::exception& e) {
             updateFunction.reset();
             scriptEnvironment.reset();
             Atlas::Log::Message("Error while compiling lua script " + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
@@ -139,25 +130,22 @@ namespace Atlas::Scene::Components
         return true;
     }
 
-    std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript()
-    {
+    std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
         AE_ASSERT(scriptEnvironment.has_value());
 
-        auto &state = scriptEnvironment.value();
+        auto& state = scriptEnvironment.value();
 
         sol::optional<sol::table> scriptProperties = state["ScriptProperties"];
-        if (!scriptProperties.has_value())
-        {
+        if (!scriptProperties.has_value()) {
             return {};
         }
 
         std::vector<ScriptProperty> foundProperties;
-        for (auto &entry : scriptProperties.value())
-        {
+        for (auto& entry : scriptProperties.value()) {
             ScriptProperty scriptProperty;
 
             // determine property name
-            const auto &key = entry.first;
+            const auto& key = entry.first;
             if (!key.valid())
                 continue;
             if (!key.is<std::string>())
@@ -165,12 +153,12 @@ namespace Atlas::Scene::Components
             scriptProperty.name = key.as<std::string>();
 
             // determine property type and value
-            const auto &propertyTable = entry.second;
+            const auto& propertyTable = entry.second;
             if (!propertyTable.valid())
                 continue;
             if (!propertyTable.is<sol::table>())
                 continue;
-            const auto &tbl = propertyTable.as<sol::table>();
+            const auto& tbl = propertyTable.as<sol::table>();
             if (!tbl.valid())
                 continue;
 
@@ -182,33 +170,27 @@ namespace Atlas::Scene::Components
             auto typeValue = type.value();
             std::transform(typeValue.begin(), typeValue.end(), typeValue.begin(), ::tolower);
 
-            if (typeValue == "string")
-            {
+            if (typeValue == "string") {
                 scriptProperty.type = PropertyType::String;
             }
-            else if (typeValue == "double")
-            {
+            else if (typeValue == "double") {
                 scriptProperty.type = PropertyType::Double;
             }
-            else if (typeValue == "integer")
-            {
+            else if (typeValue == "integer") {
                 scriptProperty.type = PropertyType::Integer;
             }
-            else if (typeValue == "boolean")
-            {
+            else if (typeValue == "boolean") {
                 scriptProperty.type = PropertyType::Boolean;
             }
-            else
-            {
+            else {
                 continue; // unknown type
             }
 
             // determine property value
-            const auto &value = tbl["value"];
+            const auto& value = tbl["value"];
             if (!value.valid())
                 continue;
-            switch (scriptProperty.type)
-            {
+            switch (scriptProperty.type) {
             case PropertyType::String:
                 if (!value.is<std::string>())
                     continue;
@@ -237,29 +219,24 @@ namespace Atlas::Scene::Components
         return foundProperties;
     }
 
-    void LuaScriptComponent::GetOrUpdatePropertiesFromScript()
-    {
+    void LuaScriptComponent::GetOrUpdatePropertiesFromScript() {
         // generate a map for the old properties
         std::unordered_map<std::string, int> oldPropertyMap;
         std::set<int> toRemove;
-        for (auto i = 0; i < properties.size(); i++)
-        {
+        for (auto i = 0; i < properties.size(); i++) {
             oldPropertyMap[properties[i].name] = i;
             toRemove.insert(i);
         }
 
         // obtain the new properties from the script
         auto newProperties = GetPropertiesFromScript();
-        for (auto &newProp : newProperties)
-        {
+        for (auto& newProp : newProperties) {
             bool oldPropEqualToNewProp = false;
             auto find = oldPropertyMap.find(newProp.name);
-            if (find != oldPropertyMap.end())
-            {
+            if (find != oldPropertyMap.end()) {
                 // a property with this name already exists
-                const auto &oldProperty = properties[(*find).second];
-                if (newProp.type == oldProperty.type)
-                {
+                const auto& oldProperty = properties[(*find).second];
+                if (newProp.type == oldProperty.type) {
                     // the new and old property also have the same type
                     // therefore it is not necessary to remove the old property
                     toRemove.erase((*find).second);
@@ -267,8 +244,7 @@ namespace Atlas::Scene::Components
                 }
             }
 
-            if (!oldPropEqualToNewProp)
-            {
+            if (!oldPropEqualToNewProp) {
                 // the new property is not covered by an old one, hence add it
                 properties.push_back(newProp);
             }
@@ -276,8 +252,7 @@ namespace Atlas::Scene::Components
 
         // generate the new property set by skipping the ones that are no longer defined
         std::vector<ScriptProperty> mergedProperties;
-        for (auto i = 0; i < properties.size(); i++)
-        {
+        for (auto i = 0; i < properties.size(); i++) {
             if (toRemove.contains(i))
                 continue;
             mergedProperties.push_back(properties[i]);
@@ -287,15 +262,12 @@ namespace Atlas::Scene::Components
         properties = mergedProperties;
     }
 
-    void LuaScriptComponent::SetPropertyValuesInLuaState()
-    {
+    void LuaScriptComponent::SetPropertyValuesInLuaState() {
         AE_ASSERT(scriptEnvironment.has_value());
-        auto &state = scriptEnvironment.value();
+        auto& state = scriptEnvironment.value();
 
-        for (const auto &property : properties)
-        {
-            switch (property.type)
-            {
+        for (const auto& property : properties) {
+            switch (property.type) {
             case PropertyType::String:
                 state["ScriptProperties"][property.name]["value"] = property.stringValue;
                 break;

@@ -6,14 +6,12 @@
 
 #include <sol/sol.hpp>
 
-namespace Atlas::Scripting
-{
-    class LuaScriptManager
-    {
+namespace Atlas::Scripting {
+    class LuaScriptManager {
     public:
-        LuaScriptManager(Scene::Scene* scene);     
+        LuaScriptManager(Scene::Scene* scene);
 
-        sol::state& state();   
+        sol::state& state();
 
     private:
         Ref<sol::state> luaState;

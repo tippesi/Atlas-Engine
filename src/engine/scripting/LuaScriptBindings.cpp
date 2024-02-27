@@ -81,6 +81,14 @@ namespace Atlas::Scripting
 
     void LuaScriptBindings::GenerateComponentBindings(sol::table* ns) {
 
+        ns->new_usertype<HierarchyComponent>("HierarchyComponent",
+            "AddChild", &HierarchyComponent::AddChild,
+            "RemoveChild", &HierarchyComponent::RemoveChild,
+            "GetChildren", &HierarchyComponent::GetChildren,
+            "globalMatrix", &HierarchyComponent::globalMatrix,
+            "root", &HierarchyComponent::root
+            );
+
         ns->new_usertype<TransformComponent>("TransformComponent",
             "Translate", &TransformComponent::Translate,
             "Set", &TransformComponent::Set,

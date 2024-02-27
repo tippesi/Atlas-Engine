@@ -1,8 +1,9 @@
 #include "SceneWindow.h"
 #include "../../Singletons.h"
+#include "../../Notifications.h"
 #include "../../tools/ResourcePayloadHelper.h"
 
-#include "scene/SceneSerializer.h"
+#include "Serializer.h"
 #include "common/Hash.h"
 #include "Clock.h"
 
@@ -23,12 +24,7 @@ namespace Atlas::Editor::UI {
 
     SceneWindow::~SceneWindow() {
 
-        if (!scene.IsLoaded())
-            return;
-
-        scene->DestroyEntity(cameraEntity);
-
-        Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
+        
 
     }
 
@@ -51,6 +47,17 @@ namespace Atlas::Editor::UI {
         else {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
+        }
+
+        bool controlDown;
+#ifdef AE_OS_MACOS
+        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
+#else
+        controlDown = io.KeyCtrl;
+#endif
+        if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_S)) {
+            SaveScene();
+            Notifications::Push({ .message = "Saved scene " + scene->name });
         }
 
     }
@@ -151,7 +158,7 @@ namespace Atlas::Editor::UI {
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
-            auto entity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), path);
+            auto entity = Serializer::DeserializePrefab(scene.Get(), path);
             PushEntityIntoSceneHierarchy(entity);
         }
 
@@ -307,7 +314,9 @@ namespace Atlas::Editor::UI {
                     // panel recovers the local matrix from the global one (needs to do this after
                     // e.g. physics only updated the global matrix
                     transform.globalMatrix = globalMatrix;
-                    transform.ReconstructLocalMatrix(scene.Get());
+
+                    auto parentEntity = scene->GetParentEntity(selectedEntity);
+                    transform.ReconstructLocalMatrix(parentEntity);
                 }
 
                 const auto& io = ImGui::GetIO();
@@ -411,36 +420,51 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::SaveSceneState() {
 
-        Hash hash = 0;
-        HashCombine(hash, Clock::Get());
+        auto time = Clock::Get();
 
-        sceneBackupFilename = ".config/scene" + std::to_string(hash);
-        cameraBackupFilename = ".config/camera" + std::to_string(hash);
-
-        Scene::SceneSerializer::SerializePrefab(scene.Get(), cameraEntity, cameraBackupFilename);
+        cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
 
         scene->DestroyEntity(cameraEntity);
-        Scene::SceneSerializer::SerializeScene(scene.Get(), sceneBackupFilename, true);
+
+        sceneState = Scene::Scene::Backup(scene.Get());
+
+        Log::Error("Took save time: " + std::to_string(Clock::Get() - time));
 
     }
 
     void SceneWindow::RestoreSceneState() {
 
-        if (sceneBackupFilename.empty())
+        if (sceneState.empty())
             return;
 
-        auto backupScene = Scene::SceneSerializer::DeserializeScene(sceneBackupFilename, true);
+        auto time = Clock::Get();
+
+        auto backupScene = Scene::Scene::Restore(sceneState);
         scene.GetResource()->Swap(backupScene);
 
-        cameraEntity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), cameraBackupFilename);
+        cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
 
-        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory() + "/";
+        sceneState.clear();
+        cameraState.clear();
 
-        std::filesystem::remove(assetDirectory + sceneBackupFilename);
-        std::filesystem::remove(assetDirectory + cameraBackupFilename);
+        Log::Error("Took backup time: " + std::to_string(Clock::Get() - time));
 
-        sceneBackupFilename.clear();
-        cameraBackupFilename.clear();
+    }
+
+    void SceneWindow::SaveScene() {
+
+        if (!scene.IsLoaded())
+            return;
+
+        cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
+
+        scene->DestroyEntity(cameraEntity);
+
+        Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
+        
+        cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
+
+        cameraState.clear();
 
     }
 

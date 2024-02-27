@@ -6,7 +6,7 @@
 
 namespace Atlas::Editor {
 
-    class Serializer {
+    class Serialization {
 
     public:
         static void SerializeConfig();

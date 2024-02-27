@@ -1,7 +1,7 @@
 #include "App.h"
 #include "FileImporter.h"
 #include "Singletons.h"
-#include "Serializer.h"
+#include "Serialization.h"
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
@@ -47,7 +47,7 @@ namespace Atlas::Editor {
         
         shape->Scale(vec3(0.8f));
 
-        Serializer::DeserializeConfig();
+        Serialization::DeserializeConfig();
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
@@ -70,10 +70,10 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper->Unload();
 
         for (const auto& sceneWindow : sceneWindows) {
-            Serializer::SerializeSceneWindow(sceneWindow);
+            Serialization::SerializeSceneWindow(sceneWindow);
         }
 
-        Serializer::SerializeConfig();
+        Serialization::SerializeConfig();
 
         Singletons::Destruct();
 
@@ -91,7 +91,7 @@ namespace Atlas::Editor {
                 std::swap(waitToLoadScenes[i], waitToLoadScenes.back());
 
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
-                sceneWindows.emplace_back(Serializer::DeserializeSceneWindow(waitToLoadScenes.back()));
+                sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
                 waitToLoadScenes.pop_back();
                 i--;
             }
@@ -135,7 +135,7 @@ namespace Atlas::Editor {
         std::reverse(toBeDeletedSceneWindows.begin(), toBeDeletedSceneWindows.end());
         for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
             // Serialize window before erasing it
-            Serializer::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
+            Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
         }
 

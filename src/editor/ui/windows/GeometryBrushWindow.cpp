@@ -10,7 +10,7 @@ namespace Atlas::Editor::UI {
         if (!Begin())
             return;
 
-        std::string buttonName = "Drop entity here";
+        std::string buttonName = "Drop entity with transform component here";
 
         if (brushEntity.IsValid() && brushEntity.HasComponent<NameComponent>())
             buttonName = brushEntity.GetComponent<NameComponent>().name;
@@ -22,8 +22,6 @@ namespace Atlas::Editor::UI {
             if (dropPayload->IsDataType(typeid(Scene::Entity).name())) {
                 std::memcpy(&dropEntity, dropPayload->Data, dropPayload->DataSize);
                 bool validEntity = dropEntity.HasComponent<TransformComponent>();
-                if (!validEntity)
-                    Notifications::Push({.message = "Entity needs to have a transform component"});
 
                 if (validEntity && ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name())) {
                     brushEntity = dropEntity;
@@ -88,7 +86,7 @@ namespace Atlas::Editor::UI {
         ImGui::Separator();
 
         ImGui::Text("Drop randomization");
-        
+
 
     }
 
@@ -194,7 +192,7 @@ namespace Atlas::Editor::UI {
 
             // Ray cast result is in global space, so need to bring transform to valid local one
             transformComponent.globalMatrix = transform;
-            transformComponent.ReconstructLocalMatrix(activeSceneWindow->scene.Get());
+            transformComponent.ReconstructLocalMatrix(parentEntity);
         }
 
     }

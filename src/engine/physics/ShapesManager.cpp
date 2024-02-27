@@ -13,6 +13,9 @@ namespace Atlas {
 
     namespace Physics {
 
+        std::unordered_map<Hash, ShapesManager::CacheItem<Mesh::Mesh>> ShapesManager::meshShapeCache;
+        std::mutex ShapesManager::meshShapeCacheMutex;
+
         bool ShapesManager::TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings) {
 
             if (!settings.mesh.IsLoaded())
@@ -21,33 +24,45 @@ namespace Atlas {
             auto& mesh = settings.mesh;
             const auto& scale = settings.scale;
 
-            JPH::VertexList vertexList;
-            JPH::IndexedTriangleList triangleList;
+            // This all assumes right now that mesh data doesn't change in the objects lifetime
+            if (!meshShapeCache.contains(mesh.GetID())) {
 
-            for (auto& vertex : mesh->data.vertices) {
+                JPH::VertexList vertexList;
+                JPH::IndexedTriangleList triangleList;
 
-                vertexList.push_back(JPH::Float3(vertex.x, vertex.y, vertex.z));
+                for (auto& vertex : mesh->data.vertices) {
+
+                    vertexList.push_back(JPH::Float3(vertex.x, vertex.y, vertex.z));
+
+                }
+
+                for (size_t i = 0; i < mesh->data.indices.GetElementCount(); i+=3) {
+
+                    auto idx0 = mesh->data.indices[i];
+                    auto idx1 = mesh->data.indices[i + 1];
+                    auto idx2 = mesh->data.indices[i + 2];
+
+                    JPH::IndexedTriangle triangle(idx0, idx1, idx2);
+
+                    triangleList.push_back(triangle);
+                }
+
+                JPH::MeshShapeSettings meshShapeSettings(vertexList, triangleList);
+                auto result = meshShapeSettings.Create();
+
+                if (!result.IsValid())
+                    return false;
+
+                shape->ref = result.Get();
+
+                meshShapeCache[mesh.GetID()] = { mesh.Get(), shape->ref };
 
             }
+            else {
 
-            for (size_t i = 0; i < mesh->data.indices.GetElementCount(); i+=3) {
+                shape->ref = meshShapeCache[mesh.GetID()].ref;
 
-                auto idx0 = mesh->data.indices[i];
-                auto idx1 = mesh->data.indices[i + 1];
-                auto idx2 = mesh->data.indices[i + 2];
-
-                JPH::IndexedTriangle triangle(idx0, idx1, idx2);
-
-                triangleList.push_back(triangle);
             }
-
-            JPH::MeshShapeSettings meshShapeSettings(vertexList, triangleList);
-            auto result = meshShapeSettings.Create();
-
-            if (!result.IsValid())
-                return false;
-
-            shape->ref = result.Get();
 
             if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
                 return shape->Scale(scale);
@@ -169,6 +184,12 @@ namespace Atlas {
             shape->ref = result.Get();
 
             return true;
+
+        }
+
+        void ShapesManager::Update() {
+
+            std::erase_if(meshShapeCache, [](auto& item) { return item.second.resource.expired(); } );
 
         }
 

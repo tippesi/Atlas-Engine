@@ -33,7 +33,7 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
-                void ReconstructLocalMatrix(const Ref<Scene>& scene);
+                void ReconstructLocalMatrix(const Entity& parentEntity);
 
                 bool IsStatic() const;
 

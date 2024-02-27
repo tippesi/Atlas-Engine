@@ -2,12 +2,10 @@
 
 #include "LuaScriptManager.h"
 
-namespace Atlas::Scripting
-{
-    class LuaScriptBindings
-    {
+namespace Atlas::Scripting {
+    class LuaScriptBindings {
     public:
-        LuaScriptBindings(Ref<sol::state> luaState, sol::table *atlasNs, sol::table* glmNs);
+        LuaScriptBindings(Ref<sol::state> luaState, sol::table* atlasNs, sol::table* glmNs);
 
         void GenerateBindings();
 
@@ -27,8 +25,8 @@ namespace Atlas::Scripting
             const sol::constructor_list<Args1...> constructors, Args2&&... args);
 
         Ref<sol::state> luaState;
-        sol::table *atlasNs;
-        sol::table *glmNs;
+        sol::table* atlasNs;
+        sol::table* glmNs;
     };
 
     template<class T, class S, typename... Args1, typename... Args2>
@@ -59,7 +57,7 @@ namespace Atlas::Scripting
             [](const T& value, const T& v0) { return v0 - value; }
         );
 
-        return ns->new_usertype<T>(name, 
+        return ns->new_usertype<T>(name,
             sol::call_constructor,
             constructors,
             sol::meta_function::multiplication, multiplication_overloads,

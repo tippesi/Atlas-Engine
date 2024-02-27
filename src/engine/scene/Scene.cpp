@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Entity.h"
+#include "SceneSerializer.h"
 #include "components/Components.h"
 
 namespace Atlas {
@@ -59,7 +60,7 @@ namespace Atlas {
 
         }
 
-        Entity Scene::GetEntityByName(const std::string &name) {
+        Entity Scene::GetEntityByName(const std::string& name) {
 
             auto nameSubset = entityManager.GetSubset<NameComponent>();
             for (auto entity : nameSubset) {
@@ -94,7 +95,7 @@ namespace Atlas {
 
             // Update scripting components
             auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
-            for(auto entity : luaScriptComponentSubset){
+            for (auto entity : luaScriptComponentSubset) {
                 auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
                 luaScriptComponent.Update(luaScriptManager, deltaTime);
             }
@@ -413,7 +414,7 @@ namespace Atlas {
 
         }
 
-        CameraComponent& Scene::GetMainCamera() {           
+        CameraComponent& Scene::GetMainCamera() {
 
             return mainCameraEntity.GetComponent<CameraComponent>();
 
@@ -463,7 +464,7 @@ namespace Atlas {
                             result.data = { entity, &entityManager };
                             result.hitDistance = dist;
                         }
-                        
+
                         // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
                         if (!result.valid) {
                             result.valid = true;
@@ -485,7 +486,7 @@ namespace Atlas {
                         result.valid = true;
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
-                        
+
                     }
                 }
             }
@@ -494,7 +495,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
+        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
@@ -644,12 +645,12 @@ namespace Atlas {
 
             // Each resource type needs to count references
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     RegisterResource(registeredMeshes, meshComponent.mesh);
                 });
 
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     UnregisterResource(registeredMeshes, meshComponent.mesh);
 
                     if (meshComponent.inserted) {
@@ -659,7 +660,7 @@ namespace Atlas {
 
             // Need insert/remove physics components into physics world
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent) {
                     auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
@@ -668,13 +669,13 @@ namespace Atlas {
                 });
 
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent) {
                     auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
@@ -683,7 +684,7 @@ namespace Atlas {
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
@@ -695,7 +696,7 @@ namespace Atlas {
             std::unordered_map<ECS::Entity, Entity> entityToEntityMap;
 
             // We need all entities before we can start to attach components
-            for(auto entity : *other) {
+            for (auto entity : *other) {
                 auto newEntity = CreateEntity();
 
                 entityToEntityMap[entity] = newEntity;
@@ -751,7 +752,7 @@ namespace Atlas {
 
             // NOTE: The reason we copy entities instead of taking a reference is simply because otherwise we might
             // get dereferenced due to new components being added, which could lead to crashes
-            
+
             // Normal components without resources which are not a hierarchy that needs special treatment
             if (srcEntity.HasComponent<NameComponent>()) {
                 const auto& otherComp = srcEntity.GetComponent<NameComponent>();
@@ -779,7 +780,7 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
                 auto creationSettings = otherComp.GetBodyCreationSettings();
                 const auto otherShape = creationSettings.shape;
-                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
+                // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
                 creationSettings.shape = CreateRef<Physics::Shape>();
                 *creationSettings.shape = *otherShape;
                 auto& comp = dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
@@ -808,11 +809,36 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
                 dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
             }
+            if (srcEntity.HasComponent<LuaScriptComponent>()) {
+                // These have a proper copy constructor
+                auto otherComp = srcEntity.GetComponent<LuaScriptComponent>();
+                dstEntity.AddComponent<LuaScriptComponent>(otherComp);
+            }
             if (srcEntity.HasComponent<TextComponent>()) {
                 auto otherComp = srcEntity.GetComponent<TextComponent>();
                 auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
             }
+
+        }
+
+        std::vector<uint8_t> Scene::Backup(const Ref<Scene>& scene) {
+
+            json j;
+            SceneToJson(j, scene.get());
+
+            return json::to_bjdata(j);
+
+        }
+
+        Ref<Scene> Scene::Restore(const std::vector<uint8_t>& serialized) {
+
+            json j = json::from_bjdata(serialized);
+
+            Ref<Scene> scene;
+            SceneFromJson(j, scene);
+
+            return scene;
 
         }
 

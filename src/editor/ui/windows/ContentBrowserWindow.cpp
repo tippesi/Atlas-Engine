@@ -123,7 +123,7 @@ namespace Atlas::Editor::UI {
                         assetPath.erase(assetPath.begin());
 
                     auto entityPath = assetPath + entityName + ".aeprefab";
-                    Scene::SceneSerializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                    Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
                 }
             }
 

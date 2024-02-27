@@ -581,10 +581,6 @@ void App::Render(float deltaTime) {
                 if (ImGui::Button("Restore state##Physics")) {
                     scene->physicsWorld->RestoreState();
                 }
-                ImGui::SameLine();
-                if (ImGui::Button("Serialize##Physics")) {
-                    Atlas::Scene::SceneSerializer::SerializeScene(scene, "test.json");
-                }
             }
             if (ImGui::CollapsingHeader("Materials")) {
                 int32_t id = 0;

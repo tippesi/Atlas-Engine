@@ -20,12 +20,23 @@ namespace Atlas::Physics {
         template<class T>
         static T GetShapeSettings(ShapeRef shapeRef);
 
+        static void Update();
+
     private:
+        template<class T>
+        struct CacheItem {
+            Weak<T> resource;
+            ShapeRef ref;
+        };
+
         static bool TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings);
         static bool TryCreateShapeFromAABB(Shape* shape, const BoundingBoxShapeSettings& settings);
         static bool TryCreateShapeFromSphere(Shape* shape, const SphereShapeSettings& settings);
         static bool TryCreateShapeFromCapsule(Shape* shape, const CapsuleShapeSettings& settings);
         static bool TryCreateShapeFromHeightField(Shape* shape, const HeightFieldShapeSettings& settings);
+
+        static std::unordered_map<Hash, CacheItem<Mesh::Mesh>> meshShapeCache;
+        static std::mutex meshShapeCacheMutex;
 
         friend Shape;
 

@@ -117,14 +117,17 @@ namespace Atlas {
 
             SceneIterator end();
 
+            static std::vector<uint8_t> Backup(const Ref<Scene>& scene);
+
+            static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
+
             std::string name;
 
             Ref<Ocean::Ocean> ocean = nullptr;
             Ref<Terrain::Terrain> terrain = nullptr;
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
-            
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;            
 
             Wind wind;
             Lighting::Sky sky;
