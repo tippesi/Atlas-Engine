@@ -142,7 +142,7 @@ namespace Atlas::Scene::Components {
 
         std::vector<ScriptProperty> foundProperties;
         for (const auto& entry : scriptProperties.value()) {
-            ScriptProperty scriptProperty;
+            ScriptProperty scriptProperty = {};
 
             // determine property name
             const auto& key = entry.first;

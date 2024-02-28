@@ -20,7 +20,7 @@ namespace Atlas {
             public:
                 MeshComponent() = default;
                 explicit MeshComponent(Scene* scene) : scene(scene) {}
-                explicit MeshComponent(Scene* scene, ResourceHandle<Mesh::Mesh> mesh) : 
+                explicit MeshComponent(Scene* scene, const ResourceHandle<Mesh::Mesh>& mesh) : 
                     scene(scene), mesh(mesh) {};
 
                 void ChangeResource(const ResourceHandle<Mesh::Mesh>& mesh);

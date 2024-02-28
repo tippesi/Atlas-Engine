@@ -256,7 +256,7 @@ namespace Atlas::Editor::UI {
 
                 if (ImGui::MenuItem("Rename")) {
                     renamePopupVisible = true;
-                    renameString = dirEntry.path().filename();
+                    renameString = dirEntry.path().filename().generic_string();
                     renameDirEntry = dirEntry;
                 }
 

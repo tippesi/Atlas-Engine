@@ -23,7 +23,7 @@ namespace Atlas {
 
             }
 
-            AudioComponent::AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData>& audioData,
+            AudioComponent::AudioComponent(Scene* scene, const ResourceHandle<Audio::AudioData>& audioData,
                 float falloffFactor, bool loop) : falloffFactor(falloffFactor), scene(scene) {
 
                 stream = Audio::AudioManager::CreateStream(audioData, 0.0f, loop);

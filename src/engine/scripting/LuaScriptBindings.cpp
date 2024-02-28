@@ -49,12 +49,12 @@ namespace Atlas::Scripting {
             "AddCameraComponent", &Scene::Entity::AddComponent<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
             "AddHierarchyComponent", &Scene::Entity::AddComponent<HierarchyComponent>,
             "AddLightComponentComponent", &Scene::Entity::AddComponent<LightComponent>,
-            "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent>,
-            "AddNameComponent", &Scene::Entity::AddComponent<NameComponent>,
+            "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
+            "AddNameComponent", &Scene::Entity::AddComponent<NameComponent, std::string>,
             "AddPlayerComponent", &Scene::Entity::AddComponent<PlayerComponent>,
             "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent>,
-            "AddTextComponent", &Scene::Entity::AddComponent<TextComponent>,
-            "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent>,
+            "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
+            "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
 
             // Remove components
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
@@ -145,6 +145,27 @@ namespace Atlas::Scripting {
             "root", &HierarchyComponent::root
         );
 
+        // TODO: Extend this
+        ns->new_usertype<LightComponent>("LightComponent",
+            "color", &LightComponent::color,
+            "intensity", &LightComponent::intensity,
+            "properties", &LightComponent::properties,
+            "transformedProperties", &LightComponent::transformedProperties,
+            "isMain", &LightComponent::isMain,
+            "volumetric", &LightComponent::volumetric
+        );
+
+        ns->new_usertype<MeshComponent>("MeshComponent",
+            "mesh", &MeshComponent::mesh,
+            "visible", &MeshComponent::visible,
+            "dontCull", &MeshComponent::dontCull,
+            "aabb", &MeshComponent::aabb
+        );
+
+        ns->new_usertype<NameComponent>("NameComponent",
+            "name", &NameComponent::name
+        );
+
         ns->new_usertype<TransformComponent>("TransformComponent",
             "Translate", &TransformComponent::Translate,
             "Set", &TransformComponent::Set,
@@ -153,10 +174,6 @@ namespace Atlas::Scripting {
             //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
-        );
-
-        ns->new_usertype<NameComponent>("NameComponent",
-            "name", &NameComponent::name
         );
 
         ns->new_usertype<RigidBodyComponent>("RigidBodyComponent",
@@ -390,8 +407,20 @@ namespace Atlas::Scripting {
             "max", &Volume::AABB::max
             );
 
+        auto resizeFrustumOverload = sol::overload(
+            [](Volume::Frustum& frustum, const std::vector<vec3>& corners) { frustum.Resize(corners); },
+            [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
+        );
+
         // TODO
-        ns->new_usertype<Volume::Frustum>("Frustum"
+        ns->new_usertype<Volume::Frustum>("Frustum",
+            sol::call_constructor,
+            sol::constructors<Volume::Frustum(), Volume::Frustum(const std::vector<vec3>&), Volume::Frustum(glm::mat4)>(),
+            "Resize", resizeFrustumOverload,
+            "Intersects", &Volume::Frustum::Intersects,
+            "IsInside", &Volume::Frustum::IsInside,
+            "GetPlanes", &Volume::Frustum::GetPlanes,
+            "GetCorners", &Volume::Frustum::GetCorners
             );
 
     }
