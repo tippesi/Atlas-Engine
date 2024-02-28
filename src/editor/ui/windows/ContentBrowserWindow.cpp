@@ -256,7 +256,8 @@ namespace Atlas::Editor::UI {
 
                 if (ImGui::MenuItem("Rename")) {
                     renamePopupVisible = true;
-                    renameString = dirEntry.path().filename().generic_string();
+                    auto dirEntryFilename = dirEntry.path().filename();
+                    renameString = dirEntryFilename.replace_extension("").string();
                     renameDirEntry = dirEntry;
                 }
 
@@ -286,9 +287,25 @@ namespace Atlas::Editor::UI {
 
         }
 
+        if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+            if (ImGui::BeginMenu("Create")) {
+                if (ImGui::MenuItem("Folder")) {
+
+                }
+                if (ImGui::MenuItem("Script")) {
+
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndPopup();
+        }
+
         if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
             auto newPath = renameDirEntry.path();
-            newPath.replace_filename(renameString);
+            newPath = newPath.filename().replace_filename(renameString);
+            if (renameDirEntry.path().has_extension())
+                newPath = newPath.replace_extension(renameDirEntry.path().extension());
             std::filesystem::rename(renameDirEntry.path(), newPath);
         }
 

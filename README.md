@@ -70,7 +70,7 @@ in the LICENSE.md file in the dependency directory.
 For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/src/demo).
 ## Screenshots
 ![Editor](wiki/images/editor.png)
-*Sponza demo scene opened in the editor* 
+*Sponza demo scene opened in the editor*
 ![Example scene](wiki/images/sponza_rasterized.png)
 *Rasterized image using real time global illumination*
 ![Example scene](wiki/images/sponza_pathtraced.png)
