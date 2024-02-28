@@ -783,7 +783,7 @@ namespace Atlas {
                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
                 creationSettings.shape = CreateRef<Physics::Shape>();
                 *creationSettings.shape = *otherShape;
-                auto& comp = dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
+                dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
             }
             if (srcEntity.HasComponent<PlayerComponent>()) {
                 auto otherComp = srcEntity.GetComponent<PlayerComponent>();

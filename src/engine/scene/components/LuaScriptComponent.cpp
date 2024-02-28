@@ -114,9 +114,9 @@ namespace Atlas::Scene::Components {
             state.script(script->code, scriptEnv);
 
             // load the script functions
-            sol::protected_function updateFunction = scriptEnv["Update"];
-            if (updateFunction.valid()) {
-                this->updateFunction = updateFunction;
+            sol::protected_function function = scriptEnv["Update"];
+            if (function.valid()) {
+                this->updateFunction = function;
             }
         }
         catch (const std::exception& e) {
@@ -133,7 +133,7 @@ namespace Atlas::Scene::Components {
     std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
         AE_ASSERT(scriptEnvironment.has_value());
 
-        auto& state = scriptEnvironment.value();
+        const auto& state = scriptEnvironment.value();
 
         sol::optional<sol::table> scriptProperties = state["ScriptProperties"];
         if (!scriptProperties.has_value()) {
@@ -141,7 +141,7 @@ namespace Atlas::Scene::Components {
         }
 
         std::vector<ScriptProperty> foundProperties;
-        for (auto& entry : scriptProperties.value()) {
+        for (const auto& entry : scriptProperties.value()) {
             ScriptProperty scriptProperty;
 
             // determine property name

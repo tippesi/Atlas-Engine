@@ -50,7 +50,9 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropTarget();
         }
 
-        if (brushEntity.IsValid() && parentEntity.IsValid() && activeSceneWindow != nullptr) {
+        if (brushEntity.IsValid() && parentEntity.IsValid() && activeSceneWindow != nullptr
+            && activeSceneWindow->scene.Get().get() == brushEntity.GetScene() 
+            && activeSceneWindow->scene.Get().get() == parentEntity.GetScene()) {
             RenderBrushSettings();
 
             if (brushEnabled) {
@@ -158,6 +160,8 @@ namespace Atlas::Editor::UI {
         if (!parentEntity.HasComponent<HierarchyComponent>())
             parentEntity.AddComponent<HierarchyComponent>();
 
+        auto decomposition = brushEntity.GetComponent<TransformComponent>().Decompose();
+
         for (int32_t i = 0; i < dropsPerFrame; i++) {
             auto deg = Common::Random::SampleFastUniformFloat() * 2.0f * 3.14159f;
             auto dist = Common::Random::SampleFastUniformFloat() + Common::Random::SampleFastUniformFloat();
@@ -170,19 +174,23 @@ namespace Atlas::Editor::UI {
             Atlas::Volume::Ray ray(pos + dropTarget.normal * brushRayLength, -dropTarget.normal);
             auto rayCastResult = scene->CastRay(ray);
 
-            if (!rayCastResult.valid || !rayCastResult.IsNormalValid() || rayCastResult.hitDistance > 2.0f * brushRayLength)
+            if (!rayCastResult.valid || !rayCastResult.IsNormalValid() || rayCastResult.hitDistance > 2.0f * brushRayLength) {
                 return;
+            }                
 
             mat4 rot { 1.0f };
             if (brushAlignToSurface) {
-                vec3 normal = rayCastResult.normal;
-                vec3 tangent = vec3(1.0f, 0.0f, 0.0f);
-                vec3 bitangent = normalize(cross(tangent, normal));
-                rot = mat4(mat3(tangent, normal, bitangent));
+                vec3 N = rayCastResult.normal;
+                vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+                vec3 tangent = normalize(cross(up, N));
+                vec3 bitangent = cross(N, tangent);
+
+                rot = mat4(mat3(tangent, N, bitangent));
             }
 
-            auto transform = glm::translate(ray.Get(rayCastResult.hitDistance)) * rot;
+            decomposition.translation = ray.Get(rayCastResult.hitDistance);
 
+            auto transform = decomposition.Compose() * rot;
             auto entity = scene->DuplicateEntity(brushEntity);
 
             auto& transformComponent = entity.GetComponent<TransformComponent>();

@@ -21,7 +21,7 @@ namespace Atlas {
 				AudioComponent() = default;
                 explicit AudioComponent(Scene* scene) : scene(scene) {}
                 explicit AudioComponent(Scene* scene, const AudioComponent& that);
-                explicit AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData> audioData,
+                explicit AudioComponent(Scene* scene, ResourceHandle<Audio::AudioData>& audioData,
                     float falloffFactor = 1.0f, bool loop = false);
 
                 void ChangeResource(ResourceHandle<Audio::AudioData> audioData);

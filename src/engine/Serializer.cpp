@@ -25,7 +25,7 @@ namespace Atlas {
 
             if (binaryJson) {
                 auto data = json::to_bjdata(j);
-                fileStream.write((const char*)(data.data()), data.size());
+                fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
             }
             else {
                 fileStream << (formatJson ? j.dump(2) : j.dump());

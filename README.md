@@ -11,6 +11,8 @@
 ![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
+>**Note:**
+>The current version (0.2.0) contains many API changes and is still an active WIP
 ## Requirements
 - Vulkan SDK
 - C++20 compatible compiler
@@ -67,9 +69,11 @@ in the LICENSE.md file in the dependency directory.
 ## Code Example
 For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/src/demo).
 ## Screenshots
+![Editor](wiki/images/editor.png) <br/>
+*Sponza demo scene opened in the editor* <br/>
 ![Example scene](wiki/images/sponza_rasterized.png) <br/>
 *Rasterized image using real time global illumination* <br/>
 ![Example scene](wiki/images/sponza_pathtraced.png)
-*Path traced scene*
+*Path traced scene* <br/>
 ![Island scene](wiki/images/island.gif) <br/>
 *Island demo scene using the terrain and ocean systems* <br/>

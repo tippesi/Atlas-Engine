@@ -3,23 +3,29 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "Clock.h"
+#include "resource/ResourceManager.h"
 
-namespace Atlas::Scripting
-{
-    LuaScriptBindings::LuaScriptBindings(Ref<sol::state> luaState, sol::table *atlasNs, sol::table* glmNs)
-    {
+namespace Atlas::Scripting {
+
+    LuaScriptBindings::LuaScriptBindings(Ref<sol::state> luaState, sol::table* atlasNs, sol::table* glmNs) {
+
         this->luaState = luaState;
         this->atlasNs = atlasNs;
         this->glmNs = glmNs;
+
     }
 
-    void LuaScriptBindings::GenerateBindings()
-    {
+    void LuaScriptBindings::GenerateBindings() {
+
         GenerateSceneBindings(atlasNs);
         GenerateEntityBindings(atlasNs);
         GenerateComponentBindings(atlasNs);
         GenerateUtilityBindings(atlasNs);
+        GenerateMaterialBindings(atlasNs);
+        GenerateAudioBindings(atlasNs);
+        GenerateMeshBindings(atlasNs);
         GenerateMathBindings(glmNs);
+
     }
 
     void LuaScriptBindings::GenerateSceneBindings(sol::table* ns) {
@@ -38,9 +44,9 @@ namespace Atlas::Scripting
         auto entityType = ns->new_usertype<Scene::Entity>("Entity",
             "IsValid", &Scene::Entity::IsValid,
             // Add components
-            "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent>,
-            "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent>,
-            "AddCameraComponent", &Scene::Entity::AddComponent<CameraComponent>,
+            "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
+            "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
+            "AddCameraComponent", &Scene::Entity::AddComponent<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
             "AddHierarchyComponent", &Scene::Entity::AddComponent<HierarchyComponent>,
             "AddLightComponentComponent", &Scene::Entity::AddComponent<LightComponent>,
             "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent>,
@@ -81,13 +87,63 @@ namespace Atlas::Scripting
 
     void LuaScriptBindings::GenerateComponentBindings(sol::table* ns) {
 
+        ns->new_usertype<AudioComponent>("AudioComponent",
+            "falloffFactor", &AudioComponent::falloffFactor,
+            "falloffPower", &AudioComponent::falloffPower,
+            "cutoff", &AudioComponent::cutoff,
+            "volume", &AudioComponent::volume,
+            "stream", &AudioComponent::stream
+        );
+
+        ns->new_usertype<AudioVolumeComponent>("AudioVolumeComponent",
+            "falloffFactor", &AudioVolumeComponent::falloffFactor,
+            "falloffPower", &AudioVolumeComponent::falloffPower,
+            "cutoff", &AudioVolumeComponent::cutoff,
+            "volume", &AudioVolumeComponent::volume,
+            "aabb", &AudioVolumeComponent::aabb,
+            "stream", &AudioVolumeComponent::stream
+        );
+
+        ns->new_usertype<CameraComponent>("CameraComponent",
+            "GetJitter", &CameraComponent::GetJitter,
+            "GetLastJitter", &CameraComponent::GetLastJitter,
+            "GetLastJitteredMatrix", &CameraComponent::GetLastJitteredMatrix,
+            "GetLocation", &CameraComponent::GetLocation,
+            "GetLastLocation", &CameraComponent::GetLastLocation,
+            "GetFrustumCorners", &CameraComponent::GetFrustumCorners,
+            "UpdateFrustum", &CameraComponent::UpdateFrustum,
+            "location", &CameraComponent::location,
+            "rotation", &CameraComponent::rotation,
+            "exposure", &CameraComponent::exposure,
+            "fieldOfView", &CameraComponent::fieldOfView,
+            "aspectRatio", &CameraComponent::aspectRatio,
+            "nearPlane", &CameraComponent::nearPlane,
+            "farPlane", &CameraComponent::farPlane,
+            "thirdPerson", &CameraComponent::thirdPerson,
+            "thirdPersonDistance", &CameraComponent::thirdPersonDistance,
+            "direction", &CameraComponent::direction,
+            "up", &CameraComponent::up,
+            "right", &CameraComponent::right,
+            "viewMatrix", &CameraComponent::viewMatrix,
+            "projectionMatrix", &CameraComponent::projectionMatrix,
+            "invViewMatrix", &CameraComponent::invViewMatrix,
+            "invProjectionMatrix", &CameraComponent::invProjectionMatrix,
+            "unjitterdProjection", &CameraComponent::unjitterdProjection,
+            "invUnjitteredProjection", &CameraComponent::invUnjitteredProjection,
+            "parentTransform", &CameraComponent::parentTransform,
+            "frustum", &CameraComponent::frustum,
+            "isMain", &CameraComponent::isMain,
+            "useEntityTranslation", &CameraComponent::useEntityTranslation,
+            "useEntityRotation", &CameraComponent::useEntityRotation
+        );
+
         ns->new_usertype<HierarchyComponent>("HierarchyComponent",
             "AddChild", &HierarchyComponent::AddChild,
             "RemoveChild", &HierarchyComponent::RemoveChild,
             "GetChildren", &HierarchyComponent::GetChildren,
             "globalMatrix", &HierarchyComponent::globalMatrix,
             "root", &HierarchyComponent::root
-            );
+        );
 
         ns->new_usertype<TransformComponent>("TransformComponent",
             "Translate", &TransformComponent::Translate,
@@ -97,7 +153,7 @@ namespace Atlas::Scripting
             //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
-            );
+        );
 
         ns->new_usertype<NameComponent>("NameComponent",
             "name", &NameComponent::name
@@ -156,6 +212,96 @@ namespace Atlas::Scripting
 
     }
 
+    void LuaScriptBindings::GenerateMaterialBindings(sol::table* ns) {
+
+         ns->new_usertype<Material>("Material",
+            "HasBaseColorMap", &Material::HasBaseColorMap,
+            "HasOpacityMap", &Material::HasOpacityMap,
+            "HasNormalMap", &Material::HasNormalMap,
+            "HasRoughnessMap", &Material::HasRoughnessMap,
+            "HasMetalnessMap", &Material::HasMetalnessMap,
+            "HasAoMap", &Material::HasAoMap,
+            "HasDisplacementMap", &Material::HasDisplacementMap,
+            "name", &Material::name,
+            "baseColor", &Material::baseColor,
+            "transmissiveColor", &Material::transmissiveColor,
+            "emissiveColor", &Material::emissiveColor,
+            "emissiveIntensity", &Material::emissiveIntensity,
+            "opacity", &Material::opacity,
+            "roughness", &Material::roughness,
+            "metalness", &Material::metalness,
+            "ao", &Material::ao,
+            "reflectance", &Material::reflectance,
+            "normalScale", &Material::normalScale,
+            "displacementScale", &Material::displacementScale,
+            "tiling", &Material::tiling,
+            "twoSided", &Material::twoSided,
+            "vertexColors", &Material::vertexColors
+            );
+
+    }
+
+    void LuaScriptBindings::GenerateAudioBindings(sol::table* ns) {
+
+        GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
+
+        ns->new_usertype<Audio::AudioData>("AudioData",
+            "GetChannelCount", &Audio::AudioData::GetChannelCount,
+            "GetFrequency", &Audio::AudioData::GetFrequency,
+            "GetSampleSize", &Audio::AudioData::GetSampleSize,
+            "filename", &Audio::AudioData::filename
+            );
+
+        ns->new_usertype<Audio::AudioStream>("AudioStream",
+            "GetDuration", &Audio::AudioStream::GetDuration,
+            "SetTime", &Audio::AudioStream::SetTime,
+            "GetTime", &Audio::AudioStream::GetTime,
+            "SetVolume", &Audio::AudioStream::SetVolume,
+            "GetVolume", &Audio::AudioStream::GetVolume,
+            "SetPitch", &Audio::AudioStream::SetPitch,
+            "GetPitch", &Audio::AudioStream::GetPitch,
+            "Pause", &Audio::AudioStream::Pause,
+            "Resume", &Audio::AudioStream::Resume,
+            "IsPaused", &Audio::AudioStream::IsPaused,
+            "IsValid", &Audio::AudioStream::IsValid,
+            "loop", &Audio::AudioStream::loop
+            );
+
+    }
+
+    void LuaScriptBindings::GenerateMeshBindings(sol::table* ns) {
+
+        GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
+
+        ns->new_usertype<Mesh::MeshData>("MeshData",
+            "filename", &Mesh::MeshData::filename,
+            "materials", &Mesh::MeshData::materials,
+            "primitiveType", &Mesh::MeshData::primitiveType,
+            "aabb", &Mesh::MeshData::aabb,
+            "transform", &Mesh::MeshData::transform,
+            "radius", &Mesh::MeshData::radius
+            );
+        
+        ns->new_usertype<Mesh::Mesh>("Mesh",
+            "name", &Mesh::Mesh::name,
+            "data", &Mesh::Mesh::data,
+            "mobility", &Mesh::Mesh::mobility,
+            "usage", &Mesh::Mesh::usage,
+            "cullBackFaces", &Mesh::Mesh::cullBackFaces,
+            "depthTest", &Mesh::Mesh::depthTest,
+            "castShadow", &Mesh::Mesh::castShadow,
+            "vegetation", &Mesh::Mesh::vegetation,
+            "windNoiseTextureLod", &Mesh::Mesh::windNoiseTextureLod,
+            "windBendScale", &Mesh::Mesh::windBendScale,
+            "windWiggleScale", &Mesh::Mesh::windWiggleScale,
+            "allowedShadowCascades", &Mesh::Mesh::allowedShadowCascades,
+            "impostorDistance", &Mesh::Mesh::impostorDistance,
+            "impostorShadowDistance", &Mesh::Mesh::impostorShadowDistance,
+            "invertUVs", &Mesh::Mesh::invertUVs
+            );
+
+    }
+
     void LuaScriptBindings::GenerateMathBindings(sol::table* ns) {
 
         GenerateGlmTypeBinding<glm::vec2, float>(ns, "Vec2",
@@ -211,6 +357,42 @@ namespace Atlas::Scripting
             [](float angle, const glm::vec3& vec) { return glm::rotate(angle, vec); },
             [](const glm::mat4& mat, float angle, const glm::vec3& vec) { return glm::rotate(mat, angle, vec); }
         ));
+
+    }
+
+    void LuaScriptBindings::GenerateVolumeBindings(sol::table* ns) {
+
+        auto isInsideAABBOverload = sol::overload(
+            [](Volume::AABB& aabb0, const Volume::AABB& aabb1) { return aabb0.IsInside(aabb1); },
+            [](Volume::AABB& aabb, const vec3& vec) { return aabb.IsInside(vec); }
+        );
+
+        auto growAABBOverload = sol::overload(
+            [](Volume::AABB& aabb0, const Volume::AABB& aabb1) { return aabb0.Grow(aabb1); },
+            [](Volume::AABB& aabb, const vec3& vec) { return aabb.Grow(vec); }
+        );
+
+        ns->new_usertype<Volume::AABB>("AABB",
+            sol::call_constructor,
+            sol::constructors<Volume::AABB(), Volume::AABB(glm::vec3, glm::vec3)>(),
+            "Intersects", &Volume::AABB::Intersects,
+            "IsInside", isInsideAABBOverload,
+            "Transform", &Volume::AABB::Transform,
+            "Translate", &Volume::AABB::Translate,
+            "Scale", &Volume::AABB::Scale,
+            "Grow", growAABBOverload,
+            "Intersect", &Volume::AABB::Intersect,
+            "GetSurfaceArea", &Volume::AABB::GetSurfaceArea,
+            "GetSize", &Volume::AABB::GetSize,
+            "GetDistance", &Volume::AABB::GetDistance,
+            "GetCorners", &Volume::AABB::GetCorners,
+            "min", &Volume::AABB::min,
+            "max", &Volume::AABB::max
+            );
+
+        // TODO
+        ns->new_usertype<Volume::Frustum>("Frustum"
+            );
 
     }
 

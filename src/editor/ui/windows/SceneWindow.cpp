@@ -50,12 +50,13 @@ namespace Atlas::Editor::UI {
         }
 
         bool controlDown;
+        
 #ifdef AE_OS_MACOS
         controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
 #else
-        controlDown = io.KeyCtrl;
+        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
 #endif
-        if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_S)) {
+        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
             SaveScene();
             Notifications::Push({ .message = "Saved scene " + scene->name });
         }

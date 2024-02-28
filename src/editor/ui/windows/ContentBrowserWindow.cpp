@@ -17,7 +17,7 @@
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
 
 
 

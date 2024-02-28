@@ -34,10 +34,10 @@ namespace Atlas::Scene
                 std::string name;
                 PropertyType type;
 
-                double doubleValue;
-                int integerValue;
-                std::string stringValue;
-                bool booleanValue;
+                double doubleValue = 0.0;
+                int integerValue = 0;
+                std::string stringValue = "";
+                bool booleanValue = false;
             };
 
             LuaScriptComponent(Scene *scene, Entity entity);

@@ -190,10 +190,6 @@ namespace Atlas {
             resource = nullptr;
         }
 
-        inline T& operator*() {
-            return resource->data.operator*();
-        }
-
         inline T* operator->() const {
             return resource->data.operator->();
         }

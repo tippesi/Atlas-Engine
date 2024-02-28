@@ -49,9 +49,9 @@ namespace Atlas::Editor::UI {
 #else
             controlDown = io.KeyCtrl;
 #endif
-            if (inFocus && controlDown && ImGui::IsKeyReleased(ImGuiKey_D))
+            if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_D, false))
                 DuplicateSelectedEntity(scene);
-            if (inFocus && ImGui::IsKeyReleased(ImGuiKey_Delete))
+            if (inFocus && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntity(scene);
 
         }

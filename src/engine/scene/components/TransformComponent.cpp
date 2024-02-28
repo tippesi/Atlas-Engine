@@ -52,7 +52,7 @@ namespace Atlas {
                 mat4 parentGlobalMatrix = mat4(1.0f);
 
                 if (parentEntity.IsValid()) {
-                    auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+                    const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
                     parentGlobalMatrix = parentHierarchy.globalMatrix;
                 }
 
