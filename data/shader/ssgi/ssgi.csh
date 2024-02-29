@@ -134,17 +134,20 @@ void main() {
                     ivec2 stepPixel = ivec2(uvPos * vec2(resolution));
                     float stepDepth = texelFetch(depthTexture, stepPixel, 0).r;
 
-                    float stepLinearDepth = -ConvertDepthToViewSpaceDepth(stepDepth);
+                    vec3 stepPos = ConvertDepthToViewSpace(stepDepth, uvPos);
+                    float stepLinearDepth = -stepPos.z;
                     float rayDepth = -rayPos.z;
 
                     float depthDelta = rayDepth - stepLinearDepth;
                     vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
 
-                    if (depthDelta > 0.0 && abs(depthDelta) < rayLength) {
+                    // Check if we are now behind the depth buffer, use that hit as the source of radiance
+                    if (stepLinearDepth < rayDepth && abs(depthDelta) < rayLength) {
                         float NdotL = dot(worldNorm, -ray.direction);
                         if (NdotL >= 0.0) {
                             vec3 rayIrradiance = texelFetch(directLightTexture, stepPixel * 2 + pixelOffset, 0).rgb;
-                            irradiance += rayIrradiance;
+                            float dist = distance(viewPos, stepPos);
+                            irradiance += rayIrradiance / max(0.01, dist);
                         }
                         hit = true;
 

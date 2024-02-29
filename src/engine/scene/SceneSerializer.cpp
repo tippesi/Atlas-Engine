@@ -186,6 +186,15 @@ namespace Atlas::Scene {
         Volume::AABB aabb = j["aabb"];
         scene = CreateRef<Scene>(j["name"], aabb.min, aabb.max, j["depth"]);
 
+         // Create physics world in any case (and before entities, such that they can push bodies immediately)
+        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+        scene->physicsWorld->pauseSimulation = true;
+
+        if (j.contains("physicsWorld")) {
+            std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
+            Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
+        }
+
         std::vector<json> jEntities = j["entities"];
         for (auto jEntity : jEntities) {
             auto entity = scene->CreateEntity();
@@ -220,16 +229,9 @@ namespace Atlas::Scene {
             *scene->ssgi = j["ssgi"];
         }
 
-        // Create physics world in any case
-        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
-        scene->physicsWorld->pauseSimulation = true;
-
-        if (j.contains("physicsWorld")) {
-            std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
-            Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
-        }
-
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+
+        scene->physicsWorld->OptimizeBroadphase();
 
     }
 

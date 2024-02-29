@@ -429,6 +429,7 @@ namespace Atlas {
         Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
 
             Volume::RayResult<Entity> result;
+            result.hitDistance = ray.tMax;
 
             // Most accurate method if it works
             if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
@@ -452,7 +453,8 @@ namespace Atlas {
                     const auto& meshComp = meshSubset.Get(entity);
 
                     auto dist = 0.0f;
-                    if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
+                    ray.tMax = result.hitDistance;
+                    if (ray.Intersects(meshComp.aabb, dist)) {
                         auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
                         // This means we already found a more accurate hit
                         if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
@@ -481,7 +483,8 @@ namespace Atlas {
                     const auto& textComp = textSubset.Get(entity);
 
                     auto dist = 0.0f;
-                    if (ray.Intersects(textComp.GetRectangle(), 0.0f, result.hitDistance, dist)) {
+                    ray.tMax = result.hitDistance;
+                    if (ray.Intersects(textComp.GetRectangle(), dist)) {
 
                         result.valid = true;
                         result.data = { entity, &entityManager };

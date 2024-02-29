@@ -240,11 +240,10 @@ namespace Atlas {
 
         Volume::RayResult<Body> PhysicsWorld::CastRay(Volume::Ray& ray) {
 
-            const float farDist = 10e9f;
-
             JPH::RayCastResult hit;
             // Actually direction is not really a direction but one endpoint
-            JPH::RRayCast rayCast{ VecToJPHVec(ray.origin), VecToJPHVec(ray.direction * farDist) };
+            JPH::RRayCast rayCast{ VecToJPHVec(ray.origin + ray.direction * ray.tMin),
+                VecToJPHVec(ray.direction * ray.tMax) };
 
             Volume::RayResult<Body> result;
 
@@ -264,7 +263,7 @@ namespace Atlas {
                 }
 
                 result.valid = true;
-                result.hitDistance = hit.mFraction * farDist;
+                result.hitDistance = (ray.tMax - ray.tMin) * hit.mFraction;
                 result.data = { hit.mBodyID, this };
             }
 

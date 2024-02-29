@@ -25,12 +25,14 @@ namespace Atlas {
                 right = normalize(vec3(sin(rotation.x - 3.14f / 2.0f),
                     0.0f, cos(rotation.x - 3.14f / 2.0f)));
 
-                if (useEntityRotation) {
-                    direction = normalize(vec3(transform * vec4(direction, 0.0f)));
-                    right = normalize(vec3(transform * vec4(right, 0.0f)));
-                }
-
                 up = cross(right, direction);
+
+                vec3 globalDirection = direction, globalUp = up;
+
+                if (useEntityRotation) {
+                    globalDirection = normalize(vec3(transform * vec4(direction, 0.0f)));
+                    globalUp = normalize(vec3(transform * vec4(up, 0.0f)));
+                }                
 
                 vec3 globalLocation = location;
                 if (useEntityTranslation) {
@@ -38,9 +40,9 @@ namespace Atlas {
                 }
 
                 if (!thirdPerson)
-                    viewMatrix = lookAt(globalLocation, globalLocation + direction, up);
+                    viewMatrix = lookAt(globalLocation, globalLocation + globalDirection, globalUp);
                 else
-                    viewMatrix = lookAt(globalLocation - direction * thirdPersonDistance, globalLocation, up);
+                    viewMatrix = lookAt(globalLocation - globalDirection * thirdPersonDistance, globalLocation, globalUp);
 
                 invViewMatrix = inverse(viewMatrix);
 

@@ -127,10 +127,7 @@ namespace Atlas {
             bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
                 glm::vec3& intersection);
 
-            bool GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest,
-                glm::vec3& intersection, float max);
-
-            bool GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray, float max);
+            bool GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray);
 
             std::vector<BVHNode>& GetTree();
 
