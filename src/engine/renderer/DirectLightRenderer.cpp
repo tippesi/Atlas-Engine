@@ -119,7 +119,7 @@ namespace Atlas {
             cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
             cloudShadowUniformBuffer.Bind(commandList, 3, 5);
 
-            ivec2 res = ivec2(target->GetWidth(), target->GetHeight());
+            ivec2 res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             int32_t groupSize = 8;
             ivec2 groupCount = res / groupSize;
             groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);

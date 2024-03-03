@@ -29,17 +29,16 @@ namespace Atlas {
                 glslCode.append("#define " + macro + "\n");
             }
 
-            // Extensions have to come first
+            for (const auto& macro : macros) {
+                glslCode.append("#define " + macro + "\n");
+            }
+
             for (const auto& extension : extensions) {
                 for (auto& ifdef : extension.ifdefs)
                     glslCode += ifdef + "\n";
                 glslCode += extension.extension + "\n";
                 for (size_t i = 0; i < extension.ifdefs.size(); i++)
                     glslCode += "#endif\n";
-            }
-
-            for (const auto& macro : macros) {
-                glslCode.append("#define " + macro + "\n");
             }
 
             glslCode.append(code);

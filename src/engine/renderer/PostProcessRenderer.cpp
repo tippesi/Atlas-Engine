@@ -36,6 +36,10 @@ namespace Atlas {
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
+            commandList->ImageMemoryBarrier(target->GetHistory()->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
             if (sharpen.enable) {
                 Graphics::Profiler::BeginQuery("Sharpen");
 
@@ -143,7 +147,7 @@ namespace Atlas {
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
-            if (sharpen.enable) {
+            if (sharpen.enable && !postProcessing.fsr2) {
                 Graphics::Profiler::BeginQuery("Sharpen");
 
                 auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);

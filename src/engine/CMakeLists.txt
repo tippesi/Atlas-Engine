@@ -111,6 +111,12 @@ if (NOT ATLAS_ASSIMP)
 list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
 endif()
 
+if (NOT ATLAS_FSR2)
+list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)FSR2Renderer\.(c(pp)?|h(pp)?)$")
+else()
+set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} fsr2)
+endif()
+
 # Configure linking ###############################################################################
 if(ANDROID)    
     add_library(${PROJECT_NAME} SHARED ${ATLAS_ENGINE_SOURCE_FILES})

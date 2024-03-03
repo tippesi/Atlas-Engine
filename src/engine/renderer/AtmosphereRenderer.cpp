@@ -64,7 +64,7 @@ namespace Atlas {
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(0), 3, 3);
 
-            auto resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;
 
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);

@@ -134,7 +134,7 @@ namespace Atlas {
                 Graphics::Profiler::BeginQuery("Caustics");
 
                 const int32_t groupSize = 8;
-                auto res = ivec2(target->GetWidth(), target->GetHeight());
+                auto res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
                 ivec2 groupCount = res / groupSize;
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
@@ -378,7 +378,7 @@ namespace Atlas {
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                     const int32_t groupSize = 8;
-                    auto res = ivec2(target->GetWidth(), target->GetHeight());
+                    auto res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
                     ivec2 groupCount = res / groupSize;
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);

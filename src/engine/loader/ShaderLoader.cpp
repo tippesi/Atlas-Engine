@@ -20,6 +20,14 @@ namespace Atlas {
             std::filesystem::file_time_type lastModified = std::filesystem::file_time_type::min();
             auto code = ReadShaderFile(path, true, includes, extensions, lastModified);
 
+            // Erase all versioning qualifiers, will be filled automatically
+            std::string removeVersion = "#version";
+            auto pos = code.find(removeVersion);
+            while(pos != std::string::npos) {
+                code.erase(pos, removeVersion.length() + size_t(4));
+                pos = code.find(removeVersion);
+            }
+
             Graphics::ShaderStageFile shaderStageFile;
 
             shaderStageFile.filename = filename;

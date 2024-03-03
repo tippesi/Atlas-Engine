@@ -9,6 +9,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Temporal anti-aliasing");
         ImGui::Checkbox("Enable##TAA", &postProcessing.taa.enable);
         ImGui::SliderFloat("Jitter range", &postProcessing.taa.jitterRange, 0.001f, 0.999f);
+        ImGui::Text("FSR2");
+        ImGui::Checkbox("Enable##FSR2", &postProcessing.fsr2);
         ImGui::Separator();
         ImGui::Text("Sharpen filter");
         ImGui::Checkbox("Enable##Sharpen", &postProcessing.sharpen.enable);
@@ -18,8 +20,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Filmic tonemapping", &postProcessing.filmicTonemapping);
         ImGui::SliderFloat("Saturation", &postProcessing.saturation, 0.0f, 2.0f);
         ImGui::SliderFloat("Contrast", &postProcessing.contrast, 0.0f, 2.0f);
-        ImGui::SliderFloat("Paper white luminance", &postProcessing.paperWhiteLuminance, 0.0f, 300.0f, "%.3f", 2.0f);
-        ImGui::SliderFloat("Maximum screen luminance", &postProcessing.screenMaxLuminance, 0.0f, 2000.0f, "%.3f", 2.0f);
+        ImGui::SliderFloat("Paper white luminance", &postProcessing.paperWhiteLuminance, 0.0f, 300.0f);
+        ImGui::SliderFloat("Maximum screen luminance", &postProcessing.screenMaxLuminance, 0.0f, 2000.0f);
         ImGui::Separator();
         ImGui::Text("Chromatic aberration");
         ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);

@@ -114,3 +114,7 @@ endif()
 if (ATLAS_TESTS)
     add_subdirectory(${TESTS_LOCATION})
 endif()
+
+if (ATLAS_FSR2)
+    add_subdirectory(libs/fsr2)
+endif()
