@@ -95,7 +95,7 @@ namespace Atlas {
 
             void BindBufferOffset(const Ref<MultiBuffer>& buffer, size_t offset, uint32_t set, uint32_t binding);
 
-            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel = 0);
+            void BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, int32_t mipLevel = -1);
 
             void BindImage(const Ref<Image>& image, const Ref<Sampler>& sampler, uint32_t set, uint32_t binding);
 
@@ -168,6 +168,8 @@ namespace Atlas {
 
             void BlitImage(const Ref<Image>& srcImage, const Ref<Image>& dstImage, VkImageBlit blit);
 
+            void ClearImageColor(const Ref<Image>& image, VkClearColorValue clearColor);
+
             void GenerateMipMaps(const Ref<Image>& image);
 
             void BuildBLAS(const Ref<BLAS>& blas, VkAccelerationStructureBuildGeometryInfoKHR& buildInfo);
@@ -198,7 +200,7 @@ namespace Atlas {
             struct DescriptorBindingData {
                 std::pair<Buffer*, uint32_t> buffers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::vector<Buffer*> buffersArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
-                std::pair<Image*, uint32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
+                std::pair<Image*, int32_t> images[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::pair<Image*, Sampler*> sampledImages[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 std::vector<Image*> sampledImagesArray[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 Sampler* samplers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
@@ -230,7 +232,7 @@ namespace Atlas {
                     for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                         for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                             buffers[i][j] = { nullptr, 0u };
-                            images[i][j] = { nullptr, 0u };
+                            images[i][j] = { nullptr, -1 };
                             sampledImages[i][j] = { nullptr, nullptr };
                             sampledImagesArray[i][j] = {};
                             buffersArray[i][j] = {};
@@ -245,7 +247,7 @@ namespace Atlas {
                 void Reset(uint32_t set) {
                     for (uint32_t j = 0; j <  BINDINGS_PER_DESCRIPTOR_SET; j++) {
                         buffers[set][j] = { nullptr, 0u };
-                        images[set][j] = { nullptr, 0u };
+                        images[set][j] = { nullptr, -1 };
                         sampledImages[set][j] = { nullptr, nullptr };
                         sampledImagesArray[set][j] = {};
                         buffersArray[set][j] = {};
@@ -258,7 +260,7 @@ namespace Atlas {
 
                 void ResetBinding(uint32_t set, uint32_t binding) {
                     buffers[set][binding] = { nullptr, 0u };
-                    images[set][binding] = { nullptr, 0u };
+                    images[set][binding] = { nullptr, -1 };
                     sampledImages[set][binding] = { nullptr, nullptr };
                     sampledImagesArray[set][binding] = {};
                     buffersArray[set][binding] = {};

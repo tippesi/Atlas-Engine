@@ -30,6 +30,8 @@ namespace Atlas {
             barrier = Initializers::InitBufferMemoryBarrier(buffer->buffer,
                 buffer->accessMask, newAccessMask);
 
+            buffer->accessMask = newAccessMask;
+
             return *this;
 
         }
@@ -39,6 +41,8 @@ namespace Atlas {
             this->buffer = buffer->GetCurrent();
             barrier = Initializers::InitBufferMemoryBarrier(this->buffer->buffer,
                 this->buffer->accessMask, newAccessMask);
+
+            buffer->GetCurrent()->accessMask = newAccessMask;
 
             return *this;
 
@@ -58,13 +62,29 @@ namespace Atlas {
 
         }
 
+        ImageBarrier::ImageBarrier(Image* image, VkImageLayout newLayout, VkAccessFlags newAccessMask)
+            : newLayout(newLayout), newAccessMask(newAccessMask) {
+
+            Update(image);
+
+        }
+
         ImageBarrier& ImageBarrier::Update(const Ref<Image> &image) {
 
-            this->image = image.get();
+            return Update(image.get());
+
+        }
+
+        ImageBarrier& ImageBarrier::Update(Image* image) {
+
+            this->image = image;
             barrier = Initializers::InitImageMemoryBarrier(image->image, image->layout,
                 newLayout, image->accessMask, newAccessMask, image->aspectFlags);
             barrier.subresourceRange.layerCount = image->layers;
             barrier.subresourceRange.levelCount = image->mipLevels;
+
+            image->accessMask = newAccessMask;
+            image->layout = newLayout;
 
             return *this;
 

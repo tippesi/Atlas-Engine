@@ -16,30 +16,9 @@
 #include <codecvt>
 #include <locale>
 
-// This file is part of the FidelityFX SDK.
-//
-// Copyright (c) 2022-2023 Advanced Micro Devices, Inc. All rights reserved.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 namespace Atlas::Renderer {
 
-#define FSR2_MAX_QUEUED_FRAMES              ( 4)
+#define FSR2_MAX_QUEUED_FRAMES              ( 3)
 #define FSR2_MAX_RESOURCE_COUNT             (64)
 #define FSR2_MAX_STAGING_RESOURCE_COUNT     ( 8)
 #define FSR2_MAX_BARRIERS                   (16)
@@ -55,10 +34,8 @@ namespace Atlas::Renderer {
 	struct FSR2Resource {
 		FfxResourceDescription desc = {};
 		FfxResourceStates state;
-		bool undefined = true;
 
-		Graphics::Image* image = nullptr;
-		VkBuffer buffer = nullptr;
+		Ref<Graphics::Image> image = nullptr;
 
 		bool isDynamic = false;
 	};
@@ -78,7 +55,21 @@ namespace Atlas::Renderer {
 		std::vector<int32_t> freeResources;
 		std::vector<int32_t> dynamicResources;
 
-		std::vector<Ref<Graphics::Image>> images;
+		std::vector<Buffer::UniformBuffer> uniformBuffers;
+		size_t uniformBufferIndex = 0;
+
+		Ref<Graphics::DescriptorPool> descriptorPool;
+
+		Ref<Graphics::Sampler> pointSampler;
+		Ref<Graphics::Sampler> linearSampler;
+
+		std::vector<Graphics::ImageBarrier> imageBarriers;
+		std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+		VkPipelineStageFlags srcStageMask = 0;
+		VkPipelineStageFlags dstStageMask = 0;
+
+		Graphics::GraphicsDevice* device = nullptr;
 
 		int32_t AddResource(const FSR2Resource& resource, bool isDynamic) {
 			int32_t index = 0;
@@ -112,7 +103,15 @@ namespace Atlas::Renderer {
 			dynamicResources.clear();
 		}
 
-		Graphics::GraphicsDevice* device;
+		Buffer::UniformBuffer& GetNextUniformBuffer() {
+			auto index = uniformBufferIndex++;
+
+			if (uniformBufferIndex >= FSR2_UBO_RING_BUFFER_SIZE)
+				uniformBufferIndex = 0;
+
+			return uniformBuffers[index];
+		}
+
 	};
 
 	typedef struct BackendContext_VK {
@@ -127,7 +126,7 @@ namespace Atlas::Renderer {
 			VkDescriptorSet       descriptorSets[FSR2_MAX_QUEUED_FRAMES];
 			uint32_t              descriptorSetIndex;
 			VkPipelineLayout      pipelineLayout;
-			bool                  samplerBindings[2];
+			uint32_t 			  passIndex;
 		} PipelineLayout;
 
 		VkPhysicalDevice        physicalDevice = nullptr;
@@ -136,25 +135,10 @@ namespace Atlas::Renderer {
 		uint32_t                gpuJobCount = 0;
 		FfxGpuJobDescription    gpuJobs[FSR2_MAX_GPU_JOBS] = {};
 
-		VkDescriptorPool        descPool = nullptr;
 		VkDescriptorSetLayout   samplerDescriptorSetLayout = nullptr;
 		VkDescriptorSet         samplerDescriptorSet = nullptr;
 		uint32_t                allocatedPipelineLayoutCount = 0;
 		PipelineLayout          pipelineLayouts[FFX_FSR2_PASS_COUNT] = {};
-		VkSampler               pointSampler = nullptr;
-		VkSampler               linearSampler = nullptr;
-
-		VkDeviceMemory          uboMemory = nullptr;
-		VkMemoryPropertyFlags   uboMemoryProperties = 0;
-		UniformBuffer           uboRingBuffer[FSR2_UBO_RING_BUFFER_SIZE] = {};
-		uint32_t                uboRingBufferIndex = 0;
-
-		VkImageMemoryBarrier    imageMemoryBarriers[FSR2_MAX_BARRIERS] = {};
-		VkBufferMemoryBarrier   bufferMemoryBarriers[FSR2_MAX_BARRIERS] = {};
-		uint32_t                scheduledImageBarrierCount = 0;
-		uint32_t                scheduledBufferBarrierCount = 0;
-		VkPipelineStageFlags    srcStageMask = 0;
-		VkPipelineStageFlags    dstStageMask = 0;
 
 		uint32_t                numDeviceExtensions = 0;
 		VkExtensionProperties* extensionProperties = nullptr;
@@ -189,7 +173,7 @@ namespace Atlas::Renderer {
 		void* scratchBuffer,
 		size_t scratchBufferSize,
 		FSR2Context* userData,
-		VkPhysicalDevice physicalDevice,
+		Graphics::GraphicsDevice* device,
 		PFN_vkGetDeviceProcAddr getDeviceProcAddr) {
 		outInterface->fpGetDeviceCapabilities = GetDeviceCapabilitiesVK;
 		outInterface->fpCreateBackendContext = CreateBackendContextVK;
@@ -206,16 +190,10 @@ namespace Atlas::Renderer {
 
 		BackendContext_VK* context = (BackendContext_VK*)scratchBuffer;
 
-		context->physicalDevice = physicalDevice;
+		context->physicalDevice = device->physicalDevice;
 		context->context = userData;
 
 		return FFX_OK;
-	}
-
-	void setVKObjectName(VkDevice device, VkObjectType objectType, uint64_t object, char* name) {
-		VkDebugUtilsObjectNameInfoEXT s{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr, objectType, object, name };
-
-		vkSetDebugUtilsObjectNameEXT(device, &s);
 	}
 
 	VkFormat getVKFormatFromSurfaceFormat(FfxSurfaceFormat fmt) {
@@ -395,70 +373,6 @@ namespace Atlas::Renderer {
 		}
 	}
 
-	uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, VkMemoryRequirements memRequirements, VkMemoryPropertyFlags requestedProperties, VkMemoryPropertyFlags& outProperties) {
-		AE_ASSERT(NULL != physicalDevice);
-
-		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
-		uint32_t bestCandidate = UINT32_MAX;
-
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-			if ((memRequirements.memoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & requestedProperties)) {
-
-				// if just device-local memory is requested, make sure this is the invisible heap to prevent over-subscribing the local heap
-				if (requestedProperties == VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT && (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
-					continue;
-
-				bestCandidate = i;
-				outProperties = memProperties.memoryTypes[i].propertyFlags;
-
-				// if host-visible memory is requested, check for host coherency as well and if available, return immediately
-				if ((requestedProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
-					return bestCandidate;
-			}
-		}
-
-		return bestCandidate;
-	}
-
-	VkDescriptorBufferInfo accquireDynamicUBO(BackendContext_VK* backendContext, uint32_t size, void* pData) {
-		// the ubo ring buffer is pre-populated with VkBuffer objects of 256-bytes to prevent creating buffers at runtime
-		AE_ASSERT(size <= 256);
-
-		BackendContext_VK::UniformBuffer& ubo = backendContext->uboRingBuffer[backendContext->uboRingBufferIndex];
-
-		VkDescriptorBufferInfo bufferInfo = {};
-
-		bufferInfo.buffer = ubo.bufferResource;
-		bufferInfo.offset = 0;
-		bufferInfo.range = size;
-
-		if (pData) {
-			memcpy(ubo.pData, pData, size);
-
-			// flush mapped range if memory type is not coherant
-			if ((backendContext->uboMemoryProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
-				VkMappedMemoryRange memoryRange;
-				memset(&memoryRange, 0, sizeof(memoryRange));
-
-				memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				memoryRange.memory = backendContext->uboMemory;
-				memoryRange.offset = 256 * backendContext->uboRingBufferIndex;
-				memoryRange.size = size;
-
-				vkFlushMappedMemoryRanges(backendContext->device, 1, &memoryRange);
-			}
-		}
-
-		backendContext->uboRingBufferIndex++;
-
-		if (backendContext->uboRingBufferIndex >= FSR2_UBO_RING_BUFFER_SIZE)
-			backendContext->uboRingBufferIndex = 0;
-
-		return bufferInfo;
-	}
-
 	static uint32_t getDefaultSubgroupSize(const BackendContext_VK* backendContext) {
 		VkPhysicalDeviceVulkan11Properties vulkan11Properties = {};
 		vulkan11Properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
@@ -478,14 +392,9 @@ namespace Atlas::Renderer {
 		return reinterpret_cast<FfxDevice>(vkDevice);
 	}
 
-	FfxCommandList GetCommandListVK(VkCommandBuffer cmdBuf) {
-		AE_ASSERT(NULL != cmdBuf);
-		return reinterpret_cast<FfxCommandList>(cmdBuf);
-	}
-
-	FfxResource GetResource(FfxFsr2Context* context, const Ref<Graphics::Image>& image, const wchar_t* name, FfxResourceStates state) {
+	FfxResource GetResource(FfxFsr2Context* context, Ref<Graphics::Image>& image, const wchar_t* name, FfxResourceStates state) {
 		FfxResource resource = {};
-		resource.resource = reinterpret_cast<void*>(image.get());
+		resource.resource = reinterpret_cast<void*>(&image);
 		resource.state = state;
 		resource.descriptorData = reinterpret_cast<uint64_t>(image->view);
 		resource.description.flags = FFX_RESOURCE_FLAGS_NONE;
@@ -518,50 +427,6 @@ namespace Atlas::Renderer {
 		return resource;
 	}
 
-	VkImage GetVkImage(FfxFsr2Context* context, uint32_t resId) {
-		AE_ASSERT(NULL != context);
-
-		FfxFsr2Context_Private* contextPrivate = (FfxFsr2Context_Private*)(context);
-		BackendContext_VK* backendContext = (BackendContext_VK*)(contextPrivate->contextDescription.callbacks.scratchBuffer);
-		FSR2Context* fsr2Context = backendContext->context;
-
-		int32_t internalIndex = contextPrivate->uavResources[resId].internalIndex;
-		if (internalIndex == -1)
-			return nullptr;
-
-		auto image = fsr2Context->resources[internalIndex].image;
-		return image->image;
-	}
-
-	VkImageView GetVkImageView(FfxFsr2Context* context, uint32_t resId) {
-		AE_ASSERT(NULL != context);
-
-		FfxFsr2Context_Private* contextPrivate = (FfxFsr2Context_Private*)(context);
-		BackendContext_VK* backendContext = (BackendContext_VK*)(contextPrivate->contextDescription.callbacks.scratchBuffer);
-		FSR2Context* fsr2Context = backendContext->context;
-
-		int32_t internalIndex = contextPrivate->uavResources[resId].internalIndex;
-		if (internalIndex == -1)
-			return nullptr;
-
-		auto image = fsr2Context->resources[internalIndex].image;
-		return image->view;
-	}
-
-	VkImageLayout GetVkImageLayout(FfxFsr2Context* context, uint32_t resId) {
-		FfxFsr2Context_Private* contextPrivate = (FfxFsr2Context_Private*)(context);
-		BackendContext_VK* backendContext = (BackendContext_VK*)(contextPrivate->contextDescription.callbacks.scratchBuffer);
-		FSR2Context* fsr2Context = backendContext->context;
-
-		int32_t internalIndex = contextPrivate->uavResources[resId].internalIndex;
-		if (internalIndex == -1)
-			return VK_IMAGE_LAYOUT_UNDEFINED;
-
-		auto& resource = fsr2Context->resources[internalIndex];
-
-		return getVKImageLayoutFromResourceState(resource.state);
-	}
-
 	FfxErrorCode RegisterResourceVK(FfxFsr2Interface* backendInterface, const FfxResource* inFfxResource, FfxResourceInternal* outFfxResourceInternal) {
 		AE_ASSERT(NULL != backendInterface);
 
@@ -578,8 +443,7 @@ namespace Atlas::Renderer {
 		FSR2Resource resource = {
 			.desc = inFfxResource->description,
 			.state = inFfxResource->state,
-			.undefined = false,
-			.image = reinterpret_cast<Graphics::Image*>(inFfxResource->resource)
+			.image = *reinterpret_cast<Ref<Graphics::Image>*>(inFfxResource->resource)
 		};
 		outFfxResourceInternal->internalIndex = fsr2Context->AddResource(resource, true);
 
@@ -668,10 +532,12 @@ namespace Atlas::Renderer {
 	FfxErrorCode CreateBackendContextVK(FfxFsr2Interface* backendInterface, FfxDevice device) {
 		AE_ASSERT(NULL != backendInterface);
 
-		VkDevice vkDevice = reinterpret_cast<VkDevice>(device);
+		auto graphicsDevice = reinterpret_cast<Graphics::GraphicsDevice*>(device);
+		VkDevice vkDevice = graphicsDevice->device;
 
 		// set up some internal resources we need (space for resource views and constant buffers)
 		BackendContext_VK* backendContext = (BackendContext_VK*)backendInterface->scratchBuffer;
+		FSR2Context* fsr2Context = backendContext->context;
 		backendContext->extensionProperties = (VkExtensionProperties*)(backendContext + 1);
 
 		// make sure the extra parameters were already passed in
@@ -690,56 +556,25 @@ namespace Atlas::Renderer {
 		vkEnumerateDeviceExtensionProperties(backendContext->physicalDevice, nullptr, &backendContext->numDeviceExtensions, nullptr);
 		vkEnumerateDeviceExtensionProperties(backendContext->physicalDevice, nullptr, &backendContext->numDeviceExtensions, backendContext->extensionProperties);
 
-		// create descriptor pool
-		VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+		fsr2Context->descriptorPool = graphicsDevice->CreateDescriptorPool({});
 
-		VkDescriptorPoolSize poolSizes[] = {
-			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, FSR2_MAX_IMAGE_VIEWS * FSR2_MAX_BUFFERED_DESCRIPTORS },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, FSR2_MAX_IMAGE_VIEWS * FSR2_MAX_BUFFERED_DESCRIPTORS },
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, FSR2_MAX_SAMPLERS * FSR2_MAX_BUFFERED_DESCRIPTORS  },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, FSR2_MAX_UNIFORM_BUFFERS * FSR2_MAX_BUFFERED_DESCRIPTORS },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, FSR2_MAX_UNIFORM_BUFFERS * FSR2_MAX_BUFFERED_DESCRIPTORS },
+		Graphics::SamplerDesc samplerDesc = {
+			.filter = VK_FILTER_NEAREST,
+			.mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+			.maxLod = 1000,
 		};
+		fsr2Context->pointSampler = graphicsDevice->CreateSampler(samplerDesc);
 
-		descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		descriptorPoolCreateInfo.maxSets = (FSR2_MAX_BUFFERED_DESCRIPTORS * FSR2_MAX_QUEUED_FRAMES);
-		descriptorPoolCreateInfo.poolSizeCount = 5;
-		descriptorPoolCreateInfo.pPoolSizes = poolSizes;
-
-		if (vkCreateDescriptorPool(backendContext->device, &descriptorPoolCreateInfo, nullptr, &backendContext->descPool) != VK_SUCCESS) {
-			return FFX_ERROR_BACKEND_API_ERROR;
-		}
-
-		VkSamplerCreateInfo samplerCreateInfo = {};
-
-		samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerCreateInfo.magFilter = VK_FILTER_NEAREST;
-		samplerCreateInfo.minFilter = VK_FILTER_NEAREST;
-		samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.minLod = -1000;
-		samplerCreateInfo.maxLod = 1000;
-		samplerCreateInfo.maxAnisotropy = 1.0f;
-
-		if (vkCreateSampler(backendContext->device, &samplerCreateInfo, nullptr, &backendContext->pointSampler) != VK_SUCCESS) {
-			return FFX_ERROR_BACKEND_API_ERROR;
-		}
-
-		samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
-		samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-
-		if (vkCreateSampler(backendContext->device, &samplerCreateInfo, nullptr, &backendContext->linearSampler) != VK_SUCCESS) {
-			return FFX_ERROR_BACKEND_API_ERROR;
-		}
+		samplerDesc.filter = VK_FILTER_LINEAR;
+		fsr2Context->linearSampler = graphicsDevice->CreateSampler(samplerDesc);
 
 		{
 			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
 
 			VkDescriptorSetLayoutBinding bindings[] = {
-				{ 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &backendContext->pointSampler },
-				{ 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &backendContext->linearSampler },
+				{ 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &fsr2Context->pointSampler->sampler },
+				{ 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &fsr2Context->linearSampler->sampler },
 			};
 
 			descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -755,7 +590,7 @@ namespace Atlas::Renderer {
 			VkDescriptorSetAllocateInfo allocateInfo = {};
 
 			allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocateInfo.descriptorPool = backendContext->descPool;
+			allocateInfo.descriptorPool = fsr2Context->descriptorPool->GetNativePool();
 			allocateInfo.descriptorSetCount = 1;
 			allocateInfo.pSetLayouts = &backendContext->samplerDescriptorSetLayout;
 
@@ -764,83 +599,15 @@ namespace Atlas::Renderer {
 
 		// allocate ring buffer of uniform buffers
 		{
+			fsr2Context->uniformBuffers.reserve(FSR2_UBO_RING_BUFFER_SIZE);
+
 			for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
-				BackendContext_VK::UniformBuffer& ubo = backendContext->uboRingBuffer[i];
-
-				VkBufferCreateInfo bufferInfo = {};
-
-				bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-				bufferInfo.size = 256;
-				bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-				bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-				if (vkCreateBuffer(backendContext->device, &bufferInfo, NULL, &ubo.bufferResource) != VK_SUCCESS) {
-					return FFX_ERROR_BACKEND_API_ERROR;
-				}
-			}
-
-			// allocate memory block for all uniform buffers
-			VkMemoryRequirements memRequirements = {};
-			vkGetBufferMemoryRequirements(backendContext->device, backendContext->uboRingBuffer[0].bufferResource, &memRequirements);
-
-			VkMemoryPropertyFlags requiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-			VkMemoryAllocateInfo allocInfo{};
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.allocationSize = FSR2_UBO_MEMORY_BLOCK_SIZE;
-			allocInfo.memoryTypeIndex = findMemoryTypeIndex(backendContext->physicalDevice, memRequirements, requiredMemoryProperties, backendContext->uboMemoryProperties);
-
-			if (allocInfo.memoryTypeIndex == UINT32_MAX) {
-				requiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-				allocInfo.memoryTypeIndex = findMemoryTypeIndex(backendContext->physicalDevice, memRequirements, requiredMemoryProperties, backendContext->uboMemoryProperties);
-
-				if (allocInfo.memoryTypeIndex == UINT32_MAX) {
-					return FFX_ERROR_BACKEND_API_ERROR;
-				}
-			}
-
-			VkResult result = vkAllocateMemory(backendContext->device, &allocInfo, nullptr, &backendContext->uboMemory);
-
-			if (result != VK_SUCCESS) {
-				switch (result) {
-				case(VK_ERROR_OUT_OF_HOST_MEMORY):
-				case(VK_ERROR_OUT_OF_DEVICE_MEMORY):
-					return FFX_ERROR_OUT_OF_MEMORY;
-				default:
-					return FFX_ERROR_BACKEND_API_ERROR;
-				}
-			}
-
-			// map the memory block 
-			uint8_t* pData = nullptr;
-
-			if (vkMapMemory(backendContext->device, backendContext->uboMemory, 0, FSR2_UBO_MEMORY_BLOCK_SIZE, 0, reinterpret_cast<void**>(&pData)) != VK_SUCCESS) {
-				return FFX_ERROR_BACKEND_API_ERROR;
-			}
-
-			// bind each 256-byte block to the ubos
-			for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
-				BackendContext_VK::UniformBuffer& ubo = backendContext->uboRingBuffer[i];
-
-				// get the buffer memory requirements for each buffer object to silence validation errors
-				VkMemoryRequirements memRequirements = {};
-				vkGetBufferMemoryRequirements(backendContext->device, ubo.bufferResource, &memRequirements);
-
-				ubo.pData = pData + 256 * i;
-
-				if (vkBindBufferMemory(backendContext->device, ubo.bufferResource, backendContext->uboMemory, 256 * i) != VK_SUCCESS) {
-					return FFX_ERROR_BACKEND_API_ERROR;
-				}
+				fsr2Context->uniformBuffers.emplace_back(256);
 			}
 		}
 
 		backendContext->gpuJobCount = 0;
-		backendContext->scheduledImageBarrierCount = 0;
-		backendContext->scheduledBufferBarrierCount = 0;
 		backendContext->allocatedPipelineLayoutCount = 0;
-		backendContext->srcStageMask = 0;
-		backendContext->dstStageMask = 0;
-		backendContext->uboRingBufferIndex = 0;
 
 		return FFX_OK;
 	}
@@ -850,30 +617,9 @@ namespace Atlas::Renderer {
 
 		BackendContext_VK* backendContext = (BackendContext_VK*)backendInterface->scratchBuffer;
 
-		for (uint32_t i = 0; i < FSR2_UBO_RING_BUFFER_SIZE; i++) {
-			BackendContext_VK::UniformBuffer& ubo = backendContext->uboRingBuffer[i];
-
-			vkDestroyBuffer(backendContext->device, ubo.bufferResource, nullptr);
-
-			ubo.bufferResource = nullptr;
-			ubo.pData = nullptr;
-		}
-
-		vkUnmapMemory(backendContext->device, backendContext->uboMemory);
-		vkFreeMemory(backendContext->device, backendContext->uboMemory, nullptr);
-		backendContext->uboMemory = nullptr;
-
-		vkDestroyDescriptorPool(backendContext->device, backendContext->descPool, nullptr);
-		backendContext->descPool = nullptr;
-
 		vkDestroyDescriptorSetLayout(backendContext->device, backendContext->samplerDescriptorSetLayout, nullptr);
 		backendContext->samplerDescriptorSet = nullptr;
 		backendContext->samplerDescriptorSetLayout = nullptr;
-
-		vkDestroySampler(backendContext->device, backendContext->pointSampler, nullptr);
-		vkDestroySampler(backendContext->device, backendContext->linearSampler, nullptr);
-		backendContext->pointSampler = nullptr;
-		backendContext->linearSampler = nullptr;
 
 		if (backendContext->device != nullptr) {
 
@@ -902,39 +648,28 @@ namespace Atlas::Renderer {
 
 		AE_ASSERT(createResourceDescription->resourceDescription.type != FFX_RESOURCE_TYPE_BUFFER);
 
-		switch (createResourceDescription->resourceDescription.type) {
-		case FFX_RESOURCE_TYPE_TEXTURE1D:
-		case FFX_RESOURCE_TYPE_TEXTURE2D:
-		case FFX_RESOURCE_TYPE_TEXTURE3D:
-		{
-			auto mipLevels = createResourceDescription->resourceDescription.mipCount;
+		auto mipLevels = createResourceDescription->resourceDescription.mipCount;
 
-			Graphics::ImageDesc desc = {
-				.usageFlags = getVKImageUsageFlagsFromResourceUsage(createResourceDescription->usage),
-				.type = GetImageTypeFromResourceType(createResourceDescription->resourceDescription.type),
-				.width = createResourceDescription->resourceDescription.width,
-				.height = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE1D ? 1 : createResourceDescription->resourceDescription.height,
-				.depth = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE3D ? createResourceDescription->resourceDescription.depth : 1,
-				.mipLevels = mipLevels,
-				.format = getVKFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format),
-				.mipMapping = mipLevels == 0 || mipLevels > 1,
-				.data = createResourceDescription->initData,
-			};
+		Graphics::ImageDesc desc = {
+			.usageFlags = getVKImageUsageFlagsFromResourceUsage(createResourceDescription->usage),
+			.type = GetImageTypeFromResourceType(createResourceDescription->resourceDescription.type),
+			.width = createResourceDescription->resourceDescription.width,
+			.height = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE1D ? 1 : createResourceDescription->resourceDescription.height,
+			.depth = createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_TEXTURE3D ? createResourceDescription->resourceDescription.depth : 1,
+			.mipLevels = mipLevels,
+			.format = getVKFormatFromSurfaceFormat(createResourceDescription->resourceDescription.format),
+			.mipMapping = mipLevels == 0 || mipLevels > 1,
+			.data = createResourceDescription->initData,
+		};
 
-			auto expectedDataSize = Graphics::GetFormatSize(desc.format) * desc.depth * desc.width * desc.height;
-			AE_ASSERT(desc.data == nullptr || createResourceDescription->initDataSize == expectedDataSize);
+		auto expectedDataSize = Graphics::GetFormatSize(desc.format) * desc.depth * desc.width * desc.height;
+		AE_ASSERT(desc.data == nullptr || createResourceDescription->initDataSize == expectedDataSize);
 
-			auto image = fsr2Context->device->CreateImage(desc);
-			fsr2Context->images.push_back(image);
+		auto image = fsr2Context->device->CreateImage(desc);
+		AE_ASSERT(createResourceDescription->resourceDescription.mipCount == 0 || createResourceDescription->resourceDescription.mipCount == image->mipLevels);
 
-			AE_ASSERT(createResourceDescription->resourceDescription.mipCount == 0 || createResourceDescription->resourceDescription.mipCount == image->mipLevels);
-
-			resource.image = image.get();
-			resource.desc.mipCount = std::max(1u, image->mipLevels);
-			break;
-		}
-		default:;
-		}
+		resource.image = image;
+		resource.desc.mipCount = std::max(1u, image->mipLevels);
 
 		outResource->internalIndex = fsr2Context->AddResource(resource, false);
 
@@ -990,60 +725,39 @@ namespace Atlas::Renderer {
 		FSR2Context* fsr2Context = backendContext->context;
 		auto& fsr2Resource = fsr2Context->resources[resource->internalIndex];
 
-		if (fsr2Resource.desc.type == FFX_RESOURCE_TYPE_BUFFER) {
-			AE_ASSERT(false);
-		}
-		else {
-			auto image = fsr2Resource.image;
-			VkImage vkResource = fsr2Resource.image->image;
-			VkImageMemoryBarrier* barrier = &backendContext->imageMemoryBarriers[backendContext->scheduledImageBarrierCount];
+		AE_ASSERT(fsr2Resource.desc.type != FFX_RESOURCE_TYPE_BUFFER);
 
-			FfxResourceStates& curState = fsr2Resource.state;
+		auto image = fsr2Resource.image;
+		FfxResourceStates& curState = fsr2Resource.state;
 
-			VkImageSubresourceRange range;
-			range.aspectMask = image->aspectFlags;
-			range.baseMipLevel = 0;
-			range.levelCount = image->mipLevels;
-			range.baseArrayLayer = 0;
-			range.layerCount = 1;
+		auto newLayout = getVKImageLayoutFromResourceState(newState);
+		auto newAccessMask = getVKAccessFlagsFromResourceState(newState);
 
-			barrier->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-			barrier->pNext = nullptr;
-			barrier->srcAccessMask = getVKAccessFlagsFromResourceState(curState);
-			barrier->dstAccessMask = getVKAccessFlagsFromResourceState(newState);
-			barrier->oldLayout = fsr2Resource.undefined ? VK_IMAGE_LAYOUT_UNDEFINED : getVKImageLayoutFromResourceState(curState);
-			barrier->newLayout = getVKImageLayoutFromResourceState(newState);
-			barrier->srcQueueFamilyIndex = 0;
-			barrier->dstQueueFamilyIndex = 0;
-			barrier->image = vkResource;
-			barrier->subresourceRange = range;
+		fsr2Context->imageBarriers.emplace_back(image, newLayout, newAccessMask);
 
-			backendContext->srcStageMask |= getVKPipelineStageFlagsFromResourceState(curState);
-			backendContext->dstStageMask |= getVKPipelineStageFlagsFromResourceState(newState);
+		fsr2Context->srcStageMask |= getVKPipelineStageFlagsFromResourceState(curState);
+		fsr2Context->dstStageMask |= getVKPipelineStageFlagsFromResourceState(newState);
 
-			curState = newState;
-
-			++backendContext->scheduledImageBarrierCount;
-		}
-
-		if (fsr2Resource.undefined)
-			fsr2Resource.undefined = false;
+		curState = newState;
 	}
 
-	void flushBarriers(BackendContext_VK* backendContext, VkCommandBuffer vkCommandBuffer) {
+	void flushBarriers(BackendContext_VK* backendContext, Graphics::CommandList* commandList) {
 		AE_ASSERT(NULL != backendContext);
-		AE_ASSERT(NULL != vkCommandBuffer);
+		AE_ASSERT(NULL != commandList);
 
-		if (backendContext->scheduledImageBarrierCount > 0 || backendContext->scheduledBufferBarrierCount > 0) {
-			vkCmdPipelineBarrier(vkCommandBuffer, backendContext->srcStageMask, backendContext->dstStageMask, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, backendContext->scheduledBufferBarrierCount, backendContext->bufferMemoryBarriers, backendContext->scheduledImageBarrierCount, backendContext->imageMemoryBarriers);
-			backendContext->scheduledImageBarrierCount = 0;
-			backendContext->scheduledBufferBarrierCount = 0;
-			backendContext->srcStageMask = 0;
-			backendContext->dstStageMask = 0;
+		FSR2Context* fsr2Context = backendContext->context;
+
+		if (!fsr2Context->imageBarriers.empty() || !fsr2Context->bufferBarriers.empty()) {
+			commandList->PipelineBarrier(fsr2Context->imageBarriers, fsr2Context->bufferBarriers, fsr2Context->srcStageMask, fsr2Context->dstStageMask);
+
+			fsr2Context->imageBarriers.clear();
+			fsr2Context->bufferBarriers.clear();
+			fsr2Context->srcStageMask = 0;
+			fsr2Context->dstStageMask = 0;
 		}
 	}
 
-	static FfxErrorCode executeGpuJobCompute(BackendContext_VK* backendContext, FfxGpuJobDescription* job, VkCommandBuffer vkCommandBuffer) {
+	static FfxErrorCode executeGpuJobCompute(BackendContext_VK* backendContext, FfxGpuJobDescription* job, Graphics::CommandList* commandList) {
 		uint32_t               imageInfoIndex = 0;
 		uint32_t               bufferInfoIndex = 0;
 		uint32_t               descriptorWriteIndex = 0;
@@ -1077,6 +791,10 @@ namespace Atlas::Renderer {
 
 			AE_ASSERT(job->computeJobDescriptor.uavMip[uav] == 0 || !image->mipMapViews.empty());
 
+			auto binding = job->computeJobDescriptor.pipeline.uavResourceBindings[uav].slotIndex;
+			auto mipLevel = job->computeJobDescriptor.uavMip[uav];
+			commandList->BindImage(image, 1, binding, image->mipMapViews.empty() ? -1 : mipLevel);
+
 			imageInfoIndex++;
 			descriptorWriteIndex++;
 		}
@@ -1086,6 +804,7 @@ namespace Atlas::Renderer {
 			addBarrier(backendContext, &job->computeJobDescriptor.srvs[srv], FFX_RESOURCE_STATE_COMPUTE_READ);
 
 			const auto& fsr2Resource = fsr2Context->resources[job->computeJobDescriptor.srvs[srv].internalIndex];
+			const auto image = fsr2Resource.image;
 
 			writeDatas[descriptorWriteIndex] = {};
 			writeDatas[descriptorWriteIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1099,6 +818,9 @@ namespace Atlas::Renderer {
 			imageInfos[imageInfoIndex] = {};
 			imageInfos[imageInfoIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfos[imageInfoIndex].imageView = fsr2Resource.image->view;
+
+			auto binding = job->computeJobDescriptor.pipeline.srvResourceBindings[srv].slotIndex;
+			commandList->BindImage(image, 1, binding);
 
 			imageInfoIndex++;
 			descriptorWriteIndex++;
@@ -1115,22 +837,36 @@ namespace Atlas::Renderer {
 			writeDatas[descriptorWriteIndex].dstBinding = job->computeJobDescriptor.pipeline.cbResourceBindings[i].slotIndex;
 			writeDatas[descriptorWriteIndex].dstArrayElement = 0;
 
-			bufferInfos[bufferInfoIndex] = accquireDynamicUBO(backendContext, job->computeJobDescriptor.cbs[i].uint32Size * sizeof(uint32_t), job->computeJobDescriptor.cbs[i].data);
+			auto& buffer = fsr2Context->GetNextUniformBuffer();
+			buffer.SetData(job->computeJobDescriptor.cbs[i].data, 0, job->computeJobDescriptor.cbs[i].uint32Size * sizeof(uint32_t));
+
+			bufferInfos[bufferInfoIndex].offset = 0;
+			bufferInfos[bufferInfoIndex].buffer = buffer.Get()->GetCurrent()->buffer;
+			bufferInfos[bufferInfoIndex].range = job->computeJobDescriptor.cbs[i].uint32Size * sizeof(uint32_t);
 
 			dynamicOffsets[bufferInfoIndex] = 0;
+
+			auto binding = job->computeJobDescriptor.pipeline.cbResourceBindings[i].slotIndex;
+			buffer.Bind(commandList, 1, binding);
 
 			bufferInfoIndex++;
 			descriptorWriteIndex++;
 		}
 
+		commandList->BindSampler(fsr2Context->pointSampler, 0, 0);
+		commandList->BindSampler(fsr2Context->linearSampler, 0, 1);
+
 		// insert all the barriers 
-		flushBarriers(backendContext, vkCommandBuffer);
+		flushBarriers(backendContext, commandList);
 
 		// update all uavs and srvs
-		vkUpdateDescriptorSets(backendContext->device, descriptorWriteIndex, writeDatas, 0, nullptr);
+		// vkUpdateDescriptorSets(backendContext->device, descriptorWriteIndex, writeDatas, 0, nullptr);
+
+		const auto& pipeline = fsr2Context->passes[pipelineLayout->passIndex].pipeline;
+		commandList->BindPipeline(pipeline);
 
 		// bind pipeline
-		vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, reinterpret_cast<VkPipeline>(job->computeJobDescriptor.pipeline.pipeline));
+		// vkCmdBindPipeline(commandList->commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->pipeline);
 
 		// bind descriptor sets 
 		VkDescriptorSet sets[] = {
@@ -1138,10 +874,11 @@ namespace Atlas::Renderer {
 			pipelineLayout->descriptorSets[pipelineLayout->descriptorSetIndex],
 		};
 
-		vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout->pipelineLayout, 0, 2, sets, bufferInfoIndex, dynamicOffsets);
+		// vkCmdBindDescriptorSets(commandList->commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout->pipelineLayout, 0, 2, sets, bufferInfoIndex, dynamicOffsets);
 
 		// dispatch
-		vkCmdDispatch(vkCommandBuffer, job->computeJobDescriptor.dimensions[0], job->computeJobDescriptor.dimensions[1], job->computeJobDescriptor.dimensions[2]);
+		//vkCmdDispatch(commandList->commandBuffer, job->computeJobDescriptor.dimensions[0], job->computeJobDescriptor.dimensions[1], job->computeJobDescriptor.dimensions[2]);
+		commandList->Dispatch( job->computeJobDescriptor.dimensions[0], job->computeJobDescriptor.dimensions[1], job->computeJobDescriptor.dimensions[2]);
 
 		// move to another descriptor set for the next compute render job so that we don't overwrite descriptors in-use
 		pipelineLayout->descriptorSetIndex++;
@@ -1152,7 +889,7 @@ namespace Atlas::Renderer {
 		return FFX_OK;
 	}
 
-	static FfxErrorCode executeGpuJobCopy(BackendContext_VK* backendContext, FfxGpuJobDescription* job, VkCommandBuffer vkCommandBuffer) {
+	static FfxErrorCode executeGpuJobCopy(BackendContext_VK* backendContext, FfxGpuJobDescription* job, Graphics::CommandList* commandList) {
 
 		FSR2Context* fsr2Context = backendContext->context;
 		const auto& fsr2ResourceSrc = fsr2Context->resources[job->copyJobDescriptor.src.internalIndex];
@@ -1160,7 +897,7 @@ namespace Atlas::Renderer {
 
 		addBarrier(backendContext, &job->copyJobDescriptor.src, FFX_RESOURCE_STATE_COPY_SRC);
 		addBarrier(backendContext, &job->copyJobDescriptor.dst, FFX_RESOURCE_STATE_COPY_DEST);
-		flushBarriers(backendContext, vkCommandBuffer);
+		flushBarriers(backendContext, commandList);
 
 		if (fsr2ResourceSrc.desc.type == FFX_RESOURCE_TYPE_BUFFER && fsr2ResourceDst.desc.type == FFX_RESOURCE_TYPE_BUFFER) {
 			AE_ASSERT(false);
@@ -1202,13 +939,13 @@ namespace Atlas::Renderer {
 				copyRegion.extent = extent;
 			}
 
-			vkCmdCopyImage(vkCommandBuffer, vkResourceSrc, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkResourceDst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, fsr2ResourceSrc.desc.mipCount, imageCopies);
+			vkCmdCopyImage(commandList->commandBuffer, vkResourceSrc, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkResourceDst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, fsr2ResourceSrc.desc.mipCount, imageCopies);
 		}
 
 		return FFX_OK;
 	}
 
-	static FfxErrorCode executeGpuJobClearFloat(BackendContext_VK* backendContext, FfxGpuJobDescription* job, VkCommandBuffer vkCommandBuffer) {
+	static FfxErrorCode executeGpuJobClearFloat(BackendContext_VK* backendContext, FfxGpuJobDescription* job, Graphics::CommandList* commandList) {
 		uint32_t idx = job->clearJobDescriptor.target.internalIndex;
 
 		FSR2Context* fsr2Context = backendContext->context;
@@ -1216,31 +953,22 @@ namespace Atlas::Renderer {
 
 		if (fsr2Resource.desc.type != FFX_RESOURCE_TYPE_BUFFER) {
 			addBarrier(backendContext, &job->clearJobDescriptor.target, FFX_RESOURCE_STATE_COPY_DEST);
-			flushBarriers(backendContext, vkCommandBuffer);
+			flushBarriers(backendContext, commandList);
 
-			VkImage vkResource = fsr2Resource.image->image;
+			VkClearColorValue clearColor = {};
 
-			VkClearColorValue clearColorValue = {};
+			clearColor.float32[0] = job->clearJobDescriptor.color[0];
+			clearColor.float32[1] = job->clearJobDescriptor.color[1];
+			clearColor.float32[2] = job->clearJobDescriptor.color[2];
+			clearColor.float32[3] = job->clearJobDescriptor.color[3];
 
-			clearColorValue.float32[0] = job->clearJobDescriptor.color[0];
-			clearColorValue.float32[1] = job->clearJobDescriptor.color[1];
-			clearColorValue.float32[2] = job->clearJobDescriptor.color[2];
-			clearColorValue.float32[3] = job->clearJobDescriptor.color[3];
-
-			VkImageSubresourceRange range;
-			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			range.baseMipLevel = 0;
-			range.levelCount = fsr2Resource.desc.mipCount;
-			range.baseArrayLayer = 0;
-			range.layerCount = 1;
-
-			vkCmdClearColorImage(vkCommandBuffer, vkResource, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColorValue, 1, &range);
+			commandList->ClearImageColor(fsr2Resource.image, clearColor);
 		}
 
 		return FFX_OK;
 	}
 
-	FfxErrorCode ExecuteGpuJobsVK(FfxFsr2Interface* backendInterface, FfxCommandList commandList) {
+	FfxErrorCode ExecuteGpuJobsVK(FfxFsr2Interface* backendInterface, FfxCommandList ffxCommandList) {
 		AE_ASSERT(NULL != backendInterface);
 
 		BackendContext_VK* backendContext = (BackendContext_VK*)backendInterface->scratchBuffer;
@@ -1250,22 +978,22 @@ namespace Atlas::Renderer {
 		// execute all renderjobs
 		for (uint32_t i = 0; i < backendContext->gpuJobCount; ++i) {
 			FfxGpuJobDescription* gpuJob = &backendContext->gpuJobs[i];
-			VkCommandBuffer vkCommandBuffer = reinterpret_cast<VkCommandBuffer>(commandList);
+			Graphics::CommandList* commandList = reinterpret_cast<Graphics::CommandList*>(ffxCommandList);
 
 			switch (gpuJob->jobType) {
 			case FFX_GPU_JOB_CLEAR_FLOAT:
 			{
-				errorCode = executeGpuJobClearFloat(backendContext, gpuJob, vkCommandBuffer);
+				errorCode = executeGpuJobClearFloat(backendContext, gpuJob, commandList);
 				break;
 			}
 			case FFX_GPU_JOB_COPY:
 			{
-				errorCode = executeGpuJobCopy(backendContext, gpuJob, vkCommandBuffer);
+				errorCode = executeGpuJobCopy(backendContext, gpuJob, commandList);
 				break;
 			}
 			case FFX_GPU_JOB_COMPUTE:
 			{
-				errorCode = executeGpuJobCompute(backendContext, gpuJob, vkCommandBuffer);
+				errorCode = executeGpuJobCompute(backendContext, gpuJob, commandList);
 				break;
 			}
 			default:;
@@ -1402,7 +1130,7 @@ namespace Atlas::Renderer {
 		for (uint32_t i = 0; i < FSR2_MAX_QUEUED_FRAMES; i++) {
 			VkDescriptorSetAllocateInfo allocateInfo = {};
 			allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocateInfo.descriptorPool = backendContext->descPool;
+			allocateInfo.descriptorPool = fsr2Context->descriptorPool->GetNativePool();
 			allocateInfo.descriptorSetCount = 1;
 			allocateInfo.pSetLayouts = &pipelineLayout.descriptorSetLayout;
 
@@ -1415,23 +1143,21 @@ namespace Atlas::Renderer {
 		VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSizeCreateInfo = {};
 
 		if (canForceWave64) {
-
 			subgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
 			subgroupSizeCreateInfo.requiredSubgroupSize = 64;
 
 			shaderStageCreateInfo.pNext = &subgroupSizeCreateInfo;
 		}
 
-		variant->sets[0].layout->layout = backendContext->samplerDescriptorSetLayout;
+		// variant->sets[0].layout->layout = backendContext->samplerDescriptorSetLayout;
 
 		Graphics::ComputePipelineDesc pipelineDesc = {
 			.shader = variant
 		};
 		fsr2Pass.pipeline = fsr2Context->device->CreatePipeline(pipelineDesc);
 
+		pipelineLayout.passIndex = pass;
 		pipelineLayout.pipelineLayout = fsr2Pass.pipeline->layout;
-		pipelineLayout.samplerBindings[0] = variant->sets[0].bindingCount > 0 && variant->sets[0].bindings[0].valid;
-		pipelineLayout.samplerBindings[1] = variant->sets[0].bindingCount > 0 && variant->sets[0].bindings[1].valid;
 
 		outPipeline->pipeline = reinterpret_cast<FfxPipeline>(fsr2Pass.pipeline->pipeline);
 		outPipeline->rootSignature = reinterpret_cast<FfxRootSignature>(&pipelineLayout);
@@ -1499,9 +1225,9 @@ namespace Atlas::Renderer {
 		auto targetData = target->GetData(FULL_RES);
 
 		auto colorImage = target->lightingTexture.image;
-		auto const velocityImage = target->GetVelocity()->image;
-		const auto depthImage = targetData->depthTexture->image;
-		const auto outputImage = target->GetLastHistory()->image;
+		auto velocityImage = target->GetVelocity()->image;
+		auto depthImage = targetData->depthTexture->image;
+		auto outputImage = target->GetLastHistory()->image;
 
 		std::vector<Graphics::BufferBarrier> bufferBarriers;
 		std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -1509,7 +1235,7 @@ namespace Atlas::Renderer {
 		commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
 		FfxFsr2DispatchDescription dispatchParameters = {};
-		dispatchParameters.commandList = GetCommandListVK(commandList->commandBuffer);
+		dispatchParameters.commandList = commandList;
 		dispatchParameters.color = GetResource(&context, colorImage, L"FSR2_InputColor", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.depth = GetResource(&context, depthImage, L"FSR2_InputDepth", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.motionVectors = GetResource(&context, velocityImage, L"FSR2_InputMotionVectors", FFX_RESOURCE_STATE_COMPUTE_READ);
@@ -1572,10 +1298,10 @@ namespace Atlas::Renderer {
 
 		const size_t scratchBufferSize = Fsr2GetScratchMemorySizeVK(device->physicalDevice);
 		void* scratchBuffer = malloc(scratchBufferSize);
-		FfxErrorCode errorCode = Fsr2GetInterfaceVK(&initializationParameters.callbacks, scratchBuffer, scratchBufferSize, fsr2Context, device->physicalDevice, vkGetDeviceProcAddr);
+		FfxErrorCode errorCode = Fsr2GetInterfaceVK(&initializationParameters.callbacks, scratchBuffer, scratchBufferSize, fsr2Context, device, vkGetDeviceProcAddr);
 		AE_ASSERT(errorCode == FFX_OK);
 
-		initializationParameters.device = GetDeviceVK(device->device);
+		initializationParameters.device = device;
 		initializationParameters.displaySize.width = uint32_t(target->GetWidth());
 		initializationParameters.displaySize.height = uint32_t(target->GetHeight());
 		initializationParameters.maxRenderSize.width = uint32_t(target->GetScaledWidth());
