@@ -88,12 +88,20 @@ namespace Atlas {
 
             auto& taa = scene->postProcessing.taa;
             if (taa.enable) {
+                vec2 jitter = vec2(0.0f);
 #ifndef AE_FSR2
-                auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
                 jitter.x /= (float)target->GetScaledWidth();
                 jitter.y /= (float)target->GetScaledHeight();
 #else
-                vec2 jitter = fsr2Renderer.GetJitter(target, frameCount);
+                if (scene->postProcessing.fsr2) {
+                    jitter = fsr2Renderer.GetJitter(target, frameCount);
+                }
+                else {
+                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                    jitter.x /= (float)target->GetScaledWidth();
+                    jitter.y /= (float)target->GetScaledHeight();
+                }
 #endif
 
                 camera.Jitter(jitter * taa.jitterRange);
@@ -897,7 +905,7 @@ namespace Atlas {
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
                 .frameCount = frameCount,
-                .mipLodBias = -1.0f / target->GetScalingFactor()
+                .mipLodBias = -1.0f / target->GetScalingFactor() - scene->postProcessing.mipBias
             };
 
             auto frustumPlanes = camera.frustum.GetPlanes();

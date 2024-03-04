@@ -17,9 +17,9 @@ namespace Atlas::Renderer {
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
         targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
 
-        historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        historyTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        swapHistoryTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
@@ -152,8 +152,8 @@ namespace Atlas::Renderer {
         targetData.Resize(ivec2(scaledWidth, scaledHeight));
 
         // We have to also resize the other part of the history
-        historyTexture.Resize(width, height);
-        swapHistoryTexture.Resize(width, height);
+        historyTexture.Resize(scaledWidth, scaledHeight);
+        swapHistoryTexture.Resize(scaledWidth, scaledHeight);
         lightingTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
         outputTexture.Resize(width, height);

@@ -11,6 +11,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Jitter range", &postProcessing.taa.jitterRange, 0.001f, 0.999f);
         ImGui::Text("FSR2");
         ImGui::Checkbox("Enable##FSR2", &postProcessing.fsr2);
+        ImGui::DragFloat("Mip bias##FSR2", &postProcessing.mipBias, 0.05f, -5.0f, 5.0f);
         ImGui::Separator();
         ImGui::Text("Sharpen filter");
         ImGui::Checkbox("Enable##Sharpen", &postProcessing.sharpen.enable);

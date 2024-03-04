@@ -825,7 +825,7 @@ namespace Atlas::Renderer {
 		auto colorImage = target->lightingTexture.image;
 		auto velocityImage = target->GetVelocity()->image;
 		auto depthImage = targetData->depthTexture->image;
-		auto outputImage = target->GetLastHistory()->image;
+		auto outputImage = target->hdrTexture.image;
 
 		std::vector<Graphics::BufferBarrier> bufferBarriers;
 		std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -847,7 +847,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
 		dispatchParameters.reset = false;
-		dispatchParameters.enableSharpening = false;
+		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
 		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;
 		dispatchParameters.preExposure = 1.0f;
@@ -859,6 +859,9 @@ namespace Atlas::Renderer {
 
 		FfxErrorCode errorCode = ffxFsr2ContextDispatch(&context, &dispatchParameters);
 		AE_ASSERT(errorCode == FFX_OK);
+
+		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT);
 
 	}
 

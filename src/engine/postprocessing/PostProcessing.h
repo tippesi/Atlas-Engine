@@ -24,6 +24,7 @@ namespace Atlas {
             bool filmicTonemapping = false;
 
             bool fsr2 = true;
+            float mipBias = 0.0f;
 
             TAA taa;
             Vignette vignette;
