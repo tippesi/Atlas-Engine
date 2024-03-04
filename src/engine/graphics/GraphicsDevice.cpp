@@ -29,7 +29,9 @@ namespace Atlas {
                 VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                 VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                 VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                VK_EXT_DEBUG_MARKER_EXTENSION_NAME
+                VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+                VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
+                VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #endif
@@ -690,8 +692,6 @@ namespace Atlas {
 
             int32_t score = 0;
 
-            
-
             VkPhysicalDeviceProperties physicalDeviceProperties;
             VkPhysicalDeviceFeatures physicalDeviceFeatures;
             vkGetPhysicalDeviceProperties(device, &physicalDeviceProperties);
@@ -929,6 +929,8 @@ namespace Atlas {
 
             accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
             rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+            subgroupSizeControlProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
+
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
             deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
@@ -940,6 +942,8 @@ namespace Atlas {
                 propertiesBuilder.Append(rayTracingPipelineProperties);
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
                 propertiesBuilder.Append(accelerationStructureProperties);
+            if (supportedExtensions.contains(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME))
+                propertiesBuilder.Append(subgroupSizeControlProperties);
 
             vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
@@ -991,6 +995,10 @@ namespace Atlas {
 
             if (supportedExtensions.contains(VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
                 support.debugMarker = true;
+            }
+
+            if (supportedExtensions.contains(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
+                support.shaderFloat16 = true;
             }
 
 #ifdef AE_BINDLESS

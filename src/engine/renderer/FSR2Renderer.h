@@ -27,7 +27,7 @@ namespace Atlas::Renderer {
 
         void GenerateShaders();
 
-        FfxFsr2ContextDescription initializationParameters = {};
+        FfxFsr2ContextDescription initParams = {};
         FfxFsr2Context context;
 
         std::vector<Ref<Graphics::Shader>> shaders;

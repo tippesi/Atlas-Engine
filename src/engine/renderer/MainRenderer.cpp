@@ -63,10 +63,11 @@ namespace Atlas {
             volumetricCloudRenderer.Init(device);
             volumetricRenderer.Init(device);
             taaRenderer.Init(device);
-            fsr2Renderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
-
+#ifdef AE_FSR2
+            fsr2Renderer.Init(device);
+#endif
             textRenderer.Init(device);
             textureRenderer.Init(device);
 
@@ -87,11 +88,13 @@ namespace Atlas {
 
             auto& taa = scene->postProcessing.taa;
             if (taa.enable) {
-                //auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-                //jitter.x /= (float)target->GetScaledWidth();
-                //jitter.y /= (float)target->GetScaledHeight();
-
+#ifndef AE_FSR2
+                auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                jitter.x /= (float)target->GetScaledWidth();
+                jitter.y /= (float)target->GetScaledHeight();
+#else
                 vec2 jitter = fsr2Renderer.GetJitter(target, frameCount);
+#endif
 
                 camera.Jitter(jitter * taa.jitterRange);
             }
@@ -351,12 +354,16 @@ namespace Atlas {
                 RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
             {
+#ifdef AE_FSR2
                 if (scene->postProcessing.fsr2) {
                     fsr2Renderer.Render(target, scene, commandList);
                 }
                 else {
                     taaRenderer.Render(target, scene, commandList);
                 }
+#else
+                taaRenderer.Render(target, scene, commandList);
+#endif
 
                 target->Swap();
 

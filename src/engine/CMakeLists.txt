@@ -103,18 +103,19 @@ foreach(SOURCE_FILE IN ITEMS ${ATLAS_ENGINE_SOURCE_FILES})
 endforeach()
 
 if (ATLAS_EXPORT_MAIN)
-set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp CACHE INTERNAL "Make main global")
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.cpp$")
+    set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp CACHE INTERNAL "Make main global")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.cpp$")
 endif()
 
 if (NOT ATLAS_ASSIMP)
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
 endif()
 
 if (NOT ATLAS_FSR2)
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)FSR2Renderer\.(c(pp)?|h(pp)?)$")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)FSR2Renderer\.(c(pp)?|h(pp)?)$")
 else()
-set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} fsr2)
+    set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} fsr2)
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_FSR2)
 endif()
 
 # Configure linking ###############################################################################

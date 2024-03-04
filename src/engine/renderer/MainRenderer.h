@@ -176,7 +176,6 @@ namespace Atlas {
             IndirectLightRenderer indirectLightRenderer;
 
             TemporalAARenderer taaRenderer;
-            FSR2Renderer fsr2Renderer;
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
             GBufferDownscaleRenderer downscaleRenderer;
@@ -187,6 +186,9 @@ namespace Atlas {
             SSSRenderer sssRenderer;
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
+#ifdef AE_FSR2
+            FSR2Renderer fsr2Renderer;
+#endif
 
             RenderList renderList;
 
