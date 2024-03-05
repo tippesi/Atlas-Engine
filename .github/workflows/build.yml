@@ -70,7 +70,8 @@ jobs:
         shell: pwsh
         # Add additional scripting steps here
         run: |
-          Remove-Item 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build' -Include 'Microsoft.VCToolsVersion.v143.default.*' -Recurse -Force -Confirm
+          Get-ChildItem -Recurse 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build'
+          Remove-Item 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build' -Include 'Microsoft.VCToolsVersion.v143.default.*' -Force -Confirm
           Get-ChildItem -Recurse 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build'
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
