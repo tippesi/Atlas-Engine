@@ -43,6 +43,9 @@ jobs:
           repository: google/swiftshader
           path: swiftshader
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
