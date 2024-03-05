@@ -50,6 +50,12 @@ jobs:
           committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
           cache: ${{ env.USE_CACHE }}
 
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          # ninja version to download. Default: 1.10.0
+          version: 1.10.0
+
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
       - name: Install Vulkan SDK
         uses: humbletim/install-vulkan-sdk@v1.1.1
