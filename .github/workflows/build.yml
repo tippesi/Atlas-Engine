@@ -43,8 +43,14 @@ jobs:
           repository: google/swiftshader
           path: swiftshader
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Setup Microsoft Visual C++ CLI
+        uses: ilammy/msvc-dev-cmd@v1
+    
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          # ninja version to download. Default: 1.10.0
+          version: 1.11.1
 
       - name: Setup Vcpkg
         uses: friendlyanon/setup-vcpkg@v1
@@ -52,12 +58,6 @@ jobs:
         with: 
           committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
           cache: ${{ env.USE_CACHE }}
-
-      - name: Setup Ninja
-        uses: ashutoshvarma/setup-ninja@master
-        with:
-          # ninja version to download. Default: 1.10.0
-          version: 1.10.0
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
       - name: Install Vulkan SDK
@@ -72,9 +72,6 @@ jobs:
         run: |
           Get-ChildItem -Recurse "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build"
           Remove-Item –path "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.*" –recurse
-          cd ${{ github.workspace }}
-          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
-          Remove-Item –path vcpkg_installed –recurse
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
