@@ -38,14 +38,7 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
-        
-        Physics::SphereShapeSettings settings {
-            .radius = 1.0f,
-            .scale = vec3(0.9f),
-        };
-        auto shape = Physics::ShapesManager::CreateShape(settings);
-        
-        shape->Scale(vec3(0.8f));
+       
 
         Serialization::DeserializeConfig();
 

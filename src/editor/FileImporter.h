@@ -56,7 +56,7 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
             handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
+                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,

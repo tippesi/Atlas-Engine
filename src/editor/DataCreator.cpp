@@ -1,5 +1,7 @@
 #include "DataCreator.h"
 
+#include "loader/ModelLoader.h"
+
 namespace Atlas::Editor {
 
     using namespace Scene::Components;
@@ -12,6 +14,64 @@ namespace Atlas::Editor {
         auto mainGroup = scene->CreatePrefab<Group>("Root");
         auto& mainHierarchy = mainGroup.GetComponent<HierarchyComponent>();
         mainHierarchy.root = true;
+
+        auto directionalLightEntity = scene->CreateEntity();
+        directionalLightEntity.AddComponent<NameComponent>("Directional light");
+        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
+        directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+        directionalLight.intensity = 10.0f;
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.isMain = true;
+
+        mainHierarchy.AddChild(directionalLightEntity);
+
+        scene->ao = CreateRef<Lighting::AO>(16);
+        scene->ao->rt = true;
+        // Use SSGI by default
+        scene->ao->enable = false;
+        scene->reflection = CreateRef<Lighting::Reflection>();
+        scene->reflection->useShadowMap = true;
+
+        scene->fog = CreateRef<Lighting::Fog>();
+        scene->fog->enable = true;
+        scene->fog->density = 0.0002f;
+        scene->fog->heightFalloff = 0.0284f;
+        scene->fog->height = 0.0f;
+
+        scene->sky.atmosphere = CreateRef<Lighting::Atmosphere>();
+
+        scene->postProcessing.taa = PostProcessing::TAA(0.99f);
+        scene->postProcessing.sharpen.enable = true;
+        scene->postProcessing.sharpen.factor = 0.15f;
+
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
+
+        scene->sss = CreateRef<Lighting::SSS>();
+
+        scene->ssgi = CreateRef<Lighting::SSGI>();
+
+        scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
+        scene->sky.clouds->minHeight = 1400.0f;
+        scene->sky.clouds->maxHeight = 1700.0f;
+        scene->sky.clouds->castShadow = false;
+
+        scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
+        scene->physicsWorld->pauseSimulation = true;
+
+        scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+
+        return scene;
+
+    }
+
+    Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max, int32_t depth) {
+
+        auto scene = Loader::ModelLoader::LoadScene(filename, min, max, depth, false, 2048);
+
+        auto rootEntity = scene->GetEntityByName("Root");
+        auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
 
         auto directionalLightEntity = scene->CreateEntity();
         directionalLightEntity.AddComponent<NameComponent>("Directional light");

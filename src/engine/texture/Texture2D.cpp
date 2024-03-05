@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        Texture2D::Texture2D(std::string filename, bool colorSpaceConversion,
+        Texture2D::Texture2D(const std::string& filename, bool colorSpaceConversion,
             Wrapping wrapping, Filtering filtering, int32_t forceChannels) {
 
             auto image = Loader::ImageLoader::LoadImage<uint8_t>(filename,
@@ -22,13 +22,13 @@ namespace Atlas {
 
         }
 
-        Texture2D::Texture2D(Ref<Common::Image<uint8_t>>& image, Wrapping wrapping, Filtering filtering) {
+        Texture2D::Texture2D(const Ref<Common::Image<uint8_t>>& image, Wrapping wrapping, Filtering filtering) {
 
             InitializeInternal(image, wrapping, filtering);
 
         }
 
-        Texture2D::Texture2D(Ref<Common::Image<float>>& image, Wrapping wrapping, Filtering filtering) {
+        Texture2D::Texture2D(const Ref<Common::Image<float>>& image, Wrapping wrapping, Filtering filtering) {
 
             InitializeInternal(image, wrapping, filtering);
 

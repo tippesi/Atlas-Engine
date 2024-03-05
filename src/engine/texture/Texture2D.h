@@ -37,7 +37,7 @@ namespace Atlas {
             * @param filtering The filtering of the texture.
             * @param forceChannels Can be used to force a number of channels which should be loaded from the file.
             */
-            explicit Texture2D(std::string filename, bool colorSpaceConversion = true,
+            explicit Texture2D(const std::string& filename, bool colorSpaceConversion = true,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Anisotropic,
                 int32_t forceChannels = 0);
 
@@ -47,7 +47,7 @@ namespace Atlas {
              * @param wrapping The wrapping of the texture. Controls texture border behaviour.
              * @param filtering The filtering of the texture.
              */
-            explicit Texture2D(Ref<Common::Image<uint8_t>>& image, Wrapping wrapping = Wrapping::Repeat,
+            explicit Texture2D(const Ref<Common::Image<uint8_t>>& image, Wrapping wrapping = Wrapping::Repeat,
                 Filtering filtering = Filtering::Anisotropic);
 
             /**
@@ -56,7 +56,7 @@ namespace Atlas {
              * @param wrapping The wrapping of the texture. Controls texture border behaviour.
              * @param filtering The filtering of the texture.
              */
-            explicit Texture2D(Ref<Common::Image<float>>& image, Wrapping wrapping = Wrapping::Repeat,
+            explicit Texture2D(const Ref<Common::Image<float>>& image, Wrapping wrapping = Wrapping::Repeat,
                 Filtering filtering = Filtering::Anisotropic);
 
             /**
@@ -74,17 +74,17 @@ namespace Atlas {
              * @note Only uint8_t, uint16_t and float are supported typenames.
              */
             template<typename T>
-            void Save(std::string filename, bool flipHorizontally = false);
+            void Save(std::string& filename, bool flipHorizontally = false);
 
         private:
             template<typename T>
-            void InitializeInternal(Ref<Common::Image<T>>& image, Wrapping wrapping,
+            void InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping,
                 Filtering filtering);
 
         };
 
         template<typename T>
-        void Texture2D::Save(std::string filename, bool flipHorizontally) {
+        void Texture2D::Save(std::string& filename, bool flipHorizontally) {
 
             auto image = CreateRef<Common::Image<T>>(width, height, channels);
 
@@ -126,7 +126,7 @@ namespace Atlas {
         }
 
         template<typename T>
-        void Texture2D::InitializeInternal(Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering) {
+        void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering) {
 
             // RGB images are mostly not supported
             if (image->channels == 3) {

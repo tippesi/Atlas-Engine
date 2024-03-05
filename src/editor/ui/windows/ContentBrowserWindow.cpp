@@ -1,5 +1,6 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
+#include "DataCreator.h"
 #include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
@@ -263,6 +264,11 @@ namespace Atlas::Editor::UI {
 
                 if (ImGui::MenuItem("Delete"))
                     std::filesystem::remove(dirEntry.path());
+                
+                // Do a direct import here without relying on the file importer
+                if (type == FileType::Mesh && ImGui::MenuItem("Import as scene"))
+                    ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(assetRelativePath,
+                        ResourceOrigin::User, DataCreator::CreateSceneFromMesh, vec3(-2048.0f), vec3(2048.0f), 5);
 
                 ImGui::EndPopup();
             }

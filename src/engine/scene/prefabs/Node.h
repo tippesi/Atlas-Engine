@@ -15,11 +15,11 @@ namespace Atlas {
 			class Node : public Entity {
 
 			public:
-				Node(ECS::Entity entity, ECS::EntityManager* manager, mat4 transform) : Entity(entity, manager) {
+				Node(ECS::Entity entity, ECS::EntityManager* manager, const std::string& name, mat4 transform) : Entity(entity, manager) {
 
 					AddComponent<HierarchyComponent>();
-					AddComponent<TransformComponent>();
-					AddComponent<NameComponent>();
+					AddComponent<TransformComponent>(transform);
+					AddComponent<NameComponent>(name);
 
 				}
 

@@ -9,6 +9,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/types.h>
 
+#include <set>
+
 namespace Atlas {
 
     namespace Loader {
@@ -23,27 +25,28 @@ namespace Atlas {
                 Mesh::MeshMobility mobility, bool forceTangents = false,
                 int32_t maxTextureResolution = 4096);
 
-            static Ref<Scene::Scene> LoadScene(const std::string& filename,
-                bool forceTangents = false, int32_t maxTextureResolution = 4096);
+            static Ref<Scene::Scene> LoadScene(const std::string& filename, vec3 min, vec3 max,
+                int32_t depth, bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
         private:
             struct MaterialImages {
-                Ref<Common::Image<uint8_t>> baseColorImage;
-                Ref<Common::Image<uint8_t>> opacityImage;
-                Ref<Common::Image<uint8_t>> roughnessImage;
-                Ref<Common::Image<uint8_t>> metallicImage;
-                Ref<Common::Image<uint8_t>> normalImage;
-                Ref<Common::Image<uint8_t>> displacementImage;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> baseColorImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> opacityImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> roughnessImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> metallicImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> normalImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> displacementImages;
 
-                Ref<Texture::Texture2D> baseColorTexture;
-                Ref<Texture::Texture2D> opacityTexture;
-                Ref<Texture::Texture2D> roughnessTexture;
-                Ref<Texture::Texture2D> metallicTexture;
-                Ref<Texture::Texture2D> normalTexture;
-                Ref<Texture::Texture2D> displacementTexture;
+                std::map<std::string, Ref<Texture::Texture2D>> baseColorTextures;
+                std::map<std::string, Ref<Texture::Texture2D>> opacityTextures;
+                std::map<std::string, Ref<Texture::Texture2D>> roughnessTextures;
+                std::map<std::string, Ref<Texture::Texture2D>> metallicTextures;
+                std::map<std::string, Ref<Texture::Texture2D>> normalTextures;
+                std::map<std::string, Ref<Texture::Texture2D>> displacementTextures;
             };
 
-            static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material);
+            static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, 
+                Material& material, const std::string& directory, bool isObj, bool hasTangents);
 
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
                 const std::string& directory, bool isObj, bool hasTangents,
