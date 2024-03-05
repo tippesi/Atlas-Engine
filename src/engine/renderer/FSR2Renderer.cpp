@@ -753,7 +753,6 @@ namespace Atlas::Renderer {
 
 		// set wave64 if possible
 		VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroupSizeCreateInfo = {};
-
 		if (canForceWave64) {
 			subgroupSizeCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO;
 			subgroupSizeCreateInfo.requiredSubgroupSize = 64;
@@ -799,9 +798,7 @@ namespace Atlas::Renderer {
 		const int32_t jitterPhaseCount = ffxFsr2GetJitterPhaseCount(target->GetScaledWidth(), target->GetWidth());
 		ffxFsr2GetJitterOffset(&jitter.x, &jitter.y, index, jitterPhaseCount);
 
-		jitter = 2.0f * jitter - 1.0f;
-
-		return vec2(jitter.x / (float)target->GetScaledWidth(), jitter.y / (float)target->GetScaledHeight());
+		return vec2(2.0f * jitter.x / (float)target->GetScaledWidth(), 2.0f * jitter.y / (float)target->GetScaledHeight());
 
 	}
 
@@ -816,6 +813,8 @@ namespace Atlas::Renderer {
 			CreateContext(target, device);
 		}
 
+		Graphics::Profiler::BeginQuery("FSR2");
+
 		auto& postProcessing = scene->postProcessing;
 		auto& sharpen = postProcessing.sharpen;
 		auto& camera = scene->GetMainCamera();
@@ -826,6 +825,8 @@ namespace Atlas::Renderer {
 		auto velocityImage = target->GetVelocity()->image;
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
+
+		auto& taa = scene->postProcessing.taa;
 
 		std::vector<Graphics::BufferBarrier> bufferBarriers;
 		std::vector<Graphics::ImageBarrier> imageBarriers;
@@ -842,8 +843,8 @@ namespace Atlas::Renderer {
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		dispatchParameters.output = GetResource(outputImage, L"FSR2_OutputUpscaledColor", FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) + 1.0f;
-		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) + 1.0f;
+		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) * taa.jitterRange;
+		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * taa.jitterRange;
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
 		dispatchParameters.reset = false;
@@ -862,6 +863,8 @@ namespace Atlas::Renderer {
 
 		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT);
+
+		Graphics::Profiler::EndQuery();
 
 	}
 

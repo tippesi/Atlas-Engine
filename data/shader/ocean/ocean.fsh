@@ -99,8 +99,8 @@ void main() {
     vec3 rippleNormal = vec3(0.0, 1.0, 0.0);
 
 #ifdef RIPPLE_TEXTURE
-        rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2)).rgb - 1.0);
-        rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05)).rgb - 1.0);
+        rippleNormal = normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord - vec2(globalData.time * 0.2), globalData.mipLodBias).rgb - 1.0);
+        rippleNormal += normalize(2.0 * texture(rippleTexture, 20.0 * fTexCoord * 0.5 + vec2(globalData.time * 0.05), globalData.mipLodBias).rgb - 1.0);
         // Won't work with rippleNormal = vec3(0.0, 1.0, 0.0). Might be worth an investigation
         norm = normalize(tbn * rippleNormal);
 #endif
@@ -189,7 +189,7 @@ void main() {
 #ifdef FOAM_TEXTURE
     foamColor = foamShadowFactor * light.intensity * light.color.rgb;
 #endif
-    color = mix(color, foamColor, foam * texture(foamTexture, fOriginalCoord.xz / 8.0).r);
+    color = mix(color, foamColor, foam * texture(foamTexture, fOriginalCoord.xz / 8.0, globalData.mipLodBias).r);
 
     vec3 breakingColor = foamShadowFactor * light.intensity * light.color.rgb;
     color = mix(color, breakingColor, shoreInteraction.y);

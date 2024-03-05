@@ -40,8 +40,13 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-            bool spatialUpscalingEnabled = !postProcessing.fsr2 && target->GetScalingFactor() != 1.0f;
-            bool shapenEnabled = !postProcessing.fsr2 && sharpen.enable;
+            bool fsr2 = false;
+#ifdef AE_FSR2
+            fsr2 = postProcessing.fsr2;
+#endif
+
+            bool spatialUpscalingEnabled = !fsr2 && target->GetScalingFactor() != 1.0f;
+            bool shapenEnabled = !fsr2 && sharpen.enable;
 
             Texture::Texture2D* writeTexture = &target->hdrTexture, *readTexture;
 
@@ -53,7 +58,7 @@ namespace Atlas {
                 writeTexture = &target->hdrTexture;
             }
 
-            if (postProcessing.fsr2) {
+            if (fsr2) {
                 readTexture = &target->hdrTexture;
             }
             else if (taa.enable){
