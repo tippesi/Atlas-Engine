@@ -57,6 +57,15 @@ jobs:
           version: 1.3.261.1
           cache: true
 
+      - name: Delete MSVC tool version
+        shell: pwsh
+        # Add additional scripting steps here
+        run: |
+          cd 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build'
+          Get-ChildItem -Recurse *
+          Remove-Item * -Include 'Microsoft.VCToolsVersion.v143.default.props','Microsoft.VCToolsVersion.v143.default.txt' -Force | Out-Null
+          Get-ChildItem -Recurse *
+
       - name: Setup Microsoft Visual C++ CLI
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -70,10 +79,6 @@ jobs:
         shell: pwsh
         # Add additional scripting steps here
         run: |
-          cd 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build'
-          Get-ChildItem -Recurse *
-          Remove-Item * -Include 'Microsoft.VCToolsVersion.v143.default.props','Microsoft.VCToolsVersion.v143.default.txt' -Force | Out-Null
-          Get-ChildItem -Recurse *
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-windows
           Remove-Item –path vcpkg_installed –recurse
