@@ -38,7 +38,10 @@ namespace Atlas {
             auto subset = scene->GetSubset<MeshComponent, TransformComponent>();
             if (!subset.Any()) return;
 
+            blases.clear();
+
             auto meshes = scene->GetMeshes();
+            int32_t meshCount = 0;
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || 
                     !scene->meshIdToBindlessIdx.contains(mesh.GetID()))
@@ -51,21 +54,39 @@ namespace Atlas {
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
                 meshInfo.offset = int32_t(scene->meshIdToBindlessIdx[mesh.GetID()]);
+
+                // Some extra path for hardware raytracing, don't want to do work twice
+                if (hardwareRayTracing) {
+                    if (mesh->needsBvhRefresh) {
+                        blases.push_back(mesh->blas);
+                        mesh->needsBvhRefresh = false;
+                    }
+
+                    auto& meshInfo = meshInfos[mesh.GetID()];
+                    meshInfo.blas = mesh->blas;
+                    meshInfo.idx = meshCount++;
+                }
             }
 
-            std::vector<GPUBVHInstance> gpuBvhInstances;
-            std::vector<Volume::AABB> actorAABBs;
-            std::vector<mat3x4> lastMatrices;
+            if (hardwareRayTracing) {
+                Graphics::ASBuilder asBuilder;
+                if (!blases.empty())
+                    asBuilder.BuildBLAS(blases);
+            }
 
             for (auto& [_, meshInfo] : meshInfos) {
                 meshInfo.instanceIndices.clear();
                 meshInfo.matrices.clear();
             }
 
+            hardwareInstances.clear();
+            gpuBvhInstances.clear();
+            actorAABBs.clear();
+            lastMatrices.clear();
+
             UpdateMaterials();
 
             for (auto entity : subset) {
-
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
                 if (!meshInfos.contains(meshComponent.mesh.GetID()))
@@ -86,13 +107,30 @@ namespace Atlas {
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
                 lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
+
+                // Some extra path for hardware raytracing, don't want to do work twice
+                if (hardwareRayTracing) {
+                    VkAccelerationStructureInstanceKHR inst = {};
+                    VkTransformMatrixKHR transform;
+
+                    auto transposed = glm::transpose(transformComponent.globalMatrix);
+                    std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
+
+                    inst.transform = transform;
+                    inst.instanceCustomIndex = meshInfo.offset;
+                    inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
+                    inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                    inst.mask = 0xFF;
+                    inst.instanceShaderBindingTableRecordOffset = 0;
+                    hardwareInstances.push_back(inst);
+                }
             }
 
             if (gpuBvhInstances.empty())
                 return;
 
             if (hardwareRayTracing) {
-                UpdateForHardwareRayTracing(subset);
+                UpdateForHardwareRayTracing(subset, gpuBvhInstances.size());
             }
             else {
                 UpdateForSoftwareRayTracing(gpuBvhInstances, lastMatrices, actorAABBs);
@@ -252,64 +290,16 @@ namespace Atlas {
         }
 
         void RayTracingWorld::UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
-            TransformComponent>& entitySubset) {
+            TransformComponent>& entitySubset, size_t instanceCount) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
+            
             Graphics::ASBuilder asBuilder;
-
-            auto meshes = scene->GetMeshes();
-
-            blases.clear();
-
-            int32_t meshCount = 0;
-            for (auto& mesh : meshes) {
-                if (!meshInfos.contains(mesh.GetID()))
-                    continue;
-
-                if (mesh->needsBvhRefresh) {
-                    blases.push_back(mesh->blas);
-                    mesh->needsBvhRefresh = false;
-                }
-
-                auto& meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.blas = mesh->blas;
-                meshInfo.idx = meshCount++;
-            }
-
-            if (!blases.empty())
-                asBuilder.BuildBLAS(blases);
-
-            std::vector<VkAccelerationStructureInstanceKHR> instances;
-
-            for (auto entity : entitySubset) {
-                const auto& [meshComponent, transformComponent] = entitySubset.Get<MeshComponent,
-                    TransformComponent>(entity);
-
-                if (!meshInfos.contains(meshComponent.mesh.GetID()))
-                    continue;
-
-                const auto& meshInfo = meshInfos[meshComponent.mesh.GetID()];
-
-                VkAccelerationStructureInstanceKHR inst = {};
-                VkTransformMatrixKHR transform;
-
-                auto transposed = glm::transpose(transformComponent.globalMatrix);
-                std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
-
-                inst.transform = transform;
-                inst.instanceCustomIndex = meshInfo.offset;
-                inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
-                inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                inst.mask = 0xFF;
-                inst.instanceShaderBindingTableRecordOffset = 0;
-                instances.push_back(inst);
-            }
-
             auto tlasDesc = Graphics::TLASDesc();
             tlas = device->CreateTLAS(tlasDesc);
 
-            asBuilder.BuildTLAS(tlas, instances);
+            asBuilder.BuildTLAS(tlas, hardwareInstances);
 
         }
 

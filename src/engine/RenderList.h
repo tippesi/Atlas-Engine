@@ -7,7 +7,7 @@
 
 #include "graphics/Buffer.h"
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace Atlas {
@@ -38,9 +38,9 @@ namespace Atlas {
             ECS::Entity lightEntity;
             uint32_t layer;
 
-            std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
-            std::map<size_t, MeshInstances> meshToInstancesMap;
-            std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
+            std::unordered_map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
+            std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
+            std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
         };
 
         RenderList();

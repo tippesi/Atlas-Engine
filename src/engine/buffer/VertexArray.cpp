@@ -56,7 +56,7 @@ namespace Atlas {
 
         }
 
-        void VertexArray::Bind(Graphics::CommandList *commandList) const {
+        void VertexArray::Bind(Graphics::CommandList *commandList) {
 
             if (hasIndexComponent) {
                 commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
@@ -64,22 +64,22 @@ namespace Atlas {
 
             // Bind in batches to reduce driver binding overhead
             uint32_t bindingOffset = 0;
-            std::vector<Ref<Graphics::Buffer>> buffers;
+            bindingBuffers.clear();
             for (auto& [attribArray, vertexComponent] : vertexComponents) {
-                if (attribArray != bindingOffset + 1 && buffers.size() > 0) {
-                    uint32_t bindingCount = uint32_t(buffers.size());
-                    commandList->BindVertexBuffers(buffers, bindingOffset, bindingCount);
+                if (attribArray != bindingOffset + 1 && bindingBuffers.size() > 0) {
+                    uint32_t bindingCount = uint32_t(bindingBuffers.size());
+                    commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
 
-                    buffers.clear();
+                    bindingBuffers.clear();
                     bindingOffset = attribArray;
                 }
 
-                buffers.push_back(vertexComponent.vertexBuffer.buffer);
+                bindingBuffers.push_back(vertexComponent.vertexBuffer.buffer);
             }
 
-            if (buffers.size()) {
-                uint32_t bindingCount = uint32_t(buffers.size());
-                commandList->BindVertexBuffers(buffers, bindingOffset, bindingCount);
+            if (bindingBuffers.size()) {
+                uint32_t bindingCount = uint32_t(bindingBuffers.size());
+                commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
             }
 
         }

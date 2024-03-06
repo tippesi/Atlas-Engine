@@ -432,16 +432,20 @@ namespace Atlas {
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
-            std::vector<VkDeviceSize> offsets;
-            std::vector<VkBuffer> bindBuffers;
-            for (const auto& buffer : buffers) {
+            AE_ASSERT(buffers.size() < MAX_VERTEX_BUFFER_BINDINGS);
+
+            VkDeviceSize offset[MAX_VERTEX_BUFFER_BINDINGS];
+            VkBuffer bindBuffers[MAX_VERTEX_BUFFER_BINDINGS];
+
+            for (size_t i = 0; i < buffers.size(); i++) {
+                auto& buffer = buffers[i];
                 if (!buffer->buffer) return;
                 AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
-                bindBuffers.push_back(buffer->buffer);
-                offsets.push_back(0);
+                bindBuffers[i] = buffer->buffer;
+                offset[i] = 0;
             }
 
-            vkCmdBindVertexBuffers(commandBuffer, bindingOffset, bindingCount, bindBuffers.data(), offsets.data());
+            vkCmdBindVertexBuffers(commandBuffer, bindingOffset, bindingCount, bindBuffers, offset);
 
         }
 

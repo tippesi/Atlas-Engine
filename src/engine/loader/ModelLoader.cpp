@@ -481,7 +481,7 @@ namespace Atlas {
                 mesh->name = meshData.filename;
                 mesh->UpdateData();
 
-                auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name, mesh);
+                auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name + "_" + std::to_string(i), mesh);
                 meshMap[assimpMesh] = handle;
             }
 
@@ -564,11 +564,11 @@ namespace Atlas {
 
             // Avoid NaN
             specularHardness = glm::max(1.0f, specularHardness);
-            material.roughness = glm::clamp(powf(1.0f / (0.5f * specularHardness + 1.0f), 0.25f), 0.0f, 1.0f);
+            material.roughness = powf(1.0f / (0.5f * specularHardness + 1.0f), 0.25f);
             material.ao = 1.0f;
 
             metalness = metalness == 0.0f ? glm::max(specular.r, glm::max(specular.g, specular.b)) : metalness;
-            material.metalness = glm::clamp(metalness, 0.0f, 1.0f);
+            material.metalness = metalness;
 
             material.twoSided = twoSided;
 
@@ -576,6 +576,9 @@ namespace Atlas {
                 assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.metalness);
                 assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, material.roughness);
             }
+
+            material.roughness = glm::clamp(material.roughness, 0.0f, 1.0f);
+            material.metalness = glm::clamp(material.metalness, 0.0f, 1.0f);
 
             if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {

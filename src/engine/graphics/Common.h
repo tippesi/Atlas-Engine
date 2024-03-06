@@ -14,6 +14,7 @@
 #define DESCRIPTOR_SET_COUNT 4
 #define BINDINGS_PER_DESCRIPTOR_SET 32
 #define MAX_COLOR_ATTACHMENTS 8
+#define MAX_VERTEX_BUFFER_BINDINGS 16
 
 #define VK_CHECK(x) {                                                               \
                 VkResult err = x;                                                   \

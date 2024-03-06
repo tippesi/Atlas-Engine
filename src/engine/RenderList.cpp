@@ -88,14 +88,15 @@ namespace Atlas {
 
         auto id = meshComponent.mesh.GetID();
 
-        if (!meshToActorMap.contains(id)) {
+        auto item = meshToActorMap.find(id);
+        if (item != meshToActorMap.end()) {
+            item->second.push_back(entity);
+        }
+        else {
             auto& meshIdToMeshMap = pass.meshIdToMeshMap;
 
             meshToActorMap[id] = { entity };
             meshIdToMeshMap[id] = meshComponent.mesh;
-        }
-        else {
-            meshToActorMap[id].push_back(entity);
         }
 
     }
@@ -154,7 +155,7 @@ namespace Atlas {
                         }
                         else {
                             // For now push back anyways (since indices of matrices per entity need to match)
-                            lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                            lastEntityMatrices.push_back(currentEntityMatrices.back());
                         }
                     }
                     else {
@@ -172,7 +173,7 @@ namespace Atlas {
                     }
                     else {
                         // For now push back anyways
-                        lastEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
+                        lastEntityMatrices.push_back(currentEntityMatrices.back());
                     }
                 }
             }

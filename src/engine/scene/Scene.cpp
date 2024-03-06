@@ -259,6 +259,26 @@ namespace Atlas {
                 }
             }
 
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+
+                lightComponent.Update(transformComponent);
+            }
+
+#ifdef AE_BINDLESS
+            UpdateBindlessIndexMaps();
+
+            // Make sure this is changed just once at the start of a frame
+            if (rayTracingWorld) {
+                rayTracingWorld->scene = this;
+                rayTracingWorld->Update(true);
+            }
+            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+#endif
+
             // We also need to reset the hierarchy components as well
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
@@ -282,26 +302,6 @@ namespace Atlas {
 
                 textComponent.Update(transformComponent);
             }
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
-                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
-
-                lightComponent.Update(transformComponent);
-            }
-
-#ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-
-            // Make sure this is changed just once at the start of a frame
-            if (rayTracingWorld) {
-                rayTracingWorld->scene = this;
-                rayTracingWorld->Update(true);
-            }
-            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-#endif
 
         }
 
