@@ -507,11 +507,12 @@ namespace Atlas {
             auto totalPixels = int32_t(level.data.size()) / channels;
             auto count = channelOffset + channelCount;
 
-            channelData.reserve(channelCount * totalPixels);
+            channelData.resize(channelCount * totalPixels);
+            size_t dataCount = 0;
 
             for (int32_t i = 0; i < totalPixels; i++) {
                 for (int32_t j = channelOffset; j < count; j++) {
-                    channelData.push_back(level.data[i * channels + j]);
+                    channelData[dataCount++] = level.data[i * channels + j];
                 }
             }
 

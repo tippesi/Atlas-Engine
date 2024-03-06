@@ -68,6 +68,20 @@ namespace Atlas {
 
         }
 
+        std::string Path::GetFileNameWithoutExtension(std::string path) {
+
+            auto offset = path.find_last_of("/\\") + 1;
+            if (offset == std::string::npos)
+                offset = 0;
+
+            auto length = path.find_last_of(".") - offset;
+            if (length == std::string::npos)
+                length = path.length() - offset;
+
+            return path.substr(offset, length);
+
+        }
+
         std::string Path::GetFileType(std::string path) {
 
             std::string fileType = "";

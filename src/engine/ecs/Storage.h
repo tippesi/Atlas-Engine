@@ -99,11 +99,12 @@ namespace Atlas {
 
             auto idx = EntityToIdx(entity);
             auto page = GetPage(idx);
+            auto offset = GetOffset(idx);
 
-            if (page >= pageData.size())
+            if (page >= pageData.size() || offset >= pageData[page].size())
                 return EntityConfig::InvalidEntity;
 
-            return pageData[GetPage(idx)][GetOffset(idx)];
+            return pageData[page][offset];
 
         }
 

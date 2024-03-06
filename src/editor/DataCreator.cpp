@@ -7,7 +7,7 @@ namespace Atlas::Editor {
     using namespace Scene::Components;
     using namespace Scene::Prefabs;
 
-    Ref<Scene::Scene> DataCreator::CreateScene(const std::string &name, vec3 min, vec3 max, int32_t depth) {
+    Ref<Scene::Scene> DataCreator::CreateScene(const std::string& name, vec3 min, vec3 max, int32_t depth) {
 
         auto scene = CreateRef<Scene::Scene>(name, min, max, depth);
 
@@ -66,7 +66,8 @@ namespace Atlas::Editor {
 
     }
 
-    Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max, int32_t depth) {
+    Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max,
+        int32_t depth, bool invertUVs, bool addRigidBodies) {
 
         auto scene = Loader::ModelLoader::LoadScene(filename, min, max, depth, false, 2048);
 
@@ -119,6 +120,38 @@ namespace Atlas::Editor {
         scene->physicsWorld->pauseSimulation = true;
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+
+        scene->Timestep(1.0f);
+
+        if (invertUVs) {
+            auto meshes = scene->GetMeshes();
+
+            for (auto& mesh : meshes)
+                mesh->invertUVs = true;
+        }
+
+        if (addRigidBodies) {
+            auto meshSubset = scene->GetSubset<MeshComponent>();
+
+            for (auto entity : meshSubset) {
+                auto& meshComponent = meshSubset.Get(entity);
+
+                auto transformComponent = entity.GetComponent<TransformComponent>();
+                Atlas::Physics::MeshShapeSettings settings = {
+                    .mesh = meshComponent.mesh,
+                    .scale = transformComponent.DecomposeGlobal().scale
+                };
+                auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
+
+                auto bodySettings = Atlas::Physics::BodyCreationSettings{
+                    .objectLayer = Atlas::Physics::Layers::STATIC,
+                    .shape = shape,
+                };
+                entity.AddComponent<RigidBodyComponent>(bodySettings);
+            }
+        }
+
+        scene->physicsWorld->OptimizeBroadphase();
 
         return scene;
 

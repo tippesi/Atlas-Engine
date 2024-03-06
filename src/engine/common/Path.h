@@ -38,6 +38,14 @@ namespace Atlas {
             static std::string GetFileName(std::string path);
 
             /**
+             * Returns the file name of a path without its extension.
+             * @param path A path to a file.
+             * @return The file name in the path.
+             * @warning The paths must contain a filename.
+             */
+            static std::string GetFileNameWithoutExtension(std::string path);
+
+            /**
              * Returns the file type of a path.
              * @param path A path to a file.
              * @return The file name in the path.
