@@ -51,6 +51,7 @@ namespace Atlas {
             renderableMovableEntityOctree.QueryFrustum(movableEntities,
                 insideMovableEntities, frustum);
 
+            /*
             for (auto entity : staticEntities) {
                 auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;
@@ -82,6 +83,7 @@ namespace Atlas {
                 if (meshComp->visible)
                     renderList.Add(entity, *meshComp);
             }
+            */
 
         }
 

@@ -272,11 +272,13 @@ namespace Atlas {
             UpdateBindlessIndexMaps();
 
             // Make sure this is changed just once at the start of a frame
-            if (rayTracingWorld) {
-                rayTracingWorld->scene = this;
-                rayTracingWorld->Update(true);
-            }
-            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+            rayTracingWorldUpdateFuture = std::async([&]() {
+                if (rayTracingWorld) {
+                    rayTracingWorld->scene = this;
+                    rayTracingWorld->Update(true);
+                }
+                rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                });           
 #endif
 
             // We also need to reset the hierarchy components as well
@@ -498,7 +500,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList) {
+        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList, const Ref<RenderList::Pass>& pass) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
@@ -506,7 +508,7 @@ namespace Atlas {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
                 if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
-                    renderList.Add(entity, comp);
+                    renderList.Add(pass, entity, comp);
             }
 
         }

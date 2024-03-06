@@ -76,7 +76,7 @@ namespace Atlas {
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
             Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
 
-            if (!device->swapChain->isComplete || !scene->HasMainCamera()) 
+            if (!device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
             auto& camera = scene->GetMainCamera();
@@ -101,16 +101,25 @@ namespace Atlas {
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
 
-            FillRenderList(scene, camera);
+            auto fillRenderListFuture = std::async([&]() { FillRenderList(scene, camera); });
 
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
-
-            PrepareMaterials(scene, materials, materialMap);
+            auto prepareMaterialsFuture = std::async([&]() { PrepareMaterials(scene, materials, materialMap); });
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+
+
+            auto prepareBindlessFuture = std::async([&]() {
+                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+                });
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+            fillRenderListFuture.get();
+            prepareMaterialsFuture.get();
+            prepareBindlessFuture.get();
 
             SetUniforms(scene, camera);
 
@@ -1089,10 +1098,13 @@ namespace Atlas {
         void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
             renderList.NewFrame(scene);
-            renderList.NewMainPass();
 
-            scene->GetRenderList(camera.frustum, renderList);
-            renderList.Update(camera.GetLocation());
+            auto mainPass = renderList.GetMainPass();
+            if (mainPass == nullptr)
+                mainPass = renderList.NewMainPass();
+
+            scene->GetRenderList(camera.frustum, renderList, mainPass);
+            renderList.Update(mainPass, camera.GetLocation());
 
             auto lightSubset = scene->GetSubset<LightComponent>();
 
@@ -1111,9 +1123,11 @@ namespace Atlas {
                     auto component = &shadow->views[i];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
-                    renderList.NewShadowPass(lightEntity, i);
-                    scene->GetRenderList(frustum, renderList);
-                    renderList.Update(camera.GetLocation());
+                    auto shadowPass = renderList.GetShadowPass(lightEntity, i);
+                    if (shadowPass == nullptr)
+                        shadowPass = renderList.NewShadowPass(lightEntity, i);
+                    scene->GetRenderList(frustum, renderList, shadowPass);
+                    renderList.Update(shadowPass, camera.GetLocation());
                 }
 
             }

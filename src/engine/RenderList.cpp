@@ -30,9 +30,18 @@ namespace Atlas {
         impostorMatrices.clear();
         if (lastSize) impostorMatrices.reserve(lastSize);
 
+        // Fill in missing meshes since they are cleared at the end of each frame
+        auto meshes = scene->GetMeshes();
+        for (auto& pass : passes) {
+            for (const auto& mesh : meshes) {
+                auto id = mesh.GetID();
+                pass->meshIdToMeshMap[id] = mesh;
+            }
+        }
+
     }
 
-    void RenderList::NewMainPass() {
+    Ref<RenderList::Pass> RenderList::NewMainPass() {
 
         Pass pass {
             .type = RenderPassType::Main,
@@ -40,48 +49,49 @@ namespace Atlas {
             .layer = 0
         };
 
-        passes.push_back(pass);
+        passes.push_back(CreateRef(pass));
+        return passes.back();
 
     }
 
-    void RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
+    Ref<RenderList::Pass> RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
-        Pass pass {
+        Pass pass{
             .type = RenderPassType::Shadow,
             .lightEntity = lightEntity,
-            .layer = layer
+            .layer = layer,
+            .wasUsed = true
         };
 
-        passes.push_back(pass);
+        passes.push_back(CreateRef(pass));
+        return passes.back();
 
     }
 
-
-    RenderList::Pass* RenderList::GetMainPass() {
+    Ref<RenderList::Pass> RenderList::GetMainPass() {
 
         for (auto& pass : passes) {
-            if (pass.type == RenderPassType::Main) return &pass;
+            if (pass->type == RenderPassType::Main) return pass;
         }
 
         return nullptr;
 
     }
 
-    RenderList::Pass* RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
+    Ref<RenderList::Pass> RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
 
         for (auto& pass : passes) {
-            if (pass.type == RenderPassType::Shadow &&
-                pass.lightEntity == lightEntity && pass.layer == layer) return &pass;
+            if (pass->type == RenderPassType::Shadow &&
+                pass->lightEntity == lightEntity && pass->layer == layer) return pass;
         }
 
         return nullptr;
 
     }
 
-    void RenderList::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
+    void RenderList::Add(const Ref<Pass>& pass, const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
-        auto& pass = passes.back();
-        auto& meshToActorMap = pass.meshToEntityMap;
+        auto& meshToActorMap = pass->meshToEntityMap;
 
         if (!meshComponent.mesh.IsLoaded())
             return;
@@ -90,41 +100,43 @@ namespace Atlas {
 
         auto item = meshToActorMap.find(id);
         if (item != meshToActorMap.end()) {
-            item->second.push_back(entity);
+            item->second.Add(entity);
         }
         else {
-            auto& meshIdToMeshMap = pass.meshIdToMeshMap;
+            auto& meshIdToMeshMap = pass->meshIdToMeshMap;
 
-            meshToActorMap[id] = { entity };
+            EntityBatch batch;
+            batch.Add(entity);
+
+            meshToActorMap[id] = batch;
             meshIdToMeshMap[id] = meshComponent.mesh;
         }
 
     }
 
-    void RenderList::Update(vec3 cameraLocation) {
+    void RenderList::Update(const Ref<Pass>& pass, vec3 cameraLocation) {
 
-        auto& pass = passes.back();
-        auto type = pass.type;
-        auto& meshToActorMap = pass.meshToEntityMap;
-        auto& meshToInstancesMap = pass.meshToInstancesMap;
-        auto& meshIdToMeshMap = pass.meshIdToMeshMap;
+        auto type = pass->type;
+        auto& meshToEntityMap = pass->meshToEntityMap;
+        auto& meshToInstancesMap = pass->meshToInstancesMap;
+        auto& meshIdToMeshMap = pass->meshIdToMeshMap;
 
         size_t maxActorCount = 0;
         size_t maxImpostorCount = 0;
 
-        for (auto& [meshId, actors] : meshToActorMap) {
+        for (auto& [meshId, batch] : meshToEntityMap) {
             auto mesh = meshIdToMeshMap[meshId];
             if (!mesh->castShadow && type == RenderPassType::Shadow)
                 continue;
 
             auto hasImpostor = mesh->impostor != nullptr;
-            maxActorCount += actors.size();
-            maxImpostorCount += hasImpostor ? actors.size() : 0;
+            maxActorCount += batch.count;
+            maxImpostorCount += hasImpostor ? batch.count : 0;
         }
 
-        for (auto& [meshId, entities] : meshToActorMap) {
+        for (auto& [meshId, batch] : meshToEntityMap) {
             auto mesh = meshIdToMeshMap[meshId];
-            if (!entities.size()) continue;
+            if (!batch.count) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
             auto hasImpostor = mesh->impostor != nullptr;
@@ -141,7 +153,8 @@ namespace Atlas {
             instances.impostorOffset = impostorMatrices.size();
 
             if (hasImpostor) {
-                for (auto ecsEntity : entities) {
+                for (size_t i = 0; i < batch.count; i++) {
+                    auto& ecsEntity = batch.entities[i];
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
                     auto& transformComponent = entity.GetComponent<TransformComponent>();
                     auto distance = glm::distance2(
@@ -164,7 +177,8 @@ namespace Atlas {
                 }
             }
             else {
-                for (auto ecsEntity : entities) {
+                for (size_t i = 0; i < batch.count; i++) {
+                    auto& ecsEntity = batch.entities[i];
                     auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
                     auto& transformComponent = entity.GetComponent<TransformComponent>();
                     currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
@@ -230,7 +244,9 @@ namespace Atlas {
         // We can reset the scene now and delete the reference
         scene = nullptr;
 
-        passes.clear();
+        std::erase_if(passes, [](auto& item) { return item->wasUsed != true; });
+        for (auto& pass : passes)
+            pass->Reset();
 
     }
 

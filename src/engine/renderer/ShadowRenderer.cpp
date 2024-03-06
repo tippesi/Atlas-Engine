@@ -74,7 +74,6 @@ namespace Atlas {
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
                     for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
-
                         auto mesh = shadowPass->meshIdToMeshMap[meshId];
                         for (auto& subData : mesh->data.subData) {
                             subDatas.push_back({ &subData, mesh });
@@ -136,7 +135,7 @@ namespace Atlas {
                     }
 
                     impostorRenderer.Render(frameBuffer, renderList, commandList,
-                        shadowPass, component->viewMatrix, component->projectionMatrix, lightLocation);
+                        shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
                     commandList->EndRenderPass();
 
