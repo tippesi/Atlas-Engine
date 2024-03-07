@@ -381,7 +381,7 @@ namespace Atlas::Renderer {
 	static FfxErrorCode DestroyBackendContext(FfxFsr2Interface* backendInterface) {
 		AE_ASSERT(NULL != backendInterface);
 
-		FSR2Context* fsr2Context = reinterpret_cast<FSR2Context*>(backendInterface->scratchBuffer);
+		// FSR2Context* fsr2Context = reinterpret_cast<FSR2Context*>(backendInterface->scratchBuffer);
 
 		return FFX_OK;
 	}
