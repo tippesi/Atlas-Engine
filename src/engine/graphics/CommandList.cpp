@@ -539,11 +539,11 @@ namespace Atlas {
 
         }
 
-        void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, uint32_t mipLevel) {
+        void CommandList::BindImage(const Ref<Image>& image, uint32_t set, uint32_t binding, int32_t mipLevel) {
 
             AE_ASSERT(set < DESCRIPTOR_SET_COUNT && "Descriptor set not allowed for use");
             AE_ASSERT(binding < BINDINGS_PER_DESCRIPTOR_SET && "The binding point is not allowed for use");
-            AE_ASSERT(mipLevel < image->mipLevels && "Invalid mip level selected");
+            AE_ASSERT((mipLevel < 0 || mipLevel < image->mipLevels) && "Invalid mip level selected");
 
             if (descriptorBindingData.images[set][binding].first == image.get() &&
                 descriptorBindingData.images[set][binding].second == mipLevel)
@@ -648,9 +648,6 @@ namespace Atlas {
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, 0, nullptr, 1, &barrier.barrier);
 
-            barrier.image->layout = barrier.newLayout;
-            barrier.image->accessMask = barrier.newAccessMask;
-
         }
 
         void CommandList::ImageTransition(const Ref<Image> &image, VkImageLayout newLayout,
@@ -701,8 +698,6 @@ namespace Atlas {
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, 1, &barrier.barrier, 0, nullptr);
 
-            barrier.buffer->accessMask = barrier.newAccessMask;
-
         }
 
         void CommandList::MemoryBarrier(VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
@@ -745,16 +740,6 @@ namespace Atlas {
             vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0,
                 nullptr, uint32_t(nativeBufferBarriers.size()), nativeBufferBarriers.data(),
                 uint32_t(nativeImageBarriers.size()), nativeImageBarriers.data());
-
-            // Only update image layouts afterward for clarity
-            for (auto& barrier : imageBarriers) {
-                barrier.image->layout = barrier.newLayout;
-                barrier.image->accessMask = barrier.newAccessMask;
-            }
-
-            for (auto& barrier : bufferBarriers) {
-                barrier.buffer->accessMask = barrier.newAccessMask;
-            }
 
         }
 
@@ -905,6 +890,21 @@ namespace Atlas {
 
         }
 
+        void CommandList::ClearImageColor(const Ref<Image>& image, VkClearColorValue clearColor) {
+
+            AE_ASSERT((image->aspectFlags & VK_IMAGE_ASPECT_COLOR_BIT) && "Image needs to have VK_IMAGE_ASPECT_COLOR_BIT set in aspect mask");
+
+            VkImageSubresourceRange range = {};
+			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			range.baseMipLevel = 0;
+			range.levelCount = image->mipLevels;
+			range.baseArrayLayer = 0;
+			range.layerCount = image->layers;
+
+            vkCmdClearColorImage(commandBuffer, image->image, image->layout, &clearColor, 1, &range);
+
+        }
+
         void CommandList::GenerateMipMaps(const Ref<Image> &image) {
 
             memoryManager->transferManager->GenerateMipMaps(image.get(), commandBuffer);
@@ -1041,14 +1041,15 @@ namespace Atlas {
                         const auto& binding = shaderBinding.binding;
                         // Check that the descriptor types match up
                         const auto descriptorType = binding.descriptorType;
-                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+                        if (descriptorType != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
+                            descriptorType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                             continue;
 
                         auto [image, mipLevel] = descriptorBindingData.images[i][j];
 
                         auto& imageInfo = imageInfos[imageInfoCounter++];
                         imageInfo.sampler = VK_NULL_HANDLE;
-                        imageInfo.imageView = mipLevel == 0 ? image->view : image->mipMapViews[mipLevel];
+                        imageInfo.imageView = mipLevel < 0 ? image->view : image->mipMapViews[mipLevel];
                         imageInfo.imageLayout = image->layout;
 
                         auto& setWrite = setWrites[bindingCounter++];
@@ -1059,7 +1060,7 @@ namespace Atlas {
                         setWrite.dstArrayElement = binding.arrayElement;
                         setWrite.dstSet = descriptorBindingData.sets[i]->set;
                         setWrite.descriptorCount = 1;
-                        setWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                        setWrite.descriptorType = descriptorType;
                         setWrite.pImageInfo = &imageInfo;
                     }
 

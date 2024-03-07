@@ -105,6 +105,18 @@ namespace Atlas::Renderer {
         int32_t GetHeight() const;
 
         /**
+         * Returns the width of the render target.
+         * @return The width of the render target.
+         */
+        int32_t GetScaledWidth() const;
+
+        /**
+         * Returns the width of the render target.
+         * @return The width of the render target.
+         */
+        int32_t GetScaledHeight() const;
+
+        /**
          * Swaps the history textures.
          * @note This is used internally for TAA.
          */
@@ -170,6 +182,10 @@ namespace Atlas::Renderer {
 
         bool HasHistory() const;
 
+        void SetScalingFactor(float factor);
+
+        float GetScalingFactor() const;
+
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
@@ -231,10 +247,15 @@ namespace Atlas::Renderer {
         int32_t width = 0;
         int32_t height = 0;
 
+        int32_t scaledHeight = 0;
+        int32_t scaledWidth = 0;
+
         RenderResolution giResolution;
         RenderResolution aoResolution;
         RenderResolution volumetricResolution;
         RenderResolution reflectionResolution;
+
+        float scalingFactor = 0.75f;
 
         bool swap = false;
         bool hasHistory = false;

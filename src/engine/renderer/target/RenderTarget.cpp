@@ -7,6 +7,9 @@ namespace Atlas::Renderer {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
+        scaledWidth = int32_t(scalingFactor * width);
+        scaledHeight = int32_t(scalingFactor * height);
+
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
 
@@ -14,20 +17,20 @@ namespace Atlas::Renderer {
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
         targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
 
-        historyTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        historyTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        swapHistoryTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        swapHistoryTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        lightingTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        oceanDepthTexture = Texture::Texture2D(width, height, VK_FORMAT_D32_SFLOAT,
+        oceanDepthTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_D32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-        oceanStencilTexture = Texture::Texture2D(width, height, VK_FORMAT_R8_UINT,
+        oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         {
@@ -133,7 +136,7 @@ namespace Atlas::Renderer {
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
 
-        sssTexture = Texture::Texture2D(width, height, VK_FORMAT_R16_SFLOAT,
+        sssTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
     }
@@ -143,17 +146,20 @@ namespace Atlas::Renderer {
         this->width = width;
         this->height = height;
 
-        targetData.Resize(ivec2(width, height));
+        scaledWidth = int32_t(scalingFactor * width);
+        scaledHeight = int32_t(scalingFactor * height);
+
+        targetData.Resize(ivec2(scaledWidth, scaledHeight));
 
         // We have to also resize the other part of the history
-        historyTexture.Resize(width, height);
-        swapHistoryTexture.Resize(width, height);
-        lightingTexture.Resize(width, height);
+        historyTexture.Resize(scaledWidth, scaledHeight);
+        swapHistoryTexture.Resize(scaledWidth, scaledHeight);
+        lightingTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
         outputTexture.Resize(width, height);
-        sssTexture.Resize(width, height);
-        oceanDepthTexture.Resize(width, height);
-        oceanStencilTexture.Resize(width, height);
+        sssTexture.Resize(scaledWidth, scaledHeight);
+        oceanDepthTexture.Resize(scaledWidth, scaledHeight);
+        oceanStencilTexture.Resize(scaledWidth, scaledHeight);
 
         SetGIResolution(giResolution);
         SetAOResolution(aoResolution);
@@ -182,6 +188,18 @@ namespace Atlas::Renderer {
 
     }
 
+    int32_t RenderTarget::GetScaledWidth() const {
+
+        return scaledWidth;
+
+    }
+
+    int32_t RenderTarget::GetScaledHeight() const {
+
+        return scaledHeight;
+
+    }
+
     void RenderTarget::Swap() {
 
         targetData.velocityTexture.swap(targetData.swapVelocityTexture);
@@ -206,7 +224,7 @@ namespace Atlas::Renderer {
         default: break;
         }
 
-        return ivec2(width / factor, height / factor);
+        return ivec2(scaledWidth / factor, scaledHeight / factor);
 
     }
 
@@ -366,6 +384,20 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::SetScalingFactor(float factor) {
+
+        scalingFactor = factor;
+
+        Resize(width, height);
+
+    }
+
+    float RenderTarget::GetScalingFactor() const {
+
+        return scalingFactor;
+
+    }
+
     void RenderTarget::CreateFrameBuffers() {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
@@ -382,7 +414,7 @@ namespace Atlas::Renderer {
                    {targetData.stencilTexture->image, 0, false},
                },
                .depthAttachment = {targetData.depthTexture->image, 0, true},
-               .extent = {uint32_t(width), uint32_t(height)}
+               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
 
@@ -394,7 +426,7 @@ namespace Atlas::Renderer {
                    {targetData.stencilTexture->image, 0, false}
                },
                .depthAttachment = {targetData.depthTexture->image, 0, true},
-               .extent = {uint32_t(width), uint32_t(height)}
+               .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
 
@@ -406,7 +438,7 @@ namespace Atlas::Renderer {
                 {targetData.stencilTexture->image, 0, true}
             },
             .depthAttachment = {targetData.depthTexture->image, 0, true},
-            .extent = {uint32_t(width), uint32_t(height)}
+            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
 
@@ -416,7 +448,7 @@ namespace Atlas::Renderer {
                 {oceanStencilTexture.image, 0, false},
             },
             .depthAttachment = {oceanDepthTexture.image, 0, true},
-            .extent = {uint32_t(width), uint32_t(height)}
+            .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         oceanDepthOnlyFrameBuffer = graphicsDevice->CreateFrameBuffer(oceanDepthOnlyFrameBufferDesc);
 

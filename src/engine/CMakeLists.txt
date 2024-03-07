@@ -40,7 +40,7 @@ if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator fsr2
             unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt)
 endif()
 
@@ -56,7 +56,7 @@ if(APPLE)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV)
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV fsr2)
 endif()
 
 if(ANDROID)
@@ -79,7 +79,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
-            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV)
+            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV fsr2)
 endif()
 
 # Add source files ################################################################################
@@ -103,12 +103,12 @@ foreach(SOURCE_FILE IN ITEMS ${ATLAS_ENGINE_SOURCE_FILES})
 endforeach()
 
 if (ATLAS_EXPORT_MAIN)
-set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp CACHE INTERNAL "Make main global")
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.cpp$")
+    set(ATLAS_ENGINE_MAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp CACHE INTERNAL "Make main global")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)Main\.cpp$")
 endif()
 
 if (NOT ATLAS_ASSIMP)
-list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
+    list(FILTER ATLAS_ENGINE_SOURCE_FILES EXCLUDE REGEX "(^.*\/|^)ModelLoader\.(c(pp)?|h(pp)?)$")
 endif()
 
 # Configure linking ###############################################################################

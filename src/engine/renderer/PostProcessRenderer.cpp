@@ -36,38 +36,88 @@ namespace Atlas {
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
-            if (sharpen.enable) {
-                Graphics::Profiler::BeginQuery("Sharpen");
+            ivec2 groupCount = resolution / 8;
+            groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+            groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-                auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);
+            bool fsr2 = postProcessing.fsr2;
+
+            bool spatialUpscalingEnabled = !fsr2 && target->GetScalingFactor() != 1.0f;
+            bool shapenEnabled = !fsr2 && sharpen.enable;
+
+            Texture::Texture2D* writeTexture = &target->hdrTexture, *readTexture;
+
+            // Want to have the last pass to always write into the hdr texture
+            if (shapenEnabled && spatialUpscalingEnabled) {
+                writeTexture = &target->outputTexture;
+            }
+            else {
+                writeTexture = &target->hdrTexture;
+            }
+
+            if (fsr2) {
+                readTexture = &target->hdrTexture;
+            }
+            else if (taa.enable){
+                readTexture = target->GetHistory();
+            }
+            else {
+                readTexture = &target->lightingTexture;
+            }
+
+            if (spatialUpscalingEnabled) {
+                Graphics::Profiler::BeginQuery("Scaling");
+
+                auto pipelineConfig = PipelineConfig("upsampleSpatial.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
                 commandList->BindPipeline(pipeline);
 
-                ivec2 groupCount = resolution / 8;
-                groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
-
-                auto& image = target->hdrTexture.image;
-
+                auto& image = writeTexture->image;
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                 commandList->BindImage(image, 3, 0);
+                readTexture->Bind(commandList, 3, 1);
 
-                if (taa.enable) {
-                    target->GetHistory()->Bind(commandList, 3, 1);
-                }
-                else {
-                    target->lightingTexture.Bind(commandList, 3, 1);
-                }
+                commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+                readTexture = writeTexture;
+                writeTexture = &target->hdrTexture;
+
+                Graphics::Profiler::EndQuery();
+            }
+
+            if (shapenEnabled) {
+                Graphics::Profiler::BeginQuery("Sharpen");
+
+                auto pipelineConfig = PipelineConfig("sharpen.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+
+                commandList->BindPipeline(pipeline);
+
+                 auto& image = writeTexture->image;
+                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+                commandList->BindImage(image, 3, 0);
+                readTexture->Bind(commandList, 3, 1);
 
                 commandList->PushConstants("constants", &sharpen.factor);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+                std::swap(readTexture, writeTexture);
 
                 Graphics::Profiler::EndQuery();
             }
@@ -99,17 +149,7 @@ namespace Atlas {
 
                     SetUniforms(camera, scene);
 
-                    if (sharpen.enable) {
-                        target->hdrTexture.Bind(commandList, 3, 0);
-                    }
-                    else {
-                        if (taa.enable) {
-                            target->GetHistory()->Bind(commandList, 3, 0);
-                        }
-                        else {
-                            target->lightingTexture.Bind(commandList, 3, 0);
-                        }
-                    }
+                    readTexture->Bind(commandList, 3, 0);
                     commandList->BindBuffer(uniformBuffer, 3, 4);
 
                     commandList->Draw(6, 1, 0, 0);
@@ -143,7 +183,7 @@ namespace Atlas {
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
-            if (sharpen.enable) {
+            if (sharpen.enable && !postProcessing.fsr2) {
                 Graphics::Profiler::BeginQuery("Sharpen");
 
                 auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);

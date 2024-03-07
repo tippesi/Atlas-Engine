@@ -68,7 +68,7 @@ void main() {
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
 #ifdef OPACITY_MAP
-    opacity *= texture(opacityMap, texCoords).r;
+    opacity *= texture(opacityMap, texCoords, globalData.mipLodBias).r;
 #endif
 #ifdef VERTEX_COLORS
     opacity *= vertexColorsVS.a;
@@ -80,7 +80,7 @@ void main() {
     baseColorFS = vec3(1.0);
 
 #ifdef BASE_COLOR_MAP
-    vec3 textureColor = texture(baseColorMap, texCoords).rgb;
+    vec3 textureColor = texture(baseColorMap, texCoords, globalData.mipLodBias).rgb;
     baseColorFS *= textureColor.rgb;
 #endif
 #ifdef VERTEX_COLORS
@@ -95,15 +95,15 @@ void main() {
     float aoFactor = 1.0;
 
 #ifdef ROUGHNESS_MAP
-    roughnessFactor *= texture(roughnessMap, texCoords).r;
+    roughnessFactor *= texture(roughnessMap, texCoords, globalData.mipLodBias).r;
     roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-    metalnessFactor *= texture(metalnessMap, texCoords).r;
+    metalnessFactor *= texture(metalnessMap, texCoords, globalData.mipLodBias).r;
     roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-    aoFactor *= texture(aoMap, texCoords).r;
+    aoFactor *= texture(aoMap, texCoords, globalData.mipLodBias).r;
     roughnessMetalnessAoFS.b = aoFactor;
 #endif
 
