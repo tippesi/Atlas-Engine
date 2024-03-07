@@ -101,17 +101,15 @@ namespace Atlas {
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
 
-            auto fillRenderListFuture = std::async([&]() { FillRenderList(scene, camera); });
+            auto fillRenderListFuture = std::async(std::launch::async, [&]() { FillRenderList(scene, camera); });
 
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
-            auto prepareMaterialsFuture = std::async([&]() { PrepareMaterials(scene, materials, materialMap); });
+            auto prepareMaterialsFuture = std::async(std::launch::async,[&]() { PrepareMaterials(scene, materials, materialMap); });
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-
-
-            auto prepareBindlessFuture = std::async([&]() {
+            auto prepareBindlessFuture = std::async(std::launch::async,[&]() {
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
                 });
 

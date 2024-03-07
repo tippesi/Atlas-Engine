@@ -280,6 +280,8 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
+    graphicsDevice->WaitForPreviousFrameCompletion();
+
 #ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
     if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
@@ -1063,6 +1065,8 @@ void App::CheckLoadScene() {
             for (const auto& material : mesh->data.materials)
                 material->metalness = 0.0f;
     }
+
+    graphicsDevice->WaitForPreviousFrameCompletion();
 
     static std::future<void> future;
 

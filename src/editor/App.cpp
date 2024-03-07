@@ -182,6 +182,8 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
+        graphicsDevice->WaitForPreviousFrameCompletion();
+
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&]() {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
@@ -206,6 +208,8 @@ namespace Atlas::Editor {
     }
 
     void App::Render(float deltaTime) {
+
+        graphicsDevice->WaitForPreviousFrameCompletion();
 
         auto windowFlags = window.GetFlags();
         if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {

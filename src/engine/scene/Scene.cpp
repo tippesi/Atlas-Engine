@@ -272,7 +272,9 @@ namespace Atlas {
             UpdateBindlessIndexMaps();
 
             // Make sure this is changed just once at the start of a frame
-            rayTracingWorldUpdateFuture = std::async([&]() {
+            rayTracingWorldUpdateFuture = std::async(std::launch::async, [&]() {
+                // Need to wait before updating graphic resources
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
                 if (rayTracingWorld) {
                     rayTracingWorld->scene = this;
                     rayTracingWorld->Update(true);

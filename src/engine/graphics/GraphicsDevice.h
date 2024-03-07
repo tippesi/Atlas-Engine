@@ -24,6 +24,7 @@
 #include <vector>
 #include <mutex>
 #include <set>
+#include <future>
 
 namespace Atlas {
 
@@ -138,13 +139,19 @@ namespace Atlas {
 
             void FlushCommandList(CommandList* cmd);
 
+            bool IsPreviousFrameComplete();
+
+            void WaitForPreviousFrameCompletion();
+
+            void CompleteFrameAsync();
+
             void CompleteFrame();
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             QueueRef GetAndLockQueue(QueueType queueType);
 
-            void WaitForIdle() const;
+            void WaitForIdle();
 
             void ForceMemoryCleanup();
 
@@ -293,6 +300,9 @@ namespace Atlas {
             int32_t windowHeight = 0;
 
             std::set<std::string> supportedExtensions;
+
+            std::atomic_bool frameComplete = true;
+            std::future<void> completeFrameFuture;
 
         };
 

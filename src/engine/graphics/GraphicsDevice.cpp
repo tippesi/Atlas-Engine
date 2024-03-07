@@ -435,6 +435,31 @@ namespace Atlas {
 
         }
 
+        bool GraphicsDevice::IsPreviousFrameComplete() {
+
+            return frameComplete;
+
+        }
+
+        void GraphicsDevice::WaitForPreviousFrameCompletion() {
+
+            if (completeFrameFuture.valid())
+                completeFrameFuture.get();
+
+        }
+
+        void GraphicsDevice::CompleteFrameAsync() {
+
+            frameComplete = false;
+
+            if (completeFrameFuture.valid())
+                completeFrameFuture.get();
+
+            completeFrameFuture = std::async(std::launch::async,
+                [this] () { CompleteFrame(); });
+
+        }
+
         void GraphicsDevice::CompleteFrame() {
 
             bool recreateSwapChain = false;
@@ -532,6 +557,9 @@ namespace Atlas {
                 // A new image index is automatically acquired
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
+
+            frameComplete = true;
+
         }
 
         bool GraphicsDevice::CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags) {
@@ -548,7 +576,9 @@ namespace Atlas {
 
         }
 
-        void GraphicsDevice::WaitForIdle() const {
+        void GraphicsDevice::WaitForIdle() {
+
+            WaitForPreviousFrameCompletion();
 
             vkDeviceWaitIdle(device);
 
