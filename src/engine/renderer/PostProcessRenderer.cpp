@@ -40,10 +40,7 @@ namespace Atlas {
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-            bool fsr2 = false;
-#ifdef AE_FSR2
-            fsr2 = postProcessing.fsr2;
-#endif
+            bool fsr2 = postProcessing.fsr2;
 
             bool spatialUpscalingEnabled = !fsr2 && target->GetScalingFactor() != 1.0f;
             bool shapenEnabled = !fsr2 && sharpen.enable;

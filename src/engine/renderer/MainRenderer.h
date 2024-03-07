@@ -186,9 +186,7 @@ namespace Atlas {
             SSSRenderer sssRenderer;
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
-#ifdef AE_FSR2
             FSR2Renderer fsr2Renderer;
-#endif
 
             RenderList renderList;
 

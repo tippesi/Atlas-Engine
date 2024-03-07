@@ -255,7 +255,7 @@ namespace Atlas::Renderer {
         RenderResolution volumetricResolution;
         RenderResolution reflectionResolution;
 
-        float scalingFactor = 0.5f;
+        float scalingFactor = 0.75f;
 
         bool swap = false;
         bool hasHistory = false;
