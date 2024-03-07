@@ -19,9 +19,12 @@ namespace Atlas {
 
             VkImageCreateInfo imageInfo = Initializers::InitImageCreateInfo(desc.format,
                 desc.usageFlags, imageExtent, GetImageType());
-            if (desc.mipMapping) {
+            if (desc.mipMapping && !desc.mipLevels) {
                 mipLevels = uint32_t(floor(log2(glm::max(float(width), float(height)))) + 1);
                 imageInfo.mipLevels = mipLevels;
+            }
+            if (desc.mipMapping && desc.mipLevels) {
+                imageInfo.mipLevels = desc.mipLevels;
             }
             if (desc.type == ImageType::Image1DArray || desc.type == ImageType::Image2DArray ||
                 desc.type == ImageType::ImageCube) {
@@ -117,7 +120,6 @@ namespace Atlas {
         }
 
         void Image::GenerateMipMaps() {
-
 
             if (domain == ImageDomain::Device) {
                 memoryManager->transferManager->GenerateMipMaps(this);

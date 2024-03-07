@@ -98,6 +98,7 @@ if (ATLAS_TESTS)
 find_package(GTest CONFIG REQUIRED)
 endif()
 
+add_subdirectory(libs/fsr2)
 add_subdirectory(${ATLAS_LOCATION})
 
 if (ATLAS_IMGUI)

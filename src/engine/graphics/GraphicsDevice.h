@@ -39,6 +39,7 @@ namespace Atlas {
             bool bindless = false;
             bool debugMarker = false;
             bool wideLines = false;
+            bool shaderFloat16 = false;
         };
 
         struct CommandListSubmission {
@@ -174,12 +175,14 @@ namespace Atlas {
             VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
+            VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
 
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
 
             DeviceSupport support;
+            std::set<std::string> supportedExtensions;
 
             Resources<RenderPass> renderPasses;
             Resources<FrameBuffer> frameBuffers;
@@ -299,7 +302,6 @@ namespace Atlas {
             int32_t windowWidth = 0;
             int32_t windowHeight = 0;
 
-            std::set<std::string> supportedExtensions;
 
             std::atomic_bool frameComplete = true;
             std::future<void> completeFrameFuture;

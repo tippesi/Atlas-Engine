@@ -23,6 +23,8 @@ namespace Atlas {
 
             bool filmicTonemapping = false;
 
+            bool fsr2 = true;
+
             TAA taa;
             Vignette vignette;
             ChromaticAberration chromaticAberration;

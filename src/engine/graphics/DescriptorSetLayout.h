@@ -55,14 +55,13 @@ namespace Atlas {
             bool IsCompatible(const Ref<DescriptorSetLayout>& that) const;
 
             VkDescriptorSetLayout layout = {};
+            DescriptorSetSize size = {};
 
             bool isComplete = false;
             bool bindless = false;
 
         private:
             GraphicsDevice* device;
-
-            DescriptorSetSize size = {};
 
             std::vector<DescriptorSetBinding> bindings;
 

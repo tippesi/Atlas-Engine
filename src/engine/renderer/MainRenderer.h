@@ -31,6 +31,7 @@
 #include "VegetationRenderer.h"
 #include "TextureRenderer.h"
 #include "PathTracingRenderer.h"
+#include "FSR2Renderer.h"
 
 namespace Atlas {
 
@@ -104,6 +105,7 @@ namespace Atlas {
                 float time;
                 float deltaTime;
                 uint32_t frameCount;
+                float mipLodBias;
             };
 
             struct alignas(16) DDGIUniforms {
@@ -133,7 +135,7 @@ namespace Atlas {
 
             void CreateGlobalDescriptorSetLayout();
 
-            void SetUniforms(Ref<Scene::Scene> scene, const CameraComponent& camera);
+            void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera);
 
             void PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
                 std::unordered_map<void*, uint16_t>& materialMap);
@@ -184,6 +186,7 @@ namespace Atlas {
             SSSRenderer sssRenderer;
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
+            FSR2Renderer fsr2Renderer;
 
             RenderList renderList;
 

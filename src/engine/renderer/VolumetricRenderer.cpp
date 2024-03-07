@@ -68,7 +68,7 @@ namespace Atlas {
 
                 const int32_t groupSize = 8;
 
-                res = ivec2(target->GetWidth(), target->GetHeight());
+                res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
                 ivec2 groupCount = res / groupSize;
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
@@ -248,7 +248,7 @@ namespace Atlas {
 
                 const int32_t groupSize = 8;
 
-                res = ivec2(target->GetWidth(), target->GetHeight());
+                res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
                 ivec2 groupCount = res / groupSize;
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);

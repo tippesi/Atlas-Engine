@@ -65,7 +65,7 @@ namespace Atlas {
             taaRenderer.Init(device);
             postProcessRenderer.Init(device);
             pathTracingRenderer.Init(device);
-
+            fsr2Renderer.Init(device);
             textRenderer.Init(device);
             textureRenderer.Init(device);
 
@@ -86,9 +86,15 @@ namespace Atlas {
 
             auto& taa = scene->postProcessing.taa;
             if (taa.enable) {
-                auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-                jitter.x /= (float)target->GetWidth();
-                jitter.y /= (float)target->GetHeight();
+                vec2 jitter = vec2(0.0f);
+                if (scene->postProcessing.fsr2) {
+                    jitter = fsr2Renderer.GetJitter(target, frameCount);
+                }
+                else {
+                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                    jitter.x /= (float)target->GetScaledWidth();
+                    jitter.y /= (float)target->GetScaledHeight();
+                }
 
                 camera.Jitter(jitter * taa.jitterRange);
             }
@@ -119,7 +125,7 @@ namespace Atlas {
             prepareMaterialsFuture.get();
             prepareBindlessFuture.get();
 
-            SetUniforms(scene, camera);
+            SetUniforms(target, scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -355,7 +361,12 @@ namespace Atlas {
                 RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
             {
-                taaRenderer.Render(target, scene, commandList);
+                if (scene->postProcessing.fsr2) {
+                    fsr2Renderer.Render(target, scene, commandList);
+                }
+                else {
+                    taaRenderer.Render(target, scene, commandList);
+                }
 
                 target->Swap();
 
@@ -867,7 +878,7 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::SetUniforms(Ref<Scene::Scene> scene, const CameraComponent& camera) {
+        void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
             auto globalUniforms = GlobalUniforms {
                 .vMatrix = camera.viewMatrix,
@@ -888,7 +899,8 @@ namespace Atlas {
                 .planetRadius = scene->sky.planetRadius,
                 .time = Clock::Get(),
                 .deltaTime = Clock::GetDelta(),
-                .frameCount = frameCount
+                .frameCount = frameCount,
+                .mipLodBias = -1.0f / target->GetScalingFactor()
             };
 
             auto frustumPlanes = camera.frustum.GetPlanes();

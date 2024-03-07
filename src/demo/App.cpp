@@ -473,6 +473,12 @@ void App::Render(float deltaTime) {
                     }
                 }
 
+                auto resolutionScale = renderTarget->GetScalingFactor();
+                ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
+
+                if (renderTarget->GetScalingFactor() != resolutionScale)
+                    renderTarget->SetScalingFactor(resolutionScale);
+
             }
             if (ImGui::CollapsingHeader("Pathtracing")) {
                 bool pathTraceEnabled = pathTrace;
@@ -597,9 +603,9 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Profiler")) {
                 gpuProfilerPanel.Render();
             }
-
-            ImGui::End();
         }
+
+        ImGui::End();
 
         if (openSceneNotFoundPopup) {
             ImGui::OpenPopup("Scene not found");

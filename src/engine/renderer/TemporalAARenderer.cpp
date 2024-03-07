@@ -25,7 +25,7 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            auto res = ivec2(target->GetWidth(), target->GetHeight());
+            auto res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
             const int32_t groupSize = 8;
             ivec2 groupCount = res / groupSize;
@@ -60,8 +60,8 @@ namespace Atlas {
             commandList->BindImage(stencil->image, stencil->sampler, 3, 6);
 
             auto constants = PushConstants {
-                .resolution = vec2((float)target->GetWidth(), (float)target->GetHeight()),
-                .invResolution = 1.0f / vec2((float)target->GetWidth(), (float)target->GetHeight()),
+                .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
+                .invResolution = 1.0f / vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .jitter = camera.GetJitter()
             };
             commandList->PushConstants("constants", &constants);
