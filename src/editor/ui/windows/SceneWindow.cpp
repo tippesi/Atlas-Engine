@@ -270,6 +270,14 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
                 ImGui::DragFloat("Far plane", &camera.farPlane, 1.0f, 1.0f, 20000.0f);
 
+                ImGui::Text("Rendering scale");
+
+                auto resolutionScale = Singletons::renderTarget->GetScalingFactor();
+                ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
+
+                if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
+                    Singletons::renderTarget->SetScalingFactor(resolutionScale);
+
                 ImGui::EndPopup();
             }
 

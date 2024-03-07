@@ -39,7 +39,11 @@ namespace Atlas {
 
             ImageBarrier(const Ref<Image>& image, VkImageLayout newLayout, VkAccessFlags newAccessMask);
 
+            ImageBarrier(Image* image, VkImageLayout newLayout, VkAccessFlags newAccessMask);
+
             ImageBarrier& Update(const Ref<Image>& image);
+
+            ImageBarrier& Update(Image* image);
 
             Image* image = nullptr;
 

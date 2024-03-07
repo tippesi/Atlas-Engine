@@ -78,6 +78,7 @@ namespace Atlas::PostProcessing {
             {"screenMaxLuminance", p.screenMaxLuminance},
             {"filmicTonemapping", p.filmicTonemapping},
             {"taa", p.taa},
+            {"fsr2", p.fsr2},
             {"vignette", p.vignette},
             {"chromaticAberration", p.chromaticAberration},
             {"filmGrain", p.filmGrain},
@@ -92,6 +93,7 @@ namespace Atlas::PostProcessing {
         j.at("screenMaxLuminance").get_to(p.screenMaxLuminance);
         j.at("filmicTonemapping").get_to(p.filmicTonemapping);
         j.at("taa").get_to(p.taa);
+        j.at("fsr2").get_to(p.fsr2);
         j.at("vignette").get_to(p.vignette);
         j.at("chromaticAberration").get_to(p.chromaticAberration);
         j.at("filmGrain").get_to(p.filmGrain);

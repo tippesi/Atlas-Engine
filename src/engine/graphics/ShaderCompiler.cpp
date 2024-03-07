@@ -67,7 +67,7 @@ namespace Atlas {
                 shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
             }
             else {
-                shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+                shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
             }
 
             // Enable SPIR-V and Vulkan rules when parsing GLSL
@@ -355,7 +355,7 @@ namespace Atlas {
             if (infoLog.empty() && debugInfoLog.empty()) {
                 Log::Error("Shader compilation failed with unknown error");
             }
-
+            
         }
 
     }

@@ -25,6 +25,7 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     float time;
     float deltaTime;
     uint frameCount;
+    float mipLodBias;
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];

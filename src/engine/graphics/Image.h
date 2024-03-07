@@ -36,6 +36,7 @@ namespace Atlas {
             uint32_t height = 1;
             uint32_t depth = 1;
             uint32_t layers = 1;
+            uint32_t mipLevels = 0;
             VkFormat format;
 
             bool mipMapping = false;
