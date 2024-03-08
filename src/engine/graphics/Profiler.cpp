@@ -20,7 +20,7 @@ namespace Atlas {
         bool Profiler::supportsDebugMarkers = false;
 
 #if !defined(AE_OS_MACOS) && !defined(AE_BUILDTYPE_RELEASE)
-        std::atomic_bool Profiler::enable = true;
+        std::atomic_bool Profiler::enable = false;
 #else
         std::atomic_bool Profiler::enable = false;
 #endif

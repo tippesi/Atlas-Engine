@@ -44,6 +44,8 @@ namespace Atlas {
 
             void Clear();
 
+            bool includeObjectHistory = false;
+
         private:
             struct MeshInfo {
                 Ref<Graphics::BLAS> blas = nullptr;

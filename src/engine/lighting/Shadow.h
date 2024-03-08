@@ -44,7 +44,7 @@ namespace Atlas {
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
             float bias = 0.001f;
-            float splitCorrection = 0.95f;
+            float splitCorrection = 0.9f;
 
             float cascadeBlendDistance = 2.5f;
 

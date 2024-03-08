@@ -106,7 +106,9 @@ namespace Atlas {
                 meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
-                lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
+
+                if (includeObjectHistory)
+                    lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
@@ -141,11 +143,15 @@ namespace Atlas {
 
             if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
                 bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
-                lastMatricesBuffer.SetSize(lastMatrices.size());
+
+                if (includeObjectHistory)
+                    lastMatricesBuffer.SetSize(lastMatrices.size());
             }
            
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
-            lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
+
+            if (includeObjectHistory)
+                lastMatricesBuffer.SetData(lastMatrices.data(), 0, lastMatrices.size());
 
         }
 

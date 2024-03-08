@@ -10,6 +10,7 @@
 #include <assimp/types.h>
 
 #include <set>
+#include <mutex>
 
 namespace Atlas {
 
@@ -29,6 +30,15 @@ namespace Atlas {
                 int32_t depth, bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
         private:
+            enum class MaterialImageType {
+                BaseColor = 0,
+                Opacity,
+                Roughness,
+                Metallic,
+                Normal,
+                Displacement,
+            };
+
             struct MaterialImages {
                 std::map<std::string, Ref<Common::Image<uint8_t>>> baseColorImages;
                 std::map<std::string, Ref<Common::Image<uint8_t>>> opacityImages;
@@ -43,10 +53,60 @@ namespace Atlas {
                 std::map<std::string, Ref<Texture::Texture2D>> metallicTextures;
                 std::map<std::string, Ref<Texture::Texture2D>> normalTextures;
                 std::map<std::string, Ref<Texture::Texture2D>> displacementTextures;
+
+                std::mutex mutexes[6];
+
+                void Add(MaterialImageType type, const std::string& path, const Ref<Common::Image<uint8_t>>& image) {
+                    std::scoped_lock lock(mutexes[static_cast<int>(type)]);
+
+                    switch (type) {
+                    case MaterialImageType::BaseColor:
+                        baseColorImages[path] = image;
+                        break;
+                    case MaterialImageType::Opacity:
+                        opacityImages[path] = image;
+                        break;
+                    case MaterialImageType::Roughness:
+                        roughnessImages[path] = image;
+                        break;
+                    case MaterialImageType::Metallic:
+                        metallicImages[path] = image;
+                        break;
+                    case MaterialImageType::Normal:
+                        normalImages[path] = image;
+                        break;
+                    case MaterialImageType::Displacement:
+                        baseColorImages[path] = image;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                bool Contains(MaterialImageType type, const std::string& path) {
+                    std::scoped_lock lock(mutexes[static_cast<int>(type)]);
+
+                    switch (type) {
+                    case MaterialImageType::BaseColor:
+                        return baseColorImages.contains(path);
+                    case MaterialImageType::Opacity:
+                        return opacityImages.contains(path);
+                    case MaterialImageType::Roughness:
+                        return roughnessImages.contains(path);
+                    case MaterialImageType::Metallic:
+                        return metallicImages.contains(path);
+                    case MaterialImageType::Normal:
+                        return normalImages.contains(path);
+                    case MaterialImageType::Displacement:
+                        return displacementImages.contains(path);
+                    default:
+                        return true;
+                    }
+                }
             };
 
-            static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, 
-                Material& material, const std::string& directory, bool isObj, bool hasTangents);
+            static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material,
+                const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords);
 
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
                 const std::string& directory, bool isObj, bool hasTangents,

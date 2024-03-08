@@ -26,7 +26,6 @@ namespace Atlas {
         Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
                 distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
 
-            splitCorrection = 0.0f;
             isCascaded = false;
 
             if (useCubemap) {

@@ -9,7 +9,7 @@ namespace Atlas {
 #ifdef AE_BUILDTYPE_RELEASE
     bool PipelineManager::hotReload = false;
 #else
-    bool PipelineManager::hotReload = true;
+    bool PipelineManager::hotReload = false;
 #endif
     std::mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;

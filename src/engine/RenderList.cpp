@@ -37,8 +37,10 @@ namespace Atlas {
                 auto id = mesh.GetID();
                 pass->meshIdToMeshMap[id] = mesh;
             }
-        }
 
+            std::erase_if(pass->meshToEntityMap, [pass](auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
+            std::erase_if(pass->meshToInstancesMap, [pass](auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
+        }
     }
 
     Ref<RenderList::Pass> RenderList::NewMainPass() {

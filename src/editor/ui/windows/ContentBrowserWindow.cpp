@@ -244,7 +244,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (!isDirectory && ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.size());
+                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.length());
                 ImGui::Text("Drag to entity component");
 
                 ImGui::EndDragDropSource();

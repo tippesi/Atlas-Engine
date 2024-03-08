@@ -89,7 +89,7 @@ namespace Atlas::Editor::UI {
         static bool invertUVs = false;
         static bool addRigidBodies = false;
 
-        SetupPopupSize(0.6f, 0.4f);
+        SetupPopupSize(0.6f, 0.3f);
 
         bool popupNew = false;
 

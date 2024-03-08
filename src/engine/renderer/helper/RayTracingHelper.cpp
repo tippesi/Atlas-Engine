@@ -117,7 +117,8 @@ namespace Atlas {
 
                     rtData->materialBuffer.Bind(commandList, 2, 7);
                     rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
+                    if (rtData->includeObjectHistory)
+                        rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
                     if (rtData->hardwareRayTracing) {
@@ -238,7 +239,8 @@ namespace Atlas {
 
                     rtData->materialBuffer.Bind(commandList, 2, 7);
                     rtData->bvhInstanceBuffer.Bind(commandList, 2, 21);
-                    rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
+                    if (rtData->includeObjectHistory)
+                        rtData->lastMatricesBuffer.Bind(commandList, 2, 27);
                     lightBuffer.Bind(commandList, 2, 11);
 
                     if (rtData->hardwareRayTracing) {

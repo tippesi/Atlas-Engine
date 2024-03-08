@@ -432,7 +432,13 @@ namespace Atlas {
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+            auto prepareBindlessFuture = std::async(std::launch::async, [&]() {
+                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+                });
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+            prepareBindlessFuture.get();
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
