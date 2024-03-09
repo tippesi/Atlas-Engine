@@ -38,8 +38,8 @@ namespace Atlas {
                 pass->meshIdToMeshMap[id] = mesh;
             }
 
-            std::erase_if(pass->meshToEntityMap, [pass](auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
-            std::erase_if(pass->meshToInstancesMap, [pass](auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
+            std::erase_if(pass->meshToEntityMap, [pass](const auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
+            std::erase_if(pass->meshToInstancesMap, [pass](const auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
         }
     }
 
@@ -246,7 +246,7 @@ namespace Atlas {
         // We can reset the scene now and delete the reference
         scene = nullptr;
 
-        std::erase_if(passes, [](auto& item) { return item->wasUsed != true; });
+        std::erase_if(passes, [](const auto& item) { return item->wasUsed != true; });
         for (auto& pass : passes)
             pass->Reset();
 

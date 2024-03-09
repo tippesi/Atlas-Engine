@@ -206,15 +206,15 @@ namespace Atlas {
             }
             if (renderPassInUse) {
                 for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    auto& rpAttachment = renderPassInUse->colorAttachments[i];
-                    auto& fbAttachment = frameBufferInUse->colorAttachments[i];
+                    const auto& rpAttachment = renderPassInUse->colorAttachments[i];
+                    const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
                     if (!fbAttachment.isValid) continue;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
                     fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
                 if (frameBufferInUse->depthAttachment.isValid) {
-                    auto& rpAttachment = renderPassInUse->depthAttachment;
-                    auto& fbAttachment = frameBufferInUse->depthAttachment;
+                    const auto& rpAttachment = renderPassInUse->depthAttachment;
+                    const auto& fbAttachment = frameBufferInUse->depthAttachment;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
                     fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
@@ -439,7 +439,7 @@ namespace Atlas {
             VkBuffer bindBuffers[MAX_VERTEX_BUFFER_BINDINGS];
 
             for (size_t i = 0; i < buffers.size(); i++) {
-                auto& buffer = buffers[i];
+                const auto& buffer = buffers[i];
                 if (!buffer->buffer) return;
                 AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
                 bindBuffers[i] = buffer->buffer;
@@ -585,7 +585,7 @@ namespace Atlas {
             if (!images.size()) return;
 
             std::vector<Image*> imagesPtr;
-            for (auto& image : images) imagesPtr.push_back(image.get());
+            for (const auto& image : images) imagesPtr.push_back(image.get());
 
             descriptorBindingData.ResetBinding(set, binding);
 
@@ -1286,7 +1286,7 @@ namespace Atlas {
 
         const VkSemaphore CommandList::GetSemaphore(VkQueue queue) {
 
-            for (auto& semaphore : semaphores) {
+            for (const auto& semaphore : semaphores) {
                 if (semaphore.queue == queue)
                     return semaphore.semaphore;
             }

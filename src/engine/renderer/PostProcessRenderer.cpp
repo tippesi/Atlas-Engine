@@ -73,7 +73,7 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto& image = writeTexture->image;
+                const auto& image = writeTexture->image;
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -101,7 +101,7 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                 auto& image = writeTexture->image;
+                const auto& image = writeTexture->image;
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -196,7 +196,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-                auto& image = target->historyPostProcessTexture.image;
+                const auto& image = target->historyPostProcessTexture.image;
 
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
