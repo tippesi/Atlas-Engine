@@ -7,6 +7,7 @@
 #include "pipeline/PipelineManager.h"
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
+#include "input/KeyboardMap.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -71,6 +72,7 @@ namespace Atlas {
         Common::Random::Init();
         PipelineManager::Init();
         Physics::PhysicsManager::Init();
+        Input::KeyboardMap::Init();
 
         // We need lower sample size for smaller buffer on SDL side (e.g. 256 instead of 1024)
         Audio::AudioManager::Configure(48000, 2, 128);
@@ -87,6 +89,7 @@ namespace Atlas {
         Physics::PhysicsManager::Shutdown();
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
+        Input::KeyboardMap::Shutdown();
 
 #ifdef AE_NO_APP
         SDL_Quit();

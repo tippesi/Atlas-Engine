@@ -8,6 +8,16 @@ ScriptProperties = {
 lastSpawn = 0.0
 
 function Update(delta)
+
+    -- Only update the player rotation if there is input
+    local playerInput = (Atlas.KeyboardMap.IsKeyPressed(Atlas.Keycode.KeyW, true) or 
+        Atlas.KeyboardMap.IsKeyPressed(Atlas.Keycode.KeyA, true) or
+        Atlas.KeyboardMap.IsKeyPressed(Atlas.Keycode.KeyS, true) or
+        Atlas.KeyboardMap.IsKeyPressed(Atlas.Keycode.KeyD, true))
+
+    if playerInput ~= true then
+        return
+    end
     
     local entity = GetThisEntity()
     local scene = GetThisScene()

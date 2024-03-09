@@ -17,7 +17,7 @@ namespace Atlas {
             explicit KeyboardEvent(SDL_KeyboardEvent event) {
 
                 windowID = event.windowID;
-                keyCode = event.keysym.sym;
+                keyCode = static_cast<Keycode>(event.keysym.sym);
                 keyModifiers = event.keysym.mod;
                 state = event.state;
                 repeat = event.repeat > 0 ? true : false;

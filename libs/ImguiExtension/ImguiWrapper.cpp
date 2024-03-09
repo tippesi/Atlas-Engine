@@ -252,7 +252,7 @@ namespace Atlas::ImguiExtension {
         ImGuiIO &io = ImGui::GetIO();
 
         UpdateKeyModifiers(event.keyModifiers);
-        ImGuiKey key = KeycodeToImGuiKey(event.keyCode);
+        ImGuiKey key = KeycodeToImGuiKey(static_cast<int32_t>(event.keyCode));
         io.AddKeyEvent(key, event.down);
 
     }

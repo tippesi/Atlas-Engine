@@ -97,77 +97,77 @@ namespace Atlas {
 
         void KeyboardHandler::KeyboardEventHandler(Events::KeyboardEvent event) {
 
-            if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyW && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.x += 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_W && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyW && event.state == AE_BUTTON_RELEASED) {
                 movement.x -= 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyS && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.x -= 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_S && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyS && event.state == AE_BUTTON_RELEASED) {
                 movement.x += 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyD && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.y += 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_D && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyD && event.state == AE_BUTTON_RELEASED) {
                 movement.y -= 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyA && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.y -= 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_A && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyA && event.state == AE_BUTTON_RELEASED) {
                 movement.y += 1.0f;
             }
 
 
-            if (event.keyCode == AE_KEY_E && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyE && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.z += 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_E && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyE && event.state == AE_BUTTON_RELEASED) {
                 movement.z -= 1.0f;
             }
 
 
-            if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_PRESSED && !event.repeat) {
+            if (event.keyCode == Keycode::KeyQ && event.state == AE_BUTTON_PRESSED && !event.repeat) {
                 movement.z -= 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_Q && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyQ && event.state == AE_BUTTON_RELEASED) {
                 movement.z += 1.0f;
             }
 
-            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeySpace && event.state == AE_BUTTON_PRESSED) {
                 jump = true;
             }
 
-            if (event.keyCode == AE_KEY_SPACE && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeySpace && event.state == AE_BUTTON_RELEASED) {
                 jump = false;
             }
 
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_PRESSED) {
                 fast = true;
             }
 
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_RELEASED) {
                 fast = false;
             }
 
-            if (event.keyCode == AE_KEY_LCTRL && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeyLeftControl && event.state == AE_BUTTON_PRESSED) {
                 slide = true;
             }
 
-            if (event.keyCode == AE_KEY_LCTRL && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyLeftControl && event.state == AE_BUTTON_RELEASED) {
                 slide = false;
             }
            

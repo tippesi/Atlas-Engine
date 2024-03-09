@@ -31,6 +31,8 @@ namespace Atlas::Scripting {
 
         void GenerateVolumeBindings(sol::table* ns);
 
+        void GenerateInputBindings(sol::table* ns);
+
         template<class T> 
         void GenerateResourceBinding(sol::table* ns, const std::string& name);
 
