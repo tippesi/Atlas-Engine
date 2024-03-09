@@ -286,7 +286,8 @@ namespace Atlas {
         }
 
         Ref<Scene::Scene> ModelLoader::LoadScene(const std::string& filename, vec3 min, vec3 max,
-            int32_t depth, bool forceTangents, int32_t maxTextureResolution) {
+            int32_t depth, bool combineMeshes, bool makeMeshesStatic,
+            bool forceTangents, int32_t maxTextureResolution) {
 
             auto directoryPath = GetDirectoryPath(filename);
 
@@ -298,16 +299,22 @@ namespace Atlas {
             Assimp::Importer importer;
             importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
 
+            auto flags = aiProcess_CalcTangentSpace |
+                         aiProcess_JoinIdenticalVertices |
+                         aiProcess_Triangulate |
+                         aiProcess_GenNormals |
+                         aiProcess_LimitBoneWeights |
+                         aiProcess_OptimizeGraph |
+                         aiProcess_RemoveRedundantMaterials |
+                         aiProcess_ImproveCacheLocality;
+
+            if (combineMeshes)
+                flags |= aiProcess_OptimizeMeshes;
+
             // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
             // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
             // Right now we just use flat normals everytime normals are missing.
-            const aiScene* assimpScene = importer.ReadFile(AssetLoader::GetFullPath(filename),
-                aiProcess_CalcTangentSpace |
-                aiProcess_JoinIdenticalVertices |
-                aiProcess_Triangulate |
-                aiProcess_GenNormals |
-                aiProcess_LimitBoneWeights |
-                aiProcess_ImproveCacheLocality);
+            const aiScene* assimpScene = importer.ReadFile(AssetLoader::GetFullPath(filename), flags);
 
             if (!assimpScene) {
                 throw ResourceLoadException(filename, "Error processing model "
@@ -494,7 +501,12 @@ namespace Atlas {
 
                     triangleCount += mesh->mNumFaces;
 
-                    auto entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(meshMap[mesh], nodeTransform, false);
+                    auto entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(
+                        meshMap[mesh], nodeTransform, makeMeshesStatic);
+
+                    auto name = std::string(mesh->mName.C_Str()) + "_" + std::to_string(entity);
+                    entity.AddComponent<NameComponent>(name);
+                    
                     parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
                 }
 

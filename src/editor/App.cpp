@@ -145,7 +145,7 @@ namespace Atlas::Editor {
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&
-            !ImGuizmo::IsUsing() && (!activeSceneWindow->isPlaying || !activeSceneWindow->hasPlayer)) {
+            !ImGuizmo::IsUsing() && !activeSceneWindow->isPlaying) {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             mouseHandler.sensibility = activeSceneWindow->cameraRotationSpeed;
             keyboardHandler.speed = activeSceneWindow->cameraMovementSpeed;

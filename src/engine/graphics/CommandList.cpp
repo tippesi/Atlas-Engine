@@ -392,7 +392,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data) {
+        void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data, uint32_t size) {
 
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
@@ -400,8 +400,9 @@ namespace Atlas {
             auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
             if (!pushConstantRange) return;
 
+            size = size != 0 ? size : pushConstantRange->range.size;
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,
-                pushConstantRange->range.offset, pushConstantRange->range.size, data);
+                pushConstantRange->range.offset, size, data);
 
         }
 

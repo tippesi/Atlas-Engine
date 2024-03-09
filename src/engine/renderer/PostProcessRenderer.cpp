@@ -109,7 +109,9 @@ namespace Atlas {
                 commandList->BindImage(image, 3, 0);
                 readTexture->Bind(commandList, 3, 1);
 
-                commandList->PushConstants("constants", &sharpen.factor);
+                // Reduce the sharpening to bring it more in line with FSR2 sharpening
+                float sharpenFactor = sharpen.factor * 0.5f;
+                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -209,7 +211,9 @@ namespace Atlas {
                     target->radianceTexture.Bind(commandList, 3, 1);
                 }
 
-                commandList->PushConstants("constants", &sharpen.factor);
+                // Reduce the sharpening to bring it more in line with FSR2 sharpening
+                float sharpenFactor = sharpen.factor * 0.5f;
+                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

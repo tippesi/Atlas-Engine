@@ -39,6 +39,7 @@ namespace Atlas {
 
         void SpacePartitioning::GetRenderList(Volume::Frustum frustum, RenderList& renderList) {
 
+            /*
             auto entityManager = &scene->entityManager;
 
             std::vector<ECS::Entity> staticEntities;
@@ -51,7 +52,6 @@ namespace Atlas {
             renderableMovableEntityOctree.QueryFrustum(movableEntities,
                 insideMovableEntities, frustum);
 
-            /*
             for (auto entity : staticEntities) {
                 auto meshComp = entityManager->TryGet<MeshComponent>(entity);
                 if (!meshComp) continue;

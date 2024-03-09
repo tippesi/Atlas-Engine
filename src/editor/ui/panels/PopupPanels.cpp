@@ -88,6 +88,8 @@ namespace Atlas::Editor::UI {
         static int32_t octreeDepth = 5;
         static bool invertUVs = false;
         static bool addRigidBodies = false;
+        static bool combineMeshes = false;
+        static bool makeMeshesStatic = false;
 
         SetupPopupSize(0.6f, 0.3f);
 
@@ -116,6 +118,8 @@ namespace Atlas::Editor::UI {
             ImGui::Text("Import properties");
             ImGui::Checkbox("Invert UVs", &invertUVs);
             ImGui::Checkbox("Attach mesh rigid body components", &addRigidBodies);
+            ImGui::Checkbox("Combine meshes", &combineMeshes);
+            ImGui::Checkbox("Make meshes static", &makeMeshesStatic);
 
             if (ImGui::Button("Cancel")) {
                 isImportScenePopupVisible = false;
@@ -126,7 +130,7 @@ namespace Atlas::Editor::UI {
 
             if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
                 auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize, 
-                    octreeDepth, invertUVs, addRigidBodies);
+                    octreeDepth, invertUVs, addRigidBodies, combineMeshes, makeMeshesStatic);
 
                 bool alreadyExisted;
                 Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);

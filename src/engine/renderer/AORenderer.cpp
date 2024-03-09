@@ -243,7 +243,7 @@ namespace Atlas {
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->BindPipeline(horizontalBlurPipeline);
-                    commandList->PushConstants("constants", &kernelSize);
+                    commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->swapAoTexture.image, 3, 0);
                     commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
@@ -260,7 +260,7 @@ namespace Atlas {
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->BindPipeline(verticalBlurPipeline);
-                    commandList->PushConstants("constants", &kernelSize);
+                    commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->aoTexture.image, 3, 0);
                     commandList->BindImage(target->swapAoTexture.image, target->swapAoTexture.sampler, 3, 1);

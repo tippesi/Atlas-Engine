@@ -67,9 +67,10 @@ namespace Atlas::Editor {
     }
 
     Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max,
-        int32_t depth, bool invertUVs, bool addRigidBodies) {
+        int32_t depth, bool invertUVs, bool addRigidBodies, bool combineMeshes, bool makeMeshesStatic) {
 
-        auto scene = Loader::ModelLoader::LoadScene(filename, min, max, depth, false, 2048);
+        auto scene = Loader::ModelLoader::LoadScene(filename, min, max, depth,
+            combineMeshes, makeMeshesStatic, false, 2048);
 
         auto rootEntity = scene->GetEntityByName("Root");
         auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
@@ -126,7 +127,7 @@ namespace Atlas::Editor {
         if (invertUVs) {
             auto meshes = scene->GetMeshes();
 
-            for (auto& mesh : meshes)
+            for (const auto& mesh : meshes)
                 mesh->invertUVs = true;
         }
 
@@ -134,7 +135,7 @@ namespace Atlas::Editor {
             auto meshSubset = scene->GetSubset<MeshComponent>();
 
             for (auto entity : meshSubset) {
-                auto& meshComponent = meshSubset.Get(entity);
+                const auto& meshComponent = meshSubset.Get(entity);
 
                 auto transformComponent = entity.GetComponent<TransformComponent>();
                 Atlas::Physics::MeshShapeSettings settings = {

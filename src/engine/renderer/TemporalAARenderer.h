@@ -20,7 +20,7 @@ namespace Atlas {
             void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 vec2 resolution;
                 vec2 invResolution;
                 vec2 jitter;

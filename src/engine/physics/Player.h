@@ -58,13 +58,14 @@ namespace Atlas::Physics {
 
 		vec3 GetUp() const;
 
-		void StickToGround(vec3 distVector);
-
 		void SetShape(const Ref<Shape>& shape);
 
 		virtual void Update(float deltaTime);
 
 		Ref<PlayerCreationSettings> creationSettings = nullptr;
+
+        vec3 stickToGroundDist = vec3(0.0f);
+        vec3 walkStairsStepUpDist = vec3(0.0f);
 
 	protected:
 		void Init(PhysicsWorld* world, vec3 initialPosition, quat initialRotation);

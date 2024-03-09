@@ -35,6 +35,7 @@ namespace Atlas::Scene {
 			bool allowInput = true;
 			
 			float stickToGroundDistance = 0.1f;
+            float walkStairStepUpDistance = 0.2f;
 
 			float slideDeacceleration = 4.0f;
 			float slideCutoffVelocity = 0.2f;

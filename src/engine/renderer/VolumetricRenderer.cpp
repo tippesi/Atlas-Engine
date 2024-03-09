@@ -210,7 +210,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindPipeline(horizontalBlurPipeline);
-                commandList->PushConstants("constants", &kernelSize);
+                commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                 commandList->BindImage(target->swapVolumetricTexture.image, 3, 0);
                 commandList->BindImage(target->volumetricTexture.image, target->volumetricTexture.sampler, 3, 1);
@@ -227,7 +227,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                 commandList->BindPipeline(verticalBlurPipeline);
-                commandList->PushConstants("constants", &kernelSize);
+                commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                 commandList->BindImage(target->volumetricTexture.image, 3, 0);
                 commandList->BindImage(target->swapVolumetricTexture.image, target->swapVolumetricTexture.sampler, 3, 1);

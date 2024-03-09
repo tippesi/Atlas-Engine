@@ -9,7 +9,7 @@ namespace Atlas::Editor::UI {
         ImGui::Text("Transform");
 
         ImGui::DragFloat3("Position", glm::value_ptr(cameraComponent.location), 0.1f, -10000.0f, 10000.0f);
-        ImGui::DragFloat2("Rotation", glm::value_ptr(cameraComponent.rotation), 0.01f, -glm::pi<float>() /  2.0f, glm::pi<float>() /  2.0f);
+        ImGui::DragFloat2("Rotation", glm::value_ptr(cameraComponent.rotation), 0.01f, -glm::pi<float>(), glm::pi<float>());
 
         ImGui::Checkbox("Use entity translation", &cameraComponent.useEntityTranslation);
         ImGui::Checkbox("Use entity rotation", &cameraComponent.useEntityRotation);

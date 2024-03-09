@@ -62,7 +62,6 @@ namespace Atlas {
                         mesh->needsBvhRefresh = false;
                     }
 
-                    auto& meshInfo = meshInfos[mesh.GetID()];
                     meshInfo.blas = mesh->blas;
                     meshInfo.idx = meshCount++;
                 }
@@ -279,7 +278,8 @@ namespace Atlas {
             std::vector<mat3x4> orderedLastMatrices(bvh.refs.size());
             for (size_t i = 0; i < bvh.refs.size(); i++) {
                 const auto& ref = bvh.refs[i];
-                orderedLastMatrices[i] = lastMatrices[bvh.refs[i].idx];
+                if (includeObjectHistory)
+                    orderedLastMatrices[i] = lastMatrices[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i] = gpuBvhInstances[bvh.refs[i].idx];
                 orderedGpuBvhInstances[i].nextInstance = ref.endOfNode ? -1 : int32_t(i) + 1;
             }
@@ -291,7 +291,8 @@ namespace Atlas {
             tlasNodeBuffer.SetData(gpuBvhNodes.data(), 0, gpuBvhNodes.size());
 
             gpuBvhInstances = orderedGpuBvhInstances;
-            lastMatrices = orderedLastMatrices;
+            if (includeObjectHistory)
+                lastMatrices = orderedLastMatrices;
 
         }
 

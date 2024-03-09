@@ -29,6 +29,12 @@ namespace Atlas::Editor::UI {
             auto& mesh = meshComponent.mesh;
             ImGui::Separator();
             ImGui::Text("Mesh settings");
+
+            const char* mobilityItems[] = { "Stationary", "Movable" };
+            int mobilityItem = static_cast<int>(mesh->mobility);
+            ImGui::Combo("Mobility", &mobilityItem, mobilityItems, IM_ARRAYSIZE(mobilityItems));
+            mesh->mobility = static_cast<Mesh::MeshMobility>(mobilityItem);
+
             ImGui::Checkbox("Invert UVs", &mesh->invertUVs);
             ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
             ImGui::Separator();

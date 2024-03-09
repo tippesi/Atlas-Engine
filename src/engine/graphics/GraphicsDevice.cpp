@@ -457,6 +457,8 @@ namespace Atlas {
             if (completeFrameFuture.valid())
                 completeFrameFuture.get();
 
+            // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
+            // Refrain from using complete frame async for now
             completeFrameFuture = std::async(std::launch::async,
                 [this] () { CompleteFrame(); });
 

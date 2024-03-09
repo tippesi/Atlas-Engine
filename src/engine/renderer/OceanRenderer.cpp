@@ -153,7 +153,7 @@ namespace Atlas {
 
                 commandList->ImageMemoryBarrier(lightingImage, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                commandList->PushConstants("constants", &ocean->translation.y);
+                commandList->PushConstants("constants", &ocean->translation.y, sizeof(float));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }

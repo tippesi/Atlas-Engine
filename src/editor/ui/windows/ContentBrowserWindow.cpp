@@ -112,7 +112,11 @@ namespace Atlas::Editor::UI {
 
                     // There must be a scene, otherwise we want to get a fatal error
                     auto iter = std::find_if(scenes.begin(), scenes.end(),
-                        [&](const ResourceHandle<Scene::Scene>& item) -> bool { return item->name == scene->name; });
+                        [&](const ResourceHandle<Scene::Scene>& item) -> bool {
+                            if (!item.IsLoaded())
+                                return false;
+                            return item->name == scene->name;                        
+                        });
                     auto sceneHandle = *iter;
 
                     auto nameComponent = entity.TryGetComponent<NameComponent>();

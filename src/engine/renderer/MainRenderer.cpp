@@ -781,7 +781,7 @@ namespace Atlas {
             pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
             pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 int cubeMapMipLevels;
                 float roughness;
                 uint32_t mipLevel;

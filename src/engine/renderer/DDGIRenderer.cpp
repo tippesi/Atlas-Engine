@@ -231,7 +231,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants("constants", &probeRes);
+                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(irradianceArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -249,7 +249,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants("constants", &probeRes);
+                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(momentsArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 

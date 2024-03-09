@@ -35,7 +35,28 @@ namespace Atlas::Physics {
     void Player::SetPosition(vec3 position) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
-        character->SetPosition(Physics::VecToJPHVec(position));
+        character->SetPosition(VecToJPHVec(position));
+
+    }
+
+    vec3 Player::GetPosition() const {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return JPHVecToVec(character->GetPosition());
+
+    }
+
+    void Player::SetRotation(quat rotation) {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        character->SetRotation(QuatToJPHQuat(rotation));
+
+    }
+
+    quat Player::GetRotation() const {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return JPHQuatToQuat(character->GetRotation());
 
     }
 
@@ -90,22 +111,6 @@ namespace Atlas::Physics {
 
     }
 
-    void Player::StickToGround(vec3 distVector) {
-
-        AE_ASSERT(world != nullptr && "Physics world is invalid");
-
-        auto system = world->system;
-
-        const auto& physicsSettings = system->GetPhysicsSettings();
-        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::MOVABLE);
-        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::MOVABLE);
-        const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
-
-        character->StickToFloor(VecToJPHVec(distVector), broadPhaseLayerFilter, defaultLayerFilter,
-            {}, {}, *tempAllocator);
-
-    }
-
     void Player::SetShape(const Ref<Shape>& shape) {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");
@@ -135,8 +140,13 @@ namespace Atlas::Physics {
 
         auto gravityVector = -GetUp() * glm::length(world->GetGravity());
 
-        character->Update(deltaTime, VecToJPHVec(gravityVector), broadPhaseLayerFilter,
-            defaultLayerFilter, {}, {}, *tempAllocator);
+        JPH::CharacterVirtual::ExtendedUpdateSettings settings;
+
+        settings.mStickToFloorStepDown = VecToJPHVec(stickToGroundDist);
+        settings.mWalkStairsStepUp = VecToJPHVec(walkStairsStepUpDist);
+
+        character->ExtendedUpdate(deltaTime, VecToJPHVec(gravityVector), settings,
+            broadPhaseLayerFilter, defaultLayerFilter, {}, {}, *tempAllocator);
 
     }
 

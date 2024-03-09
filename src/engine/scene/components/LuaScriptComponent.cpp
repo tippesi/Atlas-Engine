@@ -82,17 +82,24 @@ namespace Atlas::Scene::Components {
             SetPropertyValuesInLuaState();
 
             // call the update function
-            if (updateFunction.has_value()) {
-                auto result = updateFunction.value()(deltaTime);
-                if (!result.valid()) {
-                    // Call failed
-                    // Note that if the handler was successfully called, this will include
-                    // the additional appended error message information of
-                    // "got_problems handler: " ...
-                    sol::error err = result;
-                    std::string what = err.what();
-                    Log::Error("Error while executing update in " + script.GetResource()->GetFileName() + ": " + what);
+            try {
+                if (updateFunction.has_value()) {
+                    auto result = updateFunction.value()(deltaTime);
+                    if (!result.valid()) {
+                        // Call failed
+                        // Note that if the handler was successfully called, this will include
+                        // the additional appended error message information of
+                        // "got_problems handler: " ...
+                        sol::error err = result;
+                        std::string what = err.what();
+                        Log::Error("Error while executing update in "
+                            + script.GetResource()->GetFileName() + ": " + what);
+                    }
                 }
+            }
+            catch (const std::exception e) {
+                Atlas::Log::Message("Error while compiling lua script "
+                    + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
             }
         }
     }
@@ -122,7 +129,8 @@ namespace Atlas::Scene::Components {
         catch (const std::exception& e) {
             updateFunction.reset();
             scriptEnvironment.reset();
-            Atlas::Log::Message("Error while compiling lua script " + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
+            Atlas::Log::Message("Error while compiling lua script "
+                + script.GetResource()->GetFileName() + ": " + std::string(e.what()));
 
             return false;
         }

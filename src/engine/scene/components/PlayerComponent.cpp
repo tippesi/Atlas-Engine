@@ -2,8 +2,6 @@
 #include "physics/MathConversion.h"
 #include "physics/PhysicsManager.h"
 
-#include <format>
-
 namespace Atlas::Scene::Components {
 
     PlayerComponent::PlayerComponent(float mass, float maxStrength) {
@@ -32,8 +30,11 @@ namespace Atlas::Scene::Components {
         
         auto up = GetUp();
 
+        // Don't want to stick to the ground while jumping
         if (!jumped)
-            StickToGround(-up * stickToGroundDistance);
+            stickToGroundDist = -up * stickToGroundDistance;
+        else
+            stickToGroundDist = vec3(0.0f);
 
         auto newVelocity = vec3(0.0f);
         auto groundVelocity = GetGroundVelocity();
@@ -79,6 +80,8 @@ namespace Atlas::Scene::Components {
         newVelocity += lastGravityAcceleration;
 
         SetLinearVelocity(newVelocity);
+
+        walkStairsStepUpDist = up * walkStairStepUpDistance;
 
         Player::Update(deltaTime);
         

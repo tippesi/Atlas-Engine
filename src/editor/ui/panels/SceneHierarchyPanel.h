@@ -27,7 +27,8 @@ namespace Atlas::Editor::UI {
         SelectedProperty selectedProperty;
 
     private:
-        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool inFocus);
+        void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
+            std::unordered_map<ECS::Entity, bool>& matchMap, bool inFocus);
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene);
 
@@ -37,7 +38,11 @@ namespace Atlas::Editor::UI {
 
         void DuplicateSelectedEntity(Ref<Scene::Scene>& scene);
 
+        bool SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+            std::unordered_map<ECS::Entity, bool>& matchMap, bool parentMatches);
+
         std::string entitySearch;
+        std::string transformedEntitySearch;
 
     };
 

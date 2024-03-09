@@ -38,7 +38,17 @@ namespace Atlas::Editor::UI {
 
             ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
 
-            TraverseHierarchy(scene, root, inFocus);
+            // Search should be case-insensitive
+            transformedEntitySearch = entitySearch;
+            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
+                transformedEntitySearch.begin(), ::tolower);
+
+            std::unordered_map<ECS::Entity, bool> matchMap;
+            matchMap.reserve(scene->GetEntityCount());
+            if (!transformedEntitySearch.empty())
+                SearchHierarchy(scene, root, matchMap, false);
+
+            TraverseHierarchy(scene, root, matchMap, inFocus);
 
             RenderExtendedHierarchy(scene);
 
@@ -60,7 +70,8 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, bool inFocus) {
+    void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
+        std::unordered_map<ECS::Entity, bool>& matchMap, bool inFocus) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -74,8 +85,11 @@ namespace Atlas::Editor::UI {
 
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
+        // If the search term matches we want to display everything below this item in the hierarchy
+        bool validSearch = (transformedEntitySearch.empty() || matchMap[entity]);
+
         // If we have a search term and the name doesn't match, return
-        if (nodeName != "Root" && !entitySearch.empty() && nodeName.find(entitySearch) == std::string::npos)
+        if (nodeName != "Root" && !validSearch)
             return;
 
         auto nodeFlags = baseFlags;
@@ -130,7 +144,7 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity, inFocus);
+                TraverseHierarchy(scene, childEntity, matchMap, inFocus);
 
             }
 
@@ -268,6 +282,39 @@ namespace Atlas::Editor::UI {
         selectedEntity = newEntity;
         // Reset other properties selection
         selectedProperty = SelectedProperty();
+
+    }
+
+    bool SceneHierarchyPanel::SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+        std::unordered_map<ECS::Entity, bool>& matchMap, bool parentMatches) {
+
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        auto nameComponent = entity.TryGetComponent<NameComponent>();
+
+        std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+        std::transform(nodeName.begin(), nodeName.end(), nodeName.begin(), ::tolower);
+
+        parentMatches |= nodeName.find(transformedEntitySearch) != std::string::npos;
+        bool matches = parentMatches;
+
+        if (matches) {
+            Log::Warning("Yo");
+        }
+
+        if (hierarchyComponent) {
+
+            auto children = hierarchyComponent->GetChildren();
+            for (auto childEntity : children) {
+
+                matches |= SearchHierarchy(scene, childEntity, matchMap, parentMatches);
+
+            }
+
+        }
+
+        matchMap[entity] = matches;
+
+        return matches;
 
     }
 

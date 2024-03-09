@@ -27,7 +27,8 @@ namespace Atlas {
                 int32_t maxTextureResolution = 4096);
 
             static Ref<Scene::Scene> LoadScene(const std::string& filename, vec3 min, vec3 max,
-                int32_t depth, bool forceTangents = false, int32_t maxTextureResolution = 4096);
+                int32_t depth, bool combineMeshes = true, bool makeMeshesStatic = false,
+                bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
         private:
             enum class MaterialImageType {

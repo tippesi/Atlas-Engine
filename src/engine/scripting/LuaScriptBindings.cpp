@@ -35,7 +35,10 @@ namespace Atlas::Scripting {
             "DestroyEntity", &Scene::Scene::DestroyEntity,
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
             "GetEntityByName", &Scene::Scene::GetEntityByName,
-            "GetParentEntity", &Scene::Scene::GetParentEntity);
+            "GetParentEntity", &Scene::Scene::GetParentEntity,
+            "GetMainCamera", &Scene::Scene::GetMainCamera,
+            "HasMainCamera", &Scene::Scene::HasMainCamera
+            );
 
     }
 
@@ -171,6 +174,7 @@ namespace Atlas::Scripting {
             "Set", &TransformComponent::Set,
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
+            "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
             //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
@@ -190,6 +194,20 @@ namespace Atlas::Scripting {
             "GetFriction", &RigidBodyComponent::GetFriction
         );
 
+        ns->new_usertype<PlayerComponent>("PlayerComponent",
+            "SetPosition", &PlayerComponent::SetPosition,
+            "GetPosition", &PlayerComponent::GetPosition,
+            "SetRotation", &PlayerComponent::SetRotation,
+            "GetRotation", &PlayerComponent::GetRotation,
+            "GetMatrix", &PlayerComponent::GetMatrix,
+            "SetLinearVelocity", &PlayerComponent::SetLinearVelocity,
+            "GetLinearVelocity", &PlayerComponent::GetLinearVelocity,
+            "GetGroundVelocity", &PlayerComponent::GetGroundVelocity,
+            "IsOnGround", &PlayerComponent::IsOnGround,
+            "stickToGroundDist", &PlayerComponent::stickToGroundDist,
+            "walkStairsStepUpDist", &PlayerComponent::walkStairsStepUpDist
+        );
+
         ns->new_usertype<TextComponent>("TextComponent",
             "text", &TextComponent::text,
             "position", &TextComponent::position,
@@ -205,10 +223,11 @@ namespace Atlas::Scripting {
 
     void LuaScriptBindings::GenerateUtilityBindings(sol::table* ns) {
 
-        ns->new_usertype<Log>("Log",
-            "Message", &Log::Message,
-            "Warning", &Log::Warning,
-            "Error", &Log::Error);
+        auto log = ns->new_usertype<Log>("Log");
+        // Set it manually here to avoid having a function that require the optional argument to log
+        log.set_function("Message", [](const std::string& msg) { Log::Message(msg); });
+        log.set_function("Warning", [](const std::string& warn) { Log::Warning(warn); });
+        log.set_function("Error", [](const std::string& err) { Log::Error(err); });
 
         ns->new_usertype<Clock>("Clock",
             "Get", &Clock::Get,
@@ -339,20 +358,27 @@ namespace Atlas::Scripting {
             "z", &glm::vec4::z,
             "w", &glm::vec4::w);
 
-        /*
-        GenerateGlmTypeBinding<glm::quat, float>(ns, "Quat",
-            sol::constructors<glm::quat(float), glm::quat(float, float, float, float)>(),
-            "x", &glm::quat::x,
-            "y", &glm::quat::y,
-            "z", &glm::quat::z,
-            "w", &glm::quat::w);
-        */
-
         GenerateGlmTypeBinding<glm::mat3, float>(ns, "Mat3",
             sol::constructors<glm::mat3(float)>());
 
         GenerateGlmTypeBinding<glm::mat4, float>(ns, "Mat4",
             sol::constructors<glm::mat4(float)>());
+
+         auto quat_multiplication_overloads = sol::overload(
+            [](const glm::quat& v0, const glm::quat& v1) { return v0 * v1; },
+            [](const glm::quat& v0, float value) { return v0 * value; },
+            [](const float& value, const glm::quat& v0) { return v0 * value; }
+        );
+
+        ns->new_usertype<glm::quat>("Quat",
+            sol::call_constructor,
+            sol::constructors<glm::quat(glm::vec3), glm::quat(float, float, float, float)>(),
+            sol::meta_function::multiplication, quat_multiplication_overloads,
+            "x", &glm::quat::x,
+            "y", &glm::quat::y,
+            "z", &glm::quat::z,
+            "w", &glm::quat::w
+            );
 
         ns->set_function("Dot", sol::overload(
             [](const glm::vec2& v0, const glm::vec2& v1) { return glm::dot(v0, v1); },
@@ -374,6 +400,19 @@ namespace Atlas::Scripting {
             [](float angle, const glm::vec3& vec) { return glm::rotate(angle, vec); },
             [](const glm::mat4& mat, float angle, const glm::vec3& vec) { return glm::rotate(mat, angle, vec); }
         ));
+
+        ns->set_function("Mix", sol::overload(
+            [](const float float0, const float float1, const float factor) { return glm::mix(float0, float1, factor); },
+            [](const glm::vec2& vec0, const glm::vec2& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
+            [](const glm::vec3& vec0, const glm::vec3& vec1, const float factor) { return glm::mix(vec0, vec1, factor); },
+            [](const glm::quat& quat0, const glm::quat& quat1, const float factor) { return glm::mix(quat0, quat1, factor); }
+        ));
+
+        ns->set_function("LookAt",  [](const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) 
+            { return glm::lookAt(eye, center, up); }
+            );
+
+        ns->set_function("EulerAngles", [](const glm::quat& quaternion) { return glm::eulerAngles(quaternion); });
 
     }
 
@@ -412,7 +451,6 @@ namespace Atlas::Scripting {
             [](Volume::Frustum& frustum, const mat4& matrix) { frustum.Resize(matrix); }
         );
 
-        // TODO
         ns->new_usertype<Volume::Frustum>("Frustum",
             sol::call_constructor,
             sol::constructors<Volume::Frustum(), Volume::Frustum(const std::vector<vec3>&), Volume::Frustum(glm::mat4)>(),

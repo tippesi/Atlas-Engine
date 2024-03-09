@@ -9,12 +9,16 @@
 #include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 
+#include <glm/gtx/component_wise.hpp>
+
 namespace Atlas {
 
     namespace Physics {
 
         std::unordered_map<Hash, ShapesManager::CacheItem<Mesh::Mesh>> ShapesManager::meshShapeCache;
         std::mutex ShapesManager::meshShapeCacheMutex;
+
+        const float ShapesManager::epsilon = 0.00001f;
 
         bool ShapesManager::TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings) {
 
@@ -80,7 +84,10 @@ namespace Atlas {
 
             auto halfSize = aabb.GetSize() / 2.0f;
 
-            JPH::BoxShapeSettings boxShapeSettings(VecToJPHVec(halfSize));
+            // 0.05f is the default convex radius of Jolt
+            auto convexRadius = glm::min(glm::compMin(halfSize) - epsilon, 0.05f);
+
+            JPH::BoxShapeSettings boxShapeSettings(VecToJPHVec(halfSize), convexRadius);
             boxShapeSettings.SetDensity(density);
 
             auto boxShapeResult = boxShapeSettings.Create();

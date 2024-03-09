@@ -25,6 +25,8 @@ namespace Atlas::Scripting {
 
         void GenerateMeshBindings(sol::table* ns);
 
+        void GeneratePhysicsBindings(sol::table* ns);
+
         void GenerateMathBindings(sol::table* ns);
 
         void GenerateVolumeBindings(sol::table* ns);
@@ -63,25 +65,25 @@ namespace Atlas::Scripting {
         auto multiplication_overloads = sol::overload(
             [](const T& v0, const T& v1) { return v0 * v1; },
             [](const T& v0, S value) { return v0 * value; },
-            [](const T& value, const T& v0) { return v0 * value; }
+            [](const S& value, const T& v0) { return v0 * value; }
         );
 
         auto division_overloads = sol::overload(
             [](const T& v0, const T& v1) { return v0 / v1; },
             [](const T& v0, S value) { return v0 / value; },
-            [](const T& value, const T& v0) { return value / v0; }
+            [](const S& value, const T& v0) { return value / v0; }
         );
 
         auto addition_overloads = sol::overload(
             [](const T& v0, const T& v1) { return v0 + v1; },
             [](const T& v0, S value) { return v0 + value; },
-            [](const T& value, const T& v0) { return v0 + value; }
+            [](const S& value, const T& v0) { return v0 + value; }
         );
 
         auto substraction_overloads = sol::overload(
             [](const T& v0, const T& v1) { return v0 - v1; },
             [](const T& v0, S value) { return v0 - value; },
-            [](const T& value, const T& v0) { return v0 - value; }
+            [](const S& value, const T& v0) { return value - v0; }
         );
 
         return ns->new_usertype<T>(name,

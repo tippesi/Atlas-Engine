@@ -512,7 +512,9 @@ namespace Atlas::Renderer {
 
 			auto binding = job->computeJobDescriptor.pipeline.uavResourceBindings[uav].slotIndex;
 			auto mipLevel = job->computeJobDescriptor.uavMip[uav];
-			commandList->BindImage(image, 1, binding, image->mipMapViews.empty() ? -1 : mipLevel);
+        
+            int32_t selectedMipLevel = std::min(int32_t(mipLevel), int32_t(image->mipMapViews.size()) - 1);
+			commandList->BindImage(image, 1, binding, selectedMipLevel);
 		}
 
 		for (uint32_t srv = 0; srv < job->computeJobDescriptor.pipeline.srvCount; ++srv) {

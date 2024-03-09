@@ -429,15 +429,11 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::SaveSceneState() {
 
-        auto time = Clock::Get();
-
         cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
 
         scene->DestroyEntity(cameraEntity);
 
         sceneState = Scene::Scene::Backup(scene.Get());
-
-        Log::Error("Took save time: " + std::to_string(Clock::Get() - time));
 
     }
 
@@ -446,8 +442,6 @@ namespace Atlas::Editor::UI {
         if (sceneState.empty())
             return;
 
-        auto time = Clock::Get();
-
         auto backupScene = Scene::Scene::Restore(sceneState);
         scene.GetResource()->Swap(backupScene);
 
@@ -455,8 +449,6 @@ namespace Atlas::Editor::UI {
 
         sceneState.clear();
         cameraState.clear();
-
-        Log::Error("Took backup time: " + std::to_string(Clock::Get() - time));
 
     }
 
