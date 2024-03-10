@@ -1,6 +1,7 @@
 #include "DataCreator.h"
 
 #include "loader/ModelLoader.h"
+#include "volume/AABB.h"
 
 namespace Atlas::Editor {
 
@@ -124,6 +125,20 @@ namespace Atlas::Editor {
 
         scene->Timestep(1.0f);
 
+        min = glm::vec3(std::numeric_limits<float>::max());
+        max = glm::vec3(-std::numeric_limits<float>::max());
+
+        Volume::AABB aabb(min, max);
+        auto meshSubset = scene->GetSubset<MeshComponent>();
+        for (auto entity : meshSubset) {
+            const auto& meshComponent = meshSubset.Get(entity);
+
+            aabb.Grow(meshComponent.aabb);
+        }
+
+        // Adjust settings based on calculated size
+        scene->irradianceVolume->aabb = aabb;
+
         if (invertUVs) {
             auto meshes = scene->GetMeshes();
 
@@ -132,8 +147,6 @@ namespace Atlas::Editor {
         }
 
         if (addRigidBodies) {
-            auto meshSubset = scene->GetSubset<MeshComponent>();
-
             for (auto entity : meshSubset) {
                 const auto& meshComponent = meshSubset.Get(entity);
 

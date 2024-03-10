@@ -140,6 +140,9 @@ namespace Atlas::Editor::UI {
                 comp.isMain = false;
             }
 
+            // Path tracing needs history while ray tracing
+            scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
+
             scene->Timestep(Clock::GetDelta());
             scene->Update();
 

@@ -172,13 +172,13 @@ namespace Atlas {
                 };
 
             auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::thread> threads;
+            std::vector<std::future<void>> threads;
             for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::thread{ loadImagesLambda });
+                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
             }
 
             for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].join();
+                threads[i].get();
             }
 
             ImagesToTexture(materialImages);
@@ -337,13 +337,13 @@ namespace Atlas {
             };
 
             auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::thread> threads;
+            std::vector<std::future<void>> threads;
             for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::thread{ loadImagesLambda });
+                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
             }
 
             for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].join();
+                threads[i].get();
             }
 
             ImagesToTexture(materialImages);
@@ -805,11 +805,9 @@ namespace Atlas {
         void ModelLoader::ImagesToTexture(MaterialImages& images) {
 
             for (const auto& [path, image] : images.baseColorImages) {
-                AE_ASSERT(!images.baseColorTextures.contains(path));
                 images.baseColorTextures[path] = std::make_shared<Texture::Texture2D>(image);
             }
             for (const auto& [path, image] : images.opacityImages) {
-                AE_ASSERT(!images.opacityTextures.contains(path));
                 images.opacityTextures[path] = std::make_shared<Texture::Texture2D>(image);
             }
             for (const auto& [path, image] : images.normalImages) {

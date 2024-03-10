@@ -40,16 +40,16 @@ void App::LoadContent(AppConfiguration config) {
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
-            if (event.keyCode == AE_KEY_ESCAPE) {
+            if (event.keyCode == Keycode::KeyEscape) {
                 Exit();
             }
-            if (event.keyCode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyF11 && event.state == AE_BUTTON_RELEASED) {
                 renderUI = !renderUI;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_PRESSED) {
                 keyboardHandler.speed = cameraSpeed * 4.0f;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_RELEASED) {
                 keyboardHandler.speed = cameraSpeed;
             }
         });

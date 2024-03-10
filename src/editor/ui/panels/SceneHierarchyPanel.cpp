@@ -297,10 +297,6 @@ namespace Atlas::Editor::UI {
         parentMatches |= nodeName.find(transformedEntitySearch) != std::string::npos;
         bool matches = parentMatches;
 
-        if (matches) {
-            Log::Warning("Yo");
-        }
-
         if (hierarchyComponent) {
 
             auto children = hierarchyComponent->GetChildren();

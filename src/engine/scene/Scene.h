@@ -107,6 +107,8 @@ namespace Atlas {
 
             void WaitForResourceLoad();
 
+            void WaitForAsyncWorkCompletion();
+
             bool IsFullyLoaded();
 
             bool IsRtDataValid() const;

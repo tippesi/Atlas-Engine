@@ -77,7 +77,7 @@ namespace Atlas {
                         normalImages[path] = image;
                         break;
                     case MaterialImageType::Displacement:
-                        baseColorImages[path] = image;
+                        displacementImages[path] = image;
                         break;
                     default:
                         break;

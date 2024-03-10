@@ -16,15 +16,6 @@ using namespace Atlas::ImguiExtension;
 
 void App::LoadContent() {
 
-    music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    // static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
-
-    for (uint32_t i = 0; i < 10000; i++) {
-        //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
-        //audioStreams.back()->SetVolume(0.0001);
-    }
-
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
@@ -216,7 +207,6 @@ void App::Update(float deltaTime) {
             };
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
-            entity.AddComponent<AudioComponent>(audio);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -240,8 +230,6 @@ void App::Update(float deltaTime) {
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
-
-            entity.AddComponent<AudioComponent>(audio);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings {
                 .objectLayer = Atlas::Physics::Layers::MOVABLE,
@@ -285,12 +273,16 @@ void App::Render(float deltaTime) {
 #ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
     if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+        // If we take the early way out we need to make sure that stuff is completed (usually main renderer takes care of that)
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 #endif
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
+        // If we take the early way out we need to make sure that stuff is completed
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 
@@ -492,6 +484,8 @@ void App::Render(float deltaTime) {
                 ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
                 ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
                 ImGui::SliderFloat("Max history clip##Pathtrace", &mainRenderer->pathTracingRenderer.historyClipMax, 0.0f, 1.0f);
+
+                scene->rayTracingWorld->includeObjectHistory = pathTrace;
             }
             if (ImGui::CollapsingHeader("DDGI")) {
                 irradianceVolumePanel.Render(volume);

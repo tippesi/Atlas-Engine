@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #include <thread>
+#include <sstream>
 
 namespace Atlas {
 
@@ -66,6 +67,16 @@ namespace Atlas {
                     ref->mutex.unlock();
                 }
                 valid = false;
+
+                std::stringstream ss;
+                ss << ref->threadId;
+                std::string mystring = ss.str();
+
+                std::stringstream as;
+                as << ref->queue;
+                std::string mystring2 = as.str();
+
+                Log::Warning("Unlock queue " + mystring2 + "from index " + std::to_string(familyIndex) + " with id " + std::to_string(ref->index) + " from thred " + mystring);
             }
 
             VkQueue queue;
@@ -80,6 +91,16 @@ namespace Atlas {
             QueueRef(Ref<Queue>& queue, std::thread::id threadId, bool forceLock) : ref(queue) {
                 this->queue = ref->queue;
                 this->familyIndex = ref->familyIndex;
+
+                std::stringstream ss;
+                ss << threadId;
+                std::string mystring = ss.str();
+
+                std::stringstream as;
+                as << ref->queue;
+                std::string mystring2 = as.str();
+
+                Log::Warning("Lock queue " + mystring2 + "from index " + std::to_string(familyIndex) + " with id " + std::to_string(ref->index) + " from thred " + mystring);
 
                 if (threadId == queue->threadId && queue->counter > 0) {
                     this->counter = queue->counter;

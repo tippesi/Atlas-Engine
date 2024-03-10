@@ -142,10 +142,10 @@ namespace Atlas {
 
             if (bvhInstanceBuffer.GetElementCount() < gpuBvhInstances.size()) {
                 bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
-
-                if (includeObjectHistory)
-                    lastMatricesBuffer.SetSize(lastMatrices.size());
             }
+
+            if (lastMatricesBuffer.GetSize() < lastMatrices.size() && includeObjectHistory)
+                lastMatricesBuffer.SetSize(lastMatrices.size());
            
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());
 
@@ -301,7 +301,6 @@ namespace Atlas {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-            
             Graphics::ASBuilder asBuilder;
             auto tlasDesc = Graphics::TLASDesc();
             tlas = device->CreateTLAS(tlasDesc);

@@ -359,6 +359,8 @@ namespace Atlas {
 
         CommandList* GraphicsDevice::GetCommandList(QueueType queueType, bool frameIndependentList) {
 
+            
+
             if (frameIndependentList) {
                 auto commandList = GetOrCreateCommandList(queueType, commandListsMutex,
                     commandLists, true);
@@ -389,6 +391,8 @@ namespace Atlas {
 
             AE_ASSERT(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
+
+            AE_ASSERT(!cmd->isSubmitted && "Command list was probably submitted before");
 
             auto frame = GetFrameData();
 
