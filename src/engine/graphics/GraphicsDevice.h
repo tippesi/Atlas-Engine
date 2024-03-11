@@ -52,6 +52,7 @@ namespace Atlas {
         public:
             VkSemaphore semaphore = VK_NULL_HANDLE;
             VkFence fence = VK_NULL_HANDLE;
+            VkSemaphore submitSemaphore = VK_NULL_HANDLE;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
@@ -233,7 +234,7 @@ namespace Atlas {
             QueueRef SubmitAllCommandLists();
 
             void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-                const QueueRef& queue, const QueueRef& nextQueue);
+                VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
@@ -264,7 +265,7 @@ namespace Atlas {
 
             void DestroyFrameData();
 
-            FrameData* GetFrameData();
+            FrameData* GetFrameData(int32_t frameIdx);
 
             void DestroyUnusedGraphicObjects();
 

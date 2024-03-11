@@ -137,7 +137,7 @@ namespace Atlas::ImguiExtension {
 
         commandList->EndCommands();
 
-        device->SubmitCommandList(commandList, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+        device->SubmitCommandList(commandList);
 
     }
 

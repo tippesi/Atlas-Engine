@@ -191,7 +191,7 @@ namespace Atlas {
                 windowWidth, windowHeight, preferredColorSpace, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
 
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             vkDestroySemaphore(device, frame->semaphore, nullptr);
@@ -371,7 +371,7 @@ namespace Atlas {
                 return commandList;
             }
             else {
-                auto currentFrameData = GetFrameData();
+                auto currentFrameData = GetFrameData(frameIndex);
 
                 auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
                     currentFrameData->commandLists, false);
@@ -394,7 +394,7 @@ namespace Atlas {
 
             AE_ASSERT(!cmd->isSubmitted && "Command list was probably submitted before");
 
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
 
             cmd->executionOrder = order;
 
@@ -472,7 +472,7 @@ namespace Atlas {
 
             bool recreateSwapChain = false;
 
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
 
             bool wasSwapChainAccessed = false;
             for (auto commandList : frame->submittedCommandLists) {
@@ -500,6 +500,10 @@ namespace Atlas {
             AE_ASSERT(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
+            // Wait, reset and start with new semaphores
+            auto nextFrame = GetFrameData(frameIndex + 1);
+            nextFrame->WaitAndReset(device);
+
             auto presenterQueue = SubmitAllCommandLists();
 
             if (swapChain->isComplete && frame->submittedCommandLists.size()) {
@@ -515,6 +519,9 @@ namespace Atlas {
                 else {
                     semaphores.push_back(frame->semaphore);
                 }
+
+                // Since there needs to be at least one semaphore, we can use it like this
+                frame->submitSemaphore = semaphores.back();
 
                 VkPresentInfoKHR presentInfo = {};
                 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -552,10 +559,6 @@ namespace Atlas {
                     multiBuffer->UpdateFrameIndex(frameIndex);
                 }
             }
-
-            // Wait, reset and start with new semaphores
-            auto nextFrame = GetFrameData();
-            nextFrame->WaitAndReset(device);
 
             if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
@@ -603,12 +606,15 @@ namespace Atlas {
 
         QueueRef GraphicsDevice::SubmitAllCommandLists() {
 
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
+            auto previousFrame = frameIndex != 0 ? GetFrameData(frameIndex - 1) : nullptr;
 
             // Assume all submission are in order
             QueueRef nextQueue;
             QueueRef queue;
             VkSemaphore previousSemaphore = frame->semaphore;
+            VkSemaphore previousFrameSemaphore = previousFrame != nullptr ? 
+                previousFrame->submitSemaphore : VK_NULL_HANDLE;
             for (size_t i = 0; i < frame->submissions.size(); i++) {
                 auto submission = &frame->submissions[i];
                 auto nextSubmission = i + 1 < frame->submissions.size() ? &frame->submissions[i + 1] : nullptr;
@@ -628,7 +634,7 @@ namespace Atlas {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }
 
-                SubmitCommandList(submission, previousSemaphore, queue, nextQueue);
+                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue, nextQueue);
                 previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
 
                 if (nextQueue.ref != queue.ref) {
@@ -636,6 +642,8 @@ namespace Atlas {
                 }
 
                 queue = nextQueue;
+                // Only use this once
+                previousFrameSemaphore = VK_NULL_HANDLE;
             }
 
             // Make sure to return the presentation queue
@@ -647,7 +655,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            const QueueRef& queue, const QueueRef& nextQueue) {
+            VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -661,6 +669,8 @@ namespace Atlas {
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
                 waitSemaphores = { previousSemaphore };
+                //if (previousFrameSemaphore != VK_NULL_HANDLE)
+                //    waitSemaphores.push_back(previousFrameSemaphore);
             }
 
             VkSubmitInfo submit = {};
@@ -1110,9 +1120,9 @@ namespace Atlas {
 
         }
 
-        FrameData *GraphicsDevice::GetFrameData() {
+        FrameData *GraphicsDevice::GetFrameData(int32_t frameIdx) {
 
-            return &frameData[frameIndex % FRAME_DATA_COUNT];
+            return &frameData[frameIdx % FRAME_DATA_COUNT];
 
         }
 

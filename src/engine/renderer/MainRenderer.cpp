@@ -343,11 +343,28 @@ namespace Atlas {
             // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
             // downscaleRenderer.Downscale(target, commandList);
 
-            commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+            {
+                commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
-            textRenderer.Render(target, scene, commandList);
+                textRenderer.Render(target, scene, commandList);
+                
+                commandList->EndRenderPass();
+
+                auto rtData = target->GetHistoryData(FULL_RES);
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {target->lightingTexture.image, layout, access},
+                    {rtData->depthTexture->image, layout, access},
+                    {rtData->velocityTexture->image, layout, access},
+                };
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             
-            commandList->EndRenderPass();
+            }
 
             {
                 volumetricCloudRenderer.Render(target, scene, commandList);
@@ -504,6 +521,23 @@ namespace Atlas {
 
             batch->TransferData();
 
+            auto rtData = target->GetData(FULL_RES);
+
+
+            VkAccessFlags colorAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            VkAccessFlags depthAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers = {
+                {target->lightingTexture.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, colorAccess},
+                {rtData->depthTexture->image, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, depthAccess},
+                {rtData->velocityTexture->image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, colorAccess},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+
             commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
             if (batch->GetLineCount()) {
@@ -539,6 +573,17 @@ namespace Atlas {
 
 
             commandList->EndRenderPass();
+
+            VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+            imageBarriers = {
+                {target->lightingTexture.image, layout, access},
+                {rtData->depthTexture->image, layout, access},
+                {rtData->velocityTexture->image, layout, access},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             if (localCommandList) {
                 commandList->EndCommands();
