@@ -1168,10 +1168,10 @@ namespace Atlas {
             if (it == cmdLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
 
-                std::vector<VkQueue> queues;
+                std::vector<Ref<Queue>> queues;
                 for (auto& queueFamily : queueFamilyIndices.families) {
                     for (auto& queue : queueFamily.queues) {
-                        queues.push_back(queue->queue);
+                        queues.push_back(queue);
                     }
                 }
 

@@ -2,13 +2,14 @@
 #include "GraphicsDevice.h"
 
 #include <cassert>
+#include <thread>
 
 namespace Atlas {
 
     namespace Graphics {
 
         CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-            const std::vector<VkQueue>& queues, bool frameIndependent) : memoryManager(device->memoryManager),
+            std::vector<Ref<Queue>>& queues, bool frameIndependent) : memoryManager(device->memoryManager),
             device(device->device), frameIndependent(frameIndependent), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
@@ -20,13 +21,17 @@ namespace Atlas {
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
             VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
 
-            for (auto queue : queues) {
+            auto threadId = std::this_thread::get_id();
+
+            for (auto& queue : queues) {
                 Semaphore semaphore{
-                    .queue = queue
+                    .queue = queue->queue
                 };
 
+                QueueRef ref(queue, threadId, true);
                 VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore.semaphore))
+                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore.semaphore));
+                ref.Unlock();
 
                 semaphores.push_back(semaphore);
             }

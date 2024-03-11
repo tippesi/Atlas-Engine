@@ -36,7 +36,7 @@ namespace Atlas {
 
         public:
             CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-                const std::vector<VkQueue>& queues, bool frameIndependent = false);
+                std::vector<Ref<Queue>>& queues, bool frameIndependent = false);
 
             CommandList(const CommandList& that) = delete;
 
