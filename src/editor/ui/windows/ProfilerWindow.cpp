@@ -9,7 +9,11 @@ namespace Atlas::Editor::UI {
         if (!Begin())
             return;
 
-        ImGui::Text("Frametime: %f ms", Clock::GetAverage() * 1000.0f);
+        ImGui::Text("Total frame time: %f ms", Clock::GetAverage() * 1000.0f);
+
+        ImGui::Separator();
+
+        ImGui::Text("GPU time table");
 
         gpuProfilerPanel.Render();
 

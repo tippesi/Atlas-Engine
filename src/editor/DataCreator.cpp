@@ -23,7 +23,8 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
+            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -83,7 +84,8 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
+            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -122,6 +124,7 @@ namespace Atlas::Editor {
         scene->physicsWorld->pauseSimulation = true;
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
+        scene->postProcessing.fsr2 = true;
 
         scene->Timestep(1.0f);
 
@@ -137,7 +140,7 @@ namespace Atlas::Editor {
         }
 
         // Adjust settings based on calculated size
-        scene->irradianceVolume->aabb = aabb;
+        scene->irradianceVolume->SetAABB(aabb);
 
         if (invertUVs) {
             auto meshes = scene->GetMeshes();

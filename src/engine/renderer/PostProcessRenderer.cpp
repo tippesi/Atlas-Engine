@@ -319,7 +319,8 @@ namespace Atlas {
                 .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
                 .maxScreenLuminance = postProcessing.screenMaxLuminance,
                 .saturation = postProcessing.saturation,
-                .contrast = postProcessing.contrast
+                .contrast = postProcessing.contrast,
+                .tintColor = vec4(postProcessing.tint, 1.0f)
             };
 
             if (chromaticAberration.enable) {
@@ -334,7 +335,7 @@ namespace Atlas {
                 uniforms.vignetteOffset = vignette.offset;
                 uniforms.vignettePower = vignette.power;
                 uniforms.vignetteStrength = vignette.strength;
-                uniforms.vignetteColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(vignette.color), 0.0f);
+                uniforms.vignetteColor = vec4(vignette.color, 0.0f);
             }
 
             if (filmGrain.enable) {

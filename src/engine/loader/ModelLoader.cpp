@@ -512,7 +512,7 @@ namespace Atlas {
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
                     auto nodeEntity = scene->CreatePrefab<Scene::Prefabs::Node>(node->mChildren[i]->mName.C_Str(), nodeTransform);
-                    auto& hierarchy = nodeEntity.GetComponent<HierarchyComponent>();
+                    const auto& hierarchy = nodeEntity.GetComponent<HierarchyComponent>();
 
                     parentEntity.GetComponent<HierarchyComponent>().AddChild(nodeEntity);
 

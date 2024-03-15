@@ -43,8 +43,8 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || 
-                    !scene->meshIdToBindlessIdx.contains(mesh.GetID()))
+                // Only need to check for this, since that means that the BVH was built and the mesh is loaded
+                if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -88,7 +88,7 @@ namespace Atlas {
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!meshInfos.contains(meshComponent.mesh.GetID()))
+                if (!scene->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
                     continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
@@ -144,7 +144,7 @@ namespace Atlas {
                 bvhInstanceBuffer.SetSize(gpuBvhInstances.size());
             }
 
-            if (lastMatricesBuffer.GetSize() < lastMatrices.size() && includeObjectHistory)
+            if (lastMatricesBuffer.GetElementCount() < lastMatrices.size() && includeObjectHistory)
                 lastMatricesBuffer.SetSize(lastMatrices.size());
            
             bvhInstanceBuffer.SetData(gpuBvhInstances.data(), 0, gpuBvhInstances.size());

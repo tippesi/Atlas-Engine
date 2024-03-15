@@ -255,6 +255,12 @@ namespace Atlas::Editor::UI {
             }
 
             if (ImGui::BeginPopupContextItem()) {
+                // Do a direct import here without relying on the file importer
+                if (type == FileType::Mesh && ImGui::MenuItem("Import as scene")) {
+                    PopupPanels::filename = assetRelativePath;
+                    PopupPanels::isImportScenePopupVisible = true;
+                }
+
                 // We shouldn't allow the user to delete the root entity
                 if (ImGui::MenuItem("Open externally"))
                     OpenExternally(std::filesystem::absolute(dirEntry.path()).string(), isDirectory);
@@ -268,12 +274,6 @@ namespace Atlas::Editor::UI {
 
                 if (ImGui::MenuItem("Delete"))
                     std::filesystem::remove(dirEntry.path());
-                
-                // Do a direct import here without relying on the file importer
-                if (type == FileType::Mesh && ImGui::MenuItem("Import as scene")) {
-                    PopupPanels::filename = assetRelativePath;
-                    PopupPanels::isImportScenePopupVisible = true;
-                }
 
                 ImGui::EndPopup();
             }

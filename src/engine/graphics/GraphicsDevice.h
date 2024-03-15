@@ -25,6 +25,7 @@
 #include <mutex>
 #include <set>
 #include <future>
+#include <shared_mutex>
 
 namespace Atlas {
 
@@ -303,6 +304,7 @@ namespace Atlas {
             int32_t windowWidth = 0;
             int32_t windowHeight = 0;
 
+            std::shared_mutex queueMutex;
 
             std::atomic_bool frameComplete = true;
             std::future<void> completeFrameFuture;

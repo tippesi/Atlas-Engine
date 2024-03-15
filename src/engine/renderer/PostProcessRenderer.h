@@ -36,6 +36,7 @@ namespace Atlas {
                 float vignettePower;
                 float vignetteStrength;
                 vec4 vignetteColor;
+                vec4 tintColor;
             };
 
             void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,

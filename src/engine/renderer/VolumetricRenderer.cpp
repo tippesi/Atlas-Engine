@@ -86,6 +86,7 @@ namespace Atlas {
 
                 if (light.shadow) {
                     uniforms.light.shadow.cascadeCount = shadow->viewCount;
+                    uniforms.light.shadow.edgeSoftness = shadow->edgeSoftness;
 
                     commandList->BindImage(shadow->maps.image, shadowSampler, 3, 2);
 

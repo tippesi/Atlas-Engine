@@ -76,6 +76,7 @@ namespace Atlas {
                 auto& shadowUniform = lightUniform.shadow;
                 shadowUniform.distance = distance;
                 shadowUniform.bias = shadow->bias;
+                shadowUniform.edgeSoftness = shadow->edgeSoftness;
                 shadowUniform.cascadeCount = shadow->viewCount;
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);

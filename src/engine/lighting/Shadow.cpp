@@ -4,8 +4,8 @@ namespace Atlas {
 
     namespace Lighting {
 
-        Shadow::Shadow(float distance, float bias, int32_t resolution, int32_t cascadeCount, float splitCorrection) :
-                distance(distance), bias(bias), resolution(resolution) {
+        Shadow::Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, int32_t cascadeCount, 
+            float splitCorrection) : distance(distance), bias(bias), resolution(resolution), edgeSoftness(edgeSoftness) {
 
             splitCorrection = glm::clamp(splitCorrection, 0.0f, 1.0f);
             viewCount = cascadeCount;
@@ -23,8 +23,8 @@ namespace Atlas {
 
         }
 
-        Shadow::Shadow(float distance, float bias, int32_t resolution, bool useCubemap) :
-                distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap) {
+        Shadow::Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, bool useCubemap) :
+                distance(distance), bias(bias), resolution(resolution), useCubemap(useCubemap), edgeSoftness(edgeSoftness) {
 
             isCascaded = false;
 

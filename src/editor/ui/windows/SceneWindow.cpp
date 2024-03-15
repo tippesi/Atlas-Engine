@@ -269,6 +269,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Text("Editor camera");
 
+                ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 1.0f, 180.0f);
                 ImGui::DragFloat("Field of view", &camera.fieldOfView, 0.1f, 1.0f, 180.0f);
 
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
@@ -315,17 +316,28 @@ namespace Atlas::Editor::UI {
 
                 if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
+                    auto mesh = selectedEntity.TryGetComponent<MeshComponent>();
 
-                    auto globalMatrix = transform.globalMatrix;
+                    auto globalDecomp = Common::MatrixDecomposition(transform.globalMatrix);
+
+                    glm::vec3 offset = vec3(0.0f);
+                    if (mesh)
+                        offset = (0.5f * (mesh->aabb.min + mesh->aabb.max)) - globalDecomp.translation;
+
+                    globalDecomp.translation += offset;
+                    auto globalMatrix = globalDecomp.Compose();
 
                     ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix));
 
+                    globalDecomp = Common::MatrixDecomposition(globalMatrix);
+                    globalDecomp.translation -= offset;
+
                     // Update both the local and global matrix, since e.g. the transform component
                     // panel recovers the local matrix from the global one (needs to do this after
                     // e.g. physics only updated the global matrix
-                    transform.globalMatrix = globalMatrix;
+                    transform.globalMatrix = globalDecomp.Compose();
 
                     auto parentEntity = scene->GetParentEntity(selectedEntity);
                     transform.ReconstructLocalMatrix(parentEntity);

@@ -273,15 +273,15 @@ namespace Atlas {
 
             // Make sure this is changed just once at the start of a frame
             rayTracingWorldUpdateFuture = std::async(std::launch::async, [&]() {
-                
+                // Need to wait before updating graphic resources
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
+                if (rayTracingWorld) {
+                    rayTracingWorld->scene = this;
+                    rayTracingWorld->Update(true);
+                }
+                rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });
-            // Need to wait before updating graphic resources
-            Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
-            if (rayTracingWorld) {
-                rayTracingWorld->scene = this;
-                rayTracingWorld->Update(true);
-            }
-            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+            
 #endif
 
             // We also need to reset the hierarchy components as well

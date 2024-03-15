@@ -184,6 +184,8 @@ namespace Atlas::Editor {
 
         graphicsDevice->WaitForPreviousFrameCompletion();
 
+        
+        // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&]() {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
@@ -204,7 +206,7 @@ namespace Atlas::Editor {
         else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
             bvhBuilderFuture.get();
         }
-
+        
     }
 
     void App::Render(float deltaTime) {

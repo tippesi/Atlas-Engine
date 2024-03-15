@@ -132,7 +132,6 @@ namespace Atlas {
                 triangleOffsetBuffer.SetSize(triangleOffsets.size(), triangleOffsets.data());
 
                 needsBvhRefresh = true;
-
             }
 
             isBvhBuilt = true;

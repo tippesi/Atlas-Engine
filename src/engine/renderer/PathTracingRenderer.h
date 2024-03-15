@@ -38,7 +38,7 @@ namespace Atlas {
             int32_t realTimeSamplesPerFrame = 4;
 
             int32_t historyLengthMax = 32;
-            float historyClipMax = 0.1f;
+            float historyClipMax = 0.6f;
             float currentClipFactor = 2.0f;
 
             float maxRadiance = 65535.0f;
