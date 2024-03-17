@@ -226,7 +226,7 @@ namespace Atlas::Editor::UI {
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
                 SaveSceneState();
 
                 scene->physicsWorld->pauseSimulation = false;

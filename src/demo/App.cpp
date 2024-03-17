@@ -68,7 +68,7 @@ void App::LoadContent() {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f, 
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f, 
         glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
@@ -519,6 +519,7 @@ void App::Render(float deltaTime) {
                     }
                 }
                 ImGui::SliderFloat("Bias##Shadow", &shadow->bias, 0.0f, 2.0f);
+                ImGui::DragFloat("Edge softness##Shadow", &shadow->edgeSoftness, 0.005f, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);

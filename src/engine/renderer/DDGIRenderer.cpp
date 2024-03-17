@@ -280,6 +280,19 @@ namespace Atlas {
             if (!volume || !volume->enable || !volume->update || !volume->debug)
                 return;
 
+            // Need additional barrier, since in the normal case DDGI is made to be sampled just in compute shader
+            auto& internalVolume = volume->internal;
+            auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
+
+            commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+            // Need to rebind after barrier
+            commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
+            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
+
             auto shaderConfig = ShaderConfig {
                 {"ddgi/probeDebug.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                 {"ddgi/probeDebug.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},

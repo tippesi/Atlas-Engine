@@ -506,7 +506,7 @@ namespace Atlas {
 
             {
                 // Lock the queue in shared mode such that flush can happen simultaneously, but waiting for idle is not possible
-                // Not locking has caused some trouble, with WaitForIdle seeming to access queues it should if not guarded properly
+                // Not locking has caused some trouble, with WaitForIdle seeming to access queues if not guarded properly
                 std::shared_lock queueLock(queueMutex);
                 auto presenterQueue = SubmitAllCommandLists();
 
