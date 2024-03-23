@@ -96,8 +96,6 @@ namespace Atlas {
                     jitter.y /= (float)target->GetScaledHeight();
                 }
 
-                jitter = fsr2Renderer.GetJitter(target, frameCount);
-
                 camera.Jitter(jitter * taa.jitterRange);
             }
             else {

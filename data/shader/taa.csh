@@ -24,7 +24,7 @@ layout(push_constant) uniform constants {
 } PushConstants;
 
 const float minVelocityBlend = 0.05;
-const float maxVelocityBlend = 0.1;
+const float maxVelocityBlend = 0.2;
 
 #define TAA_YCOCG
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement

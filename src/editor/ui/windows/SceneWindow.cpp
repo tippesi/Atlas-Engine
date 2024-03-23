@@ -68,6 +68,10 @@ namespace Atlas::Editor::UI {
         if (!Begin())
             return;
 
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+        }
+
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
 
         if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
