@@ -182,9 +182,9 @@ void main() {
 
     color = color * Uniforms.tintColor.rgb;
 
-    //color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
+    color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 
-    //color = ((color - 0.5) * max(Uniforms.contrast, 0.0)) + 0.5;
+    color = ((color - 0.5) * max(Uniforms.contrast, 0.0)) + 0.5;
 
 #ifdef VIGNETTE    
     float vignetteFactor = max(1.0 - max(pow(length(fPosition) - Uniforms.vignetteOffset,

@@ -9,9 +9,20 @@ namespace Atlas::Editor::UI
     bool LuaScriptComponentPanel::Render(Ref<Scene::Scene>& scene, Scene::Entity entity, LuaScriptComponent &luaScriptComponent)
     {
         auto buttonName = luaScriptComponent.script.IsValid() ? luaScriptComponent.script.GetResource()->GetFileName() : "Drop script resource here";
-        ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
+        if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
+            scriptSelectionPopup.Open();
+
+        // Such that drag and drop will work from the content browser
+        if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+            ImGui::SetItemDefaultFocus();
+        }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Scripting::Script>();
+
+        auto scriptResources = ResourceManager<Scripting::Script>::GetResources();
+        handle = scriptSelectionPopup.Render(scriptResources);
+
         if (handle.IsValid()) {
             // Needs to be implemented
             // luaScriptComponent.ChangeResource(handle);

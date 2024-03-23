@@ -66,6 +66,8 @@ in the LICENSE.md file in the dependency directory.
 >The files in the data folder (except the shaders) use a different license. 
 ## Code Example
 For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/src/demo).
+## Latest executables
+The latest non-release executables can be found in the latest run of the [build pipeline](https://github.com/tippesi/Atlas-Engine/actions/workflows/build.yml?query=branch%3Amaster). They contain both the demo application and the editor.
 ## Screenshots
 ![Editor](wiki/images/editor.png)
 *Sponza demo scene opened in the editor*

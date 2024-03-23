@@ -91,6 +91,8 @@ namespace Atlas {
 
                 AABB leftAABB = InitialAABB();
                 AABB rightAABB = InitialAABB();
+
+                bool validSplit = true;
             };
 
             Split FindObjectSplit(std::vector<Ref>& refs);

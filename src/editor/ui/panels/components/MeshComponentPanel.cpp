@@ -14,9 +14,20 @@ namespace Atlas::Editor::UI {
 
         auto buttonName = meshComponent.mesh.IsValid() ? meshComponent.mesh.GetResource()->GetFileName() :
             "Drop mesh resource here";
-        ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
+        if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
+            meshSelectionPopup.Open();
+
+        // Such that drag and drop will work from the content browser
+        if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+            ImGui::SetItemDefaultFocus();
+        }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Mesh::Mesh>();
+
+        auto meshResources = ResourceManager<Mesh::Mesh>::GetResources();
+        handle = meshSelectionPopup.Render(meshResources);
+
         if (handle.IsValid()) {
             meshComponent.mesh = handle;
             resourceChanged = true;

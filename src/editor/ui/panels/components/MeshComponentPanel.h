@@ -6,6 +6,7 @@
 #include "scene/Entity.h"
 #include "scene/components/MeshComponent.h"
 
+#include "../../popups/ResourceSelectionPopup.h"
 #include "ImguiExtension/panels/MaterialsPanel.h"
 
 namespace Atlas::Editor::UI {
@@ -19,6 +20,7 @@ namespace Atlas::Editor::UI {
 
     private:
         ImguiExtension::MaterialsPanel materialsPanel;
+        ResourceSelectionPopup meshSelectionPopup;
 
     };
 

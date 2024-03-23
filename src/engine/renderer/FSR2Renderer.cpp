@@ -845,8 +845,8 @@ namespace Atlas::Renderer {
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		dispatchParameters.output = GetResource(outputImage, L"FSR2_OutputUpscaledColor", FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) * taa.jitterRange;
-		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * taa.jitterRange;
+		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) * 0.5f;
+		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * 0.5f;
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
 		dispatchParameters.reset = false;

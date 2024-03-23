@@ -14,9 +14,20 @@ namespace Atlas::Editor::UI {
             resource = audioVolumeComponent.stream->data.GetResource();
         auto buttonName = resource != nullptr ? resource->GetFileName() : "Drop resource here";
 
-        ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
+        if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
+            audioSelectionPopup.Open();
+
+        // Such that drag and drop will work from the content browser
+        if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+            ImGui::SetItemDefaultFocus();
+        }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Audio::AudioData>();
+
+        auto audioResources = ResourceManager<Audio::AudioData>::GetResources();
+        handle = audioSelectionPopup.Render(audioResources);
+
         if (handle.IsValid()) {
             audioVolumeComponent.ChangeResource(handle);
             resourceChanged = true;

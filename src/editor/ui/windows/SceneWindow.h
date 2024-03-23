@@ -28,6 +28,10 @@ namespace Atlas::Editor::UI {
 
         void PushEntityIntoSceneHierarchy(Scene::Entity entity, bool changeSelection = true);
 
+        void StartPlaying();
+
+        void StopPlaying();
+
         void SaveSceneState();
 
         void RestoreSceneState();

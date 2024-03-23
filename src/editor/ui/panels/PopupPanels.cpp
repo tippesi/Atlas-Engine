@@ -131,6 +131,7 @@ namespace Atlas::Editor::UI {
             if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
                 auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize, 
                     octreeDepth, invertUVs, addRigidBodies, combineMeshes, makeMeshesStatic);
+                scene->name = name;
 
                 bool alreadyExisted;
                 Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);

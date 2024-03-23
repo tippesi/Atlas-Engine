@@ -308,6 +308,10 @@ namespace Atlas {
                 }
             }
 
+            // Last resort. This could happend due to spatial unsplitting
+            if (leftRefs.empty() || rightRefs.empty())
+                CreateLeaf(refs);
+
             refs.clear();
             refs.shrink_to_fit();
 

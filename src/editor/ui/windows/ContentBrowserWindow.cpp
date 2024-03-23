@@ -68,9 +68,6 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
-
         const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font", "Prefab"};
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
@@ -97,6 +94,10 @@ namespace Atlas::Editor::UI {
         RenderDirectoryContent();
 
         ImGui::EndChild();
+
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+        }
 
         if (ImGui::BeginDragDropTarget()) {
             auto dropPayload = ImGui::GetDragDropPayload();

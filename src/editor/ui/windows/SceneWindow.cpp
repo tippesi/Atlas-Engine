@@ -227,14 +227,7 @@ namespace Atlas::Editor::UI {
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
-                SaveSceneState();
-
-                scene->physicsWorld->pauseSimulation = false;
-                // Unselect when starting the simulation/scene (otherwise some physics settings might not
-                // be reverted after stopping
-                sceneHierarchyPanel.selectedEntity = Scene::Entity();
-
-                isPlaying = true;
+                StartPlaying();
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
@@ -243,9 +236,7 @@ namespace Atlas::Editor::UI {
             offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
-                RestoreSceneState(); 
-
-                isPlaying = false;
+                StopPlaying();
             }
 
             auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
@@ -440,6 +431,27 @@ namespace Atlas::Editor::UI {
             sceneHierarchyPanel.selectedEntity = entity;
             sceneHierarchyPanel.selectedProperty = SelectedProperty();
         }
+    }
+
+    void SceneWindow::StartPlaying() {
+
+        SaveSceneState();
+
+        scene->physicsWorld->pauseSimulation = false;
+        // Unselect when starting the simulation/scene (otherwise some physics settings might not
+        // be reverted after stopping
+        sceneHierarchyPanel.selectedEntity = Scene::Entity();
+
+        isPlaying = true;
+
+    }
+
+    void SceneWindow::StopPlaying() {
+
+        RestoreSceneState(); 
+
+        isPlaying = false;
+
     }
 
     void SceneWindow::SaveSceneState() {

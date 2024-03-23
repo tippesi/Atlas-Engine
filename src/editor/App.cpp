@@ -63,6 +63,8 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper->Unload();
 
         for (const auto& sceneWindow : sceneWindows) {
+            if (sceneWindow->isPlaying)
+                sceneWindow->StopPlaying();
             Serialization::SerializeSceneWindow(sceneWindow);
         }
 
@@ -128,6 +130,8 @@ namespace Atlas::Editor {
         std::reverse(toBeDeletedSceneWindows.begin(), toBeDeletedSceneWindows.end());
         for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
             // Serialize window before erasing it
+            if (sceneWindows[sceneWindowIdx]->isPlaying)
+                sceneWindows[sceneWindowIdx]->StopPlaying();
             Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
         }
