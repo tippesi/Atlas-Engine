@@ -33,7 +33,7 @@ namespace Atlas {
 
             ResourceHandle<Mesh::Mesh> mesh;
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 mat4 vMatrix;
                 mat4 pMatrix;
             };
@@ -43,7 +43,7 @@ namespace Atlas {
                 mat4 pMatrix;
             };
 
-            struct ComputeConstants {
+            struct alignas(16) ComputeConstants {
                 float randomSeed;
                 float time;
             };

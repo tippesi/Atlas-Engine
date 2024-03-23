@@ -1,19 +1,19 @@
-#include "Serializer.h"
+#include "Serialization.h"
 #include "Singletons.h"
 #include "FileImporter.h"
 
 #include "common/SerializationHelper.h"
-#include "scene/EntitySerializer.h"
+#include "scene/SceneSerializer.h"
 
 #include "Log.h"
 #include "loader/AssetLoader.h"
 
 namespace Atlas::Editor {
 
-    const std::string Serializer::configPath = ".config/";
-    const std::string Serializer::configFilename = configPath + "config.json";
+    const std::string Serialization::configPath = ".config/";
+    const std::string Serialization::configFilename = configPath + "config.json";
 
-    void Serializer::SerializeConfig() {
+    void Serialization::SerializeConfig() {
 
         const auto& config = Singletons::config;
 
@@ -31,7 +31,7 @@ namespace Atlas::Editor {
 
     }
 
-    void Serializer::DeserializeConfig() {
+    void Serialization::DeserializeConfig() {
 
        auto serialized = TryReadFromFile(configFilename);
 
@@ -57,14 +57,14 @@ namespace Atlas::Editor {
 
     }
 
-    void Serializer::SerializeSceneWindow(const Ref<UI::SceneWindow>& sceneWindow) {
+    void Serialization::SerializeSceneWindow(const Ref<UI::SceneWindow>& sceneWindow) {
 
         if (!sceneWindow->scene.IsLoaded())
             return;
 
         json camera;
         std::set<ECS::Entity> insertedEntites;
-        Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get(), insertedEntites);
+        Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), insertedEntites);
 
         json j = {
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
@@ -78,7 +78,7 @@ namespace Atlas::Editor {
 
     }
 
-    Ref<UI::SceneWindow> Serializer::DeserializeSceneWindow(ResourceHandle<Scene::Scene> handle) {
+    Ref<UI::SceneWindow> Serialization::DeserializeSceneWindow(ResourceHandle<Scene::Scene> handle) {
 
         if (!handle.IsLoaded())
             return nullptr;
@@ -104,7 +104,7 @@ namespace Atlas::Editor {
             j.at("camera").get_to(camera);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
-        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get());
+        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());
 
         // When closing the application while playing the entity is saved in the wrong state
         sceneWindow->cameraEntity.GetComponent<CameraComponent>().isMain = true;
@@ -113,7 +113,7 @@ namespace Atlas::Editor {
 
     }
 
-    void Serializer::TryWriteToFile(const std::string& filename, const std::string& content) {
+    void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {
 
         auto fileStream = Loader::AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
@@ -128,7 +128,7 @@ namespace Atlas::Editor {
 
     }
 
-    std::string Serializer::TryReadFromFile(const std::string& filename) {
+    std::string Serialization::TryReadFromFile(const std::string& filename) {
 
         Loader::AssetLoader::UnpackFile(filename);
         auto path = Loader::AssetLoader::GetFullPath(filename);

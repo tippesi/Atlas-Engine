@@ -4,6 +4,7 @@
 #include "ResourceLoadException.h"
 #include "../common/Hash.h"
 #include "../common/Path.h"
+#include "../loader/AssetLoader.h"
 
 #include <vector>
 #include <mutex>
@@ -86,10 +87,29 @@ namespace Atlas {
 
         }
 
+        bool WasModified() const {
+
+            std::filesystem::file_time_type lastModified = std::filesystem::file_time_type::min();
+            lastModified = Loader::AssetLoader::GetFileLastModifiedTime(path, lastModified);
+
+            return loadModifiedTime < lastModified;
+
+        }
+
+        void UpdateModifiedTime() {
+
+            loadModifiedTime = Loader::AssetLoader::GetFileLastModifiedTime(path, loadModifiedTime);
+
+        }
+
         void Unload() {
             isLoaded = false;
             errorOnLoad = false;
             data = nullptr;
+        }
+
+        void Swap(Ref<T>& newData) {
+            data.swap(newData);
         }
 
         std::string GetFileName() const {
@@ -107,6 +127,8 @@ namespace Atlas {
 
         bool errorOnLoad = false;
         std::exception exceptionOnLoad;
+
+        std::filesystem::file_time_type loadModifiedTime;        
 
     private:
         Ref<T> data;
@@ -166,10 +188,6 @@ namespace Atlas {
 
         inline void Reset() {
             resource = nullptr;
-        }
-
-        inline T& operator*() {
-            return resource->data.operator*();
         }
 
         inline T* operator->() const {

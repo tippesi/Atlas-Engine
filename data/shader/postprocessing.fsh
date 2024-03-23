@@ -25,7 +25,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float vignettePower;
     float vignetteStrength;
     vec4 vignetteColor;
-
+    vec4 tintColor;
 } Uniforms;
 
 const float gamma = 1.0 / 2.2;
@@ -65,7 +65,7 @@ float ToneMap(float luminance) {
 
 vec3 saturate(vec3 color, float factor) {
     const vec3 luma = vec3(0.299, 0.587, 0.114);
-    vec3 pixelLuminance = vec3(dot(color, luma));
+    vec3 pixelLuminance = max(vec3(dot(color, luma)), vec3(0.0));
     return mix(pixelLuminance, color, factor);
 }
 
@@ -179,6 +179,8 @@ void main() {
     color = pow(color, vec3(gamma));
 #endif
 #endif
+
+    color = color * Uniforms.tintColor.rgb;
 
     color = clamp(saturate(color, Uniforms.saturation), vec3(0.0), vec3(1.0));
 

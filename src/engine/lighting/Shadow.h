@@ -31,9 +31,9 @@ namespace Atlas {
         public:
             Shadow() = default;
 
-            Shadow(float distance, float bias, int32_t resolution, int32_t numCascades, float splitCorrection);
+            Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, int32_t numCascades, float splitCorrection);
 
-            Shadow(float distance, float bias, int32_t resolution, bool useCubemap = false);
+            Shadow(float distance, float bias, int32_t resolution, float edgeSoftness, bool useCubemap = false);
 
             void SetResolution(int32_t resolution);
 
@@ -44,7 +44,9 @@ namespace Atlas {
             float distance = 300.0f;
             float longRangeDistance = 1024.0f;
             float bias = 0.001f;
-            float splitCorrection = 0.95f;
+            float splitCorrection = 0.9f;
+
+            float edgeSoftness = 0.025f;
 
             float cascadeBlendDistance = 2.5f;
 

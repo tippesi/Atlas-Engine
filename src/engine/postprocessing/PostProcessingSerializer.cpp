@@ -72,6 +72,7 @@ namespace Atlas::PostProcessing {
 
     void to_json(json& j, const PostProcessing& p) {
         j = json {
+            {"tint", p.tint},
             {"saturation", p.saturation},
             {"contrast", p.contrast},
             {"paperWhiteLuminance", p.paperWhiteLuminance},
@@ -87,6 +88,7 @@ namespace Atlas::PostProcessing {
     }
 
     void from_json(const json& j, PostProcessing& p) {
+        j.at("tint").get_to(p.tint);
         j.at("saturation").get_to(p.saturation);
         j.at("contrast").get_to(p.contrast);
         j.at("paperWhiteLuminance").get_to(p.paperWhiteLuminance);

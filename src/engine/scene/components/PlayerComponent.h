@@ -35,9 +35,10 @@ namespace Atlas::Scene {
 			bool allowInput = true;
 			
 			float stickToGroundDistance = 0.1f;
+            float walkStairStepUpDistance = 0.2f;
 
-			float slideDeacceleration = 1.0f;
-			float slideCutoffVelocity = 0.1f;
+			float slideDeacceleration = 4.0f;
+			float slideCutoffVelocity = 0.2f;
 			float slideVelocityMax = 4.0f;
 
 		private:
@@ -53,6 +54,8 @@ namespace Atlas::Scene {
 			bool jumped = false;
 
 			vec3 inputVelocity = vec3(0.0f);
+
+			vec3 lastGravityAcceleration = vec3(0.0f);
 
 			friend Scene;
 

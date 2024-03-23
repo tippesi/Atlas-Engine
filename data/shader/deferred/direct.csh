@@ -63,7 +63,7 @@ void main() {
         // for transmissive materials
         vec3 shadowNormal = surface.material.transmissive ? dot(-uniforms.light.direction.xyz, geometryNormal) < 0.0 ?
             -geometryNormal : geometryNormal : geometryNormal;
-        shadowFactor = CalculateCascadedShadow(uniforms.light.shadow, cascadeMaps, surface.P,
+        shadowFactor = CalculateCascadedShadow(uniforms.light.shadow, cascadeMaps, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-uniforms.light.direction.xyz, shadowNormal)));
 #endif
 #ifdef SCREEN_SPACE_SHADOWS

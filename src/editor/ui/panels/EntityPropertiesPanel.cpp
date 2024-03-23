@@ -57,6 +57,11 @@ namespace Atlas::Editor::UI {
                     entity, textComponentPanel, comp);
             }
 
+            if (entity.HasComponent<LuaScriptComponent>()) {
+                RenderComponentPanel("Lua script component", scene, 
+                    entity, luaScriptComponentPanel, entity.GetComponent<LuaScriptComponent>());
+            }
+
             if (entity.HasComponent<RigidBodyComponent>()) {
                 auto comp = entity.GetComponent<RigidBodyComponent>();
                 RenderComponentPanel("Rigid body component", scene,
@@ -101,6 +106,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<CameraComponent>();
                 if (!entity.HasComponent<TextComponent>() && ImGui::MenuItem("Add text component"))
                     entity.AddComponent<TextComponent>();
+				if (!entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Add lua script component"))
+                    entity.AddComponent<LuaScriptComponent>();
 
                 // Just make the player component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&
@@ -154,6 +161,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<CameraComponent>();
                 if (entity.HasComponent<TextComponent>() && ImGui::MenuItem("Remove text component"))
                     entity.RemoveComponent<TextComponent>();
+                if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Remove lua script component"))
+                    entity.RemoveComponent<LuaScriptComponent>();
                 if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 

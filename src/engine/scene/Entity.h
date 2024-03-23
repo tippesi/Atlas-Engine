@@ -88,6 +88,10 @@ namespace Atlas {
 
             operator ECS::Entity() const { return entity; }
 
+            static std::vector<uint8_t> Backup(const Ref<Scene>& scene, const Entity& entity);
+
+            static Entity Restore(const Ref<Scene>& scene, const std::vector<uint8_t>& serialized);
+
         private:
             ECS::Entity entity = ECS::EntityConfig::InvalidEntity;
             ECS::EntityManager* entityManager = nullptr;

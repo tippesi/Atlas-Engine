@@ -33,7 +33,7 @@ namespace Atlas {
 
                 void Set(const glm::mat4& matrix);
 
-                void ReconstructLocalMatrix(const Ref<Scene>& scene);
+                void ReconstructLocalMatrix(const Entity& parentEntity);
 
                 bool IsStatic() const;
 
@@ -42,6 +42,7 @@ namespace Atlas {
                 void Scale(glm::vec3 scale);
 
                 Common::MatrixDecomposition Decompose() const;
+                Common::MatrixDecomposition DecomposeGlobal() const;
                 void Compose(Common::MatrixDecomposition composition);
 
                 glm::mat4 matrix = mat4{ 1.0f };

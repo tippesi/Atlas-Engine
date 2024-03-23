@@ -24,12 +24,13 @@ endif()
 
 # Set built type macros ###########################################################################
 if (DEFINED CMAKE_BUILD_TYPE)
+    # We want the better/safer usertypes, such that we don't crash everything
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE SOL_ALL_SAFETIES_ON)
     elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO SOL_ALL_SAFETIES_ON)
     else()
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG)
+        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG SOL_ALL_SAFETIES_ON)
     endif()
 else()
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
@@ -40,8 +41,9 @@ if(WIN32)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_WINDOWS)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator fsr2
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt)
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
+            ${LUA_LIBRARIES} sol2 fsr2)
 endif()
 
 if (MINGW)
@@ -54,15 +56,16 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt
+            volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV fsr2)
+            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi)
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
+            ${LUA_LIBRARIES} sol2 fsr2)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -77,9 +80,14 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CMAKE_INSTALL_RPATH "./")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     
-    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
+    set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
-            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV fsr2)
+            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+endif()
+
+# Due to lua bindings we need more addressable functions (but not for clang)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/bigobj)
 endif()
 
 # Add source files ################################################################################
@@ -145,6 +153,7 @@ target_include_directories(${PROJECT_NAME}
     ${VULKAN_HEADERS_INCLUDE_DIRS}
     ${STB_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
+    ${LUA_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
 

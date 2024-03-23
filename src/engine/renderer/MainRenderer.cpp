@@ -76,7 +76,7 @@ namespace Atlas {
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
             Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
 
-            if (!device->swapChain->isComplete || !scene->HasMainCamera()) 
+            if (!device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
             auto& camera = scene->GetMainCamera();
@@ -107,16 +107,23 @@ namespace Atlas {
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
 
-            FillRenderList(scene, camera);
+            auto fillRenderListFuture = std::async(std::launch::async, [&]() { FillRenderList(scene, camera); });
 
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
-
-            PrepareMaterials(scene, materials, materialMap);
+            auto prepareMaterialsFuture = std::async(std::launch::async,[&]() { PrepareMaterials(scene, materials, materialMap); });
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+            auto prepareBindlessFuture = std::async(std::launch::async,[&]() {
+                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+                });
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+            fillRenderListFuture.get();
+            prepareMaterialsFuture.get();
+            prepareBindlessFuture.get();
 
             SetUniforms(target, scene, camera);
 
@@ -336,11 +343,28 @@ namespace Atlas {
             // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
             // downscaleRenderer.Downscale(target, commandList);
 
-            commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+            {
+                commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
-            textRenderer.Render(target, scene, commandList);
+                textRenderer.Render(target, scene, commandList);
+                
+                commandList->EndRenderPass();
+
+                auto rtData = target->GetHistoryData(FULL_RES);
+
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {target->lightingTexture.image, layout, access},
+                    {rtData->depthTexture->image, layout, access},
+                    {rtData->velocityTexture->image, layout, access},
+                };
+
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             
-            commandList->EndRenderPass();
+            }
 
             {
                 volumetricCloudRenderer.Render(target, scene, commandList);
@@ -425,7 +449,13 @@ namespace Atlas {
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+            auto prepareBindlessFuture = std::async(std::launch::async, [&]() {
+                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
+                });
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+            prepareBindlessFuture.get();
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -491,6 +521,21 @@ namespace Atlas {
 
             batch->TransferData();
 
+            auto rtData = target->GetData(FULL_RES);
+
+            VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+            std::vector<Graphics::ImageBarrier> imageBarriers = {
+                {target->lightingTexture.image, layout, access},
+                {rtData->depthTexture->image, layout, access},
+                {rtData->velocityTexture->image, layout, access},
+            };
+
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
             commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
             if (batch->GetLineCount()) {
@@ -526,6 +571,14 @@ namespace Atlas {
 
 
             commandList->EndRenderPass();
+
+            imageBarriers = {
+                {target->lightingTexture.image, layout, access},
+                {rtData->depthTexture->image, layout, access},
+                {rtData->velocityTexture->image, layout, access},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             if (localCommandList) {
                 commandList->EndCommands();
@@ -768,7 +821,7 @@ namespace Atlas {
             pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
             pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 int cubeMapMipLevels;
                 float roughness;
                 uint32_t mipLevel;
@@ -956,10 +1009,10 @@ namespace Atlas {
 
             // For debugging purpose
             if (scene->irradianceVolume && scene->irradianceVolume->debug) {
-                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugMaterial));
-                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugActiveMaterial));
-                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugInactiveMaterial));
-                sceneMaterials.push_back(CreateRef(ddgiRenderer.probeDebugOffsetMaterial));
+                sceneMaterials.push_back(ddgiRenderer.probeDebugMaterial);
+                sceneMaterials.push_back(ddgiRenderer.probeDebugActiveMaterial);
+                sceneMaterials.push_back(ddgiRenderer.probeDebugInactiveMaterial);
+                sceneMaterials.push_back(ddgiRenderer.probeDebugOffsetMaterial);
             }
 
             uint16_t idx = 0;
@@ -1101,10 +1154,13 @@ namespace Atlas {
         void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
             renderList.NewFrame(scene);
-            renderList.NewMainPass();
 
-            scene->GetRenderList(camera.frustum, renderList);
-            renderList.Update(camera.GetLocation());
+            auto mainPass = renderList.GetMainPass();
+            if (mainPass == nullptr)
+                mainPass = renderList.NewMainPass();
+
+            scene->GetRenderList(camera.frustum, renderList, mainPass);
+            renderList.Update(mainPass, camera.GetLocation());
 
             auto lightSubset = scene->GetSubset<LightComponent>();
 
@@ -1123,9 +1179,11 @@ namespace Atlas {
                     auto component = &shadow->views[i];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
-                    renderList.NewShadowPass(lightEntity, i);
-                    scene->GetRenderList(frustum, renderList);
-                    renderList.Update(camera.GetLocation());
+                    auto shadowPass = renderList.GetShadowPass(lightEntity, i);
+                    if (shadowPass == nullptr)
+                        shadowPass = renderList.NewShadowPass(lightEntity, i);
+                    scene->GetRenderList(frustum, renderList, shadowPass);
+                    renderList.Update(shadowPass, camera.GetLocation());
                 }
 
             }

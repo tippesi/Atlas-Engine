@@ -73,7 +73,7 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                auto& image = writeTexture->image;
+                const auto& image = writeTexture->image;
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -101,7 +101,7 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                 auto& image = writeTexture->image;
+                const auto& image = writeTexture->image;
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -109,7 +109,9 @@ namespace Atlas {
                 commandList->BindImage(image, 3, 0);
                 readTexture->Bind(commandList, 3, 1);
 
-                commandList->PushConstants("constants", &sharpen.factor);
+                // Reduce the sharpening to bring it more in line with FSR2 sharpening
+                float sharpenFactor = sharpen.factor * 0.5f;
+                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -194,7 +196,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
-                auto& image = target->historyPostProcessTexture.image;
+                const auto& image = target->historyPostProcessTexture.image;
 
                 commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -209,7 +211,9 @@ namespace Atlas {
                     target->radianceTexture.Bind(commandList, 3, 1);
                 }
 
-                commandList->PushConstants("constants", &sharpen.factor);
+                // Reduce the sharpening to bring it more in line with FSR2 sharpening
+                float sharpenFactor = sharpen.factor * 0.5f;
+                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -315,7 +319,8 @@ namespace Atlas {
                 .paperWhiteLuminance = postProcessing.paperWhiteLuminance,
                 .maxScreenLuminance = postProcessing.screenMaxLuminance,
                 .saturation = postProcessing.saturation,
-                .contrast = postProcessing.contrast
+                .contrast = postProcessing.contrast,
+                .tintColor = vec4(postProcessing.tint, 1.0f)
             };
 
             if (chromaticAberration.enable) {
@@ -330,7 +335,7 @@ namespace Atlas {
                 uniforms.vignetteOffset = vignette.offset;
                 uniforms.vignettePower = vignette.power;
                 uniforms.vignetteStrength = vignette.strength;
-                uniforms.vignetteColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(vignette.color), 0.0f);
+                uniforms.vignetteColor = vec4(vignette.color, 0.0f);
             }
 
             if (filmGrain.enable) {

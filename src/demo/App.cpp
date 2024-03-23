@@ -16,15 +16,6 @@ using namespace Atlas::ImguiExtension;
 
 void App::LoadContent() {
 
-    music = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    audio = Atlas::ResourceManager<Atlas::Audio::AudioData>::GetOrLoadResource("more.wav");
-    // static auto audioStream = Atlas::Audio::AudioManager::CreateStream(audio);
-
-    for (uint32_t i = 0; i < 10000; i++) {
-        //audioStreams.push_back(Atlas::Audio::AudioManager::CreateStream(audio));
-        //audioStreams.back()->SetVolume(0.0001);
-    }
-
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
@@ -49,16 +40,16 @@ void App::LoadContent() {
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
-            if (event.keyCode == AE_KEY_ESCAPE) {
+            if (event.keyCode == Keycode::KeyEscape) {
                 Exit();
             }
-            if (event.keyCode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyF11 && event.state == AE_BUTTON_RELEASED) {
                 renderUI = !renderUI;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_PRESSED) {
                 keyboardHandler.speed = cameraSpeed * 4.0f;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_RELEASED) {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
@@ -77,7 +68,8 @@ void App::LoadContent() {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f, 
+        glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
@@ -216,7 +208,6 @@ void App::Update(float deltaTime) {
             };
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
-            entity.AddComponent<AudioComponent>(audio);
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -240,8 +231,6 @@ void App::Update(float deltaTime) {
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
-
-            entity.AddComponent<AudioComponent>(audio);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings {
                 .objectLayer = Atlas::Physics::Layers::MOVABLE,
@@ -280,15 +269,21 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
+    graphicsDevice->WaitForPreviousFrameCompletion();
+
 #ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
     if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
+        // If we take the early way out we need to make sure that stuff is completed (usually main renderer takes care of that)
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 #endif
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
+        // If we take the early way out we need to make sure that stuff is completed
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 
@@ -490,6 +485,8 @@ void App::Render(float deltaTime) {
                 ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
                 ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
                 ImGui::SliderFloat("Max history clip##Pathtrace", &mainRenderer->pathTracingRenderer.historyClipMax, 0.0f, 1.0f);
+
+                scene->rayTracingWorld->includeObjectHistory = pathTrace;
             }
             if (ImGui::CollapsingHeader("DDGI")) {
                 irradianceVolumePanel.Render(volume);
@@ -522,6 +519,7 @@ void App::Render(float deltaTime) {
                     }
                 }
                 ImGui::SliderFloat("Bias##Shadow", &shadow->bias, 0.0f, 2.0f);
+                ImGui::DragFloat("Edge softness##Shadow", &shadow->edgeSoftness, 0.005f, 0.0f, 1.0f);
             }
             if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
@@ -586,10 +584,6 @@ void App::Render(float deltaTime) {
                 ImGui::SameLine();
                 if (ImGui::Button("Restore state##Physics")) {
                     scene->physicsWorld->RestoreState();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Serialize##Physics")) {
-                    Atlas::Scene::SceneSerializer::SerializeScene(scene, "test.json");
                 }
             }
             if (ImGui::CollapsingHeader("Materials")) {
@@ -896,7 +890,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf");
+        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -913,7 +907,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", false, 1024);
+        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -1073,6 +1067,8 @@ void App::CheckLoadScene() {
             for (const auto& material : mesh->data.materials)
                 material->metalness = 0.0f;
     }
+
+    graphicsDevice->WaitForPreviousFrameCompletion();
 
     static std::future<void> future;
 

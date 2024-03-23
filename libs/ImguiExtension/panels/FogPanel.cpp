@@ -22,7 +22,7 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Volumetric");
         ImGui::Checkbox("Raymarching", &fog->rayMarching);
         ImGui::SliderInt("Raymarch step count", &fog->rayMarchStepCount, 1, 32);
-        ImGui::SliderFloat("Intensity#", &fog->volumetricIntensity, 0.0f, 1.0f);
+        ImGui::SliderFloat("Intensity", &fog->volumetricIntensity, 0.0f, 1.0f);
 
         ImGui::PopID();
 

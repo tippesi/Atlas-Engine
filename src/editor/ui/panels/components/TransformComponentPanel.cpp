@@ -11,7 +11,8 @@ namespace Atlas::Editor::UI {
 
         // Make sure the local matrix is updated from the global one
         // This needs to happen when external system like physics just updated the globalMatrix
-        transform.ReconstructLocalMatrix(scene);
+        auto parentEntity = scene->GetParentEntity(entity);
+        transform.ReconstructLocalMatrix(parentEntity);
 
         // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,

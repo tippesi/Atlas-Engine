@@ -48,10 +48,13 @@ namespace Atlas {
                     subData1.first->material->mainConfig.variantHash;
             });
 
-            size_t prevHash = 0;
+            Hash prevMesh = 0;
+            Hash prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
-            ResourceHandle<Mesh::Mesh> prevMesh;
             for (auto [subData, mesh] : subDatas) {
+                auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
+                if (!instance.count) continue;
+
                 auto material = subData->material;
                 if (material->mainConfig.variantHash != prevHash) {
                     currentPipeline = PipelineManager::GetPipeline(material->mainConfig);
@@ -59,13 +62,10 @@ namespace Atlas {
                     prevHash = material->mainConfig.variantHash;
                 }
 
-                if (mesh.GetID() != prevMesh.GetID()) {
+                if (mesh.GetID() != prevMesh) {
                     mesh->vertexArray.Bind(commandList);
-                    prevMesh = mesh;
+                    prevMesh = mesh.GetID();
                 }
-
-                auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
-                if(!instance.count) continue;
 
                 if (material->HasBaseColorMap())
                     material->baseColorMap->Bind(commandList, 3, 0);

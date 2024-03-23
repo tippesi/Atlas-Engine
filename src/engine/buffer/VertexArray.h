@@ -5,6 +5,7 @@
 #include "VertexBuffer.h"
 
 #include "../graphics/CommandList.h"
+#include "../graphics/Buffer.h"
 
 #include <map>
 
@@ -53,7 +54,7 @@ namespace Atlas {
              */
             VertexBuffer GetComponent(uint32_t attribArray);
 
-            void Bind(Graphics::CommandList* commandList) const;
+            void Bind(Graphics::CommandList* commandList);
 
             VkPipelineVertexInputStateCreateInfo GetVertexInputState();
 
@@ -70,6 +71,8 @@ namespace Atlas {
             bool hasIndexComponent = false;
             std::vector<VkVertexInputBindingDescription> bindingDescriptions;
             std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+
+            std::vector<Ref<Graphics::Buffer>> bindingBuffers;
 
         };
 

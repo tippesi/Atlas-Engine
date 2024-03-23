@@ -85,13 +85,6 @@ namespace Atlas {
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             allocationCreateInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            vmaCreateImage(device->memoryManager->allocator, &imageCreateInfo, &allocationCreateInfo,
-                &depthImageAllocation.image, &depthImageAllocation.allocation, nullptr);
-
-            VkImageViewCreateInfo depthImageViewCreateInfo = Initializers::InitImageViewCreateInfo(depthFormat,
-                depthImageAllocation.image, VK_IMAGE_ASPECT_DEPTH_BIT);
-            VK_CHECK(vkCreateImageView(device->device, &depthImageViewCreateInfo, nullptr, &depthImageView));
-
             VkAttachmentDescription2 colorAttachmentDescription = Initializers::InitAttachmentDescription(
                 surfaceFormat.format, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                 VK_ATTACHMENT_LOAD_OP_LOAD);
@@ -142,6 +135,10 @@ namespace Atlas {
             imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
             frameBuffers.resize(imageCount);
+
+            depthImageAllocations.resize(imageCount);
+            depthImageViews.resize(imageCount);
+            depthImageLayouts.resize(imageCount);
             for(size_t i = 0; i < images.size(); i++) {
                 VkImageViewCreateInfo imageViewCreateInfo{};
                 imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -160,8 +157,15 @@ namespace Atlas {
 
                 VK_CHECK(vkCreateImageView(device->device, &imageViewCreateInfo, nullptr, &imageViews[i]))
 
+                vmaCreateImage(device->memoryManager->allocator, &imageCreateInfo, &allocationCreateInfo,
+                    &depthImageAllocations[i].image, &depthImageAllocations[i].allocation, nullptr);
+
+                VkImageViewCreateInfo depthImageViewCreateInfo = Initializers::InitImageViewCreateInfo(depthFormat,
+                    depthImageAllocations[i].image, VK_IMAGE_ASPECT_DEPTH_BIT);
+                VK_CHECK(vkCreateImageView(device->device, &depthImageViewCreateInfo, nullptr, &depthImageViews[i]));
+
                 // We can use a single depth texture for all frame buffers
-                VkImageView attachments[] = { imageViews[i], depthImageView };
+                VkImageView attachments[] = { imageViews[i], depthImageViews[i] };
                 VkFramebufferCreateInfo frameBufferInfo = {};
                 frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 frameBufferInfo.renderPass = renderPass;
@@ -173,9 +177,8 @@ namespace Atlas {
                 VK_CHECK(vkCreateFramebuffer(device->device, &frameBufferInfo, nullptr, &frameBuffers[i]));
 
                 imageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
+                depthImageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
             }
-
-            depthImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             isComplete = true;
 
@@ -193,9 +196,14 @@ namespace Atlas {
                 vkDestroyImageView(device->device, imageView, nullptr);
             }
 
-            vkDestroyImageView(device->device, depthImageView, nullptr);
-            vmaDestroyImage(device->memoryManager->allocator,
-                depthImageAllocation.image, depthImageAllocation.allocation);
+            for (auto& depthImageView : depthImageViews) {
+                vkDestroyImageView(device->device, depthImageView, nullptr);
+            }
+
+            for (auto& depthImageAllocation : depthImageAllocations) {
+                vmaDestroyImage(device->memoryManager->allocator,
+                    depthImageAllocation.image, depthImageAllocation.allocation);
+            }
 
             vkDestroyRenderPass(device->device, renderPass, nullptr);
             vkDestroySwapchainKHR(device->device, swapChain, nullptr);

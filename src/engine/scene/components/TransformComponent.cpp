@@ -21,29 +21,27 @@ namespace Atlas {
 
 			void TransformComponent::Set(const glm::mat4& matrix) {
 
-                AE_ASSERT(!isStatic && "Change of static transform component not allowed");
-
-                if (isStatic) {
-                    return;
-                }
-
 				this->matrix = matrix;
 				changed = true;
                 updated = false;
 
 			}
+			
+			void TransformComponent::Translate(glm::vec3 translation) {
 
-			void TransformComponent::ReconstructLocalMatrix(const Ref<Scene>& scene) {
+				this->matrix = glm::translate(matrix, translation);
+				changed = true;
+                updated = false;
+
+			}
+
+			void TransformComponent::ReconstructLocalMatrix(const Entity& parentEntity) {
 
                 mat4 parentGlobalMatrix = mat4(1.0f);
-                auto parentEntity = scene->GetParentEntity(entity);
 
-                TransformComponent* parentTransform = nullptr;
-                if (parentEntity.IsValid())
-                    parentTransform = parentEntity.TryGetComponent<TransformComponent>();
-
-                if (parentTransform) {
-                    parentGlobalMatrix = parentTransform->globalMatrix;
+                if (parentEntity.IsValid()) {
+                    const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+                    parentGlobalMatrix = parentHierarchy.globalMatrix;
                 }
 
                 auto inverseParentMatrix = glm::inverse(parentGlobalMatrix);
@@ -78,6 +76,12 @@ namespace Atlas {
             Common::MatrixDecomposition TransformComponent::Decompose() const {
 
                 return Common::MatrixDecomposition(matrix);
+
+            }
+
+            Common::MatrixDecomposition TransformComponent::DecomposeGlobal() const {
+
+                return Common::MatrixDecomposition(globalMatrix);
 
             }
 

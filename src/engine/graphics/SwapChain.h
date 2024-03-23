@@ -68,9 +68,9 @@ namespace Atlas {
             std::vector<VkImageView> imageViews;
             std::vector<VkFramebuffer> frameBuffers;
 
-            ImageAllocation depthImageAllocation;
-            VkImageLayout depthImageLayout;
-            VkImageView depthImageView;
+            std::vector<ImageAllocation> depthImageAllocations;
+            std::vector<VkImageLayout> depthImageLayouts;
+            std::vector<VkImageView> depthImageViews;
 
             VkRenderPass renderPass;
 

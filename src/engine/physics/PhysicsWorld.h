@@ -54,6 +54,10 @@ namespace Atlas {
 
             vec3 GetLinearVelocity(BodyID bodyId);
 
+            void SetAngularVelocity(BodyID bodyId, vec3 velocity);
+
+            vec3 GetAngularVelocity(BodyID bodyId);
+
             void SetRestitution(BodyID bodyId, float restitution);
 
             float GetRestitution(BodyID bodyId);

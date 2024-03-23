@@ -7,7 +7,7 @@
 
 #include "graphics/Buffer.h"
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace Atlas {
@@ -32,32 +32,63 @@ namespace Atlas {
             Shadow = 1
         };
 
+        struct EntityBatch {
+            size_t count = 0;
+            std::vector<ECS::Entity> entities;
+
+            inline void Add(ECS::Entity entity) {
+                if (count < entities.size())
+                    entities[count] = entity;
+                else
+                    entities.push_back(entity);
+                count++;
+            }
+        };
+
         struct Pass {
             RenderPassType type;
 
             ECS::Entity lightEntity;
             uint32_t layer;
 
-            std::map<size_t, std::vector<ECS::Entity>> meshToEntityMap;
-            std::map<size_t, MeshInstances> meshToInstancesMap;
-            std::map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
+            std::unordered_map<size_t, EntityBatch> meshToEntityMap;
+            std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
+            std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
+
+            bool wasUsed = false;
+
+            void Reset() { 
+                
+                std::erase_if(meshToEntityMap, [](auto& item) { return item.second.count == 0; });
+                for (auto& [id, batch] : meshToEntityMap) {
+                    batch.entities.resize(batch.count);
+                    batch.count = 0;
+                }
+
+                // Need to clear this to free the references
+                meshIdToMeshMap.clear();
+                meshToInstancesMap.clear();
+
+                wasUsed = false;
+
+            }
         };
 
         RenderList();
 
         void NewFrame(Ref<Scene::Scene> scene);
 
-        void NewMainPass();
+        Ref<Pass> NewMainPass();
 
-        void NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
+        Ref<Pass> NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
 
-        Pass* GetMainPass();
+        Ref<Pass> GetMainPass();
 
-        Pass* GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
+        Ref<Pass> GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
-        void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
+        void Add(const Ref<Pass>& pass, const ECS::Entity& entity, const MeshComponent& meshComponent);
 
-        void Update(vec3 cameraLocation);
+        void Update(const Ref<Pass>& pass, vec3 cameraLocation);
 
         void FillBuffers();
 
@@ -73,7 +104,7 @@ namespace Atlas {
         Ref<Graphics::MultiBuffer> lastMatricesBuffer;
         Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-        std::vector<Pass> passes;
+        std::vector<Ref<Pass>> passes;
 
     };
 

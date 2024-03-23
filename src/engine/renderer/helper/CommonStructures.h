@@ -18,11 +18,11 @@ namespace Atlas {
             float distance;
             float bias;
 
+            float edgeSoftness;
             float cascadeBlendDistance;
 
             int cascadeCount;
 
-            float aligment0;
             float aligment1;
 
             vec2 resolution;

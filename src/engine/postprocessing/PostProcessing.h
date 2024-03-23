@@ -17,6 +17,7 @@ namespace Atlas {
         public:
             float saturation = 1.0f;
             float contrast = 1.0f;
+            vec3 tint = vec3(1.0f);
 
             float screenMaxLuminance = 1000.0f;
             float paperWhiteLuminance = 150.0f;

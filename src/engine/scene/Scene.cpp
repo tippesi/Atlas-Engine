@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Entity.h"
+#include "SceneSerializer.h"
 #include "components/Components.h"
 
 namespace Atlas {
@@ -59,7 +60,7 @@ namespace Atlas {
 
         }
 
-        Entity Scene::GetEntityByName(const std::string &name) {
+        Entity Scene::GetEntityByName(const std::string& name) {
 
             auto nameSubset = entityManager.GetSubset<NameComponent>();
             for (auto entity : nameSubset) {
@@ -85,30 +86,19 @@ namespace Atlas {
 
         }
 
-        std::string NumberToString(auto number) {
-
-        auto str = std::to_string(number);
-        auto pos = str.find(".");
-        if (pos != std::string::npos)
-            return str.substr(0, pos + 4);
-        return str;
-
-    }
-
-    std::string VecToString(auto vector) {
-
-        return NumberToString(vector.x) + ", "
-               + NumberToString(vector.y) + ", "
-               + NumberToString(vector.z);
-
-    }
-
         void Scene::Timestep(float deltaTime) {
 
             this->deltaTime = deltaTime;
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
+
+            // Update scripting components
+            auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
+            for (auto entity : luaScriptComponentSubset) {
+                auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
+                luaScriptComponent.Update(luaScriptManager, deltaTime);
+            }
 
             TransformComponent rootTransform = {};
 
@@ -149,6 +139,8 @@ namespace Atlas {
 
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
+
+                // This part (updating physics transforms) is required regardless of the simulation running
                 auto playerSubset = entityManager.GetSubset<PlayerComponent, TransformComponent>();
                 for (auto entity : playerSubset) {
                     const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
@@ -160,7 +152,10 @@ namespace Atlas {
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
                     if (transformComponent.changed && playerComponent.IsValid()) {
-                        playerComponent.SetPosition(transformComponent.Decompose().translation);
+                        auto& globalPlayerMatrix = transformComponent.globalMatrix;
+                        auto decomposition = Common::MatrixDecomposition(globalPlayerMatrix);
+                        // In theory we have to apply the rotation here as well
+                        playerComponent.SetPosition(decomposition.translation);
                     }
 
                     playerComponent.Update(deltaTime);
@@ -182,49 +177,52 @@ namespace Atlas {
                     }
                 }
 
-                physicsWorld->Update(deltaTime);
+                // This part only needs to be executed if the simulation is running
+                if (!physicsWorld->pauseSimulation) {
+                    physicsWorld->Update(deltaTime);
 
-                for (auto entity : rigidBodySubset) {
-                    const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
+                    for (auto entity : rigidBodySubset) {
+                        const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
-                    if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
-                        rigidBodyComponent.layer == Physics::Layers::STATIC)
-                        continue;
+                        if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
+                            rigidBodyComponent.layer == Physics::Layers::STATIC)
+                            continue;
 
-                    // This happens if no change was triggered by the user, then we still need
-                    // to update the last global matrix, since it might have changed due to physics simulation
-                    if (!transformComponent.changed)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
-                    // Need to set changed to true such that the space partitioning is updated
-                    transformComponent.changed = true;
-                    transformComponent.updated = true;
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
 
-                    // Physics are updated in global space, so we don't need the parent transform
-                    transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
-                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
-                }
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
 
-                // Player update needs to be performed after normal rigid bodies, such that
-                // player can override rigid body behaviour
-                for (auto entity : playerSubset) {
-                    const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+                    // Player update needs to be performed after normal rigid bodies, such that
+                    // player can override rigid body behaviour
+                    for (auto entity : playerSubset) {
+                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
 
-                    if (!playerComponent.IsValid())
-                        continue;
+                        if (!playerComponent.IsValid())
+                            continue;
 
-                    // This happens if no change was triggered by the user, then we still need
-                    // to update the last global matrix, since it might have changed due to physics simulation
-                    if (!transformComponent.changed)
-                        transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
 
-                    // Need to set changed to true such that the space partitioning is updated
-                    transformComponent.changed = true;
-                    transformComponent.updated = true;
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
 
-                    // Physics are updated in global space, so we don't need the parent transform
-                    transformComponent.globalMatrix = playerComponent.GetMatrix();
-                    transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = playerComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
                 }
             }
 
@@ -261,6 +259,31 @@ namespace Atlas {
                 }
             }
 
+            auto lightSubset = entityManager.GetSubset<LightComponent>();
+            for (auto entity : lightSubset) {
+                auto& lightComponent = lightSubset.Get(entity);
+
+                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+
+                lightComponent.Update(transformComponent);
+            }
+
+#ifdef AE_BINDLESS
+            UpdateBindlessIndexMaps();
+
+            // Make sure this is changed just once at the start of a frame
+            rayTracingWorldUpdateFuture = std::async(std::launch::async, [&]() {
+                // Need to wait before updating graphic resources
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
+                if (rayTracingWorld) {
+                    rayTracingWorld->scene = this;
+                    rayTracingWorld->Update(true);
+                }
+                rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+                });
+            
+#endif
+
             // We also need to reset the hierarchy components as well
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
@@ -284,26 +307,6 @@ namespace Atlas {
 
                 textComponent.Update(transformComponent);
             }
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
-                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
-
-                lightComponent.Update(transformComponent);
-            }
-
-#ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-
-            // Make sure this is changed just once at the start of a frame
-            if (rayTracingWorld) {
-                rayTracingWorld->scene = this;
-                rayTracingWorld->Update(true);
-            }
-            rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-#endif
 
         }
 
@@ -416,7 +419,7 @@ namespace Atlas {
 
         }
 
-        CameraComponent& Scene::GetMainCamera() {           
+        CameraComponent& Scene::GetMainCamera() {
 
             return mainCameraEntity.GetComponent<CameraComponent>();
 
@@ -431,6 +434,7 @@ namespace Atlas {
         Volume::RayResult<Entity> Scene::CastRay(Volume::Ray& ray, SceneQueryComponents queryComponents) {
 
             Volume::RayResult<Entity> result;
+            result.hitDistance = ray.tMax;
 
             // Most accurate method if it works
             if (physicsWorld && (queryComponents & SceneQueryComponentBits::RigidBodyComponentBit)) {
@@ -454,7 +458,8 @@ namespace Atlas {
                     const auto& meshComp = meshSubset.Get(entity);
 
                     auto dist = 0.0f;
-                    if (ray.Intersects(meshComp.aabb, 0.0f, result.hitDistance, dist)) {
+                    ray.tMax = result.hitDistance;
+                    if (ray.Intersects(meshComp.aabb, dist)) {
                         auto rigidBody = entityManager.TryGet<RigidBodyComponent>(entity);
                         // This means we already found a more accurate hit
                         if (result.valid && entityManager.Contains<RigidBodyComponent>(entity))
@@ -466,7 +471,7 @@ namespace Atlas {
                             result.data = { entity, &entityManager };
                             result.hitDistance = dist;
                         }
-                        
+
                         // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
                         if (!result.valid) {
                             result.valid = true;
@@ -483,12 +488,13 @@ namespace Atlas {
                     const auto& textComp = textSubset.Get(entity);
 
                     auto dist = 0.0f;
-                    if (ray.Intersects(textComp.GetRectangle(), 0.0f, result.hitDistance, dist)) {
+                    ray.tMax = result.hitDistance;
+                    if (ray.Intersects(textComp.GetRectangle(), dist)) {
 
                         result.valid = true;
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
-                        
+
                     }
                 }
             }
@@ -497,7 +503,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList &renderList) {
+        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList, const Ref<RenderList::Pass>& pass) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
@@ -505,7 +511,7 @@ namespace Atlas {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
                 if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
-                    renderList.Add(entity, comp);
+                    renderList.Add(pass, entity, comp);
             }
 
         }
@@ -525,6 +531,13 @@ namespace Atlas {
             for (auto mesh : meshes) {
                 mesh.WaitForLoad();
             }
+
+        }
+
+        void Scene::WaitForAsyncWorkCompletion() {
+
+            if (rayTracingWorldUpdateFuture.valid())
+                rayTracingWorldUpdateFuture.get();
 
         }
 
@@ -647,12 +660,12 @@ namespace Atlas {
 
             // Each resource type needs to count references
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     RegisterResource(registeredMeshes, meshComponent.mesh);
                 });
 
             entityManager.SubscribeToTopic<MeshComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, const MeshComponent& meshComponent)  {
+                [this](const ECS::Entity entity, const MeshComponent& meshComponent) {
                     UnregisterResource(registeredMeshes, meshComponent.mesh);
 
                     if (meshComponent.inserted) {
@@ -662,7 +675,7 @@ namespace Atlas {
 
             // Need insert/remove physics components into physics world
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent) {
                     auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
@@ -671,13 +684,13 @@ namespace Atlas {
                 });
 
             entityManager.SubscribeToTopic<RigidBodyComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, RigidBodyComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentEmplace,
-                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent) {
                     auto transformComp = entityManager.TryGet<TransformComponent>(entity);
                     if (!transformComp) return;
 
@@ -686,7 +699,7 @@ namespace Atlas {
                 });
 
             entityManager.SubscribeToTopic<PlayerComponent>(ECS::Topic::ComponentErase,
-                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent)  {
+                [this](const ECS::Entity entity, PlayerComponent& rigidBodyComponent) {
                     if (physicsWorld != nullptr)
                         rigidBodyComponent.RemoveFromPhysicsWorld();
                 });
@@ -698,7 +711,7 @@ namespace Atlas {
             std::unordered_map<ECS::Entity, Entity> entityToEntityMap;
 
             // We need all entities before we can start to attach components
-            for(auto entity : *other) {
+            for (auto entity : *other) {
                 auto newEntity = CreateEntity();
 
                 entityToEntityMap[entity] = newEntity;
@@ -754,7 +767,7 @@ namespace Atlas {
 
             // NOTE: The reason we copy entities instead of taking a reference is simply because otherwise we might
             // get dereferenced due to new components being added, which could lead to crashes
-            
+
             // Normal components without resources which are not a hierarchy that needs special treatment
             if (srcEntity.HasComponent<NameComponent>()) {
                 const auto& otherComp = srcEntity.GetComponent<NameComponent>();
@@ -782,7 +795,7 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<RigidBodyComponent>();
                 auto creationSettings = otherComp.GetBodyCreationSettings();
                 const auto otherShape = creationSettings.shape;
-                 // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
+                // Need to have a copy of the shape (otherwise they are all linked, e.g. when changing scale)
                 creationSettings.shape = CreateRef<Physics::Shape>();
                 *creationSettings.shape = *otherShape;
                 dstEntity.AddComponent<RigidBodyComponent>(creationSettings);
@@ -811,11 +824,36 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<AudioVolumeComponent>();
                 dstEntity.AddComponent<AudioVolumeComponent>(otherComp);
             }
+            if (srcEntity.HasComponent<LuaScriptComponent>()) {
+                // These have a proper copy constructor
+                auto otherComp = srcEntity.GetComponent<LuaScriptComponent>();
+                dstEntity.AddComponent<LuaScriptComponent>(otherComp);
+            }
             if (srcEntity.HasComponent<TextComponent>()) {
                 auto otherComp = srcEntity.GetComponent<TextComponent>();
                 auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
             }
+
+        }
+
+        std::vector<uint8_t> Scene::Backup(const Ref<Scene>& scene) {
+
+            json j;
+            SceneToJson(j, scene.get());
+
+            return json::to_bjdata(j);
+
+        }
+
+        Ref<Scene> Scene::Restore(const std::vector<uint8_t>& serialized) {
+
+            json j = json::from_bjdata(serialized);
+
+            Ref<Scene> scene;
+            SceneFromJson(j, scene);
+
+            return scene;
 
         }
 

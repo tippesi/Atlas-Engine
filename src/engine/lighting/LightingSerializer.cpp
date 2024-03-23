@@ -176,6 +176,7 @@ namespace Atlas::Lighting {
             {"longRangeDistance", p.longRangeDistance},
             {"bias", p.bias},
             {"splitCorrection", p.splitCorrection},
+            {"edgeSoftness", p.edgeSoftness},
             {"cascadeBlendDistance", p.cascadeBlendDistance},
             {"resolution", p.resolution},
             {"views", p.views},
@@ -195,6 +196,7 @@ namespace Atlas::Lighting {
         j.at("longRangeDistance").get_to(p.longRangeDistance);
         j.at("bias").get_to(p.bias);
         j.at("splitCorrection").get_to(p.splitCorrection);
+        j.at("edgeSoftness").get_to(p.edgeSoftness);
         j.at("cascadeBlendDistance").get_to(p.cascadeBlendDistance);
         j.at("resolution").get_to(p.resolution);
         j.at("views").get_to(p.views);

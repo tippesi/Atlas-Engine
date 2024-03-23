@@ -18,12 +18,12 @@ namespace Atlas {
 
 			}
 
-			void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution,
+			void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution, float edgeSoftness,
                 int32_t cascadeCount, float splitCorrection, bool longRange, float longRangeDistance) {
 
 				AE_ASSERT(type == LightType::DirectionalLight && "Component must be of type directional light");
 
-                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution, 
+                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution, edgeSoftness,
                     glm::min(cascadeCount, MAX_SHADOW_VIEW_COUNT), splitCorrection);
 
                 shadow->allowTerrain = true;
@@ -41,11 +41,11 @@ namespace Atlas {
 			}
 
             void LightComponent::AddDirectionalShadow(float distance, float bias, int32_t resolution,
-                vec3 shadowCenter, vec4 orthoSize) {
+                float edgeSoftness, vec3 shadowCenter, vec4 orthoSize) {
 
                 AE_ASSERT(type == LightType::DirectionalLight && "Component must be of type directional light");
 
-                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution);
+                shadow = CreateRef<Lighting::Shadow>(distance, bias, resolution, edgeSoftness);
 
                 shadow->center = shadowCenter;
 

@@ -512,7 +512,9 @@ namespace Atlas::Renderer {
 
 			auto binding = job->computeJobDescriptor.pipeline.uavResourceBindings[uav].slotIndex;
 			auto mipLevel = job->computeJobDescriptor.uavMip[uav];
-			commandList->BindImage(image, 1, binding, image->mipMapViews.empty() ? -1 : mipLevel);
+        
+            int32_t selectedMipLevel = std::min(int32_t(mipLevel), int32_t(image->mipMapViews.size()) - 1);
+			commandList->BindImage(image, 1, binding, selectedMipLevel);
 		}
 
 		for (uint32_t srv = 0; srv < job->computeJobDescriptor.pipeline.srvCount; ++srv) {
@@ -843,8 +845,8 @@ namespace Atlas::Renderer {
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 
 		dispatchParameters.output = GetResource(outputImage, L"FSR2_OutputUpscaledColor", FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) * taa.jitterRange;
-		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * taa.jitterRange;
+		dispatchParameters.jitterOffset.x = camera.GetJitter().x * float(target->GetScaledWidth()) * 0.5f;
+		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * 0.5f;
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
 		dispatchParameters.reset = false;
@@ -862,7 +864,8 @@ namespace Atlas::Renderer {
 		AE_ASSERT(errorCode == FFX_OK);
 
 		commandList->ImageMemoryBarrier(outputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT);
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Graphics::Profiler::EndQuery();
 

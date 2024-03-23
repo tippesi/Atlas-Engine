@@ -34,7 +34,9 @@
     "nlohmann-json",
     "gtest",
     "joltphysics",
-    "imguizmo"
+    "imguizmo",
+    "lua",
+    "sol2"
   ],
   "overrides": [
     {
@@ -76,6 +78,14 @@
     {
       "name": "joltphysics",
       "version": "4.0.0"
+    },
+    {
+      "name": "lua",
+      "version": "5.4.6"
+    },
+    {
+      "name": "sol2",
+      "version": "3.3.0"
     }
   ]
 }

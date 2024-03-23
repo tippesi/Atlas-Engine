@@ -79,6 +79,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::DragFloat("Bias", &shadow->bias, 0.05f, 0.0f, 10.0f);
             ImGui::DragFloat("Distance", &shadow->distance, 1.0f, 0.0f, 10000.0f);
+            ImGui::DragFloat("Edge softness", &shadow->edgeSoftness, 0.005f, 0.0f, 1.0f);
 
             ImGui::Separator();
 
@@ -106,7 +107,7 @@ namespace Atlas::Editor::UI {
 
                     auto matrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -120.0f, 120.0f);
                     lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution,
-                        shadow->center, orthoSize);
+                        shadow->edgeSoftness, shadow->center, orthoSize);
                 }
                 else {
                     ImGui::SliderInt("Cascade count", &shadow->viewCount, 1, 5);
@@ -114,7 +115,7 @@ namespace Atlas::Editor::UI {
                     ImGui::Checkbox("Long range", &shadow->longRange);
                     ImGui::DragFloat("Long range distance", &shadow->longRangeDistance, 10.0f, 10.0f, 10000.0f);
 
-                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution,
+                    lightComponent.AddDirectionalShadow(shadow->distance, shadow->bias, shadow->resolution, shadow->edgeSoftness,
                         shadow->viewCount, shadow->splitCorrection, shadow->longRange, shadow->longRangeDistance);
                 }
             }

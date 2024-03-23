@@ -2,13 +2,14 @@
 #include "GraphicsDevice.h"
 
 #include <cassert>
+#include <thread>
 
 namespace Atlas {
 
     namespace Graphics {
 
         CommandList::CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-            const std::vector<VkQueue>& queues, bool frameIndependent) : memoryManager(device->memoryManager),
+            std::vector<Ref<Queue>>& queues, bool frameIndependent) : memoryManager(device->memoryManager),
             device(device->device), frameIndependent(frameIndependent), queueType(queueType), queueFamilyIndex(queueFamilyIndex) {
 
             VkCommandPoolCreateInfo poolCreateInfo = Initializers::InitCommandPoolCreateInfo(queueFamilyIndex);
@@ -20,13 +21,17 @@ namespace Atlas {
             VkFenceCreateInfo fenceInfo = Initializers::InitFenceCreateInfo();
             VK_CHECK(vkCreateFence(device->device, &fenceInfo, nullptr, &fence))
 
-            for (auto queue : queues) {
+            auto threadId = std::this_thread::get_id();
+
+            for (auto& queue : queues) {
                 Semaphore semaphore{
-                    .queue = queue
+                    .queue = queue->queue
                 };
 
+                QueueRef ref(queue, threadId, true);
                 VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
-                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore.semaphore))
+                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr, &semaphore.semaphore));
+                ref.Unlock();
 
                 semaphores.push_back(semaphore);
             }
@@ -106,14 +111,14 @@ namespace Atlas {
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
                 swapChain->imageLayouts[imageIdx] = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             }
-            if (swapChain->depthImageLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                auto barrier = Initializers::InitImageMemoryBarrier(swapChain->depthImageAllocation.image,
+            if (swapChain->depthImageLayouts[imageIdx] == VK_IMAGE_LAYOUT_UNDEFINED) {
+                auto barrier = Initializers::InitImageMemoryBarrier(swapChain->depthImageAllocations[imageIdx].image,
                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                     VK_ACCESS_MEMORY_READ_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
                 vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-                swapChain->depthImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                swapChain->depthImageLayouts[imageIdx] = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
 
             vkCmdBeginRenderPass(commandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -206,15 +211,15 @@ namespace Atlas {
             }
             if (renderPassInUse) {
                 for (uint32_t i = 0; i < MAX_COLOR_ATTACHMENTS; i++) {
-                    auto& rpAttachment = renderPassInUse->colorAttachments[i];
-                    auto& fbAttachment = frameBufferInUse->colorAttachments[i];
+                    const auto& rpAttachment = renderPassInUse->colorAttachments[i];
+                    const auto& fbAttachment = frameBufferInUse->colorAttachments[i];
                     if (!fbAttachment.isValid) continue;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
                     fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
                 if (frameBufferInUse->depthAttachment.isValid) {
-                    auto& rpAttachment = renderPassInUse->depthAttachment;
-                    auto& fbAttachment = frameBufferInUse->depthAttachment;
+                    const auto& rpAttachment = renderPassInUse->depthAttachment;
+                    const auto& fbAttachment = frameBufferInUse->depthAttachment;
                     fbAttachment.image->layout = rpAttachment.outputLayout;
                     fbAttachment.image->accessMask = VK_ACCESS_SHADER_READ_BIT;
                 }
@@ -392,7 +397,7 @@ namespace Atlas {
 
         }
 
-        void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data) {
+        void CommandList::PushConstants(const std::string& pushConstantRangeName, void *data, uint32_t size) {
 
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
@@ -400,8 +405,9 @@ namespace Atlas {
             auto pushConstantRange = pipelineInUse->shader->GetPushConstantRange(pushConstantRangeName);
             if (!pushConstantRange) return;
 
+            size = size != 0 ? size : pushConstantRange->range.size;
             vkCmdPushConstants(commandBuffer, pipelineInUse->layout, pushConstantRange->range.stageFlags,
-                pushConstantRange->range.offset, pushConstantRange->range.size, data);
+                pushConstantRange->range.offset, size, data);
 
         }
 
@@ -432,16 +438,20 @@ namespace Atlas {
             AE_ASSERT(pipelineInUse && "No pipeline is bound");
             if (!pipelineInUse) return;
 
-            std::vector<VkDeviceSize> offsets;
-            std::vector<VkBuffer> bindBuffers;
-            for (const auto& buffer : buffers) {
+            AE_ASSERT(buffers.size() < MAX_VERTEX_BUFFER_BINDINGS);
+
+            VkDeviceSize offset[MAX_VERTEX_BUFFER_BINDINGS];
+            VkBuffer bindBuffers[MAX_VERTEX_BUFFER_BINDINGS];
+
+            for (size_t i = 0; i < buffers.size(); i++) {
+                const auto& buffer = buffers[i];
                 if (!buffer->buffer) return;
                 AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
-                bindBuffers.push_back(buffer->buffer);
-                offsets.push_back(0);
+                bindBuffers[i] = buffer->buffer;
+                offset[i] = 0;
             }
 
-            vkCmdBindVertexBuffers(commandBuffer, bindingOffset, bindingCount, bindBuffers.data(), offsets.data());
+            vkCmdBindVertexBuffers(commandBuffer, bindingOffset, bindingCount, bindBuffers, offset);
 
         }
 
@@ -580,7 +590,7 @@ namespace Atlas {
             if (!images.size()) return;
 
             std::vector<Image*> imagesPtr;
-            for (auto& image : images) imagesPtr.push_back(image.get());
+            for (const auto& image : images) imagesPtr.push_back(image.get());
 
             descriptorBindingData.ResetBinding(set, binding);
 
@@ -1281,7 +1291,7 @@ namespace Atlas {
 
         const VkSemaphore CommandList::GetSemaphore(VkQueue queue) {
 
-            for (auto& semaphore : semaphores) {
+            for (const auto& semaphore : semaphores) {
                 if (semaphore.queue == queue)
                     return semaphore.semaphore;
             }

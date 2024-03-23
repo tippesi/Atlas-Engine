@@ -24,6 +24,8 @@
 #include <vector>
 #include <mutex>
 #include <set>
+#include <future>
+#include <shared_mutex>
 
 namespace Atlas {
 
@@ -51,6 +53,7 @@ namespace Atlas {
         public:
             VkSemaphore semaphore = VK_NULL_HANDLE;
             VkFence fence = VK_NULL_HANDLE;
+            VkSemaphore submitSemaphore = VK_NULL_HANDLE;
 
             std::mutex commandListsMutex;
             std::vector<CommandList*> commandLists;
@@ -139,13 +142,19 @@ namespace Atlas {
 
             void FlushCommandList(CommandList* cmd);
 
+            bool IsPreviousFrameComplete();
+
+            void WaitForPreviousFrameCompletion();
+
+            void CompleteFrameAsync();
+
             void CompleteFrame();
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
             QueueRef GetAndLockQueue(QueueType queueType);
 
-            void WaitForIdle() const;
+            void WaitForIdle();
 
             void ForceMemoryCleanup();
 
@@ -226,7 +235,7 @@ namespace Atlas {
             QueueRef SubmitAllCommandLists();
 
             void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-                const QueueRef& queue, const QueueRef& nextQueue);
+                VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);
@@ -257,7 +266,7 @@ namespace Atlas {
 
             void DestroyFrameData();
 
-            FrameData* GetFrameData();
+            FrameData* GetFrameData(int32_t frameIdx);
 
             void DestroyUnusedGraphicObjects();
 
@@ -294,6 +303,11 @@ namespace Atlas {
 
             int32_t windowWidth = 0;
             int32_t windowHeight = 0;
+
+            std::shared_mutex queueMutex;
+
+            std::atomic_bool frameComplete = true;
+            std::future<void> completeFrameFuture;
 
         };
 

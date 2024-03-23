@@ -149,11 +149,9 @@ namespace Atlas {
         template <class T>
         void Octree<T>::QueryRay(std::vector<T>& data, Ray ray) {
 
-            constexpr float maxFloat = std::numeric_limits<float>::max();
-
             auto scaled = this->aabb.Scale(relaxFactor);
 
-            if (!ray.Intersects(scaled, 0.0f, maxFloat))
+            if (!ray.Intersects(scaled))
                 return;
 
             std::copy(octreeData.begin(), octreeData.end(), back_inserter(data));

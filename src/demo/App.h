@@ -67,9 +67,6 @@ private:
 
     Ref<Atlas::Scene::Scene> scene;
 
-    Atlas::ResourceHandle<Atlas::Audio::AudioData> audio;
-    Atlas::ResourceHandle<Atlas::Audio::AudioData> music;
-
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
 
     Atlas::Scene::Entity cameraEntity;

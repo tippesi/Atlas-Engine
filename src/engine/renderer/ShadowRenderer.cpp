@@ -74,7 +74,6 @@ namespace Atlas {
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
                     for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
-
                         auto mesh = shadowPass->meshIdToMeshMap[meshId];
                         for (auto& subData : mesh->data.subData) {
                             subDatas.push_back({ &subData, mesh });
@@ -98,8 +97,11 @@ namespace Atlas {
 
                     size_t prevHash = 0;
                     Ref<Graphics::Pipeline> currentPipeline = nullptr;
-                    ResourceHandle<Mesh::Mesh> prevMesh;
-                    for (auto [subData, mesh] : subDatas) {
+                    Hash prevMesh = 0;
+                    for (auto& [subData, mesh] : subDatas) {
+                        auto& instance = shadowPass->meshToInstancesMap[mesh.GetID()];
+                        if (!instance.count) continue;
+
                         auto material = subData->material;
                         if (material->shadowConfig.variantHash != prevHash) {
                             currentPipeline = PipelineManager::GetPipeline(material->shadowConfig);
@@ -107,12 +109,10 @@ namespace Atlas {
                             prevHash = material->shadowConfig.variantHash;
                         }
 
-                        if (mesh.GetID() != prevMesh.GetID()) {
+                        if (mesh.GetID() != prevMesh) {
                             mesh->vertexArray.Bind(commandList);
-                            prevMesh = mesh;
-                        }
-
-                        auto& instance = shadowPass->meshToInstancesMap[mesh.GetID()];
+                            prevMesh = mesh.GetID();
+                        }                        
 
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
@@ -129,14 +129,13 @@ namespace Atlas {
                         };
                         commandList->PushConstants("constants", &pushConstants);
 
-                        if(!instance.count) continue;
                         commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                             0, instance.offset);
 
                     }
 
                     impostorRenderer.Render(frameBuffer, renderList, commandList,
-                        shadowPass, component->viewMatrix, component->projectionMatrix, lightLocation);
+                        shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
                     commandList->EndRenderPass();
 

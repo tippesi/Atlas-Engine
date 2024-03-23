@@ -4,8 +4,8 @@ namespace Atlas {
 
     namespace Volume {
 
-        Ray::Ray(vec3 origin, vec3 direction) : origin(origin),
-            direction(direction), inverseDirection(1.0f / direction) {
+        Ray::Ray(vec3 origin, vec3 direction, float tMin, float tMax) : origin(origin),
+            direction(direction), inverseDirection(1.0f / direction), tMin(tMin), tMax(tMax) {
 
 
 
@@ -17,15 +17,15 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(const AABB& aabb, float tmin, float tmax) {
+        bool Ray::Intersects(const AABB& aabb) {
 
             auto t = 0.0f;
 
-            return Intersects(aabb, tmin, tmax, t);
+            return Intersects(aabb, t);
 
         }
 
-        bool Ray::Intersects(const AABB& aabb, float tmin, float tmax, float& t) {
+        bool Ray::Intersects(const AABB& aabb, float& t) {
 
             auto t0 = (aabb.min - origin) * inverseDirection;
             auto t1 = (aabb.max - origin) * inverseDirection;
@@ -33,8 +33,8 @@ namespace Atlas {
             auto tsmall = glm::min(t0, t1);
             auto tbig = glm::max(t0, t1);
 
-            auto tminf = glm::max(tmin, glm::max(tsmall.x, glm::max(tsmall.y, tsmall.z)));
-            auto tmaxf = glm::min(tmax, glm::min(tbig.x, glm::min(tbig.y, tbig.z)));
+            auto tminf = glm::max(tMin, glm::max(tsmall.x, glm::max(tsmall.y, tsmall.z)));
+            auto tmaxf = glm::min(tMax, glm::min(tbig.x, glm::min(tbig.y, tbig.z)));
 
             t = tminf;
 
@@ -75,7 +75,7 @@ namespace Atlas {
 
         }
 
-        bool Ray::Intersects(const Rectangle& rect, float tmin, float tmax, float& t) {
+        bool Ray::Intersects(const Rectangle& rect, float& t) {
 
             auto N = rect.GetNormal();
 
@@ -85,7 +85,7 @@ namespace Atlas {
 
             float dist = glm::dot(rect.point - origin, N) / nDotD;
 
-            if (dist <= tmin && dist > tmax)
+            if (dist <= tMin && dist > tMax)
                 return false;
 
             auto point = Get(dist) - rect.point;

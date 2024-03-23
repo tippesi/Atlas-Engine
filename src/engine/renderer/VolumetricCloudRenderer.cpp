@@ -246,7 +246,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
-            commandList->PushConstants("constants", &randomFloat);
+            commandList->PushConstants("constants", &randomFloat, sizeof(float));
 
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
@@ -274,7 +274,7 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             auto randomFloat = Common::Random::SampleUniformFloat() * 10.0f;
-            commandList->PushConstants("constants", &randomFloat);
+            commandList->PushConstants("constants", &randomFloat, sizeof(float));
 
             commandList->ImageMemoryBarrier(texture->image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);

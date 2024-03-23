@@ -20,7 +20,7 @@ namespace Atlas {
         void VegetationRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 uint32_t invertUVs;
                 uint32_t twoSided;
                 uint32_t materialIdx;

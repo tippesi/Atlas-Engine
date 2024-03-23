@@ -24,11 +24,12 @@ layout(push_constant) uniform constants {
 } PushConstants;
 
 const float minVelocityBlend = 0.05;
-const float maxVelocityBlend = 0.5;
+const float maxVelocityBlend = 0.2;
 
 #define TAA_YCOCG
 #define TAA_BICUBIC // Nearly always use the bicubic sampling for better quality and sharpness under movement
 #define TAA_TONE // Somehow introduces more flickering as well
+#define TAA_CLIP
 //#define TAA_DENOISE
 
 #ifdef PATHTRACE
