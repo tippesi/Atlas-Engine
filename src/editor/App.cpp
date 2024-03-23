@@ -1,7 +1,7 @@
 #include "App.h"
 #include "FileImporter.h"
 #include "Singletons.h"
-#include "Serializer.h"
+#include "Serialization.h"
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
@@ -38,16 +38,9 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
-        
-        Physics::SphereShapeSettings settings {
-            .radius = 1.0f,
-            .scale = vec3(0.9f),
-        };
-        auto shape = Physics::ShapesManager::CreateShape(settings);
-        
-        shape->Scale(vec3(0.8f));
+       
 
-        Serializer::DeserializeConfig();
+        Serialization::DeserializeConfig();
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
@@ -70,10 +63,12 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper->Unload();
 
         for (const auto& sceneWindow : sceneWindows) {
-            Serializer::SerializeSceneWindow(sceneWindow);
+            if (sceneWindow->isPlaying)
+                sceneWindow->StopPlaying();
+            Serialization::SerializeSceneWindow(sceneWindow);
         }
 
-        Serializer::SerializeConfig();
+        Serialization::SerializeConfig();
 
         Singletons::Destruct();
 
@@ -91,7 +86,7 @@ namespace Atlas::Editor {
                 std::swap(waitToLoadScenes[i], waitToLoadScenes.back());
 
                 // After the scene is loaded we can retrieve the window configuration and deserialize it
-                sceneWindows.emplace_back(Serializer::DeserializeSceneWindow(waitToLoadScenes.back()));
+                sceneWindows.emplace_back(Serialization::DeserializeSceneWindow(waitToLoadScenes.back()));
                 waitToLoadScenes.pop_back();
                 i--;
             }
@@ -135,7 +130,9 @@ namespace Atlas::Editor {
         std::reverse(toBeDeletedSceneWindows.begin(), toBeDeletedSceneWindows.end());
         for (auto sceneWindowIdx : toBeDeletedSceneWindows) {
             // Serialize window before erasing it
-            Serializer::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
+            if (sceneWindows[sceneWindowIdx]->isPlaying)
+                sceneWindows[sceneWindowIdx]->StopPlaying();
+            Serialization::SerializeSceneWindow(sceneWindows[sceneWindowIdx]);
             sceneWindows.erase(sceneWindows.begin() + sceneWindowIdx);
         }
 
@@ -152,7 +149,7 @@ namespace Atlas::Editor {
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&
-            !ImGuizmo::IsUsing() && (!activeSceneWindow->isPlaying || !activeSceneWindow->hasPlayer)) {
+            !ImGuizmo::IsUsing() && !activeSceneWindow->isPlaying) {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             mouseHandler.sensibility = activeSceneWindow->cameraRotationSpeed;
             keyboardHandler.speed = activeSceneWindow->cameraMovementSpeed;
@@ -189,6 +186,10 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
+        graphicsDevice->WaitForPreviousFrameCompletion();
+
+        
+        // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&]() {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
@@ -209,10 +210,12 @@ namespace Atlas::Editor {
         else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
             bvhBuilderFuture.get();
         }
-
+        
     }
 
     void App::Render(float deltaTime) {
+
+        graphicsDevice->WaitForPreviousFrameCompletion();
 
         auto windowFlags = window.GetFlags();
         if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
@@ -296,7 +299,8 @@ namespace Atlas::Editor {
         contentBrowserWindow.Render();
         logWindow.Render();
         profilerWindow.Render();
-        geometryBrushWindow.Render(sceneWindows[activeSceneIdx]);
+
+        geometryBrushWindow.Render(sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx]);
 
         for (auto& sceneWindow : sceneWindows) {
             sceneWindow->Render();

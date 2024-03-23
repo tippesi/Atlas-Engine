@@ -27,6 +27,11 @@ namespace Atlas {
             irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
             momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
+            probeDebugMaterial = CreateRef<Material>();
+            probeDebugActiveMaterial = CreateRef<Material>();
+            probeDebugInactiveMaterial = CreateRef<Material>();
+            probeDebugOffsetMaterial = CreateRef<Material>();
+
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -128,6 +133,7 @@ namespace Atlas {
                         auto &shadowUniform = uniforms.shadow;
                         shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
                         shadowUniform.bias = shadow->bias;
+                        shadowUniform.edgeSoftness = shadow->edgeSoftness;
                         shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                         shadowUniform.cascadeCount = shadow->viewCount;
                         shadowUniform.resolution = vec2(shadow->resolution);
@@ -226,7 +232,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants("constants", &probeRes);
+                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(irradianceArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -244,7 +250,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants("constants", &probeRes);
+                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(momentsArray.image, 3, 0);
                 commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
 
@@ -274,6 +280,19 @@ namespace Atlas {
             if (!volume || !volume->enable || !volume->update || !volume->debug)
                 return;
 
+            // Need additional barrier, since in the normal case DDGI is made to be sampled just in compute shader
+            auto& internalVolume = volume->internal;
+            auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
+
+            commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+            // Need to rebind after barrier
+            commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
+            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
+
             auto shaderConfig = ShaderConfig {
                 {"ddgi/probeDebug.vsh", VK_SHADER_STAGE_VERTEX_BIT},
                 {"ddgi/probeDebug.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
@@ -288,17 +307,17 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            probeDebugActiveMaterial.emissiveColor = vec3(0.0f, 1.0f, 0.0f);
-            probeDebugInactiveMaterial.emissiveColor = vec3(1.0f, 0.0f, 0.0f);
-            probeDebugOffsetMaterial.emissiveColor = vec3(0.0f, 0.0f, 1.0f);
+            probeDebugActiveMaterial->emissiveColor = vec3(0.0f, 1.0f, 0.0f);
+            probeDebugInactiveMaterial->emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+            probeDebugOffsetMaterial->emissiveColor = vec3(0.0f, 0.0f, 1.0f);
 
             sphereArray.Bind(commandList);
 
             ProbeDebugConstants constants = {
-                .probeMaterialIdx = uint32_t(materialMap[&probeDebugMaterial]),
-                .probeActiveMaterialIdx = uint32_t(materialMap[&probeDebugActiveMaterial]),
-                .probeInactiveMaterialIdx = uint32_t(materialMap[&probeDebugInactiveMaterial]),
-                .probeOffsetMaterialIdx = uint32_t(materialMap[&probeDebugOffsetMaterial])
+                .probeMaterialIdx = uint32_t(materialMap[probeDebugMaterial.get()]),
+                .probeActiveMaterialIdx = uint32_t(materialMap[probeDebugActiveMaterial.get()]),
+                .probeInactiveMaterialIdx = uint32_t(materialMap[probeDebugInactiveMaterial.get()]),
+                .probeOffsetMaterialIdx = uint32_t(materialMap[probeDebugOffsetMaterial.get()])
             };
             commandList->PushConstants("constants", &constants);
 

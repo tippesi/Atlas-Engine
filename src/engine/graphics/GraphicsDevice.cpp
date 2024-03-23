@@ -191,7 +191,7 @@ namespace Atlas {
                 windowWidth, windowHeight, preferredColorSpace, presentMode, VK_NULL_HANDLE);
 
             // Acquire first index since normally these are acquired at completion of frame
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
 
             VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             vkDestroySemaphore(device, frame->semaphore, nullptr);
@@ -369,7 +369,7 @@ namespace Atlas {
                 return commandList;
             }
             else {
-                auto currentFrameData = GetFrameData();
+                auto currentFrameData = GetFrameData(frameIndex);
 
                 auto commandList = GetOrCreateCommandList(queueType, currentFrameData->commandListsMutex,
                     currentFrameData->commandLists, false);
@@ -390,7 +390,9 @@ namespace Atlas {
             AE_ASSERT(swapChain->isComplete && "Swap chain should be complete."
                 && " The swap chain might have an invalid size due to a window resize");
 
-            auto frame = GetFrameData();
+            AE_ASSERT(!cmd->isSubmitted && "Command list was probably submitted before");
+
+            auto frame = GetFrameData(frameIndex);
 
             cmd->executionOrder = order;
 
@@ -409,6 +411,8 @@ namespace Atlas {
         }
 
         void GraphicsDevice::FlushCommandList(CommandList *cmd) {
+
+            std::shared_lock lock(queueMutex);
 
             AE_ASSERT(cmd->frameIndependent && "Flushed command list is not frame independent."
                    && "Please use the submit method instead");
@@ -437,11 +441,38 @@ namespace Atlas {
 
         }
 
+        bool GraphicsDevice::IsPreviousFrameComplete() {
+
+            return frameComplete;
+
+        }
+
+        void GraphicsDevice::WaitForPreviousFrameCompletion() {
+
+            if (completeFrameFuture.valid())
+                completeFrameFuture.get();
+
+        }
+
+        void GraphicsDevice::CompleteFrameAsync() {
+
+            frameComplete = false;
+
+            if (completeFrameFuture.valid())
+                completeFrameFuture.get();
+
+            // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
+            // Refrain from using complete frame async for now
+            completeFrameFuture = std::async(std::launch::async,
+                [this] () { CompleteFrame(); });
+
+        }
+
         void GraphicsDevice::CompleteFrame() {
 
             bool recreateSwapChain = false;
 
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
 
             bool wasSwapChainAccessed = false;
             for (auto commandList : frame->submittedCommandLists) {
@@ -459,7 +490,7 @@ namespace Atlas {
             }
 
             // Lock mutex such that submissions can't happen anymore
-            std::lock_guard<std::mutex> lock(frame->submissionMutex);
+            std::lock_guard<std::mutex> frameSubmissionLock(frame->submissionMutex);
 
             bool allListSubmitted = true;
             for (auto commandList : frame->commandLists) {
@@ -469,39 +500,51 @@ namespace Atlas {
             AE_ASSERT(allListSubmitted && "Not all command list were submitted before frame completion." &&
                 "Consider using a frame independent command lists for longer executions.");
 
-            auto presenterQueue = SubmitAllCommandLists();
+            // Wait, reset and start with new semaphores
+            auto nextFrame = GetFrameData(frameIndex + 1);
+            nextFrame->WaitAndReset(device);
 
-            if (swapChain->isComplete && frame->submittedCommandLists.size()) {
+            {
+                // Lock the queue in shared mode such that flush can happen simultaneously, but waiting for idle is not possible
+                // Not locking has caused some trouble, with WaitForIdle seeming to access queues if not guarded properly
+                std::shared_lock queueLock(queueMutex);
+                auto presenterQueue = SubmitAllCommandLists();
 
-                std::vector<VkSemaphore> semaphores;
-                // For now, we will only use sequential execution of queue submits,
-                // which means only the latest submit can signal its semaphore here
-                //for (auto cmd : frameData->submittedCommandLists)
-                //    semaphores.push_back(cmd->semaphore);
-                if (frame->submittedCommandLists.size()) {
-                    semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
-                }
-                else {
-                    semaphores.push_back(frame->semaphore);
-                }
+                if (swapChain->isComplete && frame->submittedCommandLists.size()) {
 
-                VkPresentInfoKHR presentInfo = {};
-                presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-                presentInfo.pNext = nullptr;
-                presentInfo.pSwapchains = &swapChain->swapChain;
-                presentInfo.swapchainCount = 1;
-                presentInfo.pWaitSemaphores = semaphores.data();
-                presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
-                presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+                    std::vector<VkSemaphore> semaphores;
+                    // For now, we will only use sequential execution of queue submits,
+                    // which means only the latest submit can signal its semaphore here
+                    //for (auto cmd : frameData->submittedCommandLists)
+                    //    semaphores.push_back(cmd->semaphore);
+                    if (frame->submittedCommandLists.size()) {
+                        semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                    }
+                    else {
+                        semaphores.push_back(frame->semaphore);
+                    }
 
-                auto result = vkQueuePresentKHR(presenterQueue.queue, &presentInfo);
-                presenterQueue.Unlock();
+                    // Since there needs to be at least one semaphore, we can use it like this
+                    frame->submitSemaphore = semaphores.back();
 
-                if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                    recreateSwapChain = true;
-                }
-                else {
-                    VK_CHECK(result)
+                    VkPresentInfoKHR presentInfo = {};
+                    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+                    presentInfo.pNext = nullptr;
+                    presentInfo.pSwapchains = &swapChain->swapChain;
+                    presentInfo.swapchainCount = 1;
+                    presentInfo.pWaitSemaphores = semaphores.data();
+                    presentInfo.waitSemaphoreCount = uint32_t(semaphores.size());
+                    presentInfo.pImageIndices = &swapChain->aquiredImageIndex;
+
+                    auto result = vkQueuePresentKHR(presenterQueue.queue, &presentInfo);
+                    presenterQueue.Unlock();
+
+                    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                        recreateSwapChain = true;
+                    }
+                    else {
+                        VK_CHECK(result)
+                    }
                 }
             }
 
@@ -522,10 +565,6 @@ namespace Atlas {
                 }
             }
 
-            // Wait, reset and start with new semaphores
-            auto nextFrame = GetFrameData();
-            nextFrame->WaitAndReset(device);
-
             if (swapChain->AcquireImageIndex(nextFrame->semaphore)) {
                 recreateSwapChain = true;
             }
@@ -534,6 +573,9 @@ namespace Atlas {
                 // A new image index is automatically acquired
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
+
+            frameComplete = true;
+
         }
 
         bool GraphicsDevice::CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags) {
@@ -550,7 +592,11 @@ namespace Atlas {
 
         }
 
-        void GraphicsDevice::WaitForIdle() const {
+        void GraphicsDevice::WaitForIdle() {
+
+            WaitForPreviousFrameCompletion();
+
+            std::unique_lock lock(queueMutex);
 
             vkDeviceWaitIdle(device);
 
@@ -567,12 +613,15 @@ namespace Atlas {
 
         QueueRef GraphicsDevice::SubmitAllCommandLists() {
 
-            auto frame = GetFrameData();
+            auto frame = GetFrameData(frameIndex);
+            auto previousFrame = frameIndex != 0 ? GetFrameData(frameIndex - 1) : nullptr;
 
             // Assume all submission are in order
             QueueRef nextQueue;
             QueueRef queue;
             VkSemaphore previousSemaphore = frame->semaphore;
+            VkSemaphore previousFrameSemaphore = previousFrame != nullptr ? 
+                previousFrame->submitSemaphore : VK_NULL_HANDLE;
             for (size_t i = 0; i < frame->submissions.size(); i++) {
                 auto submission = &frame->submissions[i];
                 auto nextSubmission = i + 1 < frame->submissions.size() ? &frame->submissions[i + 1] : nullptr;
@@ -592,7 +641,7 @@ namespace Atlas {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }
 
-                SubmitCommandList(submission, previousSemaphore, queue, nextQueue);
+                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue, nextQueue);
                 previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
 
                 if (nextQueue.ref != queue.ref) {
@@ -600,6 +649,8 @@ namespace Atlas {
                 }
 
                 queue = nextQueue;
+                // Only use this once
+                previousFrameSemaphore = VK_NULL_HANDLE;
             }
 
             // Make sure to return the presentation queue
@@ -611,7 +662,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            const QueueRef& queue, const QueueRef& nextQueue) {
+            VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -625,6 +676,8 @@ namespace Atlas {
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
                 waitSemaphores = { previousSemaphore };
+                //if (previousFrameSemaphore != VK_NULL_HANDLE)
+                //    waitSemaphores.push_back(previousFrameSemaphore);
             }
 
             VkSubmitInfo submit = {};
@@ -1074,9 +1127,9 @@ namespace Atlas {
 
         }
 
-        FrameData *GraphicsDevice::GetFrameData() {
+        FrameData *GraphicsDevice::GetFrameData(int32_t frameIdx) {
 
-            return &frameData[frameIndex % FRAME_DATA_COUNT];
+            return &frameData[frameIdx % FRAME_DATA_COUNT];
 
         }
 
@@ -1122,10 +1175,10 @@ namespace Atlas {
             if (it == cmdLists.end()) {
                 auto queueFamilyIndex = queueFamilyIndices.queueFamilies[queueType];
 
-                std::vector<VkQueue> queues;
+                std::vector<Ref<Queue>> queues;
                 for (auto& queueFamily : queueFamilyIndices.families) {
                     for (auto& queue : queueFamily.queues) {
-                        queues.push_back(queue->queue);
+                        queues.push_back(queue);
                     }
                 }
 

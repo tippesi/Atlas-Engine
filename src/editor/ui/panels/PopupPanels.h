@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace Atlas::Editor::UI {
 
     class PopupPanels {
@@ -7,13 +9,18 @@ namespace Atlas::Editor::UI {
     public:
         static void Render();
 
+        static void SetupPopupSize(float horizontalFactor, float verticalFactor);
+
         static bool isNewScenePopupVisible;
+        static bool isImportScenePopupVisible;
         static bool isAddComponentPopupVisible;
+
+        static std::string filename;
 
     private:
         static void RenderNewScenePopup();
 
-        static void SetupPopupSize(float horizontalFactor, float verticalFactor);
+        static void RenderImportScenePopup();
 
     };
 

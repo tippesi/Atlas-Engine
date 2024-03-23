@@ -10,10 +10,11 @@
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "scripting/Script.h"
 #include "Font.h"
 
 #include "loader/ModelLoader.h"
-#include "scene/SceneSerializer.h"
+#include "Serializer.h"
 
 namespace Atlas::Editor {
 
@@ -55,14 +56,15 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
             handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
+                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Scene::SceneSerializer::DeserializeScene);
+                ResourceOrigin::User, Serializer::DeserializeScene, false);
         }
-        else if constexpr (std::is_same_v<T, bool>) {
-            // Load script here
+        else if constexpr (std::is_same_v<T, Scripting::Script>) {
+            handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
+                filename, ResourceOrigin::User);
         }
         else if constexpr (std::is_same_v<T, Font>) {
             handle = ResourceManager<Font>::GetOrLoadResourceAsync(filename,
@@ -93,7 +95,7 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             return type == FileType::Scene;
         }
-        else if constexpr (std::is_same_v<T, bool>) {
+        else if constexpr (std::is_same_v<T, Scripting::Script>) {
             return type == FileType::Script;
         }
         else if constexpr (std::is_same_v<T, Font>) {

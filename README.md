@@ -11,6 +11,8 @@
 ![GI scene](wiki/images/intel_sponza.gif) <br/>*Realtime Sponza scene with raytraced GI, AO and reflections (model from [Intel Graphics Research Sample Library](https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html))* <br/>
 ## Introduction
 This is a cross platform toy engine developed in my spare time that is available on Linux, Windows and MacOS.
+>**Note:**
+>The current version (0.2.0) contains many API changes and is still an active WIP
 ## Requirements
 - Vulkan SDK
 - C++20 compatible compiler
@@ -22,8 +24,6 @@ or while doing the build configuration with CMake. To use vcpkg together with CM
 ### Compiling the demo application
 Run CMake with the option ATLAS_DEMO=ON to include the demo application in the project. For easier use, the vsbuild.bat does exactly
 that and launches Visual Studio afterwards. After launching the IDE, set AtlasEngineDemo as your target.
->**Note:**
->In order to start the application properly you might need to change the asset directory in the [demo source file](https://github.com/tippesi/Atlas-Engine/blob/master/src/demo/App.cpp).
 ### Including the library into your own project
 It is possible to compile the engine either as a shared or static library. Set the ATLAS_BUILD_SHARED option accordingly. To make
 the library work with its dependencies, the root CMakeLists.txt of this repository has to be added as a subdirectory. As an entry
@@ -66,10 +66,14 @@ in the LICENSE.md file in the dependency directory.
 >The files in the data folder (except the shaders) use a different license. 
 ## Code Example
 For a code example have a look at the [demo application](https://github.com/tippesi/Atlas-Engine/tree/master/src/demo).
+## Latest executables
+The latest non-release executables can be found in the latest run of the [build pipeline](https://github.com/tippesi/Atlas-Engine/actions/workflows/build.yml?query=branch%3Amaster). They contain both the demo application and the editor.
 ## Screenshots
-![Example scene](wiki/images/sponza_rasterized.png) <br/>
-*Rasterized image using real time global illumination* <br/>
+![Editor](wiki/images/editor.png)
+*Sponza demo scene opened in the editor*
+![Example scene](wiki/images/sponza_rasterized.png)
+*Rasterized image using real time global illumination*
 ![Example scene](wiki/images/sponza_pathtraced.png)
 *Path traced scene*
-![Island scene](wiki/images/island.gif) <br/>
-*Island demo scene using the terrain and ocean systems* <br/>
+![Island scene](wiki/images/island.gif)
+*Island demo scene using the terrain and ocean systems*

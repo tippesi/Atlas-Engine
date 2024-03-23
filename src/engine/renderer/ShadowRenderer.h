@@ -29,7 +29,7 @@ namespace Atlas {
 
             using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;
                 uint32_t vegetation;
                 uint32_t invertUVs;

@@ -100,18 +100,10 @@ namespace Atlas {
             delete builder;
 
         }
-
+        
         bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection) {
 
-            constexpr auto max = std::numeric_limits<float>::max();
-
-            return GetIntersection(stack, ray, closest, intersection, max);
-
-        }
-
-        bool BVH::GetIntersection(std::vector<std::pair<int32_t, float>>& stack, Ray ray, BVHTriangle& closest, glm::vec3& intersection, float max) {
-
-            intersection.x = max;
+            intersection.x = ray.tMax;
 
             if (nodes.size()) {
                 // Use a stack based iterative ray traversal
@@ -147,10 +139,12 @@ namespace Atlas {
                     else {
                         float hitL = 0.0f, hitR = 0.0f;
 
+                        ray.tMax = intersection.x;
+
                         const auto& node = nodes[nodePtr];
                         // We might want to check whether these nodes are leafs
-                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, intersection.x, hitL);
-                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, intersection.x, hitR);
+                        auto intersectL = ray.Intersects(node.leftAABB, hitL);
+                        auto intersectR = ray.Intersects(node.rightAABB, hitR);
 
                         if (intersectR && intersectL) {
                             if (hitL < hitR) {
@@ -176,11 +170,11 @@ namespace Atlas {
                 closest = data[closestPtr];
             }
 
-            return (intersection.x < max);
+            return (intersection.x < ray.tMax);
 
         }
 
-        bool BVH::GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray, float max) {
+        bool BVH::GetIntersectionAny(std::vector<std::pair<int32_t, float>>& stack, Ray ray) {
 
             if (nodes.size()) {
                 stack[0] = std::pair(0, 0.0f);
@@ -202,7 +196,7 @@ namespace Atlas {
                             bool hit = ray.Intersects(triangle.v0, triangle.v1, triangle.v2, intersect);
 
                             // Only allow intersections "in range"
-                            if (hit && intersect.x < max) {
+                            if (hit && intersect.x < ray.tMax) {
                                 return true;
                             }
                         }
@@ -210,8 +204,8 @@ namespace Atlas {
                     else {
                         const auto& node = nodes[nodePtr];
                         // We might want to check whether these nodes are leafs
-                        auto intersectL = ray.Intersects(node.leftAABB, 0.0f, max);
-                        auto intersectR = ray.Intersects(node.rightAABB, 0.0f, max);
+                        auto intersectL = ray.Intersects(node.leftAABB);
+                        auto intersectR = ray.Intersects(node.rightAABB);
 
                         if (intersectR) stack[stackPtr++] = std::pair(node.rightPtr, 0.0f);
                         if (intersectL) stack[stackPtr++] = std::pair(node.leftPtr, 0.0f);
@@ -313,6 +307,10 @@ namespace Atlas {
                     spatialSplitCount++;
                 }
             }
+
+            // Last resort. This could happend due to spatial unsplitting
+            if (leftRefs.empty() || rightRefs.empty())
+                CreateLeaf(refs);
 
             refs.clear();
             refs.shrink_to_fit();

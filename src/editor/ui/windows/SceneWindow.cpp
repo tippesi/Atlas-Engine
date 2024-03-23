@@ -1,8 +1,10 @@
 #include "SceneWindow.h"
 #include "../../Singletons.h"
+#include "../../Notifications.h"
 #include "../../tools/ResourcePayloadHelper.h"
 
-#include "scene/SceneSerializer.h"
+#include "Serializer.h"
+#include "common/Hash.h"
 #include "Clock.h"
 
 #include <imgui_internal.h>
@@ -22,12 +24,7 @@ namespace Atlas::Editor::UI {
 
     SceneWindow::~SceneWindow() {
 
-        if (!scene.IsLoaded())
-            return;
-
-        scene->DestroyEntity(cameraEntity);
-
-        Scene::SceneSerializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
+        
 
     }
 
@@ -42,13 +39,26 @@ namespace Atlas::Editor::UI {
             camera.isMain = true;
         }
 
-        auto& camera = cameraEntity.GetComponent<CameraComponent>();
-        camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
-
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
             scene->Timestep(deltaTime);
             scene->Update();
+        }
+        else {
+            auto& camera = cameraEntity.GetComponent<CameraComponent>();
+            camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
+        }
+
+        bool controlDown;
+        
+#ifdef AE_OS_MACOS
+        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
+#else
+        controlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
+#endif
+        if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
+            SaveScene();
+            Notifications::Push({ .message = "Saved scene " + scene->name });
         }
 
     }
@@ -57,6 +67,10 @@ namespace Atlas::Editor::UI {
 
         if (!Begin())
             return;
+
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+        }
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
 
@@ -130,6 +144,9 @@ namespace Atlas::Editor::UI {
                 comp.isMain = false;
             }
 
+            // Path tracing needs history while ray tracing
+            scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
+
             scene->Timestep(Clock::GetDelta());
             scene->Update();
 
@@ -149,7 +166,7 @@ namespace Atlas::Editor::UI {
 
         auto path = ResourcePayloadHelper::AcceptDropResourceAndGetPath<Scene::Entity>();
         if (!path.empty()) {
-            auto entity = Scene::SceneSerializer::DeserializePrefab(scene.Get(), path);
+            auto entity = Serializer::DeserializePrefab(scene.Get(), path);
             PushEntityIntoSceneHierarchy(entity);
         }
 
@@ -213,19 +230,8 @@ namespace Atlas::Editor::UI {
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
-                if (hasMainCamera) {
-                    auto& camera = cameraEntity.GetComponent<CameraComponent>();
-                    camera.isMain = false;
-                }
-                
-                scene->physicsWorld->SaveState();
-                scene->physicsWorld->pauseSimulation = false;
-                // Unselect when starting the simulation/scene (otherwise some physics settings might not
-                // be reverted after stopping
-                sceneHierarchyPanel.selectedEntity = Scene::Entity();
-
-                isPlaying = true;
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
+                StartPlaying();
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
@@ -234,14 +240,7 @@ namespace Atlas::Editor::UI {
             offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
             if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
-                // Set camera to main in any case
-                auto& camera = cameraEntity.GetComponent<CameraComponent>();
-                camera.isMain = true;  
-
-                scene->physicsWorld->RestoreState();
-                scene->physicsWorld->pauseSimulation = true;
-
-                isPlaying = false;
+                StopPlaying();
             }
 
             auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
@@ -265,6 +264,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Text("Editor camera");
 
+                ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 1.0f, 180.0f);
                 ImGui::DragFloat("Field of view", &camera.fieldOfView, 0.1f, 1.0f, 180.0f);
 
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
@@ -311,18 +311,31 @@ namespace Atlas::Editor::UI {
 
                 if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
+                    auto mesh = selectedEntity.TryGetComponent<MeshComponent>();
 
-                    auto globalMatrix = transform.globalMatrix;
+                    auto globalDecomp = Common::MatrixDecomposition(transform.globalMatrix);
+
+                    glm::vec3 offset = vec3(0.0f);
+                    if (mesh)
+                        offset = (0.5f * (mesh->aabb.min + mesh->aabb.max)) - globalDecomp.translation;
+
+                    globalDecomp.translation += offset;
+                    auto globalMatrix = globalDecomp.Compose();
 
                     ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix));
 
+                    globalDecomp = Common::MatrixDecomposition(globalMatrix);
+                    globalDecomp.translation -= offset;
+
                     // Update both the local and global matrix, since e.g. the transform component
                     // panel recovers the local matrix from the global one (needs to do this after
                     // e.g. physics only updated the global matrix
-                    transform.globalMatrix = globalMatrix;
-                    transform.ReconstructLocalMatrix(scene.Get());
+                    transform.globalMatrix = globalDecomp.Compose();
+
+                    auto parentEntity = scene->GetParentEntity(selectedEntity);
+                    transform.ReconstructLocalMatrix(parentEntity);
                 }
 
                 const auto& io = ImGui::GetIO();
@@ -409,13 +422,82 @@ namespace Atlas::Editor::UI {
         if (!parentEntity.HasComponent<HierarchyComponent>())
             parentEntity.AddComponent<HierarchyComponent>();
 
-        auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
-        hierarchy.AddChild(entity);
+        auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+        parentHierarchy.AddChild(entity);
+
+        // We don't know where this entity came from, so disable root hierarchy in any case to
+        // avoid setting the matrices twice and getting unwanted movements
+        auto hierarchy = entity.TryGetComponent<HierarchyComponent>();
+        if (hierarchy)
+            hierarchy->root = false;
 
         if (changeSelection) {
             sceneHierarchyPanel.selectedEntity = entity;
             sceneHierarchyPanel.selectedProperty = SelectedProperty();
         }
+    }
+
+    void SceneWindow::StartPlaying() {
+
+        SaveSceneState();
+
+        scene->physicsWorld->pauseSimulation = false;
+        // Unselect when starting the simulation/scene (otherwise some physics settings might not
+        // be reverted after stopping
+        sceneHierarchyPanel.selectedEntity = Scene::Entity();
+
+        isPlaying = true;
+
+    }
+
+    void SceneWindow::StopPlaying() {
+
+        RestoreSceneState(); 
+
+        isPlaying = false;
+
+    }
+
+    void SceneWindow::SaveSceneState() {
+
+        cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
+
+        scene->DestroyEntity(cameraEntity);
+
+        sceneState = Scene::Scene::Backup(scene.Get());
+
+    }
+
+    void SceneWindow::RestoreSceneState() {
+
+        if (sceneState.empty())
+            return;
+
+        auto backupScene = Scene::Scene::Restore(sceneState);
+        scene.GetResource()->Swap(backupScene);
+
+        cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
+
+        sceneState.clear();
+        cameraState.clear();
+
+    }
+
+    void SceneWindow::SaveScene() {
+
+        if (!scene.IsLoaded())
+            return;
+
+        cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
+
+        scene->DestroyEntity(cameraEntity);
+
+        Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
+        
+        cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
+
+        cameraState.clear();
+
     }
 
 }

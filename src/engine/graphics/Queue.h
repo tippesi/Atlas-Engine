@@ -15,18 +15,12 @@ namespace Atlas {
         };
 
         class GraphicsDevice;
+        class CommandList;
 
         class Queue {
 
         public:
-            bool IsTypeSupported(QueueType queueType) const {
-                switch (queueType) {
-                case GraphicsQueue: return supportsGraphics;
-                case PresentationQueue: return supportsPresentation;
-                case TransferQueue: return supportsTransfer;
-                default: return false;
-                }
-            }
+            bool IsTypeSupported(QueueType queueType) const;
 
             VkQueue queue;
 
@@ -51,22 +45,14 @@ namespace Atlas {
         class QueueRef {
 
             friend class GraphicsDevice;
+            friend class CommandList;
 
         public:
             QueueRef() = default;
 
-            ~QueueRef() {
-                Unlock();
-            }
+            ~QueueRef();
 
-            void Unlock() {
-                if (counter.use_count() == 2) {
-                    counter.reset();
-                    ref->threadId = std::thread::id();
-                    ref->mutex.unlock();
-                }
-                valid = false;
-            }
+            void Unlock();
 
             VkQueue queue;
             uint32_t familyIndex;
@@ -77,30 +63,7 @@ namespace Atlas {
 
             Ref<int32_t> counter;
 
-            QueueRef(Ref<Queue>& queue, std::thread::id threadId, bool forceLock) : ref(queue) {
-                this->queue = ref->queue;
-                this->familyIndex = ref->familyIndex;
-
-                if (threadId == queue->threadId && queue->counter > 0) {
-                    this->counter = queue->counter;
-                    valid = true;
-                    return;
-                }
-
-                if (forceLock) {
-                    queue->mutex.lock();
-                    queue->threadId = threadId;
-                    this->counter = queue->counter;
-                    valid = true;
-                }
-                else {
-                    if (queue->mutex.try_lock()) {
-                        queue->threadId = threadId;
-                        this->counter = queue->counter;
-                        valid = true;
-                    }
-                }
-            }
+            QueueRef(Ref<Queue>& queue, std::thread::id threadId, bool forceLock);
 
         };
 

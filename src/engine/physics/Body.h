@@ -27,6 +27,10 @@ namespace Atlas::Physics {
 
         vec3 GetLinearVelocity();
 
+        void SetAngularVelocity(vec3 velocity);
+
+        vec3 GetAngularVelocity();
+
         void SetRestitution(float restitution);
 
         float GetRestitution();

@@ -30,6 +30,8 @@ namespace Atlas {
             Ref<Buffer> buffer;
             VkAccelerationStructureKHR accelerationStructure;
 
+            bool isComplete = false;
+
         private:
             GraphicsDevice* device;
 

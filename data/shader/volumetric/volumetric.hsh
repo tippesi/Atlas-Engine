@@ -38,11 +38,19 @@ vec3 ApplyVolumetrics(Fog fog, vec3 inputColor, vec4 volumetricFog, vec4 volumet
     inputColor = alpha * inputColor;
 #endif
 
+#ifdef FOG
     vec3 outputColor = fog.density > 0.0 ? inputColor * fogExtinction + volumetricFog.rgb : inputColor;
+#else
+    vec3 outputColor = inputColor;
+#endif
 
 #ifdef CLOUDS
     fogExtinction = intersectDists.x < 0.0 ? fogExtinction : 1.0;
+#ifdef FOG
     outputColor += volumetricClouds.rgb * fogExtinction;
+#else
+    outputColor += volumetricClouds.rgb;
+#endif
 #endif
 
     return outputColor;

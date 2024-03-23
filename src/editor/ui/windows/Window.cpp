@@ -1,5 +1,9 @@
 #include "Window.h"
 
+#include <Log.h>
+
+#include <imgui_internal.h>
+
 namespace Atlas::Editor::UI {
 
     bool Window::Begin(ImGuiWindowFlags flags) {

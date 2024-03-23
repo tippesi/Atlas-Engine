@@ -502,15 +502,17 @@ namespace Atlas {
             int32_t channelCount, int32_t mipLevel) const {
 
             std::vector<T> channelData;
-
             auto& level = mipLevels[mipLevel];
 
             auto totalPixels = int32_t(level.data.size()) / channels;
             auto count = channelOffset + channelCount;
 
+            channelData.resize(channelCount * totalPixels);
+            size_t dataCount = 0;
+
             for (int32_t i = 0; i < totalPixels; i++) {
                 for (int32_t j = channelOffset; j < count; j++) {
-                    channelData.push_back(level.data[i * channels + j]);
+                    channelData[dataCount++] = level.data[i * channels + j];
                 }
             }
 

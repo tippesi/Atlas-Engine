@@ -27,7 +27,9 @@ namespace Atlas {
 
                 std::vector<Entity>& GetChildren();
 
-                bool root = false;                
+                bool root = false;
+
+                glm::mat4 globalMatrix {1.0f};            
 
             protected:
                 void Update(const TransformComponent& transform, bool parentChanged);

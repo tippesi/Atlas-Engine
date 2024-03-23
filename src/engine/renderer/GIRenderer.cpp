@@ -255,7 +255,7 @@ namespace Atlas {
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->BindPipeline(horizontalBlurPipeline);
-                    commandList->PushConstants("constants", &kernelSize);
+                    commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->swapGiTexture.image, 3, 0);
                     commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 1);
@@ -272,7 +272,7 @@ namespace Atlas {
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     commandList->BindPipeline(verticalBlurPipeline);
-                    commandList->PushConstants("constants", &kernelSize);
+                    commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
 
                     commandList->BindImage(target->giTexture.image, 3, 0);
                     commandList->BindImage(target->swapGiTexture.image, target->swapGiTexture.sampler, 3, 1);

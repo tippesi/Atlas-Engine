@@ -1,5 +1,7 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
+#include "DataCreator.h"
+#include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
@@ -16,7 +18,7 @@
 
 namespace Atlas::Editor::UI {
 
-    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Object browser", show) {
+    ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
 
 
 
@@ -57,8 +59,14 @@ namespace Atlas::Editor::UI {
         End();
 
         ImGui::Begin("ResourceTypeSelection", nullptr);
-        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+
+        ImGui::SetWindowFontScale(1.5f);
+
+        ImGui::Text("Filters");
+
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Separator();
 
         const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font", "Prefab"};
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
@@ -87,6 +95,10 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+            ImGui::SetWindowFocus();
+        }
+
         if (ImGui::BeginDragDropTarget()) {
             auto dropPayload = ImGui::GetDragDropPayload();
             if (ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name())) {
@@ -101,16 +113,23 @@ namespace Atlas::Editor::UI {
 
                     // There must be a scene, otherwise we want to get a fatal error
                     auto iter = std::find_if(scenes.begin(), scenes.end(),
-                        [&](const ResourceHandle<Scene::Scene>& item) -> bool { return item->name == scene->name; });
+                        [&](const ResourceHandle<Scene::Scene>& item) -> bool {
+                            if (!item.IsLoaded())
+                                return false;
+                            return item->name == scene->name;                        
+                        });
                     auto sceneHandle = *iter;
 
                     auto nameComponent = entity.TryGetComponent<NameComponent>();
                     auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
                     auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
-                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
+                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory) + "/";
+                    if (assetPath.starts_with('/'))
+                        assetPath.erase(assetPath.begin());
+
                     auto entityPath = assetPath + entityName + ".aeprefab";
-                    Scene::SceneSerializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
+                    Serializer::SerializePrefab(sceneHandle.Get(), entity, entityPath);
                 }
             }
 
@@ -230,16 +249,32 @@ namespace Atlas::Editor::UI {
             }
 
             if (!isDirectory && ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.size());
+                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.length());
                 ImGui::Text("Drag to entity component");
 
                 ImGui::EndDragDropSource();
             }
 
             if (ImGui::BeginPopupContextItem()) {
+                // Do a direct import here without relying on the file importer
+                if (type == FileType::Mesh && ImGui::MenuItem("Import as scene")) {
+                    PopupPanels::filename = assetRelativePath;
+                    PopupPanels::isImportScenePopupVisible = true;
+                }
+
                 // We shouldn't allow the user to delete the root entity
                 if (ImGui::MenuItem("Open externally"))
                     OpenExternally(std::filesystem::absolute(dirEntry.path()).string(), isDirectory);
+
+                if (ImGui::MenuItem("Rename")) {
+                    renamePopupVisible = true;
+                    auto dirEntryFilename = dirEntry.path().filename();
+                    renameString = dirEntryFilename.replace_extension("").string();
+                    renameDirEntry = dirEntry;
+                }
+
+                if (ImGui::MenuItem("Delete"))
+                    std::filesystem::remove(dirEntry.path());
 
                 ImGui::EndPopup();
             }
@@ -262,6 +297,28 @@ namespace Atlas::Editor::UI {
 
             ImGui::NextColumn();
 
+        }
+
+        if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+            if (ImGui::BeginMenu("Create")) {
+                if (ImGui::MenuItem("Folder")) {
+
+                }
+                if (ImGui::MenuItem("Script")) {
+
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
+            auto newPath = renameDirEntry.path();
+            newPath = newPath.filename().replace_filename(renameString);
+            if (renameDirEntry.path().has_extension())
+                newPath = newPath.replace_extension(renameDirEntry.path().extension());
+            std::filesystem::rename(renameDirEntry.path(), newPath);
         }
 
         if (!nextDirectory.empty()) {
@@ -377,6 +434,50 @@ namespace Atlas::Editor::UI {
         system(command.c_str());
 #endif
         
+    }
+
+    bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
+
+         if (!isVisible)
+            return false;
+
+        PopupPanels::SetupPopupSize(0.4f, 0.1f);
+
+        bool popupNew = false;
+
+        if (!ImGui::IsPopupOpen(name)) {
+            popupNew = true;
+            ImGui::OpenPopup(name);
+        }
+
+        bool success = false;
+
+        if (ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_NoResize)) {
+
+            if (popupNew)
+                ImGui::SetKeyboardFocusHere();
+                
+            ImGui::InputText("New name",  &input);
+
+            if (ImGui::Button("Cancel")) {
+                isVisible = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
+                success = true;
+                isVisible = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+
+        }
+
+        return success;
+
     }
 
 }

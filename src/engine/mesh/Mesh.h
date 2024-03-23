@@ -31,8 +31,6 @@ namespace Atlas {
             HostAccessBit = (1 << 1),
         } MeshUsageBits;
 
-        
-
         class Mesh {
 
             friend RayTracing::RayTracingWorld;

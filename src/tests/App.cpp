@@ -40,16 +40,16 @@ void App::LoadContent(AppConfiguration config) {
 
     Atlas::Events::EventManager::KeyboardEventDelegate.Subscribe(
         [this](Atlas::Events::KeyboardEvent event) {
-            if (event.keyCode == AE_KEY_ESCAPE) {
+            if (event.keyCode == Keycode::KeyEscape) {
                 Exit();
             }
-            if (event.keyCode == AE_KEY_F11 && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyF11 && event.state == AE_BUTTON_RELEASED) {
                 renderUI = !renderUI;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_PRESSED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_PRESSED) {
                 keyboardHandler.speed = cameraSpeed * 4.0f;
             }
-            if (event.keyCode == AE_KEY_LSHIFT && event.state == AE_BUTTON_RELEASED) {
+            if (event.keyCode == Keycode::KeyLeftShift && event.state == AE_BUTTON_RELEASED) {
                 keyboardHandler.speed = cameraSpeed;
             }
         });
@@ -61,7 +61,8 @@ void App::LoadContent(AppConfiguration config) {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
+        glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);

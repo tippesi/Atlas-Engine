@@ -282,6 +282,8 @@ namespace Atlas {
 
             commandList->ImageTransition(renderTarget->texture.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            commandList->ImageTransition(renderTarget->radianceTexture.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
 
             helper.InvalidateRayBuffer(commandList);
 

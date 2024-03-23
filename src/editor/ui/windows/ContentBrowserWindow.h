@@ -33,10 +33,16 @@ namespace Atlas::Editor::UI {
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
+        bool TextInputPopup(const char* name, bool& isVisible, std::string& input);
+
         int selectedFilter = -1;
 
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
         std::string assetSearch;
+
+        std::string renameString;
+        std::filesystem::directory_entry renameDirEntry;
+        bool renamePopupVisible = false;
 
     };
 

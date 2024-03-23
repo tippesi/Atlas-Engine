@@ -33,7 +33,7 @@ namespace Atlas {
              * Constructs a Frustum object.
              * @param matrix The view projection matrix of the frustum.
              */
-            explicit Frustum(mat4 matrix);
+            explicit Frustum(const mat4& matrix);
 
             /**
              * Resizes the frustum.
@@ -43,27 +43,27 @@ namespace Atlas {
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
              */
-            void Resize(std::vector<vec3> corners);
+            void Resize(const std::vector<vec3>& corners);
 
             /**
              * Resizes the frustum.
              * @param matrix The view projection matrix of the frustum.
              */
-            void Resize(mat4 matrix);
+            void Resize(const mat4& matrix);
 
             /**
              * Checks if the AABB intersects the frustum
              * @param aabb An AABB to test against the frustum
              * @return True if visible, false otherwise.
              */
-            bool Intersects(AABB aabb) const;
+            bool Intersects(const AABB& aabb) const;
 
             /**
              * Checks if the AABB is inside the frustum
              * @param aabb An AABB to test against the frustum
              * @return True if visible, false otherwise.
              */
-            bool IsInside(AABB aabb) const;
+            bool IsInside(const AABB& aabb) const;
 
             /**
              * Returns the planes of the frustum as 4-component vectors
@@ -84,7 +84,7 @@ namespace Atlas {
             std::vector<vec3> GetCorners() const;
 
         private:
-            void CalculateCorners(mat4 matrix);
+            void CalculateCorners(const mat4& matrix);
 
             enum {
                 NEAR_PLANE = 0,    FAR_PLANE, TOP_PLANE,

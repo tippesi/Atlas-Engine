@@ -10,13 +10,13 @@ namespace Atlas {
 
         }
 
-        Frustum::Frustum(mat4 matrix) {
+        Frustum::Frustum(const mat4& matrix) {
 
             Resize(matrix);
 
         }
 
-        void Frustum::Resize(std::vector<vec3> corners) {
+        void Frustum::Resize(const std::vector<vec3>& corners) {
 
             this->corners = corners;
             planes[NEAR_PLANE] = Plane(corners[4], corners[5], corners[7]);
@@ -28,14 +28,14 @@ namespace Atlas {
 
         }
 
-        void Frustum::Resize(mat4 matrix) {
+        void Frustum::Resize(const mat4& matrix) {
 
             CalculateCorners(matrix);
             Resize(corners);
 
         }
 
-        bool Frustum::Intersects(AABB aabb) const {
+        bool Frustum::Intersects(const AABB& aabb) const {
 
             for (uint8_t i = 0; i < 6; i++) {
 
@@ -56,7 +56,7 @@ namespace Atlas {
 
         }
 
-        bool Frustum::IsInside(AABB aabb) const {
+        bool Frustum::IsInside(const AABB& aabb) const {
 
             for (uint8_t i = 0; i < 6; i++) {
 
@@ -96,7 +96,7 @@ namespace Atlas {
 
         }
 
-        void Frustum::CalculateCorners(mat4 matrix) {
+        void Frustum::CalculateCorners(const mat4& matrix) {
 
             // Somehow far and near points are reversed
             vec3 vectors[8] = {

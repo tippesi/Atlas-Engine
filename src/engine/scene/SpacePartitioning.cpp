@@ -39,6 +39,7 @@ namespace Atlas {
 
         void SpacePartitioning::GetRenderList(Volume::Frustum frustum, RenderList& renderList) {
 
+            /*
             auto entityManager = &scene->entityManager;
 
             std::vector<ECS::Entity> staticEntities;
@@ -82,6 +83,7 @@ namespace Atlas {
                 if (meshComp->visible)
                     renderList.Add(entity, *meshComp);
             }
+            */
 
         }
 

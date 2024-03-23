@@ -34,7 +34,7 @@ namespace Atlas {
             void VegetationHelper::PrepareInstanceBuffer(Scene::Clutter& vegetation,
                 const CameraComponent& camera, Graphics::CommandList* commandList) {
 
-                struct PushConstants {
+                struct alignas(16) PushConstants {
                     int32_t instanceCount;
                     int32_t meshIdx;
                     uint32_t binCount;
@@ -169,7 +169,7 @@ namespace Atlas {
                     commandList->BindPipeline(pipeline);
 
                     int32_t drawCallCount = int32_t(indirectDrawCallBuffer.GetElementCount());
-                    commandList->PushConstants("constants", &drawCallCount);
+                    commandList->PushConstants("constants", &drawCallCount, sizeof(int32_t));
 
                     auto groupSize = 64;
                     auto groupCount = glm::max(drawCallCount / groupSize, 1);

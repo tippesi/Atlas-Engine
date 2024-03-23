@@ -25,22 +25,25 @@ namespace Atlas {
                 right = normalize(vec3(sin(rotation.x - 3.14f / 2.0f),
                     0.0f, cos(rotation.x - 3.14f / 2.0f)));
 
-                if (useEntityRotation) {
-                    direction = normalize(vec3(transform * vec4(direction, 0.0f)));
-                    right = normalize(vec3(transform * vec4(right, 0.0f)));
-                }
-
                 up = cross(right, direction);
 
-                vec3 globalLocation = location;
+                globalDirection = direction;
+                vec3 globalUp = up;
+
+                if (useEntityRotation) {
+                    globalDirection = normalize(vec3(transform * vec4(direction, 0.0f)));
+                    globalUp = normalize(vec3(transform * vec4(up, 0.0f)));
+                }                
+
+                globalLocation = location;
                 if (useEntityTranslation) {
                     globalLocation = vec3(transform * vec4(location, 1.0f));
                 }
 
                 if (!thirdPerson)
-                    viewMatrix = lookAt(globalLocation, globalLocation + direction, up);
+                    viewMatrix = lookAt(globalLocation, globalLocation + globalDirection, globalUp);
                 else
-                    viewMatrix = lookAt(globalLocation - direction * thirdPersonDistance, globalLocation, up);
+                    viewMatrix = lookAt(globalLocation - globalDirection * thirdPersonDistance, globalLocation, globalUp);
 
                 invViewMatrix = inverse(viewMatrix);
 
@@ -132,8 +135,8 @@ namespace Atlas {
                 float nearWidth = aspectRatio * nearHeight;
 
                 vec3 cameraLocation = GetLocation();
-                vec3 farPoint = cameraLocation + direction * farPlane;
-                vec3 nearPoint = cameraLocation + direction * nearPlane;
+                vec3 farPoint = cameraLocation + globalDirection * farPlane;
+                vec3 nearPoint = cameraLocation + globalDirection * nearPlane;
 
                 corners.push_back(farPoint + farHeight * up - farWidth * right);
                 corners.push_back(farPoint + farHeight * up + farWidth * right);

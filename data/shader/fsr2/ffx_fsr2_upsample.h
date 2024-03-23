@@ -177,10 +177,6 @@ FfxFloat32x4 ComputeUpsampledColorAndWeight(const AccumulationPassCommonParams p
         Deringing(clippingBox, fColorAndWeight.xyz);
     }
 
-    #if FFX_FSR2_OPTION_UPSAMPLE_SAMPLERS_USE_DATA_HALF && FFX_HALF
-    #include "ffx_fsr2_force16_end.h"
-    #endif
-
     return fColorAndWeight;
 }
 

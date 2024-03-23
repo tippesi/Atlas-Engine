@@ -14,7 +14,7 @@ namespace Atlas {
             Sharpen(float factor) : enable(true), factor(factor) {}
 
             bool enable = false;
-            float factor = 0.25f;
+            float factor = 0.5f;
 
         };
 

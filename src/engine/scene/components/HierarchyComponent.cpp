@@ -40,6 +40,8 @@ namespace Atlas {
 
                 updated = true;
 
+				globalMatrix = transform.globalMatrix;
+
 				for (auto entity : entities) {
                     bool transformChanged = parentChanged;
 
@@ -53,6 +55,7 @@ namespace Atlas {
 					}
 
 					if (hierarchyComponent) {
+						AE_ASSERT(!hierarchyComponent->root && "A child hierarchy should never also be a root hierarchy");
 						hierarchyComponent->Update(transformComponent ? *transformComponent : transform,
                             transformChanged);
 					}

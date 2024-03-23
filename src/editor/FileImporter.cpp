@@ -29,6 +29,7 @@ namespace Atlas::Editor {
         case FileType::Audio: ImportFile<Audio::AudioData>(filename); break;
         case FileType::Mesh: ImportFile<Mesh::Mesh>(filename); break;
         case FileType::Scene: ImportFile<Scene::Scene>(filename); break;
+        case FileType::Script: ImportFile<Scripting::Script>(filename); break;
         case FileType::Font: ImportFile<Font>(filename); break;
         default: break;
         }

@@ -5,6 +5,8 @@
 #include "scene/Scene.h"
 #include "scene/components/AudioComponent.h"
 
+#include "../../popups/ResourceSelectionPopup.h"
+
 namespace Atlas::Editor::UI {
 
     class AudioComponentPanel : public Panel {
@@ -13,6 +15,9 @@ namespace Atlas::Editor::UI {
         AudioComponentPanel() : Panel("Audio component") {}
 
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, AudioComponent& audioVolumeComponent);
+
+    private:
+        ResourceSelectionPopup audioSelectionPopup;
 
     };
 

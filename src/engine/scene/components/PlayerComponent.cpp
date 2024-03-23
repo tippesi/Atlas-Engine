@@ -30,8 +30,11 @@ namespace Atlas::Scene::Components {
         
         auto up = GetUp();
 
+        // Don't want to stick to the ground while jumping
         if (!jumped)
-            StickToGround(-up * stickToGroundDistance);
+            stickToGroundDist = -up * stickToGroundDistance;
+        else
+            stickToGroundDist = vec3(0.0f);
 
         auto newVelocity = vec3(0.0f);
         auto groundVelocity = GetGroundVelocity();
@@ -49,12 +52,13 @@ namespace Atlas::Scene::Components {
             if (slide) {
                 // Get difference between ground velocity and actual velocty and dampen this over time
                 vec3 slideVelocity = GetLinearVelocity() - groundVelocity;
+                // Cancel out vertical velocity, we are on the ground
+                slideVelocity -= lastGravityAcceleration;
                 float slideVelocityLength = glm::min(glm::length(slideVelocity), slideVelocityMax);
 
-                vec3 deaccVelocity = slideDeacceleration * 1.0f * slideVelocity * deltaTime;
+                vec3 deaccVelocity = slideDeacceleration * slideVelocity * deltaTime;
 
                 if (slideVelocityLength > slideCutoffVelocity && slideVelocityLength > glm::length(deaccVelocity)) {
-
                     if (glm::dot(slideVelocity, slideVelocity) > 0.0f) {
                         newVelocity += slideVelocity;
                         newVelocity -= deaccVelocity;
@@ -72,9 +76,12 @@ namespace Atlas::Scene::Components {
 
         jump = false;
 
-        newVelocity += up * world->GetGravity() * deltaTime;
+        lastGravityAcceleration = up * world->GetGravity() * deltaTime;
+        newVelocity += lastGravityAcceleration;
 
         SetLinearVelocity(newVelocity);
+
+        walkStairsStepUpDist = up * walkStairStepUpDistance;
 
         Player::Update(deltaTime);
         

@@ -1,25 +1,19 @@
 #pragma once
 
-#include "Scene.h"
+#include "components/ComponentSerializer.h"
+#include "scene/Scene.h"
 
-namespace Atlas {
+#include <set>
 
-    namespace Scene {
+namespace Atlas::Scene {
 
-        class SceneSerializer {
+    void EntityToJson(json& j, const Entity& p, Scene* scene,
+        std::set<ECS::Entity>& insertedEntities);
 
-        public:
-            static void SerializeScene(Ref<Scene> scene, const std::string& filename);
+    void EntityFromJson(const json& j, Entity& p, Scene* scene);
 
-            static Ref<Scene> DeserializeScene(const std::string& filename);
+    void SceneToJson(json& j, Scene* scene);
 
-            static void SerializePrefab(Ref<Scene> scene, Entity entity, const std::string& filename);
-
-            static Entity DeserializePrefab(Ref<Scene> scene, const std::string& filename);
-
-        };
-
-    };
-
+    void SceneFromJson(const json& j, Ref<Scene>& scene);
 
 }

@@ -36,7 +36,7 @@ namespace Atlas {
 
         public:
             CommandList(GraphicsDevice* device, QueueType queueType, uint32_t queueFamilyIndex,
-                const std::vector<VkQueue>& queues, bool frameIndependent = false);
+                std::vector<Ref<Queue>>& queues, bool frameIndependent = false);
 
             CommandList(const CommandList& that) = delete;
 
@@ -77,7 +77,7 @@ namespace Atlas {
 
             void ClearAttachments();
 
-            void PushConstants(const std::string& pushConstantRangeName, void* data);
+            void PushConstants(const std::string& pushConstantRangeName, void* data, uint32_t size = 0);
 
             void BindIndexBuffer(const Ref<Buffer>& buffer, VkIndexType type);
 

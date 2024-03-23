@@ -26,7 +26,10 @@ namespace Atlas {
 
         TLAS::~TLAS() {
 
-            vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
+            AE_ASSERT(isComplete);
+
+            if (isComplete)
+                vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
 
         }
 
@@ -69,7 +72,9 @@ namespace Atlas {
             createInfo.size = sizesInfo.accelerationStructureSize;
             createInfo.buffer = buffer->buffer;
 
-            VK_CHECK(vkCreateAccelerationStructureKHR(device->device, &createInfo, nullptr, &accelerationStructure))
+            VK_CHECK(vkCreateAccelerationStructureKHR(device->device, &createInfo, nullptr, &accelerationStructure));
+
+            isComplete = true;
 
         }
 

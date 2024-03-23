@@ -44,6 +44,8 @@ namespace Atlas {
 
             void Clear();
 
+            bool includeObjectHistory = false;
+
         private:
             struct MeshInfo {
                 Ref<Graphics::BLAS> blas = nullptr;
@@ -64,7 +66,7 @@ namespace Atlas {
                 std::vector<mat3x4>& lastMatrices, std::vector<Volume::AABB>& actorAABBs);
 
             void UpdateForHardwareRayTracing(Scene::Subset<MeshComponent,
-                TransformComponent>& entitySubset);
+                TransformComponent>& entitySubset, size_t instanceCount);
 
             void BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh>& mesh);
 
@@ -79,6 +81,11 @@ namespace Atlas {
             Buffer::Buffer bvhInstanceBuffer;
             Buffer::Buffer tlasNodeBuffer;
             Buffer::Buffer lastMatricesBuffer;
+
+            std::vector<VkAccelerationStructureInstanceKHR> hardwareInstances;
+            std::vector<GPUBVHInstance> gpuBvhInstances;
+            std::vector<Volume::AABB> actorAABBs;
+            std::vector<mat3x4> lastMatrices;
 
             std::vector<GPULight> triangleLights;
 

@@ -20,6 +20,9 @@ namespace Atlas::Editor::UI {
 
             ImGui::Begin(GetNameID());
 
+            if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered() && !ImGui::IsWindowFocused())
+                ImGui::SetWindowFocus();
+
             isFocused = ImGui::IsWindowFocused();
 
             if constexpr (std::is_same_v<T, Scene::Entity>) {

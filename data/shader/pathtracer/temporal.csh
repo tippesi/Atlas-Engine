@@ -399,7 +399,7 @@ void main() {
         historyRadiance, currentRadiance);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentRadiance = clamp(currentRadiance, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    //historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
+    // historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
 
     historyRadiance = YCoCgToRGB(historyRadiance);
     currentRadiance = YCoCgToRGB(currentRadiance);

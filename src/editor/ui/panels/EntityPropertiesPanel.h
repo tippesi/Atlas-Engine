@@ -9,6 +9,7 @@
 #include "components/LightComponentPanel.h"
 #include "components/AudioComponentPanel.h"
 #include "components/AudioVolumeComponentPanel.h"
+#include "components/LuaScriptComponentPanel.h"
 #include "components/RigidBodyComponentPanel.h"
 #include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
@@ -32,6 +33,7 @@ namespace Atlas::Editor::UI {
         LightComponentPanel lightComponentPanel;
         AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
+		LuaScriptComponentPanel luaScriptComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;

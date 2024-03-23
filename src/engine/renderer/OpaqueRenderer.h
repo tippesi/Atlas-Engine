@@ -25,7 +25,7 @@ namespace Atlas {
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
 
-            struct PushConstants {
+            struct alignas(16) PushConstants {
                 uint32_t vegetation;
                 uint32_t invertUVs;
                 uint32_t twoSided;
