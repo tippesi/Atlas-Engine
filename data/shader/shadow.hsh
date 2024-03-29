@@ -214,11 +214,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
     visibility /= 2704.0;
 #endif
 
-#define SHADOW_FILTER_VOGEL
-
 #ifdef SHADOW_FILTER_VOGEL
-    visibility = 0.0;
-
     vec2 texelSize = vec2(shadow.cascades[int(cascadeIndex)].texelSize);
     for (int i = 0; i < 16; i++) {
         visibility += offsetLookup(cascadeMaps, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);

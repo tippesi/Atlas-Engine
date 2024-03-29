@@ -1,4 +1,4 @@
-#define SHADOW_FILTER_3x3
+#define SHADOW_FILTER_VOGEL
 
 #include <common.hsh>
 #include <../common/convert.hsh>
