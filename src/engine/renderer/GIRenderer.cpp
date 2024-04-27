@@ -137,6 +137,7 @@ namespace Atlas {
                     .radius = ssgi->radius,
                     .rayCount = uint32_t(ssgi->rayCount),
                     .sampleCount = uint32_t(ssgi->sampleCount),
+                    .downsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
                 };
                 ssUniformBuffer.SetData(&uniforms, 0);
 

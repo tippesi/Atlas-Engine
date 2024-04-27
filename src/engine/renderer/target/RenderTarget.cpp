@@ -245,6 +245,8 @@ namespace Atlas::Renderer {
         historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+        hasHistory = false;
+
     }
 
     RenderResolution RenderTarget::GetGIResolution() {
@@ -270,6 +272,8 @@ namespace Atlas::Renderer {
         historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+        hasHistory = false;
+
     }
 
     RenderResolution RenderTarget::GetAOResolution() {
@@ -292,6 +296,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        hasHistory = false;
 
     }
 
@@ -317,6 +323,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        hasHistory = false;
     
     }
 

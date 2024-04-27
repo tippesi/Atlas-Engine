@@ -148,12 +148,12 @@ void main() {
     vec3 normalColor = texture(normalMap, texCoords, globalData.mipLodBias).rgb;
     vec3 normal = mix(geometryNormal, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
     // We want the normal always to face the camera for two sided materials
-    geometryNormal *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
     normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
     normalFS = EncodeNormal(normal);
 #else
     // We want the normal always to face the camera for two sided materials
-    geometryNormal *= PushConstants.twoSided > 0 ? dot(normalVS, positionVS) > 0.0 ? -1.0 : 1.0 : 1.0;
+    geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
 #endif
     
     geometryNormalFS = EncodeNormal(geometryNormal);

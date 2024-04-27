@@ -108,16 +108,18 @@ namespace Atlas::Editor::UI {
 
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
+            auto& target = Singletons::renderTarget;
+
             if (sceneHierarchyPanel.selectedProperty.fog)
-                scenePropertiesPanel.Render(scene->fog);
+                scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
-                scenePropertiesPanel.Render(scene->sky.clouds);
+                scenePropertiesPanel.Render(scene->sky.clouds, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.irradianceVolume)
                 scenePropertiesPanel.Render(scene->irradianceVolume);
             else if (sceneHierarchyPanel.selectedProperty.reflection)
-                scenePropertiesPanel.Render(scene->reflection);
+                scenePropertiesPanel.Render(scene->reflection, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.ssgi)
-                scenePropertiesPanel.Render(scene->ssgi);
+                scenePropertiesPanel.Render(scene->ssgi, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.sss)
                 scenePropertiesPanel.Render(scene->sss);
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)

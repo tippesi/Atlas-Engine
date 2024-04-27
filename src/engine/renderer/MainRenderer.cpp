@@ -85,7 +85,7 @@ namespace Atlas {
             commandList->BeginCommands();
 
             auto& taa = scene->postProcessing.taa;
-            if (taa.enable) {
+            if (taa.enable || scene->postProcessing.fsr2) {
                 vec2 jitter = vec2(0.0f);
                 if (scene->postProcessing.fsr2) {
                     jitter = fsr2Renderer.GetJitter(target, frameCount);

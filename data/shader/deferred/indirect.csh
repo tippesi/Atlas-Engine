@@ -16,9 +16,9 @@ layout(set = 3, binding = 3) uniform sampler2D giTexture;
 layout(set = 3, binding = 4) uniform sampler2D lowResDepthTexture;
 
 layout(set = 3, binding = 5) uniform UniformBuffer {
-    int aoEnabled;
     int aoDownsampled2x;
-    int reflectionEnabled;
+    int reflectionDownsampled2x;
+    int giDownsampled2x;
     float aoStrength;
     int specularProbeMipLevels;
 } Uniforms;
@@ -43,13 +43,16 @@ void LoadGroupSharedData() {
         offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 #ifdef AO
-        aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
+        if (Uniforms.aoDownsampled2x > 0)
+            aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
 #endif
 #ifdef REFLECTION
-        reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
+        if (Uniforms.reflectionDownsampled2x > 0)
+            reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
 #endif
 #ifdef SSGI
-        gi[gl_LocalInvocationIndex] = texelFetch(giTexture, offset, 0);
+        if (Uniforms.giDownsampled2x > 0)
+            gi[gl_LocalInvocationIndex] = texelFetch(giTexture, offset, 0);
 #endif
     }
 
@@ -164,7 +167,7 @@ vec4 UpsampleGi2x(float referenceDepth, vec2 texCoords) {
 
 void main() {
 
-    if (Uniforms.aoDownsampled2x > 0) LoadGroupSharedData();
+    if (Uniforms.aoDownsampled2x > 0 || Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
 
     if (gl_GlobalInvocationID.x > imageSize(image).x ||
         gl_GlobalInvocationID.y > imageSize(image).y)
@@ -211,8 +214,7 @@ void main() {
         //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
         //    * prefilteredDiffuseLocal.a;
 #ifdef REFLECTION
-        vec3 indirectSpecular = Uniforms.reflectionEnabled > 0 ? true ?
-            UpsampleReflection2x(depth, texCoord) : texture(reflectionTexture, texCoord).rgb : vec3(0.0);
+        vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? UpsampleReflection2x(depth, texCoord) : textureLod(reflectionTexture, texCoord, 0.0).rgb;
 #else
 #ifdef DDGI
         vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
@@ -225,14 +227,13 @@ void main() {
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 
 #ifdef SSGI
-        vec4 ssgi = UpsampleGi2x(depth, texCoord);
+        vec4 ssgi = Uniforms.giDownsampled2x > 0 ? UpsampleGi2x(depth, texCoord) : textureLod(giTexture, texCoord, 0.0);
 #endif
 
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef AO
-        float occlusionFactor = Uniforms.aoEnabled > 0 ? Uniforms.aoDownsampled2x > 0 ?
-            UpsampleAo2x(depth) : texture(aoTexture, texCoord).r : 1.0;
+        float occlusionFactor = Uniforms.aoDownsampled2x > 0 ? UpsampleAo2x(depth) : textureLod(aoTexture, texCoord, 0.0).r : 1.0;
 
         indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
 #endif

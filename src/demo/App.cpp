@@ -527,7 +527,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ssgiPanel.Render(ssgi);
+                ssgiPanel.Render(ssgi, renderTarget);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -540,7 +540,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Reflection")) {
                 ImGui::Checkbox("Debug##Reflection", &debugReflection);
-                reflectionPanel.Render(reflection);
+                reflectionPanel.Render(reflection, renderTarget);
             }
             if (ImGui::CollapsingHeader("Camera")) {
                 ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
@@ -554,11 +554,11 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Rotate camera", &rotateCamera);
             }
             if (ImGui::CollapsingHeader("Fog")) {
-                fogPanel.Render(fog);
+                fogPanel.Render(fog, renderTarget);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
-                volumetricCloudsPanel.Render(clouds);
+                volumetricCloudsPanel.Render(clouds, renderTarget);
             }
             if (ImGui::CollapsingHeader("Postprocessing")) {
                 postProcessingPanel.Render(postProcessing);

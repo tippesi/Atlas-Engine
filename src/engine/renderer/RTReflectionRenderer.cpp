@@ -45,7 +45,7 @@ namespace Atlas {
 
             helper.UpdateLights(scene, false);
 
-            ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
+            ivec2 res = ivec2(target->reflectionTexture.width, target->reflectionTexture.height);
 
             Graphics::Profiler::BeginQuery("Render RT Reflections");
             Graphics::Profiler::BeginQuery("Trace rays");

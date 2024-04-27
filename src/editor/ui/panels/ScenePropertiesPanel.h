@@ -16,7 +16,7 @@ namespace Atlas::Editor::UI {
         ScenePropertiesPanel() : Panel("Scene properties") {}
 
         template<class T>
-        void Render(T& t, Ref<Scene::Scene> scene = nullptr) {
+        void Render(T& t, Ref<Scene::Scene> scene = nullptr, Ref<Renderer::RenderTarget> target = nullptr) {
 
             ImGui::Begin(GetNameID());
 
@@ -33,11 +33,11 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
                 RenderHeading("Fog");
-                fogPanel.Render(t);
+                fogPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::VolumetricClouds>>) {
                 RenderHeading("Clouds");
-                volumetricCloudsPanel.Render(t);
+                volumetricCloudsPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::IrradianceVolume>>) {
                 RenderHeading("Irradiance volume");
@@ -45,11 +45,11 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
                 RenderHeading("Reflection");
-                reflectionPanel.Render(t);
+                reflectionPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
                 RenderHeading("Screen-space global illumination");
-                ssgiPanel.Render(t);
+                ssgiPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSS>>) {
                 RenderHeading("Screen-space shadows");

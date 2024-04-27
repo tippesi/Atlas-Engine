@@ -52,10 +52,10 @@ namespace Atlas {
             }
 
             auto uniforms = Uniforms{
-                .aoEnabled = aoEnabled || ssgiAo ? 1 : 0,
-                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES : 
+                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES :
                     target->GetAOResolution() == RenderResolution::HALF_RES,
-                .reflectionEnabled = reflectionEnabled ? 1 : 0,
+                .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
+                .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
                 .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ao->strength : ssgi->aoStrength / sqrt(ssgi->radius)) : 1.0f,
                 .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->cubemap.image->mipLevels : 1)
             };

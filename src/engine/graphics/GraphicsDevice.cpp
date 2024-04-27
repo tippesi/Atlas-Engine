@@ -569,7 +569,7 @@ namespace Atlas {
                 recreateSwapChain = true;
             }
 
-            if (recreateSwapChain || CheckForWindowResize()) {
+            if (recreateSwapChain || CheckForWindowResize() || !swapChain->isComplete) {
                 // A new image index is automatically acquired
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }

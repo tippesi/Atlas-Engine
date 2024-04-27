@@ -46,6 +46,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float radius;
     uint rayCount;
     uint sampleCount;
+    int downsampled2x;
 } uniforms;
 
 float Luma(vec3 color) {
@@ -145,7 +146,8 @@ void main() {
                     if (stepLinearDepth < rayDepth && abs(depthDelta) < rayLength) {
                         float NdotL = dot(worldNorm, -ray.direction);
                         if (NdotL >= 0.0) {
-                            vec3 rayIrradiance = texelFetch(directLightTexture, stepPixel * 2 + pixelOffset, 0).rgb;
+                            ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
+                            vec3 rayIrradiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
                             float dist = distance(viewPos, stepPos);
                             irradiance += rayIrradiance / max(0.01, dist);
                         }

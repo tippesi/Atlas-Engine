@@ -138,7 +138,7 @@ void main() {
     else {
         volumetricFog = textureLod(lowResVolumetricTexture, texCoord, 0);
 #ifdef CLOUDS
-        volumetricClouds = texture(lowResVolumetricCloudsTexture, texCoord);
+        volumetricClouds = textureLod(lowResVolumetricCloudsTexture, texCoord, 0);
 #endif
     }
 

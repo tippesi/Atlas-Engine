@@ -18,9 +18,9 @@ namespace Atlas {
 
         private:
             struct Uniforms {
-                int aoEnabled;
                 int aoDownsampled2x;
-                int reflectionEnabled;
+                int reflectionDownsampled2x;
+                int giDownsampled2x;
                 float aoStrength;
                 int specularProbeMipLevels;
             };
