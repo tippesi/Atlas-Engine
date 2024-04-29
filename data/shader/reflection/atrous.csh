@@ -230,7 +230,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerRoughness, sampleRoughness,
                                     stdDeviation * pushConstants.strength, 
-                                    32.0, 1.0, 0.05);
+                                    256.0, 1.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

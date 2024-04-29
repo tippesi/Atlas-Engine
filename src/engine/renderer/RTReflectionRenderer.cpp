@@ -61,7 +61,7 @@ namespace Atlas {
 
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = downsampledRT->geometryNormalTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
@@ -69,7 +69,7 @@ namespace Atlas {
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
-            auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
+            auto historyNormalTexture = reflection->useNormalMaps ? downsampledHistoryRT->normalTexture : downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -164,8 +164,10 @@ namespace Atlas {
                 TemporalConstants constants = {
                     .temporalWeight = reflection->temporalWeight,
                     .historyClipMax = reflection->historyClipMax,
-                    .currentClipFactor = reflection->currentClipFactor
+                    .currentClipFactor = reflection->currentClipFactor,
+                    .resetHistory = !target->HasHistory() ? 1 : 0
                 };
+
                 commandList->PushConstants("constants", &constants);
 
                 imageBarriers = {

@@ -42,6 +42,7 @@ layout(push_constant) uniform constants {
     float temporalWeight;
     float historyClipMax;
     float currentClipFactor;
+    int resetHistory;
 } pushConstants;
 
 const ivec2 offsets[9] = ivec2[9](
@@ -406,6 +407,8 @@ void main() {
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
+
     float historyLength = historyMoments.b;
     if (factor < 0.1 * roughness || !valid) {
         historyLength = 0.0;
@@ -415,8 +418,8 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
-    vec3 resolve = mix(currentColor, historyColor, factor);
-    vec2 momentsResolve = mix(currentMoments, historyMoments.rg, factor);
+    vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
+    vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
 
     // Boost variance when we have a small history length (we trade blur for noise)
     float varianceBoost = max(1.0, 4.0 / (historyLength + 1.0));

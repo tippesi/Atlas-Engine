@@ -249,5 +249,6 @@ void main() {
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(vec3(direct + indirect), 0.0));
+    //imageStore(image, pixel, vec4(vec3(textureLod(giTexture, texCoord, 0.0).rgb), 0.0));
 
 }

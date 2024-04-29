@@ -12,6 +12,7 @@ namespace Atlas::Renderer {
 
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
+        targetDataSwap = RenderTargetData(res, true);
 
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
@@ -150,6 +151,7 @@ namespace Atlas::Renderer {
         scaledHeight = int32_t(scalingFactor * height);
 
         targetData.Resize(ivec2(scaledWidth, scaledHeight));
+        targetDataSwap.Resize(ivec2(scaledWidth, scaledHeight));
 
         // We have to also resize the other part of the history
         historyTexture.Resize(scaledWidth, scaledHeight);
@@ -202,16 +204,10 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Swap() {
 
-        targetData.velocityTexture.swap(targetData.swapVelocityTexture);
-
-        gBufferFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 5);
-        gBufferFrameBuffer->Refresh();
-
-        afterLightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
-        afterLightingFrameBuffer->Refresh();
-
         hasHistory = true;
         swap = !swap;
+
+        CreateFrameBuffers();
 
     }
 
@@ -337,7 +333,7 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return &targetData;
+        case FULL_RES: return swap ? &targetData : &targetDataSwap;
         default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
         }
 
@@ -346,7 +342,7 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return &targetData; // This is not correct
+        case FULL_RES: return swap ? &targetDataSwap : &targetData;
         default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
         }
 
@@ -376,13 +372,13 @@ namespace Atlas::Renderer {
 
     Texture::Texture2D* RenderTarget::GetVelocity() {
 
-        return targetData.velocityTexture.get();
+        return GetData(FULL_RES)->velocityTexture.get();
 
     }
 
     Texture::Texture2D* RenderTarget::GetLastVelocity() {
 
-        return targetData.swapVelocityTexture.get();
+        return GetHistoryData(FULL_RES)->velocityTexture.get();
 
     }
 
@@ -410,18 +406,20 @@ namespace Atlas::Renderer {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
+        auto target = GetData(FULL_RES);
+
         auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
                .renderPass = gBufferRenderPass,
                .colorAttachments = {
-                   {targetData.baseColorTexture->image, 0, true},
-                   {targetData.normalTexture->image, 0, true},
-                   {targetData.geometryNormalTexture->image, 0, true},
-                   {targetData.roughnessMetallicAoTexture->image, 0, true},
-                   {targetData.materialIdxTexture->image, 0, true},
-                   {targetData.velocityTexture->image, 0, true},
-                   {targetData.stencilTexture->image, 0, false},
+                   {target->baseColorTexture->image, 0, true},
+                   {target->normalTexture->image, 0, true},
+                   {target->geometryNormalTexture->image, 0, true},
+                   {target->roughnessMetallicAoTexture->image, 0, true},
+                   {target->materialIdxTexture->image, 0, true},
+                   {target->velocityTexture->image, 0, true},
+                   {target->stencilTexture->image, 0, false},
                },
-               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .depthAttachment = {target->depthTexture->image, 0, true},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
@@ -430,10 +428,10 @@ namespace Atlas::Renderer {
                .renderPass = afterLightingRenderPass,
                .colorAttachments = {
                    {lightingTexture.image, 0, true},
-                   {targetData.velocityTexture->image, 0, true},
-                   {targetData.stencilTexture->image, 0, false}
+                   {target->velocityTexture->image, 0, true},
+                   {target->stencilTexture->image, 0, false}
                },
-               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .depthAttachment = {target->depthTexture->image, 0, true},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
@@ -442,10 +440,10 @@ namespace Atlas::Renderer {
             .renderPass = afterLightingRenderPass,
             .colorAttachments = {
                 {lightingTexture.image, 0, true},
-                {targetData.velocityTexture->image, 0, true},
-                {targetData.stencilTexture->image, 0, true}
+                {target->velocityTexture->image, 0, true},
+                {target->stencilTexture->image, 0, true}
             },
-            .depthAttachment = {targetData.depthTexture->image, 0, true},
+            .depthAttachment = {target->depthTexture->image, 0, true},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);

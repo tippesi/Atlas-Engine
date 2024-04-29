@@ -31,6 +31,7 @@ namespace Atlas {
                 float temporalWeight;
                 float historyClipMax;
                 float currentClipFactor;
+                int32_t resetHistory;
             };
 
             struct alignas(16) AtrousConstants {

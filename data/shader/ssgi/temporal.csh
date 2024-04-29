@@ -24,10 +24,14 @@ layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 
+layout(push_constant) uniform constants {
+    int resetHistory;
+} pushConstants;
+
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 1;
+const int kernelRadius = 3;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -255,7 +259,7 @@ void main() {
     vec4 mean, std;
     ComputeVarianceMinMax(mean, std);
 
-    const float historyClipFactorGi = 1.0, historyClipFactorAo = 1.0;
+    const float historyClipFactorGi = 1.0, historyClipFactorAo = 0.5;
     vec4 historyClipFactor = vec4(vec3(historyClipFactorGi), historyClipFactorAo);
     vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
@@ -281,11 +285,13 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
+    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
+
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;
@@ -293,7 +299,7 @@ void main() {
 
     factor = min(factor, historyLength / max(1.0, (historyLength + 1.0)));
 
-    vec4 resolve = mix(currentValue, historyValue, factor);
+    vec4 resolve = factor <= 0.0 ? currentValue : mix(currentValue, historyValue, factor);
 
     imageStore(resolveImage, pixel, vec4(resolve));
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));

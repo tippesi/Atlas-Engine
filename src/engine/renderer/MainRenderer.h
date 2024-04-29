@@ -19,7 +19,7 @@
 #include "SkyboxRenderer.h"
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
-#include "GBufferDownscaleRenderer.h"
+#include "GBufferRenderer.h"
 #include "TextRenderer.h"
 #include "GIRenderer.h"
 #include "DDGIRenderer.h"
@@ -178,7 +178,7 @@ namespace Atlas {
             TemporalAARenderer taaRenderer;
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
-            GBufferDownscaleRenderer downscaleRenderer;
+            GBufferRenderer gBufferRenderer;
             GIRenderer giRenderer;
             DDGIRenderer ddgiRenderer;
             AORenderer aoRenderer;

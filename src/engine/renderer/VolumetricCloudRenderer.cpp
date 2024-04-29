@@ -119,6 +119,9 @@ namespace Atlas {
                 commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
 
+                int32_t resetHistory = !target->HasHistory() ? 1 : 0;
+                commandList->PushConstants("constants", &resetHistory, sizeof(int32_t));
+
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 Graphics::Profiler::EndQuery();

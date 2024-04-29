@@ -179,6 +179,9 @@ namespace Atlas {
                 commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
 
+                int32_t resetHistory = !target->HasHistory() ? 1 : 0;
+                commandList->PushConstants("constants", &resetHistory, sizeof(int32_t));
+
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 // Need barriers for all four images

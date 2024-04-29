@@ -1,19 +1,21 @@
-#include "GBufferDownscaleRenderer.h"
+#include "GBufferRenderer.h"
 
 namespace Atlas {
 
     namespace Renderer {
 
-        void GBufferDownscaleRenderer::Init(Graphics::GraphicsDevice *device) {
+        void GBufferRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
-            downscalePipelineConfig = PipelineConfig("downsampleGBuffer2x.csh");
-            downscaleDepthOnlyPipelineConfig = PipelineConfig("downsampleGBuffer2x.csh", {"DEPTH_ONLY"});
+            downscalePipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh");
+            downscaleDepthOnlyPipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh", {"DEPTH_ONLY"});
+
+            patchNormalPipelineConfig = PipelineConfig("gbuffer/patchGBufferNormals.csh");
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::Downscale(Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Downsample GBuffer");
 
@@ -29,7 +31,7 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::DownscaleDepthOnly(Ref<RenderTarget> target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::DownscaleDepthOnly(Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
             Graphics::Profiler::BeginQuery("Downsample GBuffer depth only");
 
@@ -45,7 +47,40 @@ namespace Atlas {
 
         }
 
-        void GBufferDownscaleRenderer::Downscale(RenderTargetData* rt,
+        void GBufferRenderer::FillNormalTexture(Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+
+            Graphics::Profiler::BeginQuery("Patch GBuffer normals");
+
+            auto pipeline = PipelineManager::GetPipeline(patchNormalPipelineConfig);
+            commandList->BindPipeline(pipeline);
+
+            auto rt = target->GetData(RenderResolution::FULL_RES);
+            
+            auto normal = rt->normalTexture;
+            auto geometryNormal = rt->geometryNormalTexture;
+            auto materialIdx = rt->materialIdxTexture;
+            
+            ivec2 res = ivec2(normal->width, normal->height);
+
+            ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
+            groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
+            groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
+
+            commandList->BindImage(normal->image, 3, 0);
+            commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 1);
+            commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 2);
+
+            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+
+            commandList->Dispatch(groupCount.x, groupCount.y, 1);
+
+            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void GBufferRenderer::Downscale(RenderTargetData* rt,
             RenderTargetData* downsampledRt, Graphics::CommandList* commandList) {
 
             auto depthIn = rt->depthTexture;

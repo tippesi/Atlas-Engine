@@ -17,6 +17,10 @@ namespace Atlas::ImguiExtension {
             ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
                         This is only possible when cascaded shadow maps are not used.");
         }
+        ImGui::Checkbox("Use normal maps", &reflection->useNormalMaps);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Uses the normal maps to cast reflection rays.");
+        }
         ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
         ImGui::Checkbox("Opacity check", &reflection->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);

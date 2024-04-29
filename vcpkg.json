@@ -3,7 +3,7 @@
   "name": "atlas-engine",
   "version-string": "0.2.0",
   "port-version": 0,
-  "builtin-baseline": "5786fcb0cb5eb08d1931a230dad9701e7a6c37f0",
+  "builtin-baseline": "b346ee32f13f3bf2ef19ac02f982f6938f7a84ea",
   "homepage": "https://github.com/tippesi/Atlas-Engine",
   "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
   "dependencies": [
@@ -44,15 +44,15 @@
     },
     {
       "name": "assimp",
-      "version": "5.3.1#3"
+      "version": "5.4.0"
     },
     {
       "name": "spirv-tools",
-      "version": "1.3.275.0"
+      "version": "1.3.280.0"
     },
     {
       "name": "spirv-reflect",
-      "version": "1.3.236.0#0"
+      "version": "1.3.280.0#1"
     },
     {
       "name": "glslang",
@@ -72,11 +72,11 @@
     },
     {
       "name": "volk",
-      "version": "1.3.250#0"
+      "version": "1.3.280.0#0"
     },
     {
       "name": "vulkan-headers",
-      "version": "1.3.268.0#0"
+      "version": "1.3.280.0#0"
     },
     {
       "name": "joltphysics",

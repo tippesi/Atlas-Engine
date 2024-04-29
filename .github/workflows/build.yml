@@ -47,7 +47,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 13bde2ff13192e1b2fdd37bd9b475c7665ae6ae5
           cache: ${{ env.USE_CACHE }}
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
@@ -190,7 +190,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 13bde2ff13192e1b2fdd37bd9b475c7665ae6ae5
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
@@ -320,7 +320,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 13bde2ff13192e1b2fdd37bd9b475c7665ae6ae5
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja

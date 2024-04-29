@@ -849,7 +849,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * 0.5f;
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
-		dispatchParameters.reset = false;
+		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
 		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;

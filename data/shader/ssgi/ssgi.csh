@@ -144,12 +144,13 @@ void main() {
 
                     // Check if we are now behind the depth buffer, use that hit as the source of radiance
                     if (stepLinearDepth < rayDepth && abs(depthDelta) < rayLength) {
-                        float NdotL = dot(worldNorm, -ray.direction);
-                        if (NdotL >= 0.0) {
+                        float NdotV = dot(worldNorm, -ray.direction);
+                        float NdotL = dot(-worldNorm, surface.N) * 0.5 + 0.5;
+                        if (true) {
                             ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
                             vec3 rayIrradiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
                             float dist = distance(viewPos, stepPos);
-                            irradiance += rayIrradiance / max(0.01, dist);
+                            irradiance += rayIrradiance * max(NdotL, 0.0) * surface.NdotL / max(0.1, dist);
                         }
                         hit = true;
 

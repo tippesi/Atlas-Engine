@@ -42,7 +42,7 @@ if(WIN32)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
+            unofficial::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
             ${LUA_LIBRARIES} sol2 fsr2)
 endif()
 
@@ -58,7 +58,7 @@ if(APPLE)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
+            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
 if(ANDROID)
@@ -82,7 +82,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
-            unofficial::spirv-reflect::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
 # Due to lua bindings we need more addressable functions (but not for clang)

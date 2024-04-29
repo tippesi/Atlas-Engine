@@ -49,7 +49,7 @@ namespace Atlas {
             shadowRenderer.Init(device);
             impostorShadowRenderer.Init(device);
             terrainShadowRenderer.Init(device);
-            downscaleRenderer.Init(device);
+            gBufferRenderer.Init(device);
             ddgiRenderer.Init(device);
             giRenderer.Init(device);
             aoRenderer.Init(device);
@@ -249,7 +249,8 @@ namespace Atlas {
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
 
             if (!target->HasHistory()) {
-                auto rtData = target->GetHistoryData(HALF_RES);
+                auto rtHalfData = target->GetHistoryData(HALF_RES);
+                auto rtData = target->GetHistoryData(FULL_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
@@ -263,7 +264,15 @@ namespace Atlas {
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
-                    {rtData->swapVelocityTexture->image, layout, access},
+                    {rtHalfData->baseColorTexture->image, layout, access},
+                    {rtHalfData->depthTexture->image, layout, access},
+                    {rtHalfData->normalTexture->image, layout, access},
+                    {rtHalfData->geometryNormalTexture->image, layout, access},
+                    {rtHalfData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtHalfData->offsetTexture->image, layout, access},
+                    {rtHalfData->materialIdxTexture->image, layout, access},
+                    {rtHalfData->stencilTexture->image, layout, access},
+                    {rtHalfData->velocityTexture->image, layout, access},
                     {target->historyAoTexture.image, layout, access},
                     {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
@@ -274,7 +283,7 @@ namespace Atlas {
             }
 
             {
-                auto rtData = target->GetHistoryData(FULL_RES);
+                auto rtData = target->GetData(FULL_RES);
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
@@ -306,7 +315,9 @@ namespace Atlas {
                 }
             }
 
-            downscaleRenderer.Downscale(target, commandList);
+            gBufferRenderer.FillNormalTexture(target, commandList);
+
+            gBufferRenderer.Downscale(target, commandList);
 
             aoRenderer.Render(target, scene, commandList);
 

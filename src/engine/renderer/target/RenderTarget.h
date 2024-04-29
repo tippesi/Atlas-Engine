@@ -41,8 +41,6 @@ namespace Atlas::Renderer {
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-            swapVelocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         }
 
         void Resize(ivec2 resolution) {
@@ -55,7 +53,6 @@ namespace Atlas::Renderer {
             materialIdxTexture->Resize(resolution.x, resolution.y);
             stencilTexture->Resize(resolution.x, resolution.y);
             velocityTexture->Resize(resolution.x, resolution.y);
-            swapVelocityTexture->Resize(resolution.x, resolution.y);
         }
 
         Ref<Texture::Texture2D> baseColorTexture = nullptr;
@@ -67,7 +64,6 @@ namespace Atlas::Renderer {
         Ref<Texture::Texture2D> materialIdxTexture = nullptr;
         Ref<Texture::Texture2D> stencilTexture = nullptr;
         Ref<Texture::Texture2D> velocityTexture = nullptr;
-        Ref<Texture::Texture2D> swapVelocityTexture = nullptr;
     };
 
     class RenderTarget {
@@ -241,6 +237,7 @@ namespace Atlas::Renderer {
         Texture::Texture2D swapHistoryTexture;
 
         RenderTargetData targetData;
+        RenderTargetData targetDataSwap;
         RenderTargetData targetDataDownsampled2x;
         RenderTargetData targetDataSwapDownsampled2x;
 

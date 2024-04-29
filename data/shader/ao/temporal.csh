@@ -24,6 +24,10 @@ layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 
+layout(push_constant) uniform constants {
+    int resetHistory;
+} pushConstants;
+
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
@@ -251,13 +255,14 @@ void main() {
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
+
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;
     }
 
     factor = min(factor, historyLength / (historyLength + 1.0));
-
-    float resolve = mix(currentValue, historyValue, factor);
+    float resolve = factor <= 0.0 ?  currentValue : mix(currentValue, historyValue, factor);
 
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));
     imageStore(resolveImage, pixel, vec4(resolve, 0.0, 0.0, 0.0));

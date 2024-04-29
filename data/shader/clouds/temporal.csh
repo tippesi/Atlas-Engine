@@ -16,6 +16,10 @@ layout(set = 3, binding = 3) uniform sampler2D depthTexture;
 layout(set = 3, binding = 4) uniform sampler2D historyTexture;
 layout(set = 3, binding = 5) uniform sampler2D historyDepthTexture;
 
+layout(push_constant) uniform constants {
+    int resetHistory;
+} pushConstants;
+
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
@@ -246,8 +250,9 @@ void main() {
     }
     
     factor *= minWeight;
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
-    vec4 resolve = mix(currentValue, historyValue, factor);
+    vec4 resolve = factor <= 0.0 ? currentValue : mix(currentValue, historyValue, factor);
 
     imageStore(resolveImage, pixel, resolve);
 

@@ -56,7 +56,7 @@ namespace Atlas {
 
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = downsampledRT->geometryNormalTexture;
+            auto normalTexture = downsampledRT->normalTexture;
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
@@ -65,7 +65,7 @@ namespace Atlas {
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
-            auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
+            auto historyNormalTexture = downsampledHistoryRT->normalTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -190,6 +190,9 @@ namespace Atlas {
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
                 commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+
+                int32_t resetHistory = !target->HasHistory() ? 1 : 0;
+                commandList->PushConstants("constants", &resetHistory, sizeof(int32_t));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
