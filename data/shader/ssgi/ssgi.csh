@@ -150,7 +150,7 @@ void main() {
                             ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
                             vec3 rayIrradiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
                             float dist = distance(viewPos, stepPos);
-                            irradiance += rayIrradiance * max(NdotL, 0.0) * surface.NdotL / max(0.1, dist);
+                            irradiance += rayIrradiance * max(NdotL, 0.0) * NdotV * surface.NdotL / max(0.1, dist);
                         }
                         hit = true;
 

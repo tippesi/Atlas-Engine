@@ -14,8 +14,9 @@ layout(set = 3, binding = 1) uniform sampler2D aoTexture;
 layout(set = 3, binding = 2) uniform sampler2D reflectionTexture;
 layout(set = 3, binding = 3) uniform sampler2D giTexture;
 layout(set = 3, binding = 4) uniform sampler2D lowResDepthTexture;
+layout(set = 3, binding = 5) uniform sampler2D lowResNormalTexture;
 
-layout(set = 3, binding = 5) uniform UniformBuffer {
+layout(set = 3, binding = 6) uniform UniformBuffer {
     int aoDownsampled2x;
     int reflectionDownsampled2x;
     int giDownsampled2x;
@@ -23,8 +24,14 @@ layout(set = 3, binding = 5) uniform UniformBuffer {
     int specularProbeMipLevels;
 } Uniforms;
 
+struct UpsampleResult {
+    vec3 reflection;
+    vec4 gi;
+};
+
 // (localSize / 2 + 2)^2
 shared float depths[36];
+shared vec3 normals[36];
 shared float aos[36];
 shared vec3 reflections[36];
 shared vec4 gi[36];
@@ -42,6 +49,9 @@ void LoadGroupSharedData() {
         offset += workGroupOffset;
         offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
+
+        vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
+        normals[gl_LocalInvocationIndex] = normalize(normal);
 #ifdef AO
         if (Uniforms.aoDownsampled2x > 0)
             aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
@@ -68,6 +78,13 @@ const ivec2 offsets[9] = ivec2[9](
     ivec2(0, 0),
     ivec2(1, 0),
     ivec2(-1, 1),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
+const ivec2 pixelOffsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
     ivec2(0, 1),
     ivec2(1, 1)
 );
@@ -107,61 +124,44 @@ float UpsampleAo2x(float referenceDepth) {
 
 }
 
-vec3 UpsampleReflection2x(float referenceDepth, vec2 texCoords) {
+UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 texCoords) {
+
+    UpsampleResult result;
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
-    float invocationDepths[9];
-
-    float minWeight = 1.0;
-
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
 
-    for (uint i = 0; i < 9; i++) {
-        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+    result.gi = vec4(0.0);
+    result.reflection = vec3(0.0);
+
+    float totalWeight = 0.0;
+
+    for (uint i = 0; i < 4; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + pixelOffsets[i], unflattenedDepthDataSize);
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
         float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
-        minWeight = min(minWeight, depthWeight);
 
-        invocationDepths[i] = depth;
+        float normalWeight = min(pow(dot(referenceNormal, normals[sharedMemoryOffset]), 256.0), 1.0);
+
+        float weight = depthWeight * normalWeight;
+
+#ifdef SSGI
+        result.gi += gi[sharedMemoryOffset] * weight;
+#endif
+#ifdef REFLECTION
+        result.reflection += reflections[sharedMemoryOffset] * weight;
+#endif
+
+        totalWeight += weight;
     }
 
-    int idx = NearestDepth(referenceDepth, invocationDepths);
-    int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
+    result.reflection /= max(totalWeight, 1e-30);
+    result.gi /= max(totalWeight, 1e-30);
 
-    vec3 bilinearReflection = textureLod(reflectionTexture, texCoords, 0).rgb;
-    return mix(reflections[offset], bilinearReflection, minWeight);
-
-}
-
-vec4 UpsampleGi2x(float referenceDepth, vec2 texCoords) {
-
-    ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
-
-    float invocationDepths[9];
-
-    float minWeight = 1.0;
-
-    referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
-
-    for (uint i = 0; i < 9; i++) {
-        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
-        float depth = depths[sharedMemoryOffset];
-
-        float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
-        minWeight = min(minWeight, depthWeight);
-
-        invocationDepths[i] = depth;
-    }
-
-    int idx = NearestDepth(referenceDepth, invocationDepths);
-    int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
-
-    vec4 bilinearGi = textureLod(giTexture, texCoords, 0);
-    return mix(gi[offset], bilinearGi, minWeight);
+    return result;
 
 }
 
@@ -180,6 +180,8 @@ void main() {
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
     vec3 indirect = vec3(0.0);
+
+    UpsampleResult upsampleResult;
 
     if (depth < 1.0) {
 
@@ -213,8 +215,11 @@ void main() {
         // We multiply by local sky visibility because the reflection probe only includes the sky
         //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
         //    * prefilteredDiffuseLocal.a;
+
+        upsampleResult = Upsample(depth, surface.N, texCoord);
+
 #ifdef REFLECTION
-        vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? UpsampleReflection2x(depth, texCoord) : textureLod(reflectionTexture, texCoord, 0.0).rgb;
+        vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;
 #else
 #ifdef DDGI
         vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
@@ -227,7 +232,7 @@ void main() {
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 
 #ifdef SSGI
-        vec4 ssgi = Uniforms.giDownsampled2x > 0 ? UpsampleGi2x(depth, texCoord) : textureLod(giTexture, texCoord, 0.0);
+        vec4 ssgi = Uniforms.giDownsampled2x > 0 ? upsampleResult.gi : textureLod(giTexture, texCoord, 0.0);
 #endif
 
         // This normally only accounts for diffuse occlusion, we need seperate terms
@@ -249,6 +254,7 @@ void main() {
 
     vec3 direct = imageLoad(image, pixel).rgb;
     imageStore(image, pixel, vec4(vec3(direct + indirect), 0.0));
-    //imageStore(image, pixel, vec4(vec3(textureLod(giTexture, texCoord, 0.0).rgb), 0.0));
+    //imageStore(image, pixel, vec4(vec3(pow(textureLod(giTexture, texCoord, 0.0).a, Uniforms.aoStrength)), 0.0));
+    //imageStore(image, pixel, vec4(vec3(pow(upsampleResult.gi.a, Uniforms.aoStrength)), 0.0));
 
 }

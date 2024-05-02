@@ -37,6 +37,7 @@ namespace Atlas {
             pipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
+            auto normalTexture = target->GetData(HALF_RES)->normalTexture;
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -63,7 +64,8 @@ namespace Atlas {
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
-            commandList->BindBuffer(uniformBuffer.Get(), 3, 5);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 5);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 6);
 
             auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;
