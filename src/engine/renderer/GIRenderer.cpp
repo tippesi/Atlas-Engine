@@ -57,6 +57,7 @@ namespace Atlas {
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
             auto normalTexture = downsampledRT->normalTexture;
+            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
@@ -66,6 +67,7 @@ namespace Atlas {
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
             auto historyNormalTexture = downsampledHistoryRT->normalTexture;
+            auto historyGeometryNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -182,13 +184,13 @@ namespace Atlas {
                 commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 5);
-                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 6);
+                commandList->BindImage(geometryNormalTexture->image, geometryNormalTexture->sampler, 3, 6);
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
 
                 commandList->BindImage(target->historyGiTexture.image, target->historyGiTexture.sampler, 3, 8);
                 commandList->BindImage(target->historyGiLengthTexture.image, target->historyGiLengthTexture.sampler, 3, 9);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
-                commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
+                commandList->BindImage(historyGeometryNormalTexture->image, historyGeometryNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
 
                 int32_t resetHistory = !target->HasHistory() ? 1 : 0;

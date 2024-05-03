@@ -259,12 +259,12 @@ void main() {
     vec4 mean, std;
     ComputeVarianceMinMax(mean, std);
 
-    const float historyClipFactorGi = 1.0, historyClipFactorAo = 0.5;
+    const float historyClipFactorGi = 2.0, historyClipFactorAo = 0.5;
     vec4 historyClipFactor = vec4(vec3(historyClipFactorGi), historyClipFactorAo);
     vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    const float currentClipFactor = 4.0;
+    const float currentClipFactor = 2.0;
     vec4 currentNeighbourhoodMin = mean - currentClipFactor * std;
     vec4 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
