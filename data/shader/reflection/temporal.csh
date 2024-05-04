@@ -369,7 +369,7 @@ void main() {
 #ifdef BICUBIC_FILTER
     // This should be implemented more efficiently, see 
     vec4 catmullRomHistory;
-    bool success = SampleCatmullRom(pixel, historyPixel, catmullRomHistory);
+    bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
     history = success && valid ? catmullRomHistory : history;  
 #endif
 
