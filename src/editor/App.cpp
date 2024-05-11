@@ -187,7 +187,6 @@ namespace Atlas::Editor {
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
         graphicsDevice->WaitForPreviousFrameCompletion();
-
         
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously

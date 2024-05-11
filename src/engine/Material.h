@@ -25,6 +25,8 @@ namespace Atlas {
         bool HasAoMap() const;
         bool HasDisplacementMap() const;
 
+        void SetChanged();
+
         std::string name;
 
         Ref<Texture::Texture2D> baseColorMap = nullptr;

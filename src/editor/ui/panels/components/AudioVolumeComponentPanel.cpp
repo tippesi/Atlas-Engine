@@ -24,6 +24,10 @@ namespace Atlas::Editor::UI {
         }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Audio::AudioData>();
+        if (handle.IsValid()) {
+            audioVolumeComponent.ChangeResource(handle);
+            resourceChanged = true;
+        }
 
         auto audioResources = ResourceManager<Audio::AudioData>::GetResources();
         handle = audioSelectionPopup.Render(audioResources);

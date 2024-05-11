@@ -46,6 +46,7 @@ namespace Atlas {
                 .domain = BufferDomain::Device,
                 .size = sizesInfo.accelerationStructureSize
             };
+
             buffer = device->CreateBuffer(desc);
             bufferDeviceAddress = buffer->GetDeviceAddress();
 

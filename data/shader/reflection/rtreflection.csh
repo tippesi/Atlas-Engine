@@ -65,8 +65,9 @@ void main() {
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+        // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+        ivec2 offset = ivec2(0);
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 

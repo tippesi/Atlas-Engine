@@ -35,8 +35,8 @@ namespace Atlas {
             }
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
-            allocationCreateInfo.usage = desc.domain == ImageDomain::Host ?
-                VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            allocationCreateInfo.usage = 
+                VMA_MEMORY_USAGE_AUTO;
 
             VK_CHECK(vmaCreateImage(memoryManager->allocator, &imageInfo,
                 &allocationCreateInfo, &image, &allocation, nullptr))

@@ -269,19 +269,20 @@ namespace Atlas {
             }
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
+            UpdateBindlessIndexMaps();            
 
             // Make sure this is changed just once at the start of a frame
-            rayTracingWorldUpdateFuture = std::async(std::launch::async, [&]() {
+            rayTracingWorldUpdateFuture = std::async(std::launch::async, [this]() {
+                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
                 if (rayTracingWorld) {
                     rayTracingWorld->scene = this;
-                    rayTracingWorld->Update(true);
+                    rayTracingWorld->Update(rayTracingSubset, true);
                 }
                 rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });
-            
+                });            
 #endif
 
             // We also need to reset the hierarchy components as well

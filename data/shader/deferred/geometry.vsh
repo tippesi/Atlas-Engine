@@ -46,9 +46,11 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
+layout(location=6) out float normalInversionVS;
+
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=6) out mat3 TBN;
+layout(location=7) out mat3 TBN;
 #endif
 
 layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
@@ -71,6 +73,8 @@ void main() {
 
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
+
+    normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;

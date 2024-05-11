@@ -24,6 +24,11 @@ namespace Atlas::Editor::UI {
         }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Mesh::Mesh>();
+        // Need to change here already
+        if (handle.IsValid()) {
+            meshComponent.mesh = handle;
+            resourceChanged = true;
+        }
 
         auto meshResources = ResourceManager<Mesh::Mesh>::GetResources();
         handle = meshSelectionPopup.Render(meshResources);

@@ -19,6 +19,11 @@ namespace Atlas::Editor::UI
         }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Scripting::Script>();
+        if (handle.IsValid()) {
+            // Needs to be implemented
+            // luaScriptComponent.ChangeResource(handle);
+            luaScriptComponent.script = handle;
+        }
 
         auto scriptResources = ResourceManager<Scripting::Script>::GetResources();
         handle = scriptSelectionPopup.Render(scriptResources);

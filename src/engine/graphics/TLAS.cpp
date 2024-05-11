@@ -26,8 +26,6 @@ namespace Atlas {
 
         TLAS::~TLAS() {
 
-            AE_ASSERT(isComplete);
-
             if (isComplete)
                 vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
 

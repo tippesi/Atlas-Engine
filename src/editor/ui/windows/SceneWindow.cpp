@@ -328,16 +328,18 @@ namespace Atlas::Editor::UI {
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix));
 
-                    globalDecomp = Common::MatrixDecomposition(globalMatrix);
-                    globalDecomp.translation -= offset;
+                    if (ImGuizmo::IsUsing()) {
+                        globalDecomp = Common::MatrixDecomposition(globalMatrix);
+                        globalDecomp.translation -= offset;
 
-                    // Update both the local and global matrix, since e.g. the transform component
-                    // panel recovers the local matrix from the global one (needs to do this after
-                    // e.g. physics only updated the global matrix
-                    transform.globalMatrix = globalDecomp.Compose();
+                        // Update both the local and global matrix, since e.g. the transform component
+                        // panel recovers the local matrix from the global one (needs to do this after
+                        // e.g. physics only updated the global matrix
+                        transform.globalMatrix = globalDecomp.Compose();
 
-                    auto parentEntity = scene->GetParentEntity(selectedEntity);
-                    transform.ReconstructLocalMatrix(parentEntity);
+                        auto parentEntity = scene->GetParentEntity(selectedEntity);
+                        transform.ReconstructLocalMatrix(parentEntity);
+                    }
                 }
 
                 const auto& io = ImGui::GetIO();

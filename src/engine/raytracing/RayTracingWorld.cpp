@@ -29,13 +29,11 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::Update(bool updateTriangleLights) {
+        void RayTracingWorld::Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             if (!device->swapChain->isComplete) return;
-
-            auto subset = scene->GetSubset<MeshComponent, TransformComponent>();
             if (!subset.Any()) return;
 
             blases.clear();

@@ -21,8 +21,6 @@ namespace Atlas::Editor {
 
                 std::string resourcePath;
                 if (dropPayload->IsDataType("ContentBrowserResource")) {
-                    resourcePath.resize(dropPayload->DataSize);
-
                     // Pretty dangerous
                     resourcePath = std::string(reinterpret_cast<const char*>(dropPayload->Data));
 
