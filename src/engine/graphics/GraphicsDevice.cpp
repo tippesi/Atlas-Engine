@@ -31,7 +31,8 @@ namespace Atlas {
                 VK_KHR_RAY_QUERY_EXTENSION_NAME,
                 VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
-                VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME
+                VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
+                VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #endif
@@ -1052,6 +1053,17 @@ namespace Atlas {
 
             if (supportedExtensions.contains(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
                 support.shaderFloat16 = true;
+            }
+
+            VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedStateFeatures = {};
+            extendedStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+
+            if (supportedExtensions.contains(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+                extendedStateFeatures.extendedDynamicState = VK_TRUE;
+
+                featureBuilder.Append(extendedStateFeatures);
+
+                support.extendedDynamicState = true;
             }
 
 #ifdef AE_BINDLESS

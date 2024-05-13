@@ -241,7 +241,7 @@ void main() {
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef AO
-        float occlusionFactor = Uniforms.aoDownsampled2x > 0 ? UpsampleAo2x(depth) : textureLod(aoTexture, texCoord, 0.0).r : 1.0;
+        float occlusionFactor = Uniforms.aoDownsampled2x > 0 ? UpsampleAo2x(depth) : textureLod(aoTexture, texCoord, 0.0).r;
 
         indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
 #endif

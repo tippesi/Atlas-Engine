@@ -269,7 +269,11 @@ namespace Atlas {
             }
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();            
+            UpdateBindlessIndexMaps();
+
+            // Make sure this was executed before we start the next async update
+            if (rayTracingWorldUpdateFuture.valid())
+                rayTracingWorldUpdateFuture.get();        
 
             // Make sure this is changed just once at the start of a frame
             rayTracingWorldUpdateFuture = std::async(std::launch::async, [this]() {

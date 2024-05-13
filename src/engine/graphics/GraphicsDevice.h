@@ -41,6 +41,7 @@ namespace Atlas {
             bool debugMarker = false;
             bool wideLines = false;
             bool shaderFloat16 = false;
+            bool extendedDynamicState = false;
         };
 
         struct CommandListSubmission {
