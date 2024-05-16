@@ -54,6 +54,11 @@ namespace Atlas {
              */
             void UpdateData();
 
+            /*
+             * Resets material pipeline configs 
+             */
+            void UpdateMaterials();
+
             /**
              * Updates the vertex array based on the state of the vertex buffers.
              * @note This is useful when running your own data pipeline

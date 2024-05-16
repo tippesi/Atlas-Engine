@@ -64,21 +64,22 @@ namespace Atlas {
 
             // Bind in batches to reduce driver binding overhead
             uint32_t bindingOffset = 0;
-            bindingBuffers.clear();
+            if (bindingBuffers.size() < vertexComponents.size())
+                bindingBuffers.resize(vertexComponents.size());
+
+            uint32_t bindingCount = 0;
             for (auto& [attribArray, vertexComponent] : vertexComponents) {
                 if (attribArray != bindingOffset + 1 && bindingBuffers.size() > 0) {
-                    uint32_t bindingCount = uint32_t(bindingBuffers.size());
                     commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
 
-                    bindingBuffers.clear();
                     bindingOffset = attribArray;
+                    bindingCount = 0;
                 }
 
-                bindingBuffers.push_back(vertexComponent.vertexBuffer.buffer);
+                bindingBuffers[bindingCount++] = vertexComponent.vertexBuffer.buffer;
             }
 
             if (bindingBuffers.size()) {
-                uint32_t bindingCount = uint32_t(bindingBuffers.size());
                 commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
             }
 

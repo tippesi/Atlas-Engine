@@ -120,7 +120,7 @@ void main() {
             float hitDistance = min(maxDepth, dist);
             float weight = max(0.0, dot(N, rayData[j].direction));
 
-            const float probeOffsetDistance = 0.6;
+            const float probeOffsetDistance = 0.1;
             dist = rayData[j].dist;
             // Remember: Negative distances means backface hits.
             // Meaning we want to get probes from backfaces to the 

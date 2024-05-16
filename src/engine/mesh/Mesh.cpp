@@ -65,6 +65,14 @@ namespace Atlas {
 
         }
 
+        void Mesh::UpdateMaterials() {
+
+            for (const auto& material : data.materials) {
+                material->SetChanged();
+            }
+
+        }
+
         void Mesh::UpdateVertexArray() {
 
             vertexArray.AddIndexComponent(indexBuffer);

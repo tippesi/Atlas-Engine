@@ -280,6 +280,9 @@ namespace Atlas::Editor::UI {
                 if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
                     Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
+                ImGui::Text("Path traces samples");
+                ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 16);
+
                 ImGui::EndPopup();
             }
 

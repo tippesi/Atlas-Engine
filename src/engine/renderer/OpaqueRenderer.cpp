@@ -23,6 +23,9 @@ namespace Atlas {
             if (!mainPass)
                 return;
 
+            // Bind wind map
+            scene->wind.noiseMap.Bind(commandList, 3, 7);
+
             // Retrieve all possible materials
             std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
             for (auto& [meshId, _] : mainPass->meshToInstancesMap) {
@@ -81,8 +84,6 @@ namespace Atlas {
                     material->aoMap->Bind(commandList, 3, 5);
                 if (material->HasDisplacementMap())
                     material->displacementMap->Bind(commandList, 3, 6);
-
-                scene->wind.noiseMap.Bind(commandList, 3, 7);
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,

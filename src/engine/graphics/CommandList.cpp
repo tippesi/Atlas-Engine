@@ -443,7 +443,7 @@ namespace Atlas {
             VkDeviceSize offset[MAX_VERTEX_BUFFER_BINDINGS];
             VkBuffer bindBuffers[MAX_VERTEX_BUFFER_BINDINGS];
 
-            for (size_t i = 0; i < buffers.size(); i++) {
+            for (uint32_t i = 0; i < bindingCount; i++) {
                 const auto& buffer = buffers[i];
                 if (!buffer->buffer) return;
                 AE_ASSERT(buffer->size > 0 && "Invalid buffer size");
@@ -539,11 +539,15 @@ namespace Atlas {
             AE_ASSERT(buffer->GetCurrent()->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                    "Only uniform buffers support dynamic bindings");
 
+            // Need to check before reset
+            bool changed = descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
+            bool offsetChanged = descriptorBindingData.buffers[set][binding].second != uint32_t(offset);
+
             descriptorBindingData.ResetBinding(set, binding);
 
             // Only indicate a change of the buffer has changed, not just the offset
-            descriptorBindingData.changed[set] |=
-                descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
+            descriptorBindingData.changed[set] |= changed;
+
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
 

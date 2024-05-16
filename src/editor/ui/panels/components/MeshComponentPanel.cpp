@@ -56,6 +56,9 @@ namespace Atlas::Editor::UI {
             ImGui::Separator();
             ImGui::Text("Materials");
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials);
+
+            // Just update materials regardless of any change
+            mesh->UpdateMaterials();
         }        
 
         return resourceChanged;

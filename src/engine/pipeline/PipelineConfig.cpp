@@ -119,8 +119,9 @@ namespace Atlas {
                               : graphicsPipelineDesc.swapChain->renderPass;
 
             // To get correct results we would need to hash all the state, but that doesn't
-            // really work well in terms of performance
-            HashCombine(variantHash, renderPass);
+            // really work well in terms of performance.
+            // Note: We have to keep the amount of 
+            // HashCombine(variantHash, renderPass);
             HashCombine(variantHash, graphicsPipelineDesc.colorBlendAttachment.blendEnable);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.polygonMode);
             HashCombine(variantHash, graphicsPipelineDesc.rasterizer.cullMode);
@@ -133,6 +134,23 @@ namespace Atlas {
                 auto& vertexAttributeDesc = graphicsPipelineDesc.vertexInputInfo.pVertexAttributeDescriptions[i];
                 HashCombine(variantHash, vertexAttributeDesc.location);
                 HashCombine(variantHash, vertexAttributeDesc.format);
+            }
+
+            if (graphicsPipelineDesc.frameBuffer) {
+                for (int32_t i = 0; i < graphicsPipelineDesc.frameBuffer->renderPass->colorAttachmentCount; i++) {
+                    auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->colorAttachments[i];
+                    if (!attachment.isValid) continue;
+
+                    HashCombine(variantHash, i);
+                    HashCombine(variantHash, attachment.imageFormat);
+                    HashCombine(variantHash, attachment.srcAccessMask);
+                    HashCombine(variantHash, attachment.dstAccessMask);
+                    HashCombine(variantHash, attachment.srcStageMask);
+                    HashCombine(variantHash, attachment.dstStageMask);
+                }
+            }
+            else {
+                HashCombine(variantHash, graphicsPipelineDesc.swapChain->renderPass);
             }
         }
 

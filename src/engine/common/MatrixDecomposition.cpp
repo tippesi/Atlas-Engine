@@ -15,7 +15,24 @@ namespace Atlas {
 
         void MatrixDecomposition::Decompose(const mat4& matrix) {
 
-            glm::decompose(matrix, scale, quaternion, translation, skew, perspective);
+            auto local = matrix;
+            auto det = glm::determinant(matrix);
+
+            // Handle negative scales properly
+            auto minIdx = 0;
+            if (det < 0.0f) {
+                auto sumVec = glm::vec3(1.0f) * glm::mat3(local);
+
+                minIdx = sumVec[minIdx] < sumVec[1] ? minIdx : 1;
+                minIdx = sumVec[minIdx] < sumVec[2] ? minIdx : 2;
+
+                local[minIdx] *= -1.0f;
+            }
+
+            glm::decompose(local, scale, quaternion, translation, skew, perspective);
+
+            if (det < 0.0f)
+                scale[minIdx] *= -1.0f;
 
             quaternion = glm::conjugate(quaternion);
             rotation = glm::eulerAngles(quaternion);

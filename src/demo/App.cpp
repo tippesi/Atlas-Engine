@@ -19,8 +19,6 @@ void App::LoadContent() {
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
     pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
-    renderTarget->SetScalingFactor(1.0f);
-
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
     auto icon = Atlas::Texture::Texture2D("icon.png");
@@ -90,7 +88,6 @@ void App::LoadContent() {
     scene->sky.atmosphere = Atlas::CreateRef<Atlas::Lighting::Atmosphere>();
 
     scene->postProcessing.taa = Atlas::PostProcessing::TAA(0.99f);
-    scene->postProcessing.fsr2 = false;
     scene->postProcessing.sharpen.enable = true;
     scene->postProcessing.sharpen.factor = 0.15f;
 
