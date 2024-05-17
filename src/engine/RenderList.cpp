@@ -58,7 +58,7 @@ namespace Atlas {
 
     Ref<RenderList::Pass> RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
-        Pass pass{
+        Pass pass {
             .type = RenderPassType::Shadow,
             .lightEntity = lightEntity,
             .layer = layer,
@@ -73,7 +73,10 @@ namespace Atlas {
     Ref<RenderList::Pass> RenderList::GetMainPass() {
 
         for (auto& pass : passes) {
-            if (pass->type == RenderPassType::Main) return pass;
+            if (pass->type == RenderPassType::Main) {
+                pass->wasUsed = true;
+                return pass;
+            }
         }
 
         return nullptr;
@@ -84,7 +87,10 @@ namespace Atlas {
 
         for (auto& pass : passes) {
             if (pass->type == RenderPassType::Shadow &&
-                pass->lightEntity == lightEntity && pass->layer == layer) return pass;
+                pass->lightEntity == lightEntity && pass->layer == layer) {
+                pass->wasUsed = true;
+                return pass;
+            }
         }
 
         return nullptr;

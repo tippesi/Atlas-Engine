@@ -69,7 +69,7 @@ namespace Atlas {
 
             uint32_t bindingCount = 0;
             for (auto& [attribArray, vertexComponent] : vertexComponents) {
-                if (attribArray != bindingOffset + 1 && bindingBuffers.size() > 0) {
+                if (attribArray != bindingOffset + 1 && bindingCount > 0) {
                     commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
 
                     bindingOffset = attribArray;
@@ -79,7 +79,7 @@ namespace Atlas {
                 bindingBuffers[bindingCount++] = vertexComponent.vertexBuffer.buffer;
             }
 
-            if (bindingBuffers.size()) {
+            if (bindingCount) {
                 commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
             }
 

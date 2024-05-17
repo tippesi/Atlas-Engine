@@ -11,9 +11,10 @@ namespace Atlas {
 #else
     bool PipelineManager::hotReload = true;
 #endif
-    std::mutex PipelineManager::shaderToVariantsMutex;
+    std::shared_mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
     Ref<Graphics::DescriptorSetLayout> PipelineManager::globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
+    std::future<void> PipelineManager::hotReloadFuture;
 
     void PipelineManager::Init() {
 
@@ -41,35 +42,41 @@ namespace Atlas {
 
     void PipelineManager::Update() {
 
-        std::lock_guard lock(shaderToVariantsMutex);
-
-        std::unordered_map<std::string, std::filesystem::file_time_type> lastModifiedMap;
         if (hotReload) {
-            for (auto& [_, variants] : shaderToVariantsMap) {
-                std::lock_guard innerLock(variants->variantsMutex);
+            if (hotReloadFuture.valid())
+                hotReloadFuture.get();
 
-                for (auto& stageFile : variants->shader->shaderStageFiles) {
-                    for (auto& includePath : stageFile.includes) {
-                        if (lastModifiedMap.find(includePath) != lastModifiedMap.end())
-                            continue;
+            hotReloadFuture = std::async(std::launch::async, [&]() {
+                std::shared_lock lock(shaderToVariantsMutex);
 
-                        std::error_code errorCode;
-                        auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
-                        if (!errorCode)
-                            lastModifiedMap[includePath] = lastModified;
+                std::unordered_map<std::string, std::filesystem::file_time_type> modifiedMap;
+
+                for (auto& [_, variants] : shaderToVariantsMap) {
+                    std::lock_guard innerLock(variants->variantsMutex);
+
+                    for (auto& stageFile : variants->shader->shaderStageFiles) {
+                        for (auto& includePath : stageFile.includes) {
+                            if (modifiedMap.find(includePath) != modifiedMap.end())
+                                continue;
+
+                            std::error_code errorCode;
+                            auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
+                            if (!errorCode)
+                                modifiedMap[includePath] = lastModified;
+                        }
                     }
                 }
-            }
-        }
 
-        // Do check for hot reload only once per frame
-        for (auto& [hash, variants] : shaderToVariantsMap) {
-            std::lock_guard innerLock(variants->variantsMutex);
+                // Do check for hot reload only once per frame
+                for (auto& [hash, variants] : shaderToVariantsMap) {
+                    std::lock_guard innerLock(variants->variantsMutex);
 
-            if (hotReload && variants->shader->Reload(lastModifiedMap)) {
-                // Clear variants on hot reload
-                variants->pipelines.clear();
-            }
+                    if (hotReload && variants->shader->Reload(modifiedMap)) {
+                        // Clear variants on hot reload
+                        variants->pipelines.clear();
+                    }
+                }
+                });            
         }
 
     }
@@ -100,7 +107,7 @@ namespace Atlas {
 
     void PipelineManager::OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set) {
         
-        std::lock_guard lock(shaderToVariantsMutex);
+        std::unique_lock lock(shaderToVariantsMutex);
 
         if (set < DESCRIPTOR_SET_COUNT) {
 
@@ -136,18 +143,23 @@ namespace Atlas {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-        PipelineVariants* variants;
+        // In most cases we will find the variants and don't need a unique lock
+        PipelineVariants* variants = nullptr;
         {
-            std::lock_guard lock(shaderToVariantsMutex);
+            std::shared_lock lock(shaderToVariantsMutex);
 
-            if (!shaderToVariantsMap.contains(config.shaderHash)) {
-                auto pipelineVariants = std::make_shared<PipelineVariants>();
-                shaderToVariantsMap[config.shaderHash] = pipelineVariants;
-                variants = pipelineVariants.get();
-            }
-            else {
+            if (shaderToVariantsMap.contains(config.shaderHash)) {
                 variants = shaderToVariantsMap[config.shaderHash].get();
             }
+        }
+
+        // In case we didn't find anything we need to lock it for real
+        if (!variants) {
+            std::unique_lock lock(shaderToVariantsMutex);
+
+            auto pipelineVariants = std::make_shared<PipelineVariants>();
+            shaderToVariantsMap[config.shaderHash] = pipelineVariants;
+            variants = pipelineVariants.get();
         }
 
         {
