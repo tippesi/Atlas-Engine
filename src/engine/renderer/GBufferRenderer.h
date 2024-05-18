@@ -13,11 +13,13 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Downscale(Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            void Downscale(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
-            void DownscaleDepthOnly(Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            void DownscaleDepthOnly(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
-            void FillNormalTexture(Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+            void FillNormalTexture(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
+
+            void GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
         private:
             void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt, Graphics::CommandList* commandList);
@@ -25,6 +27,7 @@ namespace Atlas {
             PipelineConfig downscalePipelineConfig;
             PipelineConfig downscaleDepthOnlyPipelineConfig;
             PipelineConfig patchNormalPipelineConfig;
+            PipelineConfig generateReactiveMaskPipelineConfig;
 
         };
 

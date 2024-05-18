@@ -228,6 +228,7 @@ namespace Atlas::Renderer {
         Texture::Texture2D historyReflectionMomentsTexture;
 
         Texture::Texture2D lightingTexture;
+        Texture::Texture2D reactiveMaskTexture;
         Texture::Texture2D hdrTexture;
 
     private:

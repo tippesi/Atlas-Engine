@@ -19,8 +19,6 @@ namespace Atlas::Renderer {
         vec2 GetJitter(const Ref<RenderTarget>& target, uint32_t index) const;
 
     private:
-        bool CheckContextNeedsUpdate() const;
-
         void CreateContext(const Ref<RenderTarget>& target, Graphics::GraphicsDevice* device);
 
         void DestroyContext();

@@ -390,6 +390,8 @@ namespace Atlas {
 
             {
                 if (scene->postProcessing.fsr2) {
+                    gBufferRenderer.GenerateReactiveMask(target, commandList);
+
                     fsr2Renderer.Render(target, scene, commandList);
                 }
                 else {

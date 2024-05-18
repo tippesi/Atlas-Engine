@@ -50,9 +50,6 @@ namespace Atlas {
                     lightLocation = light.transformedProperties.point.position;
                 }
 
-                // Bind wind map
-                scene->wind.noiseMap.Bind(commandList, 3, 1);
-
                 for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
 
                     auto component = &shadow->views[i];
@@ -119,6 +116,9 @@ namespace Atlas {
 
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
+
+                        // Bind wind map (need to figure out why we need to keep it here, see ocean demo)
+                        scene->wind.noiseMap.Bind(commandList, 3, 1);
 
                         auto pushConstants = PushConstants {
                             .lightSpaceMatrix = lightSpaceMatrix,

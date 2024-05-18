@@ -148,6 +148,16 @@ namespace Atlas {
                     HashCombine(variantHash, attachment.srcStageMask);
                     HashCombine(variantHash, attachment.dstStageMask);
                 }
+
+                auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->depthAttachment;
+
+                if (attachment.isValid) {
+                    HashCombine(variantHash, attachment.imageFormat);
+                    HashCombine(variantHash, attachment.srcAccessMask);
+                    HashCombine(variantHash, attachment.dstAccessMask);
+                    HashCombine(variantHash, attachment.srcStageMask);
+                    HashCombine(variantHash, attachment.dstStageMask);
+                }
             }
             else {
                 HashCombine(variantHash, graphicsPipelineDesc.swapChain->renderPass);
