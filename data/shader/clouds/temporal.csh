@@ -18,6 +18,7 @@ layout(set = 3, binding = 5) uniform sampler2D historyDepthTexture;
 
 layout(push_constant) uniform constants {
     int resetHistory;
+    int downsampled2x;
 } pushConstants;
 
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
@@ -104,12 +105,93 @@ ivec2 FindNearest3x3(ivec2 pixel) {
 
 }
 
-vec4 SampleCatmullRom(vec2 uv) {
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history) {
+    
+    history = vec4(0.0);
 
-    // http://advances.realtimerendering.com/s2016/Filmic%20SMAA%20v7.pptx
-    // Credit: Jorge Jimenez (SIGGRAPH 2016)
-    // Ignores the 4 corners of the 4x4 grid
-    // Learn more: http://vec3.ca/bicubic-filtering-in-fewer-taps/
+    float totalWeight = 0.0;
+    float x    = fract(historyPixel.x);
+    float y    = fract(historyPixel.y);
+
+    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
+
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+
+    // Calculate confidence over 2x2 bilinear neighborhood
+    for (int i = 0; i < 4; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + pixelOffsets[i];
+        float confidence = 1.0;
+
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.5) {
+            totalWeight += weights[i];
+            history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        history /= totalWeight;
+        return true;
+    }
+
+    for (int i = 0; i < 9; i++) {
+        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        float confidence = 1.0;
+
+        offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
+
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+        if (confidence > 0.5) {
+            totalWeight += 1.0;
+            history += texelFetch(historyTexture, offsetPixel, 0);
+        }
+    }
+
+    if (totalWeight > 0.0) {
+        history /= totalWeight;
+        return true;
+    }
+
+    history = vec4(0.0);
+
+    return false;
+
+}
+
+float IsHistoryPixelValid(ivec2 pixel, float linearDepth) {
+
+    float depthPhi = max(1.0, abs(0.25 * linearDepth));
+    float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
+    float historyLinearDepth = historyDepth;
+    float confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+
+    return confidence > 0.1 ? 1.0 : 0.0;
+
+}
+
+vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth) {
+
+    pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
+
+    weight *= IsHistoryPixelValid(pixel, linearDepth);
+
+    return texelFetch(historyTexture, pixel, 0) * weight;
+
+}
+
+bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
+    
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+
     vec2 position = uv * resolution;
 
     vec2 center = floor(position - 0.5) + 0.5;
@@ -122,48 +204,35 @@ vec4 SampleCatmullRom(vec2 uv) {
     vec2 w3 = 0.5 * (f3 - f2);
     vec2 w2 = 1.0 - w0 - w1 - w3;
 
-    vec2 w12 = w1 + w2;
+    ivec2 uv0 = ivec2(center - 1.0);
+    ivec2 uv1 = ivec2(center);
+    ivec2 uv2 = ivec2(center + 1.0);
+    ivec2 uv3 = ivec2(center + 2.0);
 
-    vec2 tc0 = (center - 1.0) * invResolution;
-    vec2 tc12 = (center + w2 / w12) * invResolution;
-    vec2 tc3 = (center + 2.0) * invResolution;
+    ivec2 uvs[4] = { uv0, uv1, uv2, uv3 };
+    vec2 weights[4] = { w0, w1, w2, w3 };
 
-    vec2 uv0 = clamp(vec2(tc12.x, tc0.y), vec2(0.0), vec2(1.0));
-    vec2 uv1 = clamp(vec2(tc0.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv2 = clamp(vec2(tc12.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv3 = clamp(vec2(tc3.x, tc12.y), vec2(0.0), vec2(1.0));
-    vec2 uv4 = clamp(vec2(tc12.x, tc3.y), vec2(0.0), vec2(1.0));
+    history = vec4(0.0);
 
-    float weight0 = w12.x * w0.y;
-    float weight1 = w0.x * w12.y;
-    float weight2 = w12.x * w12.y;
-    float weight3 = w3.x * w12.y;
-    float weight4 = w12.x * w3.y;
+    float totalWeight = 0.0;
 
-    vec4 sample0 = textureLod(historyTexture, uv0, 0.0) * weight0;
-    vec4 sample1 = textureLod(historyTexture, uv1, 0.0) * weight1;
-    vec4 sample2 = textureLod(historyTexture, uv2, 0.0) * weight2;
-    vec4 sample3 = textureLod(historyTexture, uv3, 0.0) * weight3;
-    vec4 sample4 = textureLod(historyTexture, uv4, 0.0) * weight4;
+    for (int x = 0; x <= 3; x++) {
+        for (int y = 0; y <= 3; y++) {
+            float weight = weights[x].x * weights[y].y;
+            ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
 
-    float totalWeight = weight0 + weight1 + 
-        weight2 + weight3 + weight4;
+            history += GetCatmullRomSample(uv, weight, depth);
+            totalWeight += weight;
+        }
+    }
+    
+    if (totalWeight > 0.5) {
+        history /= totalWeight;
+   
+        return true;
+    }
 
-    vec4 totalSample = sample0 + sample1 +
-        sample2 + sample3 + sample4;
-
-    return totalSample / totalWeight;    
-
-}
-
-vec4 SampleHistory(vec2 texCoord) {
-
-    vec4 historyValue;
-
-    historyValue = SampleCatmullRom(texCoord);
-
-    return historyValue;
-
+    return false;
 }
 
 void ComputeVarianceMinMax(out vec4 aabbMin, out vec4 aabbMax) {
@@ -212,9 +281,19 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
+    vec2 historyPixel = vec2(pixel) + velocity * resolution;
 
     // Maybe we might want to filter the current input pixel
-    vec4 history = SampleHistory(uv);
+    vec4 history = vec4(0.0);
+
+    bool valid = SampleHistory(pixel, historyPixel, history);
+
+    // We only really need this for low resolution inputs
+    if (pushConstants.downsampled2x > 0) {
+        vec4 catmullRomHistory;
+        bool success = SampleCatmullRom(pixel, uv, catmullRomHistory);
+        history = success && valid ? catmullRomHistory : history;  
+    }
 
     vec4 historyValue = history;
     vec4 currentValue = texelFetch(currentTexture, pixel, 0);
@@ -228,28 +307,7 @@ void main() {
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
-    ivec2 historyPixel = ivec2(vec2(pixel) + velocity * resolution);
-    float minWeight = 1.0;
-    // Calculate confidence over 2x2 bilinear neighborhood
-    // Note that 3x3 neighborhoud could help on edges
-    for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = historyPixel + offsets[i];
-        float confidence = 1.0;
-
-        float sampleLinearDepth = ConvertDepthToViewSpaceDepth(currentDepth);
-
-        if (offsetPixel.x < imageSize(resolveImage).x && offsetPixel.y < imageSize(resolveImage).y &&
-            offsetPixel.x >= 0 && offsetPixel.y >= 0) {
-            float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-            float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-
-            float weight = min(1.0 , exp(-abs(historyLinearDepth - sampleLinearDepth)));
-
-            minWeight = min(minWeight, weight);
-        }
-    }
-    
-    factor *= minWeight;
+    factor *= valid ? 1.0 : 0.0;
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     vec4 resolve = factor <= 0.0 ? currentValue : mix(currentValue, historyValue, factor);

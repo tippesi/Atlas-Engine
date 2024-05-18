@@ -186,7 +186,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        confidence *= pow(dot(historyNormal, normal), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);

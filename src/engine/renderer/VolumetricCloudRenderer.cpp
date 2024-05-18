@@ -27,9 +27,9 @@ namespace Atlas {
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
             shadowPipelineConfig = PipelineConfig("clouds/shadow.csh");
 
-            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
+            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(CloudUniforms), 1);
             shadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadowUniforms), 1);
-            shadowVolumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
+            shadowVolumetricUniformBuffer = Buffer::UniformBuffer(sizeof(CloudUniforms), 1);
 
         }
 
@@ -50,7 +50,7 @@ namespace Atlas {
             }
 
             auto downsampledRT = target->GetData(target->GetVolumetricResolution());
-            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
+            auto downsampledHistoryRT = target->GetHistoryData(target->GetVolumetricResolution());
 
             ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
@@ -119,8 +119,11 @@ namespace Atlas {
                 commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
 
-                int32_t resetHistory = !target->HasHistory() ? 1 : 0;
-                commandList->PushConstants("constants", &resetHistory, sizeof(int32_t));
+                CloudTemporalPushConstants constants {
+                    .resetHistory = !target->HasHistory() ? 1 : 0,
+                    .downsampled2x = target->GetVolumetricResolution() == HALF_RES ? 1 : 0
+                };
+                commandList->PushConstants("constants", &constants, sizeof(CloudTemporalPushConstants));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -293,7 +296,7 @@ namespace Atlas {
 
         }
 
-        VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(
+        VolumetricCloudRenderer::CloudUniforms VolumetricCloudRenderer::GetUniformStructure(
             Ref<Scene::Scene> scene, Scene::Entity mainLightEntity) {
 
             auto clouds = scene->sky.clouds;
@@ -321,7 +324,7 @@ namespace Atlas {
             float outerRadius = scene->sky.planetRadius + clouds->maxHeight;
             vec3 cloudCenter = scene->sky.planetCenter;
 
-            VolumetricCloudUniforms uniforms{
+            CloudUniforms uniforms{
                 .planetRadius = scene->sky.planetRadius,
                 .innerRadius = innerRadius,
                 .outerRadius = outerRadius,
