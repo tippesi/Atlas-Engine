@@ -71,6 +71,9 @@ namespace Atlas {
 
                     auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
+                    // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
+                    scene->wind.noiseMap.Bind(commandList, 3, 1);
+
                     // Retrieve all possible materials
                     std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
                     for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
@@ -116,9 +119,6 @@ namespace Atlas {
 
                         if (material->HasOpacityMap())
                             commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
-
-                        // Bind wind map (need to figure out why we need to keep it here, see ocean demo)
-                        scene->wind.noiseMap.Bind(commandList, 3, 1);
 
                         auto pushConstants = PushConstants {
                             .lightSpaceMatrix = lightSpaceMatrix,
