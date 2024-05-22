@@ -45,6 +45,7 @@ namespace Atlas::Editor {
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab.png") },
+                { IconType::Eye, Texture::Texture2D("editor/icons/eye.png") },
             };
         }
         else {
@@ -65,6 +66,7 @@ namespace Atlas::Editor {
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft_light.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight_light.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab_light.png") },
+                { IconType::Eye, Texture::Texture2D("editor/icons/eye_light.png") },
             };
         }
 

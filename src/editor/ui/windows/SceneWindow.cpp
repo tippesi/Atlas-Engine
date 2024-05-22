@@ -122,6 +122,8 @@ namespace Atlas::Editor::UI {
                 scenePropertiesPanel.Render(scene->ssgi, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.sss)
                 scenePropertiesPanel.Render(scene->sss);
+            else if (sceneHierarchyPanel.selectedProperty.wind)
+                scenePropertiesPanel.Render(scene->wind);
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)
                 scenePropertiesPanel.Render(scene->postProcessing);
             else
@@ -183,6 +185,14 @@ namespace Atlas::Editor::UI {
             const float padding = 8.0f;
 
             auto height = ImGui::GetTextLineHeight();
+            auto region = ImGui::GetContentRegionAvail();
+            auto buttonSize = ImVec2(height, height);
+
+            auto backgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 55) : IM_COL32(255, 255, 255, 55);
+
+            auto windowPos = ImGui::GetWindowPos();
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->AddRectFilled(windowPos, ImVec2(region.x + windowPos.x, height + windowPos.y + padding), backgroundColor);
 
             ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
@@ -198,8 +208,7 @@ namespace Atlas::Editor::UI {
                 guizmoMode = ImGuizmo::OPERATION::SCALE;
             }
 
-            auto region = ImGui::GetContentRegionAvail();
-            auto buttonSize = ImVec2(height, height);
+
             auto uvMin = ImVec2(0.25, 0.25);
             auto uvMax = ImVec2(0.75, 0.75);
 
@@ -214,7 +223,7 @@ namespace Atlas::Editor::UI {
                 for (auto entity : cameraSubset) {
                     if (entity == cameraEntity)
                         continue;
-                    
+
                     const auto& comp = cameraSubset.Get(entity);
                     hasMainCamera |= comp.isMain;
                 }
@@ -251,7 +260,7 @@ namespace Atlas::Editor::UI {
             uvMin = ImVec2(0.1f, 0.1f);
             uvMax = ImVec2(0.9f, 0.9f);
 
-            ImGui::SetCursorPos(ImVec2(region.x - buttonSize.x - padding, 0.0f));
+            ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + padding), 0.0f));
             if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 ImGui::OpenPopup("Viewport settings");
             }
@@ -282,6 +291,43 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Text("Path traces samples");
                 ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 16);
+
+                ImGui::EndPopup();
+            }
+
+            auto& eyeIcon = Singletons::icons->Get(IconType::Eye);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(eyeIcon);
+
+            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + padding), 0.0f));
+            if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+                ImGui::OpenPopup("Visualization settings");
+            }
+
+            auto menuItem = [&](const char* name, ViewportVisualization vis) {
+                bool selected = viewportPanel.visualization == vis;
+                ImGui::MenuItem(name, nullptr, &selected);
+                if (selected)
+                    viewportPanel.visualization = vis;
+            };
+
+            if (ImGui::BeginPopup("Visualization settings")) {
+                ImGui::Text("Visualization");
+                ImGui::Separator();
+
+                menuItem("Lit", ViewportVisualization::Lit);
+
+                if (ImGui::BeginMenu("GBuffer")) {
+                    menuItem("Depth", ViewportVisualization::GBufferDepth);
+                    menuItem("Normals", ViewportVisualization::GBufferNormals);
+                    menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);
+                    menuItem("Velocity", ViewportVisualization::GBufferVelocity);
+                    ImGui::EndMenu();
+                }
+
+                menuItem("Clouds", ViewportVisualization::Clouds);
+                menuItem("Reflections", ViewportVisualization::Reflections);
+                menuItem("SSS", ViewportVisualization::SSS);
+                menuItem("SSGI", ViewportVisualization::SSGI);
 
                 ImGui::EndPopup();
             }

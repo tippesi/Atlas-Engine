@@ -13,6 +13,7 @@ namespace Atlas::Editor::UI {
         bool ssgi = false;
         bool sss = false;
         bool irradianceVolume = false;
+        bool wind = false;
         bool postProcessing = false;
     };
 

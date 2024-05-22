@@ -3,12 +3,14 @@
 
 namespace Atlas::Renderer {
 
-    RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+    RenderTarget::RenderTarget(int32_t width, int32_t height) : 
+        width(glm::max(4, width)), height(glm::max(4, height)) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-        scaledWidth = int32_t(scalingFactor * width);
-        scaledHeight = int32_t(scalingFactor * height);
+        // Need to at least have a size of 2x2 pixels
+        scaledWidth = glm::max(2, int32_t(scalingFactor * width));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
 
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
@@ -146,11 +148,12 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Resize(int32_t width, int32_t height) {
 
-        this->width = width;
-        this->height = height;
+        this->width = glm::max(4, width);
+        this->height = glm::max(4, height);
 
-        scaledWidth = int32_t(scalingFactor * width);
-        scaledHeight = int32_t(scalingFactor * height);
+        // Need to at least have a size of 2x2 pixels
+        scaledWidth = glm::max(2, int32_t(scalingFactor * width));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
 
         targetData.Resize(ivec2(scaledWidth, scaledHeight));
         targetDataSwap.Resize(ivec2(scaledWidth, scaledHeight));

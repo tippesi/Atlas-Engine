@@ -22,7 +22,8 @@ namespace Atlas::Editor {
         ArrowUp,
         ArrowLeft,
         ArrowRight,
-        Prefab
+        Prefab,
+        Eye
     };
 
     class Icons {

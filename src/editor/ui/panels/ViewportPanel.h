@@ -7,6 +7,18 @@
 
 namespace Atlas::Editor::UI {
 
+    enum ViewportVisualization {
+        Lit = 0,
+        GBufferNormals,
+        GBufferGeometryNormals,
+        GBufferDepth,
+        GBufferVelocity,
+        Clouds,
+        Reflections,
+        SSS,
+        SSGI
+    };
+
     class ViewportPanel : public Panel {
 
     public:
@@ -23,11 +35,20 @@ namespace Atlas::Editor::UI {
 
         PrimitiveBatchWrapper primitiveBatchWrapper;
 
+        ViewportVisualization visualization = Lit;
+
         std::function<void()> drawMenuBarFunc;
         std::function<void()> drawOverlayFunc;
 
     private:
+        void RenderVisualization();
+
+        void CreateRenderPass();
+
         bool firstFrame = true;
+
+        Ref<Graphics::RenderPass> renderPass;
+        Ref<Graphics::FrameBuffer> frameBuffer;
 
     };
 

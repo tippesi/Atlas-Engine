@@ -12,6 +12,8 @@ namespace Atlas::Editor::UI {
 
         primitiveBatchWrapper.primitiveBatch->testDepth = false;
 
+        CreateRenderPass();
+
     }
 
     void ViewportPanel::DrawMenuBar(std::function<void()> func) {
@@ -54,6 +56,7 @@ namespace Atlas::Editor::UI {
             viewportTexture.height != int32_t(region.y)) && validRegion) {
             viewport->Set(int32_t(windowPos.x), int32_t(windowPos.y), int32_t(region.x), int32_t(region.y));
             viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
+            CreateRenderPass();
         }
 
         if (scene != nullptr && validRegion && isActiveWindow) {
@@ -79,6 +82,10 @@ namespace Atlas::Editor::UI {
 
                 Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
                     primitiveBatchWrapper.primitiveBatch, &viewportTexture);
+
+                if (visualization != Lit) {
+                    RenderVisualization();
+                }
             }
 
             primitiveBatchWrapper.primitiveBatch->Clear();
@@ -93,22 +100,101 @@ namespace Atlas::Editor::UI {
         if (drawOverlayFunc)
             drawOverlayFunc();
 
-        ImGui::EndChild();
-
         ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
         if (drawMenuBarFunc) {
-            ImGui::BeginChild("Viewport area");
-
             isFocused |= ImGui::IsWindowFocused();            
 
-            drawMenuBarFunc();
-
-            ImGui::EndChild();        
+            drawMenuBarFunc(); 
         }
 
+        ImGui::EndChild();
 
         ImGui::End();
+
+    }
+
+    void ViewportPanel::RenderVisualization() {
+
+        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+        auto& renderTarget = Singletons::renderTarget;
+        auto& mainRenderer = Singletons::mainRenderer;
+
+        auto rtData = renderTarget->GetData(Renderer::RenderResolution::FULL_RES);
+
+        auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
+        commandList->BeginCommands();
+        commandList->BeginRenderPass(renderPass, frameBuffer, true);
+
+        if (visualization == GBufferNormals) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->normalTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        if (visualization == GBufferGeometryNormals) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->geometryNormalTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        if (visualization == GBufferDepth) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->depthTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        if (visualization == GBufferVelocity) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->velocityTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == Reflections) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == Clouds) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricCloudsTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == SSS) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == SSGI) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+
+        commandList->EndRenderPass();
+
+        commandList->ImageMemoryBarrier(viewportTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
+        commandList->EndCommands();
+        graphicsDevice->SubmitCommandList(commandList);
+
+    }
+
+    void ViewportPanel::CreateRenderPass() {
+
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+        auto colorAttachment = Graphics::RenderPassColorAttachment{
+            .imageFormat = viewportTexture.image->format,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .outputLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        };
+
+        auto renderPassDesc = Graphics::RenderPassDesc{
+            .colorAttachments = { colorAttachment }
+        };
+
+        renderPass = device->CreateRenderPass(renderPassDesc);
+
+        auto frameBufferDesc = Graphics::FrameBufferDesc {
+            .renderPass = renderPass,
+            .colorAttachments = {
+                { viewportTexture.image, 0, true },
+            },
+            .extent = { uint32_t(viewportTexture.width), uint32_t(viewportTexture.height) }
+        };
+        frameBuffer = device->CreateFrameBuffer(frameBufferDesc);
 
     }
 

@@ -227,6 +227,8 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
         if (scene->sss)
             RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
+
+        RenderExtendedItem("Wind", &selectedProperty.wind);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
 
     }
