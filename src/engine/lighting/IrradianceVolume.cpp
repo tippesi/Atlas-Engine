@@ -52,9 +52,20 @@ namespace Atlas {
             auto center = (aabb.max + aabb.min) * 0.5f;
 
             for (int32_t i = 0; i < cascadeCount; i++) {
-                this->aabb[i] = aabb;
                 size[i] = aabb.max - aabb.min;
                 cellSize[i] = size[i] / vec3(probeCount - ivec3(1));
+                
+                if (!scroll) {
+                    // In this case we can just set the AABB
+                    this->aabb[i] = aabb;
+                }
+                else {
+                    // In case of scrolling, just take discrete steps
+                    ivec3 cascadeOffset = ivec3(center / cellSize[i]);
+
+                    vec3 offset = vec3(cascadeOffset) * cellSize[i];
+                    this->aabb[i] = Volume::AABB(-size[i] / 2.0f + offset, size[i] / 2.0f + offset);
+                }
 
                 aabb.min = center - size[i] / 4.0f;
                 aabb.max = center + size[i] / 4.0f;

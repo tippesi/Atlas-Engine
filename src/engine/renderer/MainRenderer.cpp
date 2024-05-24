@@ -970,7 +970,8 @@ namespace Atlas {
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
 
-                auto pos = vec3(0.4f, 12.7f, -43.0f);
+                // auto pos = vec3(0.4f, 12.7f, -43.0f);
+                auto pos = camera.GetLocation();
                 auto volumeAABB = Volume::AABB(-vec3(400.0f) + pos, vec3(400.0f) + pos);
                 volume->SetAABB(volumeAABB);
 

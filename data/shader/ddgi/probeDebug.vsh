@@ -22,7 +22,7 @@ void main() {
 
     int probeCascadeIndex = int(gl_InstanceIndex) / 1000;
 
-    probeCascadeIndex = 7;
+    probeCascadeIndex = 5;
     ivec3 probeCoord = GetProbeGridCoord(instanceID);
     vec3 probeOffset = GetProbeOffset(instanceID);
     vec3 probePosition = GetProbePosition(probeCoord, probeCascadeIndex);
