@@ -108,11 +108,20 @@ namespace Atlas {
                 float mipLodBias;
             };
 
-            struct alignas(16) DDGIUniforms {
+            struct alignas(16) DDGICascade {
                 vec4 volumeMin;
                 vec4 volumeMax;
-                ivec4 volumeProbeCount;
                 vec4 cellSize;
+            };
+
+            struct alignas(16) DDGIUniforms {
+
+                vec4 volumeCenter;
+                
+                DDGICascade cascades[MAX_IRRADIANCE_VOLUME_CASCADES];
+
+                ivec4 volumeProbeCount;
+                int32_t cascadeCount;
 
                 float volumeBias;
 

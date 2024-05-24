@@ -81,7 +81,9 @@ void main() {
     ivec2 resOffset = (res + ivec2(2)) * ivec2(gl_WorkGroupID.xz) + ivec2(1);
     ivec3 volumeCoord = ivec3(resOffset + pix, int(gl_WorkGroupID.y));
 
-    float cellLength = length(ddgiData.cellSize.xyz);
+    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
+
+    float cellLength = length(ddgiData.cascades[cascadeIndex].cellSize.xyz);
     float maxDepth = cellLength * 0.75;
 
     vec4 result = vec4(0.0);
@@ -177,7 +179,7 @@ void main() {
 
     imageStore(moment, volumeCoord, vec4(resultOut, 0.0, 0.0));
     if (gl_LocalInvocationIndex == 0 && ddgiData.optimizeProbes > 0) {
-        vec3 maxOffset = ddgiData.cellSize.xyz * 0.5;
+        vec3 maxOffset = ddgiData.cascades[cascadeIndex].cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
         probeOffset.w = max(0.0, probeOffset.w - 0.01);
         probeOffsets[baseIdx] = probeOffset;

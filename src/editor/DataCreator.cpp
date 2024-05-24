@@ -48,7 +48,7 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(10));
 
         scene->sss = CreateRef<Lighting::SSS>();
 
@@ -109,7 +109,7 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(10));
 
         scene->sss = CreateRef<Lighting::SSS>();
 

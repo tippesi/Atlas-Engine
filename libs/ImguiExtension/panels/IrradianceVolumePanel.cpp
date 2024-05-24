@@ -8,7 +8,7 @@ namespace Atlas::ImguiExtension {
         ImGui::PushID(GetNameID());
 
         ImGui::Text("Probe count: %s", VecToString(volume->probeCount).c_str());
-        ImGui::Text("Cell size: %s", VecToString(volume->cellSize).c_str());
+        ImGui::Text("Cell size: %s", VecToString(volume->cellSize[0]).c_str());
         ImGui::Checkbox("Enable volume", &volume->enable);
         ImGui::Checkbox("Update volume", &volume->update);
         ImGui::Checkbox("Visualize probes", &volume->debug);
@@ -60,10 +60,12 @@ namespace Atlas::ImguiExtension {
 
         ImGui::SliderFloat("Strength", &volume->strength, 0.0f, 5.0f);
         ImGui::Separator();
-        ImGui::Text("AABB");
+        ImGui::Text("AABB"); 
+        /*
         ImGui::DragFloat3("Min", (float*)&volume->aabb.min, 0.5f, -2000.0f, 2000.0f);
         ImGui::DragFloat3("Max", (float*)&volume->aabb.max, 0.5f, -2000.0f, 2000.0f);
         volume->SetAABB(volume->aabb);
+        */
         ImGui::Separator();
         ImGui::SliderFloat("Hysteresis", &volume->hysteresis, 0.0f, 1.0f, "%.3f");
         ImGui::SliderFloat("Sharpness", &volume->sharpness, 0.01f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);

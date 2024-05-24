@@ -969,11 +969,17 @@ namespace Atlas {
 
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
+
+                auto pos = vec3(0.4f, 12.7f, -43.0f);
+                auto volumeAABB = Volume::AABB(-vec3(400.0f) + pos, vec3(400.0f) + pos);
+                volume->SetAABB(volumeAABB);
+
+                auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y * 
+                    volume->probeCount.z;
                 auto ddgiUniforms = DDGIUniforms {
-                    .volumeMin = vec4(volume->aabb.min, 1.0f),
-                    .volumeMax = vec4(volume->aabb.max, 1.0f),
-                    .volumeProbeCount = ivec4(volume->probeCount, 0),
-                    .cellSize = vec4(volume->cellSize, 0.0f),
+                    .volumeCenter = vec4(camera.GetLocation(), 1.0f),
+                    .volumeProbeCount = ivec4(volume->probeCount, probeCountPerCascade),
+                    .cascadeCount = volume->cascadeCount,
                     .volumeBias = volume->bias,
                     .volumeIrradianceRes = volume->irrRes,
                     .volumeMomentsRes = volume->momRes,
@@ -986,14 +992,30 @@ namespace Atlas {
                     .optimizeProbes = volume->optimizeProbes ? 1 : 0,
                     .volumeEnabled = volume->enable ? 1 : 0
                 };
+
+                for (int32_t i = 0; i < volume->cascadeCount; i++) {
+                    ddgiUniforms.cascades[i] = DDGICascade {
+                        .volumeMin = vec4(volume->aabb[i].min, 1.0f),
+                        .volumeMax = vec4(volume->aabb[i].max, 1.0f),
+                        .cellSize = vec4(volume->cellSize[i], 1.0f),
+                    };
+                }
+
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
             }
             else {
                 auto ddgiUniforms = DDGIUniforms {
-                    .volumeMin = vec4(0.0f),
-                    .volumeMax = vec4(0.0f),
                     .volumeEnabled = 0
                 };
+
+                for (int32_t i = 0; i < MAX_IRRADIANCE_VOLUME_CASCADES; i++) {
+                    ddgiUniforms.cascades[i] = DDGICascade {
+                        .volumeMin = vec4(0.0f),
+                        .volumeMax = vec4(0.0f),
+                        .cellSize = vec4(0.0f),
+                    };
+                }
+
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
             }
 

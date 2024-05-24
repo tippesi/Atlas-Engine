@@ -1108,67 +1108,67 @@ void App::CheckLoadScene() {
 
     if (sceneSelection == CORNELL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.10f), glm::ivec3(20));
+            sceneAABB.Scale(1.10f), glm::ivec3(10));
         scene->irradianceVolume->sampleEmissives = true;
         scene->irradianceVolume->SetRayCount(512, 32);
     }
     else if (sceneSelection == SPONZA) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(0.9f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
         scene->irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == BISTRO) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(0.9f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(32, 32);
         scene->irradianceVolume->strength = 1.5f;
     }
     else if (sceneSelection == SANMIGUEL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MEDIEVAL) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
         for (auto& material : meshes.front()->data.materials) material->twoSided = false;
 
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.0f), glm::ivec3(20));
+            sceneAABB.Scale(1.0f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == SUBWAY) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == MATERIALS) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == FOREST) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(32, 32);
     }
     else if (sceneSelection == NEWSPONZA) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == EMERALDSQUARE) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == FLYINGWORLD) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(1.05f), glm::ivec3(20));
+            sceneAABB.Scale(1.05f), glm::ivec3(10));
         scene->irradianceVolume->SetRayCount(128, 32);
     }
 

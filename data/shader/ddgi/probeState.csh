@@ -41,9 +41,11 @@ void main() {
     barrier();
 
     uint probeRayCount = GetProbeRayCount(probeState);
+
+    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
     // Use an extended size to avoid potential flickering
     // due to not having full sampling of the environment
-    float extendedSize = max3(ddgiData.cellSize.xyz) * 1.0;
+    float extendedSize = max3(ddgiData.cascades[cascadeIndex].cellSize.xyz) * 1.0;
 
     uint workGroupOffset = gl_WorkGroupSize.x;
     for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
