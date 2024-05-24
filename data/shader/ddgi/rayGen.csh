@@ -34,7 +34,11 @@ shared vec3 probeOffset;
 
 void main() {
 
-    uint baseIdx = GetProbeIdx(ivec3(gl_WorkGroupID));
+    ivec3 probeIndex = ivec3(gl_WorkGroupID);
+    int cascadeIndex = GetProbeCascadeIndex(probeIndex);
+
+    probeIndex.y %= ddgiData.volumeProbeCount.y;
+    uint baseIdx = GetProbeIdx(probeIndex, cascadeIndex);
 
     if (gl_LocalInvocationID.x == 0u) {
         probeState = floatBitsToUint(probeStates[baseIdx].x);
@@ -51,7 +55,7 @@ void main() {
         Ray ray;
 
         ray.ID = int(rayBaseIdx + i);
-        ray.origin = GetProbePosition(ivec3(gl_WorkGroupID)) + probeOffset;
+        ray.origin = GetProbePosition(probeIndex, cascadeIndex) + probeOffset;
         ray.direction = normalize(mat3(Uniforms.randomRotation) *
             (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
 

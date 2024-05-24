@@ -61,7 +61,8 @@ namespace Atlas {
 
             auto totalProbeCount = volume->probeCount.x *
                 volume->probeCount.y *
-                volume->probeCount.z;
+                volume->probeCount.z * 
+                volume->cascadeCount;
 
             auto rayCount = volume->rayCount;
             auto rayCountInactive = volume->rayCountInactive;
@@ -88,10 +89,12 @@ namespace Atlas {
             commandList->BindBuffer(probeStateBuffer.Get(), 2, 19);
             commandList->BindBuffer(probeOffsetBuffer.Get(), 2, 20);
 
+            auto probeCount = volume->probeCount * ivec3(1, volume->cascadeCount, 1);
+
             Graphics::Profiler::EndAndBeginQuery("Ray generation");
 
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
-            helper.DispatchRayGen(scene, commandList, rayGenPipeline, volume->probeCount, false,
+            helper.DispatchRayGen(scene, commandList, rayGenPipeline, probeCount, false,
                 [&]() {
                     using namespace Common;
 
@@ -176,8 +179,6 @@ namespace Atlas {
 
             Graphics::Profiler::EndAndBeginQuery("Update probes");
 
-            ivec3 probeCount = volume->probeCount;
-
             // Update the probes
             {
                 Graphics::Profiler::BeginQuery("Update irradiance");
@@ -258,12 +259,16 @@ namespace Atlas {
 
             helper.InvalidateRayBuffer(commandList);
 
+            VkPipelineStageFlags destinationShaderStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            if (volume->debug)
+                destinationShaderStage |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
             commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->BufferMemoryBarrier(probeOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT);
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destinationShaderStage);
             commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT);
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destinationShaderStage);
 
             commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
             commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
@@ -283,11 +288,6 @@ namespace Atlas {
             // Need additional barrier, since in the normal case DDGI is made to be sampled just in compute shader
             auto& internalVolume = volume->internal;
             auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
-
-            commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-            commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             // Need to rebind after barrier
             commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
@@ -321,7 +321,7 @@ namespace Atlas {
             };
             commandList->PushConstants("constants", &constants);
 
-            auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z;
+            auto instanceCount = volume->probeCount.x * volume->probeCount.y * volume->probeCount.z * volume->cascadeCount;
             commandList->DrawIndexed(sphereArray.GetIndexComponent().elementCount, uint32_t(instanceCount));
 
         }

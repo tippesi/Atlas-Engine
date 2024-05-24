@@ -20,9 +20,12 @@ void main() {
 
     instanceID = gl_InstanceIndex;
 
-    ivec3 probeCoord = GetProbeGridCoord(gl_InstanceIndex);
-    vec3 probeOffset = GetProbeOffset(gl_InstanceIndex);
-    vec3 probePosition = GetProbePosition(probeCoord);
+    int probeCascadeIndex = int(gl_InstanceIndex) / 1000;
+
+    probeCascadeIndex = 7;
+    ivec3 probeCoord = GetProbeGridCoord(instanceID);
+    vec3 probeOffset = GetProbeOffset(instanceID);
+    vec3 probePosition = GetProbePosition(probeCoord, probeCascadeIndex);
     
     mat4 mvMatrix = globalData.vMatrix;
 

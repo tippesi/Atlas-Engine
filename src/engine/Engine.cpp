@@ -41,10 +41,10 @@ namespace Atlas {
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
             .instanceName = "AtlasEngineInstance",
-#ifdef AE_BUILDTYPE_RELEASE
-            .enableValidationLayers = false,
-#else
+#ifdef AE_BUILDTYPE_DEBUG
             .enableValidationLayers = true,
+#else
+            .enableValidationLayers = false,
 #endif
             .validationLayerSeverity = config.validationLayerSeverity
         };
