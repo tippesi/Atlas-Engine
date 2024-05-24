@@ -112,14 +112,14 @@ namespace Atlas {
                 vec4 volumeMin;
                 vec4 volumeMax;
                 vec4 cellSize;
+                vec4 padding;
             };
 
             struct alignas(16) DDGIUniforms {
-
-                vec4 volumeCenter;
                 
                 DDGICascade cascades[MAX_IRRADIANCE_VOLUME_CASCADES];
 
+                vec4 volumeCenter;
                 ivec4 volumeProbeCount;
                 int32_t cascadeCount;
 

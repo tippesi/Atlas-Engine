@@ -235,7 +235,7 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(irradianceArray.image, 3, 0);
-                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
+                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
 
                 commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -253,7 +253,7 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(momentsArray.image, 3, 0);
-                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.z);
+                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
 
             }
 

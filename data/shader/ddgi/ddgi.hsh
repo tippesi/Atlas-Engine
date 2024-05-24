@@ -28,12 +28,14 @@ struct DDGICascade {
     vec4 volumeMin;
     vec4 volumeMax;
     vec4 cellSize;
+    vec4 padding;
 };
 
 layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
-    vec4 volumeCenter;
     
     DDGICascade cascades[VOLUME_CASCADE_COUNT];
+
+    vec4 volumeCenter;
     ivec4 volumeProbeCount;
     int cascadeCount;
 

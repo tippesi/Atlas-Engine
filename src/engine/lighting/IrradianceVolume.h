@@ -89,7 +89,7 @@ namespace Atlas {
             vec3 size[MAX_IRRADIANCE_VOLUME_CASCADES];
             vec3 cellSize[MAX_IRRADIANCE_VOLUME_CASCADES];
 
-            uint32_t rayCount = 100;
+            uint32_t rayCount = 128;
             uint32_t rayCountInactive = 32;
 
             float hysteresis = 0.98f;
@@ -108,7 +108,7 @@ namespace Atlas {
             bool useShadowMap = false;
             bool lowerResMoments = false;
             bool opacityCheck = false;
-            bool scroll = false;
+            bool scroll = true;
 
             InternalIrradianceVolume internal;
 
