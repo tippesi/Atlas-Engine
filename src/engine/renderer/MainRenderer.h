@@ -112,7 +112,7 @@ namespace Atlas {
                 vec4 volumeMin;
                 vec4 volumeMax;
                 vec4 cellSize;
-                vec4 padding;
+                ivec4 offsetDifference;
             };
 
             struct alignas(16) DDGIUniforms {

@@ -36,14 +36,24 @@ namespace Atlas {
             std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
                 GetLastProbes() const;
 
+            std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
+                GetCurrentProbeBuffers() const;
+
+            std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
+                GetLastProbeBuffers() const;
+
             void ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
 
             void ResetProbeOffsets();
 
             Buffer::Buffer rayDirBuffer;
             Buffer::Buffer rayDirInactiveBuffer;
+
             Buffer::Buffer probeOffsetBuffer;
+            Buffer::Buffer historyProbeOffsetBuffer;
+
             Buffer::Buffer probeStateBuffer;
+            Buffer::Buffer historyProbeStateBuffer;
 
         private:
             void FillRayBuffers();
@@ -63,7 +73,7 @@ namespace Atlas {
         public:
             IrradianceVolume() = default;
 
-            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = MAX_IRRADIANCE_VOLUME_CASCADES, bool lowerResMoments = true);
+            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = 1, bool lowerResMoments = false);
 
             ivec3 GetIrradianceArrayOffset(ivec3 probeIndex, int32_t cascadeIndex);
 
@@ -75,19 +85,24 @@ namespace Atlas {
 
             void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
 
-            void SetProbeCount(ivec3 probeCount);
+            void SetProbeCount(ivec3 probeCount, int32_t cascadeCount = 1);
 
             void ClearProbes();
 
             void ResetProbeOffsets();
 
-            Volume::AABB aabb[MAX_IRRADIANCE_VOLUME_CASCADES];
+            struct Cascade {
+                Volume::AABB aabb;
+                vec3 size;
+                vec3 cellSize;
+                ivec3 offsets;
+                ivec3 offsetDifferences;
+            }cascades[MAX_IRRADIANCE_VOLUME_CASCADES];
+
+            Volume::AABB aabb;
 
             ivec3 probeCount;
             int32_t cascadeCount;
-
-            vec3 size[MAX_IRRADIANCE_VOLUME_CASCADES];
-            vec3 cellSize[MAX_IRRADIANCE_VOLUME_CASCADES];
 
             uint32_t rayCount = 128;
             uint32_t rayCountInactive = 32;
@@ -100,6 +115,8 @@ namespace Atlas {
 
             float strength = 1.0f;
 
+            float splitCorrection = 1.5f;
+
             bool enable = true;
             bool update = true;
             bool sampleEmissives = false;
@@ -108,7 +125,7 @@ namespace Atlas {
             bool useShadowMap = false;
             bool lowerResMoments = false;
             bool opacityCheck = false;
-            bool scroll = true;
+            bool scroll = false;
 
             InternalIrradianceVolume internal;
 

@@ -28,11 +28,10 @@ struct DDGICascade {
     vec4 volumeMin;
     vec4 volumeMax;
     vec4 cellSize;
-    vec4 padding;
+    ivec4 offsetDifference;
 };
 
-layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
-    
+layout(std140, set = 2, binding = 26) uniform DDGIBuffer {    
     DDGICascade cascades[VOLUME_CASCADE_COUNT];
 
     vec4 volumeCenter;
@@ -191,6 +190,8 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
     vec3 alpha = localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz - vec3(baseCell);
 
+    float totalVisibility = 0.0;
+
     for (int i = 0; i < 8; i++) {
         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
         ivec3 gridCell = clamp(baseCell + offset, ivec3(0), ddgiData.volumeProbeCount.xyz - ivec3(1));
@@ -224,14 +225,26 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
         float weightCheb = weight;
 
+        float visibilityWeight = 1.0;
+
         if (biasedDistToProbe > mean) {            
             float variance = abs(mean * mean - mean2);
             float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
-            weight *= max(0.0, visibility * visibility * visibility);
+            visibilityWeight *= max(0.0, visibility * visibility * visibility);
+            totalVisibility += visibilityWeight;
         }
+        else {
+            totalVisibility += 1.0;
+        }
+
+        weight *= max(0.05, visibilityWeight);
 
         weight = max(0.000001, weight);
         weightCheb = max(0.000001, weightCheb);
+
+        if (weight < 0.2) {
+            //weight *= weight * weight / (0.2 * 0.2);
+        }
 
         float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
         weight *= trilinearWeight;
@@ -248,7 +261,7 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
     if (sumWeightCheb == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
     vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
-        sqr(sumIrradiance / sumWeight), sumWeight), 0.0);
+        sqr(sumIrradiance / sumWeight), 1.0), 0.0);
 
     // Due to the texture format we loose a bit of energy
     irradiance *= 1.0989;
@@ -258,9 +271,6 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 }
 
 vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
-
-    //vec3 pointToCenter = ddgiData.volumeCenter.xyz - P;
-    //float distanceToCenter = length(pointToCenter);
 
     int cascadeIndex = 0;
     while (cascadeIndex < ddgiData.cascadeCount) {
@@ -273,6 +283,43 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
     }
 
     return GetLocalIrradianceFromCascade(P, V, N, geometryNormal, max(cascadeIndex - 1, 0));
+
+}
+
+vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
+
+    int cascadeIndex = 0;
+    while (cascadeIndex < ddgiData.cascadeCount) {
+
+        bool isInside = IsInsideCascade(P, cascadeIndex);
+        if (!isInside)
+            break;
+
+        cascadeIndex++;
+    }
+
+    cascadeIndex = max(cascadeIndex - 1, 0);
+
+    // Shrink AABB to get a proper blend distance
+    vec3 aabbMin = ddgiData.volumeCenter.xyz - ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - 4) * 0.5;
+    vec3 aabbMax = ddgiData.volumeCenter.xyz + ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - 4) * 0.5;
+
+    vec3 closestPoint = clamp(P, aabbMin, aabbMax);
+    float distanceToAABB = distance(P, closestPoint);
+
+    float minAxialDistance = min3(ddgiData.cascades[cascadeIndex].cellSize.xyz);
+    float alpha = min(distanceToAABB / minAxialDistance, 1.0);
+
+    vec4 irradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex);
+
+    if (alpha > 0.0 && cascadeIndex > 0) {
+
+        vec4 outerIrradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex - 1);
+        //irradiance = mix(irradiance, outerIrradiance, alpha);
+
+    }
+
+    return irradiance;
 
 }
 

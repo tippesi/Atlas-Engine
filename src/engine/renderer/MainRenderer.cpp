@@ -970,10 +970,15 @@ namespace Atlas {
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
 
-                // auto pos = vec3(0.4f, 12.7f, -43.0f);
-                auto pos = camera.GetLocation();
-                auto volumeAABB = Volume::AABB(-vec3(400.0f) + pos, vec3(400.0f) + pos);
-                volume->SetAABB(volumeAABB);
+                if (volume->scroll) {
+                    //auto pos = vec3(0.4f, 12.7f, -43.0f);
+                    //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
+                    auto pos = camera.GetLocation();
+
+                    auto volumeSize = volume->aabb.GetSize();
+                    auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
+                    volume->SetAABB(volumeAABB);
+                }
 
                 auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y * 
                     volume->probeCount.z;
@@ -995,10 +1000,11 @@ namespace Atlas {
                 };
 
                 for (int32_t i = 0; i < volume->cascadeCount; i++) {
-                    ddgiUniforms.cascades[i] = DDGICascade {
-                        .volumeMin = vec4(volume->aabb[i].min, 1.0f),
-                        .volumeMax = vec4(volume->aabb[i].max, 1.0f),
-                        .cellSize = vec4(volume->cellSize[i], 1.0f),
+                    ddgiUniforms.cascades[i] = DDGICascade{
+                        .volumeMin = vec4(volume->cascades[i].aabb.min, 1.0f),
+                        .volumeMax = vec4(volume->cascades[i].aabb.max, 1.0f),
+                        .cellSize = vec4(volume->cascades[i].cellSize, glm::length(volume->cascades[i].cellSize)),
+                        .offsetDifference = ivec4(volume->cascades[i].offsetDifferences, 0),
                     };
                 }
 

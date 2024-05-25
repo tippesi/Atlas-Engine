@@ -5,7 +5,7 @@ namespace Atlas {
     namespace Lighting {
 
         IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount,
-            bool lowerResMoments) : probeCount(probeCount), cascadeCount(cascadeCount), 
+            bool lowerResMoments) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
             momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
 
             auto irrRes = ivec2(this->irrRes + 2);
@@ -43,32 +43,37 @@ namespace Atlas {
 
         vec3 IrradianceVolume::GetProbeLocation(ivec3 probeIndex, int32_t cascadeIndex) {
 
-            return aabb[cascadeIndex].min + vec3(probeIndex) * cellSize[cascadeIndex];
+            return cascades[cascadeIndex].aabb.min + vec3(probeIndex) * cascades[cascadeIndex].cellSize;
 
         }
 
         void IrradianceVolume::SetAABB(Volume::AABB aabb) {
 
+            this->aabb = aabb;
+
             auto center = (aabb.max + aabb.min) * 0.5f;
 
             for (int32_t i = 0; i < cascadeCount; i++) {
-                size[i] = aabb.max - aabb.min;
-                cellSize[i] = size[i] / vec3(probeCount - ivec3(1));
+                cascades[i].size = aabb.max - aabb.min;
+                cascades[i].cellSize = cascades[i].size / vec3(probeCount - ivec3(1));
                 
                 if (!scroll) {
                     // In this case we can just set the AABB
-                    this->aabb[i] = aabb;
+                    cascades[i].aabb = aabb;
                 }
                 else {
                     // In case of scrolling, just take discrete steps
-                    ivec3 cascadeOffset = ivec3(center / cellSize[i]);
+                    ivec3 cascadeOffset = ivec3(center / cascades[i].cellSize);
 
-                    vec3 offset = vec3(cascadeOffset) * cellSize[i];
-                    this->aabb[i] = Volume::AABB(-size[i] / 2.0f + offset, size[i] / 2.0f + offset);
+                    cascades[i].offsetDifferences = cascadeOffset - cascades[i].offsets;
+                    cascades[i].offsets = cascadeOffset;
+
+                    vec3 offset = vec3(cascadeOffset) * cascades[i].cellSize;
+                    cascades[i].aabb = Volume::AABB(-cascades[i].size / 2.0f + offset, cascades[i].size / 2.0f + offset);
                 }
 
-                aabb.min = center - size[i] / 4.0f;
-                aabb.max = center + size[i] / 4.0f;
+                aabb.min = center - cascades[i].size / (2.0f * splitCorrection);
+                aabb.max = center + cascades[i].size / (2.0f * splitCorrection);
             }
 
         }
@@ -82,9 +87,10 @@ namespace Atlas {
         
         }
 
-        void IrradianceVolume::SetProbeCount(ivec3 probeCount) {
+        void IrradianceVolume::SetProbeCount(ivec3 probeCount, int32_t cascadeCount) {
 
             this->probeCount = probeCount;
+            this->cascadeCount = std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES);
 
             auto irrRes = ivec2(this->irrRes + 2);
             irrRes.x *= probeCount.x;
@@ -125,7 +131,11 @@ namespace Atlas {
             rayDirInactiveBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
             probeStateBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4),
                 probeCount.x * probeCount.y * probeCount.z * cascadeCount);
+            historyProbeStateBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4),
+                probeCount.x * probeCount.y * probeCount.z * cascadeCount);
             probeOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4),
+                probeCount.x * probeCount.y * probeCount.z * cascadeCount);
+            historyProbeOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4),
                 probeCount.x * probeCount.y * probeCount.z * cascadeCount);
 
             irradianceArray0 = Texture::Texture2DArray(irrRes.x, irrRes.y, probeCount.y * cascadeCount,
@@ -182,6 +192,38 @@ namespace Atlas {
                     irradianceArray0, momentsArray0
                     );
             }    
+
+        }
+
+        std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
+            InternalIrradianceVolume::GetCurrentProbeBuffers() const {
+
+            if (swapIdx == 0) {
+                return std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>(
+                    probeStateBuffer, probeOffsetBuffer
+                );
+            }
+            else {
+                return std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>(
+                    historyProbeStateBuffer, historyProbeOffsetBuffer
+                );
+            }
+
+        }
+
+        std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
+            InternalIrradianceVolume::GetLastProbeBuffers() const {
+
+            if (swapIdx == 0) {
+                return std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>(
+                    historyProbeStateBuffer, historyProbeOffsetBuffer
+                );
+            }
+            else {
+                return std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>(
+                    probeStateBuffer, probeOffsetBuffer
+                );
+            }
 
         }
 

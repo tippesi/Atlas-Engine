@@ -48,13 +48,19 @@ namespace Atlas {
              * @param set
              * @param binding
              */
-            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const;
 
             /**
              * Returns an owning pointer to a graphics buffer
              * @return
              */
             Ref<Graphics::Buffer> Get();
+
+            /**
+             * Returns an owning pointer to a graphics buffer
+             * @return
+             */
+            const Ref<Graphics::Buffer> Get() const;
 
             /**
              * Returns an owning pointer to a graphics multi buffer

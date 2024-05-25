@@ -81,13 +81,13 @@ namespace Atlas {
 
             auto& rayDirBuffer = internalVolume.rayDirBuffer;
             auto& rayDirInactiveBuffer = internalVolume.rayDirInactiveBuffer;
-            auto& probeStateBuffer = internalVolume.probeStateBuffer;
-            auto& probeOffsetBuffer = internalVolume.probeOffsetBuffer;
+            auto [probeStateBuffer, probeOffsetBuffer] = internalVolume.GetCurrentProbeBuffers();
+            auto [historyProbeStateBuffer, historyProbeOffsetBuffer] = internalVolume.GetLastProbeBuffers();
 
             helper.UpdateLights(scene, volume->sampleEmissives);
 
-            commandList->BindBuffer(probeStateBuffer.Get(), 2, 19);
-            commandList->BindBuffer(probeOffsetBuffer.Get(), 2, 20);
+            probeStateBuffer.Bind(commandList, 2, 19);
+            probeOffsetBuffer.Bind(commandList, 2, 20);
 
             auto probeCount = volume->probeCount * ivec3(1, volume->cascadeCount, 1);
 
@@ -170,7 +170,10 @@ namespace Atlas {
             );
 
             commandList->BufferMemoryBarrier(rayHitBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-            commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
+
+            rayHitBuffer.Bind(commandList, 3, 1);
+            historyProbeStateBuffer.Bind(commandList, 3, 2);
+            historyProbeOffsetBuffer.Bind(commandList, 3, 3);
 
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
