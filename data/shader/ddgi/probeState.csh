@@ -21,6 +21,14 @@ layout(std430, set = 3, binding = 1) buffer RayHits {
     PackedRayHit hits[];
 };
 
+layout(std430, set = 3, binding = 2) buffer HistoryProbeStates {
+    vec4 historyProbeStates[];
+};
+
+layout(std430, set = 3, binding = 3) buffer HistoryProbeOffsets {
+    vec4 historyProbeOffsets[];
+};
+
 shared uint probeState;
 shared uint backFaceHits;
 shared uint inCellHits;
@@ -31,18 +39,30 @@ void main() {
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
 
+    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
+
+    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
+    ivec3 historyProbeIndex = ivec3(gl_WorkGroupID.xyz) + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
+    ivec3 historyCascadeProbeIndex = historyProbeIndex - cascadeProbeOffset;
+
+    bool reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
+        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
+    // Now calculate the actual valid (clamped) istory probe index
+    historyProbeIndex = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
+    historyProbeIndex += cascadeProbeOffset;
+    uint historyBaseIdx = Flatten3D(ivec3(historyProbeIndex.xzy), ivec3(gl_NumWorkGroups.xzy));
+
     if (gl_LocalInvocationID.x == 0u) {
         backFaceHits = 0u;
         inCellHits = 0u;
-        probeState = GetProbeState(baseIdx);
-        temporalCellHits = probeStates[baseIdx].y;
+        probeState = GetProbeState(historyBaseIdx);
+        temporalCellHits = reset ? float(ddgiData.rayCount) : historyProbeStates[historyBaseIdx].y;
     }
 
     barrier();
 
     uint probeRayCount = GetProbeRayCount(probeState);
 
-    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
     // Use an extended size to avoid potential flickering
     // due to not having full sampling of the environment
     float extendedSize = max3(ddgiData.cascades[cascadeIndex].cellSize.xyz) * 1.0;
@@ -68,7 +88,7 @@ void main() {
         float temporalCellHits = mix(float(inCellHits), temporalCellHits, ddgiData.hysteresis);
 
         // Use temporally stable information to decide probe state
-        if (temporalCellHits > 0.0) {
+        if (temporalCellHits > 0.5) {
             probeState = PROBE_STATE_ACTIVE;
         }
         

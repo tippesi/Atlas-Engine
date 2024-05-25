@@ -18,7 +18,7 @@ namespace Atlas {
 
         }
 
-        void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) {
+        void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const {
 
             if (multiBuffer != nullptr) {
                 commandList->BindBuffer(multiBuffer, set, binding);
@@ -30,6 +30,12 @@ namespace Atlas {
         }
 
         Ref<Graphics::Buffer> Buffer::Get() {
+
+            return buffer;
+
+        }
+
+        const Ref<Graphics::Buffer> Buffer::Get() const {
 
             return buffer;
 

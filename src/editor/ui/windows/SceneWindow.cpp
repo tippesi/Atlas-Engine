@@ -115,7 +115,7 @@ namespace Atlas::Editor::UI {
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
                 scenePropertiesPanel.Render(scene->sky.clouds, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.irradianceVolume)
-                scenePropertiesPanel.Render(scene->irradianceVolume);
+                scenePropertiesPanel.Render(scene->irradianceVolume, refScene);
             else if (sceneHierarchyPanel.selectedProperty.reflection)
                 scenePropertiesPanel.Render(scene->reflection, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.ssgi)

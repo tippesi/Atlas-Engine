@@ -41,7 +41,7 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::IrradianceVolume>>) {
                 RenderHeading("Irradiance volume");
-                irradianceVolumePanel.Render(t);
+                irradianceVolumePanel.Render(t, scene);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
                 RenderHeading("Reflection");

@@ -661,6 +661,11 @@ namespace Atlas {
                     material.displacementMapPath = images.displacementImages[path]->fileName;
                 }
             }
+            if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
+                assimpMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+                // We don't support this right now
+                material.emissiveIntensity = 0.0f;
+            }
             
             // Probably foliage
             if (material.HasOpacityMap() ||

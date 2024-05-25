@@ -27,17 +27,25 @@ layout (local_size_x = 14, local_size_y = 14) in;
 #endif
 #endif
 
-layout(std430, set = 3, binding = 1) buffer RayHits {
-    PackedRayHit hits[];
-};
-
-const uint sharedSize = 32;
-
 #ifdef IRRADIANCE
 layout (set = 3, binding = 0, rgb10_a2) writeonly uniform image2DArray irradiance;
 #else
 layout (set = 3, binding = 0, rg16f) writeonly uniform image2DArray moment;
 #endif
+
+layout(std430, set = 3, binding = 1) buffer RayHits {
+    PackedRayHit hits[];
+};
+
+layout(std430, set = 3, binding = 2) buffer HistoryProbeStates {
+    vec4 historyProbeStates[];
+};
+
+layout(std430, set = 3, binding = 3) buffer HistoryProbeOffsets {
+    vec4 historyProbeOffsets[];
+};
+
+const uint sharedSize = 32;
 
 #ifdef IRRADIANCE
 struct RayData {
@@ -58,9 +66,21 @@ shared RayData rayData[sharedSize];
 void main() {
 
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
+    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
 
-    uint probeState = floatBitsToUint(probeStates[baseIdx].x);
-    vec4 probeOffset = probeOffsets[baseIdx];
+    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
+    ivec3 historyProbeIndex = ivec3(gl_WorkGroupID.xyz) + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
+    ivec3 historyCascadeProbeIndex = historyProbeIndex - cascadeProbeOffset;
+
+    bool reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
+        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
+    // Now calculate the actual valid (clamped) istory probe index
+    historyProbeIndex = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
+    historyProbeIndex += cascadeProbeOffset;
+    uint historyBaseIdx = Flatten3D(ivec3(historyProbeIndex.xzy), ivec3(gl_NumWorkGroups.xzy));
+
+    uint probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
+    vec4 probeOffset = reset ? vec4(0.0, 0.0, 0.0, 1.0) : historyProbeOffsets[historyBaseIdx];
 
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
@@ -80,8 +100,6 @@ void main() {
 
     ivec2 resOffset = (res + ivec2(2)) * ivec2(gl_WorkGroupID.xz) + ivec2(1);
     ivec3 volumeCoord = ivec3(resOffset + pix, int(gl_WorkGroupID.y));
-
-    int cascadeIndex = GetProbeCascadeIndex(baseIdx);
 
     float cellLength = length(ddgiData.cascades[cascadeIndex].cellSize.xyz);
     float maxDepth = cellLength * 0.75;
@@ -122,7 +140,7 @@ void main() {
             float hitDistance = min(maxDepth, dist);
             float weight = max(0.0, dot(N, rayData[j].direction));
 
-            const float probeOffsetDistance = 0.1;
+            const float probeOffsetDistance = max(ddgiData.cascades[cascadeIndex].cellSize.w * 0.05, 0.5);
             dist = rayData[j].dist;
             // Remember: Negative distances means backface hits.
             // Meaning we want to get probes from backfaces to the 
@@ -133,7 +151,7 @@ void main() {
             if (probeOffset.w > 0.0) {
                 float sig = sign(dist);
                 if (abs(dist) < probeOffsetDistance && ddgiData.optimizeProbes > 0) {
-                    newProbeOffset -= rayData[j].direction * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w;
+                    newProbeOffset -= rayData[j].direction * (sig * probeOffsetDistance - dist) * 0.1 * probeOffset.w / probeOffsetDistance;
                 }
             }
 
@@ -148,8 +166,11 @@ void main() {
 
     }
 
+    ivec2 historyResOffset = (res + ivec2(2)) * ivec2(historyProbeIndex.xz) + ivec2(1);
+    ivec3 historyVolumeCoord = ivec3(historyResOffset + pix, int(historyProbeIndex.y));
+
 #ifdef IRRADIANCE
-    vec3 lastResult = texelFetch(irradianceVolume, volumeCoord, 0).rgb;
+    vec3 lastResult = texelFetch(irradianceVolume, historyVolumeCoord, 0).rgb;
     vec3 resultOut = lastResult;
     if (result.w > 0.0) {
         result.xyz /= result.w;
@@ -157,7 +178,7 @@ void main() {
 
         float probeHysteresis = ddgiData.hysteresis;
 
-        if (probeState == PROBE_STATE_NEW) {
+        if (probeState == PROBE_STATE_NEW || reset) {
             resultOut = result.xyz;
         }
         else {                
@@ -166,10 +187,10 @@ void main() {
     }
     imageStore(irradiance, volumeCoord, vec4(resultOut, 0.0));
 #else
-    vec2 lastResult = texelFetch(momentsVolume, volumeCoord, 0).rg;
+    vec2 lastResult = texelFetch(momentsVolume, historyVolumeCoord, 0).rg;
     vec2 resultOut = lastResult;
     if (result.w > 0.0) {
-        if (probeState == PROBE_STATE_NEW) {
+        if (probeState == PROBE_STATE_NEW || reset) {
             resultOut = result.xy / result.w;
         }
         else {
@@ -178,11 +199,11 @@ void main() {
     }
 
     imageStore(moment, volumeCoord, vec4(resultOut, 0.0, 0.0));
-    if (gl_LocalInvocationIndex == 0 && ddgiData.optimizeProbes > 0) {
+    if (gl_LocalInvocationIndex == 0) {
         vec3 maxOffset = ddgiData.cascades[cascadeIndex].cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
-        probeOffset.w = max(0.0, probeOffset.w - 0.01);
-        probeOffsets[baseIdx] = probeOffset;
+        probeOffset.w = max(0.0, reset ? 1.0 : probeOffset.w - 0.01);
+        probeOffsets[baseIdx] = ddgiData.optimizeProbes > 0 ? probeOffset : vec4(0.0, 0.0, 0.0, 1.0);
     }
 #endif
 

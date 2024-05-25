@@ -11,7 +11,10 @@ namespace Atlas::ImguiExtension {
     public:
         IrradianceVolumePanel() : Panel("Irradiance volume properties") {}
 
-        void Render(Ref<Lighting::IrradianceVolume>& irradianceVolume);
+        void Render(Ref<Lighting::IrradianceVolume>& irradianceVolume, Ref<Scene::Scene>& scene);
+
+    private:
+        Volume::AABB CalculateSceneSize(Ref<Scene::Scene>& scene) const;
 
     };
 
