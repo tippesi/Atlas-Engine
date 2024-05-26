@@ -44,15 +44,15 @@ namespace Atlas {
 
             float coverageScale = 0.25f;
             float shapeScale = 2.0f;
-            float detailScale = 16.0f;
+            float detailScale = 8.0f;
             float coverageSpeed = 5.0f;
             float shapeSpeed = 5.0f;
             float detailSpeed = 10.0f;
-            float detailStrength = 0.15f;
+            float detailStrength = 0.30f;
 
             float densityMultiplier = 0.8f;
 
-            float heightStretch = 0.5f;
+            float heightStretch = 0.25f;
 
             float darkEdgeFocus = 2.0f;
             float darkEdgeAmbient = 0.1f;

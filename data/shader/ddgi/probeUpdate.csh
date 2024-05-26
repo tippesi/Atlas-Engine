@@ -68,16 +68,11 @@ void main() {
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
     int cascadeIndex = GetProbeCascadeIndex(baseIdx);
 
-    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
-    ivec3 historyProbeIndex = ivec3(gl_WorkGroupID.xyz) + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
-    ivec3 historyCascadeProbeIndex = historyProbeIndex - cascadeProbeOffset;
+    bool reset;
+    ivec3 historyProbeCoord;
+    GetProbeHistoryInfo(ivec3(gl_WorkGroupID.xyz), cascadeIndex, historyProbeCoord, reset);
 
-    bool reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
-        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
-    // Now calculate the actual valid (clamped) istory probe index
-    historyProbeIndex = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
-    historyProbeIndex += cascadeProbeOffset;
-    uint historyBaseIdx = Flatten3D(ivec3(historyProbeIndex.xzy), ivec3(gl_NumWorkGroups.xzy));
+    uint historyBaseIdx = Flatten3D(ivec3(historyProbeCoord.xzy), ivec3(gl_NumWorkGroups.xzy));
 
     uint probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
     vec4 probeOffset = reset ? vec4(0.0, 0.0, 0.0, 1.0) : historyProbeOffsets[historyBaseIdx];
@@ -166,8 +161,8 @@ void main() {
 
     }
 
-    ivec2 historyResOffset = (res + ivec2(2)) * ivec2(historyProbeIndex.xz) + ivec2(1);
-    ivec3 historyVolumeCoord = ivec3(historyResOffset + pix, int(historyProbeIndex.y));
+    ivec2 historyResOffset = (res + ivec2(2)) * ivec2(historyProbeCoord.xz) + ivec2(1);
+    ivec3 historyVolumeCoord = ivec3(historyResOffset + pix, int(historyProbeCoord.y));
 
 #ifdef IRRADIANCE
     vec3 lastResult = texelFetch(irradianceVolume, historyVolumeCoord, 0).rgb;
@@ -202,7 +197,7 @@ void main() {
     if (gl_LocalInvocationIndex == 0) {
         vec3 maxOffset = ddgiData.cascades[cascadeIndex].cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
-        probeOffset.w = max(0.0, reset ? 1.0 : probeOffset.w - 0.01);
+        probeOffset.w = max(0.0, reset ? 1.0 : 1.0);
         probeOffsets[baseIdx] = ddgiData.optimizeProbes > 0 ? probeOffset : vec4(0.0, 0.0, 0.0, 1.0);
     }
 #endif

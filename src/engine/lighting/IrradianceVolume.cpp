@@ -301,7 +301,9 @@ namespace Atlas {
             uint32_t zero = 0;
             std::vector<vec4> probeStates(probeStateBuffer.GetElementCount());
             std::fill(probeStates.begin(), probeStates.end(), vec4(vec3(0.0f), reinterpret_cast<float&>(zero)));
+
             probeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());
+            historyProbeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());
 
             ResetProbeOffsets();
         }
@@ -310,7 +312,9 @@ namespace Atlas {
 
             std::vector<vec4> probeOffsets(probeOffsetBuffer.GetElementCount());
             std::fill(probeOffsets.begin(), probeOffsets.end(), vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
             probeOffsetBuffer.SetData(probeOffsets.data(), 0, probeOffsets.size());
+            historyProbeOffsetBuffer.SetData(probeOffsets.data(), 0, probeOffsets.size());
 
         }
     }

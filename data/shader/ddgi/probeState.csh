@@ -41,22 +41,17 @@ void main() {
 
     int cascadeIndex = GetProbeCascadeIndex(baseIdx);
 
-    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
-    ivec3 historyProbeIndex = ivec3(gl_WorkGroupID.xyz) + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
-    ivec3 historyCascadeProbeIndex = historyProbeIndex - cascadeProbeOffset;
+    bool reset;
+    ivec3 historyProbeCoord;
+    GetProbeHistoryInfo(ivec3(gl_WorkGroupID.xyz), cascadeIndex, historyProbeCoord, reset);
 
-    bool reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
-        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
-    // Now calculate the actual valid (clamped) istory probe index
-    historyProbeIndex = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
-    historyProbeIndex += cascadeProbeOffset;
-    uint historyBaseIdx = Flatten3D(ivec3(historyProbeIndex.xzy), ivec3(gl_NumWorkGroups.xzy));
+    uint historyBaseIdx = Flatten3D(ivec3(historyProbeCoord.xzy), ivec3(gl_NumWorkGroups.xzy));
 
     if (gl_LocalInvocationID.x == 0u) {
         backFaceHits = 0u;
         inCellHits = 0u;
         probeState = GetProbeState(historyBaseIdx);
-        temporalCellHits = reset ? float(ddgiData.rayCount) : historyProbeStates[historyBaseIdx].y;
+        temporalCellHits = (probeState == PROBE_STATE_NEW || reset) ? 1.0 : historyProbeStates[historyBaseIdx].y;
     }
 
     barrier();
@@ -91,7 +86,7 @@ void main() {
         if (temporalCellHits > 0.5) {
             probeState = PROBE_STATE_ACTIVE;
         }
-        
+
         probeStates[baseIdx].x = uintBitsToFloat(probeState);
         probeStates[baseIdx].y = temporalCellHits;
     }

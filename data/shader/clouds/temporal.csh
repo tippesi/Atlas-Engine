@@ -129,7 +129,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history) {
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
 
-        if (confidence > 0.5) {
+        if (confidence > 0.999) {
             totalWeight += weights[i];
             history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
         }
@@ -150,7 +150,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history) {
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
 
-        if (confidence > 0.75) {
+        if (confidence > 0.999) {
             totalWeight += 1.0;
             history += texelFetch(historyTexture, offsetPixel, 0);
         }
@@ -171,9 +171,9 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth) {
 
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
-    float confidence = min(1.0 , abs(linearDepth - historyLinearDepth));
+    float confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
 
-    return confidence > 0.75 ? 1.0 : 0.0;
+    return confidence > 0.999 ? 1.0 : 0.0;
 
 }
 

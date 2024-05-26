@@ -25,7 +25,15 @@ layout(std430, set = 3, binding = 1) buffer RayDirsInactiveProbes {
     vec4 rayDirsInactiveProbes[];
 };
 
-layout(std140, set = 3, binding = 2) uniform UniformBuffer {
+layout(std430, set = 3, binding = 2) buffer HistoryProbeStates {
+    vec4 historyProbeStates[];
+};
+
+layout(std430, set = 3, binding = 3) buffer HistoryProbeOffsets {
+    vec4 historyProbeOffsets[];
+};
+
+layout(std140, set = 3, binding = 4) uniform UniformBuffer {
     mat4 randomRotation;
 } Uniforms;
 
@@ -40,9 +48,15 @@ void main() {
     probeIndex.y %= ddgiData.volumeProbeCount.y;
     uint baseIdx = GetProbeIdx(probeIndex, cascadeIndex);
 
+    bool reset;
+    ivec3 historyProbeCoord;
+    GetProbeHistoryInfo(ivec3(gl_WorkGroupID.xyz), cascadeIndex, historyProbeCoord, reset);
+
+    uint historyBaseIdx = Flatten3D(ivec3(historyProbeCoord.xzy), ivec3(gl_NumWorkGroups.xzy));
+
     if (gl_LocalInvocationID.x == 0u) {
-        probeState = floatBitsToUint(probeStates[baseIdx].x);
-        probeOffset = probeOffsets[baseIdx].xyz;
+        probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
+        probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) : historyProbeOffsets[historyBaseIdx].xyz;
     }
 
     barrier();
