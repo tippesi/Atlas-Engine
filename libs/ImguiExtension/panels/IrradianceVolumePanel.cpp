@@ -16,6 +16,7 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Visualize probes", &volume->debug);
         ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
         ImGui::Checkbox("Use shadow map", &volume->useShadowMap);
+        ImGui::Checkbox("Lock", &volume->lock);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
                         This is only possible when cascaded shadow maps are not used.");
@@ -31,31 +32,32 @@ namespace Atlas::ImguiExtension {
         auto prevCascadeCount = volume->cascadeCount;
         ImGui::SliderInt("Cascades count", &volume->cascadeCount, 1, MAX_IRRADIANCE_VOLUME_CASCADES);
 
-        const char* gridResItems [] = { "10x10x10", "15x15x15", "20x20x20", "30x30x30" };
+        const char* gridResItems [] = { "11x11x11", "15x15x15", "21x21x21", "31x31x31" };
         int currentItem = 0;
-        if (volume->probeCount == glm::ivec3(10)) currentItem = 0;
+        if (volume->probeCount == glm::ivec3(11)) currentItem = 0;
         if (volume->probeCount == glm::ivec3(15)) currentItem = 1;
-        if (volume->probeCount == glm::ivec3(20)) currentItem = 2;
-        if (volume->probeCount == glm::ivec3(30)) currentItem = 3;
+        if (volume->probeCount == glm::ivec3(21)) currentItem = 2;
+        if (volume->probeCount == glm::ivec3(31)) currentItem = 3;
         auto prevItem = currentItem;
         ImGui::Combo("Resolution", &currentItem, gridResItems, IM_ARRAYSIZE(gridResItems));
 
         if (currentItem != prevItem || prevCascadeCount != volume->cascadeCount) {
             switch (currentItem) {
-                case 0: volume->SetProbeCount(glm::ivec3(10), volume->cascadeCount); break;
+                case 0: volume->SetProbeCount(glm::ivec3(11), volume->cascadeCount); break;
                 case 1: volume->SetProbeCount(glm::ivec3(15), volume->cascadeCount); break;
-                case 2: volume->SetProbeCount(glm::ivec3(20), volume->cascadeCount); break;
-                case 3: volume->SetProbeCount(glm::ivec3(30), volume->cascadeCount); break;
+                case 2: volume->SetProbeCount(glm::ivec3(21), volume->cascadeCount); break;
+                case 3: volume->SetProbeCount(glm::ivec3(31), volume->cascadeCount); break;
             }
         }
 
-        const char* rayCountItems[] = { "32", "64", "128", "256", "512" };
+        const char* rayCountItems[] = { "32", "64", "96", "128", "256", "512" };
         currentItem = 0;
         if (volume->rayCount == 32) currentItem = 0;
         if (volume->rayCount == 64) currentItem = 1;
-        if (volume->rayCount == 128) currentItem = 2;
-        if (volume->rayCount == 256) currentItem = 3;
-        if (volume->rayCount == 512) currentItem = 4;
+        if (volume->rayCount == 96) currentItem = 2;
+        if (volume->rayCount == 128) currentItem = 3;
+        if (volume->rayCount == 256) currentItem = 4;
+        if (volume->rayCount == 512) currentItem = 5;
         prevItem = currentItem;
         ImGui::Combo("Ray count", &currentItem, rayCountItems, IM_ARRAYSIZE(rayCountItems));
 
@@ -63,9 +65,10 @@ namespace Atlas::ImguiExtension {
             switch (currentItem) {
                 case 0: volume->SetRayCount(32, 32); break;
                 case 1: volume->SetRayCount(64, 32); break;
-                case 2: volume->SetRayCount(128, 32); break;
-                case 3: volume->SetRayCount(256, 32); break;
-                case 4: volume->SetRayCount(512, 32); break;
+                case 2: volume->SetRayCount(96, 32); break;
+                case 3: volume->SetRayCount(128, 32); break;
+                case 4: volume->SetRayCount(256, 32); break;
+                case 5: volume->SetRayCount(512, 32); break;
             }
         }
 

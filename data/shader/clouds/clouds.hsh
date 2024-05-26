@@ -224,7 +224,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     float distFromCenter = distance(pos, cloudPlanetCenter);
     float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
         (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
-    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / cloudUniforms.heightStretch);
+    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / (4.0 * cloudUniforms.heightStretch));
 
     baseCloudDensity *= saturate(densityHeightGradient);
 

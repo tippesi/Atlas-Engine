@@ -970,7 +970,7 @@ namespace Atlas {
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
 
-                if (volume->scroll) {
+                if (volume->scroll && !volume->lock) {
                     //auto pos = vec3(0.4f, 12.7f, -43.0f);
                     //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
                     auto pos = camera.GetLocation();

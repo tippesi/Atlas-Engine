@@ -82,6 +82,7 @@ namespace Atlas::Lighting {
         j = json {
             {"aabb", p.aabb},
             {"probeCount", p.probeCount},
+            {"cascadeCount", p.cascadeCount},
             {"lowerResMoments", p.lowerResMoments},
             {"enable", p.enable},
             {"rayCount", p.rayCount},
@@ -95,12 +96,14 @@ namespace Atlas::Lighting {
             {"optimizeProbes", p.optimizeProbes},
             {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
+            {"scroll", p.scroll},
+            {"splitCorrection", p.splitCorrection},
         };
     }
 
     void from_json(const json& j, IrradianceVolume& p) {
-        p = IrradianceVolume(j["aabb"].get<Volume::AABB>(),
-            j["probeCount"].get<ivec3>(), j["lowerResMoments"].get<bool>());
+        p = IrradianceVolume(j["aabb"].get<Volume::AABB>(), j["probeCount"].get<ivec3>(), 
+            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>());
         j.at("enable").get_to(p.enable);
         j.at("rayCount").get_to(p.rayCount);
         j.at("rayCountInactive").get_to(p.rayCountInactive);
@@ -113,6 +116,8 @@ namespace Atlas::Lighting {
         j.at("optimizeProbes").get_to(p.optimizeProbes);
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        j.at("scroll").get_to(p.scroll);
+        j.at("splitCorrection").get_to(p.splitCorrection);
     }
 
     void to_json(json& j, const Reflection& p) {
@@ -128,7 +133,7 @@ namespace Atlas::Lighting {
             {"rt", p.rt},
             {"gi", p.gi},
             {"useShadowMap", p.useShadowMap},
-            {"opacityCheck", p.opacityCheck},
+            {"opacityCheck", p.opacityCheck}
         };
     }
 

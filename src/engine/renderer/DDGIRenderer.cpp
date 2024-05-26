@@ -117,7 +117,9 @@ namespace Atlas {
 
                     commandList->BindBuffer(rayDirBuffer.Get(), 3, 0);
                     commandList->BindBuffer(rayDirInactiveBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(historyProbeStateBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(historyProbeOffsetBuffer.Get(), 3, 3);
+                    commandList->BindBuffer(rayGenUniformBuffer.Get(), 3, 4);                    
                 }
             );
 

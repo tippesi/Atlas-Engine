@@ -113,13 +113,6 @@ vec3 GetProbeOffset(uint idx) {
     return probeOffsets[idx].xyz;
 }
 
-/*
-ivec3 GetNearestProbe(vec3 position) {
-    vec3 localPosition = position - ddgiData.volumeMin.xyz;
-    return ivec3(round(localPosition / ddgiData.cellSize.xyz));
-}
-*/
-
 uint GetProbeIdx(ivec3 probe, int cascadeIndex) {
     return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy) + 
         uint(cascadeIndex * ddgiData.volumeProbeCount.w);
@@ -148,6 +141,20 @@ bool IsInsideCascade(vec3 position, int cascadeIndex) {
 
     return !any(lessThan(position, ddgiData.cascades[cascadeIndex].volumeMin.xyz))
         && !any(greaterThan(position, ddgiData.cascades[cascadeIndex].volumeMax.xyz));
+
+}
+
+void GetProbeHistoryInfo(ivec3 probeIndex, int cascadeIndex, out ivec3 historyProbeCoord, out bool reset) {
+
+    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
+    historyProbeCoord = probeIndex + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
+    ivec3 historyCascadeProbeIndex = historyProbeCoord - cascadeProbeOffset;
+
+    reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
+        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
+    // Now calculate the actual valid (clamped) istory probe index
+    historyProbeCoord = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
+    historyProbeCoord += cascadeProbeOffset;
 
 }
 
@@ -242,10 +249,6 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         weight = max(0.000001, weight);
         weightCheb = max(0.000001, weightCheb);
 
-        if (weight < 0.2) {
-            //weight *= weight * weight / (0.2 * 0.2);
-        }
-
         float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
         weight *= trilinearWeight;
         weightCheb *= trilinearWeight;
@@ -259,7 +262,7 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         sumWeightCheb += weightCheb;
     }
 
-    if (sumWeightCheb == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+    if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
     vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
         sqr(sumIrradiance / sumWeight), 1.0), 0.0);
 
@@ -301,8 +304,8 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal)
     cascadeIndex = max(cascadeIndex - 1, 0);
 
     // Shrink AABB to get a proper blend distance
-    vec3 aabbMin = ddgiData.volumeCenter.xyz - ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - 4) * 0.5;
-    vec3 aabbMax = ddgiData.volumeCenter.xyz + ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - 4) * 0.5;
+    vec3 aabbMin = ddgiData.volumeCenter.xyz - ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
+    vec3 aabbMax = ddgiData.volumeCenter.xyz + ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
 
     vec3 closestPoint = clamp(P, aabbMin, aabbMax);
     float distanceToAABB = distance(P, closestPoint);
@@ -315,11 +318,11 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal)
     if (alpha > 0.0 && cascadeIndex > 0) {
 
         vec4 outerIrradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex - 1);
-        //irradiance = mix(irradiance, outerIrradiance, alpha);
+        irradiance = mix(irradiance, outerIrradiance, alpha);
 
     }
 
-    return irradiance;
+    return vec4(irradiance);
 
 }
 

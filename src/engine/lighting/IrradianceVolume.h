@@ -115,7 +115,7 @@ namespace Atlas {
 
             float strength = 1.0f;
 
-            float splitCorrection = 1.5f;
+            float splitCorrection = 2.0f;
 
             bool enable = true;
             bool update = true;
@@ -126,6 +126,7 @@ namespace Atlas {
             bool lowerResMoments = false;
             bool opacityCheck = false;
             bool scroll = false;
+            bool lock = false;
 
             InternalIrradianceVolume internal;
 
