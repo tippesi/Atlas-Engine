@@ -48,6 +48,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::SliderFloat("Reflectance", &material->reflectance, 0.0f, 1.0f);
 
+        ImGui::ColorEdit3("Transmissive color", glm::value_ptr(material->transmissiveColor));
+
         ImGui::Checkbox("Two sided", &material->twoSided);
 
         ImGui::PopID();

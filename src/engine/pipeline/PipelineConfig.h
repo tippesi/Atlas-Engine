@@ -42,16 +42,17 @@ namespace Atlas {
         Hash shaderHash = 0;
         Hash variantHash = 0;
 
-    private:
-        void CalculateShaderHash();
-        void CalculateVariantHash();
-
         ShaderConfig shaderConfig;
         std::vector<std::string> macros;
 
         bool isCompute = false;
 
         Graphics::GraphicsPipelineDesc graphicsPipelineDesc;
+
+    private:
+        void CalculateShaderHash();
+        void CalculateVariantHash();
+
     };
 
 }

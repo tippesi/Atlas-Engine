@@ -106,6 +106,10 @@ namespace Atlas {
                         if (!instance.count) continue;
 
                         auto material = subData->material;
+
+                        // Overwrite material config frame buffer (and assume these have the same format)
+                        material->shadowConfig.graphicsPipelineDesc.frameBuffer = frameBuffer;
+
                         if (material->shadowConfig.variantHash != prevHash) {
                             currentPipeline = PipelineManager::GetPipeline(material->shadowConfig);
                             commandList->BindPipeline(currentPipeline);
@@ -132,6 +136,9 @@ namespace Atlas {
 
                         commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
                             0, instance.offset);
+
+                        // Reset the frame buffer here to let it be able to be deleted
+                        material->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
                     }
 

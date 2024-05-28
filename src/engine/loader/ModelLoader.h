@@ -106,7 +106,7 @@ namespace Atlas {
                 }
             };
 
-            static void LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material,
+            static uint32_t LoadMaterial(aiMaterial * assimpMaterial, MaterialImages & images, Material & material,
                 const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords);
 
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,

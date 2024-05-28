@@ -76,6 +76,9 @@ namespace Atlas {
 
                 for (auto commandList : submittedCommandLists) {
                     commandList->ResetDescriptors();
+                    commandList->frameBufferInUse = nullptr;
+                    commandList->renderPassInUse = nullptr;
+                    commandList->pipelineInUse = nullptr;
                     commandList->wasSwapChainAccessed = false;
                     commandList->isLocked = false;
                 }

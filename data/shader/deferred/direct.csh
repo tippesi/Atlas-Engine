@@ -82,10 +82,10 @@ void main() {
             Surface backSurface = CreateSurface(surface.V, -surface.N, surface.L, surface.material);
 
             float viewDependency = saturate(dot(-surface.V, surface.L));
-            viewDependency = sqr(viewDependency);
+            // viewDependency = sqr(viewDependency);
 
             // Direct diffuse BRDF backside
-            directDiffuse = surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
+            directDiffuse = viewDependency * surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
             direct += directDiffuse * radiance * backSurface.NdotL * shadowFactor;
         }
 

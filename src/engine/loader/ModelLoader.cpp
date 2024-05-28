@@ -405,7 +405,7 @@ namespace Atlas {
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
-                LoadMaterial(assimpMaterial, materialImages, *material, directoryPath, isObj, hasTangents, hasTexCoords);
+                uint32_t uvChannel = LoadMaterial(assimpMaterial, materialImages, *material, directoryPath, isObj, hasTangents, hasTexCoords);
 
                 material->vertexColors = hasVertexColors;
 
@@ -442,9 +442,9 @@ namespace Atlas {
                         tangents[j] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
                     }
 
-                    if (hasTexCoords && assimpMesh->mTextureCoords[0] != nullptr) {
-                        texCoords[j] = vec2(assimpMesh->mTextureCoords[0][j].x,
-                            assimpMesh->mTextureCoords[0][j].y);
+                    if (hasTexCoords && assimpMesh->mTextureCoords[uvChannel] != nullptr) {
+                        texCoords[j] = vec2(assimpMesh->mTextureCoords[uvChannel][j].x,
+                            assimpMesh->mTextureCoords[uvChannel][j].y);
                     }
 
                     if (hasVertexColors && assimpMesh->mColors[0] != nullptr) {
@@ -526,9 +526,10 @@ namespace Atlas {
 
         }
 
-        void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
+        uint32_t ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
             const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords) {
 
+            uint32_t uvChannel = 0;
             bool roughnessMetalnessTexture = false;
 
             aiString name;
@@ -583,15 +584,16 @@ namespace Atlas {
             material.metalness = glm::clamp(material.metalness, 0.0f, 1.0f);
 
             if (!hasTexCoords)
-                return;
+                return 0;
 
             if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
                 aiString aiPath;
+                aiTextureMapping aiMapping;
                 if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0)
-                    assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath);
+                    assimpMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &aiPath, &aiMapping, &uvChannel);
                 else
-                    assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath);
+                    assimpMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &aiPath, &aiMapping, &uvChannel);
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.baseColorTextures.contains(path)) {
                     material.baseColorMap = images.baseColorTextures[path];
@@ -672,6 +674,8 @@ namespace Atlas {
                 material.opacity < 1.0f) {
                 material.twoSided = true;
             }
+
+            return uvChannel;
             
         }
 

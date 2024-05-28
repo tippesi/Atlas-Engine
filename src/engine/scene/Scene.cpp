@@ -90,6 +90,12 @@ namespace Atlas {
 
             this->deltaTime = deltaTime;
 
+#ifdef AE_BINDLESS
+            // Make sure this was executed before we start the next update
+            if (rayTracingWorldUpdateFuture.valid())
+                rayTracingWorldUpdateFuture.get();
+#endif
+
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
@@ -269,11 +275,7 @@ namespace Atlas {
             }
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-
-            // Make sure this was executed before we start the next async update
-            if (rayTracingWorldUpdateFuture.valid())
-                rayTracingWorldUpdateFuture.get();        
+            UpdateBindlessIndexMaps();     
 
             // Make sure this is changed just once at the start of a frame
             rayTracingWorldUpdateFuture = std::async(std::launch::async, [this]() {
@@ -283,7 +285,8 @@ namespace Atlas {
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
                 if (rayTracingWorld) {
                     rayTracingWorld->scene = this;
-                    rayTracingWorld->Update(rayTracingSubset, true);
+                    // Don't update triangle lights for now (second argument)
+                    rayTracingWorld->Update(rayTracingSubset, false);
                 }
                 rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });            
