@@ -11,7 +11,7 @@ namespace Atlas::ImguiExtension {
     public:
         WindPanel() : Panel("Wind properties") {}
 
-        void Render(Scene::Wind& wind);
+        void Render(Ref<ImguiWrapper>& wrapper, Scene::Wind& wind);
 
     };
 

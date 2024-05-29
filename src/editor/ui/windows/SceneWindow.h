@@ -49,6 +49,8 @@ namespace Atlas::Editor::UI {
         float cameraMovementSpeed = 7.0f;
         float cameraRotationSpeed = 1.5f;
 
+        float resolutionScale = 0.75f;
+
         // Imguizmo translate mode
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;

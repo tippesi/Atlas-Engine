@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "scene/Scene.h"
 
+#include "Singletons.h"
 #include "EntityPropertiesPanel.h"
 #include "ImguiExtension/Panels.h"
 
@@ -57,7 +58,7 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, Scene::Wind>) {
                 RenderHeading("Wind");
-                windPanel.Render(t);
+                windPanel.Render(Singletons::imguiWrapper, t);
             }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");

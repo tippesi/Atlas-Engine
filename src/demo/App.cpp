@@ -560,6 +560,9 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
                 volumetricCloudsPanel.Render(clouds, renderTarget);
             }
+            if (ImGui::CollapsingHeader("Wind")) {
+                windPanel.Render(imguiWrapper, scene->wind);
+            }
             if (ImGui::CollapsingHeader("Postprocessing")) {
                 postProcessingPanel.Render(postProcessing);
             }

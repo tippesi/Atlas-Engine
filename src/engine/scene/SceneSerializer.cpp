@@ -161,6 +161,7 @@ namespace Atlas::Scene {
         j["entities"] = entities;
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
+        j["wind"] = scene->wind;
 
         // Parse all optional members
         if (scene->fog)
@@ -203,6 +204,7 @@ namespace Atlas::Scene {
 
         scene->sky = j["sky"];
         scene->postProcessing = j["postProcessing"];
+        scene->wind = j["wind"];
 
         if (j.contains("fog")) {
             scene->fog = CreateRef<Lighting::Fog>();
@@ -232,6 +234,22 @@ namespace Atlas::Scene {
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void to_json(json& j, const Wind& p) {
+
+        j = json{
+            {"direction", p.direction},
+            {"speed", p.speed}
+        };
+
+    }
+
+    void from_json(const json& j, Wind& p) {
+
+        try_get_json(j, "direction", p.direction);
+        try_get_json(j, "speed", p.speed);
 
     }
 

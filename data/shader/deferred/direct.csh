@@ -66,15 +66,17 @@ void main() {
         shadowFactor = CalculateCascadedShadow(uniforms.light.shadow, cascadeMaps, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-uniforms.light.direction.xyz, shadowNormal)));
 #endif
-#ifdef SCREEN_SPACE_SHADOWS
-        float sssFactor = textureLod(sssTexture, texCoord, 0).r;
-        shadowFactor = min(sssFactor, shadowFactor);
-#endif
 #ifdef CLOUD_SHADOWS
         float cloudShadowFactor = CalculateCloudShadow(surface.P, cloudShadowUniforms.cloudShadow, cloudMap);
 
         shadowFactor = min(shadowFactor, cloudShadowFactor);
 #endif
+        float shadowFactorTransmissive = shadowFactor;
+#ifdef SCREEN_SPACE_SHADOWS
+        float sssFactor = textureLod(sssTexture, texCoord, 0).r;
+        shadowFactor = min(sssFactor, shadowFactor);
+#endif
+
         vec3 radiance = uniforms.light.color.rgb * uniforms.light.intensity;
         direct = direct * radiance * surface.NdotL * shadowFactor;
 
@@ -86,7 +88,7 @@ void main() {
 
             // Direct diffuse BRDF backside
             directDiffuse = viewDependency * surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
-            direct += directDiffuse * radiance * backSurface.NdotL * shadowFactor;
+            direct += directDiffuse * radiance * backSurface.NdotL * shadowFactorTransmissive;
         }
 
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {    

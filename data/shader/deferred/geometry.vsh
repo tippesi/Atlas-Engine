@@ -87,11 +87,14 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+        // This is not well optimized and could use some work
+        vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
+        vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
+        position = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
+        lastPosition = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod,
-            globalData.time - globalData.deltaTime, mMatrix[3].xyz);
+            globalData.time - globalData.deltaTime, windPosition);
 
     }
 

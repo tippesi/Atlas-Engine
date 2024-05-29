@@ -283,7 +283,6 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Text("Rendering scale");
 
-                auto resolutionScale = Singletons::renderTarget->GetScalingFactor();
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
 
                 if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)

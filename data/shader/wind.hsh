@@ -10,19 +10,18 @@ vec4 SmoothCurve( vec4 x ) {   return x * x *( 3.0 - 2.0 * x ); }
 vec4 TriangleWave( vec4 x ) {   return abs( fract( x + 0.5 ) * 2.0 - 1.0 ); } 
 vec4 SmoothTriangleWave( vec4 x ) {   return SmoothCurve( TriangleWave( x ) ); }
 
-vec3 WindAnimation(sampler2D noiseTexture, vec3 position,
+vec3 WindAnimation(sampler2D noiseTexture, vec3 position, vec2 windDir,
     float bendFactor, float wiggleFactor, float lod, float animTime, vec3 location) {
 
     vec3 originalPos = position;
 
-    vec2 windDir = globalData.windDir;
     float windSpeed = globalData.windSpeed;
 
     float centerDistance = length(position.xz);
-    float height = position.y * bendFactor * 0.5;
+    float height = max(0.0, position.y * bendFactor * 0.5);
 
     float windScale = textureLod(noiseTexture, location.xz / 128.0 +
-        windDir * sqrt(windSpeed) * 0.01 * animTime, lod).r * 0.1;
+        globalData.windDir * sqrt(windSpeed) * 0.01 * animTime, lod).r * 0.1 - 0.02;
 
     float mainBending = height * windScale;
     mainBending += 1.0;
@@ -30,7 +29,7 @@ vec3 WindAnimation(sampler2D noiseTexture, vec3 position,
     mainBending = mainBending * mainBending - mainBending;
 
     position.xz += windDir * mainBending * sqrt(windSpeed);
-    position.xyz = normalize(position) * length(originalPos);
+    position.xyz = normalize(position - vec3(originalPos.x, 0.0, originalPos.z)) * abs(originalPos.y) + vec3(originalPos.x, 0.0, originalPos.z);
 
     float branchAmp = .25 * sqrt(windSpeed);
     float detailAmp = 0.02;
