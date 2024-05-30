@@ -22,6 +22,8 @@ namespace Atlas {
 
             vertexComponents[attribArray] = component;
 
+            ResetBatches();
+
         }
 
         void VertexArray::AddInstancedComponent(uint32_t attribArray, VertexBuffer buffer) {
@@ -35,6 +37,8 @@ namespace Atlas {
             component.bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
             vertexComponents[attribArray] = component;
+
+            ResetBatches();
 
         }
 
@@ -62,25 +66,11 @@ namespace Atlas {
                 commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
             }
 
-            // Bind in batches to reduce driver binding overhead
-            uint32_t bindingOffset = 0;
-            if (bindingBuffers.size() < vertexComponents.size())
-                bindingBuffers.resize(vertexComponents.size());
+            if (!batches.size())
+                BuildBatches();
 
-            uint32_t bindingCount = 0;
-            for (auto& [attribArray, vertexComponent] : vertexComponents) {
-                if (attribArray != bindingOffset + 1 && bindingCount > 0) {
-                    commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
-
-                    bindingOffset = attribArray;
-                    bindingCount = 0;
-                }
-
-                bindingBuffers[bindingCount++] = vertexComponent.vertexBuffer.buffer;
-            }
-
-            if (bindingCount) {
-                commandList->BindVertexBuffers(bindingBuffers, bindingOffset, bindingCount);
+            for (auto& batch : batches) {
+                commandList->BindVertexBuffers(batch.buffers, batch.offset, batch.count);
             }
 
         }
@@ -99,6 +89,42 @@ namespace Atlas {
                 bindingDescriptions.data(), uint32_t(bindingDescriptions.size()),
                 attributeDescriptions.data(), uint32_t(attributeDescriptions.size())
             );
+
+        }
+
+        void VertexArray::ResetBatches() {
+
+            batches.clear();
+
+        }
+
+        void VertexArray::BuildBatches() {
+
+            VertexBufferBatch batch{};
+
+            // Bind in batches to reduce driver binding overhead
+            uint32_t bindingOffset = 0;
+            uint32_t bindingCount = 0;
+            for (auto& [attribArray, vertexComponent] : vertexComponents) {
+                if (attribArray != bindingOffset + 1 && bindingCount > 0) {
+                    batch.offset = bindingOffset;
+                    batch.count = bindingCount;
+                    batches.push_back(batch);
+
+                    batch = {};
+                    bindingOffset = attribArray;
+                    bindingCount = 0;
+                }
+
+                batch.buffers.push_back(vertexComponent.vertexBuffer.buffer);
+                bindingCount++;
+            }
+
+            if (bindingCount) {
+                batch.offset = bindingOffset;
+                batch.count = bindingCount;
+                batches.push_back(batch);
+            }
 
         }
 

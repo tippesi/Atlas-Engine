@@ -74,36 +74,43 @@ namespace Atlas {
                     // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
                     scene->wind.noiseMap.Bind(commandList, 3, 1);
 
+                    int32_t subDataCount = 0;
                     // Retrieve all possible materials
-                    std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
-                    for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
-                        auto mesh = shadowPass->meshIdToMeshMap[meshId];
+                    for (auto& [meshId, instances] : shadowPass->meshToInstancesMap) {
+                        if (!instances.count) continue;
+
+                        auto& mesh = shadowPass->meshIdToMeshMap[meshId];
                         for (auto& subData : mesh->data.subData) {
-                            subDatas.push_back({ &subData, mesh });
+                            if (subDataCount < subDatas.size())
+                                subDatas[subDataCount] = {&subData, mesh.GetID(), mesh.Get().get()};
+                            else
+                                subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
+                            subDataCount++;
                         }
                     }
 
                     // Check whether materials have pipeline configs
-                    for (auto [subData, mesh] : subDatas) {
-                        auto material = subData->material;
+                    for (int32_t i = 0; i < subDataCount; i++) {
+                        auto& [subData, _, mesh] = subDatas[i];
+                        auto& material = subData->material;
                         if (material->shadowConfig.IsValid()) continue;
 
                         material->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                     }
 
                     // Sort materials by hash
-                    std::sort(subDatas.begin(), subDatas.end(),
-                        [](auto subData0, auto subData1) {
-                            return subData0.first->material->shadowConfig.variantHash <
-                                   subData1.first->material->shadowConfig.variantHash;
+                    std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
+                        [](auto& subData0, auto& subData1) {
+                            return std::get<0>(subData0)->material->shadowConfig.variantHash <
+                                std::get<0>(subData1)->material->shadowConfig.variantHash;
                         });
 
-                    size_t prevHash = 0;
-                    Ref<Graphics::Pipeline> currentPipeline = nullptr;
+                    Hash prevHash = 0;
                     Hash prevMesh = 0;
-                    for (auto& [subData, mesh] : subDatas) {
-                        auto& instance = shadowPass->meshToInstancesMap[mesh.GetID()];
-                        if (!instance.count) continue;
+                    Ref<Graphics::Pipeline> currentPipeline = nullptr;
+                    for (int32_t i = 0; i < subDataCount; i++) {
+                        auto& [subData, meshID, mesh] = subDatas[i];
+                        auto& instances = shadowPass->meshToInstancesMap[meshID];
 
                         auto material = subData->material;
 
@@ -116,9 +123,9 @@ namespace Atlas {
                             prevHash = material->shadowConfig.variantHash;
                         }
 
-                        if (mesh.GetID() != prevMesh) {
+                        if (meshID != prevMesh) {
                             mesh->vertexArray.Bind(commandList);
-                            prevMesh = mesh.GetID();
+                            prevMesh = meshID;
                         }                        
 
                         if (material->HasOpacityMap())
@@ -134,8 +141,8 @@ namespace Atlas {
                         };
                         commandList->PushConstants("constants", &pushConstants);
 
-                        commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
-                            0, instance.offset);
+                        commandList->DrawIndexed(subData->indicesCount, instances.count, subData->indicesOffset,
+                            0, instances.offset);
 
                         // Reset the frame buffer here to let it be able to be deleted
                         material->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
@@ -194,7 +201,7 @@ namespace Atlas {
         }
 
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+            Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 

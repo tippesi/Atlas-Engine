@@ -206,6 +206,14 @@ namespace Atlas {
                 Sampler* samplers[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
                 TLAS* tlases[DESCRIPTOR_SET_COUNT][BINDINGS_PER_DESCRIPTOR_SET];
 
+                uint32_t maxBufferBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxBufferArrayBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxImageBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxSampledImageBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxSampledImageArrayBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxSamplerBinding[DESCRIPTOR_SET_COUNT];
+                uint32_t maxTLASBinding[DESCRIPTOR_SET_COUNT];
+
                 Ref<DescriptorSet> sets[DESCRIPTOR_SET_COUNT];
                 Ref<DescriptorSetLayout> layouts[DESCRIPTOR_SET_COUNT];
                 bool changed[DESCRIPTOR_SET_COUNT];
@@ -241,6 +249,14 @@ namespace Atlas {
                         }
                         sets[i] = nullptr;
                         changed[i] = true;
+
+                        maxBufferBinding[i] = 0;
+                        maxBufferArrayBinding[i] = 0;
+                        maxImageBinding[i] = 0;
+                        maxSampledImageBinding[i] = 0;
+                        maxSampledImageArrayBinding[i] = 0;
+                        maxSamplerBinding[i] = 0;
+                        maxTLASBinding[i] = 0;
                     }
                 }
 
@@ -256,6 +272,14 @@ namespace Atlas {
                     }
                     sets[set] = nullptr;
                     changed[set] = true;
+
+                    maxBufferBinding[set] = 0;
+                    maxBufferArrayBinding[set] = 0;
+                    maxImageBinding[set] = 0;
+                    maxSampledImageBinding[set] = 0;
+                    maxSampledImageArrayBinding[set] = 0;
+                    maxSamplerBinding[set] = 0;
+                    maxTLASBinding[set] = 0;
                 }
 
                 void ResetBinding(uint32_t set, uint32_t binding) {

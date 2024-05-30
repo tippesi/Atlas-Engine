@@ -3,6 +3,7 @@
 #include "../Clock.h"
 
 #include <mutex>
+#include <tuple>
 
 namespace Atlas {
 
@@ -26,37 +27,43 @@ namespace Atlas {
             // Bind wind map
             scene->wind.noiseMap.Bind(commandList, 3, 7);
 
-            // Retrieve all possible materials
-            std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
-            for (auto& [meshId, _] : mainPass->meshToInstancesMap) {
+            int32_t subDataCount = 0;
+            // Retrieve all possible materials;
+            for (auto& [meshId, instances] : mainPass->meshToInstancesMap) {
+                if (!instances.count) continue;
 
-                auto mesh = mainPass->meshIdToMeshMap[meshId];
+                auto& mesh = mainPass->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
-                    subDatas.push_back({ &subData, mesh });
+                    if (subDataCount < subDatas.size())
+                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
+                    else
+                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
+                    subDataCount++;
                 }
             }
 
             // Check whether materials have pipeline configs
-            for (auto [subData, mesh] : subDatas) {
-                auto material = subData->material;
+            for (int32_t i = 0; i < subDataCount; i++) {
+                auto& [subData, _, mesh] = subDatas[i];
+                auto& material = subData->material;
                 if (material->mainConfig.IsValid()) continue;
 
                 material->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
             }
 
             // Sort materials by hash
-            std::sort(subDatas.begin(), subDatas.end(),
-                [](auto subData0, auto subData1) {
-                return subData0.first->material->mainConfig.variantHash <
-                    subData1.first->material->mainConfig.variantHash;
-            });
+            std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
+                [](auto& subData0, auto& subData1) {
+                    return std::get<0>(subData0)->material->mainConfig.variantHash <
+                        std::get<0>(subData1)->material->mainConfig.variantHash;
+                });
 
             Hash prevMesh = 0;
             Hash prevHash = 0;
             Ref<Graphics::Pipeline> currentPipeline;
-            for (auto [subData, mesh] : subDatas) {
-                auto& instance = mainPass->meshToInstancesMap[mesh.GetID()];
-                if (!instance.count) continue;
+            for (int32_t i = 0; i < subDataCount; i++) {
+                auto& [subData, meshID, mesh] = subDatas[i];
+                auto& instances = mainPass->meshToInstancesMap[meshID];
 
                 auto material = subData->material;
 
@@ -69,9 +76,9 @@ namespace Atlas {
                     prevHash = material->mainConfig.variantHash;
                 }
 
-                if (mesh.GetID() != prevMesh) {
+                if (meshID != prevMesh) {
                     mesh->vertexArray.Bind(commandList);
-                    prevMesh = mesh.GetID();
+                    prevMesh = meshID;
                 }
 
                 if (material->HasBaseColorMap())
@@ -103,8 +110,8 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
-                commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
-                    0, instance.offset);
+                commandList->DrawIndexed(subData->indicesCount, instances.count, subData->indicesOffset,
+                    0, instances.offset);
 
                 // Reset the frame buffer here to let it be able to be deleted
                 material->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
@@ -116,7 +123,7 @@ namespace Atlas {
         }
 
         PipelineConfig OpaqueRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target) {
+            Mesh::Mesh* mesh, const Ref<RenderTarget>& target) {
 
             auto shaderConfig = ShaderConfig {
                 {"deferred/geometry.vsh", VK_SHADER_STAGE_VERTEX_BIT},

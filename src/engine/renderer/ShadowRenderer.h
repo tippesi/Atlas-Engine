@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <map>
+#include <tuple>
 
 namespace Atlas {
 
@@ -25,7 +26,7 @@ namespace Atlas {
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
             using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
 
@@ -41,6 +42,8 @@ namespace Atlas {
             LightMap lightMap;
 
             ImpostorShadowRenderer impostorRenderer;
+
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
 
         };
 

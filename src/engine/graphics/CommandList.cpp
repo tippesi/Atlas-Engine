@@ -468,6 +468,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), 0u };
+            descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -487,6 +488,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
+            descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -511,6 +513,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffersArray[set][binding] = { buffersPtr };
+            descriptorBindingData.maxBufferArrayBinding[set] = std::max(descriptorBindingData.maxBufferArrayBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -528,6 +531,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer->GetCurrent(), 0 };
+            descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
             descriptorBindingData.changed[set] = true;
         }
 
@@ -550,6 +554,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
+            descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
 
         }
 
@@ -566,6 +571,7 @@ namespace Atlas {
             descriptorBindingData.ResetBinding(set, binding);
 
             descriptorBindingData.images[set][binding] = { image.get(), mipLevel };
+            descriptorBindingData.maxImageBinding[set] = std::max(descriptorBindingData.maxImageBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -582,6 +588,7 @@ namespace Atlas {
             descriptorBindingData.ResetBinding(set, binding);
 
             descriptorBindingData.sampledImages[set][binding] = { image.get(), sampler.get() };
+            descriptorBindingData.maxSampledImageBinding[set] = std::max(descriptorBindingData.maxSampledImageBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -600,6 +607,7 @@ namespace Atlas {
 
             // We don't do any checks here if the same things were bound already
             descriptorBindingData.sampledImagesArray[set][binding] = { imagesPtr };
+            descriptorBindingData.maxSampledImageArrayBinding[set] = std::max(descriptorBindingData.maxSampledImageArrayBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -615,6 +623,7 @@ namespace Atlas {
             descriptorBindingData.ResetBinding(set, binding);
 
             descriptorBindingData.samplers[set][binding] = sampler.get();
+            descriptorBindingData.maxSamplerBinding[set] = std::max(descriptorBindingData.maxSamplerBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -630,6 +639,7 @@ namespace Atlas {
             descriptorBindingData.ResetBinding(set, binding);
 
             descriptorBindingData.tlases[set][binding] = tlas.get();
+            descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
             descriptorBindingData.changed[set] = true;
 
         }
@@ -979,7 +989,7 @@ namespace Atlas {
                     descriptorBindingData.sets[i] = descriptorPool->GetCachedSet(shader->sets[i].layout);
 
                     // BUFFER
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxBufferBinding[i]; j++) {
                         if (!descriptorBindingData.buffers[i][j].first) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
@@ -1013,7 +1023,7 @@ namespace Atlas {
                     }
 
                     // SAMPLED IMAGES
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxSampledImageBinding[i]; j++) {
                         if (!descriptorBindingData.sampledImages[i][j].first ||
                             !descriptorBindingData.sampledImages[i][j].second) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
@@ -1046,7 +1056,7 @@ namespace Atlas {
                     }
 
                     // STORAGE IMAGES OR IMAGES SEPARATED FROM SAMPLER
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxImageBinding[i]; j++) {
                         if (!descriptorBindingData.images[i][j].first) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
@@ -1079,7 +1089,7 @@ namespace Atlas {
                     }
 
                     // SAMPLERS
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxSamplerBinding[i]; j++) {
                         if (!descriptorBindingData.samplers[i][j]) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
@@ -1110,7 +1120,7 @@ namespace Atlas {
                     }
 
                     // TOP-LEVEL ACCELERATION STRUCTURES
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxTLASBinding[i]; j++) {
                         if (!descriptorBindingData.tlases[i][j]) continue;
                         const auto& shaderBinding = shader->sets[i].bindings[j];
                         // This probably is an old binding, which isn't used by this shader
@@ -1142,7 +1152,7 @@ namespace Atlas {
                     }
 
                     // SAMPLED IMAGE ARRAYS
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxSampledImageArrayBinding[i]; j++) {
                         auto descriptorArraySize = descriptorBindingData.sets[i]->sampledImageArraySize[j];
 
                         if (descriptorBindingData.sampledImagesArray[i][j].empty() && !descriptorArraySize) continue;
@@ -1199,7 +1209,7 @@ namespace Atlas {
                     }
 
                     // BUFFER ARRAYS
-                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                    for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxBufferArrayBinding[i]; j++) {
                         auto descriptorArraySize = descriptorBindingData.sets[i]->bufferArraySize[j];
 
                         if (descriptorBindingData.buffersArray[i][j].empty() && !descriptorArraySize) continue;

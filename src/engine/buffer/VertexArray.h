@@ -59,10 +59,20 @@ namespace Atlas {
             VkPipelineVertexInputStateCreateInfo GetVertexInputState();
 
         private:
+            void ResetBatches();
+
+            void BuildBatches();
+
             struct VertexComponent {
                 VertexBuffer vertexBuffer;
                 VkVertexInputBindingDescription bindingDescription = {};
                 VkVertexInputAttributeDescription attributeDescription = {};
+            };
+
+            struct VertexBufferBatch {
+                uint32_t offset;
+                uint32_t count;
+                std::vector<Ref<Graphics::Buffer>> buffers;
             };
 
             IndexBuffer indexComponent;
@@ -72,7 +82,7 @@ namespace Atlas {
             std::vector<VkVertexInputBindingDescription> bindingDescriptions;
             std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-            std::vector<Ref<Graphics::Buffer>> bindingBuffers;
+            std::vector<VertexBufferBatch> batches;
 
         };
 
