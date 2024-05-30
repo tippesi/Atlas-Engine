@@ -1,6 +1,7 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
 #include "DataCreator.h"
+#include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
@@ -193,6 +194,12 @@ namespace Atlas::Editor::UI {
         columnItemCount = columnItemCount <= 0 ? 1 : columnItemCount;
 
         ImGui::Columns(columnItemCount, nullptr, false);
+
+        if (!std::filesystem::exists(currentDirectory)) {
+            auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
+            Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
+            currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        }
 
         auto entries = GetFilteredAndSortedDirEntries();
 

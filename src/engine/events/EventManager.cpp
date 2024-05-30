@@ -20,6 +20,7 @@ namespace Atlas {
         EventDelegate<DropEvent> EventManager::DropEventDelegate;
         EventDelegate<FrameEvent> EventManager::FrameEventDelegate;
         EventDelegate<> EventManager::QuitEventDelegate;
+        EventDelegate<> EventManager::ShutdownEventDelegate;
 
         std::mutex EventManager::handlerMutex;
         std::unordered_map<int32_t, EventManager::ControllerDevice> EventManager::controllers;

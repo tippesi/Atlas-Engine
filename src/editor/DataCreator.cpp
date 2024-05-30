@@ -23,8 +23,7 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
-            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -34,7 +33,6 @@ namespace Atlas::Editor {
         // Use SSGI by default
         scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
 
         scene->fog = CreateRef<Lighting::Fog>();
         scene->fog->enable = true;
@@ -84,8 +82,7 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
-            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -95,7 +92,6 @@ namespace Atlas::Editor {
         // Use SSGI by default
         scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
 
         scene->fog = CreateRef<Lighting::Fog>();
         scene->fog->enable = true;

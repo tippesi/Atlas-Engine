@@ -124,9 +124,15 @@ float UpsampleAo2x(float referenceDepth) {
 
 }
 
-UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 texCoords) {
+UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     UpsampleResult result;
+
+    highResPixel /= 2.0;
+    float x = fract(highResPixel.x);
+    float y = fract(highResPixel.y);
+
+    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
 
@@ -142,11 +148,11 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 texCoor
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 16.0), 1.0);
+        float depthWeight = min(exp(-depthDiff), 1.0);
 
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 128.0), 1.0);
 
-        float weight = depthWeight * normalWeight;
+        float weight = depthWeight * normalWeight * weights[i];
 
 #ifdef SSGI
         result.gi += gi[sharedMemoryOffset] * weight;
@@ -219,7 +225,7 @@ void main() {
         //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
         //    * prefilteredDiffuseLocal.a;
 
-        upsampleResult = Upsample(depth, surface.N, texCoord);
+        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
 
 #ifdef REFLECTION
         vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;

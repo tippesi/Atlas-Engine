@@ -204,7 +204,6 @@ namespace Atlas::Scene {
 
         scene->sky = j["sky"];
         scene->postProcessing = j["postProcessing"];
-        scene->wind = j["wind"];
 
         if (j.contains("fog")) {
             scene->fog = CreateRef<Lighting::Fog>();
@@ -229,6 +228,9 @@ namespace Atlas::Scene {
         if (j.contains("ssgi")) {
             scene->ssgi = CreateRef<Lighting::SSGI>();
             *scene->ssgi = j["ssgi"];
+        }
+        if (j.contains("wind")) {
+            scene->wind = j["wind"];
         }
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();

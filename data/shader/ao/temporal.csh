@@ -176,6 +176,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -190,7 +191,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += weights[i];

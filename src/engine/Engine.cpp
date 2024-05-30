@@ -8,6 +8,7 @@
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
+#include "events/EventManager.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -90,6 +91,8 @@ namespace Atlas {
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
         Input::KeyboardMap::Shutdown();
+
+        Events::EventManager::ShutdownEventDelegate.Fire();
 
 #ifdef AE_NO_APP
         SDL_Quit();

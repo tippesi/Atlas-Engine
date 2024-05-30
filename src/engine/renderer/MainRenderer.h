@@ -68,7 +68,7 @@ namespace Atlas {
             Ref<Font> font;
 
         private:
-            struct PackedMaterial {
+            struct alignas(16) PackedMaterial {
 
                 int32_t baseColor;
                 int32_t emissiveColor;

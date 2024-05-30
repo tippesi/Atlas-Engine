@@ -108,7 +108,7 @@ void main() {
 
                 float pdf = 1.0;
                 BRDFSample brdfSample;
-                if (material.roughness > 0.02) {
+                if (material.roughness > 0.01) {
                     ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
                         ray.direction, pdf);
                 }
@@ -120,7 +120,8 @@ void main() {
                     continue;
                 }
 
-                ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
+                // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
+                ray.origin = worldPos + ray.direction * EPSILON * 0.01 * abs(viewPos.z) + worldNorm * EPSILON * abs(viewPos.z)* 0.01;
 
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;

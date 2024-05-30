@@ -1,4 +1,4 @@
-//#define BICUBIC_FILTER
+#define BICUBIC_FILTER
 
 #include <../common/utility.hsh>
 #include <../common/ycocg.hsh>
@@ -170,6 +170,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -183,7 +184,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += weights[i];
@@ -209,7 +211,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += 1.0;
@@ -238,10 +240,10 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal) {
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
     confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
-    float depthPhi = max(1.0, abs(0.25 * linearDepth));
+    float depthPhi = 16.0 / abs(linearDepth);
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
     
     return confidence > 0.1 ? 1.0 : 0.0;
 
@@ -296,8 +298,9 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.5) {
+    if (totalWeight > 0.1) {
         history /= totalWeight;
+        history = max(history, 0.0);
    
         return true;
     }
@@ -391,7 +394,7 @@ void main() {
         historyColor, currentColor);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    //historyColor = mix(historyColor, currentColor, adjClipBlend);
+
 
     historyColor = YCoCgToRGB(historyColor);
     currentColor = YCoCgToRGB(currentColor);
@@ -403,7 +406,7 @@ void main() {
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
     float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
-    float factor = clamp(16.0 * log(roughness + 1.0), 0.001, temporalWeight);
+    float factor = clamp(32.0 * log(roughness + 1.0), 0.5, temporalWeight);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -426,7 +429,7 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    variance = roughness <= 0.02 ? 0.0 : variance;
+    variance = roughness <= 0.1 ? 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
