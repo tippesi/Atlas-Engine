@@ -126,8 +126,10 @@ namespace Atlas::Editor::UI {
                 scenePropertiesPanel.Render(scene->wind);
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)
                 scenePropertiesPanel.Render(scene->postProcessing);
-            else
+            else if (sceneHierarchyPanel.selectedEntity.IsValid())
                 scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
+            else
+                scenePropertiesPanel.Render(refScene);
         }
         else {
             // Render with invalid entity and invalid scene (will just return, but with window created)

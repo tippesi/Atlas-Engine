@@ -17,6 +17,8 @@ namespace Atlas::Editor::UI {
 
         if (scene != nullptr) {
 
+            bool selectionChanged = false;
+
             auto root = scene->GetEntityByName("Root");
 
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
@@ -40,6 +42,7 @@ namespace Atlas::Editor::UI {
             }
 
             ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+            if (ImGui::IsItemClicked()) selectionChanged = true;
 
             // Search should be case-insensitive
             transformedEntitySearch = entitySearch;
@@ -52,9 +55,9 @@ namespace Atlas::Editor::UI {
             if (!transformedEntitySearch.empty())
                 SearchHierarchy(scene, root, matchSet, nodeName, false);
 
-            TraverseHierarchy(scene, root, matchSet, inFocus);
+            TraverseHierarchy(scene, root, matchSet, inFocus, &selectionChanged);
 
-            RenderExtendedHierarchy(scene);
+            RenderExtendedHierarchy(scene, &selectionChanged);
 
             const auto& io = ImGui::GetIO();
             bool controlDown;
@@ -68,6 +71,12 @@ namespace Atlas::Editor::UI {
             if (inFocus && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntity(scene);
 
+            if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
+                selectedEntity = Scene::Entity();
+                selectedProperty = SelectedProperty();
+            }
+
+
         }
 
         ImGui::End();
@@ -75,7 +84,7 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
-        std::unordered_set<ECS::Entity>& matchSet, bool inFocus) {
+        std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -104,6 +113,7 @@ namespace Atlas::Editor::UI {
             ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen()) {
             selectedEntity = entity;
             selectedProperty = SelectedProperty();
+            *selectionChanged = true;
         }
 
         if (ImGui::BeginDragDropSource()) {
@@ -148,7 +158,7 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity, matchSet, inFocus);
+                TraverseHierarchy(scene, childEntity, matchSet, inFocus, selectionChanged);
 
             }
 
@@ -186,6 +196,8 @@ namespace Atlas::Editor::UI {
             DuplicateSelectedEntity(scene);
         }
 
+        *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
+
         if (dropEntity.IsValid()) {
             auto dropParentEntity = scene->GetParentEntity(dropEntity);
 
@@ -211,29 +223,29 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged) {
 
         ImGui::Separator();
 
         if (scene->fog)
-            RenderExtendedItem("Fog", &selectedProperty.fog);
+            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);
         if (scene->sky.clouds)
-            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds);
+            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
         if (scene->irradianceVolume)
-            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
+            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->reflection)
-            RenderExtendedItem("Reflection", &selectedProperty.reflection);
+            RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
         if (scene->ssgi)
-            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
+            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi, selectionChanged);
         if (scene->sss)
-            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
+            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
 
-        RenderExtendedItem("Wind", &selectedProperty.wind);
-        RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
+        RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
+        RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected) {
+    void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected, bool *selectionChanged) {
 
         ImGuiTreeNodeFlags nodeFlags =  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -244,6 +256,7 @@ namespace Atlas::Editor::UI {
             selectedProperty = SelectedProperty();
             selectedEntity = Scene::Entity();
             *selected = true;
+            *selectionChanged = true;
         }
 
     }

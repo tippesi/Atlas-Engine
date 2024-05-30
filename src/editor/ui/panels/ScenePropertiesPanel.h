@@ -5,6 +5,7 @@
 
 #include "Singletons.h"
 #include "EntityPropertiesPanel.h"
+#include "SceneStatisticsPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -64,6 +65,10 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
+                RenderHeading("Scene statistics");
+                sceneStatisticsPanel.Render(t);
+            }
 
             ImGui::End();
 
@@ -83,6 +88,7 @@ namespace Atlas::Editor::UI {
         }
 
         EntityPropertiesPanel entityPropertiesPanel;
+        SceneStatisticsPanel sceneStatisticsPanel;
 
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
