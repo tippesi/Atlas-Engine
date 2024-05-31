@@ -57,7 +57,8 @@ namespace Atlas::Scene
             Entity entity;
             Scripting::LuaScriptManager* scriptManager = nullptr;
             
-            bool scriptWasModifiedInLastUpdate = false;
+            // Force initial execution to be recognized as a changed script
+            bool scriptWasModifiedInLastUpdate = true;
 
             std::optional<sol::protected_function> updateFunction;
             std::optional<sol::environment> scriptEnvironment;

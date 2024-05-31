@@ -173,6 +173,7 @@ namespace Atlas {
             Entity mainCameraEntity;
             float deltaTime = 1.0f;
 
+            bool firstTimestep = true;
             bool hasChanged = true;
             bool rtDataValid = false;
             bool vegetationChanged = false;

@@ -279,17 +279,16 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void to_json(json &j, const LuaScriptComponent &p)
-    {
+    void to_json(json &j, const LuaScriptComponent &p) {
         j = json{};
 
         if (p.script.IsValid())
             j["resourcePath"] = p.script.GetResource()->path;
 
-        for (const auto &prop : p.properties)
-        {
-            switch (prop.type)
-            {
+        j["permanentExecution"] = p.permanentExecution;
+
+        for (const auto &prop : p.properties) {
+            switch (prop.type) {
             case LuaScriptComponent::PropertyType::Boolean:
                 j["scriptProperties"][prop.name]["type"] = "boolean";
                 j["scriptProperties"][prop.name]["value"] = prop.booleanValue;
@@ -312,13 +311,13 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void from_json(const json &j, LuaScriptComponent &p)
-    {
+    void from_json(const json &j, LuaScriptComponent &p) {
 
-        if (j.contains("resourcePath"))
-        {
+        if (j.contains("resourcePath")) {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
+
+            try_get_json(j, "permanentExecution", p.permanentExecution);
 
             p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
                 resourcePath, ResourceOrigin::User);

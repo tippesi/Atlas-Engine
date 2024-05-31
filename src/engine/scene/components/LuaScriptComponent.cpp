@@ -46,11 +46,10 @@ namespace Atlas::Scene::Components {
             if (scriptWasModifiedInLastUpdate && resource->WasModified()) {
                 resource->UpdateModifiedTime();
             }
-            scriptWasModifiedInLastUpdate = false;
             if (resource->WasModified()) {
                 // Do reload here, adjust modified time beforehand to be conservative
                 script->Reload();
-                scriptWasModifiedInLastUpdate = true;
+                scriptWasModifiedInLastUpdate |= true;
             }
         }
 
@@ -67,6 +66,8 @@ namespace Atlas::Scene::Components {
 
             // and then get or update the properties from the script
             GetOrUpdatePropertiesFromScript();
+
+            scriptWasModifiedInLastUpdate = false;
         }
 
         if (scene->physicsWorld->pauseSimulation && !permanentExecution) {

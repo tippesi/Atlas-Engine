@@ -99,11 +99,13 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-            // Update scripting components
-            auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
-            for (auto entity : luaScriptComponentSubset) {
-                auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
-                luaScriptComponent.Update(luaScriptManager, deltaTime);
+            // Update scripting components (but only after the first timestep when everything else is settled)
+            if (!firstTimestep) {
+                auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
+                for (auto entity : luaScriptComponentSubset) {
+                    auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
+                    luaScriptComponent.Update(luaScriptManager, deltaTime);
+                }
             }
 
             TransformComponent rootTransform = {};
@@ -314,6 +316,8 @@ namespace Atlas {
 
                 textComponent.Update(transformComponent);
             }
+
+            firstTimestep = false;
 
         }
 

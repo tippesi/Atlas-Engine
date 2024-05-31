@@ -27,7 +27,9 @@ namespace Atlas::Scripting {
         GenerateMeshBindings(atlasNs);
         GenerateMathBindings(glmNs);
         GenerateVolumeBindings(atlasNs);
+        GenerateLightingBindings(atlasNs);
         GenerateInputBindings(atlasNs);
+        GenerateGraphicBindings(atlasNs);
 
     }
 
@@ -39,10 +41,26 @@ namespace Atlas::Scripting {
             "DuplicateEntity", &Scene::Scene::DuplicateEntity,
             "GetEntityByName", &Scene::Scene::GetEntityByName,
             "GetParentEntity", &Scene::Scene::GetParentEntity,
+            "GetEntityCount", &Scene::Scene::GetEntityCount,
             "GetMainCamera", &Scene::Scene::GetMainCamera,
             "HasMainCamera", &Scene::Scene::HasMainCamera,
             "GetMeshes", &Scene::Scene::GetMeshes,
-            "GetMaterials", &Scene::Scene::GetMaterials
+            "wind", &Scene::Scene::wind,
+            "sky", &Scene::Scene::sky,
+            "fog", &Scene::Scene::fog,
+            "irradianceVolume", &Scene::Scene::irradianceVolume,
+            "ao", &Scene::Scene::ao,
+            "reflection", &Scene::Scene::reflection,
+            "sss", &Scene::Scene::sss,
+            "ssgi", &Scene::Scene::ssgi,
+            "sky", &Scene::Scene::sky,
+            "postProcessing", &Scene::Scene::postProcessing
+            );
+
+        ns->new_usertype<Scene::Wind>("Wind",
+            "direction", &Scene::Wind::direction,
+            "speed", &Scene::Wind::speed,
+            "noiseMap", &Scene::Wind::noiseMap
             );
 
     }
@@ -56,7 +74,7 @@ namespace Atlas::Scripting {
             "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
             "AddCameraComponent", &Scene::Entity::AddComponent<CameraComponent, float, float, float, float, glm::vec3&, glm::vec2&>,
             "AddHierarchyComponent", &Scene::Entity::AddComponent<HierarchyComponent>,
-            "AddLightComponentComponent", &Scene::Entity::AddComponent<LightComponent>,
+            "AddLightComponent", &Scene::Entity::AddComponent<LightComponent>,
             "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
             "AddNameComponent", &Scene::Entity::AddComponent<NameComponent, std::string>,
             "AddPlayerComponent", &Scene::Entity::AddComponent<PlayerComponent>,
@@ -69,7 +87,7 @@ namespace Atlas::Scripting {
             "RemoveAudioVolumeComponent", &Scene::Entity::RemoveComponent<AudioVolumeComponent>,
             "RemoveCameraComponent", &Scene::Entity::RemoveComponent<CameraComponent>,
             "RemoveHierarchyComponent", &Scene::Entity::RemoveComponent<HierarchyComponent>,
-            "RemoveLightComponentComponent", &Scene::Entity::RemoveComponent<LightComponent>,
+            "RemoveLightComponent", &Scene::Entity::RemoveComponent<LightComponent>,
             "RemoveMeshComponent", &Scene::Entity::RemoveComponent<MeshComponent>,
             "RemoveNameComponent", &Scene::Entity::RemoveComponent<NameComponent>,
             "RemovePlayerComponent", &Scene::Entity::RemoveComponent<PlayerComponent>,
@@ -82,7 +100,7 @@ namespace Atlas::Scripting {
             "GetAudioVolumeComponent", &Scene::Entity::TryGetComponent<AudioVolumeComponent>,
             "GetCameraComponent", &Scene::Entity::TryGetComponent<CameraComponent>,
             "GetHierarchyComponent", &Scene::Entity::TryGetComponent<HierarchyComponent>,
-            "GetLightComponentComponent", &Scene::Entity::TryGetComponent<LightComponent>,
+            "GetLightComponent", &Scene::Entity::TryGetComponent<LightComponent>,
             "GetMeshComponent", &Scene::Entity::TryGetComponent<MeshComponent>,
             "GetNameComponent", &Scene::Entity::TryGetComponent<NameComponent>,
             "GetPlayerComponent", &Scene::Entity::TryGetComponent<PlayerComponent>,
@@ -151,6 +169,21 @@ namespace Atlas::Scripting {
             "GetChildren", &HierarchyComponent::GetChildren,
             "globalMatrix", &HierarchyComponent::globalMatrix,
             "root", &HierarchyComponent::root
+        );
+
+        ns->new_usertype<DirectionalLightProperties>("DirectionalLightProperties",
+            "direction", &DirectionalLightProperties::direction
+        );
+
+        ns->new_usertype<PointLightProperties>("PointLightProperties",
+            "position", &PointLightProperties::position,
+            "radius", &PointLightProperties::radius,
+            "attenuation", &PointLightProperties::attenuation
+        );
+
+        ns->new_usertype<TypeProperties>("TypeProperties",
+            "directional", &TypeProperties::directional,
+            "point", &TypeProperties::point
         );
 
         // TODO: Extend this
@@ -468,6 +501,122 @@ namespace Atlas::Scripting {
 
     }
 
+    void LuaScriptBindings::GenerateLightingBindings(sol::table* ns) {
+
+        ns->new_usertype<Lighting::VolumetricClouds::Scattering>("VolumetricCloudsScattering",
+            "extinctionFactor", &Lighting::VolumetricClouds::Scattering::extinctionFactor,
+            "scatteringFactor", &Lighting::VolumetricClouds::Scattering::scatteringFactor,
+            "extinctionCoefficients", &Lighting::VolumetricClouds::Scattering::extinctionCoefficients,
+            "eccentricityFirstPhase", &Lighting::VolumetricClouds::Scattering::eccentricityFirstPhase,
+            "eccentricitySecondPhase", &Lighting::VolumetricClouds::Scattering::eccentricitySecondPhase,
+            "phaseAlpha", &Lighting::VolumetricClouds::Scattering::phaseAlpha
+            );
+
+        ns->new_usertype<Lighting::VolumetricClouds>("VolumetricClouds",
+            "coverageTexture", &Lighting::VolumetricClouds::coverageTexture,
+            "shapeTexture", &Lighting::VolumetricClouds::shapeTexture,
+            "detailTexture", &Lighting::VolumetricClouds::detailTexture,
+            "shadowTexture", &Lighting::VolumetricClouds::shadowTexture,
+            "sampleCount", &Lighting::VolumetricClouds::sampleCount,
+            "occlusionSampleCount", &Lighting::VolumetricClouds::occlusionSampleCount,
+            "shadowSampleFraction", &Lighting::VolumetricClouds::shadowSampleFraction,
+            "minHeight", &Lighting::VolumetricClouds::minHeight,
+            "maxHeight", &Lighting::VolumetricClouds::maxHeight,
+            "distanceLimit", &Lighting::VolumetricClouds::distanceLimit,
+            "coverageScale", &Lighting::VolumetricClouds::coverageScale,
+            "shapeScale", &Lighting::VolumetricClouds::shapeScale,
+            "detailScale", &Lighting::VolumetricClouds::detailScale,
+            "coverageSpeed", &Lighting::VolumetricClouds::coverageSpeed,
+            "shapeSpeed", &Lighting::VolumetricClouds::shapeSpeed,
+            "detailSpeed", &Lighting::VolumetricClouds::detailSpeed,
+            "detailStrength", &Lighting::VolumetricClouds::detailStrength,
+            "densityMultiplier", &Lighting::VolumetricClouds::densityMultiplier,
+            "heightStretch", &Lighting::VolumetricClouds::heightStretch,
+            "darkEdgeFocus", &Lighting::VolumetricClouds::darkEdgeFocus,
+            "darkEdgeAmbient", &Lighting::VolumetricClouds::darkEdgeAmbient,
+            "needsNoiseUpdate", &Lighting::VolumetricClouds::needsNoiseUpdate,
+            "enable", &Lighting::VolumetricClouds::enable,
+            "castShadow", &Lighting::VolumetricClouds::castShadow,
+            "stochasticOcclusionSampling", &Lighting::VolumetricClouds::stochasticOcclusionSampling,
+            "scattering", &Lighting::VolumetricClouds::scattering
+            );
+
+        ns->new_usertype<Lighting::Atmosphere>("Atmosphere",
+            "height", &Lighting::Atmosphere::height
+        );
+
+        ns->new_usertype<Lighting::SSS>("SSS",
+            "sampleCount", &Lighting::SSS::sampleCount,
+            "maxLength", &Lighting::SSS::maxLength,
+            "thickness", &Lighting::SSS::thickness,
+            "enable", &Lighting::SSS::enable
+        );
+
+        ns->new_usertype<Lighting::SSGI>("SSGI",
+            "enable", &Lighting::SSGI::enable,
+            "enableAo", &Lighting::SSGI::enableAo,
+            "radius", &Lighting::SSGI::radius,
+            "rayCount", &Lighting::SSGI::rayCount,
+            "sampleCount", &Lighting::SSGI::sampleCount,
+            "irradianceLimit", &Lighting::SSGI::irradianceLimit,
+            "aoStrength", &Lighting::SSGI::aoStrength,
+            "rt", &Lighting::SSGI::rt,
+            "opacityCheck", &Lighting::SSGI::opacityCheck
+        );
+
+        ns->new_usertype<Lighting::Reflection>("Reflection",
+            "textureLevel", &Lighting::Reflection::textureLevel,
+            "radianceLimit", &Lighting::Reflection::radianceLimit,
+            "bias", &Lighting::Reflection::bias,
+            "spatialFilterStrength", &Lighting::Reflection::spatialFilterStrength,
+            "temporalWeight", &Lighting::Reflection::temporalWeight,
+            "historyClipMax", &Lighting::Reflection::historyClipMax,
+            "currentClipFactor", &Lighting::Reflection::currentClipFactor,
+            "enable", &Lighting::Reflection::enable,
+            "rt", &Lighting::Reflection::rt,
+            "gi", &Lighting::Reflection::gi,
+            "useShadowMap", &Lighting::Reflection::useShadowMap,
+            "useNormalMaps", &Lighting::Reflection::useNormalMaps,
+            "opacityCheck", &Lighting::Reflection::opacityCheck
+        );
+
+        ns->new_usertype<Lighting::EnvironmentProbe>("EnvironmentProbe",
+            "resolution", &Lighting::EnvironmentProbe::resolution,
+            "viewMatrices", &Lighting::EnvironmentProbe::viewMatrices,
+            "projectionMatrix", &Lighting::EnvironmentProbe::projectionMatrix,
+            "update", &Lighting::EnvironmentProbe::update,
+            "cubemap", &Lighting::EnvironmentProbe::cubemap,
+            "depth", &Lighting::EnvironmentProbe::depth,
+            "filteredDiffuse", &Lighting::EnvironmentProbe::filteredDiffuse,
+            "filteredSpecular", &Lighting::EnvironmentProbe::filteredSpecular
+        );
+
+        ns->new_usertype<Lighting::Fog>("Fog",
+            "enable", &Lighting::Fog::enable,
+            "extinctionFactor", &Lighting::Fog::extinctionFactor,
+            "scatteringFactor", &Lighting::Fog::scatteringFactor,
+            "extinctionCoefficients", &Lighting::Fog::extinctionCoefficients,
+            "density", &Lighting::Fog::density,
+            "height", &Lighting::Fog::height,
+            "heightFalloff", &Lighting::Fog::heightFalloff,
+            "scatteringAnisotropy", &Lighting::Fog::scatteringAnisotropy,
+            "ambientFactor", &Lighting::Fog::ambientFactor,
+            "rayMarching", &Lighting::Fog::rayMarching,
+            "rayMarchStepCount", &Lighting::Fog::rayMarchStepCount,
+            "volumetricIntensity", &Lighting::Fog::volumetricIntensity
+        );
+
+        ns->new_usertype<Lighting::Sky>("Sky",
+            "GetProbe", &Lighting::Sky::GetProbe,
+            "planetCenter", &Lighting::Sky::planetCenter,
+            "planetRadius", &Lighting::Sky::planetRadius,
+            "clouds", &Lighting::Sky::clouds,
+            "atmosphere", &Lighting::Sky::atmosphere,
+            "probe", &Lighting::Sky::probe
+        );
+
+    }
+
     void LuaScriptBindings::GenerateInputBindings(sol::table* ns) {
 
         ns->new_enum("Keycode", 
@@ -572,6 +721,36 @@ namespace Atlas::Scripting {
         ns->new_usertype<Input::KeyboardMap>("KeyboardMap",
             "GetKeyState", Input::KeyboardMap::GetKeyState,
             "IsKeyPressed", Input::KeyboardMap::IsKeyPressed
+        );
+
+    }
+
+    void LuaScriptBindings::GenerateGraphicBindings(sol::table* ns) {
+
+        ns->new_usertype<Texture::Texture2D>("Texture2D",
+            "width", &Texture::Texture2D::width,
+            "height", &Texture::Texture2D::height,
+            "channels", &Texture::Texture2D::channels
+        );
+
+        ns->new_usertype<Texture::Texture2DArray>("Texture2DArrayc",
+            "width", &Texture::Texture2DArray::width,
+            "height", &Texture::Texture2DArray::height,
+            "depth", &Texture::Texture2DArray::depth,
+            "channels", &Texture::Texture2DArray::channels
+        );
+
+        ns->new_usertype<Texture::Texture3D>("Texture3D",
+            "width", &Texture::Texture3D::width,
+            "height", &Texture::Texture3D::height,
+            "depth", &Texture::Texture3D::depth,
+            "channels", &Texture::Texture3D::channels
+        );
+
+        ns->new_usertype<Texture::Cubemap>("Cubemap",
+            "width", &Texture::Cubemap::width,
+            "height", &Texture::Cubemap::height,
+            "channels", &Texture::Cubemap::channels
         );
 
     }
