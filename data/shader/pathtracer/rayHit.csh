@@ -290,7 +290,9 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
     // Russain roulette, terminate rays with a chance of one percent
     float probability = clamp(max(payload.throughput.r,
-        max(payload.throughput.g, payload.throughput.b)), 0.1, 0.99);
+        max(payload.throughput.g, payload.throughput.b)), 0.01, 0.99);
+
+    probability = Uniforms.bounceCount < 3 ? min(3.0 * probability, 1.0) : probability;
 
     if (random(raySeed, curSeed) > probability) {
         payload.throughput = vec3(0.0);

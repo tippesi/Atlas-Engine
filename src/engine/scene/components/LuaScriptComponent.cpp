@@ -20,6 +20,10 @@ namespace Atlas::Scene::Components {
         this->scene = scene;
         this->entity = entity;
 
+        // reset the saved references
+        updateFunction.reset();
+        scriptEnvironment.reset();
+
     }
 
     void LuaScriptComponent::Update(Scripting::LuaScriptManager& scriptManager, float deltaTime) {
@@ -65,7 +69,7 @@ namespace Atlas::Scene::Components {
             GetOrUpdatePropertiesFromScript();
         }
 
-        if (scene->physicsWorld->pauseSimulation) {
+        if (scene->physicsWorld->pauseSimulation && !permanentExecution) {
             // the instance is not running, discard the state
             updateFunction.reset();
             scriptEnvironment.reset();
@@ -112,10 +116,9 @@ namespace Atlas::Scene::Components {
             sol::environment scriptEnv(state, sol::create, state.globals());
             scriptEnvironment = scriptEnv;
 
-            // create environment based functions
-            scriptEnv.set_function("GetThisEntity", [&]() { return this->entity; });
-
-            scriptEnv.set_function("GetThisScene", [&]() { return this->scene; });
+            // create environment based functions (and copy the necessary lambda captures)
+            scriptEnv.set_function("GetThisEntity", [entity = this->entity]() { return entity; });
+            scriptEnv.set_function("GetThisScene", [scene = this->scene]() { return scene; });
 
             // load script
             state.script(script->code, scriptEnv);

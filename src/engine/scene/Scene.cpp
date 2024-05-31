@@ -279,9 +279,7 @@ namespace Atlas {
 
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
             // Make sure this is changed just once at the start of a frame
-            rayTracingWorldUpdateFuture = std::async(std::launch::async, [this, rayTracingSubset]() {
-                
-
+            rayTracingWorldUpdateFuture = std::async(std::launch::async, [this, rayTracingSubset]() {              
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
                 if (rayTracingWorld) {

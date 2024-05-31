@@ -40,7 +40,9 @@ namespace Atlas::Scripting {
             "GetEntityByName", &Scene::Scene::GetEntityByName,
             "GetParentEntity", &Scene::Scene::GetParentEntity,
             "GetMainCamera", &Scene::Scene::GetMainCamera,
-            "HasMainCamera", &Scene::Scene::HasMainCamera
+            "HasMainCamera", &Scene::Scene::HasMainCamera,
+            "GetMeshes", &Scene::Scene::GetMeshes,
+            "GetMaterials", &Scene::Scene::GetMaterials
             );
 
     }

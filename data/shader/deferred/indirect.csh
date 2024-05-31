@@ -150,7 +150,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         float depthDiff = abs(referenceDepth - depth);
         float depthWeight = min(exp(-depthDiff), 1.0);
 
-        float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 128.0), 1.0);
+        float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
         float weight = depthWeight * normalWeight * weights[i];
 

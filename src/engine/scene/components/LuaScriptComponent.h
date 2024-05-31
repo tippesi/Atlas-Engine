@@ -47,6 +47,8 @@ namespace Atlas::Scene
             ResourceHandle<Scripting::Script> script;
             std::vector<ScriptProperty> properties;
 
+            bool permanentExecution = false;
+
         protected:
             void Update(Scripting::LuaScriptManager& scriptManager, float deltaTime);
 

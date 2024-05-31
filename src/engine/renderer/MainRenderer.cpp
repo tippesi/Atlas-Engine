@@ -3,6 +3,7 @@
 #include "helper/HaltonSequence.h"
 
 #include "../common/Packing.h"
+#include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
@@ -119,13 +120,9 @@ namespace Atlas {
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
                 });
 
-            if (scene->rayTracingWorldUpdateFuture.valid())
-                scene->rayTracingWorldUpdateFuture.get();
-            fillRenderListFuture.get();
-            prepareMaterialsFuture.get();
-            prepareBindlessFuture.get();
-
             SetUniforms(target, scene, camera);
+
+            prepareBindlessFuture.get();
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -141,6 +138,8 @@ namespace Atlas {
                 commandList->BindBuffers(blasBuffers, 0, 0);
                 commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
             }
+
+            prepareMaterialsFuture.get();
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -169,14 +168,23 @@ namespace Atlas {
                 FilterProbe(scene->sky.atmosphere->probe, commandList);
             }
 
+            if (scene->irradianceVolume) {
+                commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
+            }
+
+            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+
+            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
+
+            fillRenderListFuture.get();
+
             // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
             commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 2);
             commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 3);
-
-            if (scene->irradianceVolume) {
-                commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
-            }
 
             {
                 shadowRenderer.Render(target, scene, commandList, &renderList);
@@ -190,8 +198,6 @@ namespace Atlas {
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
             }
-
-            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -214,8 +220,6 @@ namespace Atlas {
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
-
-            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");

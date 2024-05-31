@@ -68,7 +68,7 @@ namespace Atlas::Editor::UI {
         if (!Begin())
             return;
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
         }
 
@@ -190,34 +190,73 @@ namespace Atlas::Editor::UI {
             auto region = ImGui::GetContentRegionAvail();
             auto buttonSize = ImVec2(height, height);
 
-            auto backgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 55) : IM_COL32(255, 255, 255, 55);
+            ImVec4 selectedColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+
+            auto barBackgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 55) : IM_COL32(255, 255, 255, 55);
 
             auto windowPos = ImGui::GetWindowPos();
             auto drawList = ImGui::GetWindowDrawList();
-            drawList->AddRectFilled(windowPos, ImVec2(region.x + windowPos.x, height + windowPos.y + padding), backgroundColor);
+            drawList->AddRectFilled(windowPos, ImVec2(region.x + windowPos.x, height + windowPos.y + padding), barBackgroundColor);
 
             ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
-            if (ImGui::RadioButton("T", &guizmoMode, ImGuizmo::OPERATION::TRANSLATE)) {
+            auto uvMin = ImVec2(0.15f, 0.15f);
+            auto uvMax = ImVec2(0.85f, 0.85f);
+
+            auto& moveIcon = Singletons::icons->Get(IconType::Move);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(moveIcon);
+            bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
+            ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
                 guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
             }
+            ImGui::SetItemTooltip("Sets the gizmo into translation mode");
+            ImGui::PopStyleColor();
+
             ImGui::SameLine();
-            if (ImGui::RadioButton("R", &guizmoMode, ImGuizmo::OPERATION::ROTATE)) {
+            auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(rotateIcon);
+            selected = guizmoMode == ImGuizmo::OPERATION::ROTATE;
+            backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f); 
+            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
                 guizmoMode = ImGuizmo::OPERATION::ROTATE;
             }
+            ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
+            ImGui::PopStyleColor();
+
             ImGui::SameLine();
-            if (ImGui::RadioButton("S", &guizmoMode, ImGuizmo::OPERATION::SCALE)) {
+            auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(scaleIcon);
+            selected = guizmoMode == ImGuizmo::OPERATION::SCALE;
+            backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
                 guizmoMode = ImGuizmo::OPERATION::SCALE;
             }
-
-
-            auto uvMin = ImVec2(0.25, 0.25);
-            auto uvMax = ImVec2(0.75, 0.75);
+            ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
+            ImGui::PopStyleColor();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-            auto& playIcon = Singletons::icons->Get(IconType::Play);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
+            auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreHorizIcon);
+            ImGui::SameLine();
+            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                ImGui::OpenPopup("Guizmo settings");
+            }
+
+            if (ImGui::BeginPopup("Guizmo settings")) {
+                ImGui::Text("Snapping");
+
+                ImGui::Checkbox("Enabled", &snappingEnabled);
+                ImGui::DragFloat("Translation snap", &translationSnap, 0.01f, 0.1f, 100.0f);
+                ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
+                ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
+
+                ImGui::EndPopup();
+            }
 
             hasMainCamera = false;
             if (scene.IsLoaded()) {
@@ -240,6 +279,12 @@ namespace Atlas::Editor::UI {
                     playerEntity = entity;
                 }
             }
+
+            uvMin = ImVec2(0.25f, 0.25f);
+            uvMax = ImVec2(0.75f, 0.75f);
+
+            auto& playIcon = Singletons::icons->Get(IconType::Play);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
@@ -374,9 +419,24 @@ namespace Atlas::Editor::UI {
                     globalDecomp.translation += offset;
                     auto globalMatrix = globalDecomp.Compose();
 
-                    ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
+                    float* snappingPtr = nullptr;
+                    glm::vec3 translation = vec3(translationSnap);
+                    // Expects a 3-comp vector for translation
+                    if (guizmoMode == ImGuizmo::OPERATION::TRANSLATE && snappingEnabled)
+                        snappingPtr = glm::value_ptr(translation);
+                    else if (guizmoMode == ImGuizmo::OPERATION::ROTATE && snappingEnabled)
+                        snappingPtr = &rotationSnap;
+                    else if (guizmoMode == ImGuizmo::OPERATION::SCALE && snappingEnabled)
+                        snappingPtr = &scaleSnap;
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+                    auto size = drawList->VtxBuffer.Size;
+
+                    bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
-                        glm::value_ptr(globalMatrix));
+                        glm::value_ptr(globalMatrix), nullptr, snappingPtr);
+
+                    // Only visible if something was drawn
+                    bool visible = drawList->VtxBuffer.Size != size;
 
                     if (ImGuizmo::IsUsing()) {
                         globalDecomp = Common::MatrixDecomposition(globalMatrix);
@@ -389,6 +449,11 @@ namespace Atlas::Editor::UI {
 
                         auto parentEntity = scene->GetParentEntity(selectedEntity);
                         transform.ReconstructLocalMatrix(parentEntity);
+                    }
+
+                    // Need to disable here, otherwise we can't move around anymore
+                    if (!visible) {
+                        needGuizmoEnabled = false;
                     }
                 }
 

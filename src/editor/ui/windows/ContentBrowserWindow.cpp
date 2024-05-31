@@ -96,7 +96,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
         }
 

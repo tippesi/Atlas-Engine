@@ -68,6 +68,10 @@ namespace Atlas::Editor {
 
         json j = {
             { "resolutionScale", sceneWindow->resolutionScale },
+            { "snappingEnabled", sceneWindow->snappingEnabled },
+            { "translationSnap", sceneWindow->translationSnap },
+            { "rotationSnap", sceneWindow->rotationSnap },
+            { "scaleSnap", sceneWindow->scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "camera", camera }
@@ -98,6 +102,10 @@ namespace Atlas::Editor {
         json camera;
 
         try_get_json(j, "resolutionScale", sceneWindow->resolutionScale);
+        try_get_json(j, "snappingEnabled", sceneWindow->snappingEnabled);
+        try_get_json(j, "translationSnap", sceneWindow->translationSnap);
+        try_get_json(j, "rotationSnap", sceneWindow->rotationSnap);
+        try_get_json(j, "scaleSnap", sceneWindow->scaleSnap);
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "camera", camera);

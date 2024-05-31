@@ -46,6 +46,11 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity cameraEntity;
 
+        bool snappingEnabled = false;
+        float translationSnap = 0.1f;
+        float rotationSnap = 1.0f;
+        float scaleSnap = 0.01f;
+
         float cameraMovementSpeed = 7.0f;
         float cameraRotationSpeed = 1.5f;
 

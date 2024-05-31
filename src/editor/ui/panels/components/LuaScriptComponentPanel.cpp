@@ -37,6 +37,7 @@ namespace Atlas::Editor::UI
         if (!luaScriptComponent.script.IsLoaded())
             return false;
 
+        ImGui::Checkbox("Permanent execution", &luaScriptComponent.permanentExecution);
         ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code, ImVec2(0, 0), ImGuiInputTextFlags_ReadOnly);
 
         ImGui::Separator();
