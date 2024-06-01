@@ -42,6 +42,11 @@ namespace Atlas {
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!clouds || !clouds->enable || !mainLightEntity.IsValid()) return;
 
+            if (clouds->halfResolution && target->GetVolumetricResolution() == FULL_RES)
+                target->SetVolumetricResolution(HALF_RES);
+            else if (!clouds->halfResolution && target->GetVolumetricResolution() != FULL_RES)
+                target->SetVolumetricResolution(FULL_RES);
+
             Graphics::Profiler::BeginQuery("Volumetric clouds");
 
             if (clouds->needsNoiseUpdate) {

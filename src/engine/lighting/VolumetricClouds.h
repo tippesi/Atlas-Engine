@@ -63,6 +63,7 @@ namespace Atlas {
             bool enable = true;
             bool castShadow = true;
             bool stochasticOcclusionSampling = true;
+            bool halfResolution = true;
 
         };
 

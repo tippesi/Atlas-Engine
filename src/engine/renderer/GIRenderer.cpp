@@ -51,6 +51,11 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Render SSGI");
 
+            if (ssgi->halfResolution && target->GetGIResolution() == FULL_RES)
+                target->SetGIResolution(HALF_RES);
+            else if (!ssgi->halfResolution && target->GetGIResolution() != FULL_RES)
+                target->SetGIResolution(FULL_RES);
+
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
 

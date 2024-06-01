@@ -43,6 +43,11 @@ namespace Atlas {
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
 
+            if (reflection->halfResolution && target->GetReflectionResolution() == FULL_RES)
+                target->SetReflectionResolution(HALF_RES);
+            else if (!reflection->halfResolution && target->GetReflectionResolution() != FULL_RES)
+                target->SetReflectionResolution(FULL_RES);
+
             helper.UpdateLights(scene, false);
 
             ivec2 res = ivec2(target->reflectionTexture.width, target->reflectionTexture.height);

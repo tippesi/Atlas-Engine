@@ -6,10 +6,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        bool halfRes = target->GetVolumetricResolution() == Renderer::RenderResolution::HALF_RES;
-
         ImGui::Checkbox("Enable", &fog->enable);
-        ImGui::Checkbox("Half resolution", &halfRes);
         ImGui::SetItemTooltip("Resoltion settings are shared between fog and volumetric clouds");
 
         ImGui::ColorEdit3("Extinction coefficients", &fog->extinctionCoefficients[0]);
@@ -29,13 +26,6 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Intensity", &fog->volumetricIntensity, 0.0f, 1.0f);
 
         ImGui::PopID();
-
-        if (halfRes && target->GetVolumetricResolution() != Renderer::RenderResolution::HALF_RES) {
-            target->SetVolumetricResolution(Renderer::RenderResolution::HALF_RES);
-        }
-        else if (!halfRes && target->GetVolumetricResolution() == Renderer::RenderResolution::HALF_RES) {
-            target->SetVolumetricResolution(Renderer::RenderResolution::FULL_RES);
-        }
 
     }
 

@@ -192,7 +192,7 @@ namespace Atlas::Editor::UI {
 
             ImVec4 selectedColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 
-            auto barBackgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 55) : IM_COL32(255, 255, 255, 55);
+            auto barBackgroundColor = Singletons::config->darkMode ? IM_COL32(0, 0, 0, 75) : IM_COL32(255, 255, 255, 75);
 
             auto windowPos = ImGui::GetWindowPos();
             auto drawList = ImGui::GetWindowDrawList();
@@ -307,7 +307,7 @@ namespace Atlas::Editor::UI {
             uvMin = ImVec2(0.1f, 0.1f);
             uvMax = ImVec2(0.9f, 0.9f);
 
-            ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + padding), 0.0f));
+            ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
             if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 ImGui::OpenPopup("Viewport settings");
             }
@@ -344,7 +344,7 @@ namespace Atlas::Editor::UI {
             auto& eyeIcon = Singletons::icons->Get(IconType::Eye);
             set = Singletons::imguiWrapper->GetTextureDescriptorSet(eyeIcon);
 
-            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + padding), 0.0f));
+            ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
             if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 ImGui::OpenPopup("Visualization settings");
             }
@@ -363,6 +363,8 @@ namespace Atlas::Editor::UI {
                 menuItem("Lit", ViewportVisualization::Lit);
 
                 if (ImGui::BeginMenu("GBuffer")) {
+                    menuItem("Base color", ViewportVisualization::GBufferBaseColor);
+                    menuItem("Roughness/Metalness/Ao", ViewportVisualization::GBufferRoughnessMetalnessAo);
                     menuItem("Depth", ViewportVisualization::GBufferDepth);
                     menuItem("Normals", ViewportVisualization::GBufferNormals);
                     menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);

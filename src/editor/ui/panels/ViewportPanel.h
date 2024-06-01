@@ -9,6 +9,8 @@ namespace Atlas::Editor::UI {
 
     enum ViewportVisualization {
         Lit = 0,
+        GBufferBaseColor,
+        GBufferRoughnessMetalnessAo,
         GBufferNormals,
         GBufferGeometryNormals,
         GBufferDepth,
