@@ -85,6 +85,7 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
+#ifndef AE_BINDLESS
                 if (material->HasBaseColorMap())
                     material->baseColorMap->Bind(commandList, 3, 0);
                 if (material->HasOpacityMap())
@@ -99,6 +100,7 @@ namespace Atlas {
                     material->aoMap->Bind(commandList, 3, 5);
                 if (material->HasDisplacementMap())
                     material->displacementMap->Bind(commandList, 3, 6);
+#endif
 
                 auto pushConstants = PushConstants {
                     .vegetation = mesh->vegetation ? 1u : 0u,
@@ -110,7 +112,14 @@ namespace Atlas {
                     .displacementScale = material->displacementScale,
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
-                    .windWiggleScale = mesh->windWiggleScale
+                    .windWiggleScale = mesh->windWiggleScale,
+                    .baseColorTextureIdx = material->HasBaseColorMap() ? scene->textureToBindlessIdx[material->baseColorMap] : 0,
+                    .opacityTextureIdx = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap] : 0,
+                    .normalTextureIdx = material->HasNormalMap() ? scene->textureToBindlessIdx[material->normalMap] : 0,
+                    .roughnessTextureIdx = material->HasRoughnessMap() ? scene->textureToBindlessIdx[material->roughnessMap] : 0,
+                    .metalnessTextureIdx = material->HasMetalnessMap() ? scene->textureToBindlessIdx[material->metalnessMap] : 0,
+                    .aoTextureIdx = material->HasAoMap() ? scene->textureToBindlessIdx[material->aoMap] : 0,
+                    .heightTextureIdx = material->HasDisplacementMap() ? scene->textureToBindlessIdx[material->displacementMap] : 0,
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

@@ -1,6 +1,7 @@
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
 #include <../globals.hsh>
+#include <texture.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec2 normalFS;
@@ -8,28 +9,6 @@ layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
 layout (location = 4) out uint materialIdxFS;
 layout (location = 5) out vec2 velocityFS;
-
-#ifdef BASE_COLOR_MAP
-layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
-#endif
-#ifdef OPACITY_MAP
-layout(set = 3, binding = 1) uniform sampler2D opacityMap;
-#endif
-#ifdef NORMAL_MAP
-layout(set = 3, binding = 2) uniform sampler2D normalMap;
-#endif
-#ifdef ROUGHNESS_MAP
-layout(set = 3, binding = 3) uniform sampler2D roughnessMap;
-#endif
-#ifdef METALNESS_MAP
-layout(set = 3, binding = 4) uniform sampler2D metalnessMap;
-#endif
-#ifdef AO_MAP
-layout(set = 3, binding = 5) uniform sampler2D aoMap;
-#endif
-#ifdef HEIGHT_MAP
-layout(set = 3, binding = 6) uniform sampler2D heightMap;
-#endif
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec3 normalVS;
@@ -61,6 +40,13 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    uint baseColorTextureIdx;
+    uint opacityTextureIdx;
+    uint normalTextureIdx;
+    uint roughnessTextureIdx;
+    uint metalnessTextureIdx;
+    uint aoTextureIdx;
+    uint heightTextureIdx;
 } PushConstants;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
@@ -81,13 +67,13 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     vec2 ddx = dFdx(texCoords);
     vec2 ddy = dFdy(texCoords);
     
-    float currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;
+    float currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r;
     
     while(currentLayerDepth < currentDepthMapValue) {
         // shift texture coordinates along direction of P
         currentTexCoords -= deltaTexCoords;
         // get depthmap value at current texture coordinates
-        currentDepthMapValue = 1.0 - textureGrad(heightMap, currentTexCoords, ddx, ddy).r;  
+        currentDepthMapValue = 1.0 - SampleHeight(currentTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r;
         // get depth of next layer
         currentLayerDepth += layerDepth;  
     }
@@ -96,7 +82,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
 
     // get depth after and before collision for linear interpolation
     float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = 1.0 - textureGrad(heightMap, prevTexCoords, ddx, ddy).r - currentLayerDepth + layerDepth;
+    float beforeDepth = 1.0 - SampleHeight(prevTexCoords, PushConstants.heightTextureIdx, ddx, ddy).r - currentLayerDepth + layerDepth;
      
     // interpolation of texture coordinates
     float weight = afterDepth / (afterDepth - beforeDepth);
@@ -126,7 +112,7 @@ void main() {
 #if (defined(OPACITY_MAP) || defined(VERTEX_COLORS))
     float opacity = 1.0;
 #ifdef OPACITY_MAP
-    opacity *= texture(opacityMap, texCoords, globalData.mipLodBias).r;
+    opacity *= SampleOpacity(texCoords, PushConstants.opacityTextureIdx, globalData.mipLodBias);
 #endif
 #ifdef VERTEX_COLORS
     // opacity *= vertexColorsVS.a;
@@ -136,7 +122,7 @@ void main() {
 #endif
 
 #ifdef BASE_COLOR_MAP
-    vec3 textureColor = texture(baseColorMap, texCoords, globalData.mipLodBias).rgb;
+    vec3 textureColor = SampleBaseColor(texCoords, PushConstants.baseColorTextureIdx, globalData.mipLodBias);
     baseColorFS *= textureColor.rgb;
 #endif
 
@@ -147,8 +133,8 @@ void main() {
     vec3 geometryNormal = normalize(normalVS);
 
 #ifdef NORMAL_MAP
-    vec3 normalColor = texture(normalMap, texCoords, globalData.mipLodBias).rgb;
-    vec3 normal = mix(geometryNormal, normalize(TBN * (2.0 * normalColor - 1.0)), PushConstants.normalScale);
+    vec3 normalColor = SampleNormal(texCoords, PushConstants.normalTextureIdx, globalData.mipLodBias);
+    vec3 normal = mix(geometryNormal, normalize(TBN * normalColor), PushConstants.normalScale);
     // We want the normal always to face the camera for two sided materials
     geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
     normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
@@ -169,15 +155,15 @@ void main() {
     float aoFactor = 1.0;
 
 #ifdef ROUGHNESS_MAP
-    roughnessFactor *= texture(roughnessMap, texCoords, globalData.mipLodBias).r;
+    roughnessFactor *= SampleRoughness(texCoords, PushConstants.roughnessTextureIdx, globalData.mipLodBias);
     roughnessMetalnessAoFS.r = roughnessFactor;
 #endif
 #ifdef METALNESS_MAP
-    metalnessFactor *= texture(metalnessMap, texCoords, globalData.mipLodBias).r;
+    metalnessFactor *= SampleMetalness(texCoords, PushConstants.metalnessTextureIdx, globalData.mipLodBias);
     roughnessMetalnessAoFS.g = metalnessFactor;
 #endif
 #ifdef AO_MAP
-    aoFactor *= texture(aoMap, texCoords, globalData.mipLodBias).r;
+    aoFactor *= SampleAo(texCoords, PushConstants.aoTextureIdx, globalData.mipLodBias);
     roughnessMetalnessAoFS.b = aoFactor;
 #endif
 

@@ -98,7 +98,7 @@ namespace Atlas {
             auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
 
             // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
-            scene->wind.noiseMap.Bind(commandList, 3, 1);
+            scene->wind.noiseMap.Bind(commandList, 3, 0);
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials
@@ -154,8 +154,10 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
+#ifndef AE_BINDLESS
                 if (material->HasOpacityMap())
-                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
+                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
+#endif
 
                 auto pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
@@ -163,7 +165,8 @@ namespace Atlas {
                     .invertUVs = mesh->invertUVs ? 1u : 0u,
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
-                    .windWiggleScale = mesh->windWiggleScale
+                    .windWiggleScale = mesh->windWiggleScale,
+                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap] : 0
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

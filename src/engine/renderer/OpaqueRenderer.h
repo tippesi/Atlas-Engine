@@ -39,6 +39,13 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                uint32_t baseColorTextureIdx;
+                uint32_t opacityTextureIdx;
+                uint32_t normalTextureIdx;
+                uint32_t roughnessTextureIdx;
+                uint32_t metalnessTextureIdx;
+                uint32_t aoTextureIdx;
+                uint32_t heightTextureIdx;
             };
 
 

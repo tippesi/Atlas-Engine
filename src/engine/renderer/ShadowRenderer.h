@@ -39,6 +39,7 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                uint32_t textureID;
             };
 
             LightMap lightMap;

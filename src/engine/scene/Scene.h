@@ -141,6 +141,9 @@ namespace Atlas {
             Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
+            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
+            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+
         private:
             void UpdateBindlessIndexMaps();
 
@@ -166,9 +169,6 @@ namespace Atlas {
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
-
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
             Entity mainCameraEntity;
             float deltaTime = 1.0f;

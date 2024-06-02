@@ -14,7 +14,7 @@ layout(std430, set = 1, binding = 1) buffer Matrices {
     mat3x4 matrices[];
 };
 
-layout(set = 3, binding = 1) uniform sampler2D windNoiseMap;
+layout(set = 3, binding = 0) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
@@ -23,6 +23,7 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    uint textureID;
 } PushConstants;
 
 void main() {

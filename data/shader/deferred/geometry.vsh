@@ -66,6 +66,13 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    uint baseColorTextureIdx;
+    uint opacityTextureIdx;
+    uint normalTextureIdx;
+    uint roughnessTextureIdx;
+    uint metalnessTextureIdx;
+    uint aoTextureIdx;
+    uint heightTextureIdx;
 } PushConstants;
 
 // Functions

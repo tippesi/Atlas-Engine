@@ -42,7 +42,7 @@ namespace Atlas::Editor::UI {
 
         if (!lightComponent.shadow && castShadow) {
             if (lightComponent.type == LightType::DirectionalLight) {
-                lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 3, 0.05f, 0.95f, true, 2048.0f);
+                lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 0.05f, 3, 0.95f, true, 2048.0f);
             }
         }
         else if (lightComponent.shadow && !castShadow) {
