@@ -23,12 +23,14 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
+            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass);
+
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
                 Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
-            using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
+            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
 
             struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;

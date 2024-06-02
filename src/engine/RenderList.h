@@ -9,6 +9,9 @@
 
 #include <unordered_map>
 #include <vector>
+#include <atomic>
+#include <mutex>
+#include <future>
 
 namespace Atlas {
 
@@ -48,8 +51,10 @@ namespace Atlas {
         struct Pass {
             RenderPassType type;
 
-            ECS::Entity lightEntity;
+            Scene::Entity lightEntity;
             uint32_t layer;
+
+            Ref<Scene::Scene> scene = nullptr;
 
             std::unordered_map<size_t, EntityBatch> meshToEntityMap;
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
@@ -57,27 +62,32 @@ namespace Atlas {
 
             bool wasUsed = false;
 
-            void Reset() { 
-                
-                std::erase_if(meshToEntityMap, [](auto& item) { return item.second.count == 0; });
-                for (auto& [id, batch] : meshToEntityMap) {
-                    batch.entities.resize(batch.count);
-                    batch.count = 0;
-                }
+            std::vector<mat3x4> currentEntityMatrices;
+            std::vector<mat3x4> lastEntityMatrices;
+            std::vector<mat3x4> impostorMatrices;
 
-                // Need to clear this to free the references
-                meshIdToMeshMap.clear();
-                meshToInstancesMap.clear();
+            Ref<Graphics::MultiBuffer> currentMatricesBuffer;
+            Ref<Graphics::MultiBuffer> lastMatricesBuffer;
+            Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-                wasUsed = false;
+            void NewFrame(const Ref<Scene::Scene>& scene, std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
 
-            }
+            void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
+
+            void Update(vec3 cameraLocation);
+
+            void FillBuffers();
+
+            void Reset();
         };
 
         RenderList();
 
-        void NewFrame(Ref<Scene::Scene> scene);
+        ~RenderList();
 
+        void NewFrame(const Ref<Scene::Scene>& scene);
+
+        // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();
 
         Ref<Pass> NewShadowPass(const ECS::Entity lightEntity, uint32_t layer);
@@ -86,25 +96,21 @@ namespace Atlas {
 
         Ref<Pass> GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
-        void Add(const Ref<Pass>& pass, const ECS::Entity& entity, const MeshComponent& meshComponent);
+        void FinishPass(const Ref<Pass>& pass);
 
-        void Update(const Ref<Pass>& pass, vec3 cameraLocation);
-
-        void FillBuffers();
+        Ref<Pass> PopPassFromQueue(RenderPassType type);
 
         void Clear();
 
         Ref<Scene::Scene> scene = nullptr;
 
-        std::vector<mat3x4> currentEntityMatrices;
-        std::vector<mat3x4> lastEntityMatrices;
-        std::vector<mat3x4> impostorMatrices;
-
-        Ref<Graphics::MultiBuffer> currentMatricesBuffer;
-        Ref<Graphics::MultiBuffer> lastMatricesBuffer;
-        Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
-
         std::vector<Ref<Pass>> passes;
+        std::deque<Ref<Pass>> processedPasses;
+
+        std::mutex mutex;
+        std::atomic_bool doneProcessingShadows;
+
+        std::future<void> clearFuture;
 
     };
 

@@ -40,6 +40,10 @@ namespace Atlas {
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
+
+            if (scene->bindlessMapsUpdateFuture.valid())
+                scene->bindlessMapsUpdateFuture.get();
+
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
                 if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))

@@ -101,7 +101,7 @@ namespace Atlas {
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
-            void GetRenderList(Volume::Frustum frustum, RenderList& renderList, const Ref<RenderList::Pass>& pass);
+            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 
@@ -180,7 +180,8 @@ namespace Atlas {
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            std::future<void> rayTracingWorldUpdateFuture;
+            std::shared_future<void> rayTracingWorldUpdateFuture;
+            std::shared_future<void> bindlessMapsUpdateFuture;
 
             friend Entity;
             friend SpacePartitioning;

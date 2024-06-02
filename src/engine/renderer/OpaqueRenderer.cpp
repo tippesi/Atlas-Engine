@@ -24,6 +24,10 @@ namespace Atlas {
             if (!mainPass)
                 return;
 
+            commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
+            commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
+            commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
+
             // Bind wind map
             scene->wind.noiseMap.Bind(commandList, 3, 7);
 

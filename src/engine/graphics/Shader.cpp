@@ -325,7 +325,7 @@ namespace Atlas {
         PushConstantRange* ShaderVariant::GetPushConstantRange(const std::string &name) {
 
             auto it = std::find_if(pushConstantRanges.begin(), pushConstantRanges.end(),
-                [name](const auto& pushConstantRange) { return pushConstantRange.name == name; });
+                [&](const auto& pushConstantRange) { return pushConstantRange.name == name; });
 
             if (it != pushConstantRanges.end())
                 return &(*it);

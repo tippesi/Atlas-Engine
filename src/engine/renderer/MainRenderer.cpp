@@ -174,18 +174,6 @@ namespace Atlas {
 
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
-            if (scene->rayTracingWorldUpdateFuture.valid())
-                scene->rayTracingWorldUpdateFuture.get();
-
-            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
-
-            fillRenderListFuture.get();
-
-            // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
-            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 1);
-            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 2);
-            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 3);
-
             {
                 shadowRenderer.Render(target, scene, commandList, &renderList);
 
@@ -220,6 +208,14 @@ namespace Atlas {
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
+
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+
+            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
+
+            // Only here does the main pass need to be ready
+            fillRenderListFuture.get();
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");
@@ -1164,6 +1160,10 @@ namespace Atlas {
             if (!device->support.bindless)
                 return;
 
+            // This might lead to crashes, since this shared future just has one copy that is used across threads
+            if (scene->bindlessMapsUpdateFuture.valid())
+                scene->bindlessMapsUpdateFuture.get();
+
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
             bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
@@ -1199,14 +1199,8 @@ namespace Atlas {
 
         void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
+            auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
-
-            auto mainPass = renderList.GetMainPass();
-            if (mainPass == nullptr)
-                mainPass = renderList.NewMainPass();
-
-            scene->GetRenderList(camera.frustum, renderList, mainPass);
-            renderList.Update(mainPass, camera.GetLocation());
 
             auto lightSubset = scene->GetSubset<LightComponent>();
 
@@ -1219,7 +1213,7 @@ namespace Atlas {
                 auto& shadow = light.shadow;
 
                 auto componentCount = shadow->longRange ?
-                    shadow->viewCount -1 : shadow->viewCount;
+                    shadow->viewCount - 1 : shadow->viewCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
                     auto component = &shadow->views[i];
@@ -1228,13 +1222,25 @@ namespace Atlas {
                     auto shadowPass = renderList.GetShadowPass(lightEntity, i);
                     if (shadowPass == nullptr)
                         shadowPass = renderList.NewShadowPass(lightEntity, i);
-                    scene->GetRenderList(frustum, renderList, shadowPass);
-                    renderList.Update(shadowPass, camera.GetLocation());
+
+                    shadowPass->NewFrame(scene, meshes);
+                    scene->GetRenderList(frustum, shadowPass);
+                    shadowPass->Update(camera.GetLocation());
+                    shadowPass->FillBuffers();
+                    renderList.FinishPass(shadowPass);
                 }
 
             }
 
-            renderList.FillBuffers();
+            auto mainPass = renderList.GetMainPass();
+            if (mainPass == nullptr)
+                mainPass = renderList.NewMainPass();
+
+            mainPass->NewFrame(scene, meshes);
+            scene->GetRenderList(camera.frustum, mainPass);
+            mainPass->Update(camera.GetLocation());
+            mainPass->FillBuffers();
+            renderList.FinishPass(mainPass);
 
         }
 

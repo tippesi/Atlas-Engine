@@ -12,6 +12,7 @@ namespace Atlas {
         Scene::~Scene() {
 
             Clear();
+            WaitForAsyncWorkCompletion();
 
         }
 
@@ -90,14 +91,16 @@ namespace Atlas {
 
             this->deltaTime = deltaTime;
 
-#ifdef AE_BINDLESS
-            // Make sure this was executed before we start the next update
-            if (rayTracingWorldUpdateFuture.valid())
-                rayTracingWorldUpdateFuture.get();
-#endif
+            WaitForAsyncWorkCompletion();
 
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
+
+#ifdef AE_BINDLESS
+            bindlessMapsUpdateFuture = std::async(std::launch::async, [this]() {
+                UpdateBindlessIndexMaps();
+                });
+#endif
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
@@ -277,8 +280,6 @@ namespace Atlas {
             }
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
             // Make sure this is changed just once at the start of a frame
             rayTracingWorldUpdateFuture = std::async(std::launch::async, [this, rayTracingSubset]() {              
@@ -386,6 +387,7 @@ namespace Atlas {
         std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {
 
             std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+            meshes.reserve(registeredMeshes.size());
 
             // Not really efficient, but does the job
             for (auto& [meshId, registeredMesh] : registeredMeshes) {
@@ -514,7 +516,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList, const Ref<RenderList::Pass>& pass) {
+        void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
@@ -522,7 +524,7 @@ namespace Atlas {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
                 if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
-                    renderList.Add(pass, entity, comp);
+                    pass->Add(entity, comp);
             }
 
         }
@@ -547,6 +549,8 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
+            if (bindlessMapsUpdateFuture.valid())
+                bindlessMapsUpdateFuture.get();
             if (rayTracingWorldUpdateFuture.valid())
                 rayTracingWorldUpdateFuture.get();
 

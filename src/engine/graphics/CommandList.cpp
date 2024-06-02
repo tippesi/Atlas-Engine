@@ -963,7 +963,7 @@ namespace Atlas {
 
                 // We need to collect the dynamic offsets everytime we bind a descriptor set
                 // This also means if just the offset changed, we don't need to update the set
-                for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET; j++) {
+                for (uint32_t j = 0; j < BINDINGS_PER_DESCRIPTOR_SET && j <= descriptorBindingData.maxBufferBinding[i]; j++) {
                     if (!descriptorBindingData.buffers[i][j].first) continue;
                     const auto& binding = shader->sets[i].bindings[j];
                     // This probably is an old binding, which isn't used by this shader
