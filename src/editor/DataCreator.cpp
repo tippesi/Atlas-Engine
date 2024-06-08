@@ -137,6 +137,9 @@ namespace Atlas::Editor {
 
         // Adjust settings based on calculated size
         scene->irradianceVolume->SetAABB(aabb);
+        scene->irradianceVolume->scroll = true;
+        scene->irradianceVolume->cascadeCount = 4;
+        scene->irradianceVolume->splitCorrection = 1.6f;
 
         if (invertUVs) {
             auto meshes = scene->GetMeshes();

@@ -65,14 +65,18 @@ void main() {
     uint probeRayCount = GetProbeRayCount(probeState);
 
     uint workGroupOffset = gl_WorkGroupSize.x;
-    for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
+    for(uint i = gl_LocalInvocationIndex; i < ddgiData.rayCount; i += workGroupOffset) {
         Ray ray;
+        if (i < probeRayCount) {       
+            ray.ID = int(rayBaseIdx + i);
+            ray.origin = GetProbePosition(probeIndex, cascadeIndex) + probeOffset;
+            ray.direction = normalize(mat3(Uniforms.randomRotation) *
+                (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
+        }
+        else {
+            ray.ID = -1;
+        }
 
-        ray.ID = int(rayBaseIdx + i);
-        ray.origin = GetProbePosition(probeIndex, cascadeIndex) + probeOffset;
-        ray.direction = normalize(mat3(Uniforms.randomRotation) *
-            (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
-
-        WriteRay(ray);
+        WriteRay(ray, rayBaseIdx + i);
     }
 }

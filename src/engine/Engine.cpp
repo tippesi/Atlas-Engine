@@ -38,6 +38,11 @@ namespace Atlas {
         DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
             AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
 #endif
+        // Need to retrieve the extension names required to create an SDL surface
+        uint32_t extensionCount;
+        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, nullptr);
+        std::vector<const char*> requiredExtensions(extensionCount);
+        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, requiredExtensions.data());
 
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
@@ -47,7 +52,8 @@ namespace Atlas {
 #else
             .enableValidationLayers = false,
 #endif
-            .validationLayerSeverity = config.validationLayerSeverity
+            .validationLayerSeverity = config.validationLayerSeverity,
+            .requiredExtensions = requiredExtensions
         };
 
         Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);

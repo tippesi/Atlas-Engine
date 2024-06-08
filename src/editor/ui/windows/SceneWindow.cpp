@@ -322,7 +322,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Text("Editor camera");
 
-                ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 1.0f, 180.0f);
+                ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 0.01f, 180.0f);
                 ImGui::DragFloat("Field of view", &camera.fieldOfView, 0.1f, 1.0f, 180.0f);
 
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
@@ -336,7 +336,7 @@ namespace Atlas::Editor::UI {
                     Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
                 ImGui::Text("Path traces samples");
-                ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 16);
+                ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
 
                 ImGui::EndPopup();
             }

@@ -91,7 +91,7 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 1.0 && depth < 1.0) {
+        if (material.roughness <= 1.0 && depth < 1.0) {
 
             float alpha = sqr(material.roughness);
 

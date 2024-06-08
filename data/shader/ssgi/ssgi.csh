@@ -144,7 +144,7 @@ void main() {
 
                     // Check if we are now behind the depth buffer, use that hit as the source of radiance
                     if (stepLinearDepth < rayDepth && abs(depthDelta) < rayLength) {
-                        float NdotV = dot(worldNorm, -ray.direction);
+                        float NdotV = dot(worldNorm, -ray.direction) * 0.5 + 0.5;
                         float NdotL = dot(-worldNorm, surface.N) * 0.5 + 0.5;
                         if (true) {
                             ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;

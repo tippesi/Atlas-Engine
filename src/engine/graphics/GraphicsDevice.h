@@ -42,6 +42,7 @@ namespace Atlas {
             bool wideLines = false;
             bool shaderFloat16 = false;
             bool extendedDynamicState = false;
+            bool memoryPriority = false;
         };
 
         struct CommandListSubmission {
@@ -162,6 +163,8 @@ namespace Atlas {
 
             void ForceMemoryCleanup();
 
+            void SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle);
+
             template <class T>
             struct Resources {
                 std::vector<Ref<T>> data;
@@ -183,9 +186,9 @@ namespace Atlas {
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
 
-            VkPhysicalDeviceFeatures2 features = {};
-            VkPhysicalDeviceVulkan11Features features11 = {};
-            VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceFeatures2 availableFeatures = {};
+            VkPhysicalDeviceVulkan11Features availableFeatures11 = {};
+            VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
 
             DeviceSupport support;
             std::set<std::string> supportedExtensions;

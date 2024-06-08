@@ -15,6 +15,7 @@ namespace Atlas {
         void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
             glslang::TShader& shader);
 
+        bool ShaderCompiler::includeDebugInfo = false;
         std::unordered_map<size_t, ShaderCompiler::SpvCacheEntry> ShaderCompiler::cache;
         const std::string ShaderCompiler::cachePath = ".cache/";
 
@@ -94,19 +95,24 @@ namespace Atlas {
             }
 
             glslang::SpvOptions options;
+            options.generateDebugInfo = includeDebugInfo;
+            options.stripDebugInfo = !includeDebugInfo;
             glslang::GlslangToSpv(*program.getIntermediate(stage), spirvBinary, &options);
 
             success = true;
 
-            spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
-            opt.RegisterPerformancePasses();
+            // Optimization strips debug info
+            if (!includeDebugInfo) {
+                spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
+                opt.RegisterPerformancePasses();
 
-            std::vector<uint32_t> optimizedBinary;
-            if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {
-                AddCacheEntry(shaderFile, macros, optimizedBinary);
-                return optimizedBinary;
+                std::vector<uint32_t> optimizedBinary;
+                if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {
+                    AddCacheEntry(shaderFile, macros, optimizedBinary);
+                    return optimizedBinary;
+                }
             }
-
+           
             AddCacheEntry(shaderFile, macros, spirvBinary);
             return spirvBinary;
 
@@ -124,7 +130,12 @@ namespace Atlas {
                 entry = cache[hash];                
             }
             else {
-                auto path = cachePath + std::to_string(hash);
+                std::string path;
+                if (includeDebugInfo)
+                    path = cachePath + std::to_string(hash) + "_debug";
+                else
+                    path = cachePath + std::to_string(hash);
+
                 if (Loader::AssetLoader::FileExists(path)) {
                     entry.fileName = path;
                     entry.lastModified = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
@@ -158,7 +169,7 @@ namespace Atlas {
             auto hash = CalculateHash(shaderFile, macros);
 
             SpvCacheEntry entry {
-                .fileName = cachePath + std::to_string(hash),
+                .fileName = includeDebugInfo ? cachePath + std::to_string(hash) + "_debug" : cachePath + std::to_string(hash),
 
                 .lastModified = shaderFile.lastModified,
                 .spirvBinary = binary,

@@ -975,7 +975,7 @@ namespace Atlas {
                     //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
                     auto pos = camera.GetLocation();
 
-                    auto volumeSize = volume->aabb.GetSize();
+                    auto volumeSize = vec3(150.0f, 75.0f, 150.0f);
                     auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
                     volume->SetAABB(volumeAABB);
                 }

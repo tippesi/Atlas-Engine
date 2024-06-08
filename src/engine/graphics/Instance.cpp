@@ -4,6 +4,7 @@
 
 #include <volk.h>
 #include <set>
+#include <iterator>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_macos.h>
 
@@ -28,11 +29,19 @@ namespace Atlas {
 
             LoadSupportedLayersAndExtensions();
 
-            auto requiredExtensions = extensionNames;
+            auto requiredExtensions = desc.requiredExtensions;
 #ifdef AE_HEADLESS
             AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
             requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 #endif
+#ifndef AE_BUILDTYPE_RELEASE
+            if (supportedExtensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+                requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            }
+#endif
+            if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
+                requiredExtensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
+            }
 
             CheckExtensionSupport(requiredExtensions);
 
@@ -62,7 +71,9 @@ namespace Atlas {
 
             // Only enable these with validation layers enabled as well as debug mode enabled
             // They do take away a large chunk of performance
-            VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+            VkValidationFeatureEnableEXT enables[] = {
+                VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+            };
             VkValidationFeaturesEXT validationFeatures = {};
 
             StructureChainBuilder structureChainBuilder(createInfo);
@@ -75,7 +86,7 @@ namespace Atlas {
 
 #ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-                validationFeatures.enabledValidationFeatureCount = 1;
+                validationFeatures.enabledValidationFeatureCount = std::size(enables);
                 validationFeatures.pEnabledValidationFeatures = enables;
 
                 structureChainBuilder.Append(validationFeatures);                
@@ -237,7 +248,8 @@ namespace Atlas {
 
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
