@@ -26,12 +26,14 @@ namespace Atlas {
 
             auto rtDataValid = scene->IsRtDataValid();
             auto ddgiEnabled = volume && volume->enable && rtDataValid;
+            auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
             auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
             auto ssgiEnabled = ssgi && ssgi->enable && (!ssgi->rt || rtDataValid);
             bool ssgiAo = ssgi && ssgi->enable && ssgi->enableAo;            
 
             pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
+            pipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
             pipelineConfig.ManageMacro("AO", aoEnabled);
             pipelineConfig.ManageMacro("SSGI", ssgiEnabled);

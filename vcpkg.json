@@ -35,8 +35,7 @@
     "joltphysics",
     "imguizmo",
     "lua",
-    "sol2",
-    "ktx"
+    "sol2"
   ],
   "overrides": [
     {
@@ -90,10 +89,6 @@
     {
       "name": "sol2",
       "version": "3.3.0"
-    },
-    {
-      "name": "ktx",
-      "version": "4.3.1#1"
     }
   ]
 }

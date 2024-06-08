@@ -36,7 +36,13 @@ namespace Atlas {
 #endif
 #ifndef AE_BUILDTYPE_RELEASE
             if (supportedExtensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+                requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
                 requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            }
+#endif
+#ifdef AE_OS_MACOS
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+                requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             }
 #endif
             if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
@@ -63,7 +69,6 @@ namespace Atlas {
                 createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
             }
 #endif
-
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 

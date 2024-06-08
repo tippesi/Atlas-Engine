@@ -1,4 +1,6 @@
+#ifndef AE_OS_MACOS
 #define BICUBIC_FILTER
+#endif
 
 #include <../common/utility.hsh>
 #include <../common/ycocg.hsh>

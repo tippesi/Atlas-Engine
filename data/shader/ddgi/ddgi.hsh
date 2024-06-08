@@ -224,16 +224,16 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         float weight = dot(L, geometryNormal);
         if (weight < 0.0) continue;
 
+        float weightCheb = weight;
+
+#ifdef DDGI_VISIBILITY
         vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
         vec3 momCoord = GetProbeCoord(gridCell, cascadeIndex, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
         vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
         float mean = temp.x;
         float mean2 = temp.y;
 
-        float weightCheb = weight;
-
         float visibilityWeight = 1.0;
-
         if (biasedDistToProbe > mean) {            
             float variance = abs(mean * mean - mean2);
             float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
@@ -245,6 +245,7 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         }
 
         weight *= max(0.05, visibilityWeight);
+#endif
 
         weight = max(0.000001, weight);
         weightCheb = max(0.000001, weightCheb);
@@ -263,9 +264,13 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
     }
 
     if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+
+#ifdef DDGI_VISIBILITY
     vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
         sqr(sumIrradiance / sumWeight), 1.0), 0.0);
-
+#else
+    vec4 irradiance = vec4(sqr(sumIrradianceCheb / sumWeightCheb), 0.0);
+#endif
     // Due to the texture format we loose a bit of energy
     irradiance *= 1.0989;
 

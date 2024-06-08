@@ -97,8 +97,11 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
+                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
+                rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->gi && ddgiVisibility);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);

@@ -1,6 +1,6 @@
 #include <../globals.hsh>
 
-#ifdef AE_BINDLESS
+#ifndef AE_BINDLESS
 #ifdef BASE_COLOR_MAP
 layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
 #endif
@@ -29,7 +29,11 @@ vec3 SampleBaseColor(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).rgb;    
 #else
+#ifdef BASE_COLOR_MAP
     return texture(baseColorMap, texCoords, bias).rgb;
+#else
+    return vec3(0.0);
+#endif
 #endif
 
 }
@@ -39,7 +43,11 @@ float SampleOpacity(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
 #else
+#ifdef OPACITY_MAP
     return texture(opacityMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
 #endif
 
 }
@@ -49,7 +57,11 @@ vec3 SampleNormal(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return 2.0 * texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).rgb - 1.0;    
 #else
+#ifdef NORMAL_MAP
     return 2.0 * texture(normalMap, texCoords, bias).rgb - 1.0;
+#else
+    return vec3(0.0);
+#endif
 #endif
 
 }
@@ -59,7 +71,11 @@ float SampleRoughness(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
 #else
+#ifdef ROUGHNESS_MAP
     return texture(roughnessMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
 #endif
 
 }
@@ -69,7 +85,11 @@ float SampleMetalness(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
 #else
+#ifdef METALNESS_MAP
     return texture(metalnessMap, texCoords, bias).r;
+#else
+    return 0.0;
+#endif
 #endif
 
 }
@@ -79,7 +99,11 @@ float SampleAo(vec2 texCoords, uint textureID, float bias) {
 #ifdef AE_BINDLESS
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
 #else
+#ifdef AO_MAP
     return texture(aoMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
 #endif
 
 }
@@ -89,7 +113,11 @@ float SampleHeight(vec2 texCoords, uint textureID, vec2 ddx, vec2 ddy) {
 #ifdef AE_BINDLESS
     return textureGrad(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, ddx, ddy).r;    
 #else
+#ifdef HEIGHT_MAP
     return textureGrad(heightMap, texCoords, ddx, ddy).r;
+#else
+    return 0.0;
+#endif
 #endif
 
 }

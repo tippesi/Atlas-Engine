@@ -53,7 +53,8 @@ namespace Atlas {
             auto mainLightEntity = GetMainLightEntity(scene);
             if (mainLightEntity.IsValid())
                 shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-
+                
+            rayHitPipelineConfig.ManageMacro("DDGI_VISIBILITY", volume->visibility);
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             
             auto& internalVolume = volume->internal;
@@ -195,15 +196,17 @@ namespace Atlas {
 
                 commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
-                Graphics::Profiler::EndAndBeginQuery("Update moments");
+                if (volume->visibility) {
+                    Graphics::Profiler::EndAndBeginQuery("Update moments");
 
-                commandList->BindImage(momentsArray.image, 3, 0);
+                    commandList->BindImage(momentsArray.image, 3, 0);
 
-                probeMomentsUpdatePipelineConfig.ManageMacro("LOWER_RES_MOMENTS", volume->lowerResMoments);
-                pipeline = PipelineManager::GetPipeline(probeMomentsUpdatePipelineConfig);
-                commandList->BindPipeline(pipeline);
+                    probeMomentsUpdatePipelineConfig.ManageMacro("LOWER_RES_MOMENTS", volume->lowerResMoments);
+                    pipeline = PipelineManager::GetPipeline(probeMomentsUpdatePipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
-                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                    commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                }
 
                 Graphics::Profiler::EndQuery();
             }
@@ -245,20 +248,22 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                pipeline = PipelineManager::GetPipeline(momentsCopyEdgePipelineConfig);
-                commandList->BindPipeline(pipeline);
+                if (volume->visibility) {
+                    pipeline = PipelineManager::GetPipeline(momentsCopyEdgePipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
-                probeRes = volume->momRes;
+                    probeRes = volume->momRes;
 
-                res = ivec2(momentsArray.width, momentsArray.height);
-                groupCount = res / 8;
+                    res = ivec2(momentsArray.width, momentsArray.height);
+                    groupCount = res / 8;
 
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+                    groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
 
-                commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
-                commandList->BindImage(momentsArray.image, 3, 0);
-                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
+                    commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
+                    commandList->BindImage(momentsArray.image, 3, 0);
+                    commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
+                }
 
             }
 

@@ -121,7 +121,8 @@ void main() {
                 }
 
                 // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                ray.origin = worldPos + ray.direction * EPSILON * 0.01 * abs(viewPos.z) + worldNorm * EPSILON * abs(viewPos.z)* 0.01;
+                float viewOffset = max(1.0, length(viewPos));
+                ray.origin = worldPos + ray.direction * EPSILON * 0.1 * viewOffset + worldNorm * EPSILON * viewOffset * 0.1;
 
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
@@ -130,9 +131,9 @@ void main() {
 
                 if (material.roughness < 0.9) {
 #ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, 10e-9, INF);
+                    HitClosestTransparency(ray, 10e-3, INF);
 #else
-                    HitClosest(ray, 10e-9, INF);
+                    HitClosest(ray, 10e-3, INF);
 #endif
 
                     radiance = EvaluateHit(ray);

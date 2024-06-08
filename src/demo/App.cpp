@@ -1176,6 +1176,7 @@ void App::CheckLoadScene() {
     }
 
     scene->irradianceVolume->useShadowMap = true;
+    scene->irradianceVolume->visibility = false;
 
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
