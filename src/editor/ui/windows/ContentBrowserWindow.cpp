@@ -213,7 +213,7 @@ namespace Atlas::Editor::UI {
 
             auto isDirectory = dirEntry.is_directory();
 
-            auto path = dirEntry.path().string();
+            auto path = Common::Path::Normalize(dirEntry.path().string());
             auto assetPath = Common::Path::GetRelative(assetDirectory, path);
 
             // Ignore 'invisible' directories
@@ -323,7 +323,7 @@ namespace Atlas::Editor::UI {
 
         if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
             auto newPath = renameDirEntry.path();
-            newPath = newPath.filename().replace_filename(renameString);
+            newPath = newPath.replace_filename(renameString);
             if (renameDirEntry.path().has_extension())
                 newPath = newPath.replace_extension(renameDirEntry.path().extension());
             std::filesystem::rename(renameDirEntry.path(), newPath);

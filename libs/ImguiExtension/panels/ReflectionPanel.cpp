@@ -6,10 +6,8 @@ namespace Atlas::ImguiExtension {
 
         ImGui::PushID(GetNameID());
 
-        bool halfRes = target->GetReflectionResolution() == Renderer::RenderResolution::HALF_RES;
-
         ImGui::Checkbox("Enable", &reflection->enable);
-        ImGui::Checkbox("Half resolution", &halfRes);
+        ImGui::Checkbox("Half resolution", &reflection->halfResolution);
 
         //ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
         ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
@@ -34,13 +32,6 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Current clip factor", &reflection->currentClipFactor, 0.0f, 10.0f);
 
         ImGui::PopID();
-
-        if (halfRes && target->GetReflectionResolution() != Renderer::RenderResolution::HALF_RES) {
-            target->SetReflectionResolution(Renderer::RenderResolution::HALF_RES);
-        }
-        else if (!halfRes && target->GetReflectionResolution() == Renderer::RenderResolution::HALF_RES) {
-            target->SetReflectionResolution(Renderer::RenderResolution::FULL_RES);
-        }
 
     }
 

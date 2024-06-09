@@ -26,7 +26,7 @@ namespace Atlas {
 
             // Find the first character that doesn't match
             size_t count = 0;
-            size_t max = dest.find_last_of('/');
+            size_t max = dest.find_last_of("/\\");
 
             while (count <= max && src[count] == dest[count])
                 count++;
@@ -34,7 +34,7 @@ namespace Atlas {
             if (!count)
                 return dest;
 
-            dest = dest.substr(count, dest.size());
+            dest = dest.substr(count + 1, dest.size());
 
             for (size_t i = count; i < src.size(); i++)
                 if (src[i] == '/' || src[i] == '\\')

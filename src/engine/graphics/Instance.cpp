@@ -24,7 +24,7 @@ namespace Atlas {
             appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
-            appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 0);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
             LoadSupportedLayersAndExtensions();
@@ -35,7 +35,8 @@ namespace Atlas {
             requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 #endif
 #ifndef AE_BUILDTYPE_RELEASE
-            if (supportedExtensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+            if (supportedExtensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
                 requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
                 requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             }
