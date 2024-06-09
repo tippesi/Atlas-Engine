@@ -138,7 +138,7 @@ namespace Atlas {
 
             if (graphicsPipelineDesc.frameBuffer) {
                 for (int32_t i = 0; i < graphicsPipelineDesc.frameBuffer->renderPass->colorAttachmentCount; i++) {
-                    auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->colorAttachments[i];
+                    const auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->colorAttachments[i];
                     if (!attachment.isValid) continue;
 
                     HashCombine(variantHash, i);
@@ -149,7 +149,7 @@ namespace Atlas {
                     HashCombine(variantHash, attachment.dstStageMask);
                 }
 
-                auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->depthAttachment;
+                const auto& attachment = graphicsPipelineDesc.frameBuffer->renderPass->depthAttachment;
 
                 if (attachment.isValid) {
                     HashCombine(variantHash, attachment.imageFormat);

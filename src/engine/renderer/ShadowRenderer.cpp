@@ -43,7 +43,7 @@ namespace Atlas {
 
             // Need to also keep track of non processed layer (e.g. long range layers)
             for (auto& [lightEntity, frameBuffer] : lightMap) {
-                auto& light = lightEntity.GetComponent<LightComponent>();
+                const auto& light = lightEntity.GetComponent<LightComponent>();
                 
                 if (light.type == LightType::DirectionalLight && light.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned
@@ -118,7 +118,7 @@ namespace Atlas {
             // Check whether materials have pipeline configs
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, _, mesh] = subDatas[i];
-                auto& material = subData->material;
+                const auto& material = subData->material;
                 if (material->shadowConfig.IsValid()) continue;
 
                 material->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
@@ -136,7 +136,7 @@ namespace Atlas {
             Ref<Graphics::Pipeline> currentPipeline = nullptr;
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, meshID, mesh] = subDatas[i];
-                auto& instances = shadowPass->meshToInstancesMap[meshID];
+                const auto& instances = shadowPass->meshToInstancesMap[meshID];
 
                 auto material = subData->material;
 

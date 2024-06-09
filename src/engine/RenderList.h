@@ -70,7 +70,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-            void NewFrame(const Ref<Scene::Scene>& scene, std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
+            void NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
 
             void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 

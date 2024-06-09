@@ -130,7 +130,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Pass::NewFrame(const Ref<Scene::Scene>& scene, std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
+    void RenderList::Pass::NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
 
         this->scene = scene;
 
@@ -225,7 +225,7 @@ namespace Atlas {
                         if (needsHistory) {
                             lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                         }
-                        else if (!needsHistory && type != RenderPassType::Shadow) {
+                        else if (type != RenderPassType::Shadow) {
                             // For now push back anyways for main pass (since indices of matrices per entity need to match)
                             lastEntityMatrices.push_back(currentEntityMatrices.back());
                         }
@@ -244,7 +244,7 @@ namespace Atlas {
                     if (needsHistory) {
                         lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
-                    else if (!needsHistory && type != RenderPassType::Shadow) {
+                    else if (type != RenderPassType::Shadow) {
                         // For now push back anyways for main pass (since indices of matrices per entity need to match)
                         lastEntityMatrices.push_back(currentEntityMatrices.back());
                     }
@@ -301,7 +301,7 @@ namespace Atlas {
 
     void RenderList::Pass::Reset() {
 
-        std::erase_if(meshToEntityMap, [](auto& item) { return item.second.count == 0; });
+        std::erase_if(meshToEntityMap, [](const auto& item) { return item.second.count == 0; });
         for (auto& [id, batch] : meshToEntityMap) {
             batch.entities.resize(batch.count);
             batch.count = 0;

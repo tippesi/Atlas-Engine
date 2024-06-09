@@ -1199,7 +1199,7 @@ namespace Atlas {
         void GraphicsDevice::DestroyFrameData() {
 
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
-                auto& frameCommandLists = frameData[i].commandLists;
+                const auto& frameCommandLists = frameData[i].commandLists;
                 for (auto commandList : frameCommandLists) {
                     delete commandList;
                 }

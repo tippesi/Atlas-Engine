@@ -545,7 +545,6 @@ namespace Atlas {
 
             // Need to check before reset
             bool changed = descriptorBindingData.buffers[set][binding].first != buffer->GetCurrent();
-            bool offsetChanged = descriptorBindingData.buffers[set][binding].second != uint32_t(offset);
 
             descriptorBindingData.ResetBinding(set, binding);
 

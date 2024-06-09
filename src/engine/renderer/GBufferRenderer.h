@@ -22,7 +22,7 @@ namespace Atlas {
             void GenerateReactiveMask(const Ref<RenderTarget>& target, Graphics::CommandList* commandList);
 
         private:
-            void Downscale(RenderTargetData* rt, RenderTargetData* downsampledRt, Graphics::CommandList* commandList);
+            void Downscale(const RenderTargetData* rt, const RenderTargetData* downsampledRt, Graphics::CommandList* commandList);
 
             PipelineConfig downscalePipelineConfig;
             PipelineConfig downscaleDepthOnlyPipelineConfig;

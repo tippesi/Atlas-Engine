@@ -108,7 +108,7 @@ namespace Atlas::Editor::UI {
 
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
-            auto& target = Singletons::renderTarget;
+            const auto& target = Singletons::renderTarget;
 
             if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);

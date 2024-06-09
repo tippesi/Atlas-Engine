@@ -112,8 +112,8 @@ namespace Atlas {
 
         }
 
-        void GBufferRenderer::Downscale(RenderTargetData* rt,
-            RenderTargetData* downsampledRt, Graphics::CommandList* commandList) {
+        void GBufferRenderer::Downscale(const RenderTargetData* rt,
+            const RenderTargetData* downsampledRt, Graphics::CommandList* commandList) {
 
             auto depthIn = rt->depthTexture;
             auto normalIn = rt->normalTexture;

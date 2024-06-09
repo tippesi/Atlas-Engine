@@ -101,8 +101,10 @@ namespace Atlas::Editor::UI {
         // If the search term matches we want to display everything below this item in the hierarchy
         bool validSearch = (transformedEntitySearch.empty() || matchSet.contains(entity));
 
+        bool rootNode = nodeName == "Root";
+
         // If we have a search term and the name doesn't match, return
-        if (nodeName != "Root" && !validSearch)
+        if (!rootNode && !validSearch)
             return;
 
         auto nodeFlags = baseFlags;
@@ -140,15 +142,15 @@ namespace Atlas::Editor::UI {
         bool deleteEntity = false;
         bool duplicateEntity = false;
         if (ImGui::BeginPopupContextItem()) {
-            // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Delete entity"))
-                deleteEntity = true;
-
             if (ImGui::MenuItem("Add emtpy entity"))
                 createEntity = true;
 
             if (ImGui::MenuItem("Duplicate entity"))
                 duplicateEntity = true;
+
+            // We shouldn't allow the user to delete the root entity
+            if (!rootNode && ImGui::MenuItem("Delete entity"))
+                deleteEntity = true;
 
             ImGui::EndPopup();
         }

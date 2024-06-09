@@ -46,7 +46,7 @@ public:
         if (graphicsInstance->validationLayersEnabled)
             Atlas::Log::Message("Validation layers are set up to be enalbed");
         else
-            Atlas::Log::Message("Validation layers are disabled"),
+            Atlas::Log::Message("Validation layers are disabled");
 
         ASSERT_EQ(graphicsInstance->isComplete, true);
     }
