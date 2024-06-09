@@ -32,6 +32,9 @@ int main(int argc, char* argv[]) {
     setenv("MVK_DEBUG", "0", 1);
 #endif
 
+    // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)
+    // SetEnvironmentVariable("VK_ICD_FILENAMES", "..\\vk_swiftshader_icd.json");
+
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;

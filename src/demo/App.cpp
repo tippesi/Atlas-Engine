@@ -622,12 +622,6 @@ void App::Render(float deltaTime) {
 
         ImGui::Render();
 
-#ifdef AE_HEADLESS
-        Atlas::Log::Message("Frame rendererd");
-        renderTarget.hdrTexture.Save<float>("prepost");
-        renderTarget.postProcessTexture.Save<uint8_t>("result");
-#endif
-
         if (!recreateSwapchain) {
             imguiWrapper->Render();
         }

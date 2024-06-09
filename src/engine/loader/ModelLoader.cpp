@@ -626,6 +626,10 @@ namespace Atlas {
                     material.normalMap = images.normalTextures[path];
                     material.normalMapPath = images.normalImages[path]->fileName;
                 }
+                if (images.displacementTextures.contains(path) && isObj) {
+                    material.displacementMap = images.displacementTextures[path];
+                    material.displacementMapPath = images.displacementImages[path]->fileName;
+                }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
                 aiString aiPath;

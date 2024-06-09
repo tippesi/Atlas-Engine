@@ -627,6 +627,8 @@ namespace Atlas {
                         textures.insert(material->metalnessMap);
                     if (material->HasAoMap())
                         textures.insert(material->aoMap);
+                    if (material->HasDisplacementMap())
+                        textures.insert(material->displacementMap);
                 }
 
                 // Not all meshes might have a bvh
