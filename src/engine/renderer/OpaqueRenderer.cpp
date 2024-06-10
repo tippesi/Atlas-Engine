@@ -33,7 +33,7 @@ namespace Atlas {
 
             int32_t subDataCount = 0;
             // Retrieve all possible materials;
-            for (auto& [meshId, instances] : mainPass->meshToInstancesMap) {
+            for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
                 if (!instances.count) continue;
 
                 auto& mesh = mainPass->meshIdToMeshMap[meshId];
@@ -49,7 +49,7 @@ namespace Atlas {
             // Check whether materials have pipeline configs
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, _, mesh] = subDatas[i];
-                auto& material = subData->material;
+                const auto& material = subData->material;
                 if (material->mainConfig.IsValid()) continue;
 
                 material->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
@@ -67,9 +67,9 @@ namespace Atlas {
             Ref<Graphics::Pipeline> currentPipeline;
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, meshID, mesh] = subDatas[i];
-                auto& instances = mainPass->meshToInstancesMap[meshID];
+                const auto& instances = mainPass->meshToInstancesMap[meshID];
 
-                auto material = subData->material;
+                const auto material = subData->material;
 
                 // Overwrite material config frame buffer (and assume these have the same format)
                 material->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
