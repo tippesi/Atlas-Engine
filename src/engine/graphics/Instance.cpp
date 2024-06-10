@@ -29,6 +29,15 @@ namespace Atlas {
 
             LoadSupportedLayersAndExtensions();
 
+            const std::vector<const char*> validationLayers = {
+                    "VK_LAYER_KHRONOS_validation",
+            };
+
+            if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
+                Log::Warning("Required validation layers were not found. Disabling validation layers");
+                validationLayersEnabled = false;
+            }
+
             auto requiredExtensions = desc.requiredExtensions;
 #ifdef AE_HEADLESS
             AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
@@ -51,15 +60,6 @@ namespace Atlas {
             }
 
             CheckExtensionSupport(requiredExtensions);
-
-            const std::vector<const char*> validationLayers = {
-                    "VK_LAYER_KHRONOS_validation",
-            };
-
-            if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
-                Log::Warning("Required validation layers were not found. Disabling validation layers");
-                validationLayersEnabled = false;
-            }
 
             VkInstanceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
