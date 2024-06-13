@@ -31,6 +31,8 @@ namespace Atlas {
 
             LoadSupportedLayersAndExtensions();
 
+            Log::Warning("Loaded layers and extensions");
+
             const std::vector<const char*> validationLayers = {
                 "VK_LAYER_KHRONOS_validation",
             };
@@ -60,6 +62,8 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
                 requiredExtensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
             }
+
+            Log::Warning("Added necessary extensions");
 
             CheckExtensionSupport(requiredExtensions);
 
@@ -174,6 +178,9 @@ namespace Atlas {
         }
 
         void Instance::LoadSupportedLayersAndExtensions() {
+
+            if (vkEnumerateInstanceExtensionProperties == nullptr)
+                Log::Warning("Stuff not loaded");
 
             unsigned int extensionCount = 0;
             bool success = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) == VK_SUCCESS;
