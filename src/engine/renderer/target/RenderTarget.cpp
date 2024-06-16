@@ -457,7 +457,7 @@ namespace Atlas::Renderer {
         auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
             .renderPass = oceanRenderPass,
             .colorAttachments = {
-                {oceanStencilTexture.image, 0, false},
+                {oceanStencilTexture.image, 0, true},
             },
             .depthAttachment = {oceanDepthTexture.image, 0, true},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}

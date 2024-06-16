@@ -47,6 +47,8 @@ namespace Atlas {
                 
                 if (light.type == LightType::DirectionalLight && light.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned
+                    frameBuffer->depthAttachment.layer = light.shadow->viewCount - 1;
+                    frameBuffer->Refresh();
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
                     commandList->EndRenderPass();
                 }

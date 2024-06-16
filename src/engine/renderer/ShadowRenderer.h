@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../System.h"
-#include "../RenderList.h"
+#include "helper/RenderList.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
 

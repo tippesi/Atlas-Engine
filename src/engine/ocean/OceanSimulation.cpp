@@ -35,7 +35,7 @@ namespace Atlas {
             noise3.SetData(image3.GetData());
 
             displacementMap = Texture::Texture2DArray(N, N, C, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
             normalMap = Texture::Texture2DArray(N, N, C, VK_FORMAT_R16G16B16A16_SFLOAT,
                 Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic);
             perlinNoiseMap = Texture::Texture2D(N * 2, N * 2, VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -65,6 +65,8 @@ namespace Atlas {
         }
 
         void OceanSimulation::Update(float deltaTime) {
+
+            if (!update) return;
 
             time += deltaTime;
 
@@ -162,7 +164,7 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Compute ocean simulation");
 
-            if (!update) return;
+            
 
             // displacementMapPrev.Copy(displacementMap);
 
@@ -306,6 +308,7 @@ namespace Atlas {
                 struct alignas(16) PushConstants {
                     ivec4 L;
                     vec4 tilingFactors;
+                    vec4 spectrumScaling;
                     int N = 1;
                     float choppyScale = 1.0f;
                     float displacementScale = 1.0f;
@@ -325,6 +328,7 @@ namespace Atlas {
                 PushConstants constants = {
                     .L = ivec4(L, L * 2, L * 4, L * 8),
                     .tilingFactors = spectrumTilingFactors,
+                    .spectrumScaling = spectrumWeights,
                     .N = N,
                     .choppyScale = choppinessScale,
                     .displacementScale = displacementScale,
@@ -362,6 +366,18 @@ namespace Atlas {
 
             // The cube map generating automatically transforms the image layout to read-only optimal
             commandList->GenerateMipMaps(normalMap.image);
+
+            commandList->ImageMemoryBarrier(displacementMap.image,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+            commandList->ImageMemoryBarrier(displacementMap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            // The cube map generating automatically transforms the image layout to read-only optimal
+            commandList->GenerateMipMaps(displacementMap.image);
 
             commandList->ImageMemoryBarrier(displacementMap.image,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,

@@ -8,7 +8,7 @@ layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
 
 layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
 
-layout(std140, set = 3, binding = 7) uniform CloudUniformBuffer {
+layout(std140, set = 3, binding = 5) uniform CloudUniformBuffer {
     Light light;
 
     float planetRadius;
@@ -230,8 +230,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
 
     const float cloudCoverage = min(cloudUniforms.densityMultiplier *
         (textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.5), 1.0);
-    baseCloudDensity = Remap(baseCloudDensity, cloudCoverage,
-    1.0, 0.0, 1.0);
+    baseCloudDensity = Remap(baseCloudDensity, cloudCoverage, 1.0, 0.0, 1.0);
     float finalCloudDensity = baseCloudDensity;
 
     if (baseCloudDensity > 0.0 && sampleDetail) {

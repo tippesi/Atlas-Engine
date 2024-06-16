@@ -5,6 +5,7 @@
 #include <../common/utility.hsh>
 #include <../common/stencil.hsh>
 #include <../common/normalencode.hsh>
+#include <../common/normalreconstruction.hsh>
 #include <../clouds/shadow.hsh>
 #include <../volumetric/volumetric.hsh>
 #include <../structures>
@@ -26,6 +27,7 @@ layout (set = 3, binding = 8) uniform sampler2DArrayShadow cascadeMaps;
 layout (set = 3, binding = 10) uniform sampler2D rippleTexture;
 layout(set = 3, binding = 15) uniform sampler2D cloudShadowMap;
 layout(set = 3, binding = 16) uniform sampler2D volumetricCloudTexture;
+layout(set = 3, binding = 20) uniform sampler2D oceanDepthTexture;
 
 layout(location=0) in vec4 fClipSpace;
 layout(location=1) in vec3 fPosition;
@@ -53,6 +55,14 @@ const float shoreSoftness = 70.5;
 const float fadeoutDistance = 100.0;
 const float fadeoutFalloff = 0.2;
 
+float GetPixelDepth(ivec2 pixelOffset) {
+
+    ivec2 resolution = textureSize(oceanDepthTexture, 0);
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+
+    return texelFetch(oceanDepthTexture, pixel + pixelOffset, 0).r;
+}
+
 void main() {
 
     Light light = LightUniforms.light;
@@ -64,14 +74,27 @@ void main() {
     GetOceanGradientAndFold(fOriginalCoord.xz, distance(fOriginalCoord.xyz, globalData.cameraLocation.xyz),
         fold, gradientDisplacement);
 
-    vec2 gradient = gradientDisplacement;
+    /*
+    // This stuff calculates the geometry normals from the depth buffer
+    float depthCenter = GetPixelDepth(ivec2(0, 0));
+    float depthLeft = GetPixelDepth(ivec2(-1, 0));
+    float depthRight = GetPixelDepth(ivec2(1, 0));
+    float depthTop = GetPixelDepth(ivec2(0, -1));
+    float depthBottom = GetPixelDepth(ivec2(0, 1));
+
+    ivec2 resolution = ivec2(textureSize(oceanDepthTexture, 0));
+    vec3 normal = normalize(vec3(globalData.ivMatrix * vec4(ReconstructNormal(resolution, depthCenter, depthLeft, depthRight,
+        depthTop, depthBottom, gl_FragCoord.xy / vec2(resolution)), 0.0)));
+        */
+
     float tileSize = Uniforms.tiling / float(Uniforms.N);
     
     vec2 ndcCoord = 0.5 * (fClipSpace.xy / fClipSpace.w) + 0.5;
     float clipDepth = textureLod(depthTexture, ndcCoord, 0.0).r;
     
     vec3 depthPos = ConvertDepthToViewSpace(clipDepth, ndcCoord);
-    vec3 fNormal = normalize(vec3(gradient.x, 2.0 * tileSize, gradient.y));
+    //vec3 fNormal = normal;
+    vec3 fNormal = normalize(vec3(gradientDisplacement.x, 2.0, gradientDisplacement.y));
     
     float shadowFactor = CalculateCascadedShadow(light.shadow,
         cascadeMaps, fPosition, fNormal, 1.0);

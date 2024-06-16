@@ -19,8 +19,6 @@ namespace Atlas {
 
             VK_CHECK(volkInitialize());
 
-            Log::Warning("Volk initialized");
-
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
             appInfo.pApplicationName = name.c_str();
@@ -30,8 +28,6 @@ namespace Atlas {
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
             LoadSupportedLayersAndExtensions();
-
-            Log::Warning("Loaded layers and extensions");
 
             const std::vector<const char*> validationLayers = {
                 "VK_LAYER_KHRONOS_validation",
@@ -62,8 +58,6 @@ namespace Atlas {
             if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
                 requiredExtensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
             }
-
-            Log::Warning("Added necessary extensions");
 
             CheckExtensionSupport(requiredExtensions);
 
@@ -109,11 +103,6 @@ namespace Atlas {
             }
 
             VK_CHECK_MESSAGE(vkCreateInstance(&createInfo, nullptr, &instance), "Error creating instance");
-
-            if (instance != nullptr)
-                Log::Warning("Instance initialized");
-            else
-                Log::Warning("Instance failed");
 
             volkLoadInstance(instance);
 
@@ -194,7 +183,6 @@ namespace Atlas {
                     std::string(extensionProperty.extensionName) == "VK_LUNARG_direct_driver_loading")
                     continue;
                 extensionNames.push_back(extensionProperty.extensionName);
-                Log::Warning("Extension: " + std::string(extensionProperty.extensionName));
                 supportedExtensions.insert(extensionProperty.extensionName);
             }
 

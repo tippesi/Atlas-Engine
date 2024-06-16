@@ -16,7 +16,7 @@ void main() {
         float reactivity = 0.0;
 
         StencilFeatures features = DecodeStencilFeatures(texelFetch(stencilTexture, pixel, 0).r);
-        reactivity = features.responsivePixel ? 0.5 : reactivity;
+        reactivity = features.responsivePixel ? 0.8 : reactivity;
 
         imageStore(reactiveMaskImage, pixel, vec4(reactivity, 0.0, 0.0, 0.0));
         
