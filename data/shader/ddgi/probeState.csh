@@ -33,6 +33,7 @@ shared uint probeState;
 shared uint backFaceHits;
 shared uint inCellHits;
 shared float temporalCellHits;
+shared float temporalBackFaceHits;
 
 void main() {
 
@@ -52,6 +53,7 @@ void main() {
         inCellHits = 0u;
         probeState = GetProbeState(historyBaseIdx);
         temporalCellHits = (probeState == PROBE_STATE_NEW || reset) ? 1.0 : historyProbeStates[historyBaseIdx].y;
+        temporalBackFaceHits = (probeState == PROBE_STATE_NEW || reset) ? 0.0 : historyProbeStates[historyBaseIdx].z;
     }
 
     barrier();
@@ -81,14 +83,21 @@ void main() {
         probeState = PROBE_STATE_INACTIVE;
 
         float temporalCellHits = mix(float(inCellHits), temporalCellHits, ddgiData.hysteresis);
+        float temporalBackFaceHits = mix(float(backFaceHits), temporalBackFaceHits, ddgiData.hysteresis);
 
         // Use temporally stable information to decide probe state
-        if (temporalCellHits > 0.5) {
+        if (temporalCellHits > 0.01) {
             probeState = PROBE_STATE_ACTIVE;
+        }
+
+        float backFaceRatio = temporalBackFaceHits / probeRayCount;
+        if (backFaceRatio > 0.25) {
+            probeState = PROBE_STATE_INACTIVE;
         }
 
         probeStates[baseIdx].x = uintBitsToFloat(probeState);
         probeStates[baseIdx].y = temporalCellHits;
+        probeStates[baseIdx].z = temporalBackFaceHits;
     }
 
 }

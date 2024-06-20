@@ -203,59 +203,61 @@ namespace Atlas::Editor::UI {
             auto uvMin = ImVec2(0.15f, 0.15f);
             auto uvMax = ImVec2(0.85f, 0.85f);
 
-            auto& moveIcon = Singletons::icons->Get(IconType::Move);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(moveIcon);
-            bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
-            ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
-            }
-            ImGui::SetItemTooltip("Sets the gizmo into translation mode");
-            ImGui::PopStyleColor();
+            if (!isPlaying) {
+                auto& moveIcon = Singletons::icons->Get(IconType::Move);
+                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(moveIcon);
+                bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
+                ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+                if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                    guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                }
+                ImGui::SetItemTooltip("Sets the gizmo into translation mode");
+                ImGui::PopStyleColor();
 
-            ImGui::SameLine();
-            auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(rotateIcon);
-            selected = guizmoMode == ImGuizmo::OPERATION::ROTATE;
-            backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f); 
-            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                guizmoMode = ImGuizmo::OPERATION::ROTATE;
-            }
-            ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
-            ImGui::PopStyleColor();
+                ImGui::SameLine();
+                auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(rotateIcon);
+                selected = guizmoMode == ImGuizmo::OPERATION::ROTATE;
+                backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                    guizmoMode = ImGuizmo::OPERATION::ROTATE;
+                }
+                ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
+                ImGui::PopStyleColor();
 
-            ImGui::SameLine();
-            auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(scaleIcon);
-            selected = guizmoMode == ImGuizmo::OPERATION::SCALE;
-            backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                guizmoMode = ImGuizmo::OPERATION::SCALE;
-            }
-            ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
-            ImGui::PopStyleColor();
+                ImGui::SameLine();
+                auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(scaleIcon);
+                selected = guizmoMode == ImGuizmo::OPERATION::SCALE;
+                backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+                ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
+                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                    guizmoMode = ImGuizmo::OPERATION::SCALE;
+                }
+                ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
+                ImGui::PopStyleColor();
 
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-            auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreHorizIcon);
-            ImGui::SameLine();
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                ImGui::OpenPopup("Guizmo settings");
-            }
+                auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreHorizIcon);
+                ImGui::SameLine();
+                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                    ImGui::OpenPopup("Guizmo settings");
+                }
 
-            if (ImGui::BeginPopup("Guizmo settings")) {
-                ImGui::Text("Snapping");
+                if (ImGui::BeginPopup("Guizmo settings")) {
+                    ImGui::Text("Snapping");
 
-                ImGui::Checkbox("Enabled", &snappingEnabled);
-                ImGui::DragFloat("Translation snap", &translationSnap, 0.01f, 0.1f, 100.0f);
-                ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
-                ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
+                    ImGui::Checkbox("Enabled", &snappingEnabled);
+                    ImGui::DragFloat("Translation snap", &translationSnap, 0.01f, 0.1f, 100.0f);
+                    ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
+                    ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
 
-                ImGui::EndPopup();
+                    ImGui::EndPopup();
+                }
             }
 
             hasMainCamera = false;
@@ -284,7 +286,7 @@ namespace Atlas::Editor::UI {
             uvMax = ImVec2(0.75f, 0.75f);
 
             auto& playIcon = Singletons::icons->Get(IconType::Play);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));

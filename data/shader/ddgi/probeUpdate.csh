@@ -197,7 +197,7 @@ void main() {
     if (gl_LocalInvocationIndex == 0) {
         vec3 maxOffset = ddgiData.cascades[cascadeIndex].cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
-        probeOffset.w = max(0.0, reset ? 1.0 : 1.0);
+        probeOffset.w = max(0.0, reset ? 1.0 : probeOffset.w - 0.01);
         probeOffsets[baseIdx] = ddgiData.optimizeProbes > 0 ? probeOffset : vec4(0.0, 0.0, 0.0, 1.0);
     }
 #endif

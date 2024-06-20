@@ -68,7 +68,7 @@ void main() {
     
     float width = right.x - center.x;
     float height = top.z - center.z;
-    vec2 gradient = vec2(right.y - center.y, top.y - center.y) / (tileSize + vec2(width, height));
+    vec2 gradient = vec2(right.y - center.y, top.y - center.y) / max(tileSize + vec2(width, height), tileSize * 0.01);
     
     imageStore(normalMap, coord, vec4(-gradient, 0.0, fold));
 

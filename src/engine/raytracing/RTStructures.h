@@ -61,6 +61,7 @@ namespace Atlas {
 
         int32_t invertUVs;
         int32_t twoSided;
+        int32_t cullBackFaces;
         int32_t useVertexColors;
 
         int32_t baseColorTexture = -1;

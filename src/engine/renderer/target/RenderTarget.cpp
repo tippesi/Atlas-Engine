@@ -36,7 +36,7 @@ namespace Atlas::Renderer {
         oceanDepthTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_D32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
 
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
