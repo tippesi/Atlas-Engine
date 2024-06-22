@@ -160,7 +160,7 @@ namespace Atlas::Editor {
                 auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
                 auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                    .objectLayer = Atlas::Physics::Layers::STATIC,
+                    .objectLayer = Atlas::Physics::Layers::Static,
                     .shape = shape,
                 };
                 entity.AddComponent<RigidBodyComponent>(bodySettings);

@@ -133,7 +133,7 @@ namespace Atlas::Editor::UI {
                     scale = Common::MatrixDecomposition(globalMatrix).scale;
 
                     auto shape = Physics::ShapesManager::CreateShape(Physics::BoundingBoxShapeSettings { .scale = scale });
-                    auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::MOVABLE, .shape = shape };
+                    auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::Movable, .shape = shape };
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
 

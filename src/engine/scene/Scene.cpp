@@ -196,7 +196,7 @@ namespace Atlas {
                         const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
                         if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
-                            rigidBodyComponent.layer == Physics::Layers::STATIC)
+                            rigidBodyComponent.layer == Physics::Layers::Static)
                             continue;
 
                         // This happens if no change was triggered by the user, then we still need

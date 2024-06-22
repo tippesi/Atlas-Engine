@@ -202,7 +202,7 @@ void App::Update(float deltaTime) {
             auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+                .objectLayer = Atlas::Physics::Layers::Movable,
                 .restitution = sphereRestitution,
                 .shape = shape,
             };
@@ -233,7 +233,7 @@ void App::Update(float deltaTime) {
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+                .objectLayer = Atlas::Physics::Layers::Movable,
                 .motionQuality = Atlas::Physics::MotionQuality::LinearCast,
                 .linearVelocity = camera.direction * shootVelocity,
                 .restitution = sphereRestitution,
@@ -1187,7 +1187,7 @@ void App::CheckLoadScene() {
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                .objectLayer = Atlas::Physics::Layers::STATIC,
+                .objectLayer = Atlas::Physics::Layers::Static,
                 .shape = shape,
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);
@@ -1200,7 +1200,7 @@ void App::CheckLoadScene() {
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                .objectLayer = Atlas::Physics::Layers::STATIC,
+                .objectLayer = Atlas::Physics::Layers::Static,
                 .shape = shape,
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);

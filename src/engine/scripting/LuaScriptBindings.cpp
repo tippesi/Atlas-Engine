@@ -25,6 +25,7 @@ namespace Atlas::Scripting {
         GenerateMaterialBindings(atlasNs);
         GenerateAudioBindings(atlasNs);
         GenerateMeshBindings(atlasNs);
+        GeneratePhysicsBindings(atlasNs);
         GenerateMathBindings(glmNs);
         GenerateVolumeBindings(atlasNs);
         GenerateLightingBindings(atlasNs);
@@ -81,6 +82,7 @@ namespace Atlas::Scripting {
             "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent>,
             "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
+            "AddLuaScripComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
 
             // Remove components
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
@@ -94,6 +96,7 @@ namespace Atlas::Scripting {
             "RemoveRigidBodyComponent", &Scene::Entity::RemoveComponent<RigidBodyComponent>,
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
+            "RemoveLuaScripComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
 
             // Get components
             "GetAudioComponent", &Scene::Entity::TryGetComponent<AudioComponent>,
@@ -106,7 +109,8 @@ namespace Atlas::Scripting {
             "GetPlayerComponent", &Scene::Entity::TryGetComponent<PlayerComponent>,
             "GetRigidBodyComponent", &Scene::Entity::TryGetComponent<RigidBodyComponent>,
             "GetTextComponent", &Scene::Entity::TryGetComponent<TextComponent>,
-            "GetTransformComponent", &Scene::Entity::TryGetComponent<TransformComponent>
+            "GetTransformComponent", &Scene::Entity::TryGetComponent<TransformComponent>,
+            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>
         );
 
     }
@@ -372,6 +376,88 @@ namespace Atlas::Scripting {
             "impostorDistance", &Mesh::Mesh::impostorDistance,
             "impostorShadowDistance", &Mesh::Mesh::impostorShadowDistance,
             "invertUVs", &Mesh::Mesh::invertUVs
+            );
+
+    }
+
+    void LuaScriptBindings::GeneratePhysicsBindings(sol::table* ns) {
+
+        ns->new_enum<Physics::Layers>("Layers", {
+            { "Static", Physics::Layers::Static },
+            { "Movable", Physics::Layers::Movable },
+            { "NumLayers", Physics::Layers::NumLayers }
+            });
+
+        ns->new_enum<Physics::MotionQuality>("Layers", {
+            { "Discrete", Physics::MotionQuality::Discrete },
+            { "LinearCast", Physics::MotionQuality::LinearCast }
+            });
+
+        ns->new_enum<Physics::ShapeType>("ShapeType", {
+            { "Mesh", Physics::ShapeType::Mesh },
+            { "Sphere", Physics::ShapeType::Sphere },
+            { "BoundingBox", Physics::ShapeType::BoundingBox },
+            { "Capsule", Physics::ShapeType::Capsule },
+            { "HeightField", Physics::ShapeType::HeightField }
+            });
+
+        ns->new_usertype<Physics::MeshShapeSettings>("MeshShapeSettings",
+            "mesh", &Physics::MeshShapeSettings::mesh,
+            "scale", &Physics::MeshShapeSettings::scale
+            );
+
+        ns->new_usertype<Physics::SphereShapeSettings>("SphereShapeSettings",
+            "radius", &Physics::SphereShapeSettings::radius,
+            "density", &Physics::SphereShapeSettings::density,
+            "scale", &Physics::SphereShapeSettings::scale
+            );
+
+        ns->new_usertype<Physics::BoundingBoxShapeSettings>("BoundingBoxShapeSettings",
+            "aabb", &Physics::BoundingBoxShapeSettings::aabb,
+            "density", &Physics::BoundingBoxShapeSettings::density,
+            "scale", &Physics::BoundingBoxShapeSettings::scale
+            );
+
+        ns->new_usertype<Physics::CapsuleShapeSettings>("CapsuleShapeSettings",
+            "height", &Physics::CapsuleShapeSettings::height,
+            "radius", &Physics::CapsuleShapeSettings::radius,
+            "density", &Physics::CapsuleShapeSettings::density,
+            "scale", &Physics::CapsuleShapeSettings::scale
+            );
+
+        ns->new_usertype<Physics::HeightFieldShapeSettings>("HeightFieldShapeSettings",
+            "heightData", &Physics::HeightFieldShapeSettings::heightData,
+            "translation", &Physics::HeightFieldShapeSettings::translation,
+            "scale", &Physics::HeightFieldShapeSettings::scale
+            );
+
+        ns->new_usertype<Physics::Shape>("Shape",
+            "IsValid", &Physics::Shape::IsValid,
+            "TryCreate", &Physics::Shape::TryCreate,
+            "Scale", &Physics::Shape::Scale,
+            "type", &Physics::Shape::type,
+            "settings", &Physics::Shape::settings
+            );
+
+        ns->new_usertype<Physics::ShapesManager>("ShapesManager",
+            "CreateShape", &Physics::ShapesManager::CreateShape<Physics::MeshShapeSettings>,
+            "CreateShape", &Physics::ShapesManager::CreateShape<Physics::SphereShapeSettings>,
+            "CreateShape", &Physics::ShapesManager::CreateShape<Physics::BoundingBoxShapeSettings>,
+            "CreateShape", &Physics::ShapesManager::CreateShape<Physics::CapsuleShapeSettings>,
+            "CreateShape", &Physics::ShapesManager::CreateShape<Physics::HeightFieldShapeSettings>
+            );
+
+        ns->new_usertype<Physics::BodyCreationSettings>("RigidBodyCreationSettings",
+            "objectLayer", &Physics::BodyCreationSettings::objectLayer,
+            "motionQuality", &Physics::BodyCreationSettings::motionQuality,
+            "linearVelocity", &Physics::BodyCreationSettings::linearVelocity,
+            "angularVelocity", &Physics::BodyCreationSettings::angularVelocity,
+            "friction", &Physics::BodyCreationSettings::friction,
+            "restitution", &Physics::BodyCreationSettings::restitution,
+            "linearDampening", &Physics::BodyCreationSettings::linearDampening,
+            "angularDampening", &Physics::BodyCreationSettings::angularDampening,
+            "gravityFactor", &Physics::BodyCreationSettings::gravityFactor,  
+            "shape", &Physics::BodyCreationSettings::shape
             );
 
     }

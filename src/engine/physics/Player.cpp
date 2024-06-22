@@ -118,8 +118,8 @@ namespace Atlas::Physics {
         auto system = world->system;
 
         const auto& physicsSettings = system->GetPhysicsSettings();
-        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::MOVABLE);
-        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::MOVABLE);
+        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::Movable);
+        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::Movable);
         const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
 
         character->SetShape(shape->ref, physicsSettings.mPenetrationSlop * 1.5f, broadPhaseLayerFilter,
@@ -134,8 +134,8 @@ namespace Atlas::Physics {
         auto system = world->system;
 
         const auto& physicsSettings = system->GetPhysicsSettings();
-        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::MOVABLE);
-        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::MOVABLE);
+        const auto& broadPhaseLayerFilter = system->GetDefaultBroadPhaseLayerFilter(Layers::Movable);
+        const auto& defaultLayerFilter = system->GetDefaultLayerFilter(Physics::Layers::Movable);
         const auto& tempAllocator = Physics::PhysicsManager::tempAllocator;
 
         auto gravityVector = -GetUp() * glm::length(world->GetGravity());

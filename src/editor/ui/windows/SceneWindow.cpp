@@ -209,7 +209,7 @@ namespace Atlas::Editor::UI {
                 bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
                 ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
                     guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into translation mode");

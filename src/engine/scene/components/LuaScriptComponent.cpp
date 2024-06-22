@@ -20,9 +20,22 @@ namespace Atlas::Scene::Components {
         this->scene = scene;
         this->entity = entity;
 
-        // reset the saved references
-        updateFunction.reset();
-        scriptEnvironment.reset();
+        scriptWasModifiedInLastUpdate = true;
+
+    }
+
+    LuaScriptComponent::LuaScriptComponent(Scene* scene, Entity entity, const ResourceHandle<Scripting::Script>& script)
+         : script(script), scene(scene), entity(entity) {
+
+        
+
+    }
+
+    void LuaScriptComponent::ChangeResource(const ResourceHandle<Scripting::Script>& script) {
+
+        this->script = script;
+
+        scriptWasModifiedInLastUpdate = true;
 
     }
 

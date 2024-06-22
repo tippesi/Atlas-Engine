@@ -8,29 +8,24 @@
 
 #include <sol/sol.hpp>
 
-namespace Atlas::Scene
-{
+namespace Atlas::Scene {
 
     class Scene;
 
-    namespace Components
-    {
+    namespace Components {
 
-        class LuaScriptComponent
-        {
+        class LuaScriptComponent {
             friend Scene;
 
         public:
-            enum class PropertyType
-            {
+            enum class PropertyType {
                 String,
                 Double,
                 Integer,
                 Boolean
             };
 
-            struct ScriptProperty
-            {
+            struct ScriptProperty {
                 std::string name;
                 PropertyType type;
 
@@ -40,9 +35,12 @@ namespace Atlas::Scene
                 bool booleanValue = false;
             };
 
-            LuaScriptComponent(Scene *scene, Entity entity);
-            LuaScriptComponent(Scene *scene, Entity entity, const LuaScriptComponent &that);
             LuaScriptComponent() = default;
+            LuaScriptComponent(Scene* scene, Entity entity);
+            LuaScriptComponent(Scene* scene, Entity entity, const LuaScriptComponent& that);
+            LuaScriptComponent(Scene* scene, Entity entity, const ResourceHandle<Scripting::Script>& script);
+
+            void ChangeResource(const ResourceHandle<Scripting::Script>& script);
 
             ResourceHandle<Scripting::Script> script;
             std::vector<ScriptProperty> properties;
@@ -53,16 +51,16 @@ namespace Atlas::Scene
             void Update(Scripting::LuaScriptManager& scriptManager, float deltaTime);
 
         private:
-            Scene *scene;
+            Scene* scene;
             Entity entity;
             Scripting::LuaScriptManager* scriptManager = nullptr;
-            
+
             // Force initial execution to be recognized as a changed script
             bool scriptWasModifiedInLastUpdate = true;
 
             std::optional<sol::protected_function> updateFunction;
             std::optional<sol::environment> scriptEnvironment;
-            
+
             bool InitScriptEnvironment();
             std::vector<ScriptProperty> GetPropertiesFromScript();
             void GetOrUpdatePropertiesFromScript();
