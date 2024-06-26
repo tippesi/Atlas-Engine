@@ -20,6 +20,7 @@ namespace Atlas {
             inline Comp& AddComponent(Args&&... args) {
 
                 AE_ASSERT(IsValid() && "Entity is not valid and doesn't belong to any scene");
+
                 AE_ASSERT(!HasComponent<Comp>() && "Entity already has this component");
 
                 if constexpr (std::is_constructible_v<Comp, Scene*, Entity, Args...>) {

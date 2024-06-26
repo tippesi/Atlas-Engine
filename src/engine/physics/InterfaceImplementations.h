@@ -61,15 +61,15 @@ namespace Atlas {
             }
 
             virtual JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer inLayer) const override {
-                JPH_ASSERT(inLayer < Layers::NUM_LAYERS);
+                JPH_ASSERT(inLayer < Layers::NumLayers);
                 return mObjectToBroadPhase[inLayer];
             }
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
             virtual const char* GetBroadPhaseLayerName(JPH::BroadPhaseLayer inLayer) const override {
                 switch ((JPH::BroadPhaseLayer::Type)inLayer) {
-                    case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::STATIC:	return "STATIC";
-                    case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVABLE:	return "MOVABLE";
+                    case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::Static:	return "STATIC";
+                    case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::Movable:	return "MOVABLE";
                     default: return "INVALID";
                 }
             }

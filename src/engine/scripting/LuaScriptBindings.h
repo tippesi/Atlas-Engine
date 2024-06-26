@@ -37,6 +37,8 @@ namespace Atlas::Scripting {
 
         void GenerateGraphicBindings(sol::table* ns);
 
+        void GenerateResourceManagerBindings(sol::table* ns);
+
         template<class T> 
         void GenerateResourceBinding(sol::table* ns, const std::string& name);
 
@@ -59,8 +61,8 @@ namespace Atlas::Scripting {
             "GetID", &ResourceHandle<T>::GetID
             );
 
-        type.set_function("GetResource", sol::resolve<Ref<Resource<T>>&(void)>(&ResourceHandle<T>::GetResource) );
-        type.set_function("Get", sol::resolve<Ref<T>&(void)>(&ResourceHandle<T>::Get) );
+        type.set_function("GetResource", sol::resolve<Ref<Resource<T>>&(void)>(&ResourceHandle<T>::GetResource));
+        type.set_function("Get", sol::resolve<Ref<T>&(void)>(&ResourceHandle<T>::Get));
 
     }
 
@@ -102,16 +104,5 @@ namespace Atlas::Scripting {
             std::forward<Args2>(args)...);
 
     }
-
-    template <typename T>
-		inline decltype(auto) deref(T&& item) {
-			using Tu = sol::meta::unqualified_t<T>;
-			if constexpr (sol::meta::is_pointer_like_v<Tu>) {
-				return *std::forward<T>(item);
-			}
-			else {
-				return std::forward<T>(item);
-			}
-		}
 
 }

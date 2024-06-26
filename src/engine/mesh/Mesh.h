@@ -109,6 +109,8 @@ namespace Atlas {
 
             int32_t allowedShadowCascades = 6;
 
+            float distanceCulling = 6e10f;
+            float shadowDistanceCulling = 6e10f;
             float impostorDistance = 300.0f;
             float impostorShadowDistance = 100.0f;
 

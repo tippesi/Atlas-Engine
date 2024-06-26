@@ -104,10 +104,14 @@ namespace Atlas {
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
-                auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
-                for (auto entity : luaScriptComponentSubset) {
-                    auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
+                // Work with a copy here
+                auto luaScriptComponents = entityManager.GetComponents<LuaScriptComponent>();
+                for (auto& luaScriptComponent : luaScriptComponents) {
                     luaScriptComponent.Update(luaScriptManager, deltaTime);
+
+                    // Replace original one with the updated component
+                    auto& originalComponent = entityManager.Get<LuaScriptComponent>(luaScriptComponent.entity);
+                    originalComponent = luaScriptComponent;
                 }
             }
 
@@ -518,12 +522,24 @@ namespace Atlas {
 
         void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
 
+            if (!mainCameraEntity.IsValid())
+                return;
+
+            auto cameraPos = mainCameraEntity.GetComponent<CameraComponent>().GetLocation();
+
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto& entity : subset) {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
-                if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
+                if (!comp.mesh.IsLoaded())
+                    continue;
+
+                float dist2 = glm::dot(cameraPos, comp.aabb.GetCenter());
+                float cullingDist = pass->type == RenderList::RenderPassType::Main ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
+                float cullingDist2 = cullingDist * cullingDist;
+
+                if (comp.dontCull || comp.visible && dist2 < cullingDist2 && frustum.Intersects(comp.aabb))
                     pass->Add(entity, comp);
             }
 

@@ -85,6 +85,8 @@ namespace Atlas {
 
             float GetDistance(vec3 point) const;
 
+            vec3 GetCenter() const;
+
             /**
              * Returns the eight corners of the AABB.
              * @return The eight corners of the AABB.

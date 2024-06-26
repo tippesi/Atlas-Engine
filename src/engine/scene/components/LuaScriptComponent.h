@@ -36,9 +36,9 @@ namespace Atlas::Scene {
             };
 
             LuaScriptComponent() = default;
-            LuaScriptComponent(Scene* scene, Entity entity);
-            LuaScriptComponent(Scene* scene, Entity entity, const LuaScriptComponent& that);
-            LuaScriptComponent(Scene* scene, Entity entity, const ResourceHandle<Scripting::Script>& script);
+            explicit LuaScriptComponent(Scene* scene, Entity entity);
+            explicit LuaScriptComponent(Scene* scene, Entity entity, const LuaScriptComponent& that);
+            explicit LuaScriptComponent(Scene* scene, Entity entity, const ResourceHandle<Scripting::Script>& script);
 
             void ChangeResource(const ResourceHandle<Scripting::Script>& script);
 

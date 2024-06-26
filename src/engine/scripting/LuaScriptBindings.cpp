@@ -5,6 +5,7 @@
 #include "Clock.h"
 #include "resource/ResourceManager.h"
 #include "input/KeyboardMap.h"
+#include "loader/ModelLoader.h"
 
 namespace Atlas::Scripting {
 
@@ -31,6 +32,7 @@ namespace Atlas::Scripting {
         GenerateLightingBindings(atlasNs);
         GenerateInputBindings(atlasNs);
         GenerateGraphicBindings(atlasNs);
+        GenerateResourceManagerBindings(atlasNs);
 
     }
 
@@ -82,7 +84,7 @@ namespace Atlas::Scripting {
             "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent>,
             "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
-            "AddLuaScripComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
+            "AddLuaScriptComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
 
             // Remove components
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
@@ -96,7 +98,7 @@ namespace Atlas::Scripting {
             "RemoveRigidBodyComponent", &Scene::Entity::RemoveComponent<RigidBodyComponent>,
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
-            "RemoveLuaScripComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
+            "RemoveLuaScriptComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
 
             // Get components
             "GetAudioComponent", &Scene::Entity::TryGetComponent<AudioComponent>,
@@ -261,6 +263,12 @@ namespace Atlas::Scripting {
             "textScale", &TextComponent::textScale
         );
 
+        ns->new_usertype<LuaScriptComponent>("LuaScriptComponent",
+            "ChangeResource", &LuaScriptComponent::ChangeResource,
+            "permanentExecution", &LuaScriptComponent::permanentExecution,
+            "script", &LuaScriptComponent::script
+        );
+
     }
 
     void LuaScriptBindings::GenerateUtilityBindings(sol::table* ns) {
@@ -321,8 +329,6 @@ namespace Atlas::Scripting {
 
     void LuaScriptBindings::GenerateAudioBindings(sol::table* ns) {
 
-        GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
-
         ns->new_usertype<Audio::AudioData>("AudioData",
             "GetChannelCount", &Audio::AudioData::GetChannelCount,
             "GetFrequency", &Audio::AudioData::GetFrequency,
@@ -349,7 +355,15 @@ namespace Atlas::Scripting {
 
     void LuaScriptBindings::GenerateMeshBindings(sol::table* ns) {
 
-        GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
+        ns->new_enum<Mesh::MeshMobility>("MeshMobility", {
+            { "Stationary", Mesh::MeshMobility::Stationary },
+            { "Movable", Mesh::MeshMobility::Movable },
+        });
+
+        ns->new_enum<Mesh::MeshUsageBits>("MeshUsageBits", {
+            { "MultiBufferedBit", Mesh::MeshUsageBits::MultiBufferedBit },
+            { "HostAccessBit", Mesh::MeshUsageBits::HostAccessBit },
+        });
 
         ns->new_usertype<Mesh::MeshData>("MeshData",
             "filename", &Mesh::MeshData::filename,
@@ -373,6 +387,8 @@ namespace Atlas::Scripting {
             "windBendScale", &Mesh::Mesh::windBendScale,
             "windWiggleScale", &Mesh::Mesh::windWiggleScale,
             "allowedShadowCascades", &Mesh::Mesh::allowedShadowCascades,
+            "distanceCulling", &Mesh::Mesh::distanceCulling,
+            "shadowDistanceCulling", &Mesh::Mesh::shadowDistanceCulling,
             "impostorDistance", &Mesh::Mesh::impostorDistance,
             "impostorShadowDistance", &Mesh::Mesh::impostorShadowDistance,
             "invertUVs", &Mesh::Mesh::invertUVs
@@ -838,6 +854,34 @@ namespace Atlas::Scripting {
             "height", &Texture::Cubemap::height,
             "channels", &Texture::Cubemap::channels
         );
+
+    }
+
+    void LuaScriptBindings::GenerateResourceManagerBindings(sol::table* ns) {
+
+        GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
+        GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
+        GenerateResourceBinding<Scripting::Script>(ns, "ScriptResourceHandle");
+
+        auto type = ns->create_named("ResourceManager");
+
+        type.set_function("GetOrLoadMesh", [](const std::string& filename) -> ResourceHandle<Mesh::Mesh> { 
+                return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
+                    filename, ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
+            });
+
+        type.set_function("GetMeshes", []() { 
+                return ResourceManager<Mesh::Mesh>::GetResources();
+            });
+
+        type.set_function("GetOrLoadScript", [](const std::string& filename) -> ResourceHandle<Scripting::Script> { 
+                return ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
+                    filename, ResourceOrigin::User);
+            });
+
+        type.set_function("GetScripts", []() { 
+                return ResourceManager<Scripting::Script>::GetResources();
+            });
 
     }
 

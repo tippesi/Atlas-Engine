@@ -58,6 +58,11 @@ namespace Atlas::Editor::UI {
 
             ImGui::Checkbox("Cast shadow", &mesh->castShadow);
             ImGui::SliderInt("Shadow cascades", &mesh->allowedShadowCascades, 1, 6);
+
+            ImGui::Separator();
+            ImGui::Text("Culling settings");            
+            ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);
+            ImGui::DragFloat("Shadow distance culling", &mesh->shadowDistanceCulling, 1.0f);
             
             ImGui::Separator();
             ImGui::Text("Wind settings");

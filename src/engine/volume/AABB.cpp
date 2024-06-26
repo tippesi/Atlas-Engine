@@ -118,6 +118,12 @@ namespace Atlas {
 
         }
 
+        vec3 AABB::GetCenter() const {
+
+            return 0.5f * (max + min);
+
+        }
+
         std::vector<vec3> AABB::GetCorners() {
 
             std::vector<vec3> corners;
