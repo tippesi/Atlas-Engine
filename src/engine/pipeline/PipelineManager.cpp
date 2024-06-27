@@ -49,7 +49,7 @@ namespace Atlas {
             hotReloadFuture = std::async(std::launch::async, [&]() {
                 std::shared_lock lock(shaderToVariantsMutex);
 
-                std::unordered_map<std::string, std::filesystem::file_time_type> modifiedMap;
+                std::unordered_map<std::string, std::time_t> modifiedMap;
 
                 for (auto& [_, variants] : shaderToVariantsMap) {
                     std::lock_guard innerLock(variants->variantsMutex);
@@ -60,9 +60,11 @@ namespace Atlas {
                                 continue;
 
                             std::error_code errorCode;
-                            auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
-                            if (!errorCode)
-                                modifiedMap[includePath] = lastModified;
+                            auto lastModifiedFileTime = std::filesystem::last_write_time(includePath, errorCode);
+                            if (!errorCode) {
+                                auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModifiedFileTime);
+                                modifiedMap[includePath] = std::chrono::system_clock::to_time_t(systemTime);
+                            }
                         }
                     }
                 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Components.h"
+#include "LuaScriptComponent.h"
+
 #include "common/SerializationHelper.h"
 #include "lighting/LightingSerializer.h"
 #include "audio/AudioSerializer.h"

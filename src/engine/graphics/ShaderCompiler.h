@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <vector>
 #include <unordered_map>
+#include <ctime>
 
 namespace Atlas {
 
@@ -28,7 +29,7 @@ namespace Atlas {
             struct SpvCacheEntry {
                 std::string fileName;
 
-                std::filesystem::file_time_type lastModified;
+                std::time_t lastModified;
                 std::vector<uint32_t> spirvBinary;
 
                 bool wasModified = false;

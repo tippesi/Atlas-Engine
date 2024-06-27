@@ -6,7 +6,6 @@
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
-#include "loader/AssetLoader.h"
 
 #include <cctype>
 #include <filesystem>

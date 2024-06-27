@@ -3,6 +3,7 @@
 #include "../buffer/Buffer.h"
 #include "../graphics/Profiler.h"
 #include "../pipeline/PipelineManager.h"
+#include "../common/NoiseGenerator.h"
 
 #include <vector>
 

@@ -1,6 +1,7 @@
 #include "SceneBindings.h"
 
 #include "scene/Scene.h"
+#include "scene/components/LuaScriptComponent.h"
 
 namespace Atlas::Scripting::Bindings {
 

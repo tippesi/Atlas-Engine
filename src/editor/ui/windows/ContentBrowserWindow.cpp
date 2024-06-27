@@ -7,6 +7,7 @@
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "loader/AssetLoader.h"
 
 #include <filesystem>
 #include <imgui_internal.h>

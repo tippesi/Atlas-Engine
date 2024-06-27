@@ -4,7 +4,7 @@
 #include "../scene/Entity.h"
 #include "../common/Ref.h"
 
-#include <sol/sol.hpp>
+#include <sol/state.hpp>
 
 namespace Atlas::Scripting {
     class LuaScriptManager {

@@ -17,8 +17,10 @@ namespace Atlas {
 
             std::vector<std::string> includes;
             std::vector<Graphics::ShaderStageFile::Extension> extensions;
-            std::filesystem::file_time_type lastModified = std::filesystem::file_time_type::min();
-            auto code = ReadShaderFile(path, true, includes, extensions, lastModified);
+            std::filesystem::file_time_type lastModifiedFileTime = std::filesystem::file_time_type::min();
+            auto code = ReadShaderFile(path, true, includes, extensions, lastModifiedFileTime);
+
+            auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModifiedFileTime);
 
             // Erase all versioning qualifiers, will be filled automatically
             std::string removeVersion = "#version";
@@ -35,7 +37,7 @@ namespace Atlas {
             shaderStageFile.includes = includes;
             shaderStageFile.extensions = extensions;
             shaderStageFile.shaderStage = shaderStage;
-            shaderStageFile.lastModified = lastModified;
+            shaderStageFile.lastModified = std::chrono::system_clock::to_time_t(lastModifiedTime);
 
             return shaderStageFile;
 

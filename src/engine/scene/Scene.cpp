@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "SceneSerializer.h"
 #include "components/Components.h"
+#include "components/LuaScriptComponent.h"
 
 namespace Atlas {
 

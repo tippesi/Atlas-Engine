@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <string>
 #include <algorithm>
+#include <filesystem>
 
 namespace Atlas {
 
@@ -144,18 +145,19 @@ namespace Atlas {
 
         }
 
-        bool Shader::Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap) {
+        bool Shader::Reload(std::unordered_map<std::string, std::time_t>& lastModifiedMap) {
 
             std::lock_guard lock(variantMutex);
 
-            std::filesystem::file_time_type maxLastModified = lastReload;
+            std::time_t maxLastModified = lastReload;
 
             bool reload = false;
             for (auto& shaderStage : shaderStageFiles) {
                 std::filesystem::file_time_type lastModified;
-                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename,
-                    shaderStage.lastModified, lastModified)) {
-                    maxLastModified = std::max(maxLastModified, lastModified);
+                auto ownLastModified = std::chrono::clock_cast<std::chrono::file_clock>(std::chrono::system_clock::from_time_t(shaderStage.lastModified));
+                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename, ownLastModified, lastModified)) {
+                    auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModified);
+                    maxLastModified = std::max(maxLastModified, std::chrono::system_clock::to_time_t(systemTime));
                     reload = true;
                 }
 

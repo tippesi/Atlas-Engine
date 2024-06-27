@@ -137,8 +137,11 @@ namespace Atlas {
                     path = cachePath + std::to_string(hash);
 
                 if (Loader::AssetLoader::FileExists(path)) {
+                    const auto fileTime = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
+                    const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+
                     entry.fileName = path;
-                    entry.lastModified = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
+                    entry.lastModified = std::chrono::system_clock::to_time_t(systemTime);
 
                     auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
                     if (fileStream.is_open()) {
