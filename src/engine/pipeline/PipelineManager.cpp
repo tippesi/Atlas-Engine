@@ -49,7 +49,7 @@ namespace Atlas {
             hotReloadFuture = std::async(std::launch::async, [&]() {
                 std::shared_lock lock(shaderToVariantsMutex);
 
-                std::unordered_map<std::string, std::time_t> modifiedMap;
+                std::unordered_map<std::string, std::filesystem::file_time_type> modifiedMap;
 
                 for (auto& [_, variants] : shaderToVariantsMap) {
                     std::lock_guard innerLock(variants->variantsMutex);
@@ -60,11 +60,9 @@ namespace Atlas {
                                 continue;
 
                             std::error_code errorCode;
-                            auto lastModifiedFileTime = std::filesystem::last_write_time(includePath, errorCode);
-                            if (!errorCode) {
-                                auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModifiedFileTime);
-                                modifiedMap[includePath] = std::chrono::system_clock::to_time_t(systemTime);
-                            }
+                            auto lastModified = std::filesystem::last_write_time(includePath, errorCode);
+                            if (!errorCode)
+                                modifiedMap[includePath] = lastModified;
                         }
                     }
                 }
@@ -78,7 +76,7 @@ namespace Atlas {
                         variants->pipelines.clear();
                     }
                 }
-                });            
+                });
         }
 
     }
@@ -95,20 +93,20 @@ namespace Atlas {
 
     }
 
-    void PipelineManager::AddPipeline(PipelineConfig &config) {
+    void PipelineManager::AddPipeline(PipelineConfig& config) {
 
         GetOrCreatePipeline(config);
 
     }
 
-    Ref<Graphics::Pipeline> PipelineManager::GetPipeline(PipelineConfig &config) {
+    Ref<Graphics::Pipeline> PipelineManager::GetPipeline(PipelineConfig& config) {
 
         return GetOrCreatePipeline(config);
 
     }
 
     void PipelineManager::OverrideDescriptorSetLayout(Ref<Graphics::DescriptorSetLayout> layout, uint32_t set) {
-        
+
         std::unique_lock lock(shaderToVariantsMutex);
 
         if (set < DESCRIPTOR_SET_COUNT) {
@@ -116,7 +114,7 @@ namespace Atlas {
             globalDescriptorSetLayoutOverrides[set] = layout;
 
             for (auto& [_, variants] : shaderToVariantsMap) {
-                
+
                 std::unordered_map<size_t, Ref<Graphics::Pipeline>> validPipelines;
 
                 std::lock_guard innerLock(variants->variantsMutex);
@@ -141,7 +139,7 @@ namespace Atlas {
 
     }
 
-    Ref<Graphics::Pipeline> PipelineManager::GetOrCreatePipeline(PipelineConfig &config) {
+    Ref<Graphics::Pipeline> PipelineManager::GetOrCreatePipeline(PipelineConfig& config) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -182,7 +180,7 @@ namespace Atlas {
             Ref<Graphics::Pipeline> pipeline;
             if (!variants->pipelines.contains(config.variantHash)) {
                 auto shaderVariant = variants->shader->GetVariant(config.macros);
-                
+
                 for (uint32_t i = 0; i < DESCRIPTOR_SET_COUNT; i++) {
                     auto& layout = globalDescriptorSetLayoutOverrides[i];
                     if (layout == nullptr) continue;

@@ -147,13 +147,13 @@ namespace Atlas {
 
             void FlushCommandList(CommandList* cmd);
 
-            bool IsPreviousFrameComplete();
+            bool IsPreviousFrameSubmitted();
 
-            void WaitForPreviousFrameCompletion();
+            void WaitForPreviousFrameSubmission();
 
-            void CompleteFrameAsync();
+            void SubmitFrameAsync();
 
-            void CompleteFrame();
+            void SubmitFrame();
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
@@ -313,8 +313,8 @@ namespace Atlas {
 
             std::shared_mutex queueMutex;
 
-            std::atomic_bool frameComplete = true;
-            std::future<void> completeFrameFuture;
+            std::atomic_bool frameSubmissionComplete = true;
+            std::future<void> submitFrameFuture;
 
         };
 

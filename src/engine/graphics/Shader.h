@@ -7,7 +7,7 @@
 #include <string>
 #include <mutex>
 #include <unordered_map>
-#include <ctime>
+#include <filesystem>
 
 namespace Atlas {
 
@@ -35,7 +35,7 @@ namespace Atlas {
             std::vector<std::string> includes;
             std::vector<Extension> extensions;
 
-            std::time_t lastModified;
+            std::filesystem::file_time_type lastModified;
 
             VkShaderStageFlagBits shaderStage;
 
@@ -56,7 +56,7 @@ namespace Atlas {
             size_t hash = 0;
 
             uint32_t set = 0;
-           
+
             DescriptorSetBinding binding;
 
             bool valid = false;
@@ -128,7 +128,7 @@ namespace Atlas {
 
             Ref<ShaderVariant> GetVariant(std::vector<std::string> macros);
 
-            bool Reload(std::unordered_map<std::string, std::time_t>& lastModifiedMap);
+            bool Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap);
 
             std::string name;
 
@@ -140,7 +140,7 @@ namespace Atlas {
             std::vector<ShaderStageFile> shaderStageFiles;
             std::vector<ShaderStageFile> historyShaderStageFiles;
 
-            std::time_t lastReload = 0;
+            std::filesystem::file_time_type lastReload = std::filesystem::file_time_type::min();
 
             std::mutex variantMutex;
             std::vector<Ref<ShaderVariant>> shaderVariants;

@@ -38,7 +38,7 @@ namespace Atlas::Editor::UI
 
         ImGui::Separator();
         ImGui::Text("Script defined properties:");
-        for (auto &property : luaScriptComponent.properties)
+        for (auto &[name, property] : luaScriptComponent.properties)
         {
             switch (property.type)
             {

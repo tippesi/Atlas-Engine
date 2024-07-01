@@ -10,9 +10,9 @@ namespace Atlas {
 
     namespace Graphics {
 
-        void InitBuildInResources(TBuiltInResource &Resources);
+        void InitBuildInResources(TBuiltInResource& Resources);
         EShLanguage FindLanguage(const VkShaderStageFlagBits shaderType);
-        void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
+        void LogError(const ShaderStageFile& shaderStageFile, const std::vector<std::string>& macros,
             glslang::TShader& shader);
 
         bool ShaderCompiler::includeDebugInfo = false;
@@ -62,7 +62,7 @@ namespace Atlas {
 
             EShLanguage stage = FindLanguage(shaderFile.shaderStage);
             glslang::TShader shader(stage);
-            
+
             if (device->support.hardwareRayTracing) {
                 // Mac struggles with Spv 1.4, so use only when necessary
                 shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
@@ -112,7 +112,7 @@ namespace Atlas {
                     return optimizedBinary;
                 }
             }
-           
+
             AddCacheEntry(shaderFile, macros, spirvBinary);
             return spirvBinary;
 
@@ -127,7 +127,7 @@ namespace Atlas {
 
             SpvCacheEntry entry;
             if (cache.contains(hash)) {
-                entry = cache[hash];                
+                entry = cache[hash];
             }
             else {
                 std::string path;
@@ -137,11 +137,8 @@ namespace Atlas {
                     path = cachePath + std::to_string(hash);
 
                 if (Loader::AssetLoader::FileExists(path)) {
-                    const auto fileTime = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
-                    const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
-
                     entry.fileName = path;
-                    entry.lastModified = std::chrono::system_clock::to_time_t(systemTime);
+                    entry.lastModified = Loader::AssetLoader::GetFileLastModifiedTime(path, std::filesystem::file_time_type::min());
 
                     auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
                     if (fileStream.is_open()) {
@@ -171,7 +168,7 @@ namespace Atlas {
 
             auto hash = CalculateHash(shaderFile, macros);
 
-            SpvCacheEntry entry {
+            SpvCacheEntry entry{
                 .fileName = includeDebugInfo ? cachePath + std::to_string(hash) + "_debug" : cachePath + std::to_string(hash),
 
                 .lastModified = shaderFile.lastModified,
@@ -199,7 +196,7 @@ namespace Atlas {
 
         }
 
-        void InitBuildInResources(TBuiltInResource &Resources) {
+        void InitBuildInResources(TBuiltInResource& Resources) {
             Resources.maxLights = 32;
             Resources.maxClipPlanes = 6;
             Resources.maxTextureUnits = 32;
@@ -305,24 +302,24 @@ namespace Atlas {
 
         EShLanguage FindLanguage(const VkShaderStageFlagBits shaderType) {
             switch (shaderType) {
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT:
-                    return EShLangVertex;
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-                    return EShLangTessControl;
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-                    return EShLangTessEvaluation;
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT:
-                    return EShLangGeometry;
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT:
-                    return EShLangFragment;
-                case VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT:
-                    return EShLangCompute;
-                default:
-                    return EShLangCompute;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT:
+                return EShLangVertex;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+                return EShLangTessControl;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+                return EShLangTessEvaluation;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT:
+                return EShLangGeometry;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT:
+                return EShLangFragment;
+            case VkShaderStageFlagBits::VK_SHADER_STAGE_COMPUTE_BIT:
+                return EShLangCompute;
+            default:
+                return EShLangCompute;
             }
         }
 
-        void LogError(const ShaderStageFile &shaderStageFile, const std::vector<std::string>& macros,
+        void LogError(const ShaderStageFile& shaderStageFile, const std::vector<std::string>& macros,
             glslang::TShader& shader) {
 
             std::string log;
@@ -369,7 +366,7 @@ namespace Atlas {
             if (infoLog.empty() && debugInfoLog.empty()) {
                 Log::Error("Shader compilation failed with unknown error");
             }
-            
+
         }
 
     }

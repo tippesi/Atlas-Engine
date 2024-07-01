@@ -289,7 +289,7 @@ namespace Atlas {
             // Make sure this is changed just once at the start of a frame
             rayTracingWorldUpdateFuture = std::async(std::launch::async, [this, rayTracingSubset]() {              
                 // Need to wait before updating graphic resources
-                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
                     rayTracingWorld->scene = this;
                     // Don't update triangle lights for now (second argument)
@@ -536,7 +536,9 @@ namespace Atlas {
                 if (!comp.mesh.IsLoaded())
                     continue;
 
-                float dist2 = glm::dot(cameraPos, comp.aabb.GetCenter());
+                auto diff = comp.aabb.GetCenter() - cameraPos;
+
+                float dist2 = glm::dot(diff, diff);
                 float cullingDist = pass->type == RenderList::RenderPassType::Main ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
                 float cullingDist2 = cullingDist * cullingDist;
 

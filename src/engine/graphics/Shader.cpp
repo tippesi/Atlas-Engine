@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <string>
 #include <algorithm>
-#include <filesystem>
 
 namespace Atlas {
 
@@ -84,7 +83,7 @@ namespace Atlas {
 
         }
 
-        Shader::Shader(GraphicsDevice *device, const ShaderDesc &desc) :
+        Shader::Shader(GraphicsDevice* device, const ShaderDesc& desc) :
             name(desc.name), device(device), shaderStageFiles(desc.stages) {
 
 
@@ -145,19 +144,18 @@ namespace Atlas {
 
         }
 
-        bool Shader::Reload(std::unordered_map<std::string, std::time_t>& lastModifiedMap) {
+        bool Shader::Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap) {
 
             std::lock_guard lock(variantMutex);
 
-            std::time_t maxLastModified = lastReload;
+            std::filesystem::file_time_type maxLastModified = lastReload;
 
             bool reload = false;
             for (auto& shaderStage : shaderStageFiles) {
                 std::filesystem::file_time_type lastModified;
-                auto ownLastModified = std::chrono::clock_cast<std::chrono::file_clock>(std::chrono::system_clock::from_time_t(shaderStage.lastModified));
-                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename, ownLastModified, lastModified)) {
-                    auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModified);
-                    maxLastModified = std::max(maxLastModified, std::chrono::system_clock::to_time_t(systemTime));
+                if (Loader::ShaderLoader::CheckForReload(shaderStage.filename,
+                    shaderStage.lastModified, lastModified)) {
+                    maxLastModified = std::max(maxLastModified, lastModified);
                     reload = true;
                 }
 
@@ -195,7 +193,7 @@ namespace Atlas {
 
         }
 
-        Ref<ShaderVariant> Shader::FindVariant(const std::vector<std::string> &macros) {
+        Ref<ShaderVariant> Shader::FindVariant(const std::vector<std::string>& macros) {
 
             for (auto& variant : shaderVariants) {
                 if (variant->macros.size() != macros.size())
@@ -242,7 +240,7 @@ namespace Atlas {
                 auto result = vkCreateShaderModule(device->device, &createInfo,
                     nullptr, &modules[i]);
                 VK_CHECK_MESSAGE(result, "Error creating shader module");
-                if (result != VK_SUCCESS) {                    
+                if (result != VK_SUCCESS) {
                     return;
                 }
 
@@ -324,7 +322,7 @@ namespace Atlas {
 
         }
 
-        PushConstantRange* ShaderVariant::GetPushConstantRange(const std::string &name) {
+        PushConstantRange* ShaderVariant::GetPushConstantRange(const std::string& name) {
 
             auto it = std::find_if(pushConstantRanges.begin(), pushConstantRanges.end(),
                 [&](const auto& pushConstantRange) { return pushConstantRange.name == name; });
@@ -351,7 +349,7 @@ namespace Atlas {
             for (size_t i = 0; i < BINDINGS_PER_DESCRIPTOR_SET; i++) {
                 sets[set].bindings[i].valid = false;
             }
-            
+
             for (size_t i = 0; i < layout->layoutBindings.size(); i++) {
                 const auto& binding = layout->bindings[i];
 
@@ -364,7 +362,7 @@ namespace Atlas {
 
         }
 
-        void ShaderVariant::GenerateReflectionData(ShaderModule &shaderModule, const std::vector<uint32_t>& spirvBinary) {
+        void ShaderVariant::GenerateReflectionData(ShaderModule& shaderModule, const std::vector<uint32_t>& spirvBinary) {
 
             SpvReflectShaderModule module;
             SpvReflectResult result = spvReflectCreateShaderModule(spirvBinary.size() * sizeof(uint32_t),
@@ -407,14 +405,14 @@ namespace Atlas {
 
                 AE_ASSERT(descriptorSet->binding_count <= BINDINGS_PER_DESCRIPTOR_SET && "Too many bindings for this shader");
 
-                for(uint32_t i = 0; i < descriptorSet->binding_count; i++) {
+                for (uint32_t i = 0; i < descriptorSet->binding_count; i++) {
                     auto descriptorBinding = descriptorSet->bindings[i];
 
                     ShaderDescriptorBinding binding;
 
                     binding.name.assign(descriptorBinding->name);
                     binding.set = descriptorBinding->set;
-                    
+
                     binding.valid = true;
 
                     AE_ASSERT(binding.set < DESCRIPTOR_SET_COUNT && "Too many descriptor sets for this shader");
@@ -447,11 +445,11 @@ namespace Atlas {
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, nullptr);
                 AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
-                std::vector<SpvReflectInterfaceVariable *> inputVariables(inputVariableCount);
+                std::vector<SpvReflectInterfaceVariable*> inputVariables(inputVariableCount);
                 result = spvReflectEnumerateInputVariables(&module, &inputVariableCount, inputVariables.data());
                 AE_ASSERT(result == SPV_REFLECT_RESULT_SUCCESS && "Couldn't retrieve descriptor sets");
 
-                for (auto inputVariable: inputVariables) {
+                for (auto inputVariable : inputVariables) {
                     // Reject all build in variables
                     if (inputVariable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
                         continue;

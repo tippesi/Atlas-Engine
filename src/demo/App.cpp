@@ -269,7 +269,7 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
-    graphicsDevice->WaitForPreviousFrameCompletion();
+    graphicsDevice->WaitForPreviousFrameSubmission();
 
 #ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
@@ -428,7 +428,7 @@ void App::Render(float deltaTime) {
                     if (hdr) {
                         colorSpace = Atlas::Graphics::HDR10_HLG;
                     }
-                    graphicsDevice->CompleteFrame();
+                    graphicsDevice->SubmitFrame();
                     if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, colorSpace);
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, colorSpace);
                     vsyncMode = vsync;
@@ -1065,7 +1065,7 @@ void App::CheckLoadScene() {
                 material->metalness = 0.0f;
     }
 
-    graphicsDevice->WaitForPreviousFrameCompletion();
+    graphicsDevice->WaitForPreviousFrameSubmission();
 
     static std::future<void> future;
 

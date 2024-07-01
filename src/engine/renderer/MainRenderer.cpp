@@ -1042,7 +1042,7 @@ namespace Atlas {
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
             }
 
-        }
+        } 
 
         void MainRenderer::PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
             std::unordered_map<void*, uint16_t>& materialMap) {

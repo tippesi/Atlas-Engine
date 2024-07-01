@@ -10,22 +10,20 @@ namespace Atlas {
 
         std::string ShaderLoader::sourceDirectory = "";
 
-        Graphics::ShaderStageFile ShaderLoader::LoadFile(const std::string &filename, VkShaderStageFlagBits shaderStage) {
+        Graphics::ShaderStageFile ShaderLoader::LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage) {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
 
             std::vector<std::string> includes;
             std::vector<Graphics::ShaderStageFile::Extension> extensions;
-            std::filesystem::file_time_type lastModifiedFileTime = std::filesystem::file_time_type::min();
-            auto code = ReadShaderFile(path, true, includes, extensions, lastModifiedFileTime);
-
-            auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(lastModifiedFileTime);
+            std::filesystem::file_time_type lastModified = std::filesystem::file_time_type::min();
+            auto code = ReadShaderFile(path, true, includes, extensions, lastModified);
 
             // Erase all versioning qualifiers, will be filled automatically
             std::string removeVersion = "#version";
             auto pos = code.find(removeVersion);
-            while(pos != std::string::npos) {
+            while (pos != std::string::npos) {
                 code.erase(pos, removeVersion.length() + size_t(4));
                 pos = code.find(removeVersion);
             }
@@ -37,7 +35,7 @@ namespace Atlas {
             shaderStageFile.includes = includes;
             shaderStageFile.extensions = extensions;
             shaderStageFile.shaderStage = shaderStage;
-            shaderStageFile.lastModified = std::chrono::system_clock::to_time_t(lastModifiedTime);
+            shaderStageFile.lastModified = lastModified;
 
             return shaderStageFile;
 
@@ -54,7 +52,7 @@ namespace Atlas {
 
         }
 
-        void ShaderLoader::SetSourceDirectory(const std::string &directory) {
+        void ShaderLoader::SetSourceDirectory(const std::string& directory) {
 
             sourceDirectory = directory;
 

@@ -232,8 +232,26 @@ namespace Atlas::Scripting::Bindings {
             "textScale", &TextComponent::textScale
         );
 
+        ns->new_enum<LuaScriptComponent::PropertyType>("ScriptPropertyType", {
+            { "Undefined", LuaScriptComponent::PropertyType::Undefined },
+            { "String", LuaScriptComponent::PropertyType::String },
+            { "Double", LuaScriptComponent::PropertyType::Double },
+            { "Int", LuaScriptComponent::PropertyType::Integer },
+            { "Bool", LuaScriptComponent::PropertyType::Boolean },
+            });
+
         ns->new_usertype<LuaScriptComponent>("LuaScriptComponent",
             "ChangeResource", &LuaScriptComponent::ChangeResource,
+            "HasProperty", &LuaScriptComponent::HasProperty,
+            "GetPropertyType", &LuaScriptComponent::GetPropertyType,
+            "SetPropertyString", &LuaScriptComponent::SetPropertyValue<std::string>,
+            "SetPropertyDouble", &LuaScriptComponent::SetPropertyValue<double>,
+            "SetPropertyInt", &LuaScriptComponent::SetPropertyValue<int32_t>,
+            "SetPropertyBool", &LuaScriptComponent::SetPropertyValue<bool>,
+            "GetPropertyString", &LuaScriptComponent::GetPropertyValue<std::string>,
+            "GetPropertyDouble", &LuaScriptComponent::GetPropertyValue<double>,
+            "GetPropertyInt", &LuaScriptComponent::GetPropertyValue<int32_t>,
+            "GetPropertyBool", &LuaScriptComponent::GetPropertyValue<bool>,
             "permanentExecution", &LuaScriptComponent::permanentExecution,
             "script", &LuaScriptComponent::script
         );

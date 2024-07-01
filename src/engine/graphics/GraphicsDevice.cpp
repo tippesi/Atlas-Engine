@@ -440,34 +440,34 @@ namespace Atlas {
 
         }
 
-        bool GraphicsDevice::IsPreviousFrameComplete() {
+        bool GraphicsDevice::IsPreviousFrameSubmitted() {
 
-            return frameComplete;
-
-        }
-
-        void GraphicsDevice::WaitForPreviousFrameCompletion() {
-
-            if (completeFrameFuture.valid())
-                completeFrameFuture.get();
+            return frameSubmissionComplete;
 
         }
 
-        void GraphicsDevice::CompleteFrameAsync() {
+        void GraphicsDevice::WaitForPreviousFrameSubmission() {
 
-            frameComplete = false;
+            if (submitFrameFuture.valid())
+                submitFrameFuture.get();
 
-            if (completeFrameFuture.valid())
-                completeFrameFuture.get();
+        }
+
+        void GraphicsDevice::SubmitFrameAsync() {
+
+            frameSubmissionComplete = false;
+
+            if (submitFrameFuture.valid())
+                submitFrameFuture.get();
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
             // Refrain from using complete frame async for now
-            completeFrameFuture = std::async(std::launch::async,
-                [this] () { CompleteFrame(); });
+            submitFrameFuture = std::async(std::launch::async,
+                [this] () { SubmitFrame(); });
 
         }
 
-        void GraphicsDevice::CompleteFrame() {
+        void GraphicsDevice::SubmitFrame() {
 
             bool recreateSwapChain = false;
 
@@ -573,7 +573,7 @@ namespace Atlas {
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
 
-            frameComplete = true;
+            frameSubmissionComplete = true;
 
         }
 
@@ -593,7 +593,7 @@ namespace Atlas {
 
         void GraphicsDevice::WaitForIdle() {
 
-            WaitForPreviousFrameCompletion();
+            WaitForPreviousFrameSubmission();
 
             std::unique_lock lock(queueMutex);
 
