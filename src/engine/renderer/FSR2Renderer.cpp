@@ -825,6 +825,7 @@ namespace Atlas::Renderer {
 
 		auto colorImage = target->lightingTexture.image;
 		auto velocityImage = target->GetVelocity()->image;
+		auto reactiveMaskImage = target->reactiveMaskTexture.image;
 		auto depthImage = targetData->depthTexture->image;
 		auto outputImage = target->hdrTexture.image;
 
@@ -840,6 +841,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.color = GetResource(colorImage, L"FSR2_InputColor", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.depth = GetResource(depthImage, L"FSR2_InputDepth", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.motionVectors = GetResource(velocityImage, L"FSR2_InputMotionVectors", FFX_RESOURCE_STATE_COMPUTE_READ);
+		dispatchParameters.reactive = GetResource(reactiveMaskImage, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.exposure = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_InputExposure", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.reactive = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);
@@ -849,7 +851,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.jitterOffset.y = camera.GetJitter().y * float(target->GetScaledHeight()) * 0.5f;
 		dispatchParameters.motionVectorScale.x = float(target->GetScaledWidth());
 		dispatchParameters.motionVectorScale.y = float(target->GetScaledHeight());
-		dispatchParameters.reset = false;
+		dispatchParameters.reset = !target->HasHistory();
 		dispatchParameters.enableSharpening = sharpen.enable;
 		dispatchParameters.sharpness = sharpen.factor;
 		dispatchParameters.frameTimeDelta = Clock::GetDelta() * 1000.0f;

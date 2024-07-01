@@ -2,16 +2,22 @@
 
 namespace Atlas::ImguiExtension {
 
-    void ReflectionPanel::Render(Ref<Lighting::Reflection> &reflection) {
+    void ReflectionPanel::Render(Ref<Lighting::Reflection> &reflection, Ref<Renderer::RenderTarget>& target) {
 
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &reflection->enable);
+        ImGui::Checkbox("Half resolution", &reflection->halfResolution);
+
         //ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
         ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
                         This is only possible when cascaded shadow maps are not used.");
+        }
+        ImGui::Checkbox("Use normal maps", &reflection->useNormalMaps);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Uses the normal maps to cast reflection rays.");
         }
         ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
         ImGui::Checkbox("Opacity check", &reflection->opacityCheck);

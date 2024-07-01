@@ -62,8 +62,10 @@ namespace Atlas {
             auto constants = PushConstants {
                 .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .invResolution = 1.0f / vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
-                .jitter = camera.GetJitter()
+                .jitter = camera.GetJitter(),
+                .resetHistory = !target->HasHistory() ? 1 : 0
             };
+
             commandList->PushConstants("constants", &constants);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);

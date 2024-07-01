@@ -30,7 +30,7 @@ layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
     vec4 data[32];
 } weights;
 
-const float normalPhi = 32.0;
+const float normalPhi = 256.0;
 const float depthPhi = 0.5;
 
 #if defined(BLUR_RGB)

@@ -17,7 +17,9 @@ namespace Atlas {
             IndirectBufferBit = (1 << 2),
             MultiBufferedBit = (1 << 3),
             HostAccessBit = (1 << 4),
-            MemoryTransfersBit = (1 << 5)
+            MemoryTransfersBit = (1 << 5),
+            DedicatedMemoryBit = (1 << 6),
+            HighPriorityMemoryBit = (1 << 7),
         } BufferUsageBits;
 
         /**
@@ -48,13 +50,19 @@ namespace Atlas {
              * @param set
              * @param binding
              */
-            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const;
 
             /**
              * Returns an owning pointer to a graphics buffer
              * @return
              */
             Ref<Graphics::Buffer> Get();
+
+            /**
+             * Returns an owning pointer to a graphics buffer
+             * @return
+             */
+            const Ref<Graphics::Buffer> Get() const;
 
             /**
              * Returns an owning pointer to a graphics multi buffer

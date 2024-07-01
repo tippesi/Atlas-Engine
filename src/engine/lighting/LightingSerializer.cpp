@@ -10,6 +10,7 @@ namespace Atlas::Lighting {
             {"enable", p.enable},
             {"rt", p.rt},
             {"opacityCheck", p.opacityCheck},
+            {"halfResolution", p.halfResolution},
         };
     }
 
@@ -20,6 +21,7 @@ namespace Atlas::Lighting {
         j.at("enable").get_to(p.enable);
         j.at("rt").get_to(p.rt);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "halfResolution", p.halfResolution);
     }
 
     void to_json(json& j, const EnvironmentProbe& p) {
@@ -82,6 +84,7 @@ namespace Atlas::Lighting {
         j = json {
             {"aabb", p.aabb},
             {"probeCount", p.probeCount},
+            {"cascadeCount", p.cascadeCount},
             {"lowerResMoments", p.lowerResMoments},
             {"enable", p.enable},
             {"rayCount", p.rayCount},
@@ -95,12 +98,14 @@ namespace Atlas::Lighting {
             {"optimizeProbes", p.optimizeProbes},
             {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
+            {"scroll", p.scroll},
+            {"splitCorrection", p.splitCorrection},
         };
     }
 
     void from_json(const json& j, IrradianceVolume& p) {
-        p = IrradianceVolume(j["aabb"].get<Volume::AABB>(),
-            j["probeCount"].get<ivec3>(), j["lowerResMoments"].get<bool>());
+        p = IrradianceVolume(j["aabb"].get<Volume::AABB>(), j["probeCount"].get<ivec3>(), 
+            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>());
         j.at("enable").get_to(p.enable);
         j.at("rayCount").get_to(p.rayCount);
         j.at("rayCountInactive").get_to(p.rayCountInactive);
@@ -113,6 +118,8 @@ namespace Atlas::Lighting {
         j.at("optimizeProbes").get_to(p.optimizeProbes);
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        j.at("scroll").get_to(p.scroll);
+        j.at("splitCorrection").get_to(p.splitCorrection);
     }
 
     void to_json(json& j, const Reflection& p) {
@@ -129,6 +136,7 @@ namespace Atlas::Lighting {
             {"gi", p.gi},
             {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
+            {"halfResolution", p.halfResolution}
         };
     }
 
@@ -145,6 +153,7 @@ namespace Atlas::Lighting {
         j.at("gi").get_to(p.gi);
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "halfResolution", p.halfResolution);
     }
 
     void to_json(json& j, const ShadowView& p) {
@@ -222,6 +231,7 @@ namespace Atlas::Lighting {
             {"aoStrength", p.aoStrength},
             {"rt", p.rt},
             {"opacityCheck", p.opacityCheck},
+            {"halfResolution", p.halfResolution}
         };
     }
 
@@ -235,6 +245,7 @@ namespace Atlas::Lighting {
         j.at("aoStrength").get_to(p.aoStrength);
         j.at("rt").get_to(p.rt);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "halfResolution", p.halfResolution);
     }
 
     void to_json(json& j, const SSS& p) {
@@ -300,6 +311,7 @@ namespace Atlas::Lighting {
             {"enable", p.enable},
             {"castShadow", p.castShadow},
             {"stochasticOcclusionSampling", p.stochasticOcclusionSampling},
+            {"halfResolution", p.halfResolution}
         };
     }
 
@@ -328,12 +340,14 @@ namespace Atlas::Lighting {
         j.at("enable").get_to(p.enable);
         j.at("castShadow").get_to(p.castShadow);
         j.at("stochasticOcclusionSampling").get_to(p.stochasticOcclusionSampling);
+        try_get_json(j, "halfResolution", p.halfResolution);
     }
 
     void to_json(json& j, const Sky& p) {
         j = json {
             {"planetCenter", p.planetCenter},
-            {"planetRadius", p.planetRadius}
+            {"planetRadius", p.planetRadius},
+            {"intensity", p.intensity}
         };
 
         if (p.atmosphere)
@@ -347,6 +361,7 @@ namespace Atlas::Lighting {
     void from_json(const json& j, Sky& p) {
         j.at("planetCenter").get_to(p.planetCenter);
         j.at("planetRadius").get_to(p.planetRadius);
+        try_get_json(j, "intensity", p.intensity);
 
         if (j.contains("atmosphere")) {
             p.atmosphere = CreateRef<Atmosphere>();

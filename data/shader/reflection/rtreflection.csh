@@ -65,8 +65,9 @@ void main() {
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+        // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+        ivec2 offset = ivec2(0);
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
@@ -90,7 +91,7 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 1.0 && depth < 1.0) {
+        if (material.roughness <= 1.0 && depth < 1.0) {
 
             float alpha = sqr(material.roughness);
 
@@ -107,7 +108,7 @@ void main() {
 
                 float pdf = 1.0;
                 BRDFSample brdfSample;
-                if (material.roughness > 0.02) {
+                if (material.roughness > 0.01) {
                     ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
                         ray.direction, pdf);
                 }
@@ -119,7 +120,9 @@ void main() {
                     continue;
                 }
 
-                ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
+                // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
+                float viewOffset = max(1.0, length(viewPos));
+                ray.origin = worldPos + ray.direction * EPSILON * 0.1 * viewOffset + worldNorm * EPSILON * viewOffset * 0.1;
 
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
@@ -128,9 +131,9 @@ void main() {
 
                 if (material.roughness < 0.9) {
 #ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, 10e-9, INF);
+                    HitClosestTransparency(ray, 10e-3, INF);
 #else
-                    HitClosest(ray, 10e-9, INF);
+                    HitClosest(ray, 10e-3, INF);
 #endif
 
                     radiance = EvaluateHit(ray);

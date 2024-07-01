@@ -98,7 +98,9 @@ namespace Atlas {
                 macros.push_back("ALPHA_BLENDING");
             }
 
-            auto pipelineConfig = GeneratePipelineConfig(nullptr, macros);
+            auto frameBuffer = commandList->swapChainInUse ? nullptr : commandList->frameBufferInUse;
+
+            auto pipelineConfig = GeneratePipelineConfig(frameBuffer, macros);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -132,7 +134,7 @@ namespace Atlas {
                 {"rectangle.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
             };
             Graphics::GraphicsPipelineDesc pipelineDesc {
-                .swapChain = device->swapChain,
+                .swapChain = frameBuffer == nullptr ? device->swapChain : nullptr,
                 .frameBuffer = frameBuffer,
                 .vertexInputInfo = vertexArray.GetVertexInputState(),
                 .assemblyInputInfo = Graphics::Initializers::InitPipelineInputAssemblyStateCreateInfo(

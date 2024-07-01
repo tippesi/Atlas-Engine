@@ -51,7 +51,8 @@ namespace Atlas {
             static EventDelegate<AudioDeviceEvent> AudioDeviceEventDelegate;
             static EventDelegate<DropEvent> DropEventDelegate;
             static EventDelegate<FrameEvent> FrameEventDelegate;
-            static EventDelegate<> QuitEventDelegate;
+            static EventDelegate<> QuitEventDelegate; 
+            static EventDelegate<> ShutdownEventDelegate;
 
         private:
             struct ControllerDevice {

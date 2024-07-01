@@ -3,12 +3,10 @@
 #include "../System.h"
 
 #include "../common/Image.h"
-#include "../loader/ImageLoader.h"
 
 #include "../common/Ref.h"
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
-#include "../graphics/CommandList.h"
 #include "../graphics/GraphicsDevice.h"
 
 #include <unordered_map>

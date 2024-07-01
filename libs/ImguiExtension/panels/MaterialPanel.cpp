@@ -45,8 +45,13 @@ namespace Atlas::ImguiExtension {
         renderWithImagePreview(material->aoMap, [&]() {
             ImGui::SliderFloat("Ao", &material->ao, 0.0f, 1.0f);
         });
+        renderWithImagePreview(material->displacementMap, [&]() {
+            ImGui::SliderFloat("Displacement scale", &material->displacementScale, 0.0f, 1.0f);
+            });
 
         ImGui::SliderFloat("Reflectance", &material->reflectance, 0.0f, 1.0f);
+
+        ImGui::ColorEdit3("Transmissive color", glm::value_ptr(material->transmissiveColor));
 
         ImGui::Checkbox("Two sided", &material->twoSided);
 

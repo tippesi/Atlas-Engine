@@ -101,7 +101,7 @@ namespace Atlas {
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
-            void GetRenderList(Volume::Frustum frustum, RenderList& renderList, const Ref<RenderList::Pass>& pass);
+            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 
@@ -141,6 +141,9 @@ namespace Atlas {
             Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
+            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
+            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+
         private:
             void UpdateBindlessIndexMaps();
 
@@ -167,19 +170,18 @@ namespace Atlas {
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
-
             Entity mainCameraEntity;
             float deltaTime = 1.0f;
 
+            bool firstTimestep = true;
             bool hasChanged = true;
             bool rtDataValid = false;
             bool vegetationChanged = false;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            std::future<void> rayTracingWorldUpdateFuture;
+            std::shared_future<void> rayTracingWorldUpdateFuture;
+            std::shared_future<void> bindlessMapsUpdateFuture;
 
             friend Entity;
             friend SpacePartitioning;

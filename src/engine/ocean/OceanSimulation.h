@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../System.h"
-#include "../common/NoiseGenerator.h"
 #include "../texture/Texture2D.h"
 #include "../texture/Texture2DArray.h"
 #include "../pipeline/PipelineConfig.h"

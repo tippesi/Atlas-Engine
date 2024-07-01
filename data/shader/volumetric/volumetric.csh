@@ -59,7 +59,7 @@ void main() {
 
     // We could use stencil features here, but they are unrealiable. Next option is to just apply
     // simpl fog to the refraction texture when under water
-    if (oceanDepth < depth) {
+    if (oceanDepth < depth && !features.underWaterPixel) {
         endPos = oceanPos;
     }
 #endif

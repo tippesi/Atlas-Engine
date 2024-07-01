@@ -23,6 +23,8 @@ namespace Atlas {
 
             bool enableValidationLayers = false;
             Log::Severity validationLayerSeverity = Log::Severity::SEVERITY_LOW;
+
+            std::vector<const char*> requiredExtensions;
         };
 
         class Instance {
@@ -51,6 +53,9 @@ namespace Atlas {
 
             bool isComplete = false;
 
+            const std::string name;
+            bool validationLayersEnabled;
+
             static Instance* DefaultInstance;
 
         private:
@@ -66,10 +71,7 @@ namespace Atlas {
 
             void RegisterDebugCallback();
 
-            VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();
-
-            const std::string name;
-            bool validationLayersEnabled;
+            VkDebugUtilsMessengerCreateInfoEXT GetDebugMessengerCreateInfo();            
 
             std::vector<VkLayerProperties> layerProperties;
             std::vector<const char*> layerNames;
@@ -78,7 +80,7 @@ namespace Atlas {
 
             std::set<std::string> supportedExtensions;
 
-            VkInstance instance;
+            VkInstance instance = {};
             VkDebugUtilsMessengerEXT debugMessenger;
 
             GraphicsDevice* graphicsDevice;

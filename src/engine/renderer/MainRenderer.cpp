@@ -3,6 +3,7 @@
 #include "helper/HaltonSequence.h"
 
 #include "../common/Packing.h"
+#include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
@@ -49,7 +50,7 @@ namespace Atlas {
             shadowRenderer.Init(device);
             impostorShadowRenderer.Init(device);
             terrainShadowRenderer.Init(device);
-            downscaleRenderer.Init(device);
+            gBufferRenderer.Init(device);
             ddgiRenderer.Init(device);
             giRenderer.Init(device);
             aoRenderer.Init(device);
@@ -85,7 +86,7 @@ namespace Atlas {
             commandList->BeginCommands();
 
             auto& taa = scene->postProcessing.taa;
-            if (taa.enable) {
+            if (taa.enable || scene->postProcessing.fsr2) {
                 vec2 jitter = vec2(0.0f);
                 if (scene->postProcessing.fsr2) {
                     jitter = fsr2Renderer.GetJitter(target, frameCount);
@@ -119,13 +120,9 @@ namespace Atlas {
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
                 });
 
-            if (scene->rayTracingWorldUpdateFuture.valid())
-                scene->rayTracingWorldUpdateFuture.get();
-            fillRenderListFuture.get();
-            prepareMaterialsFuture.get();
-            prepareBindlessFuture.get();
-
             SetUniforms(target, scene, camera);
+
+            prepareBindlessFuture.get();
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -141,6 +138,8 @@ namespace Atlas {
                 commandList->BindBuffers(blasBuffers, 0, 0);
                 commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
             }
+
+            prepareMaterialsFuture.get();
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -169,14 +168,11 @@ namespace Atlas {
                 FilterProbe(scene->sky.atmosphere->probe, commandList);
             }
 
-            // Bind before any shadows etc. are rendered, this is a shared buffer for all these passes
-            commandList->BindBuffer(renderList.currentMatricesBuffer, 1, 1);
-            commandList->BindBuffer(renderList.lastMatricesBuffer, 1, 2);
-            commandList->BindBuffer(renderList.impostorMatricesBuffer, 1, 3);
-
             if (scene->irradianceVolume) {
                 commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
             }
+
+            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             {
                 shadowRenderer.Render(target, scene, commandList, &renderList);
@@ -190,8 +186,6 @@ namespace Atlas {
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
                     scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
             }
-
-            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -215,7 +209,13 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
+            if (scene->rayTracingWorldUpdateFuture.valid())
+                scene->rayTracingWorldUpdateFuture.get();
+
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
+
+            // Only here does the main pass need to be ready
+            fillRenderListFuture.get();
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");
@@ -249,7 +249,8 @@ namespace Atlas {
             commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
 
             if (!target->HasHistory()) {
-                auto rtData = target->GetHistoryData(HALF_RES);
+                auto rtHalfData = target->GetHistoryData(HALF_RES);
+                auto rtData = target->GetHistoryData(FULL_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
@@ -263,7 +264,15 @@ namespace Atlas {
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
-                    {rtData->swapVelocityTexture->image, layout, access},
+                    {rtHalfData->baseColorTexture->image, layout, access},
+                    {rtHalfData->depthTexture->image, layout, access},
+                    {rtHalfData->normalTexture->image, layout, access},
+                    {rtHalfData->geometryNormalTexture->image, layout, access},
+                    {rtHalfData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtHalfData->offsetTexture->image, layout, access},
+                    {rtHalfData->materialIdxTexture->image, layout, access},
+                    {rtHalfData->stencilTexture->image, layout, access},
+                    {rtHalfData->velocityTexture->image, layout, access},
                     {target->historyAoTexture.image, layout, access},
                     {target->historyAoLengthTexture.image, layout, access},
                     {target->historyReflectionTexture.image, layout, access},
@@ -274,7 +283,7 @@ namespace Atlas {
             }
 
             {
-                auto rtData = target->GetHistoryData(FULL_RES);
+                auto rtData = target->GetData(FULL_RES);
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
@@ -306,7 +315,9 @@ namespace Atlas {
                 }
             }
 
-            downscaleRenderer.Downscale(target, commandList);
+            gBufferRenderer.FillNormalTexture(target, commandList);
+
+            gBufferRenderer.Downscale(target, commandList);
 
             aoRenderer.Render(target, scene, commandList);
 
@@ -379,6 +390,8 @@ namespace Atlas {
 
             {
                 if (scene->postProcessing.fsr2) {
+                    gBufferRenderer.GenerateReactiveMask(target, commandList);
+
                     fsr2Renderer.Render(target, scene, commandList);
                 }
                 else {
@@ -956,11 +969,23 @@ namespace Atlas {
 
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
+
+                if (volume->scroll && !volume->lock) {
+                    //auto pos = vec3(0.4f, 12.7f, -43.0f);
+                    //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
+                    auto pos = camera.GetLocation();
+
+                    auto volumeSize = vec3(150.0f, 75.0f, 150.0f);
+                    auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
+                    volume->SetAABB(volumeAABB);
+                }
+
+                auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y * 
+                    volume->probeCount.z;
                 auto ddgiUniforms = DDGIUniforms {
-                    .volumeMin = vec4(volume->aabb.min, 1.0f),
-                    .volumeMax = vec4(volume->aabb.max, 1.0f),
-                    .volumeProbeCount = ivec4(volume->probeCount, 0),
-                    .cellSize = vec4(volume->cellSize, 0.0f),
+                    .volumeCenter = vec4(camera.GetLocation(), 1.0f),
+                    .volumeProbeCount = ivec4(volume->probeCount, probeCountPerCascade),
+                    .cascadeCount = volume->cascadeCount,
                     .volumeBias = volume->bias,
                     .volumeIrradianceRes = volume->irrRes,
                     .volumeMomentsRes = volume->momRes,
@@ -973,14 +998,31 @@ namespace Atlas {
                     .optimizeProbes = volume->optimizeProbes ? 1 : 0,
                     .volumeEnabled = volume->enable ? 1 : 0
                 };
+
+                for (int32_t i = 0; i < volume->cascadeCount; i++) {
+                    ddgiUniforms.cascades[i] = DDGICascade{
+                        .volumeMin = vec4(volume->cascades[i].aabb.min, 1.0f),
+                        .volumeMax = vec4(volume->cascades[i].aabb.max, 1.0f),
+                        .cellSize = vec4(volume->cascades[i].cellSize, glm::length(volume->cascades[i].cellSize)),
+                        .offsetDifference = ivec4(volume->cascades[i].offsetDifferences, 0),
+                    };
+                }
+
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
             }
             else {
                 auto ddgiUniforms = DDGIUniforms {
-                    .volumeMin = vec4(0.0f),
-                    .volumeMax = vec4(0.0f),
                     .volumeEnabled = 0
                 };
+
+                for (int32_t i = 0; i < MAX_IRRADIANCE_VOLUME_CASCADES; i++) {
+                    ddgiUniforms.cascades[i] = DDGICascade {
+                        .volumeMin = vec4(0.0f),
+                        .volumeMax = vec4(0.0f),
+                        .cellSize = vec4(0.0f),
+                    };
+                }
+
                 ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
             }
 
@@ -1000,7 +1042,7 @@ namespace Atlas {
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
             }
 
-        }
+        } 
 
         void MainRenderer::PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
             std::unordered_map<void*, uint16_t>& materialMap) {
@@ -1118,6 +1160,10 @@ namespace Atlas {
             if (!device->support.bindless)
                 return;
 
+            // This might lead to crashes, since this shared future just has one copy that is used across threads
+            if (scene->bindlessMapsUpdateFuture.valid())
+                scene->bindlessMapsUpdateFuture.get();
+
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
             bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
@@ -1153,14 +1199,8 @@ namespace Atlas {
 
         void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
 
+            auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
-
-            auto mainPass = renderList.GetMainPass();
-            if (mainPass == nullptr)
-                mainPass = renderList.NewMainPass();
-
-            scene->GetRenderList(camera.frustum, renderList, mainPass);
-            renderList.Update(mainPass, camera.GetLocation());
 
             auto lightSubset = scene->GetSubset<LightComponent>();
 
@@ -1173,7 +1213,7 @@ namespace Atlas {
                 auto& shadow = light.shadow;
 
                 auto componentCount = shadow->longRange ?
-                    shadow->viewCount -1 : shadow->viewCount;
+                    shadow->viewCount - 1 : shadow->viewCount;
 
                 for (int32_t i = 0; i < componentCount; i++) {
                     auto component = &shadow->views[i];
@@ -1182,13 +1222,25 @@ namespace Atlas {
                     auto shadowPass = renderList.GetShadowPass(lightEntity, i);
                     if (shadowPass == nullptr)
                         shadowPass = renderList.NewShadowPass(lightEntity, i);
-                    scene->GetRenderList(frustum, renderList, shadowPass);
-                    renderList.Update(shadowPass, camera.GetLocation());
+
+                    shadowPass->NewFrame(scene, meshes);
+                    scene->GetRenderList(frustum, shadowPass);
+                    shadowPass->Update(camera.GetLocation());
+                    shadowPass->FillBuffers();
+                    renderList.FinishPass(shadowPass);
                 }
 
             }
 
-            renderList.FillBuffers();
+            auto mainPass = renderList.GetMainPass();
+            if (mainPass == nullptr)
+                mainPass = renderList.NewMainPass();
+
+            mainPass->NewFrame(scene, meshes);
+            scene->GetRenderList(camera.frustum, mainPass);
+            mainPass->Update(camera.GetLocation());
+            mainPass->FillBuffers();
+            renderList.FinishPass(mainPass);
 
         }
 

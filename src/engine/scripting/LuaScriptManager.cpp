@@ -2,6 +2,8 @@
 #include "Log.h"
 #include "LuaScriptBindings.h"
 
+#include <sol/sol.hpp>
+
 namespace Atlas::Scripting {
     LuaScriptManager::LuaScriptManager(Scene::Scene* scene) {
         this->scene = scene;

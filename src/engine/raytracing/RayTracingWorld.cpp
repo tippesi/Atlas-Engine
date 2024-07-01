@@ -19,8 +19,7 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
-               Buffer::BufferUsageBits::MultiBufferedBit | Buffer::BufferUsageBits::HostAccessBit;
+            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::HighPriorityMemoryBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
@@ -29,19 +28,21 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::Update(bool updateTriangleLights) {
+        void RayTracingWorld::Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             if (!device->swapChain->isComplete) return;
-
-            auto subset = scene->GetSubset<MeshComponent, TransformComponent>();
             if (!subset.Any()) return;
 
             blases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
+
+            if (scene->bindlessMapsUpdateFuture.valid())
+                scene->bindlessMapsUpdateFuture.get();
+
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
                 if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))
@@ -202,6 +203,7 @@ namespace Atlas {
 
                     gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
                     gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                    gpuMaterial.cullBackFaces = mesh->cullBackFaces ? 1 : 0;
                     gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                     if (material->HasBaseColorMap()) {

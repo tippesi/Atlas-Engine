@@ -24,6 +24,7 @@ namespace Atlas {
 
             bool rt = false;
             bool opacityCheck = false;
+            bool halfResolution = true;
 
         };
 

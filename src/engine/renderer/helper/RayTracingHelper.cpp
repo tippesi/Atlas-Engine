@@ -19,11 +19,11 @@ namespace Atlas {
 
                 const size_t lightCount = 128;
 
-                indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit,
+                indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     3 * sizeof(uint32_t), 0);
-                counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                counterBuffer0 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     sizeof(uint32_t), 0);
-                counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit,
+                counterBuffer1 = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     sizeof(uint32_t), 0);
 
                 indirectDispatchBuffer.SetSize(1);
@@ -31,13 +31,13 @@ namespace Atlas {
                 counterBuffer1.SetSize(1);
 
                 // Create dynamic resizable shader storage buffers
-                lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
+                lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit |
                     Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit,
                     sizeof(GPULight), lightCount);
-                rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, 3 * sizeof(vec4));
-                rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(vec4));
-                rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
-                rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
+                rayBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, 3 * sizeof(vec4));
+                rayPayloadBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(vec4));
+                rayBinCounterBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(uint32_t));
+                rayBinOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit, sizeof(uint32_t));
 
                 rayBinCounterBuffer.SetSize(1024);
                 rayBinOffsetBuffer.SetSize(1024);

@@ -37,7 +37,7 @@ namespace Atlas {
 				float attenuation = 1.0f;
 			};
 
-			union TypeProperties {
+			struct TypeProperties {
                 TypeProperties() {
                     // Default to directional light
                     directional = DirectionalLightProperties();

@@ -279,17 +279,16 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void to_json(json &j, const LuaScriptComponent &p)
-    {
+    void to_json(json &j, const LuaScriptComponent &p) {
         j = json{};
 
         if (p.script.IsValid())
             j["resourcePath"] = p.script.GetResource()->path;
 
-        for (const auto &prop : p.properties)
-        {
-            switch (prop.type)
-            {
+        j["permanentExecution"] = p.permanentExecution;
+
+        for (const auto& [name, prop] : p.properties) {
+            switch (prop.type) {
             case LuaScriptComponent::PropertyType::Boolean:
                 j["scriptProperties"][prop.name]["type"] = "boolean";
                 j["scriptProperties"][prop.name]["value"] = prop.booleanValue;
@@ -312,13 +311,13 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void from_json(const json &j, LuaScriptComponent &p)
-    {
+    void from_json(const json &j, LuaScriptComponent &p) {
 
-        if (j.contains("resourcePath"))
-        {
+        if (j.contains("resourcePath")) {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
+
+            try_get_json(j, "permanentExecution", p.permanentExecution);
 
             p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
                 resourcePath, ResourceOrigin::User);
@@ -334,23 +333,19 @@ namespace Atlas::Scene::Components {
                 auto propertyTypeAsString = value["type"].get<std::string>();
                 if (propertyTypeAsString == "boolean")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Boolean;
-                    scriptProperty.booleanValue = value["value"].get<bool>();
+                    scriptProperty.SetValue(value["value"].get<bool>());
                 }
                 else if (propertyTypeAsString == "integer")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Integer;
-                    scriptProperty.integerValue = value["value"].get<int>();
+                    scriptProperty.SetValue(value["value"].get<int32_t>());
                 }
                 else if (propertyTypeAsString == "double")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Double;
-                    scriptProperty.doubleValue = value["value"].get<double>();
+                    scriptProperty.SetValue(value["value"].get<double>());
                 }
                 else if (propertyTypeAsString == "string")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::String;
-                    scriptProperty.stringValue = value["value"].get<std::string>();
+                    scriptProperty.SetValue(value["value"].get<std::string>());
                 }
                 else
                 {
@@ -358,7 +353,7 @@ namespace Atlas::Scene::Components {
                     continue;
                 }
 
-                p.properties.push_back(scriptProperty);
+                p.properties[scriptProperty.name] = scriptProperty;
             }
         }
     }

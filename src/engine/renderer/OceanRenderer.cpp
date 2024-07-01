@@ -274,6 +274,7 @@ namespace Atlas {
 
                 refractionTexture.Bind(commandList, 3, 4);
                 depthTexture.Bind(commandList, 3, 5);
+                target->oceanDepthTexture.Bind(commandList, 3, 20);
 
                 if (scene->terrain) {
                     if (scene->terrain->shoreLine.IsValid()) {

@@ -32,6 +32,10 @@ bool IsRayInvocationValid() {
     return gl_GlobalInvocationID.x < readAtomic[0];
 }
 
+uint GetRayInvocation() {
+    return gl_GlobalInvocationID.x;
+}
+
 bool IsRayIndexValid(uint idx) {
     return idx < readAtomic[0];
 }

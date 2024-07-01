@@ -3,7 +3,9 @@
 #include "Panel.h"
 #include "scene/Scene.h"
 
+#include "Singletons.h"
 #include "EntityPropertiesPanel.h"
+#include "SceneStatisticsPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -16,7 +18,7 @@ namespace Atlas::Editor::UI {
         ScenePropertiesPanel() : Panel("Scene properties") {}
 
         template<class T>
-        void Render(T& t, Ref<Scene::Scene> scene = nullptr) {
+        void Render(T& t, Ref<Scene::Scene> scene = nullptr, Ref<Renderer::RenderTarget> target = nullptr) {
 
             ImGui::Begin(GetNameID());
 
@@ -33,31 +35,39 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
                 RenderHeading("Fog");
-                fogPanel.Render(t);
+                fogPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::VolumetricClouds>>) {
                 RenderHeading("Clouds");
-                volumetricCloudsPanel.Render(t);
+                volumetricCloudsPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::IrradianceVolume>>) {
                 RenderHeading("Irradiance volume");
-                irradianceVolumePanel.Render(t);
+                irradianceVolumePanel.Render(t, scene);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
                 RenderHeading("Reflection");
-                reflectionPanel.Render(t);
+                reflectionPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
                 RenderHeading("Screen-space global illumination");
-                ssgiPanel.Render(t);
+                ssgiPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSS>>) {
                 RenderHeading("Screen-space shadows");
                 sssPanel.Render(t);
             }
+            else if constexpr (std::is_same_v<T, Scene::Wind>) {
+                RenderHeading("Wind");
+                windPanel.Render(Singletons::imguiWrapper, t);
+            }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
+            }
+            else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
+                RenderHeading("Scene statistics");
+                sceneStatisticsPanel.Render(t);
             }
 
             ImGui::End();
@@ -78,6 +88,7 @@ namespace Atlas::Editor::UI {
         }
 
         EntityPropertiesPanel entityPropertiesPanel;
+        SceneStatisticsPanel sceneStatisticsPanel;
 
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
@@ -85,6 +96,7 @@ namespace Atlas::Editor::UI {
         ImguiExtension::ReflectionPanel reflectionPanel;
         ImguiExtension::SSGIPanel ssgiPanel;
         ImguiExtension::SSSPanel sssPanel;
+        ImguiExtension::WindPanel windPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };

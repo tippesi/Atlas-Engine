@@ -1,5 +1,6 @@
 #include <../globals.hsh>
 #include <../structures>
+#include <../common/stencil.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
@@ -14,8 +15,10 @@ layout (local_size_x = 8, local_size_y = 4) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudImage;
 
-layout(set = 3, binding = 5) uniform sampler2D scramblingRankingTexture;
-layout(set = 3, binding = 6) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 6) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 7) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 8) uniform sampler2D oceanDepthTexture;
+layout(set = 3, binding = 9) uniform usampler2D oceanStencilTexture;
 
 vec4 blueNoiseVec = vec4(0.0);
 
@@ -31,6 +34,20 @@ void main() {
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(imageSize(volumetricCloudImage));
 
     float depth = textureLod(depthTexture, texCoord, 0.0).r;
+
+#ifdef OCEAN
+    StencilFeatures features = DecodeStencilFeatures(textureLod(oceanStencilTexture, texCoord, 0.0).r);
+
+    float oceanDepth = textureLod(oceanDepthTexture, texCoord, 0.0).r;
+    vec3 oceanPos = ConvertDepthToViewSpace(oceanDepth, texCoord);
+
+    // We could use stencil features here, but they are unrealiable. Next option is to just apply
+    // simpl fog to the refraction texture when under water
+    if (oceanDepth < depth && !features.underWaterPixel) {
+        depth = oceanDepth;
+    }
+#endif
+
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
     int sampleIdx = int(cloudUniforms.frameSeed);

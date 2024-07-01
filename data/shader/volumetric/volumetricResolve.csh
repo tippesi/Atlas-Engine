@@ -72,9 +72,9 @@ const ivec2 offsets[9] = ivec2[9](
 
 int NearestDepth(float referenceDepth, float[9] depthVec) {
 
-    int idx = 0;
-    float nearest = distance(referenceDepth, depthVec[0]);
-    for (int i = 1; i < 9; i++) {
+    int idx = 4;
+    float nearest = distance(referenceDepth, depthVec[4]);
+    for (int i = 0; i < 9; i++) {
         float dist = distance(referenceDepth, depthVec[i]);
         if (dist < nearest) {
             nearest = dist;
@@ -138,7 +138,7 @@ void main() {
     else {
         volumetricFog = textureLod(lowResVolumetricTexture, texCoord, 0);
 #ifdef CLOUDS
-        volumetricClouds = texture(lowResVolumetricCloudsTexture, texCoord);
+        volumetricClouds = textureLod(lowResVolumetricCloudsTexture, texCoord, 0);
 #endif
     }
 

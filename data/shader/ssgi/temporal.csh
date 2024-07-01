@@ -24,10 +24,14 @@ layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 
+layout(push_constant) uniform constants {
+    int resetHistory;
+} pushConstants;
+
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 1;
+const int kernelRadius = 3;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -181,6 +185,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -191,11 +196,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
+        confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += weights[i];
@@ -217,11 +222,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
+        confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += 1.0;
@@ -255,12 +260,12 @@ void main() {
     vec4 mean, std;
     ComputeVarianceMinMax(mean, std);
 
-    const float historyClipFactorGi = 1.0, historyClipFactorAo = 1.0;
+    const float historyClipFactorGi = 2.0, historyClipFactorAo = 0.5;
     vec4 historyClipFactor = vec4(vec3(historyClipFactorGi), historyClipFactorAo);
     vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    const float currentClipFactor = 4.0;
+    const float currentClipFactor = 2.0;
     vec4 currentNeighbourhoodMin = mean - currentClipFactor * std;
     vec4 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
@@ -281,11 +286,13 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    historyValue.a = clamp(historyValue.a, historyNeighbourhoodMin.a, historyNeighbourhoodMax.a);
+    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
     float factor = 0.95;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
+
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;
@@ -293,7 +300,7 @@ void main() {
 
     factor = min(factor, historyLength / max(1.0, (historyLength + 1.0)));
 
-    vec4 resolve = mix(currentValue, historyValue, factor);
+    vec4 resolve = factor <= 0.0 ? currentValue : mix(currentValue, historyValue, factor);
 
     imageStore(resolveImage, pixel, vec4(resolve));
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));

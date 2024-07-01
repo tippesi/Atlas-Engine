@@ -186,8 +186,7 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
-        graphicsDevice->WaitForPreviousFrameCompletion();
-
+        graphicsDevice->WaitForPreviousFrameSubmission();
         
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
@@ -215,7 +214,7 @@ namespace Atlas::Editor {
 
     void App::Render(float deltaTime) {
 
-        graphicsDevice->WaitForPreviousFrameCompletion();
+        graphicsDevice->WaitForPreviousFrameSubmission();
 
         auto windowFlags = window.GetFlags();
         if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {

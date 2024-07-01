@@ -14,6 +14,8 @@ namespace Atlas::ImguiExtension {
     public:
         static void TexturePreview(Ref<ImguiWrapper>& wrapper, const Texture::Texture2D& texture);
 
+        static void TextureView(Ref<ImguiWrapper>& wrapper, const Texture::Texture2D& texture, float maxTextureSize = 0.0f);
+
     };
 
 }

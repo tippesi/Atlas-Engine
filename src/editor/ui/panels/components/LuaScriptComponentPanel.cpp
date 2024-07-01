@@ -19,24 +19,26 @@ namespace Atlas::Editor::UI
         }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Scripting::Script>();
+        if (handle.IsValid()) {
+            luaScriptComponent.ChangeResource(handle);
+        }
 
         auto scriptResources = ResourceManager<Scripting::Script>::GetResources();
         handle = scriptSelectionPopup.Render(scriptResources);
 
         if (handle.IsValid()) {
-            // Needs to be implemented
-            // luaScriptComponent.ChangeResource(handle);
-            luaScriptComponent.script = handle;
+            luaScriptComponent.ChangeResource(handle);
         }
 
         if (!luaScriptComponent.script.IsLoaded())
             return false;
 
+        ImGui::Checkbox("Permanent execution", &luaScriptComponent.permanentExecution);
         ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code, ImVec2(0, 0), ImGuiInputTextFlags_ReadOnly);
 
         ImGui::Separator();
         ImGui::Text("Script defined properties:");
-        for (auto &property : luaScriptComponent.properties)
+        for (auto &[name, property] : luaScriptComponent.properties)
         {
             switch (property.type)
             {

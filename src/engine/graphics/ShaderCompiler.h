@@ -22,6 +22,8 @@ namespace Atlas {
             static std::vector<uint32_t> Compile(const ShaderStageFile& shaderFile,
                 const std::vector<std::string>& macros, bool useCache, bool& success);
 
+            static bool includeDebugInfo;
+
         private:
             struct SpvCacheEntry {
                 std::string fileName;

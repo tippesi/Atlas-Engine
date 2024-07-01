@@ -30,6 +30,7 @@ namespace Atlas {
                 float radius;
                 uint32_t rayCount;
                 uint32_t sampleCount;
+                int32_t downsampled2x;
             };
 
             Filter blurFilter;

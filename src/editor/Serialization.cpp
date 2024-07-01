@@ -67,6 +67,11 @@ namespace Atlas::Editor {
         Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), insertedEntites);
 
         json j = {
+            { "resolutionScale", sceneWindow->resolutionScale },
+            { "snappingEnabled", sceneWindow->snappingEnabled },
+            { "translationSnap", sceneWindow->translationSnap },
+            { "rotationSnap", sceneWindow->rotationSnap },
+            { "scaleSnap", sceneWindow->scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "camera", camera }
@@ -96,12 +101,14 @@ namespace Atlas::Editor {
 
         json camera;
 
-        if (j.contains("cameraMovementSpeed"))
-            j.at("cameraMovementSpeed").get_to(sceneWindow->cameraMovementSpeed);
-        if (j.contains("cameraRotationSpeed"))
-            j.at("cameraRotationSpeed").get_to(sceneWindow->cameraRotationSpeed);
-        if (j.contains("camera"))
-            j.at("camera").get_to(camera);
+        try_get_json(j, "resolutionScale", sceneWindow->resolutionScale);
+        try_get_json(j, "snappingEnabled", sceneWindow->snappingEnabled);
+        try_get_json(j, "translationSnap", sceneWindow->translationSnap);
+        try_get_json(j, "rotationSnap", sceneWindow->rotationSnap);
+        try_get_json(j, "scaleSnap", sceneWindow->scaleSnap);
+        try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
+        try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
+        try_get_json(j, "camera", camera);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());

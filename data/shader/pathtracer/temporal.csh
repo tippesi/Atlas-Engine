@@ -175,15 +175,15 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
+    confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
     uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
-    float depthPhi = max(1.0, abs(0.25 * linearDepth));
+    float depthPhi = 16.0 / abs(linearDepth);
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
     return confidence > 0.1 ? 1.0 : 0.0;
 
@@ -205,6 +205,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = depth;
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -307,10 +308,11 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.5) {
+    if (totalWeight > 0.1) {
         history /= totalWeight;
+        history = max(history, 0.0);
    
-    return true;
+        return true;
     }
 
     return false;

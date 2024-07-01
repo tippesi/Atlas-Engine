@@ -3,6 +3,7 @@
 #include "Panel.h"
 
 #include "lighting/SSGI.h"
+#include "renderer/target/RenderTarget.h"
 
 namespace Atlas::ImguiExtension {
 
@@ -11,7 +12,7 @@ namespace Atlas::ImguiExtension {
     public:
         SSGIPanel() : Panel("SSGI properties") {}
 
-        void Render(Ref<Lighting::SSGI>& ssgi);
+        void Render(Ref<Lighting::SSGI>& ssgi, Ref<Renderer::RenderTarget>& target);
 
     };
 

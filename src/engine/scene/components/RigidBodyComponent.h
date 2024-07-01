@@ -25,7 +25,7 @@ namespace Atlas {
 
                 Physics::BodyCreationSettings GetBodyCreationSettings() const override;
 
-                Physics::ObjectLayer layer = Physics::Layers::STATIC;
+                Physics::ObjectLayer layer = Physics::Layers::Static;
                 Ref<Physics::BodyCreationSettings> creationSettings = nullptr;
 
             private:

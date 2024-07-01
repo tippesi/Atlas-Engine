@@ -10,3 +10,4 @@
 #include "panels/MaterialPanel.h"
 #include "panels/MaterialsPanel.h"
 #include "panels/GPUProfilerPanel.h"
+#include "panels/WindPanel.h"

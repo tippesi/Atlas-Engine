@@ -2,11 +2,14 @@
 
 namespace Atlas::ImguiExtension {
 
-    void VolumetricCloudsPanel::Render(Ref<Lighting::VolumetricClouds> &clouds) {
+    void VolumetricCloudsPanel::Render(Ref<Lighting::VolumetricClouds> &clouds, Ref<Renderer::RenderTarget>& target) {
 
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &clouds->enable);
+        ImGui::Checkbox("Half resolution", &clouds->halfResolution);
+        ImGui::SetItemTooltip("Resoltion settings are shared between fog and volumetric clouds");
+
         ImGui::Checkbox("Cast shadow", &clouds->castShadow);
         ImGui::Checkbox("Stochastic occlusion sampling", &clouds->stochasticOcclusionSampling);
         ImGui::Checkbox("Debug", &debug);

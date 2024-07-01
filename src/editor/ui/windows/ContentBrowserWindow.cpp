@@ -1,11 +1,13 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
 #include "DataCreator.h"
+#include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "loader/AssetLoader.h"
 
 #include <filesystem>
 #include <imgui_internal.h>
@@ -95,7 +97,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
         }
 
@@ -194,6 +196,12 @@ namespace Atlas::Editor::UI {
 
         ImGui::Columns(columnItemCount, nullptr, false);
 
+        if (!std::filesystem::exists(currentDirectory)) {
+            auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
+            Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
+            currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        }
+
         auto entries = GetFilteredAndSortedDirEntries();
 
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
@@ -206,7 +214,7 @@ namespace Atlas::Editor::UI {
 
             auto isDirectory = dirEntry.is_directory();
 
-            auto path = dirEntry.path().string();
+            auto path = Common::Path::Normalize(dirEntry.path().string());
             auto assetPath = Common::Path::GetRelative(assetDirectory, path);
 
             // Ignore 'invisible' directories
@@ -249,7 +257,8 @@ namespace Atlas::Editor::UI {
             }
 
             if (!isDirectory && ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.length());
+                // Size doesn't count the termination character, so add +1
+                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.data(), assetRelativePath.size() + 1);
                 ImGui::Text("Drag to entity component");
 
                 ImGui::EndDragDropSource();
@@ -315,7 +324,7 @@ namespace Atlas::Editor::UI {
 
         if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
             auto newPath = renameDirEntry.path();
-            newPath = newPath.filename().replace_filename(renameString);
+            newPath = newPath.replace_filename(renameString);
             if (renameDirEntry.path().has_extension())
                 newPath = newPath.replace_extension(renameDirEntry.path().extension());
             std::filesystem::rename(renameDirEntry.path(), newPath);

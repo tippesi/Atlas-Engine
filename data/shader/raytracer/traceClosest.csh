@@ -21,12 +21,14 @@ void main() {
 
         ray.hitID = -1;
         ray.hitDistance = 0.0;
-        // Find any triangle in the BVH
+        if (ray.ID >= 0) {
+            // Find any triangle in the BVH
 #ifdef OPACITY_CHECK
-        HitClosestTransparency(ray, offset, INF);
+            HitClosestTransparency(ray, offset, INF);
 #else
-        HitClosest(ray, offset, INF);
+            HitClosest(ray, offset, INF);
 #endif
+        }
 
         uint writeOffset = PushConstants.rayBufferOffset * PushConstants.rayBufferSize;
         rays[index + writeOffset] = PackRay(ray);

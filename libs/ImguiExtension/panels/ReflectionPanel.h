@@ -3,6 +3,7 @@
 #include "Panel.h"
 
 #include "lighting/Reflection.h"
+#include "renderer/target/RenderTarget.h"
 
 namespace Atlas::ImguiExtension {
 
@@ -11,7 +12,7 @@ namespace Atlas::ImguiExtension {
     public:
         ReflectionPanel() : Panel("Reflection properties") {}
 
-        void Render(Ref<Lighting::Reflection>& reflection);
+        void Render(Ref<Lighting::Reflection>& reflection, Ref<Renderer::RenderTarget>& target);
 
     };
 

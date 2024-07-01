@@ -201,6 +201,8 @@ void App::Render(float deltaTime) {
     */
 #endif
 
+    graphicsDevice->WaitForPreviousFrameSubmission();
+
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
     if (!loadingComplete) {

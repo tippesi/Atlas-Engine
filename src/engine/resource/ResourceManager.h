@@ -321,7 +321,7 @@ namespace Atlas {
             if (isInitialized.compare_exchange_strong(expected, true)) {
                 Events::EventManager::FrameEventDelegate.Subscribe(
                     ResourceManager<T>::UpdateHandler);
-                Events::EventManager::QuitEventDelegate.Subscribe(
+                Events::EventManager::ShutdownEventDelegate.Subscribe(
                     ResourceManager<T>::ShutdownHandler);
             }
 

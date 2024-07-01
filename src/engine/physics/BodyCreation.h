@@ -20,7 +20,7 @@ namespace Atlas::Physics {
 
         JPH::BodyCreationSettings GetSettings() const;
 
-        ObjectLayer objectLayer = Layers::STATIC;
+        ObjectLayer objectLayer = Layers::Static;
         MotionQuality motionQuality = MotionQuality::Discrete;
 
         vec3 linearVelocity = vec3(0.0f);

@@ -224,6 +224,8 @@ namespace Atlas {
 
                 compactedBlas->Allocate();
 
+                compactedBlas->sizesInfo.accelerationStructureSize = blas->sizesInfo.accelerationStructureSize;
+
                 // Copy generated BLAS into compacted one
                 VkCopyAccelerationStructureInfoKHR copyInfo = {};
                 copyInfo.sType = VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR;

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "../System.h"
-#include "../RenderList.h"
+#include "helper/RenderList.h"
 
 #include "Renderer.h"
 
 #include <mutex>
+#include <tuple>
 
 namespace Atlas {
 
@@ -23,7 +24,9 @@ namespace Atlas {
 
         private:
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                const ResourceHandle<Mesh::Mesh>& mesh, Ref<RenderTarget> target);
+                Mesh::Mesh* mesh, const Ref<RenderTarget>& target);
+
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
 
             struct alignas(16) PushConstants {
                 uint32_t vegetation;
@@ -36,6 +39,13 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                uint32_t baseColorTextureIdx;
+                uint32_t opacityTextureIdx;
+                uint32_t normalTextureIdx;
+                uint32_t roughnessTextureIdx;
+                uint32_t metalnessTextureIdx;
+                uint32_t aoTextureIdx;
+                uint32_t heightTextureIdx;
             };
 
 

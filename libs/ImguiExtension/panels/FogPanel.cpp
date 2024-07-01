@@ -2,11 +2,12 @@
 
 namespace Atlas::ImguiExtension {
 
-    void FogPanel::Render(Ref<Lighting::Fog>& fog) {
+    void FogPanel::Render(Ref<Lighting::Fog>& fog, Ref<Renderer::RenderTarget>& target) {
 
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &fog->enable);
+        ImGui::SetItemTooltip("Resoltion settings are shared between fog and volumetric clouds");
 
         ImGui::ColorEdit3("Extinction coefficients", &fog->extinctionCoefficients[0]);
         ImGui::DragFloat("Extinction factor", &fog->extinctionFactor, 0.002f, 0.0001f, 4.0f);

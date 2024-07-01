@@ -60,7 +60,7 @@ void App::LoadContent() {
                 shootSphere = event.down && shootSpheresEnabled;
             }
         });
-    
+
     Atlas::PipelineManager::EnableHotReload();
 
     directionalLightEntity = scene->CreateEntity();
@@ -68,14 +68,14 @@ void App::LoadContent() {
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
     directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f, 
+    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.125f,
         glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
     scene->ao->rt = true;
     // Use SSGI by default
-    scene->ao->enable = false; 
+    scene->ao->enable = false;
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
     scene->reflection->useShadowMap = true;
 
@@ -142,13 +142,13 @@ void App::Update(float deltaTime) {
     else {
         mouseHandler.Update(camera, deltaTime);
         keyboardHandler.Update(camera, deltaTime);
-    }    
+    }
 
     if (rotateCamera) {
         camera.rotation.y += rotateCameraSpeed * cos(Atlas::Clock::Get());
     }
 
-    if(moveCamera) {
+    if (moveCamera) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
     }
 
@@ -194,15 +194,15 @@ void App::Update(float deltaTime) {
 
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
-            auto shapeSettings = Atlas::Physics::SphereShapeSettings {
+            auto shapeSettings = Atlas::Physics::SphereShapeSettings{
                 .radius = meshes.back()->data.radius,
                 .density = sphereDensity,
                 .scale = glm::vec3(sphereScale),
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
-            auto bodySettings = Atlas::Physics::BodyCreationSettings {
-                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+            auto bodySettings = Atlas::Physics::BodyCreationSettings{
+                .objectLayer = Atlas::Physics::Layers::Movable,
                 .restitution = sphereRestitution,
                 .shape = shape,
             };
@@ -218,10 +218,10 @@ void App::Update(float deltaTime) {
     if (scene->IsFullyLoaded() && shootSphere) {
 
         static float lastSpawn = 0.0f;
-        
+
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
-            auto shapeSettings = Atlas::Physics::SphereShapeSettings {
+            auto shapeSettings = Atlas::Physics::SphereShapeSettings{
                 .radius = meshes.back()->data.radius,
                 .density = sphereDensity,
                 .scale = glm::vec3(sphereScale),
@@ -232,8 +232,8 @@ void App::Update(float deltaTime) {
                 camera.direction * meshes.back()->data.radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
-            auto bodySettings = Atlas::Physics::BodyCreationSettings {
-                .objectLayer = Atlas::Physics::Layers::MOVABLE,
+            auto bodySettings = Atlas::Physics::BodyCreationSettings{
+                .objectLayer = Atlas::Physics::Layers::Movable,
                 .motionQuality = Atlas::Physics::MotionQuality::LinearCast,
                 .linearVelocity = camera.direction * shootVelocity,
                 .restitution = sphereRestitution,
@@ -269,7 +269,7 @@ void App::Render(float deltaTime) {
 
     static float cloudDepthDebug = 0.0f;
 
-    graphicsDevice->WaitForPreviousFrameCompletion();
+    graphicsDevice->WaitForPreviousFrameSubmission();
 
 #ifndef AE_HEADLESS
     auto windowFlags = window.GetFlags();
@@ -364,13 +364,13 @@ void App::Render(float deltaTime) {
             if (pos != std::string::npos)
                 return str.substr(0, pos + 4);
             return str;
-        };
+            };
 
         auto vecToString = [=](auto vec) -> std::string {
             return floatToString(vec.x) + ", "
-                   + floatToString(vec.y) + ", "
-                   + floatToString(vec.z);
-        };
+                + floatToString(vec.y) + ", "
+                + floatToString(vec.z);
+            };
 
         uint32_t triangleCount = 0;
         auto sceneAABB = Atlas::Volume::AABB();
@@ -382,11 +382,11 @@ void App::Render(float deltaTime) {
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
-            if(pathTrace) ImGui::Text("Samples: %d", mainRenderer->pathTracingRenderer.GetSampleCount());
+            if (pathTrace) ImGui::Text("Samples: %d", mainRenderer->pathTracingRenderer.GetSampleCount());
             ImGui::Text("Average frametime: %.3f ms", averageFramerate * 1000.0f);
             ImGui::Text("Current frametime: %.3f ms", deltaTime * 1000.0f);
             ImGui::Text("Camera location: %s", vecToString(camera.location).c_str());
-            ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(),vecToString(sceneAABB.max).c_str());
+            ImGui::Text("Scene dimensions: %s to %s", vecToString(sceneAABB.min).c_str(), vecToString(sceneAABB.max).c_str());
             ImGui::Text("Scene triangle count: %d", triangleCount);
             ImGui::Text("Number of entities: %zu", scene->GetEntityCount());
 
@@ -394,7 +394,7 @@ void App::Render(float deltaTime) {
                 const char* items[] = { "Cornell box", "Sponza", "San Miguel",
                                         "New Sponza", "Bistro", "Medieval", "Pica Pica",
                                         "Subway", "Materials", "Forest", "Emerald square",
-                                        "Flying world"};
+                                        "Flying world" };
                 int currentItem = static_cast<int>(sceneSelection);
                 ImGui::Combo("Select scene", &currentItem, items, IM_ARRAYSIZE(items));
 
@@ -428,7 +428,7 @@ void App::Render(float deltaTime) {
                     if (hdr) {
                         colorSpace = Atlas::Graphics::HDR10_HLG;
                     }
-                    graphicsDevice->CompleteFrame();
+                    graphicsDevice->SubmitFrame();
                     if (vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, colorSpace);
                     else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, colorSpace);
                     vsyncMode = vsync;
@@ -459,10 +459,10 @@ void App::Render(float deltaTime) {
                 if (currentItem != resolution) {
                     resolution = currentItem;
                     switch (resolution) {
-                        case 0: SetResolution(1280, 720); break;
-                        case 1: SetResolution(1920, 1080); break;
-                        case 2: SetResolution(2560, 1440); break;
-                        case 3: SetResolution(3840, 2160); break;
+                    case 0: SetResolution(1280, 720); break;
+                    case 1: SetResolution(1920, 1080); break;
+                    case 2: SetResolution(2560, 1440); break;
+                    case 3: SetResolution(3840, 2160); break;
                     }
                 }
 
@@ -480,7 +480,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Sample emissives##Pathtrace", &mainRenderer->pathTracingRenderer.sampleEmissives);
                 ImGui::Text("Realtime");
                 ImGui::Checkbox("Realtime##Pathtrace", &mainRenderer->pathTracingRenderer.realTime);
-                ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);                
+                ImGui::SliderInt("Samples per frame##Pathtrace", &mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 100);
                 ImGui::Text("Realtime denoiser");
                 ImGui::SliderInt("Max accumulated frames##Pathtrace", &mainRenderer->pathTracingRenderer.historyLengthMax, 1, 256);
                 ImGui::SliderFloat("Current clip##Pathtrace", &mainRenderer->pathTracingRenderer.currentClipFactor, 0.1f, 4.0f);
@@ -489,7 +489,7 @@ void App::Render(float deltaTime) {
                 scene->rayTracingWorld->includeObjectHistory = pathTrace;
             }
             if (ImGui::CollapsingHeader("DDGI")) {
-                irradianceVolumePanel.Render(volume);
+                irradianceVolumePanel.Render(volume, scene);
             }
             if (ImGui::CollapsingHeader("Light")) {
                 ImGui::Checkbox("Animate", &animateLight);
@@ -527,7 +527,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("SSGI")) {
                 ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ssgiPanel.Render(ssgi);
+                ssgiPanel.Render(ssgi, renderTarget);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);
@@ -540,7 +540,7 @@ void App::Render(float deltaTime) {
             }
             if (ImGui::CollapsingHeader("Reflection")) {
                 ImGui::Checkbox("Debug##Reflection", &debugReflection);
-                reflectionPanel.Render(reflection);
+                reflectionPanel.Render(reflection, renderTarget);
             }
             if (ImGui::CollapsingHeader("Camera")) {
                 ImGui::SliderFloat("Exposure##Camera", &camera.exposure, 0.0f, 10.0f);
@@ -554,11 +554,14 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Rotate camera", &rotateCamera);
             }
             if (ImGui::CollapsingHeader("Fog")) {
-                fogPanel.Render(fog);
+                fogPanel.Render(fog, renderTarget);
             }
             if (ImGui::CollapsingHeader("Clouds")) {
                 ImGui::Checkbox("Debug##Clouds", &debugClouds);
-                volumetricCloudsPanel.Render(clouds);
+                volumetricCloudsPanel.Render(clouds, renderTarget);
+            }
+            if (ImGui::CollapsingHeader("Wind")) {
+                windPanel.Render(imguiWrapper, scene->wind);
             }
             if (ImGui::CollapsingHeader("Postprocessing")) {
                 postProcessingPanel.Render(postProcessing);
@@ -577,7 +580,7 @@ void App::Render(float deltaTime) {
                 ImGui::Checkbox("Enable##PhysicsShoot", &shootSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsShoot", &shootSpawnRate, 0.001f, 1.0f);
                 ImGui::SliderFloat("Velocity##PhysicsShoot", &shootVelocity, 0.0f, 100.0f);
-                
+
                 if (ImGui::Button("Save state##Physics")) {
                     scene->physicsWorld->SaveState();
                 }
@@ -619,12 +622,6 @@ void App::Render(float deltaTime) {
 
         ImGui::Render();
 
-#ifdef AE_HEADLESS
-        Atlas::Log::Message("Frame rendererd");
-        renderTarget.hdrTexture.Save<float>("prepost");
-        renderTarget.postProcessTexture.Save<uint8_t>("result");
-#endif
-
         if (!recreateSwapchain) {
             imguiWrapper->Render();
         }
@@ -648,7 +645,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
     auto commandList = graphicsDevice->GetCommandList();
 
     commandList->BeginCommands();
-    graphicsDevice->swapChain->colorClearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
+    graphicsDevice->swapChain->colorClearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
     auto windowSize = window.GetDrawableSize();
@@ -685,22 +682,22 @@ void App::DisplayLoadingScreen(float deltaTime) {
 
 bool App::IsSceneAvailable(SceneSelection selection) {
     switch (selection) {
-        case CORNELL: return Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj");
-        case SPONZA: return Atlas::Loader::AssetLoader::FileExists("sponza/sponza.obj");
-        case BISTRO: return Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj");
-        case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj");
-        case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
-        case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
-        case SUBWAY: return Atlas::Loader::AssetLoader::FileExists("subway/scene.gltf");
-        case MATERIALS: return Atlas::Loader::AssetLoader::FileExists("material demo/materials.obj");
-        case FOREST: return Atlas::Loader::AssetLoader::FileExists("forest/forest.gltf");
-        case EMERALDSQUARE: return Atlas::Loader::AssetLoader::FileExists("emeraldsquare/square.gltf");
-        case FLYINGWORLD: return Atlas::Loader::AssetLoader::FileExists("flying world/scene.gltf");
-        case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/main/NewSponza_Main_Blender_glTF.gltf") &&
-                               Atlas::Loader::AssetLoader::FileExists("newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
-                               Atlas::Loader::AssetLoader::FileExists("newsponza/curtains/NewSponza_Curtains_glTF.gltf") &&
-                               Atlas::Loader::AssetLoader::FileExists("newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf");
-        default: return false;
+    case CORNELL: return Atlas::Loader::AssetLoader::FileExists("cornell/CornellBox-Original.obj");
+    case SPONZA: return Atlas::Loader::AssetLoader::FileExists("sponza/sponza.obj");
+    case BISTRO: return Atlas::Loader::AssetLoader::FileExists("bistro/mesh/exterior.obj");
+    case SANMIGUEL: return Atlas::Loader::AssetLoader::FileExists("sanmiguel/san-miguel-low-poly.obj");
+    case MEDIEVAL: return Atlas::Loader::AssetLoader::FileExists("medieval/scene.fbx");
+    case PICAPICA: return Atlas::Loader::AssetLoader::FileExists("pica pica/mesh/scene.gltf");
+    case SUBWAY: return Atlas::Loader::AssetLoader::FileExists("subway/scene.gltf");
+    case MATERIALS: return Atlas::Loader::AssetLoader::FileExists("material demo/materials.obj");
+    case FOREST: return Atlas::Loader::AssetLoader::FileExists("forest/forest.gltf");
+    case EMERALDSQUARE: return Atlas::Loader::AssetLoader::FileExists("emeraldsquare/square.gltf");
+    case FLYINGWORLD: return Atlas::Loader::AssetLoader::FileExists("flying world/scene.gltf");
+    case NEWSPONZA: return Atlas::Loader::AssetLoader::FileExists("newsponza/main/NewSponza_Main_Blender_glTF.gltf") &&
+        Atlas::Loader::AssetLoader::FileExists("newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf") &&
+        Atlas::Loader::AssetLoader::FileExists("newsponza/curtains/NewSponza_Curtains_glTF.gltf") &&
+        Atlas::Loader::AssetLoader::FileExists("newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf");
+    default: return false;
     }
 }
 
@@ -994,7 +991,7 @@ bool App::LoadScene() {
 
     if (sceneSelection != FOREST && sceneSelection != EMERALDSQUARE) {
         auto meshCount = 0;
-        for (auto &mesh: meshes) {
+        for (auto& mesh : meshes) {
             // Only Sponza scene gets extra moving ball
             if (mesh.GetID() == meshes.back().GetID() && sceneSelection != SPONZA)
                 continue;
@@ -1068,7 +1065,7 @@ void App::CheckLoadScene() {
                 material->metalness = 0.0f;
     }
 
-    graphicsDevice->WaitForPreviousFrameCompletion();
+    graphicsDevice->WaitForPreviousFrameSubmission();
 
     static std::future<void> future;
 
@@ -1078,7 +1075,7 @@ void App::CheckLoadScene() {
         for (const auto& mesh : sceneMeshes) {
             mesh->BuildBVH();
         }
-    };
+        };
 
     if (!future.valid()) {
         future = std::async(std::launch::async, buildRTStructure);
@@ -1173,6 +1170,7 @@ void App::CheckLoadScene() {
     }
 
     scene->irradianceVolume->useShadowMap = true;
+    scene->irradianceVolume->visibility = false;
 
     // Add rigid body components to entities (we need to wait for loading to complete to get valid mesh bounds)
     int32_t entityCount = 0;
@@ -1188,8 +1186,8 @@ void App::CheckLoadScene() {
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
-            auto bodySettings = Atlas::Physics::BodyCreationSettings {
-                .objectLayer = Atlas::Physics::Layers::STATIC,
+            auto bodySettings = Atlas::Physics::BodyCreationSettings{
+                .objectLayer = Atlas::Physics::Layers::Static,
                 .shape = shape,
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);
@@ -1201,8 +1199,8 @@ void App::CheckLoadScene() {
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
-            auto bodySettings = Atlas::Physics::BodyCreationSettings {
-                .objectLayer = Atlas::Physics::Layers::STATIC,
+            auto bodySettings = Atlas::Physics::BodyCreationSettings{
+                .objectLayer = Atlas::Physics::Layers::Static,
                 .shape = shape,
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);

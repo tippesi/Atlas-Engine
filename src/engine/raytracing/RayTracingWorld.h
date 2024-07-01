@@ -36,7 +36,7 @@ namespace Atlas {
         public:
             RayTracingWorld();
 
-            void Update(bool updateTriangleLights);
+            void Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights);
 
             void UpdateMaterials();
 

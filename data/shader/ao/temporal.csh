@@ -24,6 +24,10 @@ layout(set = 3, binding = 10) uniform sampler2D historyDepthTexture;
 layout(set = 3, binding = 11) uniform sampler2D historyNormalTexture;
 layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 
+layout(push_constant) uniform constants {
+    int resetHistory;
+} pushConstants;
+
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
@@ -172,6 +176,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -182,11 +187,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out float history, out float 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        confidence *= pow(abs(dot(historyNormal, normal)), 2.0);
+        confidence *= pow(dot(historyNormal, normal), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
-        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+        confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
             totalWeight += weights[i];
@@ -251,13 +256,14 @@ void main() {
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
+    factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
+
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;
     }
 
     factor = min(factor, historyLength / (historyLength + 1.0));
-
-    float resolve = mix(currentValue, historyValue, factor);
+    float resolve = factor <= 0.0 ?  currentValue : mix(currentValue, historyValue, factor);
 
     imageStore(historyLengthImage, pixel, vec4(historyLength + 1.0, 0.0, 0.0, 0.0));
     imageStore(resolveImage, pixel, vec4(resolve, 0.0, 0.0, 0.0));

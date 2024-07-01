@@ -125,6 +125,7 @@ struct RaytraceMaterial {
     
     int invertUVs;
     int twoSided;
+    int cullBackFaces;
     int useVertexColors;
     
     int baseColorTexture;
@@ -201,4 +202,7 @@ layout(push_constant) uniform constants {
     uint rayPayloadBufferOffset;
     uint rayBufferSize;
     int useRayBinning;
+    int padding0;
+    int padding1;
+    int padding2;
 } PushConstants;

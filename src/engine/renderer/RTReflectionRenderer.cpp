@@ -43,9 +43,14 @@ namespace Atlas {
             auto reflection = scene->reflection;
             if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
 
+            if (reflection->halfResolution && target->GetReflectionResolution() == FULL_RES)
+                target->SetReflectionResolution(HALF_RES);
+            else if (!reflection->halfResolution && target->GetReflectionResolution() != FULL_RES)
+                target->SetReflectionResolution(FULL_RES);
+
             helper.UpdateLights(scene, false);
 
-            ivec2 res = ivec2(target->aoTexture.width, target->aoTexture.height);
+            ivec2 res = ivec2(target->reflectionTexture.width, target->reflectionTexture.height);
 
             Graphics::Profiler::BeginQuery("Render RT Reflections");
             Graphics::Profiler::BeginQuery("Trace rays");
@@ -61,7 +66,8 @@ namespace Atlas {
 
             // Should be reflection resolution
             auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = downsampledRT->geometryNormalTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
+            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto velocityTexture = downsampledRT->velocityTexture;
@@ -69,7 +75,8 @@ namespace Atlas {
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
-            auto historyNormalTexture = downsampledHistoryRT->geometryNormalTexture;
+            auto historyNormalTexture = reflection->useNormalMaps ? downsampledHistoryRT->normalTexture : downsampledHistoryRT->geometryNormalTexture;
+            auto historyGeometryNormalTexture = downsampledHistoryRT->geometryNormalTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -90,8 +97,11 @@ namespace Atlas {
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
+                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("GI", reflection->gi && ddgiEnabled);
+                rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->gi && ddgiVisibility);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
@@ -164,8 +174,10 @@ namespace Atlas {
                 TemporalConstants constants = {
                     .temporalWeight = reflection->temporalWeight,
                     .historyClipMax = reflection->historyClipMax,
-                    .currentClipFactor = reflection->currentClipFactor
+                    .currentClipFactor = reflection->currentClipFactor,
+                    .resetHistory = !target->HasHistory() ? 1 : 0
                 };
+
                 commandList->PushConstants("constants", &constants);
 
                 imageBarriers = {
@@ -181,17 +193,43 @@ namespace Atlas {
                 commandList->BindImage(velocityTexture->image, velocityTexture->sampler, 3, 3);
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 5);
-                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 6);
+                commandList->BindImage(geometryNormalTexture->image, geometryNormalTexture->sampler, 3, 6);
                 commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 7);
 
                 commandList->BindImage(target->historyReflectionTexture.image, target->historyReflectionTexture.sampler, 3, 8);
                 commandList->BindImage(target->historyReflectionMomentsTexture.image, target->historyReflectionMomentsTexture.sampler, 3, 9);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
-                commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
+                commandList->BindImage(historyGeometryNormalTexture->image, historyGeometryNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
+
+            std::vector<Graphics::ImageBarrier> imageBarriers;
+            std::vector<Graphics::BufferBarrier> bufferBarriers;
+
+            // Need barriers for all four images
+            imageBarriers = {
+                {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
+                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            commandList->CopyImage(target->swapReflectionTexture.image, target->historyReflectionTexture.image);
+            commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
+
+            // Need barriers for all four images
+            imageBarriers = {
+                {target->swapReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             Graphics::Profiler::EndAndBeginQuery("Spatial filter");
 
@@ -205,10 +243,7 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
-                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
-
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);                
 
                 for (int32_t i = 0; i < 3; i++) {
                     Graphics::Profiler::BeginQuery("Subpass " + std::to_string(i));
@@ -244,31 +279,6 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                     Graphics::Profiler::EndQuery();
-
-                    if (i == 1) {
-                        // Need barriers for all four images
-                        imageBarriers = {
-                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                            {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
-                            {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                            {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
-                        };
-                        commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                        commandList->CopyImage(target->reflectionTexture.image, target->historyReflectionTexture.image);
-                        commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
-
-                        // Need barriers for all four images
-                        imageBarriers = {
-                            {target->reflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                            {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                            {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                            {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                        };
-                        commandList->PipelineBarrier(imageBarriers, bufferBarriers,
-                            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-                    }
                 }
 
                 // Transition to final layout, the loop won't do that

@@ -184,7 +184,7 @@ namespace Atlas {
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
-                    -maxProj.z - 300.0f, // We need to render stuff behind the camera
+                    -maxProj.z - 1250.0f, // We need to render stuff behind the camera
                     -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
                 cascade.terrainFrustumMatrix = glm::ortho(minProj.x,

@@ -14,7 +14,123 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame(Ref<Scene::Scene> scene) {
+    RenderList::~RenderList() {
+
+        if (clearFuture.valid())
+            clearFuture.get();
+
+    }
+
+    void RenderList::NewFrame(const Ref<Scene::Scene>& scene) {
+
+        this->scene = scene;
+
+        doneProcessingShadows = false;
+        processedPasses.clear();
+
+        if (clearFuture.valid())
+            clearFuture.get();
+
+    }
+
+    Ref<RenderList::Pass> RenderList::NewMainPass() {
+
+        Pass pass{
+            .type = RenderPassType::Main,
+            .layer = 0,
+            .scene = scene,
+            .wasUsed = true,
+        };
+
+        doneProcessingShadows = true;
+
+        passes.push_back(CreateRef(pass));
+        return passes.back();
+
+    }
+
+    Ref<RenderList::Pass> RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
+
+        Pass pass {
+            .type = RenderPassType::Shadow,
+            .lightEntity = Scene::Entity(lightEntity, &scene->entityManager),
+            .layer = layer,
+            .scene = scene,
+            .wasUsed = true,
+        };
+
+        passes.push_back(CreateRef(pass));
+        return passes.back();
+
+    }
+
+    Ref<RenderList::Pass> RenderList::GetMainPass() {
+
+        doneProcessingShadows = true;
+
+        for (auto& pass : passes) {
+            if (pass->type == RenderPassType::Main) {
+                pass->wasUsed = true;
+                return pass;
+            }
+        }
+
+        return nullptr;
+
+    }
+
+    Ref<RenderList::Pass> RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
+
+        for (auto& pass : passes) {
+            if (pass->type == RenderPassType::Shadow &&
+                pass->lightEntity == lightEntity && pass->layer == layer) {
+                // Update entity in case it came from a different scene
+                pass->lightEntity = Scene::Entity(lightEntity, &scene->entityManager);
+                pass->wasUsed = true;
+                return pass;
+            }
+        }
+
+        return nullptr;
+
+    }
+
+    void RenderList::FinishPass(const Ref<Pass>& pass) {
+
+        std::scoped_lock lock(mutex);
+        processedPasses.push_back(pass);
+
+    }
+
+    Ref<RenderList::Pass> RenderList::PopPassFromQueue(RenderPassType type) {
+
+        std::scoped_lock lock(mutex);
+        if (processedPasses.empty())
+            return nullptr;
+
+        auto pass = processedPasses.front();
+        if (pass->type != type)
+            return nullptr;
+
+        processedPasses.pop_front();
+        return pass;
+
+    }
+
+    void RenderList::Clear() {
+
+        // We can reset the scene now and delete the reference
+        scene = nullptr;
+
+        clearFuture = std::async(std::launch::async, [&]() {
+            std::erase_if(passes, [](const auto& item) { return item->wasUsed != true; });
+            for (auto& pass : passes)
+                pass->Reset();
+            });
+
+    }
+
+    void RenderList::Pass::NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
 
         this->scene = scene;
 
@@ -31,97 +147,38 @@ namespace Atlas {
         if (lastSize) impostorMatrices.reserve(lastSize);
 
         // Fill in missing meshes since they are cleared at the end of each frame
-        auto meshes = scene->GetMeshes();
-        for (auto& pass : passes) {
-            for (const auto& mesh : meshes) {
-                auto id = mesh.GetID();
-                pass->meshIdToMeshMap[id] = mesh;
-            }
-
-            std::erase_if(pass->meshToEntityMap, [pass](const auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
-            std::erase_if(pass->meshToInstancesMap, [pass](const auto& item) { return !pass->meshIdToMeshMap.contains(item.first); });
-        }
-    }
-
-    Ref<RenderList::Pass> RenderList::NewMainPass() {
-
-        Pass pass {
-            .type = RenderPassType::Main,
-            .lightEntity = ECS::EntityConfig::InvalidEntity,
-            .layer = 0
-        };
-
-        passes.push_back(CreateRef(pass));
-        return passes.back();
-
-    }
-
-    Ref<RenderList::Pass> RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
-
-        Pass pass{
-            .type = RenderPassType::Shadow,
-            .lightEntity = lightEntity,
-            .layer = layer,
-            .wasUsed = true
-        };
-
-        passes.push_back(CreateRef(pass));
-        return passes.back();
-
-    }
-
-    Ref<RenderList::Pass> RenderList::GetMainPass() {
-
-        for (auto& pass : passes) {
-            if (pass->type == RenderPassType::Main) return pass;
+        for (const auto& mesh : meshes) {
+            auto id = mesh.GetID();
+            meshIdToMeshMap[id] = mesh;
         }
 
-        return nullptr;
+        std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
+        std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
 
     }
 
-    Ref<RenderList::Pass> RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
-
-        for (auto& pass : passes) {
-            if (pass->type == RenderPassType::Shadow &&
-                pass->lightEntity == lightEntity && pass->layer == layer) return pass;
-        }
-
-        return nullptr;
-
-    }
-
-    void RenderList::Add(const Ref<Pass>& pass, const ECS::Entity& entity, const MeshComponent& meshComponent) {
-
-        auto& meshToActorMap = pass->meshToEntityMap;
+    void RenderList::Pass::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
         if (!meshComponent.mesh.IsLoaded())
             return;
 
         auto id = meshComponent.mesh.GetID();
 
-        auto item = meshToActorMap.find(id);
-        if (item != meshToActorMap.end()) {
+        auto item = meshToEntityMap.find(id);
+        if (item != meshToEntityMap.end()) {
             item->second.Add(entity);
         }
         else {
-            auto& meshIdToMeshMap = pass->meshIdToMeshMap;
-
             EntityBatch batch;
             batch.Add(entity);
 
-            meshToActorMap[id] = batch;
+            meshToEntityMap[id] = batch;
             meshIdToMeshMap[id] = meshComponent.mesh;
         }
 
     }
 
-    void RenderList::Update(const Ref<Pass>& pass, vec3 cameraLocation) {
-
-        auto type = pass->type;
-        auto& meshToEntityMap = pass->meshToEntityMap;
-        auto& meshToInstancesMap = pass->meshToInstancesMap;
-        auto& meshIdToMeshMap = pass->meshIdToMeshMap;
+    void RenderList::Pass::Update(vec3 cameraLocation) {
 
         size_t maxActorCount = 0;
         size_t maxImpostorCount = 0;
@@ -168,8 +225,8 @@ namespace Atlas {
                         if (needsHistory) {
                             lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                         }
-                        else {
-                            // For now push back anyways (since indices of matrices per entity need to match)
+                        else if (type != RenderPassType::Shadow) {
+                            // For now push back anyways for main pass (since indices of matrices per entity need to match)
                             lastEntityMatrices.push_back(currentEntityMatrices.back());
                         }
                     }
@@ -187,8 +244,8 @@ namespace Atlas {
                     if (needsHistory) {
                         lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));
                     }
-                    else {
-                        // For now push back anyways
+                    else if (type != RenderPassType::Shadow) {
+                        // For now push back anyways for main pass (since indices of matrices per entity need to match)
                         lastEntityMatrices.push_back(currentEntityMatrices.back());
                     }
                 }
@@ -202,7 +259,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::FillBuffers() {
+    void RenderList::Pass::FillBuffers() {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -216,7 +273,8 @@ namespace Atlas {
                 .size = newSize
             };
             if (newSize > 0) currentMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
-            if (newSize > 0) lastMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
+            // Only main pass needs the history
+            if (newSize > 0 && type != RenderPassType::Shadow) lastMatricesBuffer = device->CreateMultiBuffer(bufferDesc);
         }
 
         if (!impostorMatricesBuffer || impostorMatricesBuffer->size < sizeof(mat3x4) * impostorMatrices.size()) {
@@ -241,14 +299,20 @@ namespace Atlas {
 
     }
 
-    void RenderList::Clear() {
+    void RenderList::Pass::Reset() {
 
-        // We can reset the scene now and delete the reference
+        std::erase_if(meshToEntityMap, [](const auto& item) { return item.second.count == 0; });
+        for (auto& [id, batch] : meshToEntityMap) {
+            batch.entities.resize(batch.count);
+            batch.count = 0;
+        }
+
+        // Need to clear this to free the references
+        meshIdToMeshMap.clear();
+        meshToInstancesMap.clear();
+
+        wasUsed = false;
         scene = nullptr;
-
-        std::erase_if(passes, [](const auto& item) { return item->wasUsed != true; });
-        for (auto& pass : passes)
-            pass->Reset();
 
     }
 

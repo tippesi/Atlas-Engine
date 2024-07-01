@@ -52,6 +52,10 @@ void main() {
     colorFS = rectangleColor;
 #endif
 
+#ifndef ALPHA_BLENDING
+    colorFS.a = 1.0;
+#endif
+
     colorFS *= pushConstants.brightness;
 
 }
