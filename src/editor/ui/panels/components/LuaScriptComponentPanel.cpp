@@ -54,6 +54,8 @@ namespace Atlas::Editor::UI
             case LuaScriptComponent::PropertyType::String:
                 ImGui::InputText(property.name.c_str(), &property.stringValue);
                 break;
+            case LuaScriptComponent::PropertyType::Undefined:
+                break;
             }
         }
 

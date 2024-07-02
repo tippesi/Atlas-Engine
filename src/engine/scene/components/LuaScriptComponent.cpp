@@ -253,6 +253,8 @@ namespace Atlas::Scene::Components {
                     continue;
                 scriptProperty.booleanValue = value.get<bool>();
                 break;
+            case PropertyType::Undefined:
+                break;
             }
 
             foundProperties[scriptProperty.name] = scriptProperty;
@@ -300,6 +302,8 @@ namespace Atlas::Scene::Components {
                 break;
             case PropertyType::Boolean:
                 state["ScriptProperties"][propertyName]["value"] = property.booleanValue;
+                break;
+            case PropertyType::Undefined:
                 break;
             }
         }

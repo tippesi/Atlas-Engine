@@ -80,7 +80,7 @@ TEST_P(EngineEndToEndTest, DemoTest) {
             engineInstance->Update(deltaTime);
             engineInstance->Render(deltaTime);
 
-            graphicsDevice->CompleteFrame();
+            graphicsDevice->SubmitFrame();
 
         }
 

@@ -93,6 +93,10 @@ namespace Atlas::Scene {
 
         template<class T>
         void LuaScriptComponent::ScriptProperty::SetValue(const T value) {
+
+            static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, double> || 
+                std::is_same_v<T, int32_t> || std::is_same_v<T, bool>, "Unsupported type");
+
             if constexpr (std::is_same_v<T, std::string>) {
                 stringValue = value;
                 type = PropertyType::String;
@@ -109,9 +113,6 @@ namespace Atlas::Scene {
                 booleanValue = value;
                 type = PropertyType::Boolean;
             }
-            else {
-                static_assert("Unsupported type" && false);
-            }
 
             wasChanged = true;
         }
@@ -120,6 +121,9 @@ namespace Atlas::Scene {
         T LuaScriptComponent::ScriptProperty::GetValue() const {
 
             AE_ASSERT(type != PropertyType::Undefined && "This property was most likely not defined properly");
+
+            static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, double> || 
+                std::is_same_v<T, int32_t> || std::is_same_v<T, bool>, "Unsupported type");
 
             if constexpr (std::is_same_v<T, std::string>) {
                 return stringValue;
@@ -134,7 +138,7 @@ namespace Atlas::Scene {
                 return booleanValue;
             }
             else {
-                static_assert("Unsupported type" && false);
+                
             }
         }
 
