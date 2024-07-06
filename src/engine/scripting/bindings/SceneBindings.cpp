@@ -50,7 +50,7 @@ namespace Atlas::Scripting::Bindings {
             "AddMeshComponent", &Scene::Entity::AddComponent<MeshComponent, ResourceHandle<Mesh::Mesh>&>,
             "AddNameComponent", &Scene::Entity::AddComponent<NameComponent, std::string>,
             "AddPlayerComponent", &Scene::Entity::AddComponent<PlayerComponent>,
-            "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent>,
+            "AddRigidBodyComponent", &Scene::Entity::AddComponent<RigidBodyComponent, Physics::BodyCreationSettings&>,
             "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
             "AddLuaScriptComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
@@ -197,6 +197,8 @@ namespace Atlas::Scripting::Bindings {
             "IsValid", &RigidBodyComponent::IsValid,
             "SetMatrix", &RigidBodyComponent::SetMatrix,
             "GetMatrix", &RigidBodyComponent::GetMatrix,
+            "SetMotionQuality", &RigidBodyComponent::SetMotionQuality,
+            "GetMotionQuality", &RigidBodyComponent::GetMotionQuality,
             "SetLinearVelocity", &RigidBodyComponent::SetLinearVelocity,
             "GetLinearVelocity", &RigidBodyComponent::GetLinearVelocity,
             "SetAngularVelocity", &RigidBodyComponent::SetAngularVelocity,
@@ -204,7 +206,9 @@ namespace Atlas::Scripting::Bindings {
             "SetRestitution", &RigidBodyComponent::SetRestitution,
             "GetRestitution", &RigidBodyComponent::GetRestitution,
             "SetFriction", &RigidBodyComponent::SetFriction,
-            "GetFriction", &RigidBodyComponent::GetFriction
+            "GetFriction", &RigidBodyComponent::GetFriction,
+            "GetBodyCreationSettings", &RigidBodyComponent::GetBodyCreationSettings,
+            "layer", &RigidBodyComponent::layer
         );
 
         ns->new_usertype<PlayerComponent>("PlayerComponent",

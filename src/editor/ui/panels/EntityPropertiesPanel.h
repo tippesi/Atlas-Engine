@@ -19,6 +19,11 @@
 
 namespace Atlas::Editor::UI {
 
+    struct EntityProperties {
+        Scene::Entity entity;
+        Scene::Entity editorCameraEntity;
+    };
+
     class EntityPropertiesPanel : public Panel {
 
     public:

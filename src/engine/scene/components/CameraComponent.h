@@ -56,6 +56,8 @@ namespace Atlas {
 
                 vec3 globalLocation = vec3{ 0.0f };
                 vec3 globalDirection = vec3{ 0.0f, 0.0f, -1.0f };
+                vec3 globalUp = vec3{ 0.0f, 1.0f, 0.0f };
+                vec3 globalRight = vec3{ 1.0f, 0.0f, 0.0f };
 
                 mat4 viewMatrix = mat4{ 1.0f };
                 mat4 projectionMatrix = mat4{ 1.0f };

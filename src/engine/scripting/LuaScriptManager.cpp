@@ -20,7 +20,7 @@ namespace Atlas::Scripting {
 
         // create lua state
         luaState = std::make_shared<sol::state>();
-        luaState->open_libraries(sol::lib::base, sol::lib::math, sol::lib::string);
+        luaState->open_libraries(sol::lib::base, sol::lib::math, sol::lib::string, sol::lib::table);
         auto& state = *luaState;
 
         // create atlas namespace

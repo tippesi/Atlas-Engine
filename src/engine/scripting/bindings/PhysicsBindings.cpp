@@ -12,7 +12,7 @@ namespace Atlas::Scripting::Bindings {
             { "NumLayers", Physics::Layers::NumLayers }
             });
 
-        ns->new_enum<Physics::MotionQuality>("Layers", {
+        ns->new_enum<Physics::MotionQuality>("MotionQuality", {
             { "Discrete", Physics::MotionQuality::Discrete },
             { "LinearCast", Physics::MotionQuality::LinearCast }
             });
@@ -26,23 +26,31 @@ namespace Atlas::Scripting::Bindings {
             });
 
         ns->new_usertype<Physics::MeshShapeSettings>("MeshShapeSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::MeshShapeSettings>(),
             "mesh", &Physics::MeshShapeSettings::mesh,
             "scale", &Physics::MeshShapeSettings::scale
             );
 
         ns->new_usertype<Physics::SphereShapeSettings>("SphereShapeSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::SphereShapeSettings>(),
             "radius", &Physics::SphereShapeSettings::radius,
             "density", &Physics::SphereShapeSettings::density,
             "scale", &Physics::SphereShapeSettings::scale
             );
 
         ns->new_usertype<Physics::BoundingBoxShapeSettings>("BoundingBoxShapeSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::BoundingBoxShapeSettings>(),
             "aabb", &Physics::BoundingBoxShapeSettings::aabb,
             "density", &Physics::BoundingBoxShapeSettings::density,
             "scale", &Physics::BoundingBoxShapeSettings::scale
             );
 
         ns->new_usertype<Physics::CapsuleShapeSettings>("CapsuleShapeSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::CapsuleShapeSettings>(),
             "height", &Physics::CapsuleShapeSettings::height,
             "radius", &Physics::CapsuleShapeSettings::radius,
             "density", &Physics::CapsuleShapeSettings::density,
@@ -50,6 +58,8 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->new_usertype<Physics::HeightFieldShapeSettings>("HeightFieldShapeSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::HeightFieldShapeSettings>(),
             "heightData", &Physics::HeightFieldShapeSettings::heightData,
             "translation", &Physics::HeightFieldShapeSettings::translation,
             "scale", &Physics::HeightFieldShapeSettings::scale
@@ -72,6 +82,8 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->new_usertype<Physics::BodyCreationSettings>("RigidBodyCreationSettings",
+            sol::call_constructor,
+            sol::constructors<Physics::BodyCreationSettings>(),
             "objectLayer", &Physics::BodyCreationSettings::objectLayer,
             "motionQuality", &Physics::BodyCreationSettings::motionQuality,
             "linearVelocity", &Physics::BodyCreationSettings::linearVelocity,

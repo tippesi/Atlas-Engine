@@ -36,7 +36,6 @@ namespace Atlas::Scene {
                 template<class T>
                 T GetValue() const;
 
-                std::string name;
                 PropertyType type = PropertyType::Undefined;
 
                 std::string stringValue = "";
@@ -81,6 +80,7 @@ namespace Atlas::Scene {
 
             // Force initial execution to be recognized as a changed script
             bool scriptWasModifiedInLastUpdate = true;
+            bool environmentNeedsInitialization = true;
 
             std::optional<sol::protected_function> updateFunction;
             std::optional<sol::environment> scriptEnvironment;

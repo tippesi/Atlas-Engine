@@ -59,6 +59,13 @@ namespace Atlas {
         static std::vector<Entry> GetEntries();
 
         /**
+         * Returns the latest entries.
+         * @param count The amount of entries to return
+         * @return All log entries.
+         */
+        static std::vector<Entry> GetLatestEntries(int32_t count);
+
+        /**
          * Save the log to the hard drive.
          * @param filename The filename of the log.
          */

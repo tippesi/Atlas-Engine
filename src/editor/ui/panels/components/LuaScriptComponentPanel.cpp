@@ -38,21 +38,19 @@ namespace Atlas::Editor::UI
 
         ImGui::Separator();
         ImGui::Text("Script defined properties:");
-        for (auto &[name, property] : luaScriptComponent.properties)
-        {
-            switch (property.type)
-            {
+        for (auto& [name, property] : luaScriptComponent.properties) {
+            switch (property.type) {
             case LuaScriptComponent::PropertyType::Boolean:
-                ImGui::Checkbox(property.name.c_str(), &property.booleanValue);
+                ImGui::Checkbox(name.c_str(), &property.booleanValue);
                 break;
             case LuaScriptComponent::PropertyType::Integer:
-                ImGui::InputInt(property.name.c_str(), &property.integerValue);
+                ImGui::InputInt(name.c_str(), &property.integerValue);
                 break;
             case LuaScriptComponent::PropertyType::Double:
-                ImGui::InputDouble(property.name.c_str(), &property.doubleValue);
+                ImGui::InputDouble(name.c_str(), &property.doubleValue);
                 break;
             case LuaScriptComponent::PropertyType::String:
-                ImGui::InputText(property.name.c_str(), &property.stringValue);
+                ImGui::InputText(name.c_str(), &property.stringValue);
                 break;
             case LuaScriptComponent::PropertyType::Undefined:
                 break;

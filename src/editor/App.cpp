@@ -255,12 +255,16 @@ namespace Atlas::Editor {
         if (ImGui::BeginMainMenuBar()) {
             static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
             if (ImGui::BeginMenu("File")) {
+                /*
                 ImGui::MenuItem("Open project", nullptr, &openProject);
                 ImGui::MenuItem("Save project", nullptr, &saveProject);
                 ImGui::Separator();
+                */
                 ImGui::MenuItem("New scene", nullptr, &newScene);
+                /*
                 ImGui::Separator();
                 ImGui::MenuItem("Import files", nullptr, &importFiles);
+                */
                 ImGui::EndMenu();
             }
 

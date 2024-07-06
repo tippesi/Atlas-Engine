@@ -20,7 +20,7 @@ namespace Atlas::Scene::Components {
         this->scene = scene;
         this->entity = entity;
 
-        scriptWasModifiedInLastUpdate = true;
+        environmentNeedsInitialization = true;
 
     }
 
@@ -35,7 +35,7 @@ namespace Atlas::Scene::Components {
 
         this->script = script;
 
-        scriptWasModifiedInLastUpdate = true;
+        environmentNeedsInitialization = true;
 
     }
 
@@ -76,14 +76,15 @@ namespace Atlas::Scene::Components {
             if (scriptWasModifiedInLastUpdate && resource->WasModified()) {
                 resource->UpdateModifiedTime();
             }
+            scriptWasModifiedInLastUpdate = false;
             if (resource->WasModified()) {
                 // Do reload here, adjust modified time beforehand to be conservative
                 script->Reload();
-                scriptWasModifiedInLastUpdate |= true;
+                scriptWasModifiedInLastUpdate = true;
             }
         }
 
-        if (scriptWasModifiedInLastUpdate) {
+        if (scriptWasModifiedInLastUpdate || environmentNeedsInitialization) {
             // the script was modified
 
             // reset the saved references
@@ -97,7 +98,7 @@ namespace Atlas::Scene::Components {
             // and then get or update the properties from the script
             GetOrUpdatePropertiesFromScript();
 
-            scriptWasModifiedInLastUpdate = false;
+            environmentNeedsInitialization = false;
         }
 
         if (scene->physicsWorld->pauseSimulation && !permanentExecution) {
@@ -192,7 +193,7 @@ namespace Atlas::Scene::Components {
                 continue;
             if (!key.is<std::string>())
                 continue;
-            scriptProperty.name = key.as<std::string>();
+            const auto name = key.as<std::string>();
 
             // determine property type and value
             const auto& propertyTable = entry.second;
@@ -257,7 +258,7 @@ namespace Atlas::Scene::Components {
                 break;
             }
 
-            foundProperties[scriptProperty.name] = scriptProperty;
+            foundProperties[name] = scriptProperty;
         }
 
         return foundProperties;

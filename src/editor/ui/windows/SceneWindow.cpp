@@ -259,6 +259,9 @@ namespace Atlas::Editor::UI {
                     ImGui::EndPopup();
                 }
             }
+            else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            }
 
             hasMainCamera = false;
             if (scene.IsLoaded()) {
@@ -561,6 +564,21 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneWindow::StartPlaying() {
+
+        bool hasMainCamera = false;
+        auto cameraSubset = scene->GetSubset<CameraComponent>();
+        for (auto entity : cameraSubset) {
+            if (entity == cameraEntity)
+                continue;
+
+            auto& comp = cameraSubset.Get(entity);
+            hasMainCamera |= comp.isMain;
+        }
+
+        if (!hasMainCamera) {
+            Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
+            return;
+        }
 
         SaveSceneState();
 

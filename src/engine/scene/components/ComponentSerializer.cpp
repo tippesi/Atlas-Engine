@@ -190,6 +190,12 @@ namespace Atlas::Scene::Components {
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+
+        // Reconstruct some immediate values, don't need to be true.
+        // Just that a call to p.ReconstructLocalMatrix() before a scene updates 
+        // leaves p.matrix in the same state.
+        p.globalMatrix = p.matrix;
+        p.lastGlobalMatrix = p.matrix;
     }
 
     void to_json(json& j, const TextComponent& p) {
@@ -290,20 +296,20 @@ namespace Atlas::Scene::Components {
         for (const auto& [name, prop] : p.properties) {
             switch (prop.type) {
             case LuaScriptComponent::PropertyType::Boolean:
-                j["scriptProperties"][prop.name]["type"] = "boolean";
-                j["scriptProperties"][prop.name]["value"] = prop.booleanValue;
+                j["scriptProperties"][name]["type"] = "boolean";
+                j["scriptProperties"][name]["value"] = prop.booleanValue;
                 break;
             case LuaScriptComponent::PropertyType::Integer:
-                j["scriptProperties"][prop.name]["type"] = "integer";
-                j["scriptProperties"][prop.name]["value"] = prop.integerValue;
+                j["scriptProperties"][name]["type"] = "integer";
+                j["scriptProperties"][name]["value"] = prop.integerValue;
                 break;
             case LuaScriptComponent::PropertyType::Double:
-                j["scriptProperties"][prop.name]["type"] = "double";
-                j["scriptProperties"][prop.name]["value"] = prop.doubleValue;
+                j["scriptProperties"][name]["type"] = "double";
+                j["scriptProperties"][name]["value"] = prop.doubleValue;
                 break;
             case LuaScriptComponent::PropertyType::String:
-                j["scriptProperties"][prop.name]["type"] = "string";
-                j["scriptProperties"][prop.name]["value"] = prop.stringValue;
+                j["scriptProperties"][name]["type"] = "string";
+                j["scriptProperties"][name]["value"] = prop.stringValue;
                 break;
             default:
                 AE_ASSERT(false);
@@ -327,33 +333,24 @@ namespace Atlas::Scene::Components {
         {
             for (const auto &v : j["scriptProperties"].items())
             {
-                LuaScriptComponent::ScriptProperty scriptProperty;
-                scriptProperty.name = v.key();
                 const auto &value = v.value();
                 auto propertyTypeAsString = value["type"].get<std::string>();
                 if (propertyTypeAsString == "boolean")
                 {
-                    scriptProperty.SetValue(value["value"].get<bool>());
+                    p.SetPropertyValue(v.key(), value["value"].get<bool>());
                 }
                 else if (propertyTypeAsString == "integer")
                 {
-                    scriptProperty.SetValue(value["value"].get<int32_t>());
+                    p.SetPropertyValue(v.key(), value["value"].get<int32_t>());
                 }
                 else if (propertyTypeAsString == "double")
                 {
-                    scriptProperty.SetValue(value["value"].get<double>());
+                    p.SetPropertyValue(v.key(), value["value"].get<double>());
                 }
                 else if (propertyTypeAsString == "string")
                 {
-                    scriptProperty.SetValue(value["value"].get<std::string>());
+                    p.SetPropertyValue(v.key(), value["value"].get<std::string>());
                 }
-                else
-                {
-                    // unknown type
-                    continue;
-                }
-
-                p.properties[scriptProperty.name] = scriptProperty;
             }
         }
     }
