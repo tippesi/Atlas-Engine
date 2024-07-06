@@ -565,17 +565,17 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::StartPlaying() {
 
-        bool hasMainCamera = false;
+        bool hasMainPlayingCamera = false;
         auto cameraSubset = scene->GetSubset<CameraComponent>();
         for (auto entity : cameraSubset) {
             if (entity == cameraEntity)
                 continue;
 
-            auto& comp = cameraSubset.Get(entity);
-            hasMainCamera |= comp.isMain;
+            const auto& comp = cameraSubset.Get(entity);
+            hasMainPlayingCamera |= comp.isMain;
         }
 
-        if (!hasMainCamera) {
+        if (!hasMainPlayingCamera) {
             Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
             return;
         }

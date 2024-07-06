@@ -300,7 +300,7 @@ namespace Atlas {
             // Fill probe state buffer with values of 0 (indicates a new probe)
             uint32_t zero = 0;
             std::vector<vec4> probeStates(probeStateBuffer.GetElementCount());
-            std::fill(probeStates.begin(), probeStates.end(), vec4(vec3(0.0f), reinterpret_cast<float&>(zero)));
+            std::fill(probeStates.begin(), probeStates.end(), vec4(0.0f));
 
             probeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());
             historyProbeStateBuffer.SetData(probeStates.data(), 0, probeStates.size());

@@ -192,8 +192,8 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
     float sumWeight = 0.0;
     vec3 sumIrradiance = vec3(0.0);
 
-    float sumWeightCheb = 0.0;
-    vec3 sumIrradianceCheb = vec3(0.0);
+    float sumWeightIgnoredState = 0.0;
+    vec3 sumIrradianceIgnoredState = vec3(0.0);
 
     vec3 alpha = localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz - vec3(baseCell);
 
@@ -224,8 +224,6 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         float weight = dot(L, geometryNormal);
         if (weight < 0.0) continue;
 
-        float weightCheb = weight;
-
 #ifdef DDGI_VISIBILITY
         vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
         vec3 momCoord = GetProbeCoord(gridCell, cascadeIndex, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
@@ -248,29 +246,29 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 #endif
 
         weight = max(0.000001, weight);
-        weightCheb = max(0.000001, weightCheb);
 
         float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
         weight *= trilinearWeight;
-        weightCheb *= trilinearWeight;
 
         vec3 irrCoord = GetProbeCoord(gridCell, cascadeIndex, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
         vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
 
+        float weightIgnoredState = weight;
+        weight = probeState != PROBE_STATE_INACTIVE ? weight : 0.0;
+
         sumIrradiance += weight * irradiance;
-        sumIrradianceCheb += weightCheb * irradiance;
         sumWeight += weight;
-        sumWeightCheb += weightCheb;
+
+        sumIrradianceIgnoredState += weightIgnoredState * irradiance;
+        sumWeightIgnoredState += weightIgnoredState;
     }
 
-    if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+    if (sumWeight == 0.0 && sumWeightIgnoredState == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
 
-#ifdef DDGI_VISIBILITY
-    vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
-        sqr(sumIrradiance / sumWeight), 1.0), 0.0);
-#else
-    vec4 irradiance = vec4(sqr(sumIrradianceCheb / sumWeightCheb), 0.0);
-#endif
+    // If no probes are activated for the given geometry, at least use the information available
+    vec4 irradiance = sumWeight > 0.0 ? vec4(sqr(sumIrradiance / sumWeight), 0.0) 
+        : vec4(sqr(sumIrradianceIgnoredState / sumWeightIgnoredState), 0.0);
+
     // Due to the texture format we loose a bit of energy
     irradiance *= 1.0989;
 

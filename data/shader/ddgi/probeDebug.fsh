@@ -38,7 +38,9 @@ void main() {
     vec3 momCoord = GetProbeCoord(probeCoord, probeCascadeIndex, momOctCoord, momRes, momTexelSize, 14);
     vec2 moments = textureLod(momentsVolume, momCoord, 0).rg;
 
-    baseColorFS = vec3(moments.x) / length(ddgiData.cascades[probeCascadeIndex].cellSize.xyz);
+    float probeAge = probeStates[instanceID].w;
+    baseColorFS = vec3(probeAge / 32.0);
+    //baseColorFS = vec3(moments.x) / length(ddgiData.cascades[probeCascadeIndex].cellSize.xyz);
     
     geometryNormalFS = normalize(normalVS);
     geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
@@ -58,6 +60,6 @@ void main() {
 
     materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ?
         pushConstants.probeActiveMaterialIdx : pushConstants.probeInactiveMaterialIdx;
-    materialIdxFS = moments.x < 0.6 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
+    materialIdxFS = probeAge > 32 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
     
 }
