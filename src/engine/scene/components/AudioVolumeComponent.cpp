@@ -63,6 +63,11 @@ namespace Atlas {
                 if (!stream)
                     return;
 
+                if (scene->physicsWorld->pauseSimulation && !permanentPlay) {
+                    stream->SetVolume(0.0f);
+                    return;
+                }
+
                 const float epsilon = 0.00001f;
 
                 transformedAABB = aabb.Transform(transformComponent.globalMatrix);

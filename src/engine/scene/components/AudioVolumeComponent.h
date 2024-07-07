@@ -38,6 +38,8 @@ namespace Atlas {
 
                 Ref<Audio::AudioStream> stream = nullptr;
 
+                bool permanentPlay = true;
+
             private:
                 void Update(const TransformComponent& transformComponent, vec3 listenerLocation);
 

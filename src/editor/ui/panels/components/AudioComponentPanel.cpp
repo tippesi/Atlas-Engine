@@ -42,6 +42,8 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("Falloff factor", &audioComponent.falloffFactor, 0.05f, 0.0f, 100.0f);
         ImGui::DragFloat("Falloff power", &audioComponent.falloffPower, 1.0f, 0.0f, 100.0f);
 
+        ImGui::Checkbox("Play permanently", &audioComponent.permanentPlay);
+
         if (audioComponent.stream && audioComponent.stream->IsValid()) {
             ImGui::Checkbox("Loop stream", &audioComponent.stream->loop);
         }

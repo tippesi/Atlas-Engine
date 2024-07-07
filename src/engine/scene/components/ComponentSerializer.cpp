@@ -8,6 +8,7 @@ namespace Atlas::Scene::Components {
             {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
+            {"permanentPlay", p.permanentPlay},
         };
 
         if (p.stream) {
@@ -22,6 +23,7 @@ namespace Atlas::Scene::Components {
         j.at("falloffPower").get_to(p.falloffPower);
         j.at("cutoff").get_to(p.cutoff);
         j.at("volume").get_to(p.volume);
+        try_get_json(j, "permanentPlay", p.permanentPlay);
 
         if (j.contains("stream")) {
             j.at("stream").get_to(*p.stream);
@@ -34,7 +36,8 @@ namespace Atlas::Scene::Components {
             {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
-            {"aabb", p.aabb}
+            {"aabb", p.aabb},
+            {"permanentPlay", p.permanentPlay}
         };
 
         if (p.stream) {
@@ -50,6 +53,7 @@ namespace Atlas::Scene::Components {
         j.at("cutoff").get_to(p.cutoff);
         j.at("aabb").get_to(p.aabb);
         j.at("volume").get_to(p.volume);
+        try_get_json(j, "permanentPlay", p.permanentPlay);
 
         if (j.contains("stream")) {
             j.at("stream").get_to(*p.stream);
