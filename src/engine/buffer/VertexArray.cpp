@@ -106,7 +106,7 @@ namespace Atlas {
             uint32_t bindingOffset = 0;
             uint32_t bindingCount = 0;
             for (auto& [attribArray, vertexComponent] : vertexComponents) {
-                if (attribArray != bindingOffset + 1 && bindingCount > 0) {
+                if (attribArray != bindingOffset + bindingCount && bindingCount > 0) {
                     batch.offset = bindingOffset;
                     batch.count = bindingCount;
                     batches.push_back(batch);
