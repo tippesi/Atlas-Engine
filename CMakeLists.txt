@@ -110,7 +110,7 @@ if (ATLAS_DEMO)
 endif()
 
 if (ATLAS_EDITOR)
-    find_package(imguizmo CONFIG REQUIRED)
+    find_package(unofficial-imguizmo CONFIG REQUIRED)
     add_subdirectory(${EDITOR_LOCATION})
 endif()
 

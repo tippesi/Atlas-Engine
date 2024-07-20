@@ -23,12 +23,16 @@
       ],
       "default-features": false
     },
+    {
+      "name": "glslang",
+      "features": [],
+      "default-features": false
+    },
     "spirv-reflect",
     "assimp",
     "vulkan-memory-allocator",
     "volk",
     "vulkan-headers",
-    "glslang",
     "spirv-tools",
     "nlohmann-json",
     "gtest",
@@ -44,7 +48,7 @@
     },
     {
       "name": "assimp",
-      "version": "5.4.0"
+      "version": "5.4.2#0"
     },
     {
       "name": "spirv-tools",
@@ -56,15 +60,15 @@
     },
     {
       "name": "glslang",
-      "version": "11.11.0#1"
+      "version": "13.1.1#1"
     },
     {
       "name": "sdl2",
-      "version": "2.28.2"
+      "version": "2.30.5#1"
     },
     {
       "name": "imgui",
-      "version": "1.90.2"
+      "version": "1.90.7#1"
     },
     {
       "name": "vulkan-memory-allocator",
