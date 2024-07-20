@@ -31,7 +31,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with:
-          committish: b346ee32f13f3bf2ef19ac02f982f6938f7a84ea
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
 
       - name: Delete MSVC tool version
         shell: pwsh
@@ -109,7 +109,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with:
-          committish: b346ee32f13f3bf2ef19ac02f982f6938f7a84ea
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
