@@ -11,6 +11,11 @@ on:
           description: 'Debug CMake build type'
           required: true
           default: 'Debug'
+        build_use_cache:
+          description: 'Whether to use the vcpkg cache or not'
+          type: boolean
+          required: true
+          default: true
 
   push:
     branches:
@@ -22,7 +27,7 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE_DEBUG: ${{ github.event.inputs.build_type_debug }}
   BUILD_TYPE_RELEASE: ${{ github.event.inputs.build_type_release }}
-  USE_CACHE: true
+  USE_CACHE: ${{ github.event.inputs.build_use_cache }}
   RUN_TESTS: true
 
 jobs:
