@@ -156,7 +156,7 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-#ifndef AE_BINDLESS
+#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
                 if (material->HasOpacityMap())
                     commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
 #endif
@@ -245,6 +245,10 @@ namespace Atlas {
             if (material->HasOpacityMap()) {
                 macros.push_back("OPACITY_MAP");
             }
+
+#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
+            macros.push_back("BINDLESS_TEXTURES");
+#endif
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

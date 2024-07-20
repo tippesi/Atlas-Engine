@@ -35,7 +35,16 @@ if (DEFINED CMAKE_BUILD_TYPE)
         set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} JPH_PROFILE_ENABLED JPH_DEBUG_RENDERER)
     endif()
 else()
-    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELEASE)
+    # This is for non-single config generators like XCode
+    # Release compile definitions
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Release>:AE_BUILDTYPE_RELEASE>" 
+        "$<$<CONFIG:Release>:SOL_ALL_SAFETIES_ON>")
+    # RelWithDebInfo compile definitions
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:RelWithDebInfo>:AE_BUILDTYPE_RELWITHDEBINFO>" 
+        "$<$<CONFIG:RelWithDebInfo>:SOL_ALL_SAFETIES_ON>")
+    # Debug compile definitions
+    set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>" 
+        "$<$<CONFIG:Debug>:JPH_PROFILE_ENABLED>" "$<$<CONFIG:Debug>:JPH_DEBUG_RENDERER>" "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
 endif()
 
 # Configure platform specific stuff ###############################################################

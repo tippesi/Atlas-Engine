@@ -24,6 +24,8 @@ namespace Atlas {
                 uint32_t frameSeed;
                 float bias;
                 int32_t textureLevel;
+                float roughnessCutoff;
+                vec3 padding;
                 Shadow shadow;
             };
 

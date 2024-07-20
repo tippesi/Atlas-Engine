@@ -22,8 +22,9 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
         ImGui::Checkbox("Opacity check", &reflection->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
-        ImGui::SliderFloat("Radiance Limit", &reflection->radianceLimit, 0.0f, 10.0f);
+        ImGui::SliderFloat("Radiance limit", &reflection->radianceLimit, 0.0f, 10.0f);
         ImGui::SliderFloat("Bias", &reflection->bias, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness cuttoff", &reflection->roughnessCutoff, 0.0f, 1.0f);
         ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &reflection->spatialFilterStrength, 0.0f, 10.0f);

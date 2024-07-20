@@ -116,7 +116,8 @@ namespace Atlas {
                         RTRUniforms uniforms;
                         uniforms.radianceLimit = reflection->radianceLimit;
                         uniforms.bias = reflection->bias;
-                        uniforms.frameSeed = frameCount++;
+                        uniforms.roughnessCutoff = reflection->roughnessCutoff;
+                        uniforms.frameSeed = frameCount++;                        
                         uniforms.textureLevel = reflection->textureLevel;
 
                         if (shadow && reflection->useShadowMap) {

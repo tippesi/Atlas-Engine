@@ -127,6 +127,7 @@ namespace Atlas::Lighting {
             {"textureLevel", p.textureLevel},
             {"radianceLimit", p.radianceLimit},
             {"bias", p.bias},
+            {"roughnessCutoff", p.roughnessCutoff},
             {"spatialFilterStrength", p.spatialFilterStrength},
             {"temporalWeight", p.temporalWeight},
             {"historyClipMax", p.historyClipMax},
@@ -154,6 +155,7 @@ namespace Atlas::Lighting {
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
+        try_get_json(j, "roughnessCutoff", p.roughnessCutoff);
     }
 
     void to_json(json& j, const ShadowView& p) {

@@ -14,6 +14,7 @@ namespace Atlas {
 
             int32_t textureLevel = 3;
             float radianceLimit = 10.0f;
+            float roughnessCutoff = 0.9f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 

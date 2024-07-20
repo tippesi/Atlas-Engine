@@ -85,7 +85,7 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-#ifndef AE_BINDLESS
+#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
                 if (material->HasBaseColorMap())
                     material->baseColorMap->Bind(commandList, 3, 0);
                 if (material->HasOpacityMap())
@@ -185,6 +185,10 @@ namespace Atlas {
             if (mesh->data.colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
+
+#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
+            macros.push_back("BINDLESS_TEXTURES");
+#endif
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

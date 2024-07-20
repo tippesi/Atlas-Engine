@@ -47,6 +47,10 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     uint frameSeed;
     float bias;
     int textureLevel;
+    float roughnessCutoff;
+    float padding0;
+    float padding1;
+    float padding2;
     Shadow shadow;
 } uniforms;
 
@@ -129,7 +133,7 @@ void main() {
 
                 vec3 radiance = vec3(0.0);
 
-                if (material.roughness < 0.9) {
+                if (material.roughness <= uniforms.roughnessCutoff) {
 #ifdef OPACITY_CHECK
                     HitClosestTransparency(ray, 10e-3, INF);
 #else

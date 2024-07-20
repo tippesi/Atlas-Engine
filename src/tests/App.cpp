@@ -126,6 +126,8 @@ void App::LoadContent(AppConfiguration config) {
             glm::vec3(0.0f, 5.0f, 0.0f), 512, 86);
     }
 
+    scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+
     if (config.exampleRenderer) {
         exampleRenderer.Init(graphicsDevice);
     }
