@@ -205,7 +205,6 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
         uint probeIdx = GetProbeIdx(gridCell, cascadeIndex);
         uint probeState = GetProbeState(probeIdx);
-        if (probeState == PROBE_STATE_INACTIVE) continue;
 
         vec3 probeOffset = probeOffsets[probeIdx].xyz;
         vec3 probePos = vec3(gridCell) * ddgiData.cascades[cascadeIndex].cellSize.xyz +
@@ -220,9 +219,9 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
 
         // Should be used when the chebyshev test is weighted more
-        //float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
-        float weight = dot(L, geometryNormal);
-        if (weight < 0.0) continue;
+        float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
+        //float weight = dot(L, geometryNormal);
+        //if (weight < 0.0) continue;
 
 #ifdef DDGI_VISIBILITY
         vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
@@ -294,6 +293,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
+    // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
     int cascadeIndex = 0;
     while (cascadeIndex < ddgiData.cascadeCount) {
 

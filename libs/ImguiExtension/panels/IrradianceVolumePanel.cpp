@@ -75,12 +75,20 @@ namespace Atlas::ImguiExtension {
 
         ImGui::SliderFloat("Strength", &volume->strength, 0.0f, 5.0f);
         ImGui::Separator();
-        ImGui::Text("AABB"); 
-        ImGui::DragFloat3("Min", (float*)&volume->aabb.min, 0.5f, -2000.0f, 2000.0f);
-        ImGui::DragFloat3("Max", (float*)&volume->aabb.max, 0.5f, -2000.0f, 2000.0f);
 
-        if (ImGui::Button("Adjust to scene size")) {
-            volume->aabb = CalculateSceneSize(scene);
+        if (volume->scroll) {
+            auto volumeSize = volume->aabb.GetSize();
+            ImGui::DragFloat3("Size", (float*)&volumeSize, 0.5f, 1.0f, 2000.0f);
+            volume->aabb = volume->aabb.Scale(volumeSize / volume->aabb.GetSize());
+        }
+        else {
+            ImGui::Text("AABB");
+            ImGui::DragFloat3("Min", (float*)&volume->aabb.min, 0.5f, -2000.0f, 2000.0f);
+            ImGui::DragFloat3("Max", (float*)&volume->aabb.max, 0.5f, -2000.0f, 2000.0f);
+
+            if (ImGui::Button("Adjust to scene size")) {
+                volume->aabb = CalculateSceneSize(scene);
+            }
         }
         volume->SetAABB(volume->aabb);
        

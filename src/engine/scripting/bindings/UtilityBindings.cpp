@@ -43,6 +43,11 @@ namespace Atlas::Scripting::Bindings {
             [](Volume::AABB& aabb, const vec3& vec) { return aabb.IsInside(vec); }
         );
 
+        auto scaleAABBOverload = sol::overload(
+            [](Volume::AABB& aabb0, const float scale) { return aabb0.Scale(scale); },
+            [](Volume::AABB& aabb, const vec3& scale) { return aabb.Scale(scale); }
+        );
+
         auto growAABBOverload = sol::overload(
             [](Volume::AABB& aabb0, const Volume::AABB& aabb1) { return aabb0.Grow(aabb1); },
             [](Volume::AABB& aabb, const vec3& vec) { return aabb.Grow(vec); }
@@ -55,7 +60,7 @@ namespace Atlas::Scripting::Bindings {
             "IsInside", isInsideAABBOverload,
             "Transform", &Volume::AABB::Transform,
             "Translate", &Volume::AABB::Translate,
-            "Scale", &Volume::AABB::Scale,
+            "Scale", scaleAABBOverload,
             "Grow", growAABBOverload,
             "Intersect", &Volume::AABB::Intersect,
             "GetSurfaceArea", &Volume::AABB::GetSurfaceArea,

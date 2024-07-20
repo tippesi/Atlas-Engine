@@ -73,6 +73,8 @@ namespace Atlas {
              */
             AABB Scale(float scale);
 
+            AABB Scale(vec3 scale);
+
             void Grow(AABB aabb);
 
             void Grow(vec3 vector);

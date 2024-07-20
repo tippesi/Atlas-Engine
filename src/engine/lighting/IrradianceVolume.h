@@ -115,7 +115,7 @@ namespace Atlas {
 
             float strength = 1.0f;
 
-            float splitCorrection = 2.0f;
+            float splitCorrection = 1.6f;
 
             bool enable = true;
             bool update = true;
