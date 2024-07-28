@@ -1,6 +1,8 @@
 // See https://eleni.mutantstargoat.com/hikiko/depth-aware-upsampling-2
 // We hijack the step function here to find the min and max indices
 
+#include <../globals.hsh>
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout (set = 3, binding = 0) uniform sampler2D depthIn;
@@ -87,9 +89,10 @@ void main() {
         float depth01 = texelFetch(depthIn, coord * 2 + ivec2(0, 1), 0).r;
         float depth11 = texelFetch(depthIn, coord * 2 + ivec2(1, 1), 0).r;
 
-        vec4 depthVec = vec4(depth00, depth10, depth01, depth11);
-        float depth = depthVec[0];
-        int depthIdx = 0;
+        vec4 depthVec = vec4(depth00, depth10, depth01, depth11);        
+        int depthIdx = CheckerboardDepth(depthVec, coord, depthVec.x);
+        //depthIdx = 0;
+        float depth = depthVec[depthIdx];
         imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
 
 #ifndef DEPTH_ONLY

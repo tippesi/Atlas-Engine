@@ -84,8 +84,9 @@ private:
     Atlas::ImguiExtension::FogPanel fogPanel;
     Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
     Atlas::ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
-    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
+    Atlas::ImguiExtension::RTGIPanel rtgiPanel;
     Atlas::ImguiExtension::SSGIPanel ssgiPanel;
+    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;    
     Atlas::ImguiExtension::SSSPanel sssPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
     Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;

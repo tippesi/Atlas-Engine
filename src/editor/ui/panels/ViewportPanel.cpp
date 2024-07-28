@@ -149,7 +149,7 @@ namespace Atlas::Editor::UI {
         }
         if (visualization == GBufferVelocity) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->velocityTexture.get(),
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 100.0f, false, true);
         }
         else if (visualization == Reflections) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,

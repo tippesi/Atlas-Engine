@@ -7,29 +7,26 @@ namespace Atlas {
 
     namespace Lighting {
 
-        class Reflection {
+        class RTGI {
 
         public:
-            Reflection() = default;
+            RTGI() = default;
 
-            int32_t textureLevel = 3;
-            float radianceLimit = 10.0f;
-            float roughnessCutoff = 0.9f;
+            int32_t textureLevel = 4;
+            float radianceLimit = 5.0f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
-            float temporalWeight = 0.95f;
+            float temporalWeight = 0.97f;
             float historyClipMax = 1.0f;
             float currentClipFactor = 2.0f;
 
             bool enable = true;
-            bool rt = true;
             bool ddgi = true;
             bool useShadowMap = false;
             bool useNormalMaps = true;
             bool opacityCheck = false;
             bool halfResolution = true;
-            bool upsampleBeforeFiltering = false;
 
         };
 

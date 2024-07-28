@@ -72,9 +72,7 @@ namespace Atlas::Scripting::Bindings {
             "rayCount", &Lighting::SSGI::rayCount,
             "sampleCount", &Lighting::SSGI::sampleCount,
             "irradianceLimit", &Lighting::SSGI::irradianceLimit,
-            "aoStrength", &Lighting::SSGI::aoStrength,
-            "rt", &Lighting::SSGI::rt,
-            "opacityCheck", &Lighting::SSGI::opacityCheck
+            "aoStrength", &Lighting::SSGI::aoStrength
         );
 
         ns->new_usertype<Lighting::Reflection>("Reflection",
@@ -87,7 +85,7 @@ namespace Atlas::Scripting::Bindings {
             "currentClipFactor", &Lighting::Reflection::currentClipFactor,
             "enable", &Lighting::Reflection::enable,
             "rt", &Lighting::Reflection::rt,
-            "gi", &Lighting::Reflection::gi,
+            "ddgi", &Lighting::Reflection::ddgi,
             "useShadowMap", &Lighting::Reflection::useShadowMap,
             "useNormalMaps", &Lighting::Reflection::useNormalMaps,
             "opacityCheck", &Lighting::Reflection::opacityCheck

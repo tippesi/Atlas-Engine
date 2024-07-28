@@ -136,7 +136,7 @@ namespace Atlas::Renderer {
 
         CreateFrameBuffers();
 
-        SetGIResolution(HALF_RES);
+        SetGIResolution(HALF_RES, false);
         SetAOResolution(HALF_RES);
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
@@ -169,7 +169,7 @@ namespace Atlas::Renderer {
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);
         oceanStencilTexture.Resize(scaledWidth, scaledHeight);
 
-        SetGIResolution(giResolution);
+        SetGIResolution(giResolution, giMomentsTexture.IsValid());
         SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
@@ -230,7 +230,7 @@ namespace Atlas::Renderer {
 
     }
 
-    void RenderTarget::SetGIResolution(RenderResolution resolution) {
+    void RenderTarget::SetGIResolution(RenderResolution resolution, bool createMomentsTexture) {
 
         auto res = GetRelativeResolution(resolution);
         giResolution = resolution;
@@ -242,10 +242,22 @@ namespace Atlas::Renderer {
         historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        if (createMomentsTexture) {
+            giLengthTexture.Reset();
+            historyGiLengthTexture.Reset();
+            giMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            historyGiMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        }
+        else {
+            giMomentsTexture.Reset();
+            historyGiMomentsTexture.Reset();
+            giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        }
 
         hasHistory = false;
 

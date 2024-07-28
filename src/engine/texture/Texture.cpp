@@ -81,6 +81,17 @@ namespace Atlas {
 
         }
 
+        void Texture::Reset() {
+
+            width = 0;
+            height = 0;
+            depth = 0;
+            channels = 0;
+            image.reset();
+            sampler.reset();
+
+        }
+
         void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
             Filtering filtering, Wrapping wrapping) {
 

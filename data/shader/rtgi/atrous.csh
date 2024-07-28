@@ -144,7 +144,7 @@ float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
     float roughnessDiff = abs(centerRoughness - sampleRoughness);
     float roughnessWeight = min(exp(-roughnessDiff / (roughnessPhi + epsilon)), 1.0);
 
-    return luminanceWeight * normalWeight * depthWeight * roughnessWeight;
+    return luminanceWeight * normalWeight * depthWeight;
 
 }
 
@@ -232,7 +232,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerRoughness, sampleRoughness,
                                     stdDeviation * pushConstants.strength, 
-                                    256.0, 128.0, 0.05);
+                                    32.0, 128.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

@@ -1,4 +1,4 @@
-#include "GIRenderer.h"
+#include "SSGIRenderer.h"
 
 #include "Clock.h"
 #include "../common/RandomHelper.h"
@@ -7,7 +7,7 @@ namespace Atlas {
 
     namespace Renderer {
 
-        void GIRenderer::Init(Graphics::GraphicsDevice *device) {
+        void SSGIRenderer::Init(Graphics::GraphicsDevice *device) {
 
             this->device = device;
 
@@ -25,7 +25,6 @@ namespace Atlas {
             sobolSequenceTexture.SetData(noiseImage->GetData());
 
             ssgiPipelineConfig = PipelineConfig("ssgi/ssgi.csh");
-            //rtaoPipelineConfig = PipelineConfig("ao/rtao.csh");
             temporalPipelineConfig = PipelineConfig("ssgi/temporal.csh");
 
             horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
@@ -33,28 +32,45 @@ namespace Atlas {
             verticalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
                 {"VERTICAL", "DEPTH_WEIGHT","NORMAL_WEIGHT", "BLUR_RGBA"});
 
-            rtUniformBuffer = Buffer::UniformBuffer(sizeof(RTUniforms));
             ssUniformBuffer = Buffer::UniformBuffer(sizeof(SSUniforms));
             // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
             blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
 
         }
 
-        void GIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void SSGIRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
             auto ssgi = scene->ssgi;
             if (!ssgi || !ssgi->enable) return;
-
-            if (!scene->IsRtDataValid() && ssgi->rt) return;
             
             ivec2 res = ivec2(target->giTexture.width, target->giTexture.height);
 
             Graphics::Profiler::BeginQuery("Render SSGI");
 
             if (ssgi->halfResolution && target->GetGIResolution() == FULL_RES)
-                target->SetGIResolution(HALF_RES);
+                target->SetGIResolution(HALF_RES, false);
             else if (!ssgi->halfResolution && target->GetGIResolution() != FULL_RES)
-                target->SetGIResolution(FULL_RES);
+                target->SetGIResolution(FULL_RES, false);
+
+            if (!target->giLengthTexture.IsValid())
+                target->SetGIResolution(target->GetGIResolution(), false);
+
+            if (!target->HasHistory()) {
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {target->historyGiTexture.image, layout, access},
+                    {target->historyGiLengthTexture.image, layout, access},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            }
+
+            // Try to get a shadow map
+            Ref<Lighting::Shadow> shadow = nullptr;
+            auto mainLightEntity = GetMainLightEntity(scene);
+            if (mainLightEntity.IsValid())
+                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             auto downsampledRT = target->GetData(target->GetGIResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetGIResolution());
@@ -85,51 +101,10 @@ namespace Atlas {
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
-            // Calculate RTAO
-            if (ssgi->rt) {
-                /*
-                Graphics::Profiler::BeginQuery("Trace rays/calculate ao");
+            Graphics::Profiler::BeginQuery("Main pass");
 
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
-
-                rtaoPipelineConfig.ManageMacro("OPACITY_CHECK", ao->opacityCheck);
-
-                auto pipeline = PipelineManager::GetPipeline(rtaoPipelineConfig);
-
-                auto uniforms = RTUniforms {
-                    .radius = ao->radius,
-                    .frameSeed = frameCount++,
-                };
-                rtUniformBuffer.SetData(&uniforms, 0);
-
-                commandList->ImageMemoryBarrier(target->swapAoTexture.image,
-                    VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
-
-                helper.DispatchAndHit(commandList, pipeline, ivec3(groupCount.x * groupCount.y, 1, 1),
-                    [=]() {
-                        commandList->BindImage(target->swapAoTexture.image, 3, 0);
-
-                        commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
-                        commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-                        commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 3);
-
-                        commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 4);
-                        commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 5);
-
-                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 6);
-                    });
-
-                commandList->ImageMemoryBarrier(target->swapAoTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                */
-
-            }
-            else {
+            {
                 static int32_t frameCount = 0;
-
-                Graphics::Profiler::BeginQuery("Main pass");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
@@ -161,7 +136,7 @@ namespace Atlas {
             }
 
 
-            if (true) {
+            {
                 Graphics::Profiler::EndAndBeginQuery("Temporal filter");
 
                 std::vector<Graphics::ImageBarrier> imageBarriers;

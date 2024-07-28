@@ -11,6 +11,7 @@ namespace Atlas::Editor::UI {
         bool volumetricClouds = false;
         bool reflection = false;
         bool ssgi = false;
+        bool rtgi = false;
         bool sss = false;
         bool irradianceVolume = false;
         bool wind = false;

@@ -23,15 +23,18 @@ namespace Atlas {
             auto ao = scene->ao;
             auto reflection = scene->reflection;
             auto ssgi = scene->ssgi;
+            auto rtgi = scene->rtgi;
 
             auto rtDataValid = scene->IsRtDataValid();
-            auto ddgiEnabled = volume && volume->enable && rtDataValid;
+            auto rtgiEnabled = rtgi && rtgi->enable && rtDataValid;
+            auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
             auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
             auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
-            auto ssgiEnabled = ssgi && ssgi->enable && (!ssgi->rt || rtDataValid);
-            bool ssgiAo = ssgi && ssgi->enable && ssgi->enableAo;            
+            auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
+            bool ssgiAo = ssgiEnabled && ssgi->enableAo;            
 
+            pipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
             pipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
@@ -50,11 +53,11 @@ namespace Atlas {
             if (reflectionEnabled) {
                 commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
             }
-            if (ssgiEnabled) {
+            if (ssgiEnabled || rtgiEnabled) {
                 commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 3);
             }
 
-            auto uniforms = Uniforms{
+            auto uniforms = Uniforms {
                 .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES :
                     target->GetAOResolution() == RenderResolution::HALF_RES,
                 .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,

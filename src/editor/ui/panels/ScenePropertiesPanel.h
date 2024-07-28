@@ -45,13 +45,17 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Irradiance volume");
                 irradianceVolumePanel.Render(t, scene);
             }
-            else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
-                RenderHeading("Reflection");
-                reflectionPanel.Render(t, target);
+            else if constexpr (std::is_same_v<T, Ref<Lighting::RTGI>>) {
+                RenderHeading("Raytraced global illumination");
+                rtgiPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSGI>>) {
                 RenderHeading("Screen-space global illumination");
                 ssgiPanel.Render(t, target);
+            }
+            else if constexpr (std::is_same_v<T, Ref<Lighting::Reflection>>) {
+                RenderHeading("Reflection");
+                reflectionPanel.Render(t, target);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::SSS>>) {
                 RenderHeading("Screen-space shadows");
@@ -95,6 +99,7 @@ namespace Atlas::Editor::UI {
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
         ImguiExtension::ReflectionPanel reflectionPanel;
         ImguiExtension::SSGIPanel ssgiPanel;
+        ImguiExtension::RTGIPanel rtgiPanel;
         ImguiExtension::SSSPanel sssPanel;
         ImguiExtension::WindPanel windPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;

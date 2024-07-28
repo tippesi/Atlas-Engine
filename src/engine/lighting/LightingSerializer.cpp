@@ -134,7 +134,7 @@ namespace Atlas::Lighting {
             {"currentClipFactor", p.currentClipFactor},
             {"enable", p.enable},
             {"rt", p.rt},
-            {"gi", p.gi},
+            {"ddgi", p.ddgi},
             {"useShadowMap", p.useShadowMap},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution}
@@ -151,7 +151,7 @@ namespace Atlas::Lighting {
         j.at("currentClipFactor").get_to(p.currentClipFactor);
         j.at("enable").get_to(p.enable);
         j.at("rt").get_to(p.rt);
-        j.at("gi").get_to(p.gi);
+        j.at("ddgi").get_to(p.ddgi);
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
@@ -231,8 +231,6 @@ namespace Atlas::Lighting {
             {"sampleCount", p.sampleCount},
             {"irradianceLimit", p.irradianceLimit},
             {"aoStrength", p.aoStrength},
-            {"rt", p.rt},
-            {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution}
         };
     }
@@ -245,8 +243,6 @@ namespace Atlas::Lighting {
         j.at("sampleCount").get_to(p.sampleCount);
         j.at("irradianceLimit").get_to(p.irradianceLimit);
         j.at("aoStrength").get_to(p.aoStrength);
-        j.at("rt").get_to(p.rt);
-        j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
     }
 

@@ -127,7 +127,6 @@ namespace Atlas {
             bool opacityCheck = false;
             bool visibility = true;
             bool scroll = false;
-            bool lock = false;
 
             InternalIrradianceVolume internal;
 

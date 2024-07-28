@@ -54,6 +54,11 @@ namespace Atlas {
                 clouds->needsNoiseUpdate = false;
             }
 
+            if (!target->HasHistory()) {
+                commandList->ImageMemoryBarrier(target->historyVolumetricCloudsTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
+
             auto downsampledRT = target->GetData(target->GetVolumetricResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetVolumetricResolution());
 

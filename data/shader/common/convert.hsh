@@ -27,3 +27,10 @@ float ConvertDepthToViewSpaceDepth(float depth, mat4 ipMatrix) {
     return viewSpace.x / viewSpace.y;
     
 }
+
+vec3 ConvertDepth(float depth, vec2 texcoords, mat4 invMatrix) {
+    
+    vec4 position = invMatrix * vec4(texcoords * 2.0 - 1.0, depth, 1.0);
+    return position.xyz / position.w;
+    
+}

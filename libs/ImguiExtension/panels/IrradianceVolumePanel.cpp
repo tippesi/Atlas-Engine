@@ -17,9 +17,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
         ImGui::Checkbox("Use shadow map", &volume->useShadowMap);
         ImGui::Checkbox("Calculate visibility", &volume->visibility);
-        ImGui::Checkbox("Lock", &volume->lock);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            ImGui::SetTooltip("Uses the shadow map to calculate shadows in reflections. \
+            ImGui::SetTooltip("Uses the shadow map to calculate shadows in the GI. \
                         This is only possible when cascaded shadow maps are not used.");
         }
 

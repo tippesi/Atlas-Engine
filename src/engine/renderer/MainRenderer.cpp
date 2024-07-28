@@ -52,7 +52,8 @@ namespace Atlas {
             terrainShadowRenderer.Init(device);
             gBufferRenderer.Init(device);
             ddgiRenderer.Init(device);
-            giRenderer.Init(device);
+            rtgiRenderer.Init(device);
+            ssgiRenderer.Init(device);
             aoRenderer.Init(device);
             rtrRenderer.Init(device);
             sssRenderer.Init(device);
@@ -273,11 +274,6 @@ namespace Atlas {
                     {rtHalfData->materialIdxTexture->image, layout, access},
                     {rtHalfData->stencilTexture->image, layout, access},
                     {rtHalfData->velocityTexture->image, layout, access},
-                    {target->historyAoTexture.image, layout, access},
-                    {target->historyAoLengthTexture.image, layout, access},
-                    {target->historyReflectionTexture.image, layout, access},
-                    {target->historyReflectionMomentsTexture.image, layout, access},
-                    {target->historyVolumetricCloudsTexture.image, layout, access}
                 };
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
@@ -321,6 +317,8 @@ namespace Atlas {
 
             aoRenderer.Render(target, scene, commandList);
 
+            rtgiRenderer.Render(target, scene, commandList);
+
             rtrRenderer.Render(target, scene, commandList);
 
             sssRenderer.Render(target, scene, commandList);
@@ -333,10 +331,12 @@ namespace Atlas {
 
                 directLightRenderer.Render(target, scene, commandList);
 
-                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                if (!scene->rtgi || !scene->rtgi->enable) {
+                    commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                giRenderer.Render(target, scene, commandList);
+                    ssgiRenderer.Render(target, scene, commandList);
+                }
 
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -946,6 +946,8 @@ namespace Atlas {
                 .ipMatrix = camera.invProjectionMatrix,
                 .pvMatrixLast = camera.GetLastJitteredMatrix(),
                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
+                .ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
+                .ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
                 .jitterLast = camera.GetLastJitter(),
                 .jitterCurrent = camera.GetJitter(),
                 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
@@ -970,7 +972,7 @@ namespace Atlas {
             if (scene->irradianceVolume) {
                 auto volume = scene->irradianceVolume;
 
-                if (volume->scroll && !volume->lock) {
+                if (volume->scroll) {
                     //auto pos = vec3(0.4f, 12.7f, -43.0f);
                     //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
                     auto pos = camera.GetLocation();

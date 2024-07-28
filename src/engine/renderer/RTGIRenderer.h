@@ -9,24 +9,24 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class RTReflectionRenderer : public Renderer {
+        class RTGIRenderer : public Renderer {
 
         public:
-            RTReflectionRenderer() = default;
+            RTGIRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) RTRUniforms {
+            struct alignas(16) RTUniforms {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float bias;
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t padding;
-                ivec2 resolution;                
+                ivec2 resolution;
                 Shadow shadow;
             };
 
@@ -47,12 +47,11 @@ namespace Atlas {
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
-            PipelineConfig rtrPipelineConfig;
-            PipelineConfig upsamplePipelineConfig;
+            PipelineConfig rtPipelineConfig;
             PipelineConfig temporalPipelineConfig;
             PipelineConfig atrousPipelineConfig[3];
 
-            Buffer::UniformBuffer rtrUniformBuffer;
+            Buffer::UniformBuffer rtUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
         };
 

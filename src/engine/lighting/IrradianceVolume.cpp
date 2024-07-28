@@ -16,6 +16,8 @@ namespace Atlas {
             momRes.x *= probeCount.x;
             momRes.y *= probeCount.z;
 
+            scroll = cascadeCount > 1;
+
             SetAABB(aabb);
 
             internal = InternalIrradianceVolume(irrRes, momRes, probeCount, cascadeCount);

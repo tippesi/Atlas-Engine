@@ -94,6 +94,7 @@ void App::LoadContent() {
     scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
+    scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();
@@ -264,6 +265,7 @@ void App::Render(float deltaTime) {
     static bool debugClouds = false;
     static bool debugSSS = false;
     static bool debugSSGI = false;
+    static bool debugRTGI = false;
     static bool debugMotion = false;
     static bool slowMode = false;
 
@@ -298,7 +300,7 @@ void App::Render(float deltaTime) {
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
 
-        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugMotion;
+        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugRTGI || debugMotion;
 
         if (debug && graphicsDevice->swapChain->isComplete) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
@@ -321,7 +323,7 @@ void App::Render(float deltaTime) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
                     0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
-            else if (debugSSGI) {
+            else if (debugSSGI || debugRTGI) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
                     0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
@@ -354,6 +356,7 @@ void App::Render(float deltaTime) {
         auto& clouds = scene->sky.clouds;
         auto& sss = scene->sss;
         auto& ssgi = scene->ssgi;
+        auto& rtgi = scene->rtgi;
         auto& postProcessing = scene->postProcessing;
 
         bool openSceneNotFoundPopup = false;
@@ -491,6 +494,14 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("DDGI")) {
                 irradianceVolumePanel.Render(volume, scene);
             }
+            if (ImGui::CollapsingHeader("RTGI")) {
+                ImGui::Checkbox("Debug##RTGI", &debugRTGI);
+                rtgiPanel.Render(rtgi, renderTarget);
+            }
+            if (ImGui::CollapsingHeader("SSGI")) {
+                ImGui::Checkbox("Debug##SSGI", &debugSSGI);
+                ssgiPanel.Render(ssgi, renderTarget);
+            }
             if (ImGui::CollapsingHeader("Light")) {
                 ImGui::Checkbox("Animate", &animateLight);
                 ImGui::SliderFloat3("Direction", &light.properties.directional.direction[0], -1.0f, 1.0f);
@@ -524,10 +535,6 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
                 sssPanel.Render(sss);
-            }
-            if (ImGui::CollapsingHeader("SSGI")) {
-                ImGui::Checkbox("Debug##SSGI", &debugSSGI);
-                ssgiPanel.Render(ssgi, renderTarget);
             }
             if (ImGui::CollapsingHeader("Ambient Occlusion")) {
                 ImGui::Checkbox("Debug##Ao", &debugAo);

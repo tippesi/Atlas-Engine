@@ -10,11 +10,12 @@
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
+#include "../lighting/RTGI.h"
+#include "../lighting/SSGI.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
-#include "../lighting/SSGI.h"
 #include "../postprocessing/PostProcessing.h"
 
 #include "../mesh/Mesh.h"
@@ -135,10 +136,11 @@ namespace Atlas {
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
+            Ref<Lighting::RTGI> rtgi = nullptr;
+            Ref<Lighting::SSGI> ssgi = nullptr;
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
-            Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
             std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;

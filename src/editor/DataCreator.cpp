@@ -46,11 +46,15 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
+        scene->irradianceVolume->rayCount = 32;
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
 
         scene->ssgi = CreateRef<Lighting::SSGI>();
+        scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
@@ -105,11 +109,15 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
+        scene->irradianceVolume->rayCount = 32;
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
 
         scene->ssgi = CreateRef<Lighting::SSGI>();
+        scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
@@ -134,13 +142,7 @@ namespace Atlas::Editor {
 
             aabb.Grow(meshComponent.aabb);
         }
-
-        // Adjust settings based on calculated size
-        scene->irradianceVolume->SetAABB(aabb);
-        scene->irradianceVolume->scroll = true;
-        scene->irradianceVolume->cascadeCount = 4;
-        scene->irradianceVolume->splitCorrection = 1.6f;
-
+        
         if (invertUVs) {
             auto meshes = scene->GetMeshes();
 

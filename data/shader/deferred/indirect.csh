@@ -60,7 +60,7 @@ void LoadGroupSharedData() {
         if (Uniforms.reflectionDownsampled2x > 0)
             reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
 #endif
-#ifdef SSGI
+#if defined(SSGI) || defined(RTGI)
         if (Uniforms.giDownsampled2x > 0)
             gi[gl_LocalInvocationIndex] = texelFetch(giTexture, offset, 0);
 #endif
@@ -148,13 +148,13 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff), 1.0);
+        float depthWeight = min(exp(-depthDiff * 256.0), 1.0);
 
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
-        float weight = depthWeight * normalWeight * weights[i];
+        float weight = max(depthWeight * normalWeight * weights[i], 10e-20);
 
-#ifdef SSGI
+#if defined(SSGI) || defined(RTGI)
         result.gi += gi[sharedMemoryOffset] * weight;
 #endif
 #ifdef REFLECTION
@@ -203,7 +203,13 @@ void main() {
         vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
         vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
 
+        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
+
         // Indirect diffuse BRDF
+#ifdef RTGI
+        vec3 rtgi = Uniforms.giDownsampled2x > 0 ? upsampleResult.gi.rgb : textureLod(giTexture, texCoord, 0.0).rgb;
+        vec3 indirectDiffuse = rtgi * EvaluateIndirectDiffuseBRDF(surface);
+#else
 #ifdef DDGI
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
         vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
@@ -214,7 +220,7 @@ void main() {
 #else
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
-
+#endif
 #endif
 
         // Indirect specular BRDF
@@ -223,9 +229,7 @@ void main() {
         vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
         // We multiply by local sky visibility because the reflection probe only includes the sky
         //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
-        //    * prefilteredDiffuseLocal.a;
-
-        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
+        //    * prefilteredDiffuseLocal.a;        
 
 #ifdef REFLECTION
         vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;

@@ -7,10 +7,10 @@ namespace Atlas {
 
     namespace Renderer {
 
-        class GIRenderer : public Renderer {
+        class SSGIRenderer : public Renderer {
 
         public:
-            GIRenderer() = default;
+            SSGIRenderer() = default;
 
             void Init(Graphics::GraphicsDevice* device);
 
@@ -18,11 +18,6 @@ namespace Atlas {
 
         private:
             Graphics::GraphicsDevice* device;
-
-            struct alignas(16) RTUniforms {
-                float radius;
-                int32_t frameSeed;
-            };
 
             struct alignas(16) SSUniforms {
                 float radianceLimit;
@@ -34,19 +29,16 @@ namespace Atlas {
             };
 
             Filter blurFilter;
-            Helper::RayTracingHelper helper;
 
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig ssgiPipelineConfig;
-            PipelineConfig rtaoPipelineConfig;
             PipelineConfig temporalPipelineConfig;
 
             PipelineConfig horizontalBlurPipelineConfig;
             PipelineConfig verticalBlurPipelineConfig;
 
-            Buffer::UniformBuffer rtUniformBuffer;
             Buffer::UniformBuffer ssUniformBuffer;
             Buffer::UniformBuffer blurWeightsUniformBuffer;
 

@@ -99,6 +99,11 @@ namespace Atlas {
             template<typename T> std::vector<T> GetData(int32_t depth = 0);
 
             /**
+             * Resets the texture and therefore releasing the image and sampler
+             */
+            void Reset();
+
+            /**
              *
              */
             void GenerateMipmap();

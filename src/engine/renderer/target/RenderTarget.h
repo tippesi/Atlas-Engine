@@ -127,7 +127,7 @@ namespace Atlas::Renderer {
         /*
          * Sets the render resolution for screen space global illumination
          */
-        void SetGIResolution(RenderResolution resolution);
+        void SetGIResolution(RenderResolution resolution, bool createMomentsTexture);
 
         /*
          * Gets the render resolution for screen space global illumination
@@ -202,6 +202,8 @@ namespace Atlas::Renderer {
         Texture::Texture2D historyGiTexture;
         Texture::Texture2D giLengthTexture;
         Texture::Texture2D historyGiLengthTexture;
+        Texture::Texture2D giMomentsTexture;
+        Texture::Texture2D historyGiMomentsTexture;
 
         Texture::Texture2D aoTexture;
         Texture::Texture2D swapAoTexture;

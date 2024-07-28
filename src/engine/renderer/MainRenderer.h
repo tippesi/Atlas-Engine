@@ -21,8 +21,9 @@
 #include "PostProcessRenderer.h"
 #include "GBufferRenderer.h"
 #include "TextRenderer.h"
-#include "GIRenderer.h"
+#include "SSGIRenderer.h"
 #include "DDGIRenderer.h"
+#include "RTGIRenderer.h"
 #include "AORenderer.h"
 #include "RTReflectionRenderer.h"
 #include "SSSRenderer.h"
@@ -92,6 +93,8 @@ namespace Atlas {
                 mat4 ipMatrix;
                 mat4 pvMatrixLast;
                 mat4 pvMatrixCurrent;
+                mat4 ipvMatrixLast;
+                mat4 ipvMatrixCurrent;
                 vec2 jitterLast;
                 vec2 jitterCurrent;
                 vec4 cameraLocation;
@@ -188,8 +191,9 @@ namespace Atlas {
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
             GBufferRenderer gBufferRenderer;
-            GIRenderer giRenderer;
+            SSGIRenderer ssgiRenderer;
             DDGIRenderer ddgiRenderer;
+            RTGIRenderer rtgiRenderer;
             AORenderer aoRenderer;
             RTReflectionRenderer rtrRenderer;
             SSSRenderer sssRenderer;

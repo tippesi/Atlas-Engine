@@ -235,10 +235,12 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
         if (scene->irradianceVolume)
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
-        if (scene->reflection)
-            RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
+        if (scene->rtgi)
+            RenderExtendedItem("Raytraced global illumination", &selectedProperty.rtgi, selectionChanged);
         if (scene->ssgi)
             RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi, selectionChanged);
+        if (scene->reflection)
+            RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
         if (scene->sss)
             RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
 

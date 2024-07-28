@@ -8,6 +8,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::Checkbox("Enable", &reflection->enable);
         ImGui::Checkbox("Half resolution", &reflection->halfResolution);
+        ImGui::Checkbox("Upsample before filtering", &reflection->upsampleBeforeFiltering);
 
         //ImGui::Checkbox("Enable raytracing##Reflection", &reflection->rt);
         ImGui::Checkbox("Use shadow map", &reflection->useShadowMap);
@@ -19,7 +20,7 @@ namespace Atlas::ImguiExtension {
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Uses the normal maps to cast reflection rays.");
         }
-        ImGui::Checkbox("Enable GI in reflection", &reflection->gi);
+        ImGui::Checkbox("Use DDGI in reflection", &reflection->ddgi);
         ImGui::Checkbox("Opacity check", &reflection->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
         ImGui::SliderFloat("Radiance limit", &reflection->radianceLimit, 0.0f, 10.0f);
