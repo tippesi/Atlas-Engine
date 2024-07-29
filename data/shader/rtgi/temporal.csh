@@ -174,11 +174,10 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
     vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
-    vec3 worldNormal = vec3(vec4(normal, 0.0));
+    vec3 worldNormal = vec3(globalData.ivMatrix * vec4(normal, 0.0));
 
     float linearDepth = depth;
-    float depthPhi = 1.0 / abs(linearDepth);
-    float totalConfidence = 0.0;
+    float depthPhi = 32.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -195,10 +194,9 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
         float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, 4.0);
 
-        float confidence = planeWeight;
-        totalConfidence += confidence;
+        float confidence = planeWeight * normalWeight;
 
-        if (confidence > 0.2) {            
+        if (confidence > 0.2) {         
             totalWeight += weights[i];
             history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -208,7 +206,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     if (totalWeight > 0.0) {
         history /= totalWeight;
         historyMoments /= totalWeight;
-        //history = vec4(totalConfidence);
         return true;
     }
 
@@ -243,7 +240,6 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     history = vec4(0.0);
     historyMoments = vec4(0.0);
-    //history = vec4(totalConfidence);
 
     return false;
 
@@ -356,9 +352,9 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
             ivec2 samplePixel = pixel + ivec2(i, j);
             texCoord = (vec2(pixel) + 0.5) / resolution;
-            vec3 samplePosition = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
+            vec3 samplePosition = ConvertDepth(sampleDepth, texCoord, globalData.ipvMatrixCurrent);
 
-            float weight = GetEdgePreservingPlaneWeight(position, normal, samplePosition, 4.0);
+            float weight = GetEdgePreservingPlaneWeight(position, normal, samplePosition, 1.0);
         
             m1 += sampleRadiance * weight;
             m2 += sampleRadiance * sampleRadiance * weight;
@@ -394,8 +390,6 @@ void main() {
     vec4 historyMoments;
     valid = SampleHistory(pixel, historyPixel, history, historyMoments);
 
-    vec3 confidence = history.rgb;
-
 #ifdef BICUBIC_FILTER
     // This should be implemented more efficiently, see 
     vec4 catmullRomHistory;
@@ -422,7 +416,7 @@ void main() {
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
 
-    currentColor = valid ? currentColor : mean;
+    currentColor.r = valid ? currentColor.r : mean.r;
 
     historyColor = YCoCgToRGB(historyColor);
     currentColor = YCoCgToRGB(currentColor);
@@ -452,8 +446,8 @@ void main() {
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
-    imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
-    //imageStore(resolveImage, pixel, vec4(confidence, variance));
+    //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
+    //imageStore(resolveImage, pixel, vec4(confidence / , variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

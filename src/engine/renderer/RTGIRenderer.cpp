@@ -261,8 +261,8 @@ namespace Atlas {
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
-                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 4);
-                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);                
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 4);           
+                commandList->BindImage(target->historyGiMomentsTexture.image, target->historyGiMomentsTexture.sampler, 3, 5);           
 
                 for (int32_t i = 0; i < 3; i++) {
                     Graphics::Profiler::BeginQuery("Subpass " + std::to_string(i));

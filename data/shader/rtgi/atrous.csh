@@ -11,8 +11,8 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D outputImage;
 layout(set = 3, binding = 1) uniform sampler2D inputTexture;
 layout(set = 3, binding = 2) uniform sampler2D depthTexture;
 layout(set = 3, binding = 3) uniform sampler2D normalTexture;
-layout(set = 3, binding = 4) uniform sampler2D roughnessTexture;
-layout(set = 3, binding = 5) uniform usampler2D materialIdxTexture;
+layout(set = 3, binding = 4) uniform usampler2D materialIdxTexture;
+layout(set = 3, binding = 5) uniform sampler2D historyLengthTexture;
 
 #ifdef STEP_SIZE1
 const int kernelRadius = 2;
@@ -30,13 +30,14 @@ const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadi
 struct PixelData {
     vec4 color;
     vec3 normal;
-    float roughness;
+    uint materialIdx;
     float depth;
 };
 
 struct PackedPixelData {
     // Contains 16 bit color, variance, normal and roughness
     uvec4 data;
+    uint materialIdx;
     float depth;
 };
 
@@ -55,7 +56,8 @@ PackedPixelData PackPixelData(PixelData data) {
     compressed.data.x = packHalf2x16(data.color.rg);
     compressed.data.y = packHalf2x16(data.color.ba);
     compressed.data.z = packHalf2x16(data.normal.xy);
-    compressed.data.w = packHalf2x16(vec2(data.normal.z, data.roughness));
+    compressed.data.w = packHalf2x16(vec2(data.normal.z, 0.0));
+    compressed.materialIdx = data.materialIdx;
     compressed.depth = data.depth;
 
     return compressed;
@@ -69,7 +71,7 @@ PixelData UnpackPixelData(PackedPixelData compressed) {
     data.normal.xy = unpackHalf2x16(compressed.data.z);
     vec2 temp = unpackHalf2x16(compressed.data.w);
     data.normal.z = temp.x;
-    data.roughness = temp.y;
+    data.materialIdx = compressed.materialIdx;
     data.depth = compressed.depth;
 
     return data;
@@ -93,11 +95,7 @@ void LoadGroupSharedData() {
 
         data.depth = texelFetch(depthTexture, texel, 0).r;
 
-        uint materialIdx = texelFetch(materialIdxTexture, texel, 0).r;
-        Material material = UnpackMaterial(materialIdx);
-
-        data.roughness = material.roughness;
-        data.roughness *= material.roughnessMap ? texelFetch(roughnessTexture, texel, 0).r : 1.0;
+        data.materialIdx = texelFetch(materialIdxTexture, texel, 0).r;
 
         data.normal = DecodeNormal(texelFetch(normalTexture, texel, 0).rg);
 
@@ -126,14 +124,16 @@ float Luma(vec3 color) {
 float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
                                 vec3 centerNormal, vec3 sampleNormal,
                                 float centerDepth, float sampleDepth,
-                                float centerRoughness, float sampleRoughness,
+                                uint centerMaterialIdx, uint sampleMaterialIdx,
                                 float luminancePhi, float normalPhi, 
-                                float depthPhi, float roughnessPhi) {
+                                float depthPhi, bool noHistory) {
 
     const float epsilon = 1e-10;
 
     float luminanceDiff = abs(centerLuminance - sampleLuminance);
     float luminanceWeight = min(exp(-luminanceDiff / (luminancePhi + epsilon)), 1.0);
+
+    luminanceWeight = noHistory ? 1.0 : luminanceWeight;
 
     float normalDiff = saturate(dot(centerNormal, sampleNormal));
     float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
@@ -141,10 +141,9 @@ float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
     float depthDiff = abs(centerDepth - sampleDepth);
     float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
 
-    float roughnessDiff = abs(centerRoughness - sampleRoughness);
-    float roughnessWeight = min(exp(-roughnessDiff / (roughnessPhi + epsilon)), 1.0);
+    float materialWeight = centerMaterialIdx == sampleMaterialIdx ? 1.0 : 0.0;
 
-    return luminanceWeight * normalWeight * depthWeight;
+    return luminanceWeight * normalWeight * depthWeight * materialWeight;
 
 }
 
@@ -187,10 +186,13 @@ void main() {
     vec4 centerColor = centerPixelData.color;
     float centerDepth = centerPixelData.depth;
     vec3 centerNormal = centerPixelData.normal;
-    float centerRoughness = centerPixelData.roughness;
+    uint centerMaterialIdx = centerPixelData.materialIdx;
 
     if (centerDepth == 1.0)
         return;
+
+    float historyLength = texelFetch(historyLengthTexture, pixel, 0).b;
+    bool noHistory = historyLength <= 1.0;
 
     float centerLuminance = Luma(centerColor.rgb);
     float centerLinearDepth = centerDepth;
@@ -208,7 +210,8 @@ void main() {
         for (int y = -radius; y <= radius; y++) {            
             ivec2 samplePixel = pixel + ivec2(x, y) * pushConstants.stepSize;
 
-            if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y
+            if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y ||
+                samplePixel.x < 0 || samplePixel.y < 0
                 || (x == 0 && y == 0))
                 continue;
 
@@ -223,16 +226,16 @@ void main() {
             float sampleLinearDepth = samplePixelData.depth;
             float sampleLuminance = Luma(sampleColor.rgb);
 
-            float sampleRoughness = samplePixelData.roughness;
+            uint sampleMaterialIdx = samplePixelData.materialIdx;
 
             float kernelWeight = kernelWeights[abs(x)] * kernelWeights[abs(y)];
             float edgeStoppingWeight = ComputeEdgeStoppingWeight(
                                     centerLuminance, sampleLuminance,
                                     centerNormal, sampleNormal,
                                     centerLinearDepth, sampleLinearDepth,
-                                    centerRoughness, sampleRoughness,
+                                    centerMaterialIdx, sampleMaterialIdx,
                                     stdDeviation * pushConstants.strength, 
-                                    32.0, 128.0, 0.05);
+                                    noHistory ? 2.0 : 32.0, 32.0, noHistory);
 
             float weight = kernelWeight * edgeStoppingWeight;
             
