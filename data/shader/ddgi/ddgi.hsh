@@ -219,10 +219,9 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
         vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
 
         // Should be used when the chebyshev test is weighted more
-        float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
-        //float weight = dot(L, geometryNormal);
-        //if (weight < 0.0) continue;
-
+        //float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
+        float weight = dot(L, geometryNormal);
+        
 #ifdef DDGI_VISIBILITY
         vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
         vec3 momCoord = GetProbeCoord(gridCell, cascadeIndex, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);

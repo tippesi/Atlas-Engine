@@ -132,9 +132,9 @@ void main() {
 
                 if (material.roughness <= uniforms.roughnessCutoff) {
     #ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, 0.0, INF);
+                    HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
     #else
-                    HitClosest(ray, 0.0, INF);
+                    HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
     #endif
 
                     radiance = EvaluateHit(ray);
@@ -233,7 +233,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
         return 0.0;

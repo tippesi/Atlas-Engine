@@ -6,6 +6,11 @@
 
 namespace Atlas {
 
+    enum InstanceCullMasks {
+        MaskAll = 1 << 7,
+        MaskShadow = 1 << 6
+    };
+
     struct GPUTriangle {
         vec4 v0;
         vec4 v1;
@@ -84,7 +89,7 @@ namespace Atlas {
         int32_t materialOffset;
 
         int32_t nextInstance;
-        int32_t padding1;
+        uint32_t mask;
     };
 
     struct GPUBVHNode {

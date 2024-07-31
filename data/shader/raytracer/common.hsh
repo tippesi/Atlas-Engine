@@ -11,6 +11,9 @@
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
 
+#define INSTANCE_MASK_ALL (1 << 7)
+#define INSTANCE_MASK_SHADOW (1 << 6)
+
 Triangle UnpackTriangle(PackedTriangle triangle) {    
     Triangle tri;
 

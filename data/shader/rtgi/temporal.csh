@@ -175,9 +175,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
     vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
     vec3 worldNormal = vec3(globalData.ivMatrix * vec4(normal, 0.0));
-
-    float linearDepth = depth;
-    float depthPhi = 32.0 / abs(linearDepth);
+    
+    vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
+    float NdotV = abs(dot(viewDir, worldNormal));
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -186,13 +188,13 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 2.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         vec2 texCoord = (vec2(offsetPixel) + 0.5) / resolution;
         vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
 
-        float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, 4.0);
+        float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
 
         float confidence = planeWeight * normalWeight;
 
@@ -215,7 +217,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 2.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         vec2 texCoord = (vec2(offsetPixel) + 0.5) / resolution;

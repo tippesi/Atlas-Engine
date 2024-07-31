@@ -173,7 +173,7 @@ struct Instance {
     int materialOffset;
     
     int nextInstance;
-    int padding1;
+    int mask;
 };
 
 struct PackedBVHNode {

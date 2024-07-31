@@ -94,10 +94,10 @@ void main() {
                 ray.hitDistance = 0.0;
 
 #ifdef OPACITY_CHECK
-                float hit = 1.0 - HitAnyTransparency(ray, 0.0, uniforms.radius);
+                float hit = 1.0 - HitAnyTransparency(ray, INSTANCE_MASK_ALL, 0.0, uniforms.radius);
                 ao += hit;
 #else
-                bool hit = HitAny(ray, 0.0, uniforms.radius);
+                bool hit = HitAny(ray, INSTANCE_MASK_ALL, 0.0, uniforms.radius);
                 ao += hit ? 1.0 : 0.0;
 #endif
 

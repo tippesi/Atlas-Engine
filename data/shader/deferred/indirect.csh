@@ -124,6 +124,17 @@ float UpsampleAo2x(float referenceDepth) {
 
 }
 
+float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 referenceNormal) {
+    float depth = depths[sharedMemoryOffset];
+
+    float depthDiff = abs(referenceDepth - depth);
+    float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
+
+    float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 128.0), 1.0);
+
+    return depthWeight * normalWeight;
+}
+
 UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     UpsampleResult result;
@@ -145,14 +156,9 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
     for (uint i = 0; i < 4; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + pixelOffsets[i], unflattenedDepthDataSize);
-        float depth = depths[sharedMemoryOffset];
-
-        float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 256.0), 1.0);
-
-        float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
-
-        float weight = max(depthWeight * normalWeight * weights[i], 10e-20);
+        
+        float edgeWeight = GetPixelEdgeWeight(sharedMemoryOffset, referenceDepth, referenceNormal);
+        float weight = edgeWeight * weights[i];
 
 #if defined(SSGI) || defined(RTGI)
         result.gi += gi[sharedMemoryOffset] * weight;
@@ -166,6 +172,23 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
     result.reflection /= totalWeight;
     result.gi /= totalWeight;
+
+    float maxWeight = 0.0;
+    int maxMemoryIdx = 0;
+    for (uint i = 0; i < 9; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
+        
+        float edgeWeight = GetPixelEdgeWeight(sharedMemoryOffset, referenceDepth, referenceNormal);
+        if (edgeWeight > maxWeight) {
+            maxWeight = edgeWeight;
+            maxMemoryIdx = sharedMemoryOffset;
+        }
+    }
+
+    if (totalWeight < 10e-3) {
+        result.gi = gi[maxMemoryIdx];
+        result.reflection = reflections[maxMemoryIdx];
+    }
 
     result.gi = max(result.gi, vec4(0.0));
     result.reflection = max(result.reflection, vec3(0.0));

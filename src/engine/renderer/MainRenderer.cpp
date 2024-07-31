@@ -331,7 +331,7 @@ namespace Atlas {
 
                 directLightRenderer.Render(target, scene, commandList);
 
-                if (!scene->rtgi || !scene->rtgi->enable) {
+                if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
                     commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 

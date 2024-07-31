@@ -97,10 +97,14 @@ namespace Atlas {
 
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
 
+                uint32_t mask = InstanceCullMasks::MaskAll;
+                mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
+
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
                     .meshOffset = meshInfo.offset,
-                    .materialOffset = meshInfo.materialOffset
+                    .materialOffset = meshInfo.materialOffset,
+                    .mask = mask
                 };
 
                 meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
@@ -122,7 +126,7 @@ namespace Atlas {
                     inst.instanceCustomIndex = meshInfo.offset;
                     inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
                     inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                    inst.mask = 0xFF;
+                    inst.mask = mask;
                     inst.instanceShaderBindingTableRecordOffset = 0;
                     hardwareInstances.push_back(inst);
                 }

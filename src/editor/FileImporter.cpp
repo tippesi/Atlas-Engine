@@ -42,6 +42,8 @@ namespace Atlas::Editor {
         { "glb", FileType::Mesh },
         { "obj", FileType::Mesh },
         { "fbx", FileType::Mesh },
+        { "usd", FileType::Mesh },
+        { "usda", FileType::Mesh },
         { "aeterrain", FileType::Terrain },
         { "aescene", FileType::Scene },
         { "lua", FileType::Script },

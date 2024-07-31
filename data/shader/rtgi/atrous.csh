@@ -181,6 +181,8 @@ void main() {
     if (pixel.x >= resolution.x || pixel.y >= resolution.y)
         return;
 
+    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+
     PixelData centerPixelData = GetPixel(ivec2(0));
     
     vec4 centerColor = centerPixelData.color;
@@ -203,7 +205,9 @@ void main() {
     float variance = GetFilteredVariance(pixel);
     float stdDeviation = sqrt(max(0.0, variance));
 
-    float depthPhi = 32.0 / abs(centerLinearDepth);
+    vec3 viewDir = ConvertDepthToViewSpace(centerDepth, texCoord);
+    float NdotV = abs(dot(viewDir, centerNormal));
+    float depthPhi = max(32.0, NdotV * 128.0 / max(1.0, abs(ConvertDepthToViewSpaceDepth(centerLinearDepth))));
 
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
@@ -235,7 +239,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerMaterialIdx, sampleMaterialIdx,
                                     stdDeviation * pushConstants.strength, 
-                                    noHistory ? 2.0 : 32.0, 32.0, noHistory);
+                                    noHistory ? 2.0 : 32.0, depthPhi, noHistory);
 
             float weight = kernelWeight * edgeStoppingWeight;
             
