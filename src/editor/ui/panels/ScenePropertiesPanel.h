@@ -27,8 +27,8 @@ namespace Atlas::Editor::UI {
 
             isFocused = ImGui::IsWindowFocused();
 
-            if constexpr (std::is_same_v<T, Scene::Entity>) {
-                if (t.IsValid()) {
+            if constexpr (std::is_same_v<T, EntityProperties>) {
+                if (t.entity.IsValid()) {
                     RenderHeading("Entity");
                     entityPropertiesPanel.Render(scene, t);
                 }

@@ -185,7 +185,6 @@ namespace Atlas {
 
             meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 
-            float radius = 0.0f;
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
                 auto material = CreateRef<Material>();
@@ -214,7 +213,6 @@ namespace Atlas {
 
                         vertices[usedVertices] = vertex;
 
-                        radius = glm::max(radius, glm::length(vertex));
                         max = glm::max(vertex, max);
                         min = glm::min(vertex, min);
 
@@ -274,7 +272,7 @@ namespace Atlas {
             importer.FreeScene();
 
             meshData.aabb = Volume::AABB(min, max);
-            meshData.radius = radius;
+            meshData.radius = glm::length(max - min) * 0.5;
 
             meshData.filename = filename;
 
@@ -409,7 +407,6 @@ namespace Atlas {
 
                 material->vertexColors = hasVertexColors;
 
-                float radius = 0.0f;
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
                     vec3 vertex = vec3(assimpMesh->mVertices[j].x,
@@ -417,7 +414,6 @@ namespace Atlas {
 
                     vertices[j] = vertex;
 
-                    radius = glm::max(radius, glm::length(vertex));
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
 
@@ -462,7 +458,7 @@ namespace Atlas {
                 }
 
                 meshData.aabb = Volume::AABB(min, max);
-                meshData.radius = radius;
+                meshData.radius = glm::length(max - min) * 0.5;
 
                 meshData.subData.push_back({
                     .indicesOffset = 0,

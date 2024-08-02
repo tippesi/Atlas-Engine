@@ -95,6 +95,8 @@ void App::LoadContent() {
 
     scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
+    scene->rtgi->enable = graphicsDevice->support.hardwareRayTracing;
+    scene->rtgi->useShadowMap = true;
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
     scene->rayTracingWorld = Atlas::CreateRef<Atlas::RayTracing::RayTracingWorld>();

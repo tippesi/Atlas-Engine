@@ -145,7 +145,7 @@ namespace Atlas::Editor::UI {
             if (ImGui::MenuItem("Add emtpy entity"))
                 createEntity = true;
 
-            if (ImGui::MenuItem("Duplicate entity"))
+            if (!rootNode && ImGui::MenuItem("Duplicate entity"))
                 duplicateEntity = true;
 
             // We shouldn't allow the user to delete the root entity

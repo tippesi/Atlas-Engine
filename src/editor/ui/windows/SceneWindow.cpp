@@ -58,7 +58,6 @@ namespace Atlas::Editor::UI {
 #endif
         if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
             SaveScene();
-            Notifications::Push({ .message = "Saved scene " + scene->name });
         }
 
     }
@@ -110,6 +109,11 @@ namespace Atlas::Editor::UI {
         if (scene.IsLoaded()) {
             const auto& target = Singletons::renderTarget;
 
+            EntityProperties entityProperties = {
+                .entity = sceneHierarchyPanel.selectedEntity,
+                .editorCameraEntity = cameraEntity
+            };
+
             if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
@@ -129,7 +133,7 @@ namespace Atlas::Editor::UI {
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)
                 scenePropertiesPanel.Render(scene->postProcessing);
             else if (sceneHierarchyPanel.selectedEntity.IsValid())
-                scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
+                scenePropertiesPanel.Render(entityProperties, refScene);
             else
                 scenePropertiesPanel.Render(refScene);
         }
@@ -640,6 +644,8 @@ namespace Atlas::Editor::UI {
         cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
 
         cameraState.clear();
+
+        Notifications::Push({ .message = "Saved scene " + scene->name });
 
     }
 

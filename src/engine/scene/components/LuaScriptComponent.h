@@ -7,6 +7,7 @@
 #include "scripting/LuaScriptManager.h"
 
 #include <sol/sol.hpp>
+#include <map>
 
 namespace Atlas::Scene {
 
@@ -66,7 +67,7 @@ namespace Atlas::Scene {
 
             ResourceHandle<Scripting::Script> script;
 
-            std::unordered_map<std::string, ScriptProperty> properties;
+            std::map<std::string, ScriptProperty> properties;
 
             bool permanentExecution = false;
 
@@ -86,7 +87,7 @@ namespace Atlas::Scene {
             std::optional<sol::environment> scriptEnvironment;
 
             bool InitScriptEnvironment();
-            std::unordered_map<std::string, ScriptProperty> GetPropertiesFromScript();
+            std::map<std::string, ScriptProperty> GetPropertiesFromScript();
             void GetOrUpdatePropertiesFromScript();
             void SetPropertyValuesInLuaState();
         };

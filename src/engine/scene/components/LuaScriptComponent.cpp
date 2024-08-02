@@ -173,7 +173,7 @@ namespace Atlas::Scene::Components {
         return true;
     }
 
-    std::unordered_map<std::string, LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
+    std::map<std::string, LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
         AE_ASSERT(scriptEnvironment.has_value());
 
         const auto& state = scriptEnvironment.value();
@@ -183,7 +183,7 @@ namespace Atlas::Scene::Components {
             return {};
         }
 
-        std::unordered_map<std::string, ScriptProperty> foundProperties;
+        std::map<std::string, ScriptProperty> foundProperties;
         for (const auto& entry : scriptProperties.value()) {
             ScriptProperty scriptProperty = {};
 

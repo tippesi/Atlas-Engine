@@ -254,6 +254,7 @@ namespace Atlas::Editor {
 
         if (ImGui::BeginMainMenuBar()) {
             static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
+            bool saveScene = false;
             if (ImGui::BeginMenu("File")) {
                 /*
                 ImGui::MenuItem("Open project", nullptr, &openProject);
@@ -261,6 +262,7 @@ namespace Atlas::Editor {
                 ImGui::Separator();
                 */
                 ImGui::MenuItem("New scene", nullptr, &newScene);
+                ImGui::MenuItem("Save scene", nullptr, &saveScene);
                 /*
                 ImGui::Separator();
                 ImGui::MenuItem("Import files", nullptr, &importFiles);
@@ -292,6 +294,11 @@ namespace Atlas::Editor {
             if (newScene) {
                 UI::PopupPanels::isNewScenePopupVisible = true;
                 newScene = false;
+            }
+
+            if (saveScene) {
+                auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
+                activeSceneWindow->SaveScene();
             }
 
             ImGui::EndMainMenuBar();

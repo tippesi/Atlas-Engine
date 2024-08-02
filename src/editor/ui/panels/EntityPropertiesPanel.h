@@ -29,7 +29,7 @@ namespace Atlas::Editor::UI {
     public:
         EntityPropertiesPanel() : Panel("Entity properties") {}
 
-        void Render(Ref<Scene::Scene>& scene, Scene::Entity entity);
+        void Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties);
 
     private:
         NameComponentPanel nameComponentPanel;
