@@ -66,6 +66,11 @@ namespace Atlas {
 
             auto settings = bodyCreationSettings.GetSettings();
 
+            AE_ASSERT(bodyCreationSettings.shape->type != ShapeType::Mesh || settings.mMotionType != JPH::EMotionType::Dynamic &&
+                "Mesh shape bodies should not be set to a dynamic motion type");
+            AE_ASSERT(bodyCreationSettings.shape->type != ShapeType::HeightField || settings.mMotionType != JPH::EMotionType::Dynamic &&
+                "Height field shape bodies should not be set to a dynamic motion type");
+
             settings.mPosition = pos;
             settings.mRotation = quat;
             settings.mUserData = userData;

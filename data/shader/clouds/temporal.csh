@@ -30,6 +30,7 @@ const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGr
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
 
 shared vec4 sharedData[sharedDataSize];
+shared float sharedDepth[sharedDataSize];
 
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
@@ -50,13 +51,6 @@ const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-vec4 FetchTexel(ivec2 texel) {
-    
-    vec4 value = max(texelFetch(currentTexture, texel, 0), 0);
-    return value;
-
-}
-
 void LoadGroupSharedData() {
 
     ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) - ivec2(kernelRadius);
@@ -68,7 +62,8 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedData[i] = FetchTexel(texel);
+        sharedData[i] = max(texelFetch(currentTexture, texel, 0), 0);
+        sharedDepth[i] = texelFetch(depthTexture, texel, 0).r;
     }
 
     barrier();
@@ -85,6 +80,12 @@ int GetSharedMemoryIndex(ivec2 pixelOffset) {
 vec4 FetchCurrentColor(int sharedMemoryIdx) {
 
     return sharedData[sharedMemoryIdx];
+
+}
+
+float FetchCurrentDepth(int sharedMemoryIdx) {
+
+    return sharedDepth[sharedMemoryIdx];
 
 }
 
@@ -171,9 +172,9 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth) {
 
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
-    float confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+    float confidence = min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * 128.0));
 
-    return confidence > 0.999 ? 1.0 : 0.0;
+    return confidence < 0.999 ? 0.0 : 1.0;
 
 }
 
@@ -225,9 +226,8 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.5) {
-        history /= totalWeight;
-   
+    if (totalWeight > 0.1) {
+        history /= totalWeight;   
         return true;
     }
 
@@ -239,26 +239,34 @@ void ComputeVarianceMinMax(out vec4 aabbMin, out vec4 aabbMax) {
     vec4 m1 = vec4(0.0);
     vec4 m2 = vec4(0.0);
 
-    const int radius = 3;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
-    for (int i = -radius; i <= radius; i++) {
-        for (int j = -radius; j <= radius; j++) {
+    float depth = texelFetch(depthTexture, pixel, 0).r;
+
+    float totalWeight = 0.0;
+
+    for (int i = -kernelRadius; i <= kernelRadius; i++) {
+        for (int j = -kernelRadius; j <= kernelRadius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
             vec4 sampleColor = FetchCurrentColor(sharedMemoryIdx);
+            float sampleDepth = FetchCurrentDepth(sharedMemoryIdx);
+
+            float confidence = min(1.0 , exp(-abs(depth - sampleDepth) * 128.0));
         
-            m1 += sampleColor;
-            m2 += sampleColor * sampleColor;
+            m1 += sampleColor * confidence;
+            m2 += sampleColor * sampleColor * confidence;
+
+            totalWeight += confidence;
         }
     }
 
-    float oneDividedBySampleCount = 1.0 / float((2.0 * radius + 1.0) * (2.0 * radius + 1.0));
     float gamma = 1.0;
-    vec4 mu = m1 * oneDividedBySampleCount;
-    vec4 sigma = sqrt(max((m2 * oneDividedBySampleCount) - (mu * mu), 0.0));
-    aabbMin = mu - gamma * sigma;
-    aabbMax = mu + gamma * sigma;
+    vec4 mean = m1 / totalWeight;
+    vec4 std = sqrt(max((m2 / totalWeight) - (mean * mean), 0.0));
+
+    aabbMin = mean - gamma * std;
+    aabbMax = mean + gamma * std;
 
 }
 

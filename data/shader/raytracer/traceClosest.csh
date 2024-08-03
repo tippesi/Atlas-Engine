@@ -24,9 +24,9 @@ void main() {
         if (ray.ID >= 0) {
             // Find any triangle in the BVH
 #ifdef OPACITY_CHECK
-            HitClosestTransparency(ray, 0xFF, offset, INF);
+            HitClosestTransparency(ray, INSTANCE_MASK_ALL, offset, INF);
 #else
-            HitClosest(ray, 0xFF, offset, INF);
+            HitClosest(ray, INSTANCE_MASK_ALL, offset, INF);
 #endif
         }
 

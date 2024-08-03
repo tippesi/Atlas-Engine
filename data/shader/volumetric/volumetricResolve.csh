@@ -102,6 +102,7 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
 
         float depthDiff = abs(referenceDepth - depth);
         float depthWeight = min(exp(-depthDiff), 1.0);
+        
         minWeight = min(minWeight, depthWeight);
 
         invocationDepths[i] = depth;

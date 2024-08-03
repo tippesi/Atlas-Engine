@@ -127,7 +127,7 @@ namespace Atlas::Editor::UI {
             ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, -100.0f, 100.0f);
         }
 
-        if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
+        if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }) || shapeTypeChanged)
             shape->TryCreate();
         else
             shape->Scale(*scale);
@@ -139,8 +139,10 @@ namespace Atlas::Editor::UI {
 
         const char* layerItems[] = { "Static", "Movable" };
         int currentItem = settings.objectLayer;
-        ImGui::Combo("Object layer", &currentItem, layerItems, IM_ARRAYSIZE(layerItems));
-        settings.objectLayer = currentItem;
+        // Mesh can only be static
+        auto layoutItemCount = settings.shape->type != ShapeType::Mesh ? IM_ARRAYSIZE(layerItems) : 1;
+        ImGui::Combo("Object layer", &currentItem, layerItems, layoutItemCount);
+        settings.objectLayer = std::min(currentItem, layoutItemCount - 1);
 
         const char* motionQualityItems[] = { "Discrete", "Linear cast" };
         currentItem = static_cast<int>(settings.motionQuality);
