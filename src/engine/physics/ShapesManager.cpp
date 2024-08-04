@@ -34,17 +34,17 @@ namespace Atlas {
                 JPH::VertexList vertexList;
                 JPH::IndexedTriangleList triangleList;
 
-                for (auto& vertex : mesh->data.vertices) {
+                for (auto& vertex : mesh->data->vertices) {
 
                     vertexList.push_back(JPH::Float3(vertex.x, vertex.y, vertex.z));
 
                 }
 
-                for (size_t i = 0; i < mesh->data.indices.GetElementCount(); i+=3) {
+                for (size_t i = 0; i < mesh->data->indices.GetElementCount(); i+=3) {
 
-                    auto idx0 = mesh->data.indices[i];
-                    auto idx1 = mesh->data.indices[i + 1];
-                    auto idx2 = mesh->data.indices[i + 2];
+                    auto idx0 = mesh->data->indices[i];
+                    auto idx1 = mesh->data->indices[i + 1];
+                    auto idx2 = mesh->data->indices[i + 2];
 
                     JPH::IndexedTriangle triangle(idx0, idx1, idx2);
 

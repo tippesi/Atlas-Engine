@@ -38,7 +38,7 @@ namespace Atlas {
         public:
             Mesh() = default;
 
-            explicit Mesh(MeshData& meshData, MeshMobility mobility = MeshMobility::Stationary,
+            explicit Mesh(const ResourceHandle<MeshData>& meshData, MeshMobility mobility = MeshMobility::Stationary,
                 MeshUsage usage = 0);
 
             explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
@@ -75,7 +75,7 @@ namespace Atlas {
 
             std::string name = "";
 
-            MeshData data;
+            ResourceHandle<MeshData> data;
             MeshMobility mobility = MeshMobility::Stationary;
             MeshUsage usage = 0;
 
@@ -98,8 +98,6 @@ namespace Atlas {
             Ref<Impostor> impostor = nullptr;
 
             bool cullBackFaces = true;
-            bool depthTest = true;
-
             bool castShadow = true;
 
             bool vegetation = false;
@@ -109,16 +107,14 @@ namespace Atlas {
 
             int32_t allowedShadowCascades = 6;
 
-            float distanceCulling = 6e10f;
-            float shadowDistanceCulling = 6e10f;
+            float distanceCulling = 10000.0f;
+            float shadowDistanceCulling = 10000.0f;
             float impostorDistance = 300.0f;
             float impostorShadowDistance = 100.0f;
 
             bool invertUVs = false;
 
         private:
-            bool isLoaded = false;
-
             std::atomic_bool isBvhBuilt = false;
             std::atomic_bool needsBvhRefresh = false;
 

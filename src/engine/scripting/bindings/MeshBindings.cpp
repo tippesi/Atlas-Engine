@@ -31,7 +31,6 @@ namespace Atlas::Scripting::Bindings {
             "mobility", &Mesh::Mesh::mobility,
             "usage", &Mesh::Mesh::usage,
             "cullBackFaces", &Mesh::Mesh::cullBackFaces,
-            "depthTest", &Mesh::Mesh::depthTest,
             "castShadow", &Mesh::Mesh::castShadow,
             "vegetation", &Mesh::Mesh::vegetation,
             "windNoiseTextureLod", &Mesh::Mesh::windNoiseTextureLod,

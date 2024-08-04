@@ -243,11 +243,11 @@ namespace Atlas {
                 uint32_t meshCounter = 0;
                 std::vector<MeshInformation> meshInformation;
                 for (auto mesh : meshes) {
-                    meshInformation.push_back({ vec4(mesh->data.aabb.min, reinterpret_cast<float&>(binCounter)),
-                                                vec4(mesh->data.aabb.max, 0.0)});
+                    meshInformation.push_back({ vec4(mesh->data->aabb.min, reinterpret_cast<float&>(binCounter)),
+                                                vec4(mesh->data->aabb.max, 0.0)});
                     meshToIdxMap[&mesh] = int32_t(idx);
 
-                    for (auto& subdata : mesh->data.subData) {
+                    for (auto& subdata : mesh->data->subData) {
                         meshSubdataInformation.push_back({ idx,
                             subdata.indicesOffset, subdata.indicesCount });
                     }

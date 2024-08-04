@@ -259,7 +259,7 @@ namespace Atlas {
                 if (meshComponent.inserted)
                     SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
 
-                meshComponent.aabb = meshComponent.mesh->data.aabb.Transform(transformComponent.globalMatrix);
+                meshComponent.aabb = meshComponent.mesh->data->aabb.Transform(transformComponent.globalMatrix);
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
@@ -428,7 +428,7 @@ namespace Atlas {
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;
-                for (auto& material : mesh->data.materials) {
+                for (auto& material : mesh->data->materials) {
                     materials.push_back(material);
                 }
             }
@@ -633,7 +633,7 @@ namespace Atlas {
             for (auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                for (auto& material : mesh->data.materials) {
+                for (auto& material : mesh->data->materials) {
                     if (material->HasBaseColorMap())
                         textures.insert(material->baseColorMap);
                     if (material->HasOpacityMap())

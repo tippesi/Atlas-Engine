@@ -37,7 +37,7 @@ namespace Atlas {
                 if (!instances.count) continue;
 
                 auto& mesh = mainPass->meshIdToMeshMap[meshId];
-                for (auto& subData : mesh->data.subData) {
+                for (auto& subData : mesh->data->subData) {
                     if (subDataCount < subDatas.size())
                         subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
                     else
@@ -182,7 +182,7 @@ namespace Atlas {
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
             }
-            if (mesh->data.colors.ContainsData()) {
+            if (mesh->data->colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
 

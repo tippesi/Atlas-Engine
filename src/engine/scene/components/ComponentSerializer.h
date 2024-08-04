@@ -10,7 +10,7 @@
 
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
-#include "loader/ModelLoader.h"
+#include "loader/MeshDataLoader.h"
 
 namespace Atlas::Scene::Components {
 

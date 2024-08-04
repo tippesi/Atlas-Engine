@@ -128,9 +128,9 @@ namespace Atlas {
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
-                for (size_t j = 0; j < mesh->data.subData.size(); j++) {
+                for (size_t j = 0; j < mesh->data->subData.size(); j++) {
 
-                    auto subData = &mesh->data.subData[j];
+                    auto subData = &mesh->data->subData[j];
                     auto material = subData->material;
                     auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                     auto pipeline = PipelineManager::GetPipeline(config);

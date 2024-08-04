@@ -4,7 +4,7 @@
 #include "mesh/Mesh.h"
 #include "scripting/Script.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/MeshDataLoader.h"
 
 namespace Atlas::Scripting::Bindings {
 
@@ -18,7 +18,7 @@ namespace Atlas::Scripting::Bindings {
 
         type.set_function("GetOrLoadMesh", [](const std::string& filename) -> ResourceHandle<Mesh::Mesh> { 
                 return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-                    filename, ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
+                    filename, ResourceOrigin::User, Loader::MeshDataLoader::LoadMesh, false, 2048);
             });
 
         type.set_function("GetMeshes", []() { 

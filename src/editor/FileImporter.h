@@ -13,7 +13,7 @@
 #include "scripting/Script.h"
 #include "Font.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/MeshDataLoader.h"
 
 #include "Content.h"
 #include "Serializer.h"
@@ -48,7 +48,7 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
             handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
+                ResourceOrigin::User, Loader::MeshDataLoader::LoadMesh, false, 2048);
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,

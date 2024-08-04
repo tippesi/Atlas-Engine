@@ -3,7 +3,6 @@
 #include "PhysicsWorld.h"
 
 #include "common/SerializationHelper.h"
-#include "loader/ModelLoader.h"
 
 #include <string>
 #include <unordered_map>

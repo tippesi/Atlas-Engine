@@ -1,9 +1,10 @@
-#include "ModelLoader.h"
+#include "MeshDataLoader.h"
 #include "ImageLoader.h"
 #include "AssetLoader.h"
 #include "../Log.h"
 #include "../common/Path.h"
 #include "../graphics/Instance.h"
+#include "../resource/ResourceManager.h"
 
 #include <vector>
 #include <limits>
@@ -15,7 +16,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+        Ref<Mesh::Mesh> MeshDataLoader::LoadMesh(const std::string& filename,
             bool forceTangents, int32_t maxTextureResolution) {
 
             return LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
@@ -23,9 +24,24 @@ namespace Atlas {
 
         }
 
-        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+        Ref<Mesh::Mesh> MeshDataLoader::LoadMesh(const std::string& filename,
             Mesh::MeshMobility mobility, bool forceTangents,
-            int32_t maxTextureResolution) {
+            int32_t maxTextureResolution) {          
+
+            auto meshData = ResourceManager<Mesh::MeshData>::GetOrLoadResourceWithLoader(filename,
+                ResourceOrigin::User, Loader::MeshDataLoader::LoadMeshData, forceTangents, maxTextureResolution);
+
+            auto mesh = CreateRef<Mesh::Mesh>();
+            mesh->mobility = mobility;
+            mesh->data = meshData;
+            mesh->name = meshData->filename;
+            mesh->UpdateData();
+
+            return mesh;
+
+        }
+
+        Ref<Mesh::MeshData> MeshDataLoader::LoadMeshData(const std::string& filename, bool forceTangents, int32_t maxTextureResolution) {
 
             auto directoryPath = GetDirectoryPath(filename);
 
@@ -41,15 +57,15 @@ namespace Atlas {
             // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
             // Right now we just use flat normals everytime normals are missing.
             const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
-                                                     aiProcess_CalcTangentSpace |
-                                                     aiProcess_JoinIdenticalVertices |
-                                                     aiProcess_Triangulate |
-                                                     aiProcess_OptimizeGraph |
-                                                     aiProcess_OptimizeMeshes |
-                                                     aiProcess_RemoveRedundantMaterials |
-                                                     aiProcess_GenNormals |
-                                                     aiProcess_LimitBoneWeights |
-                                                     aiProcess_ImproveCacheLocality);
+                aiProcess_CalcTangentSpace |
+                aiProcess_JoinIdenticalVertices |
+                aiProcess_Triangulate |
+                aiProcess_OptimizeGraph |
+                aiProcess_OptimizeMeshes |
+                aiProcess_RemoveRedundantMaterials |
+                aiProcess_GenNormals |
+                aiProcess_LimitBoneWeights |
+                aiProcess_ImproveCacheLocality);
 
             if (!scene) {
                 throw ResourceLoadException(filename, "Error processing model "
@@ -103,25 +119,23 @@ namespace Atlas {
                     hasTangents = true;
             }
 
-            auto mesh = CreateRef<Mesh::Mesh>();
-            mesh->mobility = mobility;
-            auto& meshData = mesh->data;
+            auto meshData = CreateRef<Mesh::MeshData>();
 
             if (vertexCount > 65535) {
-                meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
+                meshData->indices.SetType(Mesh::ComponentFormat::UnsignedInt);
             }
             else {
-                meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
+                meshData->indices.SetType(Mesh::ComponentFormat::UnsignedShort);
             }
 
-            meshData.vertices.SetType(Mesh::ComponentFormat::Float);
-            meshData.normals.SetType(Mesh::ComponentFormat::PackedNormal);
-            meshData.texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
-            meshData.tangents.SetType(Mesh::ComponentFormat::PackedNormal);
-            meshData.colors.SetType(Mesh::ComponentFormat::PackedColor);
+            meshData->vertices.SetType(Mesh::ComponentFormat::Float);
+            meshData->normals.SetType(Mesh::ComponentFormat::PackedNormal);
+            meshData->texCoords.SetType(Mesh::ComponentFormat::HalfFloat);
+            meshData->tangents.SetType(Mesh::ComponentFormat::PackedNormal);
+            meshData->colors.SetType(Mesh::ComponentFormat::PackedColor);
 
-            meshData.SetIndexCount(indexCount);
-            meshData.SetVertexCount(vertexCount);
+            meshData->SetIndexCount(indexCount);
+            meshData->SetVertexCount(vertexCount);
 
             if (scene->HasAnimations() || bonesCount > 0) {
 
@@ -136,13 +150,13 @@ namespace Atlas {
             uint32_t usedVertices = 0;
             uint32_t loadedVertices = 0;
 
-            auto& indices = meshData.indices;
+            auto& indices = meshData->indices;
 
-            auto& vertices = meshData.vertices;
-            auto& texCoords = meshData.texCoords;
-            auto& normals = meshData.normals;
-            auto& tangents = meshData.tangents;
-            auto& colors = meshData.colors;
+            auto& vertices = meshData->vertices;
+            auto& texCoords = meshData->texCoords;
+            auto& normals = meshData->normals;
+            auto& tangents = meshData->tangents;
+            auto& colors = meshData->colors;
 
             indices.SetElementCount(indexCount);
 
@@ -183,14 +197,14 @@ namespace Atlas {
 
             ImagesToTexture(materialImages);
 
-            meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
+            meshData->subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
 
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 
                 auto material = CreateRef<Material>();
-                meshData.materials.push_back(material);
+                meshData->materials.push_back(material);
 
-                auto& subData = meshData.subData[i];
+                auto& subData = meshData->subData[i];
 
                 LoadMaterial(scene->mMaterials[i], materialImages, *material, directoryPath, isObj, hasTangents, hasTexCoords);
 
@@ -271,19 +285,16 @@ namespace Atlas {
 
             importer.FreeScene();
 
-            meshData.aabb = Volume::AABB(min, max);
-            meshData.radius = glm::length(max - min) * 0.5;
+            meshData->aabb = Volume::AABB(min, max);
+            meshData->radius = glm::length(max - min) * 0.5;
 
-            meshData.filename = filename;
+            meshData->filename = filename;
 
-            mesh->name = meshData.filename;
-            mesh->UpdateData();
-
-            return mesh;
+            return meshData;
 
         }
 
-        Ref<Scene::Scene> ModelLoader::LoadScene(const std::string& filename, vec3 min, vec3 max,
+        Ref<Scene::Scene> MeshDataLoader::LoadScene(const std::string& filename, vec3 min, vec3 max,
             int32_t depth, bool combineMeshes, bool makeMeshesStatic,
             bool forceTangents, int32_t maxTextureResolution) {
 
@@ -361,7 +372,7 @@ namespace Atlas {
                 bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
 
                 auto mesh = CreateRef<Mesh::Mesh>();
-                auto& meshData = mesh->data;
+                auto meshData = CreateRef<Mesh::MeshData>();
 
                 hasTangents |= forceTangents;
                 if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
@@ -370,24 +381,24 @@ namespace Atlas {
                     hasTangents = true;
 
                 if (vertexCount > 65535) {
-                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
+                    meshData->indices.SetType(Mesh::ComponentFormat::UnsignedInt);
                 }
                 else {
-                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
+                    meshData->indices.SetType(Mesh::ComponentFormat::UnsignedShort);
                 }
 
                 hasVertexColors = assimpMesh->HasVertexColors(0);
 
-                meshData.SetIndexCount(indexCount);
-                meshData.SetVertexCount(vertexCount);
+                meshData->SetIndexCount(indexCount);
+                meshData->SetVertexCount(vertexCount);
 
-                auto& indices = meshData.indices;
+                auto& indices = meshData->indices;
 
-                auto& vertices = meshData.vertices;
-                auto& texCoords = meshData.texCoords;
-                auto& normals = meshData.normals;
-                auto& tangents = meshData.tangents;
-                auto& colors = meshData.colors;
+                auto& vertices = meshData->vertices;
+                auto& texCoords = meshData->texCoords;
+                auto& normals = meshData->normals;
+                auto& tangents = meshData->tangents;
+                auto& colors = meshData->colors;
 
                 indices.SetElementCount(indexCount);
 
@@ -398,7 +409,7 @@ namespace Atlas {
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
                 auto material = CreateRef<Material>();
-                meshData.materials.push_back(material);
+                meshData->materials.push_back(material);
 
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
@@ -457,21 +468,22 @@ namespace Atlas {
                     }
                 }
 
-                meshData.aabb = Volume::AABB(min, max);
-                meshData.radius = glm::length(max - min) * 0.5;
+                meshData->aabb = Volume::AABB(min, max);
+                meshData->radius = glm::length(max - min) * 0.5;
 
-                meshData.subData.push_back({
+                meshData->subData.push_back({
                     .indicesOffset = 0,
                     .indicesCount = indexCount,
 
                     .material = material,
                     .materialIdx = 0,
 
-                    .aabb = meshData.aabb
+                    .aabb = meshData->aabb
                 });
 
-                meshData.filename = std::string(assimpMesh->mName.C_Str());
-                mesh->name = meshData.filename;
+                meshData->filename = std::string(assimpMesh->mName.C_Str());
+                mesh->data = ResourceManager<Mesh::MeshData>::AddResource(meshData->filename, meshData);
+                mesh->name = meshData->filename;
                 mesh->UpdateData();
 
                 auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name + "_" + std::to_string(i), mesh);
@@ -522,7 +534,7 @@ namespace Atlas {
 
         }
 
-        uint32_t ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
+        uint32_t MeshDataLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
             const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords) {
 
             uint32_t uvChannel = 0;
@@ -679,7 +691,7 @@ namespace Atlas {
             
         }
 
-        void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, const std::string& directory,
+        void MeshDataLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, const std::string& directory,
             bool isObj, bool hasTangents, int32_t maxTextureResolution, bool rgbSupport) {
 
 
@@ -811,7 +823,7 @@ namespace Atlas {
             }
         }
 
-        void ModelLoader::ImagesToTexture(MaterialImages& images) {
+        void MeshDataLoader::ImagesToTexture(MaterialImages& images) {
 
             for (const auto& [path, image] : images.baseColorImages) {
                 images.baseColorTextures[path] = std::make_shared<Texture::Texture2D>(image);
@@ -834,7 +846,7 @@ namespace Atlas {
 
         }
 
-        std::string ModelLoader::GetDirectoryPath(std::string filename) {
+        std::string MeshDataLoader::GetDirectoryPath(std::string filename) {
 
             auto directoryPath = Common::Path::GetDirectory(filename);
 

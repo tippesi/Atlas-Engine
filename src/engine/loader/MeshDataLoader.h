@@ -16,7 +16,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        class ModelLoader {
+        class MeshDataLoader {
 
         public:
             static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
@@ -25,6 +25,9 @@ namespace Atlas {
             static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
                 Mesh::MeshMobility mobility, bool forceTangents = false,
                 int32_t maxTextureResolution = 4096);
+
+            static Ref<Mesh::MeshData> LoadMeshData(const std::string& filename,
+                bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
             static Ref<Scene::Scene> LoadScene(const std::string& filename, vec3 min, vec3 max,
                 int32_t depth, bool combineMeshes = true, bool makeMeshesStatic = false,

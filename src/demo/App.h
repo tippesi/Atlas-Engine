@@ -5,7 +5,7 @@
 #include <input/Keyboard.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
-#include <loader/ModelLoader.h>
+#include <loader/MeshDataLoader.h>
 
 #include <ImguiExtension/ImguiWrapper.h>
 #include <ImguiExtension/Panels.h>

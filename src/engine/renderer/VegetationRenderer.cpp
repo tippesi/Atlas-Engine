@@ -51,7 +51,7 @@ namespace Atlas {
 
                 buffers->binnedInstanceData.Bind(commandList, 3, 8);
 
-                for (auto& subData : mesh->data.subData) {
+                for (auto& subData : mesh->data->subData) {
 
                     // We don't do any optimizations here in terms of pipeline sorting like
                     // for opaque objects. Material variety should be smaller
@@ -192,7 +192,7 @@ namespace Atlas {
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");
             }
-            if (mesh->data.colors.ContainsData()) {
+            if (mesh->data->colors.ContainsData()) {
                 macros.push_back("VERTEX_COLORS");
             }
 

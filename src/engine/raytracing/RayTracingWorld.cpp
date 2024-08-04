@@ -182,7 +182,7 @@ namespace Atlas {
 
                 int32_t meshMaterialID = 0;
 
-                for (auto& material : mesh->data.materials) {
+                for (auto& material : mesh->data->materials) {
                     GPUMaterial gpuMaterial;
 
                     size_t hash = mesh.GetID();
@@ -317,8 +317,8 @@ namespace Atlas {
 
         void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
-            auto& gpuTriangles = mesh->data.gpuTriangles;
-            auto& materials = mesh->data.materials;
+            auto& gpuTriangles = mesh->data->gpuTriangles;
+            auto& materials = mesh->data->materials;
 
             auto& meshInfo = meshInfos[mesh.GetID()];
             meshInfo.triangleLights.clear();
@@ -330,7 +330,7 @@ namespace Atlas {
                 auto& material = materials[idx];
 
                 auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor);
-                auto brightness = dot(radiance, vec3(0.3333f));
+                auto brightness = glm::dot(radiance, vec3(0.3333f));
 
                 if (brightness > 0.0f) {
                     // Extract normal information again

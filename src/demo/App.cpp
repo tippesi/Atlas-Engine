@@ -198,7 +198,7 @@ void App::Update(float deltaTime) {
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             auto shapeSettings = Atlas::Physics::SphereShapeSettings{
-                .radius = meshes.back()->data.radius,
+                .radius = meshes.back()->data->radius,
                 .density = sphereDensity,
                 .scale = glm::vec3(sphereScale),
             };
@@ -225,14 +225,14 @@ void App::Update(float deltaTime) {
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
             auto shapeSettings = Atlas::Physics::SphereShapeSettings{
-                .radius = meshes.back()->data.radius,
+                .radius = meshes.back()->data->radius,
                 .density = sphereDensity,
                 .scale = glm::vec3(sphereScale),
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(shapeSettings);
 
             auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera.GetLocation() +
-                camera.direction * meshes.back()->data.radius * 2.0f));
+                camera.direction * meshes.back()->data->radius * 2.0f));
             auto entity = scene->CreatePrefab<MeshInstance>(meshes.back(), matrix, false);
 
             auto bodySettings = Atlas::Physics::BodyCreationSettings{
@@ -382,8 +382,8 @@ void App::Render(float deltaTime) {
         for (auto& mesh : meshes) {
             if (!mesh.IsLoaded())
                 continue;
-            sceneAABB.Grow(mesh->data.aabb);
-            triangleCount += mesh->data.GetIndexCount() / 3;
+            sceneAABB.Grow(mesh->data->aabb);
+            triangleCount += mesh->data->GetIndexCount() / 3;
         }
 
         if (ImGui::Begin("Settings", (bool*)0, ImGuiWindowFlags_HorizontalScrollbar)) {
@@ -736,7 +736,7 @@ bool App::LoadScene() {
     std::vector<glm::mat4> transforms;
     if (sceneSelection == CORNELL) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "cornell/CornellBox-Original.obj", ModelLoader::LoadMesh, false, 2048
+            "cornell/CornellBox-Original.obj", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
@@ -753,13 +753,13 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == SPONZA) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "sponza/sponza.obj", ModelLoader::LoadMesh, false, 2048
+            "sponza/sponza.obj", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
 
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
+            "metallicwall.gltf", MeshDataLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(1.0f);
@@ -778,7 +778,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == BISTRO) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "bistro/mesh/exterior.obj", ModelLoader::LoadMesh, false, 2048
+            "bistro/mesh/exterior.obj", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.015f)));
@@ -796,7 +796,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == SANMIGUEL) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "sanmiguel/san-miguel-low-poly.obj", ModelLoader::LoadMesh, false, 2048
+            "sanmiguel/san-miguel-low-poly.obj", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
@@ -817,7 +817,7 @@ bool App::LoadScene() {
         meshes.reserve(1);
 
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "medieval/scene.fbx", ModelLoader::LoadMesh, false, 2048
+            "medieval/scene.fbx", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(1.0f);
@@ -837,7 +837,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == PICAPICA) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "pica pica/mesh/scene.gltf", ModelLoader::LoadMesh, false, 2048
+            "pica pica/mesh/scene.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::rotate(glm::mat4(1.0f), -3.14f / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)));
@@ -855,7 +855,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == SUBWAY) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "subway/scene.gltf", ModelLoader::LoadMesh, false, 2048
+            "subway/scene.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(1.0f);
@@ -873,7 +873,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == MATERIALS) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "material demo/materials.obj", ModelLoader::LoadMesh, false, 2048
+            "material demo/materials.obj", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::vec3(8.0f)));
@@ -896,7 +896,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::MeshDataLoader::LoadScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -913,7 +913,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelLoader::LoadScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::MeshDataLoader::LoadScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -931,7 +931,7 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == FLYINGWORLD) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "flying world/scene.gltf", ModelLoader::LoadMesh, false, 2048
+            "flying world/scene.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(glm::scale(glm::vec3(0.01f)));
@@ -957,22 +957,22 @@ bool App::LoadScene() {
     }
     else if (sceneSelection == NEWSPONZA) {
         auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/main/NewSponza_Main_Blender_glTF.gltf", ModelLoader::LoadMesh, false, 2048
+            "newsponza/main/NewSponza_Main_Blender_glTF.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", ModelLoader::LoadMesh, false, 2048
+            "newsponza/candles/NewSponza_100sOfCandles_glTF_OmniLights.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/curtains/NewSponza_Curtains_glTF.gltf", ModelLoader::LoadMesh, false, 2048
+            "newsponza/curtains/NewSponza_Curtains_glTF.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
         mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-            "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", ModelLoader::LoadMesh, false, 2048
+            "newsponza/ivy/NewSponza_IvyGrowth_glTF.gltf", MeshDataLoader::LoadMesh, false, 2048
         );
         meshes.push_back(mesh);
         transforms.emplace_back(glm::scale(glm::vec3(4.0f)));
@@ -993,7 +993,7 @@ bool App::LoadScene() {
 
     // Load chrome sphere for every scene in order to test physics
     auto mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
+        "chromesphere.gltf", MeshDataLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(mesh);
     transforms.emplace_back(1.0f);
@@ -1061,16 +1061,16 @@ void App::CheckLoadScene() {
 
     if (sceneSelection == NEWSPONZA) {
         for (auto& mesh : meshes) {
-            mesh->data.colors.Clear();
+            mesh->data->colors.Clear();
         }
     }
     else if (sceneSelection == PICAPICA) {
-        for (const auto& material : meshes.front()->data.materials)
+        for (const auto& material : meshes.front()->data->materials)
             material->vertexColors = false;
     }
     else if (sceneSelection == EMERALDSQUARE) {
         for (const auto& mesh : meshes)
-            for (const auto& material : mesh->data.materials)
+            for (const auto& material : mesh->data->materials)
                 material->metalness = 0.0f;
     }
 
@@ -1141,7 +1141,7 @@ void App::CheckLoadScene() {
         scene->irradianceVolume->SetRayCount(128, 32);
     }
     else if (sceneSelection == PICAPICA) {
-        for (auto& material : meshes.front()->data.materials) material->twoSided = false;
+        for (auto& material : meshes.front()->data->materials) material->twoSided = false;
 
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
             sceneAABB.Scale(1.0f), glm::ivec3(20));
@@ -1203,7 +1203,7 @@ void App::CheckLoadScene() {
         }
         else {
             Atlas::Physics::BoundingBoxShapeSettings settings = {
-                .aabb = meshComponent.mesh->data.aabb,
+                .aabb = meshComponent.mesh->data->aabb,
                 .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);

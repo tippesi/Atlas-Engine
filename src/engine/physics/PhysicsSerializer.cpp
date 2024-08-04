@@ -1,4 +1,5 @@
 #include "PhysicsSerializer.h"
+#include "loader/MeshDataLoader.h"
 
 #include <Jolt/Physics/PhysicsScene.h>
 #include <Jolt/ObjectStream/ObjectStreamTextIn.h>
@@ -26,7 +27,7 @@ namespace Atlas::Physics {
             j.at("resourcePath").get_to(resourcePath);
 
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
+                ResourceOrigin::User, Loader::MeshDataLoader::LoadMesh, false, 8192);
         }
     }
 

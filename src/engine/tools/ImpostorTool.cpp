@@ -16,8 +16,8 @@ namespace Atlas {
 
             std::vector<mat4> viewMatrices;
 
-            auto min = mesh->data.aabb.min;
-            auto max = mesh->data.aabb.max;
+            auto min = mesh->data->aabb.min;
+            auto max = mesh->data->aabb.max;
 
             auto center = min * 0.5f + max * 0.5f;
             auto radius = glm::distance(center, max);    
@@ -77,8 +77,8 @@ namespace Atlas {
             impostor->FillViewPlaneBuffer(rightVectors, upVectors);
 
             // Approximate transmission
-            for (auto& material : mesh->data.materials) {
-                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
+            for (auto& material : mesh->data->materials) {
+                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data->materials.size();
             }
 
             impostor->baseColorTexture.GenerateMipmap();

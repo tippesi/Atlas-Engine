@@ -1,7 +1,7 @@
 #include "ExampleRenderer.h"
 
 #include "../loader/ShaderLoader.h"
-#include "../loader/ModelLoader.h"
+#include "../loader/MeshDataLoader.h"
 #include "../resource/ResourceManager.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
@@ -117,7 +117,7 @@ namespace Atlas {
             }
             {
                 mesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoader(
-                    "sponza/sponza.obj", Atlas::Loader::ModelLoader::LoadMesh, false, 2048
+                    "sponza/sponza.obj", Atlas::Loader::MeshDataLoader::LoadMesh, false, 2048
                 );
 
                 auto shaderConfig = ShaderConfig {
@@ -205,7 +205,7 @@ namespace Atlas {
 
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
-                for (auto &subData: mesh->data.subData) {
+                for (auto &subData: mesh->data->subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
                     if (baseColorTexture) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);

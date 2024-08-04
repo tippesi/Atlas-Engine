@@ -108,7 +108,7 @@ namespace Atlas {
                 if (!instances.count) continue;
 
                 auto& mesh = shadowPass->meshIdToMeshMap[meshId];
-                for (auto& subData : mesh->data.subData) {
+                for (auto& subData : mesh->data->subData) {
                     if (subDataCount < subDatas.size())
                         subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
                     else
