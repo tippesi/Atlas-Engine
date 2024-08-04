@@ -3,6 +3,7 @@
 #include "Singletons.h"
 #include "Serialization.h"
 #include "Notifications.h"
+#include "ContentDiscovery.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
 
@@ -78,6 +79,7 @@ namespace Atlas::Editor {
 
         const ImGuiIO &io = ImGui::GetIO();
 
+        ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
         // Create new windows for fully loaded scenes
@@ -223,6 +225,12 @@ namespace Atlas::Editor {
 
         auto& config = Singletons::config;
 
+        auto swapChainVsync = graphicsDevice->swapChain->presentMode == VK_PRESENT_MODE_FIFO_KHR;
+        if (swapChainVsync != config->vsync) {
+            if (config->vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, Atlas::Graphics::SRGB_NONLINEAR);
+            else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, Atlas::Graphics::SRGB_NONLINEAR);
+        }
+
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
@@ -287,6 +295,7 @@ namespace Atlas::Editor {
             }
 
             if (ImGui::BeginMenu("Renderer")) {
+                ImGui::MenuItem("VSync", nullptr, &config->vsync);
                 ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
                 ImGui::EndMenu();
             }

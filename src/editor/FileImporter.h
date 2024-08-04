@@ -14,19 +14,13 @@
 #include "Font.h"
 
 #include "loader/ModelLoader.h"
+
+#include "Content.h"
 #include "Serializer.h"
 
 namespace Atlas::Editor {
 
-    enum class FileType {
-        Audio = 0,
-        Mesh,
-        Terrain,
-        Scene,
-        Script,
-        Font,
-        Prefab
-    };
+   
 
     class FileImporter {
 
@@ -39,9 +33,7 @@ namespace Atlas::Editor {
         static ResourceHandle<T> ImportFile(const std::string& filename);
 
         template<class T>
-        static bool AreCompatible(const std::string& filename);
-
-        static const std::map<const std::string, FileType> fileTypeMapping;
+        static bool AreCompatible(const std::string& filename);        
 
     };
 
@@ -81,28 +73,28 @@ namespace Atlas::Editor {
         std::string fileType = Common::Path::GetFileType(filename);
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
 
-        if (!fileTypeMapping.contains(fileType))
+        if (!Content::contentTypeMapping.contains(fileType))
             return false;
 
-        auto type = fileTypeMapping.at(fileType);
+        auto type = Content::contentTypeMapping.at(fileType);
 
         if constexpr (std::is_same_v<T, Audio::AudioData>) {
-            return type == FileType::Audio;
+            return type == ContentType::Audio;
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
-            return type == FileType::Mesh;
+            return type == ContentType::Mesh;
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
-            return type == FileType::Scene;
+            return type == ContentType::Scene;
         }
         else if constexpr (std::is_same_v<T, Scripting::Script>) {
-            return type == FileType::Script;
+            return type == ContentType::Script;
         }
         else if constexpr (std::is_same_v<T, Font>) {
-            return type == FileType::Font;
+            return type == ContentType::Font;
         }
         else if constexpr (std::is_same_v<T, Scene::Entity>) {
-            return type == FileType::Prefab;
+            return type == ContentType::Prefab;
         }
         else {
             return false;

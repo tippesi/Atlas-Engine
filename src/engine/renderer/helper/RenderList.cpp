@@ -146,6 +146,8 @@ namespace Atlas {
         impostorMatrices.clear();
         if (lastSize) impostorMatrices.reserve(lastSize);
 
+        meshIdToMeshMap.reserve(meshes.size());
+
         // Fill in missing meshes since they are cleared at the end of each frame
         for (const auto& mesh : meshes) {
             auto id = mesh.GetID();

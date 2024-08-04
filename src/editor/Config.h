@@ -9,6 +9,7 @@ namespace Atlas::Editor {
 	public:
 		bool darkMode = true;
 		bool pathTrace = false;
+		bool vsync = true;
 
         std::vector<ResourceHandle<Scene::Scene>> openedScenes;
 

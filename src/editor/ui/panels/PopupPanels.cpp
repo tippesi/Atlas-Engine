@@ -86,8 +86,8 @@ namespace Atlas::Editor::UI {
         static auto minSize = glm::vec3(-2048.0f);
         static auto maxSize = glm::vec3(2048.0f);
         static int32_t octreeDepth = 5;
-        static bool invertUVs = false;
-        static bool addRigidBodies = false;
+        static bool invertUVs = true;
+        static bool addRigidBodies = true;
         static bool combineMeshes = false;
         static bool makeMeshesStatic = false;
 

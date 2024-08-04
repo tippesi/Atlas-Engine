@@ -3,12 +3,14 @@
 #include "Window.h"
 #include "Singletons.h"
 #include "Icons.h"
+#include "ContentDiscovery.h"
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
 
 #include <cctype>
 #include <filesystem>
+#include <tuple>
 
 namespace Atlas::Editor::UI {
 
@@ -24,11 +26,13 @@ namespace Atlas::Editor::UI {
 
         void RenderDirectoryContent();
 
+        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType);
+
         bool IsValidFileType(const std::string& filename);
 
-        Texture::Texture2D& GetIcon(const std::filesystem::directory_entry& dirEntry);
+        Texture::Texture2D& GetIcon(const ContentType contentType);
 
-        std::vector<std::filesystem::directory_entry> GetFilteredAndSortedDirEntries();
+        void UpdateFilteredAndSortedDirEntries();
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
@@ -37,11 +41,19 @@ namespace Atlas::Editor::UI {
         int selectedFilter = -1;
 
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        std::string nextDirectory;
         std::string assetSearch;
 
         std::string renameString;
-        std::filesystem::directory_entry renameDirEntry;
+        std::filesystem::path renamePath;
         bool renamePopupVisible = false;
+
+        std::vector<Ref<ContentDirectory>> directories;
+        std::vector<Content> files;
+
+        const float padding = 8.0f;
+        const float iconSize = 64.f;
+        const float itemSize = iconSize + 2.0f * padding;
 
     };
 

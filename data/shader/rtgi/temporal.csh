@@ -1,5 +1,5 @@
 #ifndef AE_OS_MACOS
-//#define BICUBIC_FILTER
+#define BICUBIC_FILTER
 #endif
 
 #include <../common/utility.hsh>
@@ -34,7 +34,7 @@ layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 5;
+const int kernelRadius = 4;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -212,7 +212,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
@@ -223,11 +223,11 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         vec2 texCoord = (vec2(offsetPixel) + 0.5) / resolution;
         vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
 
-        float planeWeight = GetEdgePreservingPlaneWeight(position, normal, historyPosition, 4.0);
+        float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
 
         float confidence = planeWeight * normalWeight;
 
-        if (confidence > 0.2) {
+        if (confidence > 0.5) {
             totalWeight += 1.0;
             history += texelFetch(historyTexture, offsetPixel, 0);
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0);
@@ -237,7 +237,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     if (totalWeight > 0.0) {
         history /= totalWeight;
         historyMoments /= totalWeight;
-        //return true;
+        return true;
     }
 
     history = vec4(0.0);
@@ -247,7 +247,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
 }
 
-float IsHistoryPixelValid(ivec2 pixel, vec3 position, vec3 normal) {
+float IsHistoryPixelValid(ivec2 pixel, vec3 position, vec3 normal, vec3 worldNormal, float depthPhi) {
 
     float confidence = 1.0;
 
@@ -258,17 +258,17 @@ float IsHistoryPixelValid(ivec2 pixel, vec3 position, vec3 normal) {
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
     vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
 
-    confidence *= GetEdgePreservingPlaneWeight(position, normal, historyPosition, 4.0);
+    confidence *= GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
     
-    return confidence > 0.2 ? 1.0 : 0.0;
+    return confidence > 0.5 ? 1.0 : 0.0;
 
 }
 
-vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, vec3 position, vec3 normal) {
+vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, vec3 position, vec3 normal, vec3 worldNormal, float depthPhi) {
 
     pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
 
-    weight *= IsHistoryPixelValid(pixel, position, normal);
+    weight *= IsHistoryPixelValid(pixel, position, normal, worldNormal, depthPhi);
 
     return texelFetch(historyTexture, pixel, 0) * weight;
 
@@ -279,7 +279,13 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
-    vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixLast);
+    vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
+    vec3 worldNormal = vec3(globalData.ivMatrix * vec4(normal, 0.0));
+    
+    vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
+    float NdotV = abs(dot(viewDir, worldNormal));
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
 
     vec2 samplePixel = uv * resolution;
 
@@ -310,7 +316,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
             float weight = weights[x].x * weights[y].y;
             ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
 
-            history += GetCatmullRomSample(uv, weight, position, normal);
+            history += GetCatmullRomSample(uv, weight, position, normal, worldNormal, depthPhi);
             totalWeight += weight;
         }
     }
@@ -341,6 +347,11 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
     vec3 normal = vec3(globalData.ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, pixel, 0).rg), 0.0));
 
+    vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
+    float NdotV = abs(dot(viewDir, normal));
+    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
+
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     float totalWeight = 0.0;
@@ -356,7 +367,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
             texCoord = (vec2(pixel) + 0.5) / resolution;
             vec3 samplePosition = ConvertDepth(sampleDepth, texCoord, globalData.ipvMatrixCurrent);
 
-            float weight = GetEdgePreservingPlaneWeight(position, normal, samplePosition, 1.0);
+            float weight = GetEdgePreservingPlaneWeight(position, normal, samplePosition, depthPhi);
         
             m1 += sampleRadiance * weight;
             m2 += sampleRadiance * sampleRadiance * weight;

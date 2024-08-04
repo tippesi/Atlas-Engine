@@ -252,7 +252,7 @@ void ComputeVarianceMinMax(out vec4 aabbMin, out vec4 aabbMax) {
             vec4 sampleColor = FetchCurrentColor(sharedMemoryIdx);
             float sampleDepth = FetchCurrentDepth(sharedMemoryIdx);
 
-            float confidence = min(1.0 , exp(-abs(depth - sampleDepth) * 128.0));
+            float confidence = min(1.0 , exp(-abs(depth - sampleDepth) * 8.0));
         
             m1 += sampleColor * confidence;
             m2 += sampleColor * sampleColor * confidence;

@@ -24,6 +24,7 @@ namespace Atlas::Editor {
         json j = {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
+            { "vsync", config->vsync },
             { "scenes", scenePaths }
         };
 
@@ -48,6 +49,8 @@ namespace Atlas::Editor {
             j.at("darkMode").get_to(config->darkMode);
         if (j.contains("pathTrace"))
             j.at("pathTrace").get_to(config->pathTrace);
+        if (j.contains("vsync"))
+            j.at("vsync").get_to(config->vsync);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
 
