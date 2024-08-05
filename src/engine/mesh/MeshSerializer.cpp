@@ -19,11 +19,13 @@ namespace Atlas::Mesh {
     void to_json(json& j, const Mesh& p) {
 
         int mobility = static_cast<int>(p.mobility);
-        int usage = static_cast<int>(p.usage);
 
         j = json {
             {"name", p.name},
             {"mobility", p.mobility},
+            {"subDataIndices", p.subDataIndices},
+            {"radius", p.radius},
+            {"aabb", p.aabb},
             {"cullBackFaces", p.cullBackFaces},
             {"castShadow", p.castShadow},
             {"vegetation", p.vegetation},
@@ -36,6 +38,7 @@ namespace Atlas::Mesh {
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
             {"invertUVs", p.invertUVs},
+            {"compactedData", p.compactedData},
         };
 
         if (p.data.IsValid()) {
@@ -46,11 +49,13 @@ namespace Atlas::Mesh {
 
     void from_json(const json& j, Mesh& p) {
 
-        int mobility, usage;
+        int mobility;
         
         j.at("name").get_to(p.name);
         j.at("mobility").get_to(p.mobility);
-        j.at("usage").get_to(p.usage);
+        j.at("subDataIndices").get_to(p.subDataIndices);
+        j.at("radius").get_to(p.radius);
+        j.at("aabb").get_to(p.aabb);
         j.at("cullBackFaces").get_to(p.cullBackFaces);
         j.at("castShadow").get_to(p.castShadow);
         j.at("vegetation").get_to(p.vegetation);
@@ -63,9 +68,9 @@ namespace Atlas::Mesh {
         j.at("impostorDistance").get_to(p.impostorDistance);
         j.at("impostorShadowDistance").get_to(p.impostorShadowDistance);
         j.at("invertUVs").get_to(p.invertUVs);
+        j.at("compactedData").get_to(p.compactedData);
 
         p.mobility = static_cast<MeshMobility>(mobility);
-        p.usage = static_cast<MeshUsage>(mobility);
 
         if (j.contains("resourcePath")) {
             std::string resourcePath;

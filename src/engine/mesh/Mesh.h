@@ -3,7 +3,6 @@
 #include "../System.h"
 #include "../Material.h"
 #include "resource/Resource.h"
-#include "../buffer/VertexArray.h"
 
 #include "MeshData.h"
 #include "Impostor.h"
@@ -24,13 +23,6 @@ namespace Atlas {
             Movable
         };
 
-        typedef uint32_t MeshUsage;
-
-        typedef enum MeshUsageBits {
-            MultiBufferedBit = (1 << 0),
-            HostAccessBit = (1 << 1),
-        } MeshUsageBits;
-
         class Mesh {
 
             friend RayTracing::RayTracingWorld;
@@ -38,32 +30,17 @@ namespace Atlas {
         public:
             Mesh() = default;
 
-            explicit Mesh(const ResourceHandle<MeshData>& meshData, MeshMobility mobility = MeshMobility::Stationary,
-                MeshUsage usage = 0);
+            explicit Mesh(const ResourceHandle<MeshData>& meshData, std::vector<uint32_t> subDataIndices = {},
+                MeshMobility mobility = MeshMobility::Stationary);
 
-            explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
-
-            /**
-             * Transforms the underlying mesh data and updates the buffer data afterwards
-             * @param transform
-             */
-            void SetTransform(mat4 transform);
-
-            /**
-             * Fully updates the buffer data with data available through the MeshData member
-             */
-            void UpdateData();
+            explicit Mesh(MeshMobility mobility);
 
             /*
              * Resets material pipeline configs 
              */
             void UpdateMaterials();
 
-            /**
-             * Updates the vertex array based on the state of the vertex buffers.
-             * @note This is useful when running your own data pipeline
-             */
-            void UpdateVertexArray();
+            void Update();
 
             /**
              * Builds up BVH and fills raytracing related buffers
@@ -77,16 +54,8 @@ namespace Atlas {
 
             ResourceHandle<MeshData> data;
             MeshMobility mobility = MeshMobility::Stationary;
-            MeshUsage usage = 0;
 
-            Buffer::VertexArray vertexArray;
-
-            Buffer::IndexBuffer indexBuffer;
-            Buffer::VertexBuffer vertexBuffer;
-            Buffer::VertexBuffer normalBuffer;
-            Buffer::VertexBuffer texCoordBuffer;
-            Buffer::VertexBuffer tangentBuffer;
-            Buffer::VertexBuffer colorBuffer;
+            std::vector<uint32_t> subDataIndices;
 
             Buffer::Buffer blasNodeBuffer;
             Buffer::Buffer triangleBuffer;
@@ -96,6 +65,9 @@ namespace Atlas {
             Ref<Graphics::BLAS> blas = nullptr;
 
             Ref<Impostor> impostor = nullptr;
+
+            Volume::AABB aabb;
+            float radius;
 
             bool cullBackFaces = true;
             bool castShadow = true;
@@ -113,10 +85,17 @@ namespace Atlas {
             float impostorShadowDistance = 100.0f;
 
             bool invertUVs = false;
+            bool compactedData = true;
 
         private:
+            void BuildBVHData(bool parallelBuild);
+
             std::atomic_bool isBvhBuilt = false;
             std::atomic_bool needsBvhRefresh = false;
+
+            std::vector<GPUTriangle> gpuTriangles;
+            std::vector<GPUBVHTriangle> gpuBvhTriangles;
+            std::vector<GPUBVHNode> gpuBvhNodes;
 
         };
 

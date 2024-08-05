@@ -98,7 +98,7 @@ namespace Atlas {
             uniformBuffer.SetData(&uniforms, 0);
             uniformBuffer.Bind(commandList, 3, 7);
 
-            mesh->vertexArray.Bind(commandList);
+            mesh->data->vertexArray.Bind(commandList);
 
             {
                 // Transfer all framebuffer images including all mips into same layout/access as end of render pass
@@ -128,9 +128,9 @@ namespace Atlas {
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
 
-                for (size_t j = 0; j < mesh->data->subData.size(); j++) {
+                for (size_t j = 0; j < mesh->subDataIndices.size(); j++) {
 
-                    auto subData = &mesh->data->subData[j];
+                    auto subData = &mesh->data->subData[mesh->subDataIndices[j]];
                     auto material = subData->material;
                     auto config = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
                     auto pipeline = PipelineManager::GetPipeline(config);
@@ -299,7 +299,7 @@ namespace Atlas {
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                 .frameBuffer = frameBuffer,
-                .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                .vertexInputInfo = mesh->data->vertexArray.GetVertexInputState(),
             };
 
             if (material->twoSided || !mesh->cullBackFaces) {

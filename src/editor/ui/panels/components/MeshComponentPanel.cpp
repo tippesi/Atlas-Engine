@@ -70,9 +70,11 @@ namespace Atlas::Editor::UI {
             ImGui::DragFloat("Bend scale", &mesh->windBendScale, 0.05f, 0.0f, 5.0f);
             ImGui::DragFloat("Wiggle scale", &mesh->windWiggleScale, 0.05f, 0.0f, 5.0f);
 
-            ImGui::Separator();
-            ImGui::Text("Materials");
-            materialsPanel.Render(Singletons::imguiWrapper, mesh->data->materials);
+            if (mesh->data.IsLoaded()) {
+                ImGui::Separator();
+                ImGui::Text("Materials");
+                materialsPanel.Render(Singletons::imguiWrapper, mesh->data->materials);
+            }            
 
             // Just update materials regardless of any change
             mesh->UpdateMaterials();

@@ -174,7 +174,7 @@ namespace Atlas {
             materials.clear();
 
             for (auto& mesh : meshes) {
-                if (!meshInfos.contains(mesh.GetID()) || !mesh.IsLoaded())
+                if (!meshInfos.contains(mesh.GetID()) || !mesh.IsLoaded() || !mesh->data.IsLoaded())
                     continue;
 
                 auto& meshInfo = meshInfos[mesh.GetID()];
@@ -317,7 +317,7 @@ namespace Atlas {
 
         void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
-            auto& gpuTriangles = mesh->data->gpuTriangles;
+            auto& gpuTriangles = mesh->gpuTriangles;
             auto& materials = mesh->data->materials;
 
             auto& meshInfo = meshInfos[mesh.GetID()];

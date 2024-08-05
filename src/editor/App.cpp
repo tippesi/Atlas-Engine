@@ -18,6 +18,9 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Editor {
 
     void App::LoadContent() {
+        
+        // Start content discovery early on
+        ContentDiscovery::Update();
 
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
@@ -196,7 +199,7 @@ namespace Atlas::Editor {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
 
             for (const auto& mesh : sceneMeshes) {
-                if (!mesh.IsLoaded())
+                if (!mesh.IsLoaded() || !mesh->data.IsLoaded())
                     continue;
                 if (mesh->IsBVHBuilt())
                     continue;

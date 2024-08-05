@@ -1,4 +1,12 @@
 #include "ComponentSerializer.h"
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
+#include "physics/PhysicsSerializer.h"
+
+#include "resource/ResourceManager.h"
+#include "audio/AudioManager.h"
+#include "loader/MeshDataLoader.h"
+#include "loader/MeshLoader.h"
 
 namespace Atlas::Scene::Components {
 
@@ -156,8 +164,11 @@ namespace Atlas::Scene::Components {
             {"dontCull", p.dontCull}
         };
 
-        if (p.mesh.IsValid())
+        if (p.mesh.IsValid()) {
             j["resourcePath"] = p.mesh.GetResource()->path;
+
+            Loader::MeshLoader::SaveMesh(p.mesh.Get(), p.mesh.GetResource()->path + ".aemesh");
+        }
     }
 
     void from_json(const json& j, MeshComponent& p) {

@@ -108,7 +108,8 @@ namespace Atlas {
                 if (!instances.count) continue;
 
                 auto& mesh = shadowPass->meshIdToMeshMap[meshId];
-                for (auto& subData : mesh->data->subData) {
+                for (auto& subDataIdx : mesh->subDataIndices) {
+                    auto& subData = mesh->data->subData[subDataIdx];
                     if (subDataCount < subDatas.size())
                         subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
                     else
@@ -152,7 +153,7 @@ namespace Atlas {
                 }
 
                 if (meshID != prevMesh) {
-                    mesh->vertexArray.Bind(commandList);
+                    mesh->data->vertexArray.Bind(commandList);
                     prevMesh = meshID;
                 }
 
@@ -234,7 +235,7 @@ namespace Atlas {
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc {
                 .frameBuffer = frameBuffer,
-                .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                .vertexInputInfo = mesh->data->vertexArray.GetVertexInputState(),
             };
 
             if (material->twoSided || !mesh->cullBackFaces) {

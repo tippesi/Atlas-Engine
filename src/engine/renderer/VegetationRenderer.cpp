@@ -47,11 +47,12 @@ namespace Atlas {
             for (auto mesh : meshes) {
                 auto buffers = vegetation.GetBuffers(mesh);
 
-                mesh->vertexArray.Bind(commandList);
+                mesh->data->vertexArray.Bind(commandList);
 
                 buffers->binnedInstanceData.Bind(commandList, 3, 8);
 
-                for (auto& subData : mesh->data->subData) {
+                for (auto& subDataIdx : mesh->subDataIndices) {
+                    auto& subData = mesh->data->subData[subDataIdx];
 
                     // We don't do any optimizations here in terms of pipeline sorting like
                     // for opaque objects. Material variety should be smaller
@@ -154,7 +155,7 @@ namespace Atlas {
             };
             auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                 .frameBuffer = target->gBufferFrameBuffer,
-                .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                .vertexInputInfo = mesh->data->vertexArray.GetVertexInputState(),
             };
 
             auto material = subData->material;

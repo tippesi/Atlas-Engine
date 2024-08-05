@@ -126,7 +126,7 @@ namespace Atlas {
                 };
                 auto pipelineDesc = Graphics::GraphicsPipelineDesc{
                     .frameBuffer = mainFrameBuffer,
-                    .vertexInputInfo = mesh->vertexArray.GetVertexInputState(),
+                    .vertexInputInfo = mesh->data->vertexArray.GetVertexInputState(),
                 };
                 auto pipelineConfig = PipelineConfig(shaderConfig, pipelineDesc, { "MYMACRO" });
                 meshPipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -201,11 +201,12 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &pushConstants);
 
-                mesh->vertexArray.Bind(commandList);
+                mesh->data->vertexArray.Bind(commandList);
 
                 commandList->BindBuffer(uniformBuffer, 0, 0);
 
-                for (auto &subData: mesh->data->subData) {
+                for (auto& subDataIdx : mesh->subDataIndices) {
+                    auto& subData = mesh->data->subData[subDataIdx];
                     auto baseColorTexture = subData.material->baseColorMap;
                     if (baseColorTexture) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);

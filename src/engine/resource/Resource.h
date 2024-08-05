@@ -156,7 +156,7 @@ namespace Atlas {
         }
 
         inline void WaitForLoad() {
-            if (IsValid()) {
+            if (!IsLoaded()) {
                 if (!resource->future.valid())
                     return;
                 resource->future.wait();

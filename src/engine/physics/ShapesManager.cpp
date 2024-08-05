@@ -22,7 +22,7 @@ namespace Atlas {
 
         bool ShapesManager::TryCreateShapeFromMesh(Shape* shape, const MeshShapeSettings& settings) {
 
-            if (!settings.mesh.IsLoaded())
+            if (!settings.mesh.IsLoaded() || !settings.mesh->data.IsLoaded())
                 return false;
 
             auto& mesh = settings.mesh;
@@ -34,23 +34,39 @@ namespace Atlas {
                 JPH::VertexList vertexList;
                 JPH::IndexedTriangleList triangleList;
 
-                for (auto& vertex : mesh->data->vertices) {
+                uint32_t minVertexIdx = mesh->data->vertices.GetElementCount(), maxVertexIdx = 0;
+                for (auto& subDataIdx : mesh->subDataIndices) {
+                    auto& subData = mesh->data->subData[subDataIdx];
+                    
+                    for (uint32_t i = subData.indicesOffset; i < subData.indicesCount; i+=3) {
+                        auto idx0 = mesh->data->indices[i];
+                        auto idx1 = mesh->data->indices[i + 1];
+                        auto idx2 = mesh->data->indices[i + 2];
 
+                        maxVertexIdx = std::max(maxVertexIdx, std::max(idx0, std::max(idx1, idx2)));
+                        minVertexIdx = std::min(minVertexIdx, std::min(idx0, std::min(idx1, idx2)));
+                    }
+                }
+
+                for (auto& subDataIdx : mesh->subDataIndices) {
+                    auto& subData = mesh->data->subData[subDataIdx];
+                    
+                    for (uint32_t i = subData.indicesOffset; i < subData.indicesCount; i+=3) {
+                        auto idx0 = mesh->data->indices[i] - minVertexIdx;
+                        auto idx1 = mesh->data->indices[i + 1] - minVertexIdx;
+                        auto idx2 = mesh->data->indices[i + 2] - minVertexIdx;
+
+                        JPH::IndexedTriangle triangle(idx0, idx1, idx2);
+
+                        triangleList.push_back(triangle);
+                    }
+                }
+                
+                for (uint32_t i = minVertexIdx; i <= maxVertexIdx; i++) {
+                    const auto& vertex = mesh->data->vertices[i];
                     vertexList.push_back(JPH::Float3(vertex.x, vertex.y, vertex.z));
-
                 }
-
-                for (size_t i = 0; i < mesh->data->indices.GetElementCount(); i+=3) {
-
-                    auto idx0 = mesh->data->indices[i];
-                    auto idx1 = mesh->data->indices[i + 1];
-                    auto idx2 = mesh->data->indices[i + 2];
-
-                    JPH::IndexedTriangle triangle(idx0, idx1, idx2);
-
-                    triangleList.push_back(triangle);
-                }
-
+                
                 JPH::MeshShapeSettings meshShapeSettings(vertexList, triangleList);
                 auto result = meshShapeSettings.Create();
 

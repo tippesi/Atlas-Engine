@@ -2,6 +2,7 @@
 
 #include "../System.h"
 #include "../volume/AABB.h"
+#include "../buffer/VertexArray.h"
 #include "raytracing/RTStructures.h"
 #include "DataComponent.h"
 #include "Material.h"
@@ -15,6 +16,13 @@ namespace Atlas {
     }
 
     namespace Mesh {
+
+        typedef uint32_t MeshDataUsage;
+
+        typedef enum MeshDataUsageBits {
+            MultiBufferedBit = (1 << 0),
+            HostAccessBit = (1 << 1),
+        } MeshDataUsageBits;
 
         struct MeshSubData {
 
@@ -39,7 +47,7 @@ namespace Atlas {
             /**
              *
              */
-            MeshData();
+            MeshData(MeshDataUsage usage = 0);
 
             /**
              *
@@ -83,16 +91,16 @@ namespace Atlas {
              */
             void SetTransform(mat4 transform);
 
-            /**
-             * Builds a blas from the data
+             /**
+             * Fully updates the buffer data with data available through the MeshData member
              */
-            void BuildBVH(bool parallelBuild);
+            void UpdateData();
 
             /**
-             *
-             * @return
+             * Updates the vertex array based on the state of the vertex buffers.
+             * @note This is useful when running your own data pipeline
              */
-            bool IsBVHBuilt();
+            void UpdateVertexArray();
 
             std::string filename;
 
@@ -107,23 +115,29 @@ namespace Atlas {
             std::vector<Ref<Material>> materials;
             std::vector<MeshSubData> subData;
 
+            Buffer::VertexArray vertexArray;
+
+            Buffer::IndexBuffer indexBuffer;
+            Buffer::VertexBuffer vertexBuffer;
+            Buffer::VertexBuffer normalBuffer;
+            Buffer::VertexBuffer texCoordBuffer;
+            Buffer::VertexBuffer tangentBuffer;
+            Buffer::VertexBuffer colorBuffer;
+
+            MeshDataUsage usage = 0;
+
             int32_t primitiveType = 0;
 
             Volume::AABB aabb;
+            float radius = 0.0f;
 
             mat4 transform;
-
-            float radius = 0.0f;
 
         private:
             void DeepCopy(const MeshData& that);
 
             int32_t indexCount = 0;
             int32_t vertexCount = 0;
-
-            std::vector<GPUTriangle> gpuTriangles;
-            std::vector<GPUBVHTriangle> gpuBvhTriangles;
-            std::vector<GPUBVHNode> gpuBvhNodes;
 
         };
 

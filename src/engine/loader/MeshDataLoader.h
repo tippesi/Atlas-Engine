@@ -26,11 +26,14 @@ namespace Atlas {
                 Mesh::MeshMobility mobility, bool forceTangents = false,
                 int32_t maxTextureResolution = 4096);
 
+            static Ref<Mesh::MeshData> LoadMeshDataCompacted(const std::string& filename,
+                bool forceTangents = false, int32_t maxTextureResolution = 4096);
+
             static Ref<Mesh::MeshData> LoadMeshData(const std::string& filename,
                 bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
-            static Ref<Scene::Scene> LoadScene(const std::string& filename, vec3 min, vec3 max,
-                int32_t depth, bool combineMeshes = true, bool makeMeshesStatic = false,
+            static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
+                int32_t depth, bool makeMeshesStatic = false, 
                 bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
         private:
@@ -109,7 +112,10 @@ namespace Atlas {
                 }
             };
 
-            static uint32_t LoadMaterial(aiMaterial * assimpMaterial, MaterialImages & images, Material & material,
+            static Ref<Mesh::MeshData> LoadMeshData(const std::string& filename, const aiScene* scene,
+                bool isObj, bool forceTangents, int32_t maxTextureResolution);
+
+            static void LoadMaterial(aiMaterial * assimpMaterial, MaterialImages & images, Material & material,
                 const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords);
 
             static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
@@ -158,6 +164,8 @@ namespace Atlas {
                 return filtered;
 
             }
+
+            static const uint32_t flags;
 
         };
 

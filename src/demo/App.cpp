@@ -166,7 +166,7 @@ void App::Update(float deltaTime) {
 
             const auto& [meshComponent, transformComponent] = meshEntitySubset.Get(entity);
 
-            if (!meshComponent.mesh.IsLoaded())
+            if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->data.IsLoaded())
                 continue;
 
             if (meshComponent.mesh->name == "chromesphere.gltf") {
@@ -221,7 +221,6 @@ void App::Update(float deltaTime) {
     if (scene->IsFullyLoaded() && shootSphere) {
 
         static float lastSpawn = 0.0f;
-
 
         if (Atlas::Clock::Get() - shootSpawnRate > lastSpawn) {
             auto shapeSettings = Atlas::Physics::SphereShapeSettings{
@@ -380,9 +379,9 @@ void App::Render(float deltaTime) {
         uint32_t triangleCount = 0;
         auto sceneAABB = Atlas::Volume::AABB();
         for (auto& mesh : meshes) {
-            if (!mesh.IsLoaded())
+            if (!mesh.IsLoaded() || !mesh->data.IsLoaded())
                 continue;
-            sceneAABB.Grow(mesh->data->aabb);
+            sceneAABB.Grow(mesh->aabb);
             triangleCount += mesh->data->GetIndexCount() / 3;
         }
 
@@ -896,7 +895,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::MeshDataLoader::LoadScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::MeshDataLoader::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -913,7 +912,7 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::MeshDataLoader::LoadScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::MeshDataLoader::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
 
         CopyActors(otherScene);
@@ -1107,7 +1106,7 @@ void App::CheckLoadScene() {
     }
 
     for (auto& mesh : meshes) {
-        if (!mesh.IsLoaded()) continue;
+        if (!mesh.IsLoaded() || !mesh->data.IsLoaded()) continue;
         mesh->invertUVs = true;
         mesh->cullBackFaces = true;
     }
@@ -1203,7 +1202,7 @@ void App::CheckLoadScene() {
         }
         else {
             Atlas::Physics::BoundingBoxShapeSettings settings = {
-                .aabb = meshComponent.mesh->data->aabb,
+                .aabb = meshComponent.mesh->aabb,
                 .scale = scale
             };
             auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);

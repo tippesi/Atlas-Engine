@@ -11,13 +11,14 @@ namespace Atlas::Scripting::Bindings {
             { "Movable", Mesh::MeshMobility::Movable },
         });
 
-        ns->new_enum<Mesh::MeshUsageBits>("MeshUsageBits", {
-            { "MultiBufferedBit", Mesh::MeshUsageBits::MultiBufferedBit },
-            { "HostAccessBit", Mesh::MeshUsageBits::HostAccessBit },
+        ns->new_enum<Mesh::MeshDataUsageBits>("MeshUsageBits", {
+            { "MultiBufferedBit", Mesh::MeshDataUsageBits::MultiBufferedBit },
+            { "HostAccessBit", Mesh::MeshDataUsageBits::HostAccessBit },
         });
 
         ns->new_usertype<Mesh::MeshData>("MeshData",
             "filename", &Mesh::MeshData::filename,
+            "usage", &Mesh::MeshData::usage,
             "materials", &Mesh::MeshData::materials,
             "primitiveType", &Mesh::MeshData::primitiveType,
             "aabb", &Mesh::MeshData::aabb,
@@ -29,7 +30,8 @@ namespace Atlas::Scripting::Bindings {
             "name", &Mesh::Mesh::name,
             "data", &Mesh::Mesh::data,
             "mobility", &Mesh::Mesh::mobility,
-            "usage", &Mesh::Mesh::usage,
+            "radius", &Mesh::Mesh::radius,
+            "aabb", &Mesh::Mesh::aabb,
             "cullBackFaces", &Mesh::Mesh::cullBackFaces,
             "castShadow", &Mesh::Mesh::castShadow,
             "vegetation", &Mesh::Mesh::vegetation,

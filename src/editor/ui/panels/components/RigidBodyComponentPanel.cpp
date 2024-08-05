@@ -79,9 +79,9 @@ namespace Atlas::Editor::UI {
             auto sphereSettings = static_cast<SphereShapeSettings*>(shape->settings.get());
 
             ImGui::DragFloat("Radius", &sphereSettings->radius, 0.1f, 0.0f);
-            if (meshComponent && meshComponent->mesh.IsLoaded())
+            if (meshComponent && meshComponent->mesh.IsLoaded() && meshComponent->mesh->data.IsLoaded())
                 if (ImGui::Button("Take radius from mesh component"))
-                    sphereSettings->radius = meshComponent->mesh->data->radius;
+                    sphereSettings->radius = meshComponent->mesh->radius;
 
             density = &sphereSettings->density;
             scale = &sphereSettings->scale;
@@ -94,9 +94,9 @@ namespace Atlas::Editor::UI {
 
             ImGui::DragFloat3("Min", glm::value_ptr(boundingBoxSettings->aabb.min), 0.1f, -10000.0f, 10000.0f);
             ImGui::DragFloat3("Max", glm::value_ptr(boundingBoxSettings->aabb.max), 0.1f, -10000.0f, 10000.0f);
-            if (meshComponent && meshComponent->mesh.IsLoaded())
+            if (meshComponent && meshComponent->mesh.IsLoaded() && meshComponent->mesh->data.IsLoaded())
                 if (ImGui::Button("Take bounding box from mesh component"))
-                    boundingBoxSettings->aabb = meshComponent->mesh->data->aabb;
+                    boundingBoxSettings->aabb = meshComponent->mesh->aabb;
 
             density = &boundingBoxSettings->density;
             scale = &boundingBoxSettings->scale;

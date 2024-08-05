@@ -247,7 +247,7 @@ namespace Atlas {
             for (auto entity : meshSubset) {
                 auto& meshComponent = entityManager.Get<MeshComponent>(entity);
                 auto& transformComponent = entityManager.Get<TransformComponent>(entity);
-                if (!meshComponent.mesh.IsLoaded()) {
+                if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->data.IsLoaded()) {
                     // We can't update the transform yet
                     transformComponent.updated = false;
                     continue;
@@ -259,7 +259,7 @@ namespace Atlas {
                 if (meshComponent.inserted)
                     SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
 
-                meshComponent.aabb = meshComponent.mesh->data->aabb.Transform(transformComponent.globalMatrix);
+                meshComponent.aabb = meshComponent.mesh->aabb.Transform(transformComponent.globalMatrix);
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
@@ -426,7 +426,7 @@ namespace Atlas {
             }
 
             for (const auto& mesh : meshes) {
-                if (!mesh.IsLoaded())
+                if (!mesh.IsLoaded() || !mesh->data.IsLoaded())
                     continue;
                 for (auto& material : mesh->data->materials) {
                     materials.push_back(material);
@@ -533,7 +533,7 @@ namespace Atlas {
             for (auto& entity : subset) {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
-                if (!comp.mesh.IsLoaded())
+                if (!comp.mesh.IsLoaded() || !comp.mesh->data.IsLoaded())
                     continue;
 
                 auto diff = comp.aabb.GetCenter() - cameraPos;
@@ -582,7 +582,7 @@ namespace Atlas {
             auto meshes = GetMeshes();
 
             for (const auto& mesh : meshes) {
-                loaded &= mesh.IsLoaded();
+                loaded &= mesh.IsLoaded() && mesh->data.IsLoaded();
             }
 
             return loaded;
@@ -631,7 +631,7 @@ namespace Atlas {
 
             auto meshes = GetMeshes();
             for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
+                if (!mesh.IsLoaded() || !mesh->data.IsLoaded()) continue;
 
                 for (auto& material : mesh->data->materials) {
                     if (material->HasBaseColorMap())

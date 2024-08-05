@@ -16,8 +16,8 @@ namespace Atlas {
 
             std::vector<mat4> viewMatrices;
 
-            auto min = mesh->data->aabb.min;
-            auto max = mesh->data->aabb.max;
+            auto min = mesh->aabb.min;
+            auto max = mesh->aabb.max;
 
             auto center = min * 0.5f + max * 0.5f;
             auto radius = glm::distance(center, max);    

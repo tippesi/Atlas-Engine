@@ -161,7 +161,7 @@ namespace Atlas {
 
     void RenderList::Pass::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
-        if (!meshComponent.mesh.IsLoaded())
+        if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->data.IsLoaded())
             return;
 
         auto id = meshComponent.mesh.GetID();

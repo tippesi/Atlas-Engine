@@ -1,6 +1,8 @@
 #include "SceneSerializer.h"
 
 #include "postprocessing/PostProcessingSerializer.h"
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
 #include "physics/PhysicsSerializer.h"
 
 namespace Atlas::Scene {
