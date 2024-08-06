@@ -1,5 +1,7 @@
 #include "SceneSerializer.h"
 
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
 

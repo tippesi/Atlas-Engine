@@ -67,6 +67,8 @@ namespace Atlas {
         bool twoSided = false;
         bool vertexColors = false;
 
+        uint32_t uvChannel = 0;
+
         PipelineConfig mainConfig;
         PipelineConfig shadowConfig;
 

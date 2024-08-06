@@ -1,5 +1,12 @@
 #include "ComponentSerializer.h"
 
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
+#include "physics/PhysicsSerializer.h"
+
+#include "resource/ResourceManager.h"
+#include "audio/AudioManager.h"
+
 namespace Atlas::Scene::Components {
 
     void to_json(json& j, const AudioComponent& p) {
