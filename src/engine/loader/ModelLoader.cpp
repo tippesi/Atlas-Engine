@@ -192,7 +192,7 @@ namespace Atlas {
 
                 auto& subData = meshData.subData[i];
 
-                LoadMaterial(scene->mMaterials[i], materialImages, *material, directoryPath, isObj, hasTangents, hasTexCoords);
+                LoadMaterial(scene->mMaterials[i], materialImages, *material, directoryPath, isObj);
 
                 material->vertexColors = hasVertexColors;
 
@@ -346,12 +346,22 @@ namespace Atlas {
 
             ImagesToTexture(materialImages);
 
+            std::vector<Ref<Material>> materials;
+            for (uint32_t i = 0; i < assimpScene->mNumMaterials; i++) {
+                auto assimpMaterial = assimpScene->mMaterials[i];
+                auto material = CreateRef<Material>();
+
+                LoadMaterial(assimpMaterial, materialImages, *material, directoryPath, isObj);
+                material->vertexColors = true;
+                materials.push_back(material);
+            }
+
             std::map<aiMesh*, ResourceHandle<Mesh::Mesh>> meshMap;
 
             for (uint32_t i = 0; i < assimpScene->mNumMeshes; i++) {
                 auto assimpMesh = assimpScene->mMeshes[i];
                 auto materialIdx = assimpMesh->mMaterialIndex;
-                auto assimpMaterial = assimpScene->mMaterials[materialIdx];
+                auto material = materials[materialIdx];
 
                 uint32_t indexCount = assimpMesh->mNumFaces * 3;
                 uint32_t vertexCount = assimpMesh->mNumVertices;
@@ -364,9 +374,9 @@ namespace Atlas {
                 auto& meshData = mesh->data;
 
                 hasTangents |= forceTangents;
-                if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
+                if (material->HasNormalMap())
                     hasTangents = true;
-                if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
+                if (material->HasDisplacementMap())
                     hasTangents = true;
 
                 if (vertexCount > 65535) {
@@ -397,16 +407,13 @@ namespace Atlas {
                 tangents.SetElementCount(hasTangents ? vertexCount : 0);
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-                auto material = CreateRef<Material>();
+                material->vertexColors &= hasVertexColors;
                 meshData.materials.push_back(material);
 
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
-                uint32_t uvChannel = LoadMaterial(assimpMaterial, materialImages, *material, directoryPath, isObj, hasTangents, hasTexCoords);
-
-                material->vertexColors = hasVertexColors;
-
+                uint32_t uvChannel = material->uvChannel;
                 for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
                     vec3 vertex = vec3(assimpMesh->mVertices[j].x,
@@ -522,8 +529,8 @@ namespace Atlas {
 
         }
 
-        uint32_t ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
-            const std::string& directory, bool isObj, bool hasTangents, bool hasTexCoords) {
+        void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
+            const std::string& directory, bool isObj) {
 
             uint32_t uvChannel = 0;
             bool roughnessMetalnessTexture = false;
@@ -579,9 +586,6 @@ namespace Atlas {
             material.roughness = glm::clamp(material.roughness, 0.0f, 1.0f);
             material.metalness = glm::clamp(material.metalness, 0.0f, 1.0f);
 
-            if (!hasTexCoords)
-                return 0;
-
             if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
                 aiString aiPath;
@@ -610,8 +614,7 @@ namespace Atlas {
                 }
             }
             if ((assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
-                (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))
-                && hasTangents) {
+                (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))) {
                 aiString aiPath;
                 if (isObj)
                     assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
@@ -654,7 +657,7 @@ namespace Atlas {
                     material.metalnessMapPath = images.metallicImages[path]->fileName;
                 }
             }
-            if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj && hasTangents) {
+            if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
                 aiString aiPath;
                 assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
@@ -675,7 +678,7 @@ namespace Atlas {
                 material.twoSided = true;
             }
 
-            return uvChannel;
+            material.uvChannel = uvChannel;
             
         }
 

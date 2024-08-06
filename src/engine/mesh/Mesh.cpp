@@ -142,6 +142,12 @@ namespace Atlas {
                 needsBvhRefresh = true;
             }
 
+            data.gpuBvhNodes.clear();
+            data.gpuBvhNodes.shrink_to_fit();
+
+            data.gpuBvhTriangles.clear();
+            data.gpuBvhTriangles.shrink_to_fit();
+
             isBvhBuilt = true;
 
         }

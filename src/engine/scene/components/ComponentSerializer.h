@@ -4,13 +4,6 @@
 #include "LuaScriptComponent.h"
 
 #include "common/SerializationHelper.h"
-#include "lighting/LightingSerializer.h"
-#include "audio/AudioSerializer.h"
-#include "physics/PhysicsSerializer.h"
-
-#include "resource/ResourceManager.h"
-#include "audio/AudioManager.h"
-#include "loader/ModelLoader.h"
 
 namespace Atlas::Scene::Components {
 

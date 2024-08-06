@@ -10,7 +10,7 @@
 
 namespace Atlas {
 
-    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool binaryJson,  bool formatJson) {
+    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
 
             auto path = Loader::AssetLoader::GetFullPath(filename);
             auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);

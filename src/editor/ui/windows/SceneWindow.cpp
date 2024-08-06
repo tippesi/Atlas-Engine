@@ -639,7 +639,7 @@ namespace Atlas::Editor::UI {
 
         scene->DestroyEntity(cameraEntity);
 
-        Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene");
+        Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true);
         
         cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
 
