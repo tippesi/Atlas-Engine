@@ -16,21 +16,28 @@ namespace Atlas {
 
     namespace Loader {
 
-        class ModelLoader {
+        class ModelImporter {
 
         public:
-            static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
-            static Ref<Mesh::Mesh> LoadMesh(const std::string& filename,
+            static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
                 Mesh::MeshMobility mobility, bool forceTangents = false,
                 int32_t maxTextureResolution = 4096);
 
-            static Ref<Scene::Scene> LoadScene(const std::string& filename, vec3 min, vec3 max,
+            static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
                 int32_t depth, bool combineMeshes = true, bool makeMeshesStatic = false,
                 bool forceTangents = false, int32_t maxTextureResolution = 4096);
 
         private:
+            struct Paths {
+                std::string filename;
+                std::string directoryPath;
+                std::string materialPath;
+                std::string texturePath;
+            };
+
             enum class MaterialImageType {
                 BaseColor = 0,
                 Opacity,
@@ -106,16 +113,28 @@ namespace Atlas {
                 }
             };
 
-            static void LoadMaterial(aiMaterial * assimpMaterial, MaterialImages & images, Material & material,
-                const std::string& directory, bool isObj);
+            struct ImporterState {
+                Paths paths;
+                MaterialImages images;
 
-            static void LoadMaterialImages(aiMaterial* material, MaterialImages& images,
-                const std::string& directory, bool isObj, bool hasTangents,
-                int32_t maxTextureResolution, bool rgbSupport);
+                Assimp::Importer importer;
+                const aiScene* scene;
+
+                bool isObj;
+            };
+
+            static void InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes);
+
+            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution);
+
+            static void LoadMaterial(ImporterState& state, aiMaterial* assimpMaterial, Material& material);
+
+            static void LoadMaterialImages(ImporterState& state, aiMaterial* material, bool hasTangents,
+                int32_t maxTextureResolution);
 
             static void ImagesToTexture(MaterialImages& images);
 
-            static std::string GetDirectoryPath(std::string filename);
+            static Paths GetPaths(const std::string& filename);
 
             template<typename T>
             static Ref<Common::Image<T>> ApplySobelFilter(const Ref<Common::Image<T>>& image, const float strength = 1.0f) {

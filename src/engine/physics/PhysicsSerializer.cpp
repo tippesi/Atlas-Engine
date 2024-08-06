@@ -26,7 +26,7 @@ namespace Atlas::Physics {
             j.at("resourcePath").get_to(resourcePath);
 
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
+                ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
         }
     }
 

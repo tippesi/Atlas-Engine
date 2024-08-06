@@ -3,8 +3,19 @@
 #include <imgui_stdlib.h>
 
 #include <ranges>
+#include <algorithm>
 
 namespace Atlas::ImguiExtension {
+
+    void MaterialsPanel::Render(Ref<ImguiWrapper>& wrapper, std::vector<ResourceHandle<Material>>& materials) {
+
+        std::vector<Ref<Material>> transform;
+        std::transform(materials.begin(), materials.end(), std::back_inserter(transform),   
+            [](const ResourceHandle<Material>& material) { return material.Get(); });
+       
+        Render(wrapper, transform);
+
+    }
 
     void MaterialsPanel::Render(Ref<ImguiWrapper>& wrapper, std::vector<Ref<Material>> &materials) {
 
