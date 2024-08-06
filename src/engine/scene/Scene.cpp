@@ -416,7 +416,6 @@ namespace Atlas {
 
                     materials.push_back(material);
                 }
-
             }
 
             auto meshes = GetMeshes();

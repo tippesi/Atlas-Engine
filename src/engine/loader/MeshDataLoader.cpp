@@ -46,6 +46,7 @@ namespace Atlas {
             mesh->mobility = mobility;
             mesh->data = meshData;
             mesh->name = meshData->filename;
+            mesh->compactedData = true;
             mesh->Update();
 
             return mesh;
@@ -568,6 +569,7 @@ namespace Atlas {
 
                 auto mesh = CreateRef<Mesh::Mesh>(meshData, std::vector<uint32_t>{ i });
                 mesh->name = subData.name;
+                mesh->compactedData = false;
                 mesh->Update();
 
                 bool alreadyExisted = false;

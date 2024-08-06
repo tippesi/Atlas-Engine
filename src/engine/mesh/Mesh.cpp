@@ -7,6 +7,8 @@
 #include "../graphics/ASBuilder.h"
 #include "../volume/BVH.h"
 
+#include <numeric>
+
 namespace Atlas {
 
     namespace Mesh {
