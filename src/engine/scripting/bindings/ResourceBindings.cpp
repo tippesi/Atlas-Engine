@@ -18,7 +18,7 @@ namespace Atlas::Scripting::Bindings {
 
         type.set_function("GetOrLoadMesh", [](const std::string& filename) -> ResourceHandle<Mesh::Mesh> { 
                 return ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-                    filename, ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 2048);
+                    filename, ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 2048);
             });
 
         type.set_function("GetMeshes", []() { 

@@ -19,6 +19,8 @@ namespace Atlas::Editor {
 
     void App::LoadContent() {
 
+        ContentDiscovery::Update();
+
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
 

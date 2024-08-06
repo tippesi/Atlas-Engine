@@ -15,46 +15,20 @@ namespace Atlas {
 
     namespace Loader {
 
-        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+        Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
             bool forceTangents, int32_t maxTextureResolution) {
 
-            return LoadMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
+            return ImportMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
                 maxTextureResolution);
 
         }
 
-        Ref<Mesh::Mesh> ModelLoader::LoadMesh(const std::string& filename,
+        Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
             Mesh::MeshMobility mobility, bool forceTangents,
             int32_t maxTextureResolution) {
 
-            auto directoryPath = GetDirectoryPath(filename);
-
-            AssetLoader::UnpackFile(filename);
-
-            auto fileType = Common::Path::GetFileType(filename);
-            bool isObj = fileType == "obj" || fileType == "OBJ";
-
-            Assimp::Importer importer;
-            importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
-
-            // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
-            // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
-            // Right now we just use flat normals everytime normals are missing.
-            const aiScene* scene = importer.ReadFile(AssetLoader::GetFullPath(filename),
-                                                     aiProcess_CalcTangentSpace |
-                                                     aiProcess_JoinIdenticalVertices |
-                                                     aiProcess_Triangulate |
-                                                     aiProcess_OptimizeGraph |
-                                                     aiProcess_OptimizeMeshes |
-                                                     aiProcess_RemoveRedundantMaterials |
-                                                     aiProcess_GenNormals |
-                                                     aiProcess_LimitBoneWeights |
-                                                     aiProcess_ImproveCacheLocality);
-
-            if (!scene) {
-                throw ResourceLoadException(filename, "Error processing model "
-                    + std::string(importer.GetErrorString()));
-            }
+            ImporterState state;
+            InitImporterState(state, filename, true);
 
             int32_t indexCount = 0;
             int32_t vertexCount = 0;
@@ -69,14 +43,14 @@ namespace Atlas {
                 mat4 transform;
             };
 
-            std::vector<std::vector<AssimpMesh>> meshSorted(scene->mNumMaterials);
+            std::vector<std::vector<AssimpMesh>> meshSorted(state.scene->mNumMaterials);
 
             std::function<void(aiNode*, mat4)> traverseNodeTree;
             traverseNodeTree = [&](aiNode* node, mat4 accTransform) {
                 accTransform = accTransform * glm::transpose(glm::make_mat4(&node->mTransformation.a1));
                 for (uint32_t i = 0; i < node->mNumMeshes; i++) {
                     auto meshId = node->mMeshes[i];
-                    auto mesh = scene->mMeshes[meshId];
+                    auto mesh = state.scene->mMeshes[meshId];
 
                     meshSorted[mesh->mMaterialIndex].push_back({ mesh, accTransform });
 
@@ -93,13 +67,13 @@ namespace Atlas {
                 }
             };
 
-            traverseNodeTree(scene->mRootNode, mat4(1.0f));
+            traverseNodeTree(state.scene->mRootNode, mat4(1.0f));
 
             hasTangents |= forceTangents;
-            for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
-                if (scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
+            for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
+                if (state.scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
                     hasTangents = true;
-                if (scene->mMaterials[i]->GetTextureCount(aiTextureType_HEIGHT) > 0)
+                if (state.scene->mMaterials[i]->GetTextureCount(aiTextureType_HEIGHT) > 0)
                     hasTangents = true;
             }
 
@@ -123,7 +97,7 @@ namespace Atlas {
             meshData.SetIndexCount(indexCount);
             meshData.SetVertexCount(vertexCount);
 
-            if (scene->HasAnimations() || bonesCount > 0) {
+            if (state.scene->HasAnimations() || bonesCount > 0) {
 
 
 
@@ -152,47 +126,16 @@ namespace Atlas {
             tangents.SetElementCount(hasTangents ? vertexCount : 0);
             colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-            auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
-            auto rgbSupport = graphicsDevice->CheckFormatSupport(VK_FORMAT_R8G8B8_UNORM,
-                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+            auto materials = ImportMaterials(state, maxTextureResolution);
 
-            std::atomic_int32_t counter = 0;
-            MaterialImages materialImages;
-            auto loadImagesLambda = [&]() {
-                auto i = counter++;
+            meshData.subData = std::vector<Mesh::MeshSubData>(state.scene->mNumMaterials);
 
-                while (i < int32_t(scene->mNumMaterials)) {
+            for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
 
-                    LoadMaterialImages(scene->mMaterials[i], materialImages, directoryPath,
-                        isObj, true, maxTextureResolution, false);
-
-                    i = counter++;
-                }
-
-                };
-
-            auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::future<void>> threads;
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
-            }
-
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].get();
-            }
-
-            ImagesToTexture(materialImages);
-
-            meshData.subData = std::vector<Mesh::MeshSubData>(scene->mNumMaterials);
-
-            for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
-
-                auto material = CreateRef<Material>();
+                auto material = materials[i];
                 meshData.materials.push_back(material);
 
                 auto& subData = meshData.subData[i];
-
-                LoadMaterial(scene->mMaterials[i], materialImages, *material, directoryPath, isObj);
 
                 material->vertexColors = hasVertexColors;
 
@@ -269,7 +212,7 @@ namespace Atlas {
 
             }
 
-            importer.FreeScene();
+            state.importer.FreeScene();
 
             meshData.aabb = Volume::AABB(min, max);
             meshData.radius = glm::length(max - min) * 0.5;
@@ -283,83 +226,19 @@ namespace Atlas {
 
         }
 
-        Ref<Scene::Scene> ModelLoader::LoadScene(const std::string& filename, vec3 min, vec3 max,
+        Ref<Scene::Scene> ModelImporter::ImportScene(const std::string& filename, vec3 min, vec3 max,
             int32_t depth, bool combineMeshes, bool makeMeshesStatic,
             bool forceTangents, int32_t maxTextureResolution) {
 
-            auto directoryPath = GetDirectoryPath(filename);
+            ImporterState state;
+            InitImporterState(state, filename, combineMeshes);
 
-            AssetLoader::UnpackFile(filename);
-
-            auto fileType = Common::Path::GetFileType(filename);
-            bool isObj = fileType == "obj" || fileType == "OBJ";
-
-            Assimp::Importer importer;
-            importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
-
-            auto flags = aiProcess_CalcTangentSpace |
-                         aiProcess_JoinIdenticalVertices |
-                         aiProcess_Triangulate |
-                         aiProcess_GenNormals |
-                         aiProcess_LimitBoneWeights |
-                         aiProcess_OptimizeGraph |
-                         aiProcess_RemoveRedundantMaterials |
-                         aiProcess_ImproveCacheLocality;
-
-            if (combineMeshes)
-                flags |= aiProcess_OptimizeMeshes;
-
-            // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
-            // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
-            // Right now we just use flat normals everytime normals are missing.
-            const aiScene* assimpScene = importer.ReadFile(AssetLoader::GetFullPath(filename), flags);
-
-            if (!assimpScene) {
-                throw ResourceLoadException(filename, "Error processing model "
-                    + std::string(importer.GetErrorString()));
-            }
-
-            std::atomic_int32_t counter = 0;
-            MaterialImages materialImages;
-            auto loadImagesLambda = [&]() {
-                auto i = counter++;
-
-                while (i < int32_t(assimpScene->mNumMaterials)) {
-
-                    LoadMaterialImages(assimpScene->mMaterials[i], materialImages, directoryPath,
-                        isObj, true, maxTextureResolution, false);
-
-                    i = counter++;
-                }
-
-            };
-
-            auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::future<void>> threads;
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
-            }
-
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].get();
-            }
-
-            ImagesToTexture(materialImages);
-
-            std::vector<Ref<Material>> materials;
-            for (uint32_t i = 0; i < assimpScene->mNumMaterials; i++) {
-                auto assimpMaterial = assimpScene->mMaterials[i];
-                auto material = CreateRef<Material>();
-
-                LoadMaterial(assimpMaterial, materialImages, *material, directoryPath, isObj);
-                material->vertexColors = true;
-                materials.push_back(material);
-            }
+            auto materials = ImportMaterials(state, maxTextureResolution);
 
             std::map<aiMesh*, ResourceHandle<Mesh::Mesh>> meshMap;
 
-            for (uint32_t i = 0; i < assimpScene->mNumMeshes; i++) {
-                auto assimpMesh = assimpScene->mMeshes[i];
+            for (uint32_t i = 0; i < state.scene->mNumMeshes; i++) {
+                auto assimpMesh = state.scene->mMeshes[i];
                 auto materialIdx = assimpMesh->mMaterialIndex;
                 auto material = materials[materialIdx];
 
@@ -500,7 +379,7 @@ namespace Atlas {
 
                 for (uint32_t i = 0; i < node->mNumMeshes; i++) {
                     auto meshId = node->mMeshes[i];
-                    auto mesh = assimpScene->mMeshes[meshId];
+                    auto mesh = state.scene->mMeshes[meshId];
 
                     triangleCount += mesh->mNumFaces;
 
@@ -523,14 +402,101 @@ namespace Atlas {
                 }
             };
 
-            traverseNodeTree(assimpScene->mRootNode, rootEntity);
+            traverseNodeTree(state.scene->mRootNode, rootEntity);
+
+            state.importer.FreeScene();
 
             return scene;
 
         }
 
-        void ModelLoader::LoadMaterial(aiMaterial* assimpMaterial, MaterialImages& images, Material& material, 
-            const std::string& directory, bool isObj) {
+        void ModelImporter::InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes) {
+
+            state.paths = GetPaths(filename);
+
+            AssetLoader::UnpackFile(filename);
+
+            auto fileType = Common::Path::GetFileType(filename);
+            state.isObj = fileType == "obj" || fileType == "OBJ";
+
+            state.importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
+
+            uint32_t flags = aiProcess_CalcTangentSpace |
+                aiProcess_JoinIdenticalVertices |
+                aiProcess_Triangulate |
+                aiProcess_OptimizeGraph |
+                aiProcess_RemoveRedundantMaterials |
+                aiProcess_GenNormals |
+                aiProcess_LimitBoneWeights |
+                aiProcess_ImproveCacheLocality;
+
+            if (optimizeMeshes)
+                flags |= aiProcess_OptimizeMeshes;
+
+            // Use aiProcess_GenSmoothNormals in case model lacks normals and smooth normals are needed
+            // Use aiProcess_GenNormals in case model lacks normals and flat normals are needed
+            // Right now we just use flat normals everytime normals are missing.
+            state.scene = state.importer.ReadFile(AssetLoader::GetFullPath(filename), flags);
+
+            if (!state.scene) {
+                throw ResourceLoadException(filename, "Error processing model "
+                    + std::string(state.importer.GetErrorString()));
+            }
+
+        }
+
+        std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution) {
+
+            std::atomic_int32_t counter = 0;
+            auto loadImagesLambda = [&]() {
+                auto i = counter++;
+
+                while (i < int32_t(state.scene->mNumMaterials)) {
+
+                    LoadMaterialImages(state, state.scene->mMaterials[i], true, maxTextureResolution);
+
+                    i = counter++;
+                }
+
+                };
+
+            auto threadCount = std::thread::hardware_concurrency();
+            std::vector<std::future<void>> threads;
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
+            }
+
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads[i].get();
+            }
+
+            ImagesToTexture(state.images);
+
+            std::vector<ResourceHandle<Material>> materials;
+            for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
+                auto assimpMaterial = state.scene->mMaterials[i];
+                auto material = CreateRef<Material>();
+
+                LoadMaterial(state, assimpMaterial, *material);
+                material->vertexColors = true;
+
+                const auto materialFilename = state.paths.materialPath + material->name + ".aematerial";
+
+                bool existed = false;
+                auto handle = ResourceManager<Material>::AddResource(materialFilename, material, existed);
+                if (existed)
+                    Log::Warning("Material " + materialFilename + " was already loaded in the resource manager");
+                materials.push_back(handle);
+            }
+
+            return materials;
+
+        }
+
+        void ModelImporter::LoadMaterial(ImporterState& state, aiMaterial* assimpMaterial, Material& material) {
+
+            auto& images = state.images;
+            auto& directory = state.paths.directoryPath;
 
             uint32_t uvChannel = 0;
             bool roughnessMetalnessTexture = false;
@@ -614,9 +580,9 @@ namespace Atlas {
                 }
             }
             if ((assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
-                (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))) {
+                (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && state.isObj))) {
                 aiString aiPath;
-                if (isObj)
+                if (state.isObj)
                     assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
                 else
                     assimpMaterial->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
@@ -625,7 +591,7 @@ namespace Atlas {
                     material.normalMap = images.normalTextures[path];
                     material.normalMapPath = images.normalImages[path]->fileName;
                 }
-                if (images.displacementTextures.contains(path) && isObj) {
+                if (images.displacementTextures.contains(path) && state.isObj) {
                     material.displacementMap = images.displacementTextures[path];
                     material.displacementMapPath = images.displacementImages[path]->fileName;
                 }
@@ -657,7 +623,7 @@ namespace Atlas {
                     material.metalnessMapPath = images.metallicImages[path]->fileName;
                 }
             }
-            if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj) {
+            if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !state.isObj) {
                 aiString aiPath;
                 assimpMaterial->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
@@ -682,9 +648,11 @@ namespace Atlas {
             
         }
 
-        void ModelLoader::LoadMaterialImages(aiMaterial* material, MaterialImages& images, const std::string& directory,
-            bool isObj, bool hasTangents, int32_t maxTextureResolution, bool rgbSupport) {
+        void ModelImporter::LoadMaterialImages(ImporterState& state, aiMaterial* material,
+            bool hasTangents, int32_t maxTextureResolution) {
 
+            auto& images = state.images;
+            auto& directory = state.paths.directoryPath;
 
             if (material->GetTextureCount(aiTextureType_BASE_COLOR) > 0 ||
                 material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
@@ -715,10 +683,7 @@ namespace Atlas {
                         image = image->GetChannelImage(0, 3);
                     }
 
-                    // Some device e.g. Mac M1 don't support the necessary format
-                    if (!rgbSupport) {
-                        image->ExpandToChannelCount(4, 255);
-                    }
+                    image->ExpandToChannelCount(4, 255);
 
                     images.Add(MaterialImageType::BaseColor, path, image);
                     if (!images.Contains(MaterialImageType::Opacity, path) && opacityImage != nullptr)
@@ -735,10 +700,10 @@ namespace Atlas {
                 }
             }
             if ((material->GetTextureCount(aiTextureType_NORMALS) > 0 ||
-                (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && isObj))
+                (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && state.isObj))
                 && hasTangents) {
                 aiString aiPath;
-                if (isObj)
+                if (state.isObj)
                     material->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
                 else
                     material->GetTexture(aiTextureType_NORMALS, 0, &aiPath);
@@ -747,18 +712,14 @@ namespace Atlas {
                     Ref<Common::Image<uint8_t>> displacementImage = nullptr;
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
                     // Might still be a traditional displacement map
-                    if (image->channels == 1 && isObj) {
+                    if (image->channels == 1 && state.isObj) {
                         displacementImage = image;
                         image = ApplySobelFilter(image);
                     }
                     if (image->channels == 4) {
                         image = image->GetChannelImage(0, 3);
                     }
-
-                    // Some device e.g. Mac M1 don't support the necessary format
-                    if (!rgbSupport) {
-                        image->ExpandToChannelCount(4, 255);
-                    }
+                    image->ExpandToChannelCount(4, 255);
 
                     images.Add(MaterialImageType::Normal, path, image);
                     if (!images.Contains(MaterialImageType::Displacement, path) && displacementImage != nullptr)
@@ -803,7 +764,7 @@ namespace Atlas {
                     images.Add(MaterialImageType::Metallic, path, image);
                 }
             }
-            if (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && !isObj && hasTangents) {
+            if (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && !state.isObj && hasTangents) {
                 aiString aiPath;
                 material->GetTexture(aiTextureType_HEIGHT, 0, &aiPath);
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
@@ -814,7 +775,7 @@ namespace Atlas {
             }
         }
 
-        void ModelLoader::ImagesToTexture(MaterialImages& images) {
+        void ModelImporter::ImagesToTexture(MaterialImages& images) {
 
             for (const auto& [path, image] : images.baseColorImages) {
                 images.baseColorTextures[path] = std::make_shared<Texture::Texture2D>(image);
@@ -837,14 +798,19 @@ namespace Atlas {
 
         }
 
-        std::string ModelLoader::GetDirectoryPath(std::string filename) {
+        ModelImporter::Paths ModelImporter::GetPaths(const std::string& filename) {
 
             auto directoryPath = Common::Path::GetDirectory(filename);
 
             if (directoryPath.length())
                 directoryPath += "/";
 
-            return directoryPath;
+            return Paths{
+                .filename = filename,
+                .directoryPath = directoryPath,
+                .materialPath = directoryPath + "materials/",
+                .texturePath = directoryPath + "textures/",
+            };
 
         }
 

@@ -3,6 +3,7 @@
 #include "Panel.h"
 
 #include "MaterialPanel.h"
+#include "resource/Resource.h"
 
 #include <string>
 
@@ -12,6 +13,8 @@ namespace Atlas::ImguiExtension {
 
     public:
         MaterialsPanel() : Panel("Materials properties") {}
+
+        void Render(Ref<ImguiWrapper>& wrapper, std::vector<ResourceHandle<Material>>& materials);
 
         void Render(Ref<ImguiWrapper>& wrapper, std::vector<Ref<Material>>& materials);
 
