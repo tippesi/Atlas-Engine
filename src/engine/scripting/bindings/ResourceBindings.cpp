@@ -4,13 +4,15 @@
 #include "mesh/Mesh.h"
 #include "scripting/Script.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/ModelImporter.h"
 
 namespace Atlas::Scripting::Bindings {
 
     void GenerateResourceManagerBindings(sol::table* ns) {
 
         GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
+        GenerateResourceBinding<Material>(ns, "MaterialResourceHandle");
+        GenerateResourceBinding<Texture::Texture2D>(ns, "Texture2DResourceHandle");
         GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
         GenerateResourceBinding<Scripting::Script>(ns, "ScriptResourceHandle");
 

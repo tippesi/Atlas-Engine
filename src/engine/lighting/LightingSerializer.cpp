@@ -136,6 +136,7 @@ namespace Atlas::Lighting {
             {"rt", p.rt},
             {"ddgi", p.ddgi},
             {"useShadowMap", p.useShadowMap},
+            {"useNormalMaps", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution}
         };
@@ -153,9 +154,44 @@ namespace Atlas::Lighting {
         j.at("rt").get_to(p.rt);
         j.at("ddgi").get_to(p.ddgi);
         j.at("useShadowMap").get_to(p.useShadowMap);
+        j.at("useNormalMaps").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
         try_get_json(j, "halfResolution", p.halfResolution);
         try_get_json(j, "roughnessCutoff", p.roughnessCutoff);
+    }
+
+    void to_json(json& j, const RTGI& p) {
+        j = json{
+            {"textureLevel", p.textureLevel},
+            {"radianceLimit", p.radianceLimit},
+            {"bias", p.bias},
+            {"spatialFilterStrength", p.spatialFilterStrength},
+            {"temporalWeight", p.temporalWeight},
+            {"historyClipMax", p.historyClipMax},
+            {"currentClipFactor", p.currentClipFactor},
+            {"enable", p.enable},
+            {"ddgi", p.ddgi},
+            {"useShadowMap", p.useShadowMap},
+            {"useNormalMap", p.useNormalMaps},
+            {"opacityCheck", p.opacityCheck},
+            {"halfResolution", p.halfResolution}
+        };
+    }
+
+    void from_json(const json& j, RTGI& p) {
+        j.at("textureLevel").get_to(p.textureLevel);
+        j.at("radianceLimit").get_to(p.radianceLimit);
+        j.at("bias").get_to(p.bias);
+        j.at("spatialFilterStrength").get_to(p.spatialFilterStrength);
+        j.at("temporalWeight").get_to(p.temporalWeight);
+        j.at("historyClipMax").get_to(p.historyClipMax);
+        j.at("currentClipFactor").get_to(p.currentClipFactor);
+        j.at("enable").get_to(p.enable);
+        j.at("ddgi").get_to(p.ddgi);
+        j.at("useShadowMap").get_to(p.useShadowMap);
+        j.at("useNormalMap").get_to(p.useNormalMaps);
+        j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "halfResolution", p.halfResolution);
     }
 
     void to_json(json& j, const ShadowView& p) {

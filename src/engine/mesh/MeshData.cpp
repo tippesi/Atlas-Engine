@@ -60,62 +60,6 @@ namespace Atlas {
 
         }
 
-        void MeshData::SetTransform(mat4 transform) {
-
-            auto hasNormals = normals.ContainsData();
-            auto hasTangents = tangents.ContainsData();
-
-            auto& vertex = vertices.Get();
-            auto& normal = normals.Get();
-            auto& tangent = tangents.Get();
-
-            auto matrix = transform;
-
-            auto min = vec3(std::numeric_limits<float>::max());
-            auto max = vec3(-std::numeric_limits<float>::max());
-
-            for (int32_t i = 0; i < vertexCount; i++) {
-
-                auto v = vec4(vertex[i], 1.0f);
-
-                v = matrix * v;
-
-                min = glm::min(min, vec3(v));
-                max = glm::max(max, vec3(v));
-
-                vertex[i] = v;
-
-                if (hasNormals) {
-                    auto n = vec4(vec3(normal[i]), 0.0f);
-
-                    n = vec4(normalize(vec3(matrix * n)), normal[i].w);
-
-                    normal[i] = n;
-                }
-                if (hasTangents) {
-                    auto t = vec4(vec3(tangent[i]), 0.0f);
-
-                    t = vec4(normalize(vec3(matrix * t)), tangent[i].w);
-
-                    tangent[i] = t;
-                }
-
-            }
-
-            vertices.Set(vertex);
-
-            if (hasNormals)
-                normals.Set(normal);
-
-            if(hasTangents)
-                tangents.Set(tangent);
-
-            aabb = Volume::AABB(min, max);
-
-            this->transform = transform;
-
-        }
-
         void MeshData::BuildBVH(bool parallelBuild) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -334,7 +278,7 @@ namespace Atlas {
 
         void MeshData::DeepCopy(const MeshData& that) {
 
-            filename = that.filename;
+            name = that.name;
 
             indices = that.indices;
 

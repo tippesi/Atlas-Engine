@@ -1,5 +1,7 @@
-#include "ModelLoader.h"
+#include "ModelImporter.h"
 #include "ImageLoader.h"
+#include "MaterialLoader.h"
+#include "MeshLoader.h"
 #include "AssetLoader.h"
 #include "../Log.h"
 #include "../common/Path.h"
@@ -217,10 +219,13 @@ namespace Atlas {
             meshData.aabb = Volume::AABB(min, max);
             meshData.radius = glm::length(max - min) * 0.5;
 
-            meshData.filename = filename;
+            meshData.name = Common::Path::GetFileNameWithoutExtension(filename);
 
-            mesh->name = meshData.filename;
+            mesh->name = meshData.name;
             mesh->UpdateData();
+
+            auto meshFilename = state.paths.meshPath + mesh->name + ".aemesh";
+            Loader::MeshLoader::SaveMesh(mesh, meshFilename);
 
             return mesh;
 
@@ -235,7 +240,12 @@ namespace Atlas {
 
             auto materials = ImportMaterials(state, maxTextureResolution);
 
-            std::map<aiMesh*, ResourceHandle<Mesh::Mesh>> meshMap;
+            struct MeshInfo {
+                ResourceHandle<Mesh::Mesh> mesh;
+                vec3 offset;
+            };
+
+            std::map<aiMesh*, MeshInfo> meshMap;
 
             for (uint32_t i = 0; i < state.scene->mNumMeshes; i++) {
                 auto assimpMesh = state.scene->mMeshes[i];
@@ -336,6 +346,14 @@ namespace Atlas {
 
                 }
 
+                auto offset = vec3((max.x + min.x) * 0.5f, min.y, (max.z + min.z) * 0.5f);
+                // Recenter mesh
+                min -= offset;
+                max -= offset;
+                for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
+                    vertices[j] = vertices[j] - offset;
+                }                    
+
                 // Copy indices
                 for (uint32_t j = 0; j < assimpMesh->mNumFaces; j++) {
                     for (uint32_t k = 0; k < 3; k++) {
@@ -356,12 +374,16 @@ namespace Atlas {
                     .aabb = meshData.aabb
                 });
 
-                meshData.filename = std::string(assimpMesh->mName.C_Str());
-                mesh->name = meshData.filename;
+                meshData.name = std::string(assimpMesh->mName.C_Str());
+                mesh->name = meshData.name;
                 mesh->UpdateData();
 
-                auto handle = ResourceManager<Mesh::Mesh>::AddResource(filename + "_" + mesh->name + "_" + std::to_string(i), mesh);
-                meshMap[assimpMesh] = handle;
+                auto meshFilename = state.paths.meshPath + mesh->name + "_" + std::to_string(i) + ".aemesh";
+
+                auto handle = ResourceManager<Mesh::Mesh>::AddResource(meshFilename, mesh);
+                meshMap[assimpMesh] = { handle, offset };
+
+                Loader::MeshLoader::SaveMesh(mesh, meshFilename);
             }
 
             auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
@@ -383,8 +405,10 @@ namespace Atlas {
 
                     triangleCount += mesh->mNumFaces;
 
+                    auto instanceTransform = glm::translate(meshMap[mesh].offset);
+
                     auto entity = scene->CreatePrefab<Scene::Prefabs::MeshInstance>(
-                        meshMap[mesh], nodeTransform, makeMeshesStatic);
+                        meshMap[mesh].mesh, nodeTransform * instanceTransform, makeMeshesStatic);
 
                     auto name = std::string(mesh->mName.C_Str()) + "_" + std::to_string(entity);
                     entity.AddComponent<NameComponent>(name);
@@ -448,29 +472,46 @@ namespace Atlas {
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution) {
 
             std::atomic_int32_t counter = 0;
-            auto loadImagesLambda = [&]() {
-                auto i = counter++;
-
-                while (i < int32_t(state.scene->mNumMaterials)) {
-
-                    LoadMaterialImages(state, state.scene->mMaterials[i], true, maxTextureResolution);
-
-                    i = counter++;
-                }
-
-                };
 
             auto threadCount = std::thread::hardware_concurrency();
             std::vector<std::future<void>> threads;
             for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, loadImagesLambda));
+                threads.emplace_back(std::async(std::launch::async, [&]() {
+                    auto i = counter++;
+
+                    while (i < int32_t(state.scene->mNumMaterials)) {
+
+                        LoadMaterialImages(state, state.scene->mMaterials[i], true, maxTextureResolution);
+
+                        i = counter++;
+                    }
+                    }));
             }
 
             for (uint32_t i = 0; i < threadCount; i++) {
                 threads[i].get();
             }
 
-            ImagesToTexture(state.images);
+            auto imagesToSave = ImagesToTextures(state);
+
+            threads.clear();
+            counter = 0;
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads.emplace_back(std::async(std::launch::async, [&]() {
+                    auto i = counter++;
+
+                    while (i < int32_t(imagesToSave.size())) {
+
+                        ImageLoader::SaveImage(imagesToSave[i], imagesToSave[i]->fileName);
+
+                        i = counter++;
+                    }
+                    }));
+            }
+
+            for (uint32_t i = 0; i < threadCount; i++) {
+                threads[i].get();
+            }
 
             std::vector<ResourceHandle<Material>> materials;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
@@ -487,6 +528,8 @@ namespace Atlas {
                 if (existed)
                     Log::Warning("Material " + materialFilename + " was already loaded in the resource manager");
                 materials.push_back(handle);
+
+                Loader::MaterialLoader::SaveMaterial(material, materialFilename);
             }
 
             return materials;
@@ -563,11 +606,9 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.baseColorTextures.contains(path)) {
                     material.baseColorMap = images.baseColorTextures[path];
-                    material.baseColorMapPath = images.baseColorImages[path]->fileName;
                 }
                 if (images.opacityTextures.contains(path)) {
                     material.opacityMap = images.opacityTextures[path];
-                    material.opacityMapPath = images.opacityImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_OPACITY) > 0) {
@@ -576,7 +617,6 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.opacityTextures.contains(path)) {
                     material.opacityMap = images.opacityTextures[path];
-                    material.opacityMapPath = images.opacityImages[path]->fileName;
                 }
             }
             if ((assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0 ||
@@ -589,11 +629,9 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.normalTextures.contains(path)) {
                     material.normalMap = images.normalTextures[path];
-                    material.normalMapPath = images.normalImages[path]->fileName;
                 }
                 if (images.displacementTextures.contains(path) && state.isObj) {
                     material.displacementMap = images.displacementTextures[path];
-                    material.displacementMapPath = images.displacementImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0) {
@@ -602,7 +640,6 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.roughnessTextures.contains(path)) {
                     material.roughnessMap = images.roughnessTextures[path];
-                    material.roughnessMapPath = images.roughnessImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0) {
@@ -611,7 +648,6 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.metallicTextures.contains(path)) {
                     material.metalnessMap = images.metallicTextures[path];
-                    material.metalnessMapPath = images.metallicImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0) {
@@ -620,7 +656,6 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.metallicTextures.contains(path) && !material.HasMetalnessMap()) {
                     material.metalnessMap = images.metallicTextures[path];
-                    material.metalnessMapPath = images.metallicImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0 && !state.isObj) {
@@ -629,7 +664,6 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (images.displacementTextures.contains(path)) {
                     material.displacementMap = images.displacementTextures[path];
-                    material.displacementMapPath = images.displacementImages[path]->fileName;
                 }
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
@@ -775,26 +809,49 @@ namespace Atlas {
             }
         }
 
-        void ModelImporter::ImagesToTexture(MaterialImages& images) {
+        std::vector<Ref<Common::Image<uint8_t>>> ModelImporter::ImagesToTextures(ImporterState& state) {
+
+            auto& images = state.images;
+            std::vector<Ref<Common::Image<uint8_t>>> imagesToSave;
 
             for (const auto& [path, image] : images.baseColorImages) {
-                images.baseColorTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::BaseColor, path);
+                images.baseColorTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
             for (const auto& [path, image] : images.opacityImages) {
-                images.opacityTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Opacity, path);
+                images.opacityTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
             for (const auto& [path, image] : images.normalImages) {
-                images.normalTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Normal, path);
+                images.normalTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
             for (const auto& [path, image] : images.roughnessImages) {
-                images.roughnessTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Roughness, path);
+                images.roughnessTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
             for (const auto& [path, image] : images.metallicImages) {
-                images.metallicTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Metallic, path);
+                images.metallicTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
             for (const auto& [path, image] : images.displacementImages) {
-                images.displacementTextures[path] = std::make_shared<Texture::Texture2D>(image);
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Displacement, path);
+                images.displacementTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
             }
+
+            return imagesToSave;
 
         }
 
@@ -808,9 +865,37 @@ namespace Atlas {
             return Paths{
                 .filename = filename,
                 .directoryPath = directoryPath,
+                .meshPath = directoryPath + "meshes/",
                 .materialPath = directoryPath + "materials/",
                 .texturePath = directoryPath + "textures/",
             };
+
+        }
+
+        std::string ModelImporter::GetMaterialImageImportPath(ImporterState& state, MaterialImageType type, const std::string& filename) {
+
+            std::string typeName;
+            switch (type) {
+            case MaterialImageType::BaseColor:
+                typeName = "BaseColor"; break;
+            case MaterialImageType::Opacity:
+                typeName = "Opacity"; break;
+            case MaterialImageType::Roughness:
+                typeName = "Roughness"; break;
+            case MaterialImageType::Metallic:
+                typeName = "Metallic"; break;
+            case MaterialImageType::Normal:
+                typeName = "Normal"; break;
+            case MaterialImageType::Displacement:
+                typeName = "Displacement"; break;
+            default:
+                typeName = "Invalid"; break;
+            }
+
+            auto extension = Common::Path::GetFileType(filename); 
+            auto fileNameWithoutExtension = Common::Path::GetFileNameWithoutExtension(filename);
+
+            return state.paths.texturePath + fileNameWithoutExtension + "_" + typeName + "." + extension;
 
         }
 

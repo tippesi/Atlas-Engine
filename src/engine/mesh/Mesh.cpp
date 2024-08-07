@@ -23,14 +23,6 @@ namespace Atlas {
 
         }
 
-        void Mesh::SetTransform(mat4 matrix) {
-
-            data.SetTransform(matrix);
-
-            UpdateData();
-
-        }
-
         void Mesh::UpdateData() {
 
             bool hostAccessible = usage & MeshUsageBits::HostAccessBit;

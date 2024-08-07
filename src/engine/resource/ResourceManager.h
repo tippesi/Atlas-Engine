@@ -64,6 +64,8 @@ namespace Atlas {
                 handle = ResourceHandle<T>(resource);
             }
 
+            handle.WaitForLoad();
+
             return handle;
 
         }
@@ -106,6 +108,8 @@ namespace Atlas {
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
+
+            handle.WaitForLoad();
 
             return handle;
 
@@ -385,6 +389,13 @@ namespace Atlas {
         }
 
         static void ShutdownHandler() {
+         
+            for (const auto& [_, resource] : resources) {
+                if (!resource->future.valid())
+                    continue;
+                resource->future.wait();
+                resource->future.get();
+            }
 
             resources.clear();
 

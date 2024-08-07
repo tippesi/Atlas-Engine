@@ -5,30 +5,16 @@
 
 #include <string>
 
-namespace Atlas {
+namespace Atlas::Loader {
 
-    namespace Loader {
+    class MaterialLoader {
 
-        class MaterialLoader {
+    public:
+        static Ref<Material> LoadMaterial(const std::string& filename, bool binaryJson = false);
 
-        public:
-            static Ref<Material> LoadMaterial(std::string filename, int32_t mapResolution = 0);
+        static void SaveMaterial(const Ref<Material>& material, const std::string& filename,
+            bool binaryJson = false, bool formatJson = false);
 
-            static void SaveMaterial(Ref<Material> material, std::string filename);
-
-        private:
-            static Ref<Material> LoadMaterialValues(std::ifstream& stream, int32_t& textureCount);
-
-            static std::string WriteVector(std::string prefix, vec3 vector);
-
-            static vec3 ReadVector(std::string line);
-
-            static float ReadFloat(std::string line);
-
-            static std::string ReadFilePath(std::string line, std::string materialDirectory);
-
-        };
-
-    }
+    };
 
 }

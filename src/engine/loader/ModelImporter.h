@@ -34,6 +34,7 @@ namespace Atlas {
             struct Paths {
                 std::string filename;
                 std::string directoryPath;
+                std::string meshPath;
                 std::string materialPath;
                 std::string texturePath;
             };
@@ -55,12 +56,12 @@ namespace Atlas {
                 std::map<std::string, Ref<Common::Image<uint8_t>>> normalImages;
                 std::map<std::string, Ref<Common::Image<uint8_t>>> displacementImages;
 
-                std::map<std::string, Ref<Texture::Texture2D>> baseColorTextures;
-                std::map<std::string, Ref<Texture::Texture2D>> opacityTextures;
-                std::map<std::string, Ref<Texture::Texture2D>> roughnessTextures;
-                std::map<std::string, Ref<Texture::Texture2D>> metallicTextures;
-                std::map<std::string, Ref<Texture::Texture2D>> normalTextures;
-                std::map<std::string, Ref<Texture::Texture2D>> displacementTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> baseColorTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> opacityTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> roughnessTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> metallicTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> normalTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> displacementTextures;
 
                 std::mutex mutexes[6];
 
@@ -132,9 +133,11 @@ namespace Atlas {
             static void LoadMaterialImages(ImporterState& state, aiMaterial* material, bool hasTangents,
                 int32_t maxTextureResolution);
 
-            static void ImagesToTexture(MaterialImages& images);
+            static std::vector<Ref<Common::Image<uint8_t>>> ImagesToTextures(ImporterState& state);
 
             static Paths GetPaths(const std::string& filename);
+
+            static std::string GetMaterialImageImportPath(ImporterState& state, MaterialImageType type, const std::string& filename);
 
             template<typename T>
             static Ref<Common::Image<T>> ApplySobelFilter(const Ref<Common::Image<T>>& image, const float strength = 1.0f) {

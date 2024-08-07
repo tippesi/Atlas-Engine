@@ -7,6 +7,10 @@
 
 #include "loader/AssetLoader.h"
 #include "loader/TerrainLoader.h"
+#include "loader/MeshLoader.h"
+#include "loader/MaterialLoader.h"
+
+#include <map>
 
 namespace Atlas {
 
@@ -29,6 +33,26 @@ namespace Atlas {
             }
             else {
                 fileStream << (formatJson ? j.dump(2) : j.dump());
+            }
+
+            if (saveDependencies) {
+                auto meshes = scene->GetMeshes();
+                std::map<Hash, ResourceHandle<Material>> materials;
+
+                for (const auto& mesh : meshes) {
+                    if (!mesh.IsLoaded()) continue;
+
+                    Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path);
+
+                    for (const auto& material : mesh->data.materials)
+                        materials[material.GetID()] = material;
+                }
+
+                for (const auto& [_, material] : materials) {
+                    if (!material.IsLoaded()) continue;
+
+                    Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
+                }
             }
 
             fileStream.close();

@@ -11,21 +11,22 @@ namespace Atlas::Loader {
         auto fileStream = Loader::AssetLoader::ReadFile(path, std::ios::in | std::ios::binary);
 
         if (!fileStream.is_open()) {
-            throw ResourceLoadException(filename, "Couldn't open mesh file stream");
+            throw ResourceLoadException(filename, "Couldn't open mesh file stream: " + std::string(strerror(errno)));
         }
 
         json j;
         if (binaryJson) {
             auto data = Loader::AssetLoader::GetFileContent(fileStream);
+            // We don't want to keep the file stream open longer than we need
+            fileStream.close();
             j = json::from_bjdata(data);
         }
         else {
             std::string serialized((std::istreambuf_iterator<char>(fileStream)),
                 std::istreambuf_iterator<char>());
+            fileStream.close();
             j = json::parse(serialized);
         }
-
-        fileStream.close();
 
         auto mesh = CreateRef<Mesh::Mesh>();
         from_json(j, *mesh);

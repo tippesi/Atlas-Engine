@@ -6,6 +6,7 @@
 
 #include "resource/ResourceManager.h"
 #include "audio/AudioManager.h"
+#include "loader/MeshLoader.h"
 
 namespace Atlas::Scene::Components {
 
@@ -176,7 +177,7 @@ namespace Atlas::Scene::Components {
             j.at("resourcePath").get_to(resourcePath);
 
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 8192);
+                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, false);
         }
 
     }

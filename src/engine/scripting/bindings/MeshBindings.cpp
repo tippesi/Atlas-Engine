@@ -17,15 +17,17 @@ namespace Atlas::Scripting::Bindings {
         });
 
         ns->new_usertype<Mesh::MeshData>("MeshData",
-            "filename", &Mesh::MeshData::filename,
+            "filename", &Mesh::MeshData::name,
             "materials", &Mesh::MeshData::materials,
             "primitiveType", &Mesh::MeshData::primitiveType,
             "aabb", &Mesh::MeshData::aabb,
-            "transform", &Mesh::MeshData::transform,
             "radius", &Mesh::MeshData::radius
             );
         
         ns->new_usertype<Mesh::Mesh>("Mesh",
+            "UpdateData", &Mesh::Mesh::UpdateData,
+            "UpdateMaterials", &Mesh::Mesh::UpdateMaterials,
+            "UpdateVertexArray", &Mesh::Mesh::UpdateVertexArray,
             "name", &Mesh::Mesh::name,
             "data", &Mesh::Mesh::data,
             "mobility", &Mesh::Mesh::mobility,
@@ -57,6 +59,7 @@ namespace Atlas::Scripting::Bindings {
             "HasMetalnessMap", &Material::HasMetalnessMap,
             "HasAoMap", &Material::HasAoMap,
             "HasDisplacementMap", &Material::HasDisplacementMap,
+            "SetChanged", &Material::SetChanged,
             "name", &Material::name,
             "baseColor", &Material::baseColor,
             "transmissiveColor", &Material::transmissiveColor,

@@ -5,6 +5,7 @@
 #include "Shadow.h"
 #include "AO.h"
 #include "SSGI.h"
+#include "RTGI.h"
 #include "EnvironmentProbe.h"
 #include "SSS.h"
 #include "IrradianceVolume.h"
@@ -39,6 +40,10 @@ namespace Atlas::Lighting {
     void to_json(json& j, const Reflection& p);
 
     void from_json(const json& j, Reflection& p);
+
+    void to_json(json& j, const RTGI& p);
+
+    void from_json(const json& j, RTGI& p);
 
     void to_json(json& j, const ShadowView& p);
 

@@ -168,7 +168,7 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap] : 0
+                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

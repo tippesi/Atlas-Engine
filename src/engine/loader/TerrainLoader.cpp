@@ -179,7 +179,7 @@ namespace Atlas {
 
                 auto pos = line.find_last_of("\r\n");
                 auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
-                auto material = MaterialLoader::LoadMaterial(materialPath, 1024);
+                auto material = MaterialLoader::LoadMaterial(materialPath);
 
                 if (material)
                     terrain->storage.WriteMaterial(slot, material);
