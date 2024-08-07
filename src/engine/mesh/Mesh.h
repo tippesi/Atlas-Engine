@@ -44,12 +44,6 @@ namespace Atlas {
             explicit Mesh(MeshMobility mobility, MeshUsage usage = 0);
 
             /**
-             * Transforms the underlying mesh data and updates the buffer data afterwards
-             * @param transform
-             */
-            void SetTransform(mat4 transform);
-
-            /**
              * Fully updates the buffer data with data available through the MeshData member
              */
             void UpdateData();
@@ -109,8 +103,8 @@ namespace Atlas {
 
             int32_t allowedShadowCascades = 6;
 
-            float distanceCulling = 6e10f;
-            float shadowDistanceCulling = 6e10f;
+            float distanceCulling = 10000.0f;
+            float shadowDistanceCulling = 10000.0f;
             float impostorDistance = 300.0f;
             float impostorShadowDistance = 100.0f;
 

@@ -60,6 +60,7 @@ namespace Atlas {
             catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
+                Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
@@ -78,7 +79,7 @@ namespace Atlas {
             catch (const std::exception& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
-                Log::Error("Exception on load: " + std::string(exception.what()));
+                Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
@@ -134,7 +135,7 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
-        std::future<void> future;
+        std::shared_future<void> future;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -156,7 +157,12 @@ namespace Atlas {
         }
 
         inline void WaitForLoad() {
-            if (!IsLoaded()) {
+            if (IsValid()) {
+                // We might be in a situation where one thread hasn't created the future
+                // and the other already tries to wait for it
+                while (!resource->future.valid() && !resource->isLoaded)
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                // Then ask future for a state again and return if there is none
                 if (!resource->future.valid())
                     return;
                 resource->future.wait();

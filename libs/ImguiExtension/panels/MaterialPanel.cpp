@@ -10,16 +10,16 @@ namespace Atlas::ImguiExtension {
         auto padding = 8.0f;
         auto widthAfterImage = availableWidth - padding - ImGui::GetTextLineHeight();
 
-        auto renderWithImagePreview = [&](Ref<Texture::Texture2D>& texture, std::function<void(void)> element) {
-            if (texture != nullptr) {
-                UIElements::TexturePreview(wrapper, *texture);
+        auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
+            if (texture.IsLoaded()) {
+                UIElements::TexturePreview(wrapper, *texture.Get());
                 ImGui::SameLine();
                 // Calculate next item width and push a width with the image elements width substracted from it
                 auto width = ImGui::CalcItemWidth();
                 ImGui::PushItemWidth(width - padding - ImGui::GetTextLineHeightWithSpacing());
             }
             element();
-            if (texture != nullptr)
+            if (texture.IsLoaded())
                 ImGui::PopItemWidth();
         };
         

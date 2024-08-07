@@ -1,6 +1,6 @@
 #include "DataCreator.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/ModelImporter.h"
 #include "volume/AABB.h"
 
 namespace Atlas::Editor {

@@ -103,6 +103,7 @@ namespace Atlas {
                 }
 
                 image.fileName = normalizedFileName;
+                image.srgbConversion = colorSpaceConversion;
 
                 Log::Message("Loaded image " + normalizedFileName);
 
@@ -127,6 +128,12 @@ namespace Atlas {
                     Log::Error("Couldn't write image " + normalizedFileName);
                     return;
                 }
+
+                /*
+                if (image->srgbConversion) {
+                    image->LinearToGamma();
+                }
+                */
 
                 auto lambda = [](void* context, void* data, int32_t size) {
                     auto imageStream = (std::ofstream*)context;

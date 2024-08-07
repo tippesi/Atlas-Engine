@@ -1,4 +1,6 @@
 #include "MeshSerializer.h"
+#include "resource/ResourceManager.h"
+#include "loader/MaterialLoader.h"
 
 namespace Atlas::Mesh {
 
@@ -23,13 +25,8 @@ namespace Atlas::Mesh {
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
             {"invertUVs", p.invertUVs},
+            {"data", p.data},
         };
-
-        /*
-        if (p.data.IsValid()) {
-            j["resourcePath"] = p.data.GetResource()->path;
-        }
-        */
     }
 
     void from_json(const json& j, Mesh& p) {
@@ -37,6 +34,7 @@ namespace Atlas::Mesh {
         int mobility, usage;
         
         j.at("name").get_to(p.name);
+        
         j.at("mobility").get_to(mobility);
         j.at("usage").get_to(usage);
         j.at("cullBackFaces").get_to(p.cullBackFaces);
@@ -51,34 +49,95 @@ namespace Atlas::Mesh {
         j.at("impostorDistance").get_to(p.impostorDistance);
         j.at("impostorShadowDistance").get_to(p.impostorShadowDistance);
         j.at("invertUVs").get_to(p.invertUVs);
+        j.at("data").get_to(p.data);
 
         p.mobility = static_cast<MeshMobility>(mobility);
         p.usage = static_cast<MeshUsage>(usage);
 
-        /*
-        if (j.contains("resourcePath")) {
-            std::string resourcePath;
-            j.at("resourcePath").get_to(resourcePath);
-
-            p.data = ResourceManager<MeshData>::GetOrLoadResourceWithLoader(resourcePath,
-                ResourceOrigin::User, Loader::MeshDataLoader::LoadMeshData, false, 8192);
-        }
-        */
+        p.UpdateData();
 
     }
 
     void to_json(json& j, const MeshData& p) {
 
         j = json{
+           {"name", p.name},
+           {"indexCount", p.GetIndexCount()},
+           {"vertexCount", p.GetVertexCount()},
+           {"indices", p.indices},
+           {"vertices", p.vertices},
+           {"texCoords", p.texCoords},
+           {"normals", p.normals},
+           {"tangents", p.tangents},
+           {"colors", p.colors},
+           {"subData", p.subData},
+           {"primitiveType", p.primitiveType},
            {"radius", p.radius},
            {"aabb", p.aabb},
         };
+
+        for (size_t i = 0; i < p.materials.size(); i++) {
+            auto& material = p.materials[i];
+            auto path = material.GetResource()->path;
+            j["materials"][i] = path;
+        }
 
     }
 
     void from_json(const json& j, MeshData& p) {
 
+        int32_t indexCount, vertexCount;
+
+        j.at("name").get_to(p.name);
+        j.at("indexCount").get_to(indexCount);
+        j.at("vertexCount").get_to(vertexCount);
+
+        p.SetIndexCount(indexCount);
+        p.SetVertexCount(vertexCount);
+
+        j.at("indices").get_to(p.indices);
+        j.at("vertices").get_to(p.vertices);
+        j.at("texCoords").get_to(p.texCoords);
+        j.at("normals").get_to(p.normals);
+        j.at("tangents").get_to(p.tangents);
+        j.at("colors").get_to(p.colors);
+        j.at("subData").get_to(p.subData);
+        j.at("primitiveType").get_to(p.primitiveType);
         j.at("radius").get_to(p.radius);
+        j.at("aabb").get_to(p.aabb);
+
+        if (j.contains("materials")) {
+            for (auto& path : j["materials"]) {
+                auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(path,
+                    ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+                p.materials.push_back(material);
+            }
+
+            for (auto& subData : p.subData) {
+                subData.material = p.materials[subData.materialIdx];
+            }
+        }
+
+    }
+
+    void to_json(json& j, const MeshSubData& p) {
+
+        j = json{
+           {"name", p.name},
+           {"indicesOffset", p.indicesOffset},
+           {"indicesCount", p.indicesCount},
+           {"materialIdx", p.materialIdx},
+           {"aabb", p.aabb},
+        };
+
+    }
+
+    void from_json(const json& j, MeshSubData& p) {
+
+        j.at("name").get_to(p.name);
+        j.at("indicesOffset").get_to(p.indicesOffset);
+        j.at("indicesCount").get_to(p.indicesCount);
+        j.at("materialIdx").get_to(p.materialIdx);
         j.at("aabb").get_to(p.aabb);
 
     }
@@ -92,6 +151,89 @@ namespace Atlas::Mesh {
     void from_json(const json& j, Impostor& p) {
 
 
+
+    }
+
+}
+
+namespace Atlas {
+
+    void to_json(json& j, const Material& p) {
+
+        j = json{
+            {"name", p.name},
+            {"baseColor", p.baseColor},
+            {"transmissiveColor", p.transmissiveColor},
+            {"emissiveColor", p.emissiveColor},
+            {"emissiveIntensity", p.emissiveIntensity},
+            {"opacity", p.opacity},
+            {"roughness", p.roughness},
+            {"metalness", p.metalness},
+            {"ao", p.ao},
+            {"reflectance", p.reflectance},
+            {"normalScale", p.normalScale},
+            {"displacementScale", p.displacementScale},
+            {"tiling", p.tiling},
+            {"twoSided", p.twoSided},
+            {"vertexColors", p.vertexColors},
+            {"uvChannel", p.uvChannel},
+        };
+
+        if (p.baseColorMap.IsValid())
+            j["baseColorMapPath"] = p.baseColorMap.GetResource()->path;
+        if (p.opacityMap.IsValid())
+            j["opacityMapPath"] = p.opacityMap.GetResource()->path;
+        if (p.normalMap.IsValid())
+            j["normalMapPath"] = p.normalMap.GetResource()->path;
+        if (p.roughnessMap.IsValid())
+            j["roughnessMapPath"] = p.roughnessMap.GetResource()->path;
+        if (p.metalnessMap.IsValid())
+            j["metalnessMapPath"] = p.metalnessMap.GetResource()->path;
+        if (p.aoMap.IsValid())
+            j["aoMapPath"] = p.aoMap.GetResource()->path;
+        if (p.displacementMap.IsValid())
+            j["displacementMapPath"] = p.displacementMap.GetResource()->path;
+
+    }
+
+    void from_json(const json& j, Material& p) {
+
+        j.at("name").get_to(p.name);
+        j.at("baseColor").get_to(p.baseColor);
+        j.at("transmissiveColor").get_to(p.transmissiveColor);
+        j.at("emissiveColor").get_to(p.emissiveColor);
+        j.at("emissiveIntensity").get_to(p.emissiveIntensity);
+        j.at("opacity").get_to(p.opacity);
+        j.at("roughness").get_to(p.roughness);
+        j.at("metalness").get_to(p.metalness);
+        j.at("ao").get_to(p.ao);
+        j.at("reflectance").get_to(p.reflectance);
+        j.at("normalScale").get_to(p.normalScale);
+        j.at("displacementScale").get_to(p.displacementScale);
+        j.at("tiling").get_to(p.tiling);
+        j.at("twoSided").get_to(p.twoSided);
+        j.at("vertexColors").get_to(p.vertexColors);
+        j.at("uvChannel").get_to(p.uvChannel);
+
+        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion) -> auto {
+            return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
+            };
+
+        if (j.contains("baseColorMapPath"))
+            p.baseColorMap = getTextureHandle(j["baseColorMapPath"], false);
+        if (j.contains("opacityMapPath"))
+            p.opacityMap = getTextureHandle(j["opacityMapPath"], false);
+        if (j.contains("normalMapPath"))
+            p.normalMap = getTextureHandle(j["normalMapPath"], false);
+        if (j.contains("roughnessMapPath"))
+            p.roughnessMap = getTextureHandle(j["roughnessMapPath"], false);
+        if (j.contains("metalnessMapPath"))
+            p.metalnessMap = getTextureHandle(j["metalnessMapPath"], false);
+        if (j.contains("aoMapPath"))
+            p.aoMap = getTextureHandle(j["aoMapPath"], false);
+        if (j.contains("displacementMapPath"))
+            p.displacementMap = getTextureHandle(j["displacementMapPath"], false);
 
     }
 

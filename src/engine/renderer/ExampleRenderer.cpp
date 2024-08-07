@@ -1,7 +1,7 @@
 #include "ExampleRenderer.h"
 
 #include "../loader/ShaderLoader.h"
-#include "../loader/ModelLoader.h"
+#include "../loader/ModelImporter.h"
 #include "../resource/ResourceManager.h"
 #include "../common/RandomHelper.h"
 #include "../pipeline/PipelineManager.h"
@@ -207,7 +207,7 @@ namespace Atlas {
 
                 for (auto &subData: mesh->data.subData) {
                     auto baseColorTexture = subData.material->baseColorMap;
-                    if (baseColorTexture) {
+                    if (subData.material->HasBaseColorMap()) {
                         commandList->BindImage(baseColorTexture->image, baseColorTexture->sampler, 0, 1);
                     }
 

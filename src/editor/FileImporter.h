@@ -13,7 +13,7 @@
 #include "scripting/Script.h"
 #include "Font.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/ModelImporter.h"
 
 #include "Content.h"
 #include "Serializer.h"

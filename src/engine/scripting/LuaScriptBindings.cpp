@@ -4,7 +4,7 @@
 #include "scene/Scene.h"
 #include "Clock.h"
 #include "input/KeyboardMap.h"
-#include "loader/ModelLoader.h"
+#include "loader/ModelImporter.h"
 
 #include "bindings/AudioBindings.h"
 #include "bindings/GraphicsBindings.h"

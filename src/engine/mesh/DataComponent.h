@@ -168,12 +168,13 @@ namespace Atlas {
              */
             typename std::vector<T>::const_iterator end() const;
 
-        private:
-            void ConvertData();
-
             ComponentFormat format;
 
             std::vector<T> data;
+
+        private:
+            void ConvertData();
+            
             std::vector<std::byte> converted;
 
         };

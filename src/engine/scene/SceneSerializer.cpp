@@ -174,6 +174,8 @@ namespace Atlas::Scene {
             j["ao"] = *scene->ao;
         if (scene->reflection)
             j["reflection"] = *scene->reflection;
+        if (scene->rtgi)
+            j["rtgi"] = *scene->rtgi;
         if (scene->sss)
             j["sss"] = *scene->sss;
         if (scene->ssgi)
@@ -222,6 +224,10 @@ namespace Atlas::Scene {
         if (j.contains("reflection")) {
             scene->reflection = CreateRef<Lighting::Reflection>();
             *scene->reflection = j["reflection"];
+        }
+        if (j.contains("rtgi")) {
+            scene->rtgi = CreateRef<Lighting::RTGI>();
+            *scene->rtgi = j["rtgi"];
         }
         if (j.contains("sss")) {
             scene->sss = CreateRef<Lighting::SSS>();

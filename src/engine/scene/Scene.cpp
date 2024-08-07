@@ -634,20 +634,22 @@ namespace Atlas {
                 if (!mesh.IsLoaded()) continue;
 
                 for (auto& material : mesh->data.materials) {
+                    if (!material.IsLoaded())
+                        Log::Warning("Nooooo");
                     if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap);
+                        textures.insert(material->baseColorMap.Get());
                     if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap);
+                        textures.insert(material->opacityMap.Get());
                     if (material->HasNormalMap())
-                        textures.insert(material->normalMap);
+                        textures.insert(material->normalMap.Get());
                     if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap);
+                        textures.insert(material->roughnessMap.Get());
                     if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap);
+                        textures.insert(material->metalnessMap.Get());
                     if (material->HasAoMap())
-                        textures.insert(material->aoMap);
+                        textures.insert(material->aoMap.Get());
                     if (material->HasDisplacementMap())
-                        textures.insert(material->displacementMap);
+                        textures.insert(material->displacementMap.Get());
                 }
 
                 // Not all meshes might have a bvh

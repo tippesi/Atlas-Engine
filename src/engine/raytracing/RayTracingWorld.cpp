@@ -211,27 +211,27 @@ namespace Atlas {
                     gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                     if (material->HasBaseColorMap()) {
-                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap];
+                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
                     }
 
                     if (material->HasOpacityMap()) {
-                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap];
+                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
                     }
 
                     if (material->HasNormalMap()) {
-                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap];
+                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
                     }
 
                     if (material->HasRoughnessMap()) {
-                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap];
+                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
                     }
 
                     if (material->HasMetalnessMap()) {
-                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap];
+                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
                     }
 
                     if (material->HasAoMap()) {
-                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap];
+                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
                     }
 
                     materials.push_back(gpuMaterial);

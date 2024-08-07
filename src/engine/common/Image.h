@@ -198,6 +198,13 @@ namespace Atlas {
             void GammaToLinear();
 
             /**
+             * Converts the image data from linear to gamma color space.
+             * @note Converting the image data will result in a loss of data
+             * of the mipmap chain. Call GenerateMipmap() to generate it again.
+             */
+            void LinearToGamma();
+
+            /**
              * Flips image data horizontally.
              * @note Flipping the image data will result in a loss of data
              * of the mipmap chain. Call GenerateMipmap() to generate it again.
@@ -393,6 +400,8 @@ namespace Atlas {
 
             ImageFormat fileFormat = ImageFormat::PNG;
             std::string fileName = "";
+
+            bool srgbConversion = false;
 
         private:
             std::vector<MipLevel<T>> mipLevels;
@@ -752,6 +761,27 @@ namespace Atlas {
 
                 float value = float(data[i]) * invMaxPixelValue;
                 value = 0.76f * value * value + 0.24f * value * value * value;
+
+                data[i] = T(value * MaxPixelValue());
+            }
+
+        }
+
+        template<typename T>
+        void Image<T>::LinearToGamma() {
+
+            auto& data = mipLevels[0].data;
+            int32_t size = int32_t(data.size());
+
+            auto invMaxPixelValue = 1.0f / MaxPixelValue();
+            bool hasAlpha = channels == 4;
+
+            for (int32_t i = 0; i < size; i++) {
+                // Don't correct the alpha values
+                if (hasAlpha && (i + 1) % 4 == 0) continue;
+
+                float value = float(data[i]) * invMaxPixelValue;
+                value = powf(value, 1.0f / 2.2f);
 
                 data[i] = T(value * MaxPixelValue());
             }
