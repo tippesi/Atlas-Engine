@@ -634,8 +634,6 @@ namespace Atlas {
                 if (!mesh.IsLoaded()) continue;
 
                 for (auto& material : mesh->data.materials) {
-                    if (!material.IsLoaded())
-                        Log::Warning("Nooooo");
                     if (material->HasBaseColorMap())
                         textures.insert(material->baseColorMap.Get());
                     if (material->HasOpacityMap())

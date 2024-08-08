@@ -60,6 +60,8 @@ namespace Atlas::Mesh {
 
     void to_json(json& j, const MeshData& p) {
 
+        bool binary = true;
+
         j = json{
            {"name", p.name},
            {"indexCount", p.GetIndexCount()},
@@ -74,7 +76,15 @@ namespace Atlas::Mesh {
            {"primitiveType", p.primitiveType},
            {"radius", p.radius},
            {"aabb", p.aabb},
+           {"binary", binary},
         };
+
+        to_json(j["indices"], p.indices, binary);
+        to_json(j["vertices"], p.vertices, binary);
+        to_json(j["texCoords"], p.texCoords, binary);
+        to_json(j["normals"], p.normals, binary);
+        to_json(j["tangents"], p.tangents, binary);
+        to_json(j["colors"], p.colors, binary);
 
         for (size_t i = 0; i < p.materials.size(); i++) {
             auto& material = p.materials[i];
@@ -86,6 +96,7 @@ namespace Atlas::Mesh {
 
     void from_json(const json& j, MeshData& p) {
 
+        bool binary;
         int32_t indexCount, vertexCount;
 
         j.at("name").get_to(p.name);
@@ -95,16 +106,18 @@ namespace Atlas::Mesh {
         p.SetIndexCount(indexCount);
         p.SetVertexCount(vertexCount);
 
-        j.at("indices").get_to(p.indices);
-        j.at("vertices").get_to(p.vertices);
-        j.at("texCoords").get_to(p.texCoords);
-        j.at("normals").get_to(p.normals);
-        j.at("tangents").get_to(p.tangents);
-        j.at("colors").get_to(p.colors);
         j.at("subData").get_to(p.subData);
         j.at("primitiveType").get_to(p.primitiveType);
         j.at("radius").get_to(p.radius);
         j.at("aabb").get_to(p.aabb);
+        j.at("binary").get_to(binary);
+
+        from_json(j["indices"], p.indices, binary);
+        from_json(j["vertices"], p.vertices, binary);
+        from_json(j["texCoords"], p.texCoords, binary);
+        from_json(j["normals"], p.normals, binary);
+        from_json(j["tangents"], p.tangents, binary);
+        from_json(j["colors"], p.colors, binary);
 
         if (j.contains("materials")) {
             for (auto& path : j["materials"]) {

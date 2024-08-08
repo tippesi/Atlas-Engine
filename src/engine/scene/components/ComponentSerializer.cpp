@@ -177,7 +177,7 @@ namespace Atlas::Scene::Components {
             j.at("resourcePath").get_to(resourcePath);
 
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, false);
+                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
         }
 
     }

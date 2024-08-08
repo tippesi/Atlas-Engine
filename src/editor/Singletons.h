@@ -6,6 +6,7 @@
 #include "renderer/MainRenderer.h"
 #include "Icons.h"
 #include "Config.h"
+#include "BlockingOperation.h"
 
 namespace Atlas::Editor {
 
@@ -20,6 +21,7 @@ namespace Atlas::Editor {
         static Ref<Renderer::MainRenderer> mainRenderer;
         static Ref<Icons> icons;
         static Ref<Config> config;
+        static Ref<BlockingOperation> blockingOperation;
 
     };
 

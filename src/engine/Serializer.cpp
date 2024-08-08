@@ -36,23 +36,7 @@ namespace Atlas {
             }
 
             if (saveDependencies) {
-                auto meshes = scene->GetMeshes();
-                std::map<Hash, ResourceHandle<Material>> materials;
-
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path);
-
-                    for (const auto& material : mesh->data.materials)
-                        materials[material.GetID()] = material;
-                }
-
-                for (const auto& [_, material] : materials) {
-                    if (!material.IsLoaded()) continue;
-
-                    Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
-                }
+                SaveDependencies(scene);
             }
 
             fileStream.close();
@@ -147,6 +131,55 @@ namespace Atlas {
                 *rigidBody->creationSettings = j["body"];
 
             return entity;
+
+        }
+
+        void Serializer::SaveDependencies(Ref<Scene::Scene> scene, bool multithreaded) {
+
+            auto meshes = scene->GetMeshes();
+            std::map<Hash, ResourceHandle<Material>> materials;
+
+            if (multithreaded) {
+                std::atomic_int32_t counter = 0;
+
+                auto workerCount = std::thread::hardware_concurrency();
+                std::vector<std::future<void>> workers;
+                for (uint32_t i = 0; i < workerCount; i++) {
+                    workers.emplace_back(std::async(std::launch::async, [&]() {
+                        auto i = counter++;
+
+                        while (i < int32_t(meshes.size())) {
+                            auto& mesh = meshes[i];
+
+                            if (!mesh.IsLoaded()) continue;
+
+                            Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
+
+                            i = counter++;
+                        }
+                        }));
+                }
+
+                for (uint32_t i = 0; i < workerCount; i++) {
+                    workers[i].get();
+                }
+            }
+
+            for (const auto& mesh : meshes) {
+                if (!mesh.IsLoaded()) continue;
+
+                if (!multithreaded)
+                    Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
+
+                for (const auto& material : mesh->data.materials)
+                    materials[material.GetID()] = material;
+            }
+
+            for (const auto& [_, material] : materials) {
+                if (!material.IsLoaded()) continue;
+
+                Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
+            }
 
         }
 
