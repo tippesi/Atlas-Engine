@@ -71,6 +71,8 @@ namespace Atlas::Editor::UI {
             ImGui::SetWindowFocus();
         }
 
+        bool isBlocked = Singletons::blockingOperation->block;
+
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
 
         if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {
@@ -143,7 +145,7 @@ namespace Atlas::Editor::UI {
         }
 
         // We want to update the scene after all panels have update their respective values/changed the scene
-        if (!isPlaying) {
+        if (!isPlaying && !isBlocked) {
             // Temporarily disable all scene cameras, only let editor camera be main
             std::map<ECS::Entity, bool> cameraMainMap;
             auto cameraSubset = scene->GetSubset<CameraComponent>();
@@ -635,17 +637,20 @@ namespace Atlas::Editor::UI {
         if (!scene.IsLoaded())
             return;
 
-        cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
+        Singletons::blockingOperation->Block("Saving scene. Please wait...",
+            [&]() {
+                cameraState = Scene::Entity::Backup(scene.Get(), cameraEntity);
 
-        scene->DestroyEntity(cameraEntity);
+                scene->DestroyEntity(cameraEntity);
 
-        Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true);
-        
-        cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
+                Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true);
 
-        cameraState.clear();
+                cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
 
-        Notifications::Push({ .message = "Saved scene " + scene->name });
+                cameraState.clear();
+
+                Notifications::Push({ .message = "Saved scene " + scene->name });
+            });       
 
     }
 

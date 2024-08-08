@@ -33,6 +33,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::Begin(GetNameID());
 
+        bool isBlocked = Singletons::blockingOperation->block;
+
         // Workaround for offsetted Gizmo without resize after a restart
         // Seems like some ImGuizmo or ImGui config isn't properly updated
         if (firstFrame) {
@@ -59,7 +61,7 @@ namespace Atlas::Editor::UI {
             CreateRenderPass();
         }
 
-        if (scene != nullptr && validRegion && isActiveWindow) {
+        if (scene != nullptr && validRegion && isActiveWindow && !isBlocked) {
             auto& config = Singletons::config;
 
             if (config->pathTrace) {
@@ -97,12 +99,12 @@ namespace Atlas::Editor::UI {
             ImGui::Image(set, region);
         }
 
-        if (drawOverlayFunc)
+        if (drawOverlayFunc && !isBlocked)
             drawOverlayFunc();
 
         ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
 
-        if (drawMenuBarFunc) {
+        if (drawMenuBarFunc && !isBlocked) {
             isFocused |= ImGui::IsWindowFocused();            
 
             drawMenuBarFunc(); 

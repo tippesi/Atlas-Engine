@@ -17,7 +17,7 @@ namespace Atlas {
         static Scene::Entity DeserializePrefab(Ref<Scene::Scene> scene, const std::string& filename);
 
     private:
-
+        static void SaveDependencies(Ref<Scene::Scene> scene, bool multithreaded = true);
 
     };
 

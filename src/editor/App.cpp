@@ -47,6 +47,7 @@ namespace Atlas::Editor {
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
+        Singletons::blockingOperation = CreateRef<BlockingOperation>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
@@ -83,6 +84,9 @@ namespace Atlas::Editor {
 
         ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
+
+        if (Singletons::blockingOperation->block)
+            return;
 
         // Create new windows for fully loaded scenes
         for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
@@ -309,7 +313,7 @@ namespace Atlas::Editor {
 
             if (saveScene) {
                 auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
-                activeSceneWindow->SaveScene();
+                activeSceneWindow->SaveScene();                      
             }
 
             ImGui::EndMainMenuBar();

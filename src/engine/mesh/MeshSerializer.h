@@ -26,26 +26,42 @@ namespace Atlas::Mesh {
     void from_json(const json& j, Impostor& p);
 
     template<class T>
-    void to_json(json& j, const DataComponent<T>& p) {
+    void to_json(json& j, const DataComponent<T>& p, bool binary) {
 
         int format = static_cast<int>(p.format);
 
         j = json{
             {"format", format},
-            {"data", p.data}
         };
+
+        std::vector<uint8_t> binaryData;
+        if (!p.data.empty()) {
+            binaryData.resize(p.data.size() * sizeof(T));
+            std::memcpy(binaryData.data(), p.data.data(), binaryData.size());
+        }
+
+        if (binary) {            
+            j["data"] = json::binary_t(binaryData);
+        }
+        else {
+            j["data"] = binaryData;
+        }
 
     }
 
     template<class T>
-    void from_json(const json& j, DataComponent<T>& p) {
+    void from_json(const json& j, DataComponent<T>& p, bool binary) {
 
         int format;
 
         j.at("format").get_to(format);
-        j.at("data").get_to(p.data);
-
         p.format = static_cast<ComponentFormat>(format);
+
+        std::vector<uint8_t> binaryData = j["data"];
+        if (!binaryData.empty()) {
+            p.data.resize(binaryData.size() / sizeof(T));
+            std::memcpy(p.data.data(), binaryData.data(), binaryData.size());
+        }  
 
     }
 
