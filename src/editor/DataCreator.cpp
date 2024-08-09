@@ -71,10 +71,10 @@ namespace Atlas::Editor {
     }
 
     Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max,
-        int32_t depth, bool invertUVs, bool addRigidBodies, bool combineMeshes, bool makeMeshesStatic) {
+        int32_t depth, bool invertUVs, bool addRigidBodies, bool makeMeshesStatic) {
 
         auto scene = Loader::ModelImporter::ImportScene(filename, min, max, depth,
-            combineMeshes, makeMeshesStatic, false, 2048);
+            true, makeMeshesStatic, invertUVs, 2048);
 
         auto rootEntity = scene->GetEntityByName("Root");
         auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
@@ -141,13 +141,6 @@ namespace Atlas::Editor {
             const auto& meshComponent = meshSubset.Get(entity);
 
             aabb.Grow(meshComponent.aabb);
-        }
-        
-        if (invertUVs) {
-            auto meshes = scene->GetMeshes();
-
-            for (const auto& mesh : meshes)
-                mesh->invertUVs = true;
         }
 
         if (addRigidBodies) {

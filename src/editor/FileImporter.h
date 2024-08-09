@@ -14,13 +14,12 @@
 #include "Font.h"
 
 #include "loader/ModelImporter.h"
+#include "loader/MeshLoader.h"
 
 #include "Content.h"
 #include "Serializer.h"
 
-namespace Atlas::Editor {
-
-   
+namespace Atlas::Editor {   
 
     class FileImporter {
 
@@ -42,13 +41,31 @@ namespace Atlas::Editor {
 
         ResourceHandle<T> handle;
 
+        std::string fileType = Common::Path::GetFileType(filename);
+        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
+
+        if (!Content::contentTypeMapping.contains(fileType))
+            return handle;
+
+        auto type = Content::contentTypeMapping.at(fileType);
+
         if constexpr (std::is_same_v<T, Audio::AudioData>) {
             handle = ResourceManager<Audio::AudioData>::GetOrLoadResourceAsync(
                 filename, ResourceOrigin::User);
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
-            handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Loader::ModelImporter::ImportMesh, false, 2048);
+            if (type == ContentType::MeshSource) {
+                auto resourcePath = Common::Path::GetFileNameWithoutExtension(filename) + ".aemesh";
+                auto loader = [filename](const std::string& resourcePath) -> auto {
+                    return Loader::ModelImporter::ImportMesh(filename, true);
+                    };
+                handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
+                    ResourceOrigin::User, std::function(loader));
+            }
+            else {
+                handle = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(filename,
+                    ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
+            }
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
@@ -82,7 +99,7 @@ namespace Atlas::Editor {
             return type == ContentType::Audio;
         }
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
-            return type == ContentType::Mesh;
+            return type == ContentType::Mesh || type == ContentType::MeshSource;
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             return type == ContentType::Scene;

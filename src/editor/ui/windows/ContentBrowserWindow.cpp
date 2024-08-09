@@ -70,7 +70,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font", "Prefab"};
+        const char *items[] = {"Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene", "Script", "Font", "Prefab"};
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
@@ -350,6 +350,8 @@ namespace Atlas::Editor::UI {
         switch (contentType) {
         case ContentType::Audio: return icons->Get(IconType::Audio);
         case ContentType::Mesh: return icons->Get(IconType::Mesh);
+        case ContentType::MeshSource: return icons->Get(IconType::MeshSource);
+        case ContentType::Material: return icons->Get(IconType::Material);
         case ContentType::Scene: return icons->Get(IconType::Scene);
         case ContentType::Font: return icons->Get(IconType::Font);
         case ContentType::Prefab: return icons->Get(IconType::Prefab);

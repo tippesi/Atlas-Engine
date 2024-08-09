@@ -349,7 +349,7 @@ namespace Atlas::Editor {
         ImGui::DockBuilderAddNode(dsID);
 
         ImGuiID dsIdUp, dsIdDown;
-        ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.8f, &dsIdUp, &dsIdDown);
+        ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.7f, &dsIdUp, &dsIdDown);
 
         for (auto& sceneWindow : sceneWindows) {
             ImGui::DockBuilderDockWindow(sceneWindow->GetNameID(), dsIdUp);

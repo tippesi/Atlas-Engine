@@ -18,15 +18,15 @@ namespace Atlas {
     namespace Loader {
 
         Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
-            bool forceTangents, int32_t maxTextureResolution) {
+            bool saveToDisk, int32_t maxTextureResolution) {
 
-            return ImportMesh(filename, Mesh::MeshMobility::Stationary, forceTangents,
+            return ImportMesh(filename, Mesh::MeshMobility::Stationary, saveToDisk,
                 maxTextureResolution);
 
         }
 
         Ref<Mesh::Mesh> ModelImporter::ImportMesh(const std::string& filename,
-            Mesh::MeshMobility mobility, bool forceTangents,
+            Mesh::MeshMobility mobility, bool saveToDisk,
             int32_t maxTextureResolution) {
 
             ImporterState state;
@@ -71,7 +71,6 @@ namespace Atlas {
 
             traverseNodeTree(state.scene->mRootNode, mat4(1.0f));
 
-            hasTangents |= forceTangents;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
                 if (state.scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
                     hasTangents = true;
@@ -227,18 +226,21 @@ namespace Atlas {
             mesh->UpdateData();
 
             auto meshFilename = state.paths.meshPath + mesh->name + ".aemesh";
-            Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
+            if (saveToDisk) {
+                Log::Message("Imported mesh " + meshFilename);
+                Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
+            }
 
             return mesh;
 
         }
 
         Ref<Scene::Scene> ModelImporter::ImportScene(const std::string& filename, vec3 min, vec3 max,
-            int32_t depth, bool combineMeshes, bool makeMeshesStatic,
-            bool forceTangents, int32_t maxTextureResolution) {
+            int32_t depth, bool saveToDisk, bool makeMeshesStatic,
+            bool invertUVs, int32_t maxTextureResolution) {
 
             ImporterState state;
-            InitImporterState(state, filename, combineMeshes);
+            InitImporterState(state, filename, false);
 
             auto materials = ImportMaterials(state, maxTextureResolution);
 
@@ -274,7 +276,6 @@ namespace Atlas {
                         auto mesh = CreateRef<Mesh::Mesh>();
                         auto& meshData = mesh->data;
 
-                        hasTangents |= forceTangents;
                         if (material->HasNormalMap())
                             hasTangents = true;
                         if (material->HasDisplacementMap())
@@ -388,13 +389,17 @@ namespace Atlas {
 
                         meshData.name = std::string(assimpMesh->mName.C_Str());
                         mesh->name = meshData.name;
+                        mesh->invertUVs = invertUVs;
                         mesh->UpdateData();
 
                         auto meshFilename = state.paths.meshPath + mesh->name + "_" + std::to_string(i) + ".aemesh";
                         auto handle = ResourceManager<Mesh::Mesh>::AddResource(meshFilename, mesh);
                         meshes[i] = { handle, offset };
 
-                        Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
+                        if (saveToDisk) {
+                            Log::Message("Imported mesh " + meshFilename);
+                            Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
+                        }
 
                         i = counter++;
                     }

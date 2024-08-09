@@ -169,13 +169,13 @@ void App::Update(float deltaTime) {
             if (!meshComponent.mesh.IsLoaded())
                 continue;
 
-            if (meshComponent.mesh->name == "chromesphere.gltf") {
+            if (meshComponent.mesh->name == "chromesphere") {
                 float height = (sinf(Atlas::Clock::Get() / 5.0f) + 1.0f) * 20.0f;
                 auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, height, .0f));
 
                 transformComponent.Set(matrix);
             }
-            else if (meshComponent.mesh->name == "metallicwall.gltf") {
+            else if (meshComponent.mesh->name == "metallicwall") {
                 auto matrix = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, 0.0f, -2.0f));
                 matrix = glm::rotate(matrix, Atlas::Clock::Get() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 

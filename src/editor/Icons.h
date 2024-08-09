@@ -27,7 +27,9 @@ namespace Atlas::Editor {
         Move,
         Scale,
         Rotate,
-        MoreHorizontal
+        MoreHorizontal,
+        Material,
+        MeshSource
     };
 
     class Icons {

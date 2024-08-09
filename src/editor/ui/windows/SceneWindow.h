@@ -60,6 +60,8 @@ namespace Atlas::Editor::UI {
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
 
+        bool depthTestBoundingVolumes = false;
+
         bool hasMainCamera = false;
         bool hasPlayer = false;
         bool isPlaying = false;

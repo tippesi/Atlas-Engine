@@ -57,7 +57,11 @@ namespace Atlas::Mesh {
         j.at("format").get_to(format);
         p.format = static_cast<ComponentFormat>(format);
 
-        std::vector<uint8_t> binaryData = j["data"];
+        std::vector<uint8_t> binaryData;
+        if (binary)
+            binaryData = j["data"].get_binary();
+        else
+            j.at("data").get_to(binaryData);
         if (!binaryData.empty()) {
             p.data.resize(binaryData.size() / sizeof(T));
             std::memcpy(p.data.data(), binaryData.data(), binaryData.size());

@@ -135,6 +135,7 @@ namespace Atlas {
                         uniforms.bias = rtgi->bias;
                         uniforms.frameSeed = frameCount++;                        
                         uniforms.textureLevel = rtgi->textureLevel;
+                        uniforms.halfRes = target->GetGIResolution() == HALF_RES ? 1 : 0;
                         uniforms.resolution = res;
 
                         if (shadow && rtgi->useShadowMap) {

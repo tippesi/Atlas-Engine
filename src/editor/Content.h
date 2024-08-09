@@ -9,6 +9,8 @@ namespace Atlas::Editor {
     enum class ContentType {
         Audio = 0,
         Mesh,
+        MeshSource,
+        Material,
         Terrain,
         Scene,
         Script,

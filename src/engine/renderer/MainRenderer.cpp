@@ -128,6 +128,7 @@ namespace Atlas {
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
+            commandList->BindSampler(globalNearestSampler, 1, 15);
             commandList->BindBuffers(triangleBuffers, 0, 1);
             if (images.size())
                 commandList->BindSampledImages(images, 0, 3);
@@ -473,6 +474,7 @@ namespace Atlas {
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
+            commandList->BindSampler(globalNearestSampler, 1, 15);
             commandList->BindBuffers(triangleBuffers, 0, 1);
             commandList->BindSampledImages(images, 0, 3);
 
@@ -909,6 +911,15 @@ namespace Atlas {
                 .anisotropicFiltering = true
             };
             globalSampler = device->CreateSampler(samplerDesc);
+
+            samplerDesc = Graphics::SamplerDesc{
+                .filter = VK_FILTER_NEAREST,
+                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                .maxLod = 12,
+                .anisotropicFiltering = false
+            };
+            globalNearestSampler = device->CreateSampler(samplerDesc);
 
             auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
                 .bindings = {

@@ -19,7 +19,7 @@ namespace Atlas::Loader {
             auto data = Loader::AssetLoader::GetFileContent(fileStream);
             // We don't want to keep the file stream open longer than we need
             fileStream.close();
-            j = json::from_bjdata(data);
+            j = json::from_msgpack(data);
         }
         else {
             std::string serialized((std::istreambuf_iterator<char>(fileStream)),
@@ -50,7 +50,7 @@ namespace Atlas::Loader {
         to_json(j, *mesh);
         
         if (binaryJson) {
-            auto data = json::to_bjdata(j);
+            auto data = json::to_msgpack(j);
             fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
         }
         else {

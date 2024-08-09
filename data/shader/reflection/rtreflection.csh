@@ -48,7 +48,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float bias;
     int textureLevel;
     float roughnessCutoff;
-    float padding;
+    int halfRes;
     ivec2 resolution;
     Shadow shadow;
 } uniforms;
@@ -74,8 +74,12 @@ void main() {
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec2 recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
-        //vec2 recontructTexCoord = (2.0 * vec2(pixel) + 0.5) / (2.0 * vec2(resolution));
+        vec2 recontructTexCoord;
+        if (uniforms.halfRes > 0)
+            recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
+        else
+            recontructTexCoord = (vec2(pixel) + 0.5) / (vec2(resolution));
+            
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
