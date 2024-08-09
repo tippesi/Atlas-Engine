@@ -20,15 +20,15 @@ namespace Atlas {
 
         public:
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
-                bool forceTangents = false, int32_t maxTextureResolution = 4096);
+                bool saveToDisk = false, int32_t maxTextureResolution = 4096);
 
             static Ref<Mesh::Mesh> ImportMesh(const std::string& filename,
-                Mesh::MeshMobility mobility, bool forceTangents = false,
+                Mesh::MeshMobility mobility, bool saveToDisk = false,
                 int32_t maxTextureResolution = 4096);
 
             static Ref<Scene::Scene> ImportScene(const std::string& filename, vec3 min, vec3 max,
-                int32_t depth, bool combineMeshes = true, bool makeMeshesStatic = false,
-                bool forceTangents = false, int32_t maxTextureResolution = 4096);
+                int32_t depth, bool saveToDisk = true, bool makeMeshesStatic = false,
+                bool invertUVs = false, int32_t maxTextureResolution = 4096);
 
         private:
             struct Paths {

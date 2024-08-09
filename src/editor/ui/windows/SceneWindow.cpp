@@ -264,6 +264,9 @@ namespace Atlas::Editor::UI {
                     ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
                     ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
 
+                    ImGui::Text("Bounding volumes");
+                    ImGui::Checkbox("Test depth", &depthTestBoundingVolumes);
+
                     ImGui::EndPopup();
                 }
             }
@@ -504,6 +507,8 @@ namespace Atlas::Editor::UI {
 
         if (!entity.IsValid())
             return;
+
+        viewportPanel.primitiveBatchWrapper.primitiveBatch->testDepth = depthTestBoundingVolumes;
 
         if (entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();

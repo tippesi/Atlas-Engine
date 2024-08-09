@@ -50,6 +50,8 @@ namespace Atlas::Editor {
                 { IconType::Scale, Texture::Texture2D("editor/icons/scale.png") },
                 { IconType::Rotate, Texture::Texture2D("editor/icons/rotate.png") },
                 { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/more_horiz.png") },
+                { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
+                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
             };
         }
         else {
@@ -75,6 +77,8 @@ namespace Atlas::Editor {
                 { IconType::Scale, Texture::Texture2D("editor/icons/scale_light.png") },
                 { IconType::Rotate, Texture::Texture2D("editor/icons/rotate_light.png") },
                 { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/more_horiz_light.png") },
+                { IconType::Material, Texture::Texture2D("editor/icons/material_light.png") },
+                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource_light.png") },
             };
         }
 

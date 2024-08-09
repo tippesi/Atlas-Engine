@@ -77,6 +77,7 @@ namespace Atlas::Editor {
             { "scaleSnap", sceneWindow->scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
+            { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
             { "camera", camera }
         };
 
@@ -111,6 +112,7 @@ namespace Atlas::Editor {
         try_get_json(j, "scaleSnap", sceneWindow->scaleSnap);
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
+        try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
         try_get_json(j, "camera", camera);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();

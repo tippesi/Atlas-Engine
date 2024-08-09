@@ -130,6 +130,7 @@ namespace Atlas {
                         uniforms.roughnessCutoff = reflection->roughnessCutoff;
                         uniforms.frameSeed = frameCount++;                        
                         uniforms.textureLevel = reflection->textureLevel;
+                        uniforms.halfRes = target->GetReflectionResolution() == HALF_RES ? 1 : 0;
                         uniforms.resolution = rayRes;
 
                         if (shadow && reflection->useShadowMap) {

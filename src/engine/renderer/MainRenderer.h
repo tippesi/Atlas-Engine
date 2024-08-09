@@ -172,6 +172,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
             Ref<Graphics::Sampler> globalSampler;
+            Ref<Graphics::Sampler> globalNearestSampler;
 
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray cubeVertexArray;
