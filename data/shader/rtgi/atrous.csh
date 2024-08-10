@@ -205,7 +205,7 @@ void main() {
     float variance = GetFilteredVariance(pixel);
     float stdDeviation = sqrt(max(0.0, variance));
 
-    vec3 viewDir = ConvertDepthToViewSpace(centerDepth, texCoord);
+    vec3 viewDir = normalize(ConvertDepthToViewSpace(centerDepth, texCoord));
     float NdotV = abs(dot(viewDir, centerNormal));
     float depthPhi = max(32.0, NdotV * 128.0 / max(1.0, abs(ConvertDepthToViewSpaceDepth(centerLinearDepth))));
 
@@ -239,7 +239,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerMaterialIdx, sampleMaterialIdx,
                                     stdDeviation * pushConstants.strength, 
-                                    noHistory ? 2.0 : 32.0, depthPhi, noHistory);
+                                    noHistory ? 2.0 : NdotV * 512.0, depthPhi, noHistory);
 
             float weight = kernelWeight * edgeStoppingWeight;
             
@@ -249,7 +249,7 @@ void main() {
     }
 
     outputColor = outputColor / vec4(vec3(totalWeight), totalWeight * totalWeight);
-
+    
     imageStore(outputImage, pixel, outputColor);
 
 }

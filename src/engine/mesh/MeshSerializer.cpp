@@ -11,8 +11,8 @@ namespace Atlas::Mesh {
 
         j = json {
             {"name", p.name},
-            {"mobility", p.mobility},
-            {"usage", p.usage},
+            {"mobility", mobility},
+            {"usage", usage},
             {"cullBackFaces", p.cullBackFaces},
             {"castShadow", p.castShadow},
             {"vegetation", p.vegetation},
