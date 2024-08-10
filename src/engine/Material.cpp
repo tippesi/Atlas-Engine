@@ -50,11 +50,4 @@ namespace Atlas {
 
     }
 
-    void Material::SetChanged() {
-
-        mainConfig = PipelineConfig{};
-        shadowConfig = PipelineConfig{};
-
-    }
-
 }

@@ -29,7 +29,8 @@ namespace Atlas::Editor {
         Rotate,
         MoreHorizontal,
         Material,
-        MeshSource
+        MeshSource,
+        EnvironmentImage
     };
 
     class Icons {

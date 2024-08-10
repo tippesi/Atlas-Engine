@@ -26,7 +26,7 @@ namespace Atlas::Scripting::Bindings {
         
         ns->new_usertype<Mesh::Mesh>("Mesh",
             "UpdateData", &Mesh::Mesh::UpdateData,
-            "UpdateMaterials", &Mesh::Mesh::UpdateMaterials,
+            "UpdatePipelines", &Mesh::Mesh::UpdatePipelines,
             "UpdateVertexArray", &Mesh::Mesh::UpdateVertexArray,
             "name", &Mesh::Mesh::name,
             "data", &Mesh::Mesh::data,
@@ -59,7 +59,6 @@ namespace Atlas::Scripting::Bindings {
             "HasMetalnessMap", &Material::HasMetalnessMap,
             "HasAoMap", &Material::HasAoMap,
             "HasDisplacementMap", &Material::HasDisplacementMap,
-            "SetChanged", &Material::SetChanged,
             "name", &Material::name,
             "baseColor", &Material::baseColor,
             "transmissiveColor", &Material::transmissiveColor,

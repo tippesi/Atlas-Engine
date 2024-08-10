@@ -139,6 +139,10 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
             std::map<Hash, ResourceHandle<Material>> materials;
 
+            std::sort(meshes.begin(), meshes.end(), [](const auto& mesh0, const auto& mesh1) {
+                return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
+            });
+
             if (multithreaded) {
                 std::atomic_int32_t counter = 0;
 

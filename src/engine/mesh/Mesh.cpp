@@ -57,10 +57,11 @@ namespace Atlas {
 
         }
 
-        void Mesh::UpdateMaterials() {
+        void Mesh::UpdatePipelines() {
 
-            for (const auto& material : data.materials) {
-                material->SetChanged();
+            for (auto& subData : data.subData) {
+                subData.mainConfig = PipelineConfig();
+                subData.shadowConfig = PipelineConfig();
             }
 
         }

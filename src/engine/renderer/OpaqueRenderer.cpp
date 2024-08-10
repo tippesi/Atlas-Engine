@@ -50,16 +50,16 @@ namespace Atlas {
             for (int32_t i = 0; i < subDataCount; i++) {
                 auto& [subData, _, mesh] = subDatas[i];
                 const auto& material = subData->material;
-                if (material->mainConfig.IsValid()) continue;
+                if (subData->mainConfig.IsValid()) continue;
 
-                material->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
+                subData->mainConfig = GetPipelineConfigForSubData(subData, mesh, target);
             }
 
             // Sort materials by hash
             std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
                 [](auto& subData0, auto& subData1) {
-                    return std::get<0>(subData0)->material->mainConfig.variantHash <
-                        std::get<0>(subData1)->material->mainConfig.variantHash;
+                    return std::get<0>(subData0)->mainConfig.variantHash <
+                        std::get<0>(subData1)->mainConfig.variantHash;
                 });
 
             Hash prevMesh = 0;
@@ -72,12 +72,12 @@ namespace Atlas {
                 const auto material = subData->material;
 
                 // Overwrite material config frame buffer (and assume these have the same format)
-                material->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
+                subData->mainConfig.graphicsPipelineDesc.frameBuffer = target->gBufferFrameBuffer;
 
-                if (material->mainConfig.variantHash != prevHash) {
-                    currentPipeline = PipelineManager::GetPipeline(material->mainConfig);
+                if (subData->mainConfig.variantHash != prevHash) {
+                    currentPipeline = PipelineManager::GetPipeline(subData->mainConfig);
                     commandList->BindPipeline(currentPipeline);
-                    prevHash = material->mainConfig.variantHash;
+                    prevHash = subData->mainConfig.variantHash;
                 }
 
                 if (meshID != prevMesh) {
@@ -127,7 +127,7 @@ namespace Atlas {
                     0, instances.offset);
 
                 // Reset the frame buffer here to let it be able to be deleted
-                material->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
+                subData->mainConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
             }
 
