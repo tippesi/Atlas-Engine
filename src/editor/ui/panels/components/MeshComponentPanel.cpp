@@ -75,7 +75,7 @@ namespace Atlas::Editor::UI {
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials);
 
             // Just update materials regardless of any change
-            mesh->UpdateMaterials();
+            mesh->UpdatePipelines();
         }        
 
         return resourceChanged;

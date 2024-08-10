@@ -167,8 +167,16 @@ namespace Atlas::Editor::UI {
             ImGui::OpenPopup("Blocking popup");
         }
 
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.7f));
-        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        auto config = Singletons::config;
+
+        if (config->darkMode) {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        }
+        else {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(1.0f, 1.0f, 1.0f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        }
         ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 2.0f);
 
         SetupPopupSize(0.2f, 0.05f);

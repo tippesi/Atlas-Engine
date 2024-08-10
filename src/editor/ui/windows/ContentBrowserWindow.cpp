@@ -70,7 +70,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        const char *items[] = {"Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene", "Script", "Font", "Prefab"};
+        const char *items[] = {"Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene", 
+            "Script", "Font", "Prefab", "Texture", "Environment texture"};
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
@@ -292,7 +293,7 @@ namespace Atlas::Editor::UI {
 
         if (ImGui::BeginPopupContextItem()) {
             // Do a direct import here without relying on the file importer
-            if (type == ContentType::Mesh && ImGui::MenuItem("Import as scene")) {
+            if (type == ContentType::MeshSource && ImGui::MenuItem("Import as scene")) {
                 PopupPanels::filename = assetRelativePath;
                 PopupPanels::isImportScenePopupVisible = true;
             }
@@ -355,6 +356,8 @@ namespace Atlas::Editor::UI {
         case ContentType::Scene: return icons->Get(IconType::Scene);
         case ContentType::Font: return icons->Get(IconType::Font);
         case ContentType::Prefab: return icons->Get(IconType::Prefab);
+        case ContentType::Texture: return icons->Get(IconType::Image);
+        case ContentType::EnvironmentTexture: return icons->Get(IconType::EnvironmentImage);
         default: return icons->Get(IconType::Document);
         }
 

@@ -85,6 +85,8 @@ namespace Atlas::Editor {
         ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
+        Singletons::blockingOperation->Update();
+
         if (Singletons::blockingOperation->block)
             return;
 

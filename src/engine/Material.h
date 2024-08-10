@@ -5,7 +5,6 @@
 #include "texture/Texture.h"
 #include "texture/Texture2DArray.h"
 #include "loader/ImageLoader.h"
-#include "pipeline/PipelineConfig.h"
 #include "resource/Resource.h"
 #include "common/Ref.h"
 
@@ -25,8 +24,6 @@ namespace Atlas {
         bool HasMetalnessMap() const;
         bool HasAoMap() const;
         bool HasDisplacementMap() const;
-
-        void SetChanged();
 
         std::string name;
 
@@ -61,9 +58,6 @@ namespace Atlas {
         bool vertexColors = false;
 
         uint32_t uvChannel = 0;
-
-        PipelineConfig mainConfig;
-        PipelineConfig shadowConfig;
 
     };
 

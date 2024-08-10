@@ -16,6 +16,8 @@ namespace Atlas::Editor {
         Script,
         Font,
         Prefab,
+        Texture,
+        EnvironmentTexture,
         None
     };
 

@@ -6,6 +6,7 @@
 #include "resource/Resource.h"
 #include "DataComponent.h"
 #include "Material.h"
+#include "pipeline/PipelineConfig.h"
 
 #include <vector>
 
@@ -28,6 +29,9 @@ namespace Atlas {
             int32_t materialIdx;
 
             Volume::AABB aabb;
+
+            PipelineConfig mainConfig;
+            PipelineConfig shadowConfig;
         
         };
 

@@ -1,4 +1,5 @@
 #include "Notifications.h"
+#include "Singletons.h"
 
 #include "common/Hash.h"
 #include "Log.h"
@@ -26,6 +27,8 @@ namespace Atlas::Editor {
 
 		auto viewport = ImGui::GetMainViewport();
 		auto viewportSize = viewport->Size;
+
+		auto config = Singletons::config;
 
 		std::scoped_lock lock(mutex);
 
@@ -58,8 +61,14 @@ namespace Atlas::Editor {
 			HashCombine(hash, notification.message);
 			HashCombine(hash, notification.creationTime);
 
-			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, alpha * 0.9f));
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
+			if (config->darkMode) {
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, alpha * 0.9f));
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
+			}
+			else {
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, alpha * 0.9f));
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.7f, 0.7f, 0.7f, alpha * 0.9f));
+			}
 
 			auto windowName = "Notification##" + std::to_string(hash);
 			ImGui::Begin(windowName.c_str(), nullptr, notificationWindowFlags);

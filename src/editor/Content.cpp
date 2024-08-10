@@ -17,6 +17,9 @@ namespace Atlas::Editor {
         { "lua", ContentType::Script },
         { "ttf", ContentType::Font },
         { "aeprefab", ContentType::Prefab },
+        { "jpg", ContentType::Texture },
+        { "png", ContentType::Texture },
+        { "hdr", ContentType::EnvironmentTexture },
     };
 
 }
