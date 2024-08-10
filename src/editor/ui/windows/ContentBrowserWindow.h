@@ -34,6 +34,9 @@ namespace Atlas::Editor::UI {
 
         void UpdateFilteredAndSortedDirEntries();
 
+        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
+            const ContentType contentType, const std::string& searchQuery, bool recursively);
+
         void OpenExternally(const std::string& path, bool isDirectory);
 
         bool TextInputPopup(const char* name, bool& isVisible, std::string& input);

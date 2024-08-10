@@ -28,6 +28,7 @@ namespace Atlas::Editor {
         Scale,
         Rotate,
         MoreHorizontal,
+        MoreVertical,
         Material,
         MeshSource,
         EnvironmentImage

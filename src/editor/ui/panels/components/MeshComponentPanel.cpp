@@ -72,7 +72,59 @@ namespace Atlas::Editor::UI {
 
             ImGui::Separator();
             ImGui::Text("Materials");
-            materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials);
+            materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials, 
+                [&](ResourceHandle<Material> material) {
+                    auto buttonName = material.IsValid() ? material.GetResource()->GetFileName() :
+                        "Drop material resource here";
+                    if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
+                        materialSelectionPopup.Open();
+
+                    // Such that drag and drop will work from the content browser
+                    if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
+                        ImGui::SetWindowFocus();
+                        ImGui::SetItemDefaultFocus();
+                    }
+
+                    auto handle = ResourcePayloadHelper::AcceptDropResource<Material>();
+                    // Need to change here already
+                    if (handle.IsValid()) {
+                        material = handle;
+                    }
+
+                    auto materialResources = ResourceManager<Material>::GetResources();
+                    handle = materialSelectionPopup.Render(materialResources);
+
+                    if (handle.IsValid()) {
+                        material = handle;
+                    }
+                    return material;
+                },
+                [&](ResourceHandle<Texture::Texture2D> texture) {
+                    auto buttonName = texture.IsValid() ? texture.GetResource()->GetFileName() :
+                        "Drop material resource here";
+                    if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
+                        textureSelectionPopup.Open();
+
+                    // Such that drag and drop will work from the content browser
+                    if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
+                        ImGui::SetWindowFocus();
+                        ImGui::SetItemDefaultFocus();
+                    }
+
+                    auto handle = ResourcePayloadHelper::AcceptDropResource<Texture::Texture2D>();
+                    // Need to change here already
+                    if (handle.IsValid()) {
+                        texture = handle;
+                    }
+
+                    auto resources = ResourceManager<Texture::Texture2D>::GetResources();
+                    handle = textureSelectionPopup.Render(resources);
+
+                    if (handle.IsValid()) {
+                        texture = handle;
+                    }
+                    return texture;
+                });
 
             // Just update materials regardless of any change
             mesh->UpdatePipelines();

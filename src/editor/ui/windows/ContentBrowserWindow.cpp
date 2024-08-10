@@ -43,8 +43,8 @@ namespace Atlas::Editor::UI {
             uint32_t dockIdLeft, dockIdRight;
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.05f, &dockIdLeft, &dockIdRight);
 
-            ImGuiDockNode *leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
-            ImGuiDockNode *rightNode = ImGui::DockBuilderGetNode(dockIdRight);
+            ImGuiDockNode* leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
+            ImGuiDockNode* rightNode = ImGui::DockBuilderGetNode(dockIdRight);
             leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
             rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
 
@@ -70,8 +70,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        const char *items[] = {"Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene", 
-            "Script", "Font", "Prefab", "Texture", "Environment texture"};
+        const char* items[] = { "Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene",
+            "Script", "Font", "Prefab", "Texture", "Environment texture" };
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
@@ -119,7 +119,7 @@ namespace Atlas::Editor::UI {
                         [&](const ResourceHandle<Scene::Scene>& item) -> bool {
                             if (!item.IsLoaded())
                                 return false;
-                            return item->name == scene->name;                        
+                            return item->name == scene->name;
                         });
                     auto sceneHandle = *iter;
 
@@ -181,6 +181,32 @@ namespace Atlas::Editor::UI {
         ImGui::SetWindowFontScale(1.0f);
 
         ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
+
+        auto region = ImGui::GetContentRegionAvail();
+        auto& moreIcon = Singletons::icons->Get(IconType::MoreVertical);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreIcon);
+
+        lineHeight = ImGui::GetTextLineHeight();
+        auto buttonSize = ImVec2(lineHeight, lineHeight);
+
+        auto uvMin = ImVec2(0.1f, 0.1f);
+        auto uvMax = ImVec2(0.9f, 0.9f);
+
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            ImGui::OpenPopup("Content browser settings");
+        }
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopup("Content browser settings")) {
+            auto& settings = Singletons::config->contentBrowserSettings;
+
+            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
+            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+
+            ImGui::EndPopup();
+        }
 
     }
 
@@ -364,42 +390,59 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::UpdateFilteredAndSortedDirEntries() {
 
-        using dir_entry = std::filesystem::directory_entry;
-
-        ContentType filterFileType;
+        ContentType filterFileType = ContentType::None;
         if (selectedFilter >= 0)
             filterFileType = static_cast<ContentType>(selectedFilter);
 
-        std::vector<dir_entry> entries;
-        if (assetSearch.empty() && selectedFilter < 0) {
-            auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
-            if (!contentDirectory)
-                return;
+        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
+        if (!contentDirectory)
+            return;
 
+        std::string searchQuery = assetSearch;
+        if (!searchQuery.empty()) {
+            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        }
+
+        const auto& settings = Singletons::config->contentBrowserSettings;
+
+        std::vector<Content> discoverdFiles;
+        bool recursively = searchQuery.empty() ? settings.filterRecursively && filterFileType != ContentType::None : settings.searchRecursively;
+        SearchDirectory(contentDirectory, discoverdFiles, filterFileType, searchQuery, recursively);
+
+        std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
+            return file0.name < file1.name;
+        });
+
+        if (assetSearch.empty() && !settings.filterRecursively) {
             directories = contentDirectory->directories;
-            files = contentDirectory->files;
+            files = discoverdFiles;
         }
         else {
-            std::string searchQuery = assetSearch;
-            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
-
-            std::vector<Content> discoverdFiles;
-            if (selectedFilter >= 0) {
-                discoverdFiles = ContentDiscovery::GetContent(filterFileType);
-            }
-            else {
-                discoverdFiles = ContentDiscovery::GetAllContent();
-            }
-
-            if (!searchQuery.empty()) {
-                std::erase_if(discoverdFiles,
-                    [&](const Content& file) { 
-                        return file.name.find(searchQuery) == std::string::npos;
-                    });
-            }
-
             files = discoverdFiles;
             directories.clear();
+        }
+
+    }
+
+    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
+            const ContentType contentType, const std::string& searchQuery, bool recursively) {
+
+        for (const auto& file : directory->files) {
+            if (file.type != contentType && contentType != ContentType::None) {
+                continue;
+            }
+            
+            if (!searchQuery.empty() && file.name.find(searchQuery) == std::string::npos) {
+                continue;
+            }
+
+            contentFiles.push_back(file);
+        }
+
+        if (recursively) {
+            for (const auto& childDirectory : directory->directories) {
+                SearchDirectory(childDirectory, contentFiles, contentType, searchQuery, true);
+            }
         }
 
     }
@@ -413,12 +456,12 @@ namespace Atlas::Editor::UI {
         auto command = "open " + path;
         system(command.c_str());
 #endif
-        
+
     }
 
     bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
 
-         if (!isVisible)
+        if (!isVisible)
             return false;
 
         PopupPanels::SetupPopupSize(0.4f, 0.1f);
@@ -436,8 +479,8 @@ namespace Atlas::Editor::UI {
 
             if (popupNew)
                 ImGui::SetKeyboardFocusHere();
-                
-            ImGui::InputText("New name",  &input);
+
+            ImGui::InputText("New name", &input);
 
             if (ImGui::Button("Cancel")) {
                 isVisible = false;
