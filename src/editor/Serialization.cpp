@@ -28,6 +28,11 @@ namespace Atlas::Editor {
             { "scenes", scenePaths }
         };
 
+        j["contentBrowserSettings"] = {
+            { "searchRecursively", config->contentBrowserSettings.searchRecursively },
+            { "filterRecursively", config->contentBrowserSettings.filterRecursively },
+        };
+
         TryWriteToFile(configFilename, to_string(j));
 
     }
@@ -53,6 +58,12 @@ namespace Atlas::Editor {
             j.at("vsync").get_to(config->vsync);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
+
+        if (j.contains("contentBrowserSettings")) {
+            auto s = j["contentBrowserSettings"];
+            s.at("searchRecursively").get_to(config->contentBrowserSettings.searchRecursively);
+            s.at("filterRecursively").get_to(config->contentBrowserSettings.filterRecursively);
+        }
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)

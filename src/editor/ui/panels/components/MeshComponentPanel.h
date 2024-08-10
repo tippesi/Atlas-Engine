@@ -20,7 +20,10 @@ namespace Atlas::Editor::UI {
 
     private:
         ImguiExtension::MaterialsPanel materialsPanel;
+
         ResourceSelectionPopup meshSelectionPopup;
+        ResourceSelectionPopup materialSelectionPopup;
+        ResourceSelectionPopup textureSelectionPopup;
 
     };
 

@@ -2,7 +2,7 @@
 
 namespace Atlas::ImguiExtension {
 
-    void MaterialPanel::Render(Ref<ImguiWrapper>& wrapper, Ref<Material> &material) {
+    void MaterialPanel::Render(Ref<ImguiWrapper>& wrapper, Ref<Material> &material, TextureSelector textureSelector) {
 
         ImGui::PushID(GetNameID());
 
@@ -17,6 +17,12 @@ namespace Atlas::ImguiExtension {
                 // Calculate next item width and push a width with the image elements width substracted from it
                 auto width = ImGui::CalcItemWidth();
                 ImGui::PushItemWidth(width - padding - ImGui::GetTextLineHeightWithSpacing());
+                if (textureSelector.has_value())
+                    texture = textureSelector.value()(texture);
+            }
+            else {
+                if (textureSelector.has_value())
+                    textureSelector.value()(texture);
             }
             element();
             if (texture.IsLoaded())
