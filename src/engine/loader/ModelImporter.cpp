@@ -892,7 +892,7 @@ namespace Atlas {
 
         }
 
-        std::string ModelImporter::GetMaterialImageImportPath(ImporterState& state, MaterialImageType type, const std::string& filename) {
+        std::string ModelImporter::GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type, const std::string& filename) {
 
             std::string typeName;
             switch (type) {

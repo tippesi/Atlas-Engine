@@ -69,8 +69,6 @@ namespace Atlas::Editor {
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::PerformContentDiscovery() {
 
-		auto start = Clock::Get();
-
 		auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 
 		auto rootDirectory = CreateRef<ContentDirectory>({
@@ -82,9 +80,6 @@ namespace Atlas::Editor {
 		result->contentDirectories[assetDirectory] = rootDirectory;
 
 		DiscoverDirectory(rootDirectory, result);
-
-		auto end = Clock::Get();
-		Log::Warning("Discovery took " + std::to_string(end - start) + "s");
 
 		return result;
 

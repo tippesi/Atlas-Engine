@@ -198,7 +198,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
         float confidence = planeWeight * normalWeight;
 
-        if (confidence > 0.2) {         
+        if (confidence > 0.5) {         
             totalWeight += weights[i];
             history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -252,7 +252,7 @@ float IsHistoryPixelValid(ivec2 pixel, vec3 position, vec3 normal, vec3 worldNor
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 16.0);
+    confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 32.0);
 
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
@@ -428,6 +428,9 @@ void main() {
         historyColor, currentColor);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
+    //historyColor = clamp(historyColor, historyNeighbourhoodMin, historyNeighbourhoodMax);
+
+    //valid = clipBlend < 1.0 ? valid : false;
 
     currentColor.r = valid ? currentColor.r : mean.r;
 
@@ -457,10 +460,13 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
+    velocity *= 100.0;
+
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
-    //imageStore(resolveImage, pixel, vec4(confidence / , variance));
+    //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
+    imageStore(resolveImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

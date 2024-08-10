@@ -257,10 +257,9 @@ namespace Atlas::Editor::UI {
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        auto& icons = Singletons::icons;
         Texture::Texture2D iconTexture;
         if (isDirectory)
-            iconTexture = icons->Get(IconType::Folder);
+            iconTexture = Singletons::icons->Get(IconType::Folder);
         else
             iconTexture = GetIcon(contentType);
         auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(iconTexture);
