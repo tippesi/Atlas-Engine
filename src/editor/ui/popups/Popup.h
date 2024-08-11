@@ -10,6 +10,8 @@ namespace Atlas::Editor::UI {
     public:
         Popup(const std::string& name) : name(name), nameID(name + "##" + std::to_string(ID)) {}
 
+        void SetID(const size_t newID) { ID = newID; nameID = name + "##" + std::to_string(ID);  }
+
         const char* GetNameID() const { return nameID.c_str(); }
 
         void Open() { ImGui::OpenPopup(GetNameID()); }
@@ -17,15 +19,16 @@ namespace Atlas::Editor::UI {
         std::string name;
 
     protected:
-        int32_t ID = GetID();
+        size_t ID = GetID();
 
         std::string nameID;
 
     private:
-        static int32_t GetID() {
+        static size_t GetID() {
 
-            static int32_t counter = 0;
-            return counter++;
+            static size_t counter = 0;
+            static size_t max = std::numeric_limits<size_t>::max();
+            return (counter++) % max;
 
         }
 

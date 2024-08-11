@@ -12,7 +12,7 @@ namespace Atlas::Editor::UI {
     class ResourceSelectionPopup : public Popup {
 
     public:
-        ResourceSelectionPopup() : Popup("ResourceSelection") {}
+        ResourceSelectionPopup() : Popup("ResourceSelectionPopup") {}
 
         template<class T>
         ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources) {

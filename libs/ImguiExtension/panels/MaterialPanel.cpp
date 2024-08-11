@@ -17,16 +17,19 @@ namespace Atlas::ImguiExtension {
                 // Calculate next item width and push a width with the image elements width substracted from it
                 auto width = ImGui::CalcItemWidth();
                 ImGui::PushItemWidth(width - padding - ImGui::GetTextLineHeightWithSpacing());
-                if (textureSelector.has_value())
+                if (textureSelector.has_value()) {
                     texture = textureSelector.value()(texture);
+                    ImGui::PopItemWidth();
+                }
             }
             else {
                 if (textureSelector.has_value())
                     textureSelector.value()(texture);
             }
             element();
-            if (texture.IsLoaded())
+            if (texture.IsLoaded() && !textureSelector.has_value())
                 ImGui::PopItemWidth();
+            ImGui::Separator();
         };
         
         renderWithImagePreview(material->baseColorMap, [&]() {
@@ -34,22 +37,34 @@ namespace Atlas::ImguiExtension {
         });
         ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
         ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 1.0f, 10000.0f, "%.2f");
+        ImGui::Separator();
 
+        ImGui::Text("Opacity");
         renderWithImagePreview(material->opacityMap, [&]() {
-            ImGui::SliderFloat("Opacity", &material->opacity, 0.0f, 1.0f);
+            ImGui::SliderFloat("Opacity factor", &material->opacity, 0.0f, 1.0f);
         });
+
+        ImGui::Text("Normals");
         renderWithImagePreview(material->normalMap, [&]() {
-            ImGui::SliderFloat("Normal scale", &material->normalScale, 0.0f, 1.0f);
+            ImGui::SliderFloat("Normal factor", &material->normalScale, 0.0f, 1.0f);
         });
+
+        ImGui::Text("Roughness");
         renderWithImagePreview(material->roughnessMap, [&]() {
-            ImGui::SliderFloat("Roughness", &material->roughness, 0.0f, 1.0f);
+            ImGui::SliderFloat("Roughness factor", &material->roughness, 0.0f, 1.0f);
         });
+
+        ImGui::Text("Metallic");
         renderWithImagePreview(material->metalnessMap, [&]() {
-            ImGui::SliderFloat("Metallic", &material->metalness, 0.0f, 1.0f);
+            ImGui::SliderFloat("Metallic factor", &material->metalness, 0.0f, 1.0f);
         });
+
+        ImGui::Text("Ao");
         renderWithImagePreview(material->aoMap, [&]() {
-            ImGui::SliderFloat("Ao", &material->ao, 0.0f, 1.0f);
+            ImGui::SliderFloat("Ao factor", &material->ao, 0.0f, 1.0f);
         });
+
+        ImGui::Text("Displacement");
         renderWithImagePreview(material->displacementMap, [&]() {
             ImGui::SliderFloat("Displacement scale", &material->displacementScale, 0.0f, 1.0f);
             });

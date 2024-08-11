@@ -153,26 +153,29 @@ namespace Atlas {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 
+            bool hasTangents = mesh->data.tangents.ContainsData();
+            bool hasTexCoords = mesh->data.texCoords.ContainsData();
+
             std::vector<std::string> macros;
-            if (material->HasBaseColorMap()) {
+            if (material->HasBaseColorMap() && hasTexCoords) {
                 macros.push_back("BASE_COLOR_MAP");
             }
-            if (material->HasOpacityMap()) {
+            if (material->HasOpacityMap() && hasTexCoords) {
                 macros.push_back("OPACITY_MAP");
             }
-            if (material->HasNormalMap()) {
+            if (material->HasNormalMap() && hasTangents && hasTexCoords) {
                 macros.push_back("NORMAL_MAP");
             }
-            if (material->HasRoughnessMap()) {
+            if (material->HasRoughnessMap() && hasTexCoords) {
                 macros.push_back("ROUGHNESS_MAP");
             }
-            if (material->HasMetalnessMap()) {
+            if (material->HasMetalnessMap() && hasTexCoords) {
                 macros.push_back("METALNESS_MAP");
             }
-            if (material->HasAoMap()) {
+            if (material->HasAoMap() && hasTexCoords) {
                 macros.push_back("AO_MAP");
             }
-            if (material->HasDisplacementMap()) {
+            if (material->HasDisplacementMap() && hasTangents && hasTexCoords) {
                 macros.push_back("HEIGHT_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)

@@ -241,8 +241,10 @@ namespace Atlas {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 
+            bool hasTexCoords = mesh->data.texCoords.ContainsData();
+
             std::vector<std::string> macros;
-            if (material->HasOpacityMap()) {
+            if (material->HasOpacityMap() && hasTexCoords) {
                 macros.push_back("OPACITY_MAP");
             }
 
