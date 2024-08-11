@@ -6,7 +6,7 @@
 #include "scene/Entity.h"
 #include "scene/components/MeshComponent.h"
 
-#include "../../popups/ResourceSelectionPopup.h"
+#include "../ResourceSelectionPanel.h"
 #include "ImguiExtension/panels/MaterialsPanel.h"
 
 namespace Atlas::Editor::UI {
@@ -21,9 +21,9 @@ namespace Atlas::Editor::UI {
     private:
         ImguiExtension::MaterialsPanel materialsPanel;
 
-        ResourceSelectionPopup meshSelectionPopup;
-        ResourceSelectionPopup materialSelectionPopup;
-        ResourceSelectionPopup textureSelectionPopup;
+        ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
+        ResourceSelectionPanel<Material> materialSelectionPanel;
+        ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
 
     };
 

@@ -183,7 +183,7 @@ namespace Atlas::Editor::UI {
         ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
 
         auto region = ImGui::GetContentRegionAvail();
-        auto& moreIcon = Singletons::icons->Get(IconType::MoreVertical);
+        auto& moreIcon = Singletons::icons->Get(IconType::Settings);
         set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreIcon);
 
         lineHeight = ImGui::GetTextLineHeight();

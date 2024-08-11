@@ -26,10 +26,14 @@ namespace Atlas::ImguiExtension {
 
             auto materialName = !material->name.empty() ? material->name
                 : "No name " + std::to_string(counter);
+            auto nodeID = GetNameID() + std::to_string(counter);
+            materialName += "###" + nodeID;
 
             if (ImGui::TreeNode(materialName.c_str())) {
-                if (materialSelector.has_value())
+                if (materialSelector.has_value()) {
                     material = materialSelector.value()(material);
+                    ImGui::Separator();
+                }
                 materialPanel.Render(wrapper, material.Get(), textureSelector);
 
                 ImGui::TreePop();
@@ -63,6 +67,8 @@ namespace Atlas::ImguiExtension {
 
             auto materialName = !material->name.empty() ? material->name
                 : "No name " + std::to_string(counter);
+            auto nodeID = GetNameID() + std::to_string(counter);
+            materialName += "###" + nodeID;
 
             if (ImGui::TreeNode(materialName.c_str())) {
 

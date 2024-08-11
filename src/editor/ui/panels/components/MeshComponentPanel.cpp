@@ -11,32 +11,7 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, MeshComponent &meshComponent) {
 
         bool resourceChanged = false;
-
-        auto buttonName = meshComponent.mesh.IsValid() ? meshComponent.mesh.GetResource()->GetFileName() :
-            "Drop mesh resource here";
-        if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
-            meshSelectionPopup.Open();
-
-        // Such that drag and drop will work from the content browser
-        if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
-            ImGui::SetWindowFocus();
-            ImGui::SetItemDefaultFocus();
-        }
-
-        auto handle = ResourcePayloadHelper::AcceptDropResource<Mesh::Mesh>();
-        // Need to change here already
-        if (handle.IsValid()) {
-            meshComponent.mesh = handle;
-            resourceChanged = true;
-        }
-
-        auto meshResources = ResourceManager<Mesh::Mesh>::GetResources();
-        handle = meshSelectionPopup.Render(meshResources);
-
-        if (handle.IsValid()) {
-            meshComponent.mesh = handle;
-            resourceChanged = true;
-        }
+        meshSelectionPanel.Render(meshComponent.mesh);
 
         ImGui::Checkbox("Visible", &meshComponent.visible);
         ImGui::Checkbox("Don't cull", &meshComponent.dontCull);
@@ -74,56 +49,10 @@ namespace Atlas::Editor::UI {
             ImGui::Text("Materials");
             materialsPanel.Render(Singletons::imguiWrapper, mesh->data.materials, 
                 [&](ResourceHandle<Material> material) {
-                    auto buttonName = material.IsValid() ? material.GetResource()->GetFileName() :
-                        "Drop material resource here";
-                    if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
-                        materialSelectionPopup.Open();
-
-                    // Such that drag and drop will work from the content browser
-                    if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
-                        ImGui::SetWindowFocus();
-                        ImGui::SetItemDefaultFocus();
-                    }
-
-                    auto handle = ResourcePayloadHelper::AcceptDropResource<Material>();
-                    // Need to change here already
-                    if (handle.IsValid()) {
-                        material = handle;
-                    }
-
-                    auto materialResources = ResourceManager<Material>::GetResources();
-                    handle = materialSelectionPopup.Render(materialResources);
-
-                    if (handle.IsValid()) {
-                        material = handle;
-                    }
-                    return material;
+                    return materialSelectionPanel.Render(material);
                 },
                 [&](ResourceHandle<Texture::Texture2D> texture) {
-                    auto buttonName = texture.IsValid() ? texture.GetResource()->GetFileName() :
-                        "Drop material resource here";
-                    if (ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0}))
-                        textureSelectionPopup.Open();
-
-                    // Such that drag and drop will work from the content browser
-                    if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
-                        ImGui::SetWindowFocus();
-                        ImGui::SetItemDefaultFocus();
-                    }
-
-                    auto handle = ResourcePayloadHelper::AcceptDropResource<Texture::Texture2D>();
-                    // Need to change here already
-                    if (handle.IsValid()) {
-                        texture = handle;
-                    }
-
-                    auto resources = ResourceManager<Texture::Texture2D>::GetResources();
-                    handle = textureSelectionPopup.Render(resources);
-
-                    if (handle.IsValid()) {
-                        texture = handle;
-                    }
-                    return texture;
+                    return textureSelectionPanel.Render(texture);
                 });
 
             // Just update materials regardless of any change

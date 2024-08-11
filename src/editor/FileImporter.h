@@ -14,6 +14,7 @@
 #include "Font.h"
 
 #include "loader/ModelImporter.h"
+#include "loader/MaterialLoader.h"
 #include "loader/MeshLoader.h"
 
 #include "Content.h"
@@ -67,6 +68,11 @@ namespace Atlas::Editor {
                     ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
             }
         }
+        else if constexpr (std::is_same_v<T, Material>) {
+            // No support internally for async loading, load syncho. for now
+            handle = ResourceManager<Material>::GetOrLoadResourceWithLoader(filename,
+                ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+        }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
                 ResourceOrigin::User, Serializer::DeserializeScene, false);
@@ -79,6 +85,12 @@ namespace Atlas::Editor {
             handle = ResourceManager<Font>::GetOrLoadResourceAsync(filename,
                 ResourceOrigin::User, 32.0f, 8, 127);
         }
+        else if constexpr (std::is_same_v<T, Texture::Texture2D>) {
+            // No support internally for async loading, load syncho. for now
+            handle = ResourceManager<Texture::Texture2D>::GetOrLoadResource(filename,
+                ResourceOrigin::User, true, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
+        }
+       
 
         return handle;
 
@@ -101,6 +113,9 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
             return type == ContentType::Mesh || type == ContentType::MeshSource;
         }
+        else if constexpr (std::is_same_v<T, Material>) {
+            return type == ContentType::Material;
+        }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             return type == ContentType::Scene;
         }
@@ -112,6 +127,12 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Scene::Entity>) {
             return type == ContentType::Prefab;
+        }
+        else if constexpr (std::is_same_v<T, Texture::Texture2D>) {
+            return type == ContentType::Texture;
+        }
+        else if constexpr (std::is_same_v<T, Texture::Cubemap>) {
+            return type == ContentType::EnvironmentTexture;
         }
         else {
             return false;

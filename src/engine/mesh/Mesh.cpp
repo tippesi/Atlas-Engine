@@ -60,6 +60,7 @@ namespace Atlas {
         void Mesh::UpdatePipelines() {
 
             for (auto& subData : data.subData) {
+                subData.material = data.materials[subData.materialIdx];
                 subData.mainConfig = PipelineConfig();
                 subData.shadowConfig = PipelineConfig();
             }
