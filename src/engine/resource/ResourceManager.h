@@ -267,7 +267,7 @@ namespace Atlas {
             std::vector<ResourceHandle<T>> resourceHandles;
 
             for (auto& [_, resource] : resources) {
-                if (!resource->origin == origin)
+                if (resource->origin != origin)
                     continue;
                 resourceHandles.emplace_back(resource);
             }

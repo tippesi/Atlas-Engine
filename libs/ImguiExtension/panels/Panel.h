@@ -2,6 +2,7 @@
 
 #include <string>
 #include <imgui.h>
+#include <limits>
 
 #include "../UiElements.h"
 

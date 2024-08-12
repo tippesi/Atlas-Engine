@@ -563,7 +563,7 @@ namespace Atlas {
 
             mipLevels.resize(mipLevel);
 
-            for (int32_t i = 0; i < mipLevels.size(); i++) {
+            for (int32_t i = 0; i < int32_t(mipLevels.size()); i++) {
                 mipLevels[i].width = dim.x;
                 mipLevels[i].height = dim.y;
                 mipLevels[i].data.resize(dim.x * dim.y * channels);
@@ -571,7 +571,7 @@ namespace Atlas {
                 dim.y /= 2;
             }
 
-            for (int32_t i = 1; i < mipLevels.size(); i++) {
+            for (int32_t i = 1; i < int32_t(mipLevels.size()); i++) {
                 dim.x /= 2;
                 dim.y /= 2;
                 if constexpr (std::is_same_v<T, uint8_t>) {
@@ -669,7 +669,7 @@ namespace Atlas {
 
                         auto color = glm::vec4(0.0f);
 
-                        for (int32_t i = 0; i < weights.size(); i++) {
+                        for (int32_t i = 0; i < int32_t(weights.size()); i++) {
                             int32_t off = x + int32_t(offsets[i]);
                             color += glm::vec4(Sample(off, y)) * weights[i];
                         }
@@ -722,8 +722,8 @@ namespace Atlas {
 
                         auto color = glm::vec4(0.0f);
 
-                        for (uint32_t i = 0; i < weights.size(); i++) {
-                            for (uint32_t j = 0; j < weights.size(); j++) {
+                        for (uint32_t i = 0; i < int32_t(weights.size()); i++) {
+                            for (uint32_t j = 0; j < int32_t(weights.size()); j++) {
                                 int32_t offX = x + offsets[i][j].x;
                                 int32_t offY = y + offsets[i][j].y;
                                 color += glm::vec4(tmp.Sample(offX, offY)) * weights[i][j];

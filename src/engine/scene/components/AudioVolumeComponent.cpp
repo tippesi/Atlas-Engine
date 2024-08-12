@@ -25,7 +25,7 @@ namespace Atlas {
             }
 
             AudioVolumeComponent::AudioVolumeComponent(Scene* scene, const ResourceHandle<Audio::AudioData>& audioData,
-                Volume::AABB aabb, float falloffFactor) : aabb(aabb), falloffFactor(falloffFactor), scene(scene) {
+                Volume::AABB aabb, float falloffFactor) : falloffFactor(falloffFactor), aabb(aabb), scene(scene) {
 
                 stream = Audio::AudioManager::CreateStream(audioData, 0.0f);
 

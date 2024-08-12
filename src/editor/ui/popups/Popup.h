@@ -2,6 +2,7 @@
 
 #include <string>
 #include <imgui.h>
+#include <limits>
 
 namespace Atlas::Editor::UI {
 

@@ -276,7 +276,7 @@ namespace Atlas {
             if (initWithHeightData) {
                 cell->heightData.resize(tileResolution * tileResolution);
 
-                for (uint32_t i = 0; i < cell->heightData.size(); i++)
+                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
                     cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
             }
 
