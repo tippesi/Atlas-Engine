@@ -22,7 +22,7 @@ namespace Atlas {
             public:
                 Iterator() = delete;
 
-                Iterator(const std::vector<Entity>* entities, size_t idx) : entities(entities), idx(idx) {
+                Iterator(const std::vector<Entity>* entities, size_t idx) : idx(idx), entities(entities) {
 
                     if (idx < entities->size() && !ValidEntity()) {
                         operator++();

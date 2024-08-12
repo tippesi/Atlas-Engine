@@ -464,8 +464,8 @@ namespace Atlas {
 
             filter->Get(&weights, &offsets);
 
-            for (uint32_t i = 0; i < weights.size(); i++) {
-                for (uint32_t j = 0; j < weights.size(); j++) {
+            for (uint32_t i = 0; i < uint32_t(weights.size()); i++) {
+                for (uint32_t j = 0; j < uint32_t(weights.size()); j++) {
                     int32_t xTranslated = x + offsets[i][j].x;
                     int32_t yTranslated = y + offsets[i][j].y;
                     int32_t index = yTranslated * width * 3 + xTranslated;
@@ -507,7 +507,7 @@ namespace Atlas {
                         }
                     }
 
-                    for (uint32_t k = 0; k < cellHeightData.size(); k++) {
+                    for (uint32_t k = 0; k < uint32_t(cellHeightData.size()); k++) {
                         cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
                     }
 
@@ -656,7 +656,7 @@ namespace Atlas {
                         }
                     }
 
-                    for (uint32_t k = 0; k < cellHeightData.size(); k++) {
+                    for (uint32_t k = 0; k < uint32_t(cellHeightData.size()); k++) {
                         cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
                     }
 

@@ -12,7 +12,7 @@ enum class Keycode {
     KeyEnter = '\r',
     KeyEscape = '\033',
     KeyBackspace = '\b',
-    KeyTab = '    ',
+    KeyTab = '\t',
     KeySpace = ' ',
     KeyExclaim = '!',
     KeyDoubleQuote = '"',

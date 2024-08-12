@@ -60,10 +60,10 @@ namespace Atlas {
         public:
             Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : name(name),
-                SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
+                name(name) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : name(name), SpacePartitioning(this, min, max, depth) { RegisterSubscribers(); }
+                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
 
             ~Scene();
 

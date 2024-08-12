@@ -12,7 +12,7 @@ namespace Atlas {
             using ECS::EntityManager::Iterator::Iterator;
 
             SceneIterator(ECS::EntityManager* entityManager, const ECS::EntityManager::Iterator& iterator) 
-                : entityManager(entityManager), ECS::EntityManager::Iterator(iterator) {}
+                : ECS::EntityManager::Iterator(iterator), entityManager(entityManager) {}
 
             inline const Entity operator*() const {
 

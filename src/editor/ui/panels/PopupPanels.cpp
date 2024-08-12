@@ -185,7 +185,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::SetKeyboardFocusHere();
 
-            ImGui::Text(Singletons::blockingOperation->blockText.c_str());
+            ImGui::Text("%s", Singletons::blockingOperation->blockText.c_str());
 
             if (!Singletons::blockingOperation->block)
                 ImGui::CloseCurrentPopup();
