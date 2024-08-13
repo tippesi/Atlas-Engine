@@ -39,7 +39,7 @@ namespace Atlas {
         Resource() = default;
 
         Resource(const std::string& path, ResourceOrigin origin, Ref<T> data = nullptr) :
-            path(path), origin(origin), data(data), isLoaded(data != nullptr) {
+            origin(origin), path(path), data(data), isLoaded(data != nullptr) {
 
             HashCombine(ID, path);
 

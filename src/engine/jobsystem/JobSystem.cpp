@@ -7,7 +7,7 @@ namespace Atlas {
     void JobSystem::Init(const JobSystemConfig& config) {
 
         int32_t lowPriorityWorkerCount = std::max(1, int32_t(float(config.threadCount) * config.lowPriorityPercentage));
-        int32_t highPriorityWorkerCount = config.threadCount - lowPriorityWorkerCount;
+        int32_t highPriorityWorkerCount = std::max(1, config.threadCount - lowPriorityWorkerCount);
 
         priorityPools[static_cast<int>(JobPriority::High)].Init(highPriorityWorkerCount, JobPriority::High);
         priorityPools[static_cast<int>(JobPriority::Low)].Init(lowPriorityWorkerCount, JobPriority::Low);
@@ -37,7 +37,7 @@ namespace Atlas {
 
         auto& worker = priorityPool.GetNextWorker();
         worker.queue.Push(job);
-        worker.semaphore.release();        
+        worker.semaphore.release();
 
     }
 
@@ -73,16 +73,30 @@ namespace Atlas {
         if (!group.HasFinished()) {
             auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
 
-
+            auto& worker = priorityPool.GetNextWorker();
+            priorityPool.Work(worker.workerId);
         }
 
-        while (!group.HasFinished());
+        while (!group.HasFinished())
+            std::this_thread::yield();
 
     }
 
     void JobSystem::WaitSpin(JobGroup& group) {
 
-        while (!group.HasFinished());
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+
+        auto spinCount = priorityPool.spinCounter.fetch_sub(1);
+
+        // We can't let the thread pool run dry while everything is spinning
+        if (spinCount < 1) {
+            priorityPool.spinCounter.fetch_add(1);
+            Wait(group);
+        }
+        else {
+            while (!group.HasFinished());
+            priorityPool.spinCounter.fetch_add(1);
+        }
 
     }
 

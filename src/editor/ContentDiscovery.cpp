@@ -59,7 +59,7 @@ namespace Atlas::Editor {
 			content = nextContent;
 			lastDiscoveryTime = Clock::Get();
 			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
-				PerformContentDiscovery();
+				nextContent = PerformContentDiscovery();
 			});
 			return;
 		}
