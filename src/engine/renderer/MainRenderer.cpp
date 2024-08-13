@@ -126,7 +126,7 @@ namespace Atlas {
 
             SetUniforms(target, scene, camera);
 
-            JobSystem::Wait(prepareBindlessGroup);
+            JobSystem::WaitSpin(prepareBindlessGroup);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -144,7 +144,7 @@ namespace Atlas {
                 commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
             }
 
-            JobSystem::Wait(prepareMaterialsGroup);
+            JobSystem::WaitSpin(prepareMaterialsGroup);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -214,7 +214,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
-            JobSystem::Wait(scene->rayTracingWorldUpdateGroup);
+            JobSystem::WaitSpin(scene->rayTracingWorldUpdateGroup);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
@@ -471,8 +471,8 @@ namespace Atlas {
                 });
 
 
-            JobSystem::Wait(scene->rayTracingWorldUpdateGroup);
-            JobSystem::Wait(prepareBindlessGroup);
+            JobSystem::WaitSpin(scene->rayTracingWorldUpdateGroup);
+            JobSystem::WaitSpin(prepareBindlessGroup);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);

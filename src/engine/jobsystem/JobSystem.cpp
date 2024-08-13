@@ -76,9 +76,13 @@ namespace Atlas {
 
         }
 
-        while(!group.HasFinished()) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(10));
-        }
+        while (!group.HasFinished());
+
+    }
+
+    void JobSystem::WaitSpin(JobGroup& group) {
+
+        while (!group.HasFinished());
 
     }
 

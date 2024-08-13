@@ -34,6 +34,8 @@ namespace Atlas {
 
         static void Wait(JobGroup& group);
 
+        static void WaitSpin(JobGroup& group);
+
         static void WaitAll();
     
     private:
