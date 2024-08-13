@@ -23,6 +23,7 @@ namespace Atlas {
 
         JobPriority priority;
         int32_t workerCount;
+        std::atomic_uint32_t spinCounter = 0;
 
     private:
         std::vector<Worker> workers;

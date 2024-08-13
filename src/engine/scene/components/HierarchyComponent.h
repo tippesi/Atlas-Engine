@@ -37,9 +37,9 @@ namespace Atlas {
                 std::vector<Entity> entities;
 
                 bool updated = false;
+                Entity owningEntity;
 
                 Scene* scene = nullptr;
-                Entity owningEntity;
 
             };
 

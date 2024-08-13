@@ -6,6 +6,7 @@ namespace Atlas {
 
         this->workerCount = workerCount;
         this->priority = priority;
+        this->spinCounter = workerCount;
 
         for (int32_t i = 0; i < workerCount; i++) {
             workers.emplace_back(i);
