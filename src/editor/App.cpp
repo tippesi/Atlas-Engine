@@ -200,7 +200,7 @@ namespace Atlas::Editor {
         
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
-        auto buildRTStructure = [&]() {
+        auto buildRTStructure = [&](JobData) {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
 
             for (const auto& mesh : sceneMeshes) {
@@ -208,16 +208,15 @@ namespace Atlas::Editor {
                     continue;
                 if (mesh->IsBVHBuilt())
                     continue;
-                mesh->BuildBVH();
+                JobSystem::Execute(bvhBuilderGroup, [mesh](JobData&) {
+                    mesh->BuildBVH(false);
+                });
             }
             };
 
-        if (!bvhBuilderFuture.valid()) {
-            bvhBuilderFuture = std::async(std::launch::async, buildRTStructure);
+        if (bvhBuilderGroup.HasFinished()) {
+            JobSystem::Execute(bvhBuilderGroup, buildRTStructure);
             return;
-        }
-        else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
-            bvhBuilderFuture.get();
         }
         
     }

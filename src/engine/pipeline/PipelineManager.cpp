@@ -14,7 +14,7 @@ namespace Atlas {
     std::shared_mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
     Ref<Graphics::DescriptorSetLayout> PipelineManager::globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
-    std::future<void> PipelineManager::hotReloadFuture;
+    JobGroup PipelineManager::hotReloadGroup;
 
     void PipelineManager::Init() {
 
@@ -42,11 +42,9 @@ namespace Atlas {
 
     void PipelineManager::Update() {
 
-        if (hotReload) {
-            if (hotReloadFuture.valid())
-                hotReloadFuture.get();
+        if (hotReload && hotReloadGroup.HasFinished()) {
 
-            hotReloadFuture = std::async(std::launch::async, [&]() {
+            JobSystem::Execute(hotReloadGroup, [&](JobData&) {
                 std::shared_lock lock(shaderToVariantsMutex);
 
                 std::unordered_map<std::string, std::filesystem::file_time_type> modifiedMap;
@@ -76,7 +74,7 @@ namespace Atlas {
                         variants->pipelines.clear();
                     }
                 }
-                });
+            });
         }
 
     }

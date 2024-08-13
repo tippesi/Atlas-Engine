@@ -182,8 +182,8 @@ namespace Atlas {
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            std::shared_future<void> rayTracingWorldUpdateFuture;
-            std::shared_future<void> bindlessMapsUpdateFuture;
+            JobGroup rayTracingWorldUpdateGroup { JobPriority::High };
+            JobGroup bindlessMapsUpdateGroup { JobPriority::High };
 
             friend Entity;
             friend SpacePartitioning;

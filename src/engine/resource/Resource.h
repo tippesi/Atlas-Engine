@@ -5,6 +5,7 @@
 #include "../common/Hash.h"
 #include "../common/Path.h"
 #include "../loader/AssetLoader.h"
+#include "../jobsystem/JobSystem.h"
 
 #include <vector>
 #include <mutex>
@@ -135,6 +136,7 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
+        JobGroup jobGroup;
         std::shared_future<void> future;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
@@ -158,15 +160,8 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                // We might be in a situation where one thread hasn't created the future
-                // and the other already tries to wait for it
-                while (!resource->future.valid() && !resource->isLoaded)
-                    std::this_thread::sleep_for(std::chrono::microseconds(1));
-                // Then ask future for a state again and return if there is none
-                if (!resource->future.valid())
-                    return;
-                resource->future.wait();
-                resource->future.get();
+                while (!resource->isLoaded)
+                    JobSystem::Wait(resource->jobGroup);                
             }
         }
 

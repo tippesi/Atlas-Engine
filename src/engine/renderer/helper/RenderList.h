@@ -110,8 +110,7 @@ namespace Atlas {
         std::mutex mutex;
         std::atomic_bool doneProcessingShadows;
 
-        std::future<void> clearFuture;
-
+        JobGroup clearJob;
     };
 
 }

@@ -11,6 +11,7 @@
 #include "audio/AudioManager.h"
 #include "loader/AssetLoader.h"
 #include "common/RandomHelper.h"
+#include "jobsystem/JobSystem.h"
 
 namespace Atlas {
 
@@ -30,6 +31,11 @@ namespace Atlas {
          * Configures which messages of the validation layers to log
          */
         Log::Severity validationLayerSeverity = Log::SEVERITY_LOW;
+
+        /*
+         * 
+         */
+        JobSystemConfig jobSystemConfig;
     };
 
     class Engine {

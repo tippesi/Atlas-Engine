@@ -9,6 +9,7 @@
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
 #include "events/EventManager.h"
+#include "jobsystem/JobSystem.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -80,6 +81,7 @@ namespace Atlas {
         Graphics::Extensions::Process();
 
         // Do the setup for all the classes that need static setup
+        JobSystem::Init(config.jobSystemConfig);
         Loader::AssetLoader::Init();
         Common::Random::Init();
         PipelineManager::Init();
@@ -95,6 +97,7 @@ namespace Atlas {
 
     void Engine::Shutdown() {
 
+        JobSystem::Shutdown();
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
