@@ -109,21 +109,24 @@ namespace Atlas {
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
 
-            auto fillRenderListFuture = std::async(std::launch::async, [&]() { FillRenderList(scene, camera); });
+            JobGroup fillRenderListGroup { JobPriority::High };
+            JobSystem::Execute(fillRenderListGroup, [&](JobData&) { FillRenderList(scene, camera); });
 
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
-            auto prepareMaterialsFuture = std::async(std::launch::async,[&]() { PrepareMaterials(scene, materials, materialMap); });
+            JobGroup prepareMaterialsGroup { JobPriority::High };
+            JobSystem::Execute(prepareMaterialsGroup, [&](JobData&) { PrepareMaterials(scene, materials, materialMap); });
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            auto prepareBindlessFuture = std::async(std::launch::async,[&]() {
+            JobGroup prepareBindlessGroup { JobPriority::High };
+            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
                 });
 
             SetUniforms(target, scene, camera);
 
-            prepareBindlessFuture.get();
+            JobSystem::Wait(prepareBindlessGroup);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -141,7 +144,7 @@ namespace Atlas {
                 commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
             }
 
-            prepareMaterialsFuture.get();
+            JobSystem::Wait(prepareMaterialsGroup);
 
             auto materialBufferDesc = Graphics::BufferDesc {
                 .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -211,13 +214,12 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
-            if (scene->rayTracingWorldUpdateFuture.valid())
-                scene->rayTracingWorldUpdateFuture.get();
+            JobSystem::Wait(scene->rayTracingWorldUpdateGroup);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             // Only here does the main pass need to be ready
-            fillRenderListFuture.get();
+            JobSystem::Wait(fillRenderListGroup);
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");
@@ -463,13 +465,14 @@ namespace Atlas {
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            auto prepareBindlessFuture = std::async(std::launch::async, [&]() {
+            JobGroup prepareBindlessGroup { JobPriority::High };
+            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
                 });
 
-            if (scene->rayTracingWorldUpdateFuture.valid())
-                scene->rayTracingWorldUpdateFuture.get();
-            prepareBindlessFuture.get();
+
+            JobSystem::Wait(scene->rayTracingWorldUpdateGroup);
+            JobSystem::Wait(prepareBindlessGroup);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
@@ -1174,8 +1177,7 @@ namespace Atlas {
                 return;
 
             // This might lead to crashes, since this shared future just has one copy that is used across threads
-            if (scene->bindlessMapsUpdateFuture.valid())
-                scene->bindlessMapsUpdateFuture.get();
+            JobSystem::Wait(scene->bindlessMapsUpdateGroup);
 
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());

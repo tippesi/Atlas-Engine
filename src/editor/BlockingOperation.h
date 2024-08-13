@@ -1,6 +1,7 @@
 #pragma once
 
-#include <future>
+#include "jobsystem/JobSystem.h"
+
 #include <string>
 #include <optional>
 
@@ -10,8 +11,6 @@ namespace Atlas::Editor {
 
     public:
         void Block(const std::string& text, std::function<void()> blocker) {
-            if (future.valid())
-                future.get();
             this->blocker = blocker;
             blockText = text;
         }
@@ -21,14 +20,14 @@ namespace Atlas::Editor {
                 return;
             
             block = true;
-            future = std::async(std::launch::async, [blocker = blocker, &block = block] {
+            JobSystem::Execute(job, [blocker = blocker, &block = block](JobData&) {
                 blocker.value()();
                 block = false;
                 });
             blocker = {};
         }
 
-        std::future<void> future;
+        JobGroup job;
         std::optional<std::function<void()>> blocker;
         std::string blockText;
         bool block = false;

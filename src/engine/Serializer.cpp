@@ -144,29 +144,17 @@ namespace Atlas {
             });
 
             if (multithreaded) {
-                std::atomic_int32_t counter = 0;
+                JobGroup group;
+                JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
+                    [&](JobData& data) {
+                        auto& mesh = meshes[data.idx];
 
-                auto workerCount = std::thread::hardware_concurrency();
-                std::vector<std::future<void>> workers;
-                for (uint32_t i = 0; i < workerCount; i++) {
-                    workers.emplace_back(std::async(std::launch::async, [&]() {
-                        auto i = counter++;
+                        if (!mesh.IsLoaded()) return;
 
-                        while (i < int32_t(meshes.size())) {
-                            auto& mesh = meshes[i];
+                        Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
+                    });
 
-                            if (!mesh.IsLoaded()) continue;
-
-                            Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
-
-                            i = counter++;
-                        }
-                        }));
-                }
-
-                for (uint32_t i = 0; i < workerCount; i++) {
-                    workers[i].get();
-                }
+                JobSystem::Wait(group);
             }
 
             for (const auto& mesh : meshes) {

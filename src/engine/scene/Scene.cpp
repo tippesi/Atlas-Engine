@@ -98,7 +98,7 @@ namespace Atlas {
             CleanupUnusedResources();
 
 #ifdef AE_BINDLESS
-            bindlessMapsUpdateFuture = std::async(std::launch::async, [this]() {
+            JobSystem::Execute(bindlessMapsUpdateGroup, [this](JobData&) {
                 UpdateBindlessIndexMaps();
                 });
 #endif
@@ -286,8 +286,7 @@ namespace Atlas {
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            // Make sure this is changed just once at the start of a frame
-            rayTracingWorldUpdateFuture = std::async(std::launch::async, [this, rayTracingSubset]() {              
+            JobSystem::Execute(rayTracingWorldUpdateGroup, [this, rayTracingSubset](JobData&) {
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
@@ -296,7 +295,7 @@ namespace Atlas {
                     rayTracingWorld->Update(rayTracingSubset, false);
                 }
                 rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });            
+                });          
 #endif
 
             // We also need to reset the hierarchy components as well
@@ -568,10 +567,8 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            if (bindlessMapsUpdateFuture.valid())
-                bindlessMapsUpdateFuture.get();
-            if (rayTracingWorldUpdateFuture.valid())
-                rayTracingWorldUpdateFuture.get();
+            JobSystem::Wait(bindlessMapsUpdateGroup);
+            JobSystem::Wait(rayTracingWorldUpdateGroup);
 
         }
 

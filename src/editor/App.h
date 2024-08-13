@@ -51,7 +51,7 @@ namespace Atlas::Editor {
 
         size_t activeSceneIdx = 0;
 
-        std::future<void> bvhBuilderFuture;
+        JobGroup bvhBuilderGroup;
 
         ImGuiID upperDockNodeID;
 

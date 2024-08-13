@@ -2,10 +2,10 @@
 
 #include "Content.h"
 #include "System.h"
+#include "jobsystem/JobSystem.h"
 
 #include <vector>
 #include <shared_mutex>
-#include <future>
 
 namespace Atlas::Editor {
 
@@ -41,9 +41,9 @@ namespace Atlas::Editor {
 
 		static void DiscoverDirectory(const Ref<ContentDirectory>& directory, const Ref<DiscoveredContent>& result);
 
-
 		static Ref<DiscoveredContent> content;
-		static std::future<Ref<DiscoveredContent>> contentDiscoveryFuture;
+		static Ref<DiscoveredContent> nextContent;
+		static JobGroup contentDiscoveryJob;
 
 		static const float discoverFrequency;
 		static float lastDiscoveryTime;

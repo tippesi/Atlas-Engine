@@ -135,9 +135,9 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                resource->future = std::async(std::launch::async,
-                    &Resource<T>::template Load<Args...>,
-                    resource.get(), std::forward<Args>(args)...);
+                JobSystem::Execute(resource->jobGroup, [resource, args...](JobData&) {
+                    resource->Load(args...);
+                });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
@@ -180,9 +180,9 @@ namespace Atlas {
             auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
                 auto resource = GetResourceInternal(relativePath);
-                resource->future = std::async(std::launch::async,
-                    &Resource<T>::template LoadWithExternalLoader<Args...>,
-                    resource.get(), loaderFunction, std::forward<Args>(args)...);
+                JobSystem::Execute(resource->jobGroup, [resource, loaderFunction, args...](JobData&) {
+                    resource->LoadWithExternalLoader(loaderFunction, args...);
+                });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }

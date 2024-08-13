@@ -16,8 +16,7 @@ namespace Atlas {
 
     RenderList::~RenderList() {
 
-        if (clearFuture.valid())
-            clearFuture.get();
+        JobSystem::Wait(clearJob);
 
     }
 
@@ -28,8 +27,7 @@ namespace Atlas {
         doneProcessingShadows = false;
         processedPasses.clear();
 
-        if (clearFuture.valid())
-            clearFuture.get();
+        JobSystem::Wait(clearJob);
 
     }
 
@@ -122,7 +120,8 @@ namespace Atlas {
         // We can reset the scene now and delete the reference
         scene = nullptr;
 
-        clearFuture = std::async(std::launch::async, [&]() {
+        JobSystem::Execute(clearJob, 
+            [&](JobData&) {
             std::erase_if(passes, [](const auto& item) { return item->wasUsed != true; });
             for (auto& pass : passes)
                 pass->Reset();

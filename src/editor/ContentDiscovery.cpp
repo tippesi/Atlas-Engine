@@ -9,7 +9,8 @@
 namespace Atlas::Editor {
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::content = CreateRef<DiscoveredContent>();
-	std::future<Ref<ContentDiscovery::DiscoveredContent>> ContentDiscovery::contentDiscoveryFuture;
+	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
+	JobGroup ContentDiscovery::contentDiscoveryJob;
 
 	const float ContentDiscovery::discoverFrequency = 3.0f;
 	float ContentDiscovery::lastDiscoveryTime = -ContentDiscovery::discoverFrequency;
@@ -53,17 +54,20 @@ namespace Atlas::Editor {
 
 		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency;
 
-		if (!contentDiscoveryFuture.valid() && canRediscover) {
+		if (contentDiscoveryJob.HasFinished() && canRediscover) {
+			// Might be that it took longer than the timeout time
+			content = nextContent;
 			lastDiscoveryTime = Clock::Get();
-			contentDiscoveryFuture = std::async(std::launch::async, &PerformContentDiscovery);
+			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
+				PerformContentDiscovery();
+			});
 			return;
 		}
 			
-		if (contentDiscoveryFuture.valid() && contentDiscoveryFuture.wait_for(std::chrono::microseconds(0)) != std::future_status::ready)
+		if (!contentDiscoveryJob.HasFinished())
 			return;
 
-		if (contentDiscoveryFuture.valid())
-			content = contentDiscoveryFuture.get();
+		content = nextContent;
 
 	}
 
