@@ -7,9 +7,13 @@ namespace Atlas {
 
     void JobSystem::Init(const JobSystemConfig& config) {
 
-        priorityPools[static_cast<int>(JobPriority::High)].Init(config.highPriorityThreadCount, JobPriority::High);
-        priorityPools[static_cast<int>(JobPriority::Medium)].Init(config.mediumPriorityThreadCount, JobPriority::Medium);
-        priorityPools[static_cast<int>(JobPriority::Low)].Init(config.lowPriorityThreadCount, JobPriority::Low);
+        auto highPrioThreadCount = std::max(1, config.highPriorityThreadCount);
+        auto mediumPrioThreadCount = std::max(1, config.mediumPriorityThreadCount);
+        auto lowPrioThreadCount = std::max(1, config.lowPriorityThreadCount);
+
+        priorityPools[static_cast<int>(JobPriority::High)].Init(highPrioThreadCount, JobPriority::High);
+        priorityPools[static_cast<int>(JobPriority::Medium)].Init(mediumPrioThreadCount, JobPriority::Medium);
+        priorityPools[static_cast<int>(JobPriority::Low)].Init(lowPrioThreadCount, JobPriority::Low);
 
     }
 
