@@ -96,17 +96,6 @@ namespace Atlas {
             }
         };
 
-        static void TraceImpl(const char *inFMT, ...) {
-            // Format the message
-            va_list list;
-            va_start(list, inFMT);
-            char buffer[1024];
-            vsnprintf(buffer, sizeof(buffer), inFMT, list);
-            va_end(list);
-
-            Log::Message(std::string(buffer));
-        }
-
         class ContactListener : public JPH::ContactListener {
         public:
             virtual JPH::ValidateResult	OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override {

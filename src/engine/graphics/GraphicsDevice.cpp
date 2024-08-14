@@ -451,8 +451,7 @@ namespace Atlas {
 
         void GraphicsDevice::WaitForPreviousFrameSubmission() {
 
-            if (submitFrameFuture.valid())
-                submitFrameFuture.get();
+            JobSystem::Wait(submitFrameJob);
 
         }
 
@@ -460,13 +459,11 @@ namespace Atlas {
 
             frameSubmissionComplete = false;
 
-            if (submitFrameFuture.valid())
-                submitFrameFuture.get();
+            JobSystem::Wait(submitFrameJob);
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
             // Refrain from using complete frame async for now
-            submitFrameFuture = std::async(std::launch::async,
-                [this] () { SubmitFrame(); });
+            JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
 
         }
 

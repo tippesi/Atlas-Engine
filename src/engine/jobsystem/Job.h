@@ -9,6 +9,7 @@ namespace Atlas {
 
     enum class JobPriority {
         High = 0,
+        Medium,
         Low,
         Count
     };

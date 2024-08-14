@@ -19,12 +19,12 @@
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"
+#include "../jobsystem/JobSystem.h"
 
 #include <optional>
 #include <vector>
 #include <mutex>
 #include <set>
-#include <future>
 #include <shared_mutex>
 
 namespace Atlas {
@@ -314,7 +314,7 @@ namespace Atlas {
             std::shared_mutex queueMutex;
 
             std::atomic_bool frameSubmissionComplete = true;
-            std::future<void> submitFrameFuture;
+            JobGroup submitFrameJob { JobPriority::High };
 
         };
 

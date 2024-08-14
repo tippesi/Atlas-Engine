@@ -1,5 +1,4 @@
-#ifndef AE_FRUSTUM_H
-#define AE_FRUSTUM_H
+#pragma once
 
 #include "../System.h"
 
@@ -113,5 +112,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

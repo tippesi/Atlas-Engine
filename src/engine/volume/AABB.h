@@ -1,5 +1,4 @@
-#ifndef AE_AABB_H
-#define AE_AABB_H
+#pragma once
 
 #include "../System.h"
 
@@ -108,5 +107,3 @@ namespace Atlas {
     }
 
 }
-
-#endif
