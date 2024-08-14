@@ -15,8 +15,9 @@
 namespace Atlas {
 
     struct JobSystemConfig {
-        int32_t threadCount = int32_t(std::thread::hardware_concurrency()) - 1;
-        float lowPriorityPercentage = 0.5f;
+        int32_t highPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 1;
+        int32_t mediumPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 3;
+        int32_t lowPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 4;
     };
     
     class JobSystem {

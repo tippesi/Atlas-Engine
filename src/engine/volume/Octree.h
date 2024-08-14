@@ -1,5 +1,4 @@
-#ifndef AE_OCTREE_H
-#define AE_OCTREE_H
+#pragma once
 
 #include "../System.h"
 #include "AABB.h"
@@ -324,5 +323,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

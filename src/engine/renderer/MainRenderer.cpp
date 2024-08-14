@@ -112,13 +112,26 @@ namespace Atlas {
             JobGroup fillRenderListGroup { JobPriority::High };
             JobSystem::Execute(fillRenderListGroup, [&](JobData&) { FillRenderList(scene, camera); });
 
+            Ref<Graphics::Buffer> materialBuffer;
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
+
             JobGroup prepareMaterialsGroup { JobPriority::High };
-            JobSystem::Execute(prepareMaterialsGroup, [&](JobData&) { PrepareMaterials(scene, materials, materialMap); });
+            JobSystem::Execute(prepareMaterialsGroup, [&](JobData&) { 
+                PrepareMaterials(scene, materials, materialMap); 
+                auto materialBufferDesc = Graphics::BufferDesc {
+                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                    .domain = Graphics::BufferDomain::Host,
+                    .hostAccess = Graphics::BufferHostAccess::Sequential,
+                    .data = materials.data(),
+                    .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
+                };
+                materialBuffer = device->CreateBuffer(materialBufferDesc);
+                });
 
             std::vector<Ref<Graphics::Image>> images;
             std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
+
             JobGroup prepareBindlessGroup { JobPriority::High };
             JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
                 PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
@@ -145,15 +158,6 @@ namespace Atlas {
             }
 
             JobSystem::WaitSpin(prepareMaterialsGroup);
-
-            auto materialBufferDesc = Graphics::BufferDesc {
-                .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                .domain = Graphics::BufferDomain::Host,
-                .hostAccess = Graphics::BufferHostAccess::Sequential,
-                .data = materials.data(),
-                .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
-            };
-            auto materialBuffer = device->CreateBuffer(materialBufferDesc);
             commandList->BindBuffer(materialBuffer, 1, 14);
 
             if (scene->clutter)
@@ -1176,8 +1180,7 @@ namespace Atlas {
             if (!device->support.bindless)
                 return;
 
-            // This might lead to crashes, since this shared future just has one copy that is used across threads
-            JobSystem::Wait(scene->bindlessMapsUpdateGroup);
+            JobSystem::WaitSpin(scene->bindlessMapsUpdateGroup);
 
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());

@@ -19,29 +19,4 @@ namespace Atlas {
 
     }
 
-    void Worker::Work() {
-
-        while(true) {
-            auto job = queue.Pop();
-            if (job == std::nullopt)
-                break;
-
-            RunJob(job.value());
-        }
-
-    }
-
-    void Worker::RunJob(Job& job) {
-
-        JobData data = {
-            .idx = job.idx,
-            .userData = job.userData
-        };
-
-        job.function(data);
-
-        job.counter->fetch_sub(1);
-
-    }
-
 }

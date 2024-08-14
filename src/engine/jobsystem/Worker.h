@@ -20,7 +20,17 @@ namespace Atlas {
 
         void Start(std::function<void(Worker&)> function);
 
-        void Work();
+        inline void Work() {
+
+            while(true) {
+                auto job = queue.Pop();
+                if (job == std::nullopt)
+                    break;
+
+                RunJob(job.value());
+            }
+
+        }
 
         int32_t workerId;
 
@@ -29,7 +39,18 @@ namespace Atlas {
         ThreadSafeJobQueue queue;
 
     private:
-        void RunJob(Job& job);
+        inline void RunJob(Job& job) {
+
+            JobData data = {
+                .idx = job.idx,
+                .userData = job.userData
+            };
+
+            job.function(data);
+
+            job.counter->fetch_sub(1);
+
+        }
 
     };
 

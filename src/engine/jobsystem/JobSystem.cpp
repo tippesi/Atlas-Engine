@@ -1,4 +1,5 @@
 #include "JobSystem.h"
+#include "Log.h"
 
 namespace Atlas {
 
@@ -6,11 +7,9 @@ namespace Atlas {
 
     void JobSystem::Init(const JobSystemConfig& config) {
 
-        int32_t lowPriorityWorkerCount = std::max(1, int32_t(float(config.threadCount) * config.lowPriorityPercentage));
-        int32_t highPriorityWorkerCount = std::max(1, config.threadCount - lowPriorityWorkerCount);
-
-        priorityPools[static_cast<int>(JobPriority::High)].Init(highPriorityWorkerCount, JobPriority::High);
-        priorityPools[static_cast<int>(JobPriority::Low)].Init(lowPriorityWorkerCount, JobPriority::Low);
+        priorityPools[static_cast<int>(JobPriority::High)].Init(config.highPriorityThreadCount, JobPriority::High);
+        priorityPools[static_cast<int>(JobPriority::Medium)].Init(config.mediumPriorityThreadCount, JobPriority::Medium);
+        priorityPools[static_cast<int>(JobPriority::Low)].Init(config.lowPriorityThreadCount, JobPriority::Low);
 
     }
 
@@ -26,7 +25,7 @@ namespace Atlas {
     void JobSystem::Execute(JobGroup& group, std::function<void(JobData&)> func, void* userData) {
 
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
-        group.counter++;
+        group.counter.fetch_add(1);
 
         Job job = {
             .priority = group.priority,
@@ -46,7 +45,7 @@ namespace Atlas {
         auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
         group.counter += count;
 
-         Job job = {
+        Job job = {
             .priority = group.priority,
             .counter = &group.counter,
             .function = func,
