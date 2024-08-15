@@ -9,7 +9,7 @@ namespace Atlas {
         this->spinCounter = workerCount;
 
         for (int32_t i = 0; i < workerCount; i++) {
-            workers.emplace_back(i);
+            workers.emplace_back(i, priority);
         }
 
         for (int32_t i = 0; i < workerCount; i++) {

@@ -93,7 +93,7 @@ namespace Atlas {
         }
 
         void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
-            Filtering filtering, Wrapping wrapping) {
+            Filtering filtering, Wrapping wrapping, bool dedicatedMemory) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -134,6 +134,7 @@ namespace Atlas {
                 .layers = arrayType ? uint32_t(depth) : 1,
                 .format = format,
                 .mipMapping = generateMipMaps,
+                .dedicatedMemory = true
             };
             image = graphicsDevice->CreateImage(imageDesc);
 

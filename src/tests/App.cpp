@@ -356,26 +356,27 @@ void App::CheckLoadScene() {
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
 
-    static std::future<void> future;
+    static Atlas::JobGroup buildBvhGroup;
+    static bool groupStarted = false;
 
-    auto buildRTStructure = [&]() {
+    auto buildRTStructure = [&](Atlas::JobData) {
         auto sceneMeshes = scene->GetMeshes();
 
-        for (auto& mesh : sceneMeshes) {
-            mesh->BuildBVH();
-        }
-    };
+        for (const auto& mesh : sceneMeshes) {
 
-    if (!future.valid()) {
-        future = std::async(std::launch::async, buildRTStructure);
+            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
+
+        }
+        };
+
+    if (!groupStarted) {
+        Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);
+        groupStarted = true;
         return;
     }
-    else {
-        if (future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) {
-            return;
-        }
-        future.get();
-    }
+
+    if (!buildBvhGroup.HasFinished())
+        return;
 
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));

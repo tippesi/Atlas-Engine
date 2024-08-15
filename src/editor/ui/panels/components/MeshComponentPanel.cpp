@@ -11,7 +11,7 @@ namespace Atlas::Editor::UI {
         Scene::Entity entity, MeshComponent &meshComponent) {
 
         bool resourceChanged = false;
-        meshSelectionPanel.Render(meshComponent.mesh);
+        meshComponent.mesh = meshSelectionPanel.Render(meshComponent.mesh, resourceChanged);
 
         ImGui::Checkbox("Visible", &meshComponent.visible);
         ImGui::Checkbox("Don't cull", &meshComponent.dontCull);
