@@ -54,6 +54,7 @@ namespace Atlas::Editor {
                 { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
                 { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
+                { IconType::Delete, Texture::Texture2D("editor/icons/delete.png") },
             };
         }
         else {
@@ -83,6 +84,7 @@ namespace Atlas::Editor {
                 { IconType::Material, Texture::Texture2D("editor/icons/material_light.png") },
                 { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource_light.png") },
                 { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
+                { IconType::Delete, Texture::Texture2D("editor/icons/delete_light.png") },
             };
         }
 
