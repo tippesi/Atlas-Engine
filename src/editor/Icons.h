@@ -31,7 +31,8 @@ namespace Atlas::Editor {
         MoreVertical,
         Material,
         MeshSource,
-        EnvironmentImage
+        EnvironmentImage,
+        Delete
     };
 
     class Icons {
