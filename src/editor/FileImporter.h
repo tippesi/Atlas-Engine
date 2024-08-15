@@ -90,7 +90,11 @@ namespace Atlas::Editor {
             handle = ResourceManager<Texture::Texture2D>::GetOrLoadResource(filename,
                 ResourceOrigin::User, true, Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
         }
-       
+        else if constexpr (std::is_same_v<T, Texture::Cubemap>) {
+            // No support internally for async loading, load syncho. for now
+            handle = ResourceManager<Texture::Cubemap>::GetOrLoadResourceAsync(filename,
+                ResourceOrigin::User);
+        }
 
         return handle;
 

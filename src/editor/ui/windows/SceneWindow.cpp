@@ -132,6 +132,8 @@ namespace Atlas::Editor::UI {
                 scenePropertiesPanel.Render(scene->sss);
             else if (sceneHierarchyPanel.selectedProperty.wind)
                 scenePropertiesPanel.Render(scene->wind);
+            else if (sceneHierarchyPanel.selectedProperty.sky)
+                scenePropertiesPanel.Render(scene->sky);
             else if (sceneHierarchyPanel.selectedProperty.postProcessing)
                 scenePropertiesPanel.Render(scene->postProcessing);
             else if (sceneHierarchyPanel.selectedEntity.IsValid())
@@ -213,7 +215,7 @@ namespace Atlas::Editor::UI {
 
             if (!isPlaying) {
                 auto& moveIcon = Singletons::icons->Get(IconType::Move);
-                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(moveIcon);
+                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moveIcon);
                 bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
                 ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
@@ -225,7 +227,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::SameLine();
                 auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(rotateIcon);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&rotateIcon);
                 selected = guizmoMode == ImGuizmo::OPERATION::ROTATE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
@@ -237,7 +239,7 @@ namespace Atlas::Editor::UI {
 
                 ImGui::SameLine();
                 auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(scaleIcon);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&scaleIcon);
                 selected = guizmoMode == ImGuizmo::OPERATION::SCALE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
@@ -250,7 +252,7 @@ namespace Atlas::Editor::UI {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
                 auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreHorizIcon);
+                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreHorizIcon);
                 ImGui::SameLine();
                 if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
                     ImGui::OpenPopup("Guizmo settings");
@@ -300,7 +302,7 @@ namespace Atlas::Editor::UI {
             uvMax = ImVec2(0.75f, 0.75f);
 
             auto& playIcon = Singletons::icons->Get(IconType::Play);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(playIcon);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&playIcon);
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
@@ -309,7 +311,7 @@ namespace Atlas::Editor::UI {
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(stopIcon);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&stopIcon);
 
             offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
@@ -318,7 +320,7 @@ namespace Atlas::Editor::UI {
             }
 
             auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(settingsIcon);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&settingsIcon);
 
             uvMin = ImVec2(0.1f, 0.1f);
             uvMax = ImVec2(0.9f, 0.9f);
@@ -358,7 +360,7 @@ namespace Atlas::Editor::UI {
             }
 
             auto& eyeIcon = Singletons::icons->Get(IconType::Eye);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(eyeIcon);
+            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&eyeIcon);
 
             ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
             if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {

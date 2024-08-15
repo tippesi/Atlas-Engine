@@ -53,7 +53,7 @@ namespace Atlas {
              * @param set
              * @param binding
              */
-            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const;
 
             /**
              * Validates a texture.

@@ -12,3 +12,4 @@
 #include "panels/MaterialsPanel.h"
 #include "panels/GPUProfilerPanel.h"
 #include "panels/WindPanel.h"
+#include "panels/SkyPanel.h"

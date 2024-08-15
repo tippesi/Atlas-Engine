@@ -150,7 +150,7 @@ namespace Atlas::Editor::UI {
         ImGui::SetWindowFontScale(1.5f);
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(Singletons::icons->Get(IconType::ArrowLeft));
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&Singletons::icons->Get(IconType::ArrowLeft));
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -184,7 +184,7 @@ namespace Atlas::Editor::UI {
 
         auto region = ImGui::GetContentRegionAvail();
         auto& moreIcon = Singletons::icons->Get(IconType::Settings);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(moreIcon);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreIcon);
 
         lineHeight = ImGui::GetTextLineHeight();
         auto buttonSize = ImVec2(lineHeight, lineHeight);
@@ -288,7 +288,7 @@ namespace Atlas::Editor::UI {
             iconTexture = Singletons::icons->Get(IconType::Folder);
         else
             iconTexture = GetIcon(contentType);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(iconTexture);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
 
         std::string fileType = Common::Path::GetFileType(assetPath);
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);

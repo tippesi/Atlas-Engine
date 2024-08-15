@@ -8,7 +8,7 @@ namespace Atlas::ImguiExtension {
 
         ImGui::Text("Noise texture");
 
-        UIElements::TextureView(wrapper, wind.noiseMap, 255.0f);
+        UIElements::TextureView(wrapper, &wind.noiseMap, 255.0f);
 
         ImGui::Separator();
 

@@ -2,7 +2,7 @@
 
 namespace Atlas::ImguiExtension {
 
-    void UIElements::TexturePreview(Ref<ImguiWrapper>& wrapper, const Texture::Texture2D& texture) {
+    void UIElements::TexturePreview(Ref<ImguiWrapper>& wrapper, const Texture::Texture* texture) {
 
         auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
         auto set = wrapper->GetTextureDescriptorSet(texture);
@@ -15,7 +15,7 @@ namespace Atlas::ImguiExtension {
 
     }
 
-    void UIElements::TextureView(Ref<ImguiWrapper>& wrapper, const Texture::Texture2D& texture, float maxTextureSize) {
+    void UIElements::TextureView(Ref<ImguiWrapper>& wrapper, const Texture::Texture* texture, float maxTextureSize) {
 
         auto region = ImGui::GetContentRegionAvail();
 

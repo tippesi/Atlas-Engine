@@ -35,7 +35,7 @@ namespace Atlas {
 
        }
 
-       Cubemap::Cubemap(std::string filename, int32_t resolution) {
+       Cubemap::Cubemap(std::string filename) {
 
            auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 4);
 
@@ -48,6 +48,7 @@ namespace Atlas {
            filtering = Filtering::MipMapLinear;
            wrapping = Wrapping::ClampToEdge;
 
+           auto resolution = image->width / 4;
            Reallocate(Graphics::ImageType::ImageCube, resolution, resolution, 6, filtering, wrapping);
            RecreateSampler(filtering, wrapping);
 

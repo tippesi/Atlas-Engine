@@ -56,7 +56,8 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Render RT Reflections");
 
-            if (!target->HasHistory()) {
+            if (target->historyReflectionTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
+                target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;

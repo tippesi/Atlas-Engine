@@ -92,11 +92,11 @@ namespace Atlas::Scripting::Bindings {
         );
 
         ns->new_usertype<Lighting::EnvironmentProbe>("EnvironmentProbe",
-            "resolution", &Lighting::EnvironmentProbe::resolution,
             "viewMatrices", &Lighting::EnvironmentProbe::viewMatrices,
             "projectionMatrix", &Lighting::EnvironmentProbe::projectionMatrix,
             "update", &Lighting::EnvironmentProbe::update,
             "cubemap", &Lighting::EnvironmentProbe::cubemap,
+            "generatedCubemap", &Lighting::EnvironmentProbe::generatedCubemap,
             "depth", &Lighting::EnvironmentProbe::depth,
             "filteredDiffuse", &Lighting::EnvironmentProbe::filteredDiffuse,
             "filteredSpecular", &Lighting::EnvironmentProbe::filteredSpecular

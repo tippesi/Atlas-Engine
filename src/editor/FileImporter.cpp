@@ -28,6 +28,9 @@ namespace Atlas::Editor {
         switch(type) {
         case ContentType::Audio: ImportFile<Audio::AudioData>(filename); break;
         case ContentType::Mesh: ImportFile<Mesh::Mesh>(filename); break;
+        case ContentType::Material: ImportFile<Mesh::Mesh>(filename); break;
+        case ContentType::Texture: ImportFile<Texture::Texture2D>(filename); break;
+        case ContentType::EnvironmentTexture: ImportFile<Texture::Cubemap>(filename); break;
         case ContentType::Scene: ImportFile<Scene::Scene>(filename); break;
         case ContentType::Script: ImportFile<Scripting::Script>(filename); break;
         case ContentType::Font: ImportFile<Font>(filename); break;

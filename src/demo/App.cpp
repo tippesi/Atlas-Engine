@@ -715,7 +715,7 @@ bool App::LoadScene() {
     bool successful = false;
     loadingComplete = false;
 
-    Atlas::Texture::Cubemap sky;
+    Atlas::ResourceHandle<Atlas::Texture::Cubemap> sky;
     auto& directionalLight = directionalLightEntity.GetComponent<LightComponent>();
 
     directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
@@ -878,7 +878,7 @@ bool App::LoadScene() {
         meshes.push_back(mesh);
         transforms.push_back(glm::scale(glm::vec3(8.0f)));
 
-        sky = Atlas::Texture::Cubemap("environment.hdr", 2048);
+        sky = Atlas::ResourceManager<Atlas::Texture::Cubemap>::GetOrLoadResourceAsync("environment.hdr");
         probe = Atlas::Lighting::EnvironmentProbe(sky);
         scene->sky.probe = Atlas::CreateRef(probe);
 

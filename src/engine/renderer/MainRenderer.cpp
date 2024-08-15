@@ -822,9 +822,15 @@ namespace Atlas {
             commandList->ImageMemoryBarrier(probe->filteredDiffuse.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            
+            auto& cubemap = probe->GetCubemap();
+            if (cubemap.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                commandList->ImageMemoryBarrier(cubemap.image, VK_IMAGE_LAYOUT_GENERAL,
+                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            }
 
             commandList->BindImage(probe->filteredDiffuse.image, 3, 0);
-            commandList->BindImage(probe->cubemap.image, probe->cubemap.sampler, 3, 1);
+            commandList->BindImage(cubemap.image, cubemap.sampler, 3, 1);
 
             ivec2 res = ivec2(probe->filteredDiffuse.width, probe->filteredDiffuse.height);
             ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
@@ -866,7 +872,7 @@ namespace Atlas {
                 commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
 
                 PushConstants pushConstants = {
-                    .cubeMapMipLevels = int32_t(probe->cubemap.image->mipLevels),
+                    .cubeMapMipLevels = int32_t(probe->GetCubemap().image->mipLevels),
                     .roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
                     .mipLevel = i
                 };

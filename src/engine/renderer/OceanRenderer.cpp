@@ -264,7 +264,7 @@ namespace Atlas {
                 }
 
                 if (scene->sky.GetProbe()) {
-                    scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
+                    scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
                 }
 
                 if (cloudsEnabled) {
@@ -476,7 +476,7 @@ namespace Atlas {
             ocean->foamTexture.Bind(commandList, 3, 2);
 
             if (scene->sky.GetProbe()) {
-                scene->sky.GetProbe()->cubemap.Bind(commandList, 3, 3);
+                scene->sky.GetProbe()->GetCubemap().Bind(commandList, 3, 3);
             }
 
             refractionTexture.Bind(commandList, 3, 4);

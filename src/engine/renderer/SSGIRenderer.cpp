@@ -55,7 +55,8 @@ namespace Atlas {
             if (!target->giLengthTexture.IsValid())
                 target->SetGIResolution(target->GetGIResolution(), false);
 
-            if (!target->HasHistory()) {
+            if (target->historyGiTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
+                target->historyGiLengthTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;

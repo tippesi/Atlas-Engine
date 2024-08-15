@@ -57,7 +57,8 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Render RTGI");
 
-            if (!target->HasHistory()) {
+            if (target->historyGiTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
+                target->historyGiMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 std::vector<Graphics::BufferBarrier> bufferBarriers;
