@@ -140,6 +140,10 @@ namespace Atlas {
             std::map<Hash, ResourceHandle<Material>> materials;
 
             std::sort(meshes.begin(), meshes.end(), [](const auto& mesh0, const auto& mesh1) {
+                if (!mesh0.IsLoaded())
+                    return false;
+                if (!mesh1.IsLoaded())
+                    return true;
                 return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
             });
 

@@ -13,6 +13,7 @@ namespace Atlas::Scripting::Bindings {
         GenerateResourceBinding<Audio::AudioData>(ns, "AudioResourceHandle");
         GenerateResourceBinding<Material>(ns, "MaterialResourceHandle");
         GenerateResourceBinding<Texture::Texture2D>(ns, "Texture2DResourceHandle");
+        GenerateResourceBinding<Texture::Cubemap>(ns, "CubemapResourceHandle");
         GenerateResourceBinding<Mesh::Mesh>(ns, "MeshResourceHandle");
         GenerateResourceBinding<Scripting::Script>(ns, "ScriptResourceHandle");
 

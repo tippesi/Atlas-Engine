@@ -6,6 +6,7 @@
 #include "Singletons.h"
 #include "EntityPropertiesPanel.h"
 #include "SceneStatisticsPanel.h"
+#include "ResourceSelectionPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -65,6 +66,13 @@ namespace Atlas::Editor::UI {
                 RenderHeading("Wind");
                 windPanel.Render(Singletons::imguiWrapper, t);
             }
+            else if constexpr (std::is_same_v<T, Lighting::Sky>) {
+                RenderHeading("Sky");
+                skyPanel.Render(Singletons::imguiWrapper, t, 
+                    [&](ResourceHandle<Texture::Cubemap> handle) {
+                        return cubemapSelectionPanel.Render(handle);
+                    });
+            }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
                 postProcessingPanel.Render(t);
@@ -94,6 +102,8 @@ namespace Atlas::Editor::UI {
         EntityPropertiesPanel entityPropertiesPanel;
         SceneStatisticsPanel sceneStatisticsPanel;
 
+        ResourceSelectionPanel<Texture::Cubemap> cubemapSelectionPanel;
+
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
@@ -102,6 +112,7 @@ namespace Atlas::Editor::UI {
         ImguiExtension::RTGIPanel rtgiPanel;
         ImguiExtension::SSSPanel sssPanel;
         ImguiExtension::WindPanel windPanel;
+        ImguiExtension::SkyPanel skyPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
 
     };

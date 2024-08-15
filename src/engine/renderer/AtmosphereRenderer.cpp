@@ -90,7 +90,7 @@ namespace Atlas {
 
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid() || !atmosphere) {
-                commandList->ImageMemoryBarrier(probe->cubemap.image,
+                commandList->ImageMemoryBarrier(probe->generatedCubemap.image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
                 return;
             }
@@ -100,7 +100,7 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(cubeMapPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(probe->generatedCubemap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 
             auto& light = mainLightEntity.GetComponent<LightComponent>();
 
@@ -119,13 +119,13 @@ namespace Atlas {
             uniformBuffer.SetData(&uniforms, 1);
             probeMatricesBuffer.SetData(matrices.data(), 0);
 
-            commandList->BindImage(probe->cubemap.image, 3, 0);
+            commandList->BindImage(probe->generatedCubemap.image, 3, 0);
             commandList->BindBufferOffset(uniformBuffer.Get(), uniformBuffer.GetAlignedOffset(1), 3, 3);
             commandList->BindBuffer(probeMatricesBuffer.Get(), 3, 4);
 
             Graphics::Profiler::BeginQuery("Render probe faces");
 
-            auto resolution = ivec2(probe->resolution);
+            auto resolution = ivec2(probe->GetCubemap().width, probe->GetCubemap().height);
             auto groupCount = resolution / 8;
 
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
@@ -135,12 +135,12 @@ namespace Atlas {
 
             Graphics::Profiler::EndAndBeginQuery("Generate mipmaps");
 
-            commandList->ImageMemoryBarrier(probe->cubemap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            commandList->ImageMemoryBarrier(probe->generatedCubemap.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             // The cube map generating automatically transforms the image layout to read-only optimal
-            commandList->GenerateMipMaps(probe->cubemap.image);
+            commandList->GenerateMipMaps(probe->generatedCubemap.image);
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();

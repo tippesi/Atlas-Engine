@@ -1,4 +1,5 @@
 #include "LightingSerializer.h"
+#include "../resource/ResourceManager.h"
 
 namespace Atlas::Lighting {
 
@@ -26,20 +27,30 @@ namespace Atlas::Lighting {
 
     void to_json(json& j, const EnvironmentProbe& p) {
         j = json {
-            {"resolution", p.resolution},
+            {"resolution", p.GetCubemap().width},
             {"position", p.GetPosition()}
         };
+
+        if (p.cubemap.IsValid()) {
+            j["cubemapPath"] = p.cubemap.GetResource()->path;
+        }
     }
 
     void from_json(const json& j, EnvironmentProbe& p) {
-        p = EnvironmentProbe(j["resolution"].get<int32_t>(),
-            j["position"].get<vec3>());
+        if (j.contains("cubemapPath")) {
+            auto cubemapHandle = ResourceManager<Texture::Cubemap>::GetOrLoadResourceAsync(j["cubemapPath"]);
+            p = EnvironmentProbe(cubemapHandle);
+        }
+        else {
+            p = EnvironmentProbe(j["resolution"].get<int32_t>(),
+                j["position"].get<vec3>());
+        }
     }
 
     void to_json(json& j, const Atmosphere& p) {
         j = json {
             {"height", p.height},
-            {"probeResolution", p.probe->resolution}
+            {"probeResolution", p.probe->GetCubemap().width}
         };
     }
 

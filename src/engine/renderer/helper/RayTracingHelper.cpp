@@ -110,8 +110,8 @@ namespace Atlas {
                     const auto& rtData = scene->rayTracingWorld;
 
                     if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
-                            scene->sky.GetProbe()->cubemap.sampler, 2, 6);
+                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
+                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 
@@ -232,8 +232,8 @@ namespace Atlas {
                     const auto& rtData = scene->rayTracingWorld;
 
                     if (scene->sky.GetProbe())
-                        commandList->BindImage(scene->sky.GetProbe()->cubemap.image,
-                            scene->sky.GetProbe()->cubemap.sampler, 2, 6);
+                        commandList->BindImage(scene->sky.GetProbe()->GetCubemap().image,
+                            scene->sky.GetProbe()->GetCubemap().sampler, 2, 6);
                     else
                         commandList->BindImage(dummyTexture.image, dummyTexture.sampler, 2, 6);
 

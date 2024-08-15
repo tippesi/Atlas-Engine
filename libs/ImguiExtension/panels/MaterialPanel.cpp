@@ -12,7 +12,7 @@ namespace Atlas::ImguiExtension {
 
         auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
             if (texture.IsLoaded()) {
-                UIElements::TexturePreview(wrapper, *texture.Get());
+                UIElements::TexturePreview(wrapper, &texture);
                 ImGui::SameLine();
                 // Calculate next item width and push a width with the image elements width substracted from it
                 auto width = ImGui::CalcItemWidth();

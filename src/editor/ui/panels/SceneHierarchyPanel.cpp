@@ -245,6 +245,7 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
 
         RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
+        RenderExtendedItem("Sky", &selectedProperty.sky, selectionChanged);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
 
     }

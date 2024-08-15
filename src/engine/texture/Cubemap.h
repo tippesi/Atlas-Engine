@@ -36,7 +36,7 @@ namespace Atlas {
             * @param resolution
             * @note The file has to be a equirectangular map.
             */
-            Cubemap(std::string filename, int32_t resolution);
+            Cubemap(std::string filename);
 
             /**
              * Construct a Cubemap object.

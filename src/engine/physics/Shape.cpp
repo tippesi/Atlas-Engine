@@ -46,7 +46,13 @@ namespace Atlas::Physics {
             ref = shape->GetInnerShape();
         }
 
-        JPH::ScaledShapeSettings scaledShapeSettings(ref, VecToJPHVec(scale));
+        vec3 correctedScale = scale;
+        if (type == ShapeType::Sphere) {
+            // Assume scalar scale (but make sure it actually is)
+            correctedScale = vec3(scale.x);
+        }
+
+        JPH::ScaledShapeSettings scaledShapeSettings(ref, VecToJPHVec(correctedScale));
         auto result = scaledShapeSettings.Create();
 
         if (!result.IsValid())
@@ -56,19 +62,19 @@ namespace Atlas::Physics {
 
         if (settings) {
             if (type == ShapeType::Mesh) {
-                static_cast<MeshShapeSettings*>(settings.get())->scale = scale;
+                static_cast<MeshShapeSettings*>(settings.get())->scale = correctedScale;
             }
             else if (type == ShapeType::Sphere) {
-                static_cast<SphereShapeSettings*>(settings.get())->scale = scale;
+                static_cast<SphereShapeSettings*>(settings.get())->scale = correctedScale;
             }
             else if (type == ShapeType::BoundingBox) {
-                static_cast<BoundingBoxShapeSettings*>(settings.get())->scale = scale;
+                static_cast<BoundingBoxShapeSettings*>(settings.get())->scale = correctedScale;
             }
             else if (type == ShapeType::Capsule) {
-                static_cast<CapsuleShapeSettings*>(settings.get())->scale = scale;
+                static_cast<CapsuleShapeSettings*>(settings.get())->scale = correctedScale;
             }
             else if (type == ShapeType::HeightField) {
-                static_cast<HeightFieldShapeSettings*>(settings.get())->scale = scale;
+                static_cast<HeightFieldShapeSettings*>(settings.get())->scale = correctedScale;
             }
         }
 

@@ -22,7 +22,7 @@ namespace Atlas {
 
         }
 
-        void Texture::Bind(Graphics::CommandList *commandList, uint32_t set, uint32_t binding) {
+        void Texture::Bind(Graphics::CommandList *commandList, uint32_t set, uint32_t binding) const {
 
             commandList->BindImage(image, sampler, set, binding);
 
