@@ -6,7 +6,7 @@ on:
       release_version:
         description: 'Release version'
         required: true
-        default: '0.1.0'
+        default: '0.2.0'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)

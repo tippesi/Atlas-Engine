@@ -131,7 +131,7 @@ namespace Atlas {
                 int32_t width, int32_t height, int32_t depth);
 
             void Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height,
-                int32_t depth, Filtering filtering, Wrapping wrapping);
+                int32_t depth, Filtering filtering, Wrapping wrapping, bool dedicatedMemory = false);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
 

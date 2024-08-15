@@ -42,6 +42,8 @@ namespace Atlas {
             bool mipMapping = false;
 
             void* data = nullptr;
+
+            bool dedicatedMemory = false;
         };
 
         struct ImageAllocation {

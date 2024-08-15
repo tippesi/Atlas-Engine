@@ -34,12 +34,13 @@ layout(set = 3, binding = 12) uniform usampler2D historyMaterialIdxTexture;
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 4;
+const int kernelRadius = 5;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
 
 shared vec4 sharedRadianceDepth[sharedDataSize];
+shared uint sharedMaterialIdx[sharedDataSize];
 
 layout(push_constant) uniform constants {
     float temporalWeight;
@@ -94,6 +95,7 @@ void LoadGroupSharedData() {
 
         sharedRadianceDepth[i].rgb = FetchTexel(texel);
         sharedRadianceDepth[i].a = texelFetch(depthTexture, texel, 0).r;
+        sharedMaterialIdx[i].r = texelFetch(materialIdxTexture, texel, 0).r;
     }
 
     barrier();
@@ -116,6 +118,12 @@ vec3 FetchCurrentRadiance(int sharedMemoryIdx) {
 float FetchDepth(int sharedMemoryIdx) {
 
     return sharedRadianceDepth[sharedMemoryIdx].a;
+
+}
+
+uint FetchMaterialIdx(int sharedMemoryIdx) {
+
+    return sharedMaterialIdx[sharedMemoryIdx].r;
 
 }
 
@@ -171,15 +179,16 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
     vec3 position = ConvertDepth(depth, texCoord, globalData.ipvMatrixCurrent);
-    vec3 worldNormal = vec3(globalData.ivMatrix * vec4(normal, 0.0));
+    vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(normal, 0.0)));
     
     vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
     float NdotV = abs(dot(viewDir, worldNormal));
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
+    float depthPhi = max(1.0, NdotV * 16.0 / max(1.0, abs(linearDepth)));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -188,17 +197,14 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 16.0);
 
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        vec2 texCoord = (vec2(offsetPixel) + 0.5) / resolution;
-        vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
+        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
+        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
 
-        float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
+        float confidence = normalWeight * depthWeight;
 
-        float confidence = planeWeight * normalWeight;
-
-        if (confidence > 0.5) {         
+        if (confidence > 0.2) {         
             totalWeight += weights[i];
             history += texelFetch(historyTexture, offsetPixel, 0) * weights[i];
             historyMoments += texelFetch(historyMomentsTexture, offsetPixel, 0) * weights[i];
@@ -217,15 +223,12 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 16.0);
 
-        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        vec2 texCoord = (vec2(offsetPixel) + 0.5) / resolution;
-        vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
+        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
+        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
 
-        float planeWeight = GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
-
-        float confidence = planeWeight * normalWeight;
+        float confidence = normalWeight * depthWeight;
 
         if (confidence > 0.5) {
             totalWeight += 1.0;
@@ -247,28 +250,25 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
 }
 
-float IsHistoryPixelValid(ivec2 pixel, vec3 position, vec3 normal, vec3 worldNormal, float depthPhi) {
+float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal, float depthPhi) {
 
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
     confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 32.0);
 
-    float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
-    vec2 texCoord = (vec2(pixel) + 0.5) / resolution;
-    vec3 historyPosition = ConvertDepth(historyDepth, texCoord, globalData.ipvMatrixLast);
+    float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
 
-    confidence *= GetEdgePreservingPlaneWeight(position, worldNormal, historyPosition, depthPhi);
-    
     return confidence > 0.5 ? 1.0 : 0.0;
 
 }
 
-vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, vec3 position, vec3 normal, vec3 worldNormal, float depthPhi) {
+vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, vec3 normal, float depthPhi) {
 
     pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
 
-    weight *= IsHistoryPixelValid(pixel, position, normal, worldNormal, depthPhi);
+    weight *= IsHistoryPixelValid(pixel, linearDepth, normal, depthPhi);
 
     return texelFetch(historyTexture, pixel, 0) * weight;
 
@@ -285,7 +285,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
     float NdotV = abs(dot(viewDir, worldNormal));
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
+    float depthPhi = max(1.0, NdotV * 16.0 / max(1.0, abs(linearDepth)));
 
     vec2 samplePixel = uv * resolution;
 
@@ -316,7 +316,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
             float weight = weights[x].x * weights[y].y;
             ivec2 uv = ivec2(uvs[x].x, uvs[y].y);
 
-            history += GetCatmullRomSample(uv, weight, position, normal, worldNormal, depthPhi);
+            history += GetCatmullRomSample(uv, weight, linearDepth, normal, depthPhi);
             totalWeight += weight;
         }
     }
@@ -350,7 +350,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
     float NdotV = abs(dot(viewDir, normal));
     float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = max(4.0, NdotV * 128.0 / max(1.0, abs(linearDepth)));
+    float depthPhi = max(1.0, NdotV * 16.0 / max(1.0, abs(linearDepth)));
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
@@ -358,16 +358,21 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
     for (int i = -radius; i <= radius; i++) {
         for (int j = -radius; j <= radius; j++) {
+
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
             vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
             float sampleDepth = FetchDepth(sharedMemoryIdx);
+            uint sampleMaterialIdx = FetchMaterialIdx(sharedMemoryIdx);
 
             ivec2 samplePixel = pixel + ivec2(i, j);
             texCoord = (vec2(pixel) + 0.5) / resolution;
             vec3 samplePosition = ConvertDepth(sampleDepth, texCoord, globalData.ipvMatrixCurrent);
 
-            float weight = GetEdgePreservingPlaneWeight(position, normal, samplePosition, depthPhi);
+            float sampleLinearDepth = ConvertDepthToViewSpaceDepth(sampleDepth);
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) * depthPhi));
+
+            weight *= sampleMaterialIdx != materialIdx ? 0.0 : 1.0;
         
             m1 += sampleRadiance * weight;
             m2 += sampleRadiance * sampleRadiance * weight;
@@ -417,6 +422,8 @@ void main() {
     currentMoments.r = currentColor.r;
     currentMoments.g = currentMoments.r * currentMoments.r;
 
+    float historyLength = historyMoments.b;
+
     vec3 historyNeighbourhoodMin = mean - std;
     vec3 historyNeighbourhoodMax = mean + std;
 
@@ -428,22 +435,19 @@ void main() {
         historyColor, currentColor);
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentColor = clamp(currentColor, currentNeighbourhoodMin, currentNeighbourhoodMax);
-    //historyColor = clamp(historyColor, historyNeighbourhoodMin, historyNeighbourhoodMax);
-
-    //valid = clipBlend < 1.0 ? valid : false;
 
     currentColor.r = valid ? currentColor.r : mean.r;
 
     historyColor = YCoCgToRGB(historyColor);
     currentColor = YCoCgToRGB(currentColor);
 
+    //float factor = mix(0.0, pushConstants.temporalWeight, 1.0 - adjClipBlend);
     float factor = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
-
-    float historyLength = historyMoments.b;
+    
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
@@ -460,13 +464,12 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    velocity *= 100.0;
-
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
-    imageStore(resolveImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), variance));
+    //imageStore(resolveImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), variance));
+    //imageStore(resolveImage, pixel, vec4(vec3(materialIdx) / 3000.0, variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

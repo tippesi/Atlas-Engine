@@ -14,7 +14,7 @@ namespace Atlas {
     public:
         Worker() = default;
 
-        Worker(int32_t workerId);
+        Worker(int32_t workerId, JobPriority priority);
 
         Worker(Worker&& worker);
 
@@ -33,6 +33,7 @@ namespace Atlas {
         }
 
         int32_t workerId;
+        JobPriority priority;
 
         std::thread thread;
         std::binary_semaphore semaphore{0};
