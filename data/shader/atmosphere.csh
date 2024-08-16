@@ -220,7 +220,7 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
     float inDist, outDist;
     CalculateRayLength(r0, r, inDist, outDist);
     if (inDist <= 0.0 && outDist <= 0.0)
-    return;
+        return;
 
     float iStepSize = (outDist - inDist) / float(iSteps);
 
