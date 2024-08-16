@@ -11,12 +11,6 @@ namespace Atlas {
 
     namespace Volume {
 
-        uint32_t BVHBuilder::maxDepth = 0;
-        uint32_t BVHBuilder::maxTriangles = 0;
-        uint32_t BVHBuilder::minTriangles = 10000;
-        uint32_t BVHBuilder::spatialSplitCount = 0;
-        float BVHBuilder::totalSurfaceArea = 0.0f;
-
         BVH::BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
             Tools::PerformanceCounter perfCounter;
@@ -235,8 +229,6 @@ namespace Atlas {
             // Calculate cost for current node
             nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
 
-            totalSurfaceArea += this->aabb.GetSurfaceArea();
-
         }
 
         BVHBuilder::BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount, const uint32_t binCount) :
@@ -244,8 +236,6 @@ namespace Atlas {
 
             // Calculate cost for current node
             nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
-
-            totalSurfaceArea += this->aabb.GetSurfaceArea();
 
         }
 
@@ -307,9 +297,6 @@ namespace Atlas {
                     rightRefs.clear();
                     PerformObjectSplit(refs, rightRefs, leftRefs, objectSplit);
                     split = objectSplit;
-                }
-                else {
-                    spatialSplitCount++;
                 }
             }
 
@@ -870,10 +857,6 @@ namespace Atlas {
         void BVHBuilder::CreateLeaf(std::vector<Ref>& refs) {
 
             this->refs = refs;
-
-            maxDepth = std::max(depth, maxDepth);
-            minTriangles = std::min(uint32_t(refs.size()), minTriangles);
-            maxTriangles = std::max(uint32_t(refs.size()), maxTriangles);
 
         }
 

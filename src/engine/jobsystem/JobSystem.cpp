@@ -1,6 +1,14 @@
 #include "JobSystem.h"
 #include "Log.h"
 
+#ifdef AE_OS_WINDOWS
+#include "Windows.h"
+#endif
+
+#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+#include <pthread.h>
+#endif
+
 namespace Atlas {
 
     PriorityPool JobSystem::priorityPools[static_cast<int>(JobPriority::Count)];
@@ -14,6 +22,25 @@ namespace Atlas {
         priorityPools[static_cast<int>(JobPriority::High)].Init(highPrioThreadCount, JobPriority::High);
         priorityPools[static_cast<int>(JobPriority::Medium)].Init(mediumPrioThreadCount, JobPriority::Medium);
         priorityPools[static_cast<int>(JobPriority::Low)].Init(lowPrioThreadCount, JobPriority::Low);
+
+        bool success = false;
+        // Need to set our own main thread priority, otherwise we will loose when in contention with other threads
+#ifdef AE_OS_WINDOWS
+        auto threadHandle = GetCurrentThread();
+        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0;
+#endif
+
+#if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+        auto minPriority = sched_get_priority_min(SCHED_RR);
+        auto maxPriority = sched_get_priority_max(SCHED_RR);
+
+        sched_param params = { 
+            .sched_priority = maxPriority
+        };
+        success = pthread_setschedparam(pthread_self(), SCHED_RR, &params) == 0;
+#endif
+        if (!success)
+            Log::Warning("Couldn't set priority of main thread");
 
     }
 
@@ -56,17 +83,39 @@ namespace Atlas {
             .userData = userData
         };
 
-        // Not very efficient, could just batch push back all this work
-        for (int32_t i = 0; i < count; i++) {
-            auto& worker = priorityPool.GetNextWorker();
 
-            job.idx = i;
-            worker.queue.Push(job);
+        if (count <= priorityPool.workerCount) {
+            for (int32_t i = 0; i < count; i++) {
+                auto& worker = priorityPool.GetNextWorker();
+
+                job.idx = i;
+                worker.queue.Push(job);
+                worker.semaphore.release();
+            }
+            return;
         }
 
-        auto& workers = priorityPool.GetAllWorkers();
-        for (auto& worker : workers) {
+        int32_t remainingJobs = count;
+        int32_t jobCountPerWorker = count / priorityPool.workerCount;
+        std::vector<Job> jobs;
+        for (int32_t i = 0; i < priorityPool.workerCount; i++) {
+            auto jobsToPush = jobCountPerWorker;
+            if (i == priorityPool.workerCount - 1 && remainingJobs != jobsToPush)
+                jobsToPush = remainingJobs;
+
+            jobs.reserve(jobsToPush);
+
+            for (int32_t j = 0; j < jobsToPush; j++) {
+                job.idx = i;
+                jobs.push_back(job);
+            }
+
+            auto& worker = priorityPool.GetNextWorker();
+            worker.queue.PushMultiple(jobs);
             worker.semaphore.release();
+            jobs.clear();
+
+            remainingJobs -= jobsToPush;
         }
 
     }

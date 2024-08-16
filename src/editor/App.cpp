@@ -10,6 +10,9 @@
 #include <chrono>
 #include <thread>
 
+#include <atomic>
+#include <stdatomic.h>
+
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
     .shaderDirectory = "shader"
@@ -41,7 +44,6 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
-       
 
         Serialization::DeserializeConfig();
 
@@ -197,7 +199,9 @@ namespace Atlas::Editor {
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
         graphicsDevice->WaitForPreviousFrameSubmission();
-        
+
+
+#ifdef AE_BINDLESS
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&](JobData) {
@@ -218,6 +222,7 @@ namespace Atlas::Editor {
             JobSystem::Execute(bvhBuilderGroup, buildRTStructure);
             return;
         }
+#endif
         
     }
 

@@ -31,10 +31,11 @@ namespace Atlas {
             bool supportsTransfer;
             bool supportsPresentation;
 
-            std::thread::id threadId = std::thread::id();
+            std::atomic<std::thread::id> threadId = std::thread::id();
             Ref<int32_t> counter = CreateRef(0);
 
             std::mutex mutex;
+            std::mutex aquireMutex;
 
         };
 

@@ -9,6 +9,13 @@ namespace Atlas {
     
     }
 
+    void ThreadSafeJobQueue::PushMultiple(const std::vector<Job>& newJobs) {
+
+        std::scoped_lock lock(mutex);
+        jobs.insert(jobs.end(), newJobs.begin(), newJobs.end());
+
+    }
+
     std::optional<Job> ThreadSafeJobQueue::Pop() {
 
         std::scoped_lock lock(mutex);

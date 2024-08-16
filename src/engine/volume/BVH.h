@@ -67,12 +67,6 @@ namespace Atlas {
             AABB aabb;
             std::vector<Ref> refs;
 
-            static uint32_t maxDepth;
-            static uint32_t minTriangles;
-            static uint32_t maxTriangles;
-            static uint32_t spatialSplitCount;
-            static float totalSurfaceArea;
-
         private:
             struct Bin {
             public:

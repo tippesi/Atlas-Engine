@@ -16,6 +16,8 @@ namespace Atlas {
 
         void Push(const Job& job);
         
+        void PushMultiple(const std::vector<Job>& jobs);
+        
         std::optional<Job> Pop();
 
     private:
