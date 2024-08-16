@@ -39,7 +39,6 @@ namespace Atlas {
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto minPriority = sched_get_priority_min(SCHED_RR);
         auto maxPriority = sched_get_priority_max(SCHED_RR);
-        auto priorityRange = maxPriority - minPriority;
 
         sched_param params = {};
         

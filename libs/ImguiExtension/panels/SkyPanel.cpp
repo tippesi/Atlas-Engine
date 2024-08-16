@@ -15,9 +15,10 @@ namespace Atlas::ImguiExtension {
             cubemap = cubemapSelector.value()(cubemap);
         }
         
-        if (cubemap.IsValid() && !sky.probe) {
+        if (cubemap.IsValid() && !sky.probe)
             sky.probe = CreateRef<Lighting::EnvironmentProbe>(cubemap);
-        }
+        else if (!cubemap.IsValid() && sky.probe)
+            sky.probe = nullptr;
 
         ImGui::PopID();
 
