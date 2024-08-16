@@ -45,6 +45,10 @@ namespace Atlas {
                 .cameraLocation = vec4(location, 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
                 .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
+                .rayleighScatteringCoeff = vec4(atmosphere->rayleighScatteringCoeff, 0.0f),
+                .mieScatteringCoeff = atmosphere->mieScatteringCoeff,
+                .rayleighHeightScale = atmosphere->rayleighHeightScale,
+                .mieHeightScale = atmosphere->mieHeightScale,
                 .sunIntensity = light.intensity,
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height
@@ -112,6 +116,10 @@ namespace Atlas {
                 .cameraLocation = vec4(probe->GetPosition(), 1.0f),
                 .planetCenter = vec4(scene->sky.planetCenter, 1.0f),
                 .sunDirection = vec4(light.transformedProperties.directional.direction, 0.0f),
+                .rayleighScatteringCoeff = vec4(atmosphere->rayleighScatteringCoeff, 0.0f),
+                .mieScatteringCoeff = atmosphere->mieScatteringCoeff,
+                .rayleighHeightScale = atmosphere->rayleighHeightScale,
+                .mieHeightScale = atmosphere->mieHeightScale,
                 .sunIntensity = light.intensity,
                 .planetRadius = scene->sky.planetRadius,
                 .atmosphereRadius = scene->sky.planetRadius + atmosphere->height

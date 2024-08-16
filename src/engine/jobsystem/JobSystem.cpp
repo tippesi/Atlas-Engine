@@ -2,6 +2,7 @@
 #include "Log.h"
 
 #ifdef AE_OS_WINDOWS
+#define NOMINMAX
 #include "Windows.h"
 #endif
 
@@ -31,9 +32,7 @@ namespace Atlas {
 #endif
 
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
-        auto minPriority = sched_get_priority_min(SCHED_RR);
         auto maxPriority = sched_get_priority_max(SCHED_RR);
-
         sched_param params = { 
             .sched_priority = maxPriority
         };
@@ -83,7 +82,6 @@ namespace Atlas {
             .userData = userData
         };
 
-
         if (count <= priorityPool.workerCount) {
             for (int32_t i = 0; i < count; i++) {
                 auto& worker = priorityPool.GetNextWorker();
@@ -106,7 +104,7 @@ namespace Atlas {
             jobs.reserve(jobsToPush);
 
             for (int32_t j = 0; j < jobsToPush; j++) {
-                job.idx = i;
+                job.idx = j;
                 jobs.push_back(job);
             }
 

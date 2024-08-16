@@ -10,9 +10,6 @@
 #include <chrono>
 #include <thread>
 
-#include <atomic>
-#include <stdatomic.h>
-
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
     .assetDirectory = "../../data",
     .shaderDirectory = "shader"

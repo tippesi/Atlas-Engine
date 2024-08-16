@@ -148,7 +148,7 @@ namespace Atlas {
             });
 
             if (multithreaded) {
-                JobGroup group;
+                JobGroup group{ JobPriority::Medium };
                 JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
                     [&](JobData& data) {
                         auto& mesh = meshes[data.idx];
