@@ -197,7 +197,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 16.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
 
         float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
         float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
@@ -255,7 +255,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal, float dep
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 32.0);
+    confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
     float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
     confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
@@ -321,7 +321,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.1) {
+    if (totalWeight > 0.5) {
         history /= totalWeight;
         history = max(history, 0.0);
    
@@ -401,7 +401,7 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
-    vec2 historyPixel = vec2(pixel) + velocity * resolution;
+    vec2 historyPixel = vec2(pixel) + (velocity * resolution) + 0.5;
 
     bool valid = true;
     vec4 history;
@@ -468,7 +468,7 @@ void main() {
     imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), variance));
+    imageStore(resolveImage, pixel, vec4(vec3(success ? 1.0 : 0.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(materialIdx) / 3000.0, variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 

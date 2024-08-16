@@ -21,6 +21,10 @@ layout(set = 3, binding = 3, std140) uniform UniformBuffer {
     vec4 cameraLocation;
     vec4 planetCenter;
     vec4 sunDirection;
+    vec4 rayleighScatteringCoeff;
+    float mieScatteringCoeff;
+    float rayleighHeightScale;
+    float mieHeightScale;
     float sunIntensity;
     float planetRadius;
     float atmosphereRadius;
@@ -33,9 +37,6 @@ layout(set = 3, binding = 4, std140) uniform MatricesBuffer {
 #endif
 
 vec2 resolution = vec2(imageSize(colorImage));
-
-const float rayScaleHeight = 8.0e3;
-const float mieScaleHeight = 1.2e3;
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos,
     vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
@@ -72,13 +73,13 @@ void main() {
     vec3 totalMie;
 
     atmosphere(
-        r,           // normalized ray direction
-        uniforms.cameraLocation.xyz,               // ray origin
-        -uniforms.sunDirection.xyz,                        // position of the sun
-        uniforms.planetRadius,                         // radius of the planet in meters
-        uniforms.atmosphereRadius,                         // radius of the atmosphere in meters
-        vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-        21e-6,                          // Mie scattering coefficient
+        r,        
+        uniforms.cameraLocation.xyz,
+        -uniforms.sunDirection.xyz, 
+        uniforms.planetRadius,
+        uniforms.atmosphereRadius,
+        uniforms.rayleighScatteringCoeff.rgb,
+        uniforms.mieScatteringCoeff,
         totalRlh,
         totalMie
     );
@@ -197,8 +198,8 @@ out float opticalDepthRay) {
         if (height < 0.0)
         return false;
 
-        opticalDepthMie += exp(-height / mieScaleHeight) * stepSize;
-        opticalDepthRay += exp(-height / rayScaleHeight) * stepSize;
+        opticalDepthMie += exp(-height / uniforms.mieHeightScale) * stepSize;
+        opticalDepthRay += exp(-height / uniforms.rayleighHeightScale) * stepSize;
 
         time += stepSize;
 
@@ -242,8 +243,8 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
         float iHeight = distance(iPos, uniforms.planetCenter.xyz) - rPlanet;
 
         // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float odStepRlh = exp(-iHeight / rayScaleHeight) * iStepSize;
-        float odStepMie = exp(-iHeight / mieScaleHeight) * iStepSize;
+        float odStepRlh = exp(-iHeight /  uniforms.rayleighHeightScale) * iStepSize;
+        float odStepMie = exp(-iHeight / uniforms.mieHeightScale) * iStepSize;
 
         // Accumulate optical depth.
         iOdRlh += odStepRlh;

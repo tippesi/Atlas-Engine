@@ -313,7 +313,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.1) {
+    if (totalWeight > 0.5) {
         history /= totalWeight;
         history = max(history, 0.0);
    
