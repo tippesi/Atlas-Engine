@@ -50,6 +50,10 @@ namespace Atlas::Lighting {
     void to_json(json& j, const Atmosphere& p) {
         j = json {
             {"height", p.height},
+            {"rayleighScatteringCoeff", p.rayleighScatteringCoeff},
+            {"mieScatteringCoeff", p.mieScatteringCoeff},
+            {"rayleighHeightScale", p.rayleighHeightScale},
+            {"mieHeightScale", p.mieHeightScale},
             {"probeResolution", p.probe->GetCubemap().width}
         };
     }
@@ -57,6 +61,11 @@ namespace Atlas::Lighting {
     void from_json(const json& j, Atmosphere& p) {
         p = Atmosphere(j["height"].get<float>(),
             j["probeResolution"].get<int32_t>());
+
+        try_get_json(j, "rayleighScatteringCoeff", p.rayleighScatteringCoeff);
+        try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
+        try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
+        try_get_json(j, "mieHeightScale", p.mieHeightScale);
     }
 
     void to_json(json& j, const Fog& p) {

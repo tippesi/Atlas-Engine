@@ -32,6 +32,10 @@ namespace Atlas {
                 vec4 cameraLocation;
                 vec4 planetCenter;
                 vec4 sunDirection;
+                vec4 rayleighScatteringCoeff;
+                float mieScatteringCoeff;
+                float rayleighHeightScale;
+                float mieHeightScale;
                 float sunIntensity;
                 float planetRadius;
                 float atmosphereRadius;
