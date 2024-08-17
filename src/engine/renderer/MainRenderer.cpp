@@ -139,23 +139,10 @@ namespace Atlas {
 
             SetUniforms(target, scene, camera);
 
-            JobSystem::WaitSpin(prepareBindlessGroup);
-
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindSampler(globalNearestSampler, 1, 15);
-            commandList->BindBuffers(triangleBuffers, 0, 1);
-            if (images.size())
-                commandList->BindSampledImages(images, 0, 3);
-
-            if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
-            }
-            else {
-                commandList->BindBuffers(blasBuffers, 0, 0);
-                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
-            }
 
             JobSystem::WaitSpin(prepareMaterialsGroup);
             commandList->BindBuffer(materialBuffer, 1, 14);
@@ -182,6 +169,20 @@ namespace Atlas {
             }
 
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
+
+            // Wait as long as possible for this to finish
+            JobSystem::WaitSpin(prepareBindlessGroup);
+            commandList->BindBuffers(triangleBuffers, 0, 1);
+            if (images.size())
+                commandList->BindSampledImages(images, 0, 3);
+
+            if (device->support.hardwareRayTracing) {
+                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+            }
+            else {
+                commandList->BindBuffers(blasBuffers, 0, 0);
+                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+            }
 
             {
                 shadowRenderer.Render(target, scene, commandList, &renderList);
@@ -218,7 +219,7 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateGroup);
+            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
@@ -368,7 +369,7 @@ namespace Atlas {
                 
                 commandList->EndRenderPass();
 
-                auto rtData = target->GetHistoryData(FULL_RES);
+                auto rtData = target->GetData(FULL_RES);
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
@@ -378,6 +379,7 @@ namespace Atlas {
                     {target->lightingTexture.image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
+                    {rtData->stencilTexture->image, layout, access},
                 };
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -475,7 +477,7 @@ namespace Atlas {
                 });
 
 
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateGroup);
+            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
             JobSystem::WaitSpin(prepareBindlessGroup);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
@@ -598,6 +600,7 @@ namespace Atlas {
                 {target->lightingTexture.image, layout, access},
                 {rtData->depthTexture->image, layout, access},
                 {rtData->velocityTexture->image, layout, access},
+                {rtData->stencilTexture->image, layout, access},
             };
             commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -1086,6 +1089,10 @@ namespace Atlas {
             uint16_t idx = 0;
 
             for (auto material : sceneMaterials) {
+                // Might happen due to the scene giving back materials on a mesh basis
+                if (materialMap.contains(material.get()))
+                    continue;
+
                 PackedMaterial packed;
 
                 packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
@@ -1186,7 +1193,7 @@ namespace Atlas {
             if (!device->support.bindless)
                 return;
 
-            JobSystem::WaitSpin(scene->bindlessMapsUpdateGroup);
+            JobSystem::WaitSpin(scene->bindlessMeshMapUpdateJob);
 
             blasBuffers.resize(scene->meshIdToBindlessIdx.size());
             triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
@@ -1211,6 +1218,8 @@ namespace Atlas {
                 triangleOffsetBuffers[idx] = triangleOffsetBuffer;
             }
 
+            JobSystem::WaitSpin(scene->bindlessTextureMapUpdateJob);
+
             images.resize(scene->textureToBindlessIdx.size());
 
             for (const auto& [texture, idx] : scene->textureToBindlessIdx) {
@@ -1228,6 +1237,7 @@ namespace Atlas {
 
             auto lightSubset = scene->GetSubset<LightComponent>();
 
+            JobGroup group;
             for (auto& lightEntity : lightSubset) {
 
                 auto& light = lightEntity.GetComponent<LightComponent>();
@@ -1239,22 +1249,24 @@ namespace Atlas {
                 auto componentCount = shadow->longRange ?
                     shadow->viewCount - 1 : shadow->viewCount;
 
-                for (int32_t i = 0; i < componentCount; i++) {
-                    auto component = &shadow->views[i];
+                JobSystem::ExecuteMultiple(group, componentCount, 
+                    [&, shadow=shadow, lightEntity=lightEntity](JobData& data) {
+                    auto component = &shadow->views[data.idx];
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
-                    auto shadowPass = renderList.GetShadowPass(lightEntity, i);
+                    auto shadowPass = renderList.GetShadowPass(lightEntity, data.idx);
                     if (shadowPass == nullptr)
-                        shadowPass = renderList.NewShadowPass(lightEntity, i);
+                        shadowPass = renderList.NewShadowPass(lightEntity, data.idx);
 
                     shadowPass->NewFrame(scene, meshes);
                     scene->GetRenderList(frustum, shadowPass);
                     shadowPass->Update(camera.GetLocation());
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass);
-                }
-
+                    });
             }
+
+            JobSystem::Wait(group);
 
             auto mainPass = renderList.GetMainPass();
             if (mainPass == nullptr)

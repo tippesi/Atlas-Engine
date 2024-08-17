@@ -33,6 +33,7 @@ namespace Atlas {
 
     Ref<RenderList::Pass> RenderList::NewMainPass() {
 
+        std::scoped_lock lock(mutex);
         Pass pass{
             .type = RenderPassType::Main,
             .layer = 0,
@@ -49,6 +50,7 @@ namespace Atlas {
 
     Ref<RenderList::Pass> RenderList::NewShadowPass(ECS::Entity lightEntity, uint32_t layer) {
 
+        std::scoped_lock lock(mutex);
         Pass pass {
             .type = RenderPassType::Shadow,
             .lightEntity = Scene::Entity(lightEntity, &scene->entityManager),
@@ -64,6 +66,7 @@ namespace Atlas {
 
     Ref<RenderList::Pass> RenderList::GetMainPass() {
 
+        std::scoped_lock lock(mutex);
         doneProcessingShadows = true;
 
         for (auto& pass : passes) {
@@ -79,6 +82,7 @@ namespace Atlas {
 
     Ref<RenderList::Pass> RenderList::GetShadowPass(ECS::Entity lightEntity, const uint32_t layer) {
 
+        std::scoped_lock lock(mutex);
         for (auto& pass : passes) {
             if (pass->type == RenderPassType::Shadow &&
                 pass->lightEntity == lightEntity && pass->layer == layer) {

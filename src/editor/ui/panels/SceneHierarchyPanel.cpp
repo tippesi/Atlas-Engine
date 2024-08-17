@@ -229,10 +229,6 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        if (scene->fog)
-            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);
-        if (scene->sky.clouds)
-            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
         if (scene->irradianceVolume)
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->rtgi)
@@ -243,8 +239,11 @@ namespace Atlas::Editor::UI {
             RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
         if (scene->sss)
             RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
-
         RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
+        if (scene->fog)
+            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);
+        if (scene->sky.clouds)
+            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
         RenderExtendedItem("Sky", &selectedProperty.sky, selectionChanged);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
 

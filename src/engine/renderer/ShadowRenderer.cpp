@@ -24,7 +24,7 @@ namespace Atlas {
             while (!renderList->doneProcessingShadows || shadowPass != nullptr) {
                 if (!shadowPass) {
                     // We might need to wait for the next pass to be processed and culled
-                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                    std::this_thread::yield();
                     shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
                     continue;
                 }

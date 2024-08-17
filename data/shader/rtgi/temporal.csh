@@ -218,12 +218,12 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 16.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
 
         float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
         float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));

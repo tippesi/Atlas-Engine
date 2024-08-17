@@ -98,7 +98,7 @@ namespace Atlas {
             CleanupUnusedResources();
 
 #ifdef AE_BINDLESS
-            JobSystem::Execute(bindlessMapsUpdateGroup, [this](JobData&) {
+            JobSystem::Execute(bindlessMapsUpdateJob, [this](JobData&) {
                 UpdateBindlessIndexMaps();
                 });
 #endif
@@ -286,7 +286,7 @@ namespace Atlas {
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            JobSystem::Execute(rayTracingWorldUpdateGroup, [this, rayTracingSubset](JobData&) {
+            JobSystem::Execute(rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
@@ -567,8 +567,8 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(bindlessMapsUpdateGroup);
-            JobSystem::Wait(rayTracingWorldUpdateGroup);
+            JobSystem::Wait(bindlessMapsUpdateJob);
+            JobSystem::Wait(rayTracingWorldUpdateJob);
 
         }
 
@@ -618,19 +618,38 @@ namespace Atlas {
 
         void Scene::UpdateBindlessIndexMaps() {
 
-            std::set<Ref<Texture::Texture2D>> textures;
-
-            uint32_t textureIdx = 0;
-            uint32_t bufferIdx = 0;
-
-            textureToBindlessIdx.clear();
-            meshIdToBindlessIdx.clear();
-
             auto meshes = GetMeshes();
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
 
-                for (auto& material : mesh->data.materials) {
+            JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
+                meshIdToBindlessIdx.clear();
+
+                uint32_t bufferIdx = 0;
+                for (auto& mesh : meshes) {
+                    if (!mesh.IsLoaded()) continue;
+
+                    // Not all meshes might have a bvh
+                    if (!mesh->IsBVHBuilt())
+                        continue;
+
+                    meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
+                }
+                });
+
+            JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
+                textureToBindlessIdx.clear();
+
+                std::set<Ref<Material>> materials;
+                std::set<Ref<Texture::Texture2D>> textures;
+
+                uint32_t textureIdx = 0;
+                for (auto& mesh : meshes) {
+                    if (!mesh.IsLoaded()) continue;
+
+                    for (auto& material : mesh->data.materials)
+                        materials.insert(material.Get());
+                }
+
+                for (const auto& material : materials) {
                     if (material->HasBaseColorMap())
                         textures.insert(material->baseColorMap.Get());
                     if (material->HasOpacityMap())
@@ -647,18 +666,12 @@ namespace Atlas {
                         textures.insert(material->displacementMap.Get());
                 }
 
-                // Not all meshes might have a bvh
-                if (!mesh->IsBVHBuilt())
-                    continue;
+                for (const auto& texture : textures) {
 
-                meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-            }
+                    textureToBindlessIdx[texture] = textureIdx++;
 
-            for (const auto& texture : textures) {
-
-                textureToBindlessIdx[texture] = textureIdx++;
-
-            }
+                }
+                });
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();
             for (auto entity : lightSubset) {
@@ -674,6 +687,9 @@ namespace Atlas {
 
                 }
             }
+
+            JobSystem::Wait(bindlessMeshMapUpdateJob);
+            JobSystem::Wait(bindlessTextureMapUpdateJob);
 
         }
 

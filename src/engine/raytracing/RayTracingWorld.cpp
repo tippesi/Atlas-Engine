@@ -40,7 +40,7 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
 
-            JobSystem::Wait(scene->bindlessMapsUpdateGroup);
+            JobSystem::Wait(scene->bindlessMeshMapUpdateJob);
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
@@ -82,6 +82,8 @@ namespace Atlas {
             gpuBvhInstances.clear();
             actorAABBs.clear();
             lastMatrices.clear();
+
+            JobSystem::Wait(scene->bindlessTextureMapUpdateJob);
 
             UpdateMaterials();
 

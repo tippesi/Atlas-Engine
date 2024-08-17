@@ -93,6 +93,7 @@ namespace Atlas {
             return;
         }
 
+        int32_t totalCount = 0;
         int32_t remainingJobs = count;
         int32_t jobCountPerWorker = count / priorityPool.workerCount;
         std::vector<Job> jobs;
@@ -104,7 +105,7 @@ namespace Atlas {
             jobs.reserve(jobsToPush);
 
             for (int32_t j = 0; j < jobsToPush; j++) {
-                job.idx = j;
+                job.idx = totalCount++;
                 jobs.push_back(job);
             }
 

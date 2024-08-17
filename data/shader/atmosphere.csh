@@ -2,6 +2,8 @@
 #include <common/convert.hsh>
 #include <common/PI.hsh>
 
+// Based on https://github.com/wwwtyro/glsl-atmosphere. Need a more performant version in the future (see Brunetton)
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 #ifndef ENVIRONMENT_PROBE
@@ -210,7 +212,6 @@ out float opticalDepthRay) {
 }
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie) {
-    // Normalize the sun and view directions.
     pSun = normalize(pSun);
     r = normalize(r);
 
@@ -224,48 +225,35 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
 
     float iStepSize = (outDist - inDist) / float(iSteps);
 
-    // Initialize the primary ray time.
     float iTime = inDist;
 
-    // Initialize accumulators for Rayleigh and Mie scattering.
-
-    // Initialize optical depth accumulators for the primary ray.
     float iOdRlh = 0.0;
     float iOdMie = 0.0;
 
-    // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
 
-        // Calculate the primary ray sample position.
         vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
 
-        // Calculate the height of the sample.
         float iHeight = distance(iPos, uniforms.planetCenter.xyz) - rPlanet;
 
-        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
         float odStepRlh = exp(-iHeight /  uniforms.rayleighHeightScale) * iStepSize;
         float odStepMie = exp(-iHeight / uniforms.mieHeightScale) * iStepSize;
 
-        // Accumulate optical depth.
         iOdRlh += odStepRlh;
         iOdMie += odStepMie;
 
-        // Initialize optical depth accumulators for the secondary ray.
         float jOdRlh = 0.0;
         float jOdMie = 0.0;
 
         bool overground = LightSampling(iPos, pSun, rPlanet, rAtmos, jOdMie, jOdRlh);
 
         if (overground) {
-            // Calculate attenuation.
             vec3 transmittance = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
 
-            // Accumulate scattering.
             totalRlh += odStepRlh * transmittance;
             totalMie += odStepMie * transmittance;
         }
 
-        // Increment the primary ray time.
         iTime += iStepSize;
 
     }
