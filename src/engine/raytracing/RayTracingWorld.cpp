@@ -192,47 +192,49 @@ namespace Atlas {
                     // Only is persistent when no materials are reorderd in mesh
                     gpuMaterial.ID = int32_t(hash % 65535);
 
-                    gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
-                    gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
-                        * material->emissiveIntensity;
+                    if (material.IsLoaded()) {
+                        gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                        gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                            * material->emissiveIntensity;
 
-                    gpuMaterial.opacity = material->opacity;
+                        gpuMaterial.opacity = material->opacity;
 
-                    gpuMaterial.roughness = material->roughness;
-                    gpuMaterial.metalness = material->metalness;
-                    gpuMaterial.ao = material->ao;
+                        gpuMaterial.roughness = material->roughness;
+                        gpuMaterial.metalness = material->metalness;
+                        gpuMaterial.ao = material->ao;
 
-                    gpuMaterial.reflectance = material->reflectance;
+                        gpuMaterial.reflectance = material->reflectance;
 
-                    gpuMaterial.normalScale = material->normalScale;
+                        gpuMaterial.normalScale = material->normalScale;
 
-                    gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
-                    gpuMaterial.twoSided = material->twoSided ? 1 : 0;
-                    gpuMaterial.cullBackFaces = mesh->cullBackFaces ? 1 : 0;
-                    gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
+                        gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
+                        gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                        gpuMaterial.cullBackFaces = mesh->cullBackFaces ? 1 : 0;
+                        gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
-                    if (material->HasBaseColorMap()) {
-                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
-                    }
+                        if (material->HasBaseColorMap()) {
+                            gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
+                        }
 
-                    if (material->HasOpacityMap()) {
-                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
-                    }
+                        if (material->HasOpacityMap()) {
+                            gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
+                        }
 
-                    if (material->HasNormalMap()) {
-                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
-                    }
+                        if (material->HasNormalMap()) {
+                            gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
+                        }
 
-                    if (material->HasRoughnessMap()) {
-                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
-                    }
+                        if (material->HasRoughnessMap()) {
+                            gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
+                        }
 
-                    if (material->HasMetalnessMap()) {
-                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
-                    }
+                        if (material->HasMetalnessMap()) {
+                            gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
+                        }
 
-                    if (material->HasAoMap()) {
-                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
+                        if (material->HasAoMap()) {
+                            gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
+                        }
                     }
 
                     materials.push_back(gpuMaterial);

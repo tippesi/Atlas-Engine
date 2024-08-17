@@ -428,6 +428,9 @@ namespace Atlas {
                 if (!mesh.IsLoaded())
                     continue;
                 for (auto& material : mesh->data.materials) {
+                    if (!material.IsLoaded())
+                        continue;
+
                     materials.push_back(material.Get());
                 }
             }
@@ -624,7 +627,7 @@ namespace Atlas {
                 meshIdToBindlessIdx.clear();
 
                 uint32_t bufferIdx = 0;
-                for (auto& mesh : meshes) {
+                for (const auto& mesh : meshes) {
                     if (!mesh.IsLoaded()) continue;
 
                     // Not all meshes might have a bvh
@@ -642,11 +645,12 @@ namespace Atlas {
                 std::set<Ref<Texture::Texture2D>> textures;
 
                 uint32_t textureIdx = 0;
-                for (auto& mesh : meshes) {
+                for (const auto& mesh : meshes) {
                     if (!mesh.IsLoaded()) continue;
 
                     for (auto& material : mesh->data.materials)
-                        materials.insert(material.Get());
+                        if (material.IsLoaded())
+                            materials.insert(material.Get());
                 }
 
                 for (const auto& material : materials) {

@@ -38,6 +38,9 @@ namespace Atlas {
 
                 auto& mesh = mainPass->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
+                    if (!subData.material.IsLoaded())
+                        continue;
+
                     if (subDataCount < subDatas.size())
                         subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
                     else

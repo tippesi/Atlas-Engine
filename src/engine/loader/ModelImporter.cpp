@@ -253,7 +253,7 @@ namespace Atlas {
             meshes.resize(state.scene->mNumMeshes);
 
             JobGroup group;
-            JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](JobData& data) {
+            JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
                 auto i = data.idx;
 
                 auto assimpMesh = state.scene->mMeshes[i];

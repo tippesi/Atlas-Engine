@@ -24,6 +24,10 @@ namespace Atlas::Editor::UI {
     public:
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
+        ~SceneHierarchyPanel() { JobSystem::Wait(searchJob); }
+
+        void Update(Ref<Scene::Scene>& scene);
+
         void Render(Ref<Scene::Scene>& scene, bool inFocus);
 
         Scene::Entity selectedEntity;
@@ -44,8 +48,11 @@ namespace Atlas::Editor::UI {
         bool SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
             std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches);
 
+        JobGroup searchJob{ JobPriority::Medium };;
+
         std::string entitySearch;
         std::string transformedEntitySearch;
+        std::unordered_set<ECS::Entity> matchSet;
 
     };
 

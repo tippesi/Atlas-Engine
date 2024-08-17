@@ -20,6 +20,8 @@ namespace Atlas::Editor {
 	class ContentDiscovery {
 
 	public:
+		static void Shutdown() { JobSystem::Wait(contentDiscoveryJob); }
+
 		static const Ref<ContentDirectory> GetContent();
 
 		static std::vector<Content> GetContent(const ContentType type);
