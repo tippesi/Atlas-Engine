@@ -66,7 +66,7 @@ namespace Atlas {
                 commandList->BindIndexBuffer(indexComponent.buffer, indexComponent.type);
             }
 
-            if (!batches.size())
+            if (batches.empty())
                 BuildBatches();
 
             for (auto& batch : batches) {

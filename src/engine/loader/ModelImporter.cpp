@@ -252,163 +252,150 @@ namespace Atlas {
             std::vector<MeshInfo> meshes;
             meshes.resize(state.scene->mNumMeshes);
 
-            std::atomic_int32_t counter = 0;
-            auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::future<void>> threads;
+            JobGroup group;
+            JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](JobData& data) {
+                auto i = data.idx;
 
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, [&]() {
-                    auto i = counter++;
+                auto assimpMesh = state.scene->mMeshes[i];
+                auto materialIdx = assimpMesh->mMaterialIndex;
+                auto material = materials[materialIdx];
 
-                    while (i < int32_t(meshes.size())) {
+                uint32_t indexCount = assimpMesh->mNumFaces * 3;
+                uint32_t vertexCount = assimpMesh->mNumVertices;
 
-                        auto assimpMesh = state.scene->mMeshes[i];
-                        auto materialIdx = assimpMesh->mMaterialIndex;
-                        auto material = materials[materialIdx];
+                bool hasTangents = false;
+                bool hasVertexColors = false;
+                bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
 
-                        uint32_t indexCount = assimpMesh->mNumFaces * 3;
-                        uint32_t vertexCount = assimpMesh->mNumVertices;
+                auto mesh = CreateRef<Mesh::Mesh>();
+                auto& meshData = mesh->data;
 
-                        bool hasTangents = false;
-                        bool hasVertexColors = false;
-                        bool hasTexCoords = assimpMesh->mNumUVComponents[0] > 0;
+                if (material->HasNormalMap())
+                    hasTangents = true;
+                if (material->HasDisplacementMap())
+                    hasTangents = true;
 
-                        auto mesh = CreateRef<Mesh::Mesh>();
-                        auto& meshData = mesh->data;
+                if (vertexCount > 65535) {
+                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
+                }
+                else {
+                    meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
+                }
 
-                        if (material->HasNormalMap())
-                            hasTangents = true;
-                        if (material->HasDisplacementMap())
-                            hasTangents = true;
+                hasVertexColors = assimpMesh->HasVertexColors(0);
 
-                        if (vertexCount > 65535) {
-                            meshData.indices.SetType(Mesh::ComponentFormat::UnsignedInt);
-                        }
-                        else {
-                            meshData.indices.SetType(Mesh::ComponentFormat::UnsignedShort);
-                        }
+                meshData.SetIndexCount(indexCount);
+                meshData.SetVertexCount(vertexCount);
 
-                        hasVertexColors = assimpMesh->HasVertexColors(0);
+                auto& indices = meshData.indices;
 
-                        meshData.SetIndexCount(indexCount);
-                        meshData.SetVertexCount(vertexCount);
+                auto& vertices = meshData.vertices;
+                auto& texCoords = meshData.texCoords;
+                auto& normals = meshData.normals;
+                auto& tangents = meshData.tangents;
+                auto& colors = meshData.colors;
 
-                        auto& indices = meshData.indices;
+                indices.SetElementCount(indexCount);
 
-                        auto& vertices = meshData.vertices;
-                        auto& texCoords = meshData.texCoords;
-                        auto& normals = meshData.normals;
-                        auto& tangents = meshData.tangents;
-                        auto& colors = meshData.colors;
+                vertices.SetElementCount(vertexCount);
+                texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
+                normals.SetElementCount(vertexCount);
+                tangents.SetElementCount(hasTangents ? vertexCount : 0);
+                colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-                        indices.SetElementCount(indexCount);
+                material->vertexColors &= hasVertexColors;
+                meshData.materials.push_back(material);
 
-                        vertices.SetElementCount(vertexCount);
-                        texCoords.SetElementCount(hasTexCoords ? vertexCount : 0);
-                        normals.SetElementCount(vertexCount);
-                        tangents.SetElementCount(hasTangents ? vertexCount : 0);
-                        colors.SetElementCount(hasVertexColors ? vertexCount : 0);
+                auto min = vec3(std::numeric_limits<float>::max());
+                auto max = vec3(-std::numeric_limits<float>::max());
 
-                        material->vertexColors &= hasVertexColors;
-                        meshData.materials.push_back(material);
+                uint32_t uvChannel = material->uvChannel;
+                for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
 
-                        auto min = vec3(std::numeric_limits<float>::max());
-                        auto max = vec3(-std::numeric_limits<float>::max());
+                    vec3 vertex = vec3(assimpMesh->mVertices[j].x,
+                        assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
 
-                        uint32_t uvChannel = material->uvChannel;
-                        for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
+                    vertices[j] = vertex;
 
-                            vec3 vertex = vec3(assimpMesh->mVertices[j].x,
-                                assimpMesh->mVertices[j].y, assimpMesh->mVertices[j].z);
+                    max = glm::max(vertex, max);
+                    min = glm::min(vertex, min);
 
-                            vertices[j] = vertex;
+                    vec3 normal = vec3(assimpMesh->mNormals[j].x,
+                        assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
+                    normal = normalize(normal);
 
-                            max = glm::max(vertex, max);
-                            min = glm::min(vertex, min);
+                    normals[j] = vec4(normal, 0.0f);
 
-                            vec3 normal = vec3(assimpMesh->mNormals[j].x,
-                                assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
-                            normal = normalize(normal);
+                    if (hasTangents && assimpMesh->mTangents != nullptr) {
+                        // Avoid tangents that are fully zero
+                        vec3 tangent = vec3(assimpMesh->mTangents[j].x,
+                            assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z) + 1e-9f;
+                        tangent = normalize(tangent - normal * dot(normal, tangent));
 
-                            normals[j] = vec4(normal, 0.0f);
+                        vec3 estimatedBitangent = normalize(cross(tangent, normal));
+                        vec3 correctBitangent = vec3(assimpMesh->mBitangents[j].x,
+                            assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z);
+                        correctBitangent = normalize(correctBitangent);
 
-                            if (hasTangents && assimpMesh->mTangents != nullptr) {
-                                // Avoid tangents that are fully zero
-                                vec3 tangent = vec3(assimpMesh->mTangents[j].x,
-                                    assimpMesh->mTangents[j].y, assimpMesh->mTangents[j].z) + 1e-9f;
-                                tangent = normalize(tangent - normal * dot(normal, tangent));
-
-                                vec3 estimatedBitangent = normalize(cross(tangent, normal));
-                                vec3 correctBitangent = vec3(assimpMesh->mBitangents[j].x,
-                                    assimpMesh->mBitangents[j].y, assimpMesh->mBitangents[j].z);
-                                correctBitangent = normalize(correctBitangent);
-
-                                float dotProduct = dot(estimatedBitangent, correctBitangent);
-                                tangents[j] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
-                            }
-
-                            if (hasTexCoords && assimpMesh->mTextureCoords[uvChannel] != nullptr) {
-                                texCoords[j] = vec2(assimpMesh->mTextureCoords[uvChannel][j].x,
-                                    assimpMesh->mTextureCoords[uvChannel][j].y);
-                            }
-
-                            if (hasVertexColors && assimpMesh->mColors[0] != nullptr) {
-                                colors[j] = vec4(assimpMesh->mColors[0][j].r, assimpMesh->mColors[0][j].g,
-                                    assimpMesh->mColors[0][j].b, assimpMesh->mColors[0][j].a);
-                            }
-
-                        }
-
-                        auto offset = (max + min) * 0.5f;
-                        // Recenter mesh
-                        min -= offset;
-                        max -= offset;
-                        for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
-                            vertices[j] = vertices[j] - offset;
-                        }
-
-                        // Copy indices
-                        for (uint32_t j = 0; j < assimpMesh->mNumFaces; j++) {
-                            for (uint32_t k = 0; k < 3; k++) {
-                                indices[j * 3 + k] = assimpMesh->mFaces[j].mIndices[k];
-                            }
-                        }
-
-                        meshData.aabb = Volume::AABB(min, max);
-                        meshData.radius = glm::length(max - min) * 0.5;
-
-                        meshData.subData.push_back({
-                            .indicesOffset = 0,
-                            .indicesCount = indexCount,
-
-                            .material = material,
-                            .materialIdx = 0,
-
-                            .aabb = meshData.aabb
-                            });
-
-                        meshData.name = std::string(assimpMesh->mName.C_Str());
-                        mesh->name = meshData.name;
-                        mesh->invertUVs = invertUVs;
-                        mesh->UpdateData();
-
-                        auto meshFilename = state.paths.meshPath + mesh->name + "_" + std::to_string(i) + ".aemesh";
-                        auto handle = ResourceManager<Mesh::Mesh>::AddResource(meshFilename, mesh);
-                        meshes[i] = { handle, offset };
-
-                        if (saveToDisk) {
-                            Log::Message("Imported mesh " + meshFilename);
-                            Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
-                        }
-
-                        i = counter++;
+                        float dotProduct = dot(estimatedBitangent, correctBitangent);
+                        tangents[j] = vec4(tangent, dotProduct <= 0.0f ? -1.0f : 1.0f);
                     }
-                    }));
-            }
 
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].get();
-            }
+                    if (hasTexCoords && assimpMesh->mTextureCoords[uvChannel] != nullptr) {
+                        texCoords[j] = vec2(assimpMesh->mTextureCoords[uvChannel][j].x,
+                            assimpMesh->mTextureCoords[uvChannel][j].y);
+                    }
+
+                    if (hasVertexColors && assimpMesh->mColors[0] != nullptr) {
+                        colors[j] = vec4(assimpMesh->mColors[0][j].r, assimpMesh->mColors[0][j].g,
+                            assimpMesh->mColors[0][j].b, assimpMesh->mColors[0][j].a);
+                    }
+
+                }
+
+                auto offset = (max + min) * 0.5f;
+                // Recenter mesh
+                min -= offset;
+                max -= offset;
+                for (uint32_t j = 0; j < assimpMesh->mNumVertices; j++) {
+                    vertices[j] = vertices[j] - offset;
+                }
+
+                // Copy indices
+                for (uint32_t j = 0; j < assimpMesh->mNumFaces; j++) {
+                    for (uint32_t k = 0; k < 3; k++) {
+                        indices[j * 3 + k] = assimpMesh->mFaces[j].mIndices[k];
+                    }
+                }
+
+                meshData.aabb = Volume::AABB(min, max);
+                meshData.radius = glm::length(max - min) * 0.5;
+
+                meshData.subData.push_back({
+                    .indicesOffset = 0,
+                    .indicesCount = indexCount,
+
+                    .material = material,
+                    .materialIdx = 0,
+
+                    .aabb = meshData.aabb
+                    });
+
+                meshData.name = std::string(assimpMesh->mName.C_Str());
+                mesh->name = meshData.name;
+                mesh->invertUVs = invertUVs;
+                mesh->UpdateData();
+
+                auto meshFilename = state.paths.meshPath + mesh->name + "_" + std::to_string(i) + ".aemesh";
+                auto handle = ResourceManager<Mesh::Mesh>::AddResource(meshFilename, mesh);
+                meshes[i] = { handle, offset };
+
+                if (saveToDisk) {
+                    Log::Message("Imported mesh " + meshFilename);
+                    Loader::MeshLoader::SaveMesh(mesh, meshFilename, true);
+                }
+                });
+            JobSystem::Wait(group);
 
             auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
 
@@ -491,47 +478,18 @@ namespace Atlas {
 
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution) {
 
-            std::atomic_int32_t counter = 0;
-
-            auto threadCount = std::thread::hardware_concurrency();
-            std::vector<std::future<void>> threads;
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, [&]() {
-                    auto i = counter++;
-
-                    while (i < int32_t(state.scene->mNumMaterials)) {
-
-                        LoadMaterialImages(state, state.scene->mMaterials[i], true, maxTextureResolution);
-
-                        i = counter++;
-                    }
-                    }));
-            }
-
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].get();
-            }
+            JobGroup group;
+            JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](JobData& data) {
+                LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
+                });
+            JobSystem::Wait(group);
 
             auto imagesToSave = ImagesToTextures(state);
 
-            threads.clear();
-            counter = 0;
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads.emplace_back(std::async(std::launch::async, [&]() {
-                    auto i = counter++;
-
-                    while (i < int32_t(imagesToSave.size())) {
-
-                        ImageLoader::SaveImage(imagesToSave[i], imagesToSave[i]->fileName);
-
-                        i = counter++;
-                    }
-                    }));
-            }
-
-            for (uint32_t i = 0; i < threadCount; i++) {
-                threads[i].get();
-            }
+            JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](JobData& data) {
+                ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
+                });
+            JobSystem::Wait(group);
 
             std::vector<ResourceHandle<Material>> materials;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {

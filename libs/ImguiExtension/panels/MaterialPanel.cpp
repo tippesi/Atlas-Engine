@@ -36,7 +36,7 @@ namespace Atlas::ImguiExtension {
             ImGui::ColorEdit3("Base color", glm::value_ptr(material->baseColor));
         });
         ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
-        ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 1.0f, 10000.0f, "%.2f");
+        ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
         ImGui::Separator();
 
         ImGui::Text("Opacity");
