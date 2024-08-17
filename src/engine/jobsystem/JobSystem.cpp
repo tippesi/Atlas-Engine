@@ -30,7 +30,6 @@ namespace Atlas {
         auto threadHandle = GetCurrentThread();
         success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0;
 #endif
-
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto maxPriority = sched_get_priority_max(SCHED_RR);
         sched_param params = { 

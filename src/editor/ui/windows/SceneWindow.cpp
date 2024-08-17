@@ -30,7 +30,7 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::Update(float deltaTime) {
 
-        if (!scene.IsLoaded())
+        if (!scene.IsLoaded() || !show)
             return;
 
         if (!cameraEntity.IsValid()) {
@@ -38,6 +38,8 @@ namespace Atlas::Editor::UI {
             auto& camera = cameraEntity.AddComponent<CameraComponent>(47.0f, 2.0f, 1.0f, 2000.0f);
             camera.isMain = true;
         }
+
+        sceneHierarchyPanel.Update(scene.Get());
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
@@ -49,8 +51,7 @@ namespace Atlas::Editor::UI {
             camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
         }
 
-        bool controlDown;
-        
+        bool controlDown;        
 #ifdef AE_OS_MACOS
         controlDown = ImGui::IsKeyDown(ImGuiKey_LeftSuper);
 #else
@@ -104,8 +105,6 @@ namespace Atlas::Editor::UI {
             sceneHierarchyPanel.isFocused || scenePropertiesPanel.isFocused || viewportPanel.isFocused;
 
         Ref<Scene::Scene> refScene = scene.IsLoaded() ? scene.Get() : nullptr;
-
-        sceneHierarchyPanel.Render(refScene, inFocus);
 
         // Depending on the selection in the scene hierarchy panel, render the properties in a different window
         if (scene.IsLoaded()) {
@@ -176,6 +175,7 @@ namespace Atlas::Editor::UI {
             }
         }
 
+        sceneHierarchyPanel.Render(refScene, inFocus);
         RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
         viewportPanel.Render(refScene, isActiveWindow);

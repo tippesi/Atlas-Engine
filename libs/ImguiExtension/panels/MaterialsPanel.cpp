@@ -16,6 +16,11 @@ namespace Atlas::ImguiExtension {
 
         auto matches = materials | std::views::filter(
             [&](const ResourceHandle<Material>& material) {
+                if (!material.IsLoaded() && materialSearch.empty())
+                    return true;
+                else if (!material.IsLoaded() && !materialSearch.empty())
+                    return false;
+
                 return material->name.find(materialSearch) != std::string::npos;
             });
 
@@ -24,8 +29,15 @@ namespace Atlas::ImguiExtension {
 
             ImGui::PushID(counter++);
 
-            auto materialName = !material->name.empty() ? material->name
-                : "No name " + std::to_string(counter);
+            std::string materialName;
+            if (material.IsLoaded()) {
+                materialName = !material->name.empty() ? material->name
+                    : "No name for material " + std::to_string(counter);
+            }
+            else {
+                materialName = "No material";
+            }
+
             auto nodeID = GetNameID() + std::to_string(counter);
             materialName += "###" + nodeID;
 
@@ -34,7 +46,10 @@ namespace Atlas::ImguiExtension {
                     material = materialSelector.value()(material);
                     ImGui::Separator();
                 }
-                materialPanel.Render(wrapper, material.Get(), textureSelector);
+                // Might be deleted above
+                if (material.IsLoaded()) {
+                    materialPanel.Render(wrapper, material.Get(), textureSelector);
+                }
 
                 ImGui::TreePop();
 

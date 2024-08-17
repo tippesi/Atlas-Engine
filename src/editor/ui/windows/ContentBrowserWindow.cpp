@@ -26,6 +26,17 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void ContentBrowserWindow::Update() {
+
+        if (!show)
+            return;
+
+        JobSystem::Execute(searchAndFilterJob, [&](JobData&) {
+            UpdateFilteredAndSortedDirEntries();
+            });
+
+    }
+
     void ContentBrowserWindow::Render() {
 
         if (!Begin())
@@ -224,7 +235,7 @@ namespace Atlas::Editor::UI {
             currentDirectory = Loader::AssetLoader::GetAssetDirectory();
         }
 
-        UpdateFilteredAndSortedDirEntries();
+        JobSystem::Wait(searchAndFilterJob);
 
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 

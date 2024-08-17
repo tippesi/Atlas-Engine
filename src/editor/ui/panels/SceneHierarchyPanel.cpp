@@ -6,6 +6,25 @@
 
 namespace Atlas::Editor::UI {
 
+    void SceneHierarchyPanel::Update(Ref<Scene::Scene>& scene) {
+
+        JobSystem::Execute(searchJob, [&](JobData&) {
+            auto root = scene->GetEntityByName("Root");
+
+            // Search should be case-insensitive
+            transformedEntitySearch = entitySearch;
+            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
+                transformedEntitySearch.begin(), ::tolower);
+
+            std::string nodeName;
+            matchSet.clear();
+            matchSet.reserve(scene->GetEntityCount());
+            if (!transformedEntitySearch.empty())
+                SearchHierarchy(scene, root, matchSet, nodeName, false);
+            });
+
+    }
+
     void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
 
         ImGui::Begin(GetNameID());
@@ -44,16 +63,7 @@ namespace Atlas::Editor::UI {
             ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
             if (ImGui::IsItemClicked()) selectionChanged = true;
 
-            // Search should be case-insensitive
-            transformedEntitySearch = entitySearch;
-            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
-                transformedEntitySearch.begin(), ::tolower);
-
-            std::string nodeName;
-            std::unordered_set<ECS::Entity> matchSet;
-            matchSet.reserve(scene->GetEntityCount());
-            if (!transformedEntitySearch.empty())
-                SearchHierarchy(scene, root, matchSet, nodeName, false);
+            JobSystem::Wait(searchJob);
 
             TraverseHierarchy(scene, root, matchSet, inFocus, &selectionChanged);
 

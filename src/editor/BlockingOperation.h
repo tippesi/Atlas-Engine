@@ -10,6 +10,8 @@ namespace Atlas::Editor {
     class BlockingOperation {
 
     public:
+        ~BlockingOperation() { JobSystem::Wait(job); }
+
         void Block(const std::string& text, std::function<void()> blocker) {
             this->blocker = blocker;
             blockText = text;

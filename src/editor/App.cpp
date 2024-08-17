@@ -72,6 +72,7 @@ namespace Atlas::Editor {
         }
 
         Serialization::SerializeConfig();
+        ContentDiscovery::Shutdown();
 
         Singletons::Destruct();
 
@@ -88,6 +89,8 @@ namespace Atlas::Editor {
 
         if (Singletons::blockingOperation->block)
             return;
+
+        contentBrowserWindow.Update();
 
         // Create new windows for fully loaded scenes
         for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
@@ -324,15 +327,15 @@ namespace Atlas::Editor {
 
         UI::PopupPanels::Render();
 
-        contentBrowserWindow.Render();
-        logWindow.Render();
-        profilerWindow.Render();
-
         geometryBrushWindow.Render(sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx]);
 
         for (auto& sceneWindow : sceneWindows) {
             sceneWindow->Render();
         }
+
+        contentBrowserWindow.Render();
+        logWindow.Render();
+        profilerWindow.Render();
 
         Notifications::Display();
 

@@ -19,6 +19,10 @@ namespace Atlas::Editor::UI {
     public:
         explicit ContentBrowserWindow(bool show);
 
+        ~ContentBrowserWindow() { JobSystem::Wait(searchAndFilterJob); }
+
+        void Update();
+
         void Render();
 
     private:
@@ -53,6 +57,8 @@ namespace Atlas::Editor::UI {
 
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;
+
+        JobGroup searchAndFilterJob{ JobPriority::Medium };
 
         const float padding = 8.0f;
         const float iconSize = 64.f;
