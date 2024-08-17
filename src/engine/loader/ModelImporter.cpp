@@ -479,14 +479,14 @@ namespace Atlas {
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution) {
 
             JobGroup group;
-            JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](JobData& data) {
+            JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
                 LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
                 });
             JobSystem::Wait(group);
 
             auto imagesToSave = ImagesToTextures(state);
 
-            JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](JobData& data) {
+            JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
                 ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
                 });
             JobSystem::Wait(group);

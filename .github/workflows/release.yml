@@ -159,11 +159,80 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !**/CMakeFiles
 
+  macos-build:
+    runs-on: macos-13
+    name: Build on MacOS
+    # Run both builds in parallel and don't cancel if one fails
+    strategy:
+      matrix:
+        build-type: [Release]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+        # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
+        with: 
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
+          cache: ${{ env.USE_CACHE }}
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          # ninja version to download. Default: 1.10.0
+          version: 1.10.0
+
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.1.1
+        with:
+          version: 1.3.261.1
+          cache: true
+
+      - name: Run scripts
+        shell: bash
+        # Add additional scripting steps here
+        run: |
+          cd ${{ github.workspace }}
+          brew install pkg-config
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
+          rm -r vcpkg_installed
+
+      # https://github.com/marketplace/actions/setup-ninja
+      - name: Build ${{ matrix.build-type }} configuration with CMake
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ github.workspace }}/build/${{ matrix.build-type }}
+          source-dir: ${{ github.workspace }}
+          cc: "clang"
+          cxx: "clang++"
+          configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
+          parallel: 16
+          build-type: ${{ matrix.build-type }}
+
+      - name: Upload artifact
+        if: ${{ matrix.build-type == 'Release' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Atlas Engine MacOS ${{ matrix.build-type }}
+          path: |
+            data
+            README.md
+            LICENSE.md
+            THIRDPARTY.md
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor
+            ${{ github.workspace }}/bin/**/*.dylib*
+            !**/CMakeFiles
+
   release:
     runs-on: ubuntu-latest
     name: Create a new release
     environment: release
-    needs: [windows-build, linux-build]
+    needs: [windows-build, linux-build, macos-build]
 
     steps:
       - name: Download artifacts

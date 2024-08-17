@@ -19,7 +19,8 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::HighPriorityMemoryBit;
+            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit |
+                Buffer::BufferUsageBits::HighPriorityMemoryBit | Buffer::BufferUsageBits::MultiBufferedBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));

@@ -98,9 +98,7 @@ namespace Atlas {
             CleanupUnusedResources();
 
 #ifdef AE_BINDLESS
-            JobSystem::Execute(bindlessMapsUpdateJob, [this](JobData&) {
-                UpdateBindlessIndexMaps();
-                });
+            UpdateBindlessIndexMaps();
 #endif
 
             // Update scripting components (but only after the first timestep when everything else is settled)
@@ -570,7 +568,8 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(bindlessMapsUpdateJob);
+            JobSystem::Wait(bindlessMeshMapUpdateJob);
+            JobSystem::Wait(bindlessTextureMapUpdateJob);
             JobSystem::Wait(rayTracingWorldUpdateJob);
 
         }
@@ -619,11 +618,10 @@ namespace Atlas {
 
         }
 
-        void Scene::UpdateBindlessIndexMaps() {
-
-            auto meshes = GetMeshes();
+        void Scene::UpdateBindlessIndexMaps() {            
 
             JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
+                auto meshes = GetMeshes();
                 meshIdToBindlessIdx.clear();
 
                 uint32_t bufferIdx = 0;
@@ -639,6 +637,7 @@ namespace Atlas {
                 });
 
             JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
+                auto meshes = GetMeshes();
                 textureToBindlessIdx.clear();
 
                 std::set<Ref<Material>> materials;
@@ -691,9 +690,6 @@ namespace Atlas {
 
                 }
             }
-
-            JobSystem::Wait(bindlessMeshMapUpdateJob);
-            JobSystem::Wait(bindlessTextureMapUpdateJob);
 
         }
 

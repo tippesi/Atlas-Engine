@@ -290,7 +290,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 }
 
-vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
+vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
 
     // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
     int cascadeIndex = 0;
@@ -321,6 +321,11 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal)
 
         vec4 outerIrradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex - 1);
         irradiance = mix(irradiance, outerIrradiance, alpha);
+
+    }
+    else if (alpha > 0.0 && cascadeIndex == 0) {
+
+        irradiance = mix(irradiance, vec4(globalProbeIrradiance, 0.0), max(0.0, 2.0 * (alpha - 0.5)));
 
     }
 

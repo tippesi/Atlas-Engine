@@ -15,12 +15,13 @@ namespace Atlas::Editor::UI {
             transformedEntitySearch = entitySearch;
             std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
                 transformedEntitySearch.begin(), ::tolower);
-
-            std::string nodeName;
+            
             matchSet.clear();
             matchSet.reserve(scene->GetEntityCount());
-            if (!transformedEntitySearch.empty())
+            if (!transformedEntitySearch.empty()) {
+                std::string nodeName;
                 SearchHierarchy(scene, root, matchSet, nodeName, false);
+            }
             });
 
     }

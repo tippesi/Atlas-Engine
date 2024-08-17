@@ -183,7 +183,6 @@ namespace Atlas {
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
             JobGroup rayTracingWorldUpdateJob { JobPriority::High };
-            JobGroup bindlessMapsUpdateJob { JobPriority::High };
             JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
             JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
 
