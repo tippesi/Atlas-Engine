@@ -5,7 +5,6 @@
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
-#include <glm/gtx/norm.hpp>
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
 #define FEATURE_OPACITY_MAP (1 << 2)
@@ -113,6 +112,8 @@ namespace Atlas {
             JobGroup fillRenderListGroup { JobPriority::High };
             JobSystem::Execute(fillRenderListGroup, [&](JobData&) { FillRenderList(scene, camera); });
 
+            lightData.CullAndSort(scene);
+
             Ref<Graphics::Buffer> materialBuffer;
             std::vector<PackedMaterial> materials;
             std::unordered_map<void*, uint16_t> materialMap;
@@ -173,6 +174,7 @@ namespace Atlas {
 
             // Wait as long as possible for this to finish
             JobSystem::WaitSpin(prepareBindlessGroup);
+            lightData.UpdateBindlessIndices(scene);
             commandList->BindBuffers(triangleBuffers, 0, 1);
             if (images.size())
                 commandList->BindSampledImages(images, 0, 3);
@@ -221,6 +223,8 @@ namespace Atlas {
             }
 
             JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
+
+            lightData.lightBuffer.Bind(commandList, 1, 16);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
@@ -338,7 +342,7 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                directLightRenderer.Render(target, scene, commandList);
+                directLightRenderer.Render(target, scene, lightData, commandList);
 
                 if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
                     commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
@@ -1070,50 +1074,6 @@ namespace Atlas {
                 };
 
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
-            }
-
-            
-            std::vector<LightComponent> lightComponents;
-            auto lightSubset = scene->GetSubset<LightComponent>();
-            for (auto& lightEntity : lightSubset) {
-                auto& light = lightEntity.GetComponent<LightComponent>();
-                lightComponents.emplace_back(light);
-            }
-
-            std::sort(lightComponents.begin(), lightComponents.end(),
-                [&](const LightComponent& light0, const LightComponent& light1) {
-                    if (light0.isMain)
-                        return true;
-
-                    if (light0.type == LightType::DirectionalLight)
-                        return true;
-
-                    if (light0.type == LightType::PointLight &&
-                        light1.type == LightType::PointLight) {
-                        return glm::distance2(light0.transformedProperties.point.position, camera.GetLocation())
-                            < glm::distance2(light1.transformedProperties.point.position, camera.GetLocation());
-                    }
-
-                    return false;
-                });
-
-            std::vector<Light> lights;
-            for (const auto& comp : lightComponents) {
-                Light light {
-                    .color = vec4(Common::ColorConverter::ConvertSRGBToLinear(comp.color), 0.0f),
-                    .intensity = comp.intensity,
-                    .scatteringFactor = 1.0f,
-                };
-                
-                const auto& prop = comp.transformedProperties;
-                if (comp.type == LightType::DirectionalLight) {
-                    light.direction = vec4(prop.directional.direction, 0.0f);
-                }
-                else if (comp.type == LightType::PointLight) {
-                    light.location = vec4(prop.point.position, 1.0f);
-                    light.radius = prop.point.radius;
-                    light.attenuation = prop.point.attenuation;
-                }
             }
 
         } 

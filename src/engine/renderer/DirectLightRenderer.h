@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer.h"
+#include "helper/LightData.h"
 
 namespace Atlas {
 
@@ -13,11 +14,13 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, 
+                Helper::LightData& lightData, Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) Uniforms {
-                Light light;
+                int32_t mapIndices[16];
+                int32_t lightCount;
             };
 
             PipelineConfig pipelineConfig;

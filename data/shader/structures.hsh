@@ -1,5 +1,8 @@
 #include <shadow.hsh>
 
+#define DIRECTIONAL_LIGHT 0
+#define POINT_LIGHT 1
+
 //Light struct has to be implemented like this
 struct Light {
 
@@ -12,7 +15,7 @@ struct Light {
     float scatteringFactor;
         
     float radius;
-    float alignment;
+    float attenuation;
 
     Shadow shadow;
 
@@ -26,4 +29,8 @@ struct CloudShadow {
     mat4 ivMatrix;
     mat4 ipMatrix;
 
+};
+
+layout (std430, set = 1, binding = 16) buffer Lights {
+    Light lights[];
 };

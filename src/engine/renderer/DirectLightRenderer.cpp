@@ -27,7 +27,8 @@ namespace Atlas {
 
         }
 
-        void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, 
+            Helper::LightData& lightData, Graphics::CommandList* commandList) {
 
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid()) return;
@@ -39,74 +40,45 @@ namespace Atlas {
             auto sss = scene->sss;
             auto clouds = scene->sky.clouds;
 
-            vec3 direction = normalize(vec3(camera.viewMatrix *
-                vec4(light.transformedProperties.directional.direction, 0.0f)));
+            std::vector<Ref<Graphics::Image>> cascadeMaps;
+            std::vector<Ref<Graphics::Image>> cubeMaps;
 
             Uniforms uniforms;
+            uniforms.lightCount = std::min(8, int32_t(lightData.lightEntities.size()));
+            for (int32_t i = 0; i < uniforms.lightCount; i++) {
+                auto& comp = lightData.lightEntities[i].comp;
 
-            auto& lightUniform = uniforms.light;
-            lightUniform.location = vec4(0.0f);
-            lightUniform.direction = vec4(direction, 0.0f);
-            lightUniform.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 0.0f);
-            lightUniform.intensity = light.intensity;
-            lightUniform.scatteringFactor = 1.0f;
-            lightUniform.radius = 1.0f;
-
-            if (light.shadow) {
-                auto shadow = light.shadow;
-                auto& shadowUniform = lightUniform.shadow;
-                shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
-                shadowUniform.bias = shadow->bias;
-                shadowUniform.edgeSoftness = shadow->edgeSoftness;
-                shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
-                shadowUniform.cascadeCount = shadow->viewCount;
-                shadowUniform.resolution = vec2(shadow->resolution);
-
-                if (shadow->useCubemap) {
-                    commandList->BindImage(shadow->cubemap->image, shadowSampler, 3, 1);
-                }
-                else {
-                    commandList->BindImage(shadow->maps->image, shadowSampler, 3, 1);
-                }
-
-                auto componentCount = shadow->viewCount;
-                for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
-                    if (i < componentCount) {
-                        auto cascade = &shadow->views[i];
-                        auto frustum = Volume::Frustum(cascade->frustumMatrix);
-                        auto corners = frustum.GetCorners();
-                        auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
-                            abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
-                        shadowUniform.cascades[i].distance = cascade->farDistance;
-                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera.invViewMatrix;
-                        shadowUniform.cascades[i].texelSize = texelSize;
+                if (comp.shadow) {
+                    auto& shadow = comp.shadow;
+                    if (shadow->useCubemap) {
+                        uniforms.mapIndices[i] = int32_t(cubeMaps.size());
+                        cubeMaps.push_back(shadow->cubemap->image);
                     }
                     else {
-                        auto cascade = &shadow->views[componentCount - 1];
-                        shadowUniform.cascades[i].distance = cascade->farDistance;
+                        uniforms.mapIndices[i] = int32_t(cascadeMaps.size());
+                        cascadeMaps.push_back(shadow->maps->image);
                     }
                 }
             }
 
-            uniformBuffer.SetData(&uniforms, 0);
+            commandList->BindSampledImages(cascadeMaps, 3, 6);
+            commandList->BindSampledImages(cubeMaps, 3, 14);
 
-            pipelineConfig.ManageMacro("SHADOWS", light.shadow != nullptr);
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            uniformBuffer.Bind(commandList, 3, 4);
+            uniformBuffer.Bind(commandList, 3, 3);
 
             if (sss && sss->enable) {
-                commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 2);
+                commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 1);
             }
 
             CloudShadow cloudShadowUniform;
             if (clouds && clouds->enable && clouds->castShadow) {
-                clouds->shadowTexture.Bind(commandList, 3, 3);
+                clouds->shadowTexture.Bind(commandList, 3, 2);
 
                 clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
                     cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
@@ -118,7 +90,9 @@ namespace Atlas {
             }
 
             cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
-            cloudShadowUniformBuffer.Bind(commandList, 3, 5);
+            cloudShadowUniformBuffer.Bind(commandList, 3, 4);
+
+            commandList->BindSampler(shadowSampler, 3, 5);
 
             ivec2 res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             int32_t groupSize = 8;

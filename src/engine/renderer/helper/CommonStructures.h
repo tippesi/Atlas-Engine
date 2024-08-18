@@ -23,7 +23,7 @@ namespace Atlas {
 
             int cascadeCount;
 
-            float mapIdx;
+            int32_t mapIdx;
 
             vec2 resolution;
 
