@@ -14,6 +14,7 @@ namespace Atlas {
 
             int32_t textureLevel = 3;
             float radianceLimit = 10.0f;
+            float roughnessCutoff = 0.9f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
@@ -23,9 +24,12 @@ namespace Atlas {
 
             bool enable = true;
             bool rt = true;
-            bool gi = true;
+            bool ddgi = true;
             bool useShadowMap = false;
+            bool useNormalMaps = true;
             bool opacityCheck = false;
+            bool halfResolution = true;
+            bool upsampleBeforeFiltering = false;
 
         };
 

@@ -5,7 +5,7 @@
 #include <input/Keyboard.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
-#include <loader/ModelLoader.h>
+#include <loader/ModelImporter.h>
 #include <ImguiExtension/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>
@@ -36,7 +36,7 @@ class App : public Atlas::EngineInstance {
     using Ref = Atlas::Ref<T>;
 
 public:
-    App() : EngineInstance("Atlas Engine Demo", 1920, 1080, WINDOW_FLAGS) {}
+    App() : EngineInstance("Atlas Engine Tests", 1920, 1080, WINDOW_FLAGS) {}
 
     virtual void LoadContent() final {};
 

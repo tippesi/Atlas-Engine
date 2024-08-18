@@ -1,6 +1,6 @@
 #include "DataCreator.h"
 
-#include "loader/ModelLoader.h"
+#include "loader/ModelImporter.h"
 #include "volume/AABB.h"
 
 namespace Atlas::Editor {
@@ -23,8 +23,7 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
-            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -34,7 +33,6 @@ namespace Atlas::Editor {
         // Use SSGI by default
         scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
 
         scene->fog = CreateRef<Lighting::Fog>();
         scene->fog->enable = true;
@@ -48,11 +46,15 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
+        scene->irradianceVolume->rayCount = 32;
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
 
         scene->ssgi = CreateRef<Lighting::SSGI>();
+        scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
@@ -69,10 +71,10 @@ namespace Atlas::Editor {
     }
 
     Ref<Scene::Scene> DataCreator::CreateSceneFromMesh(const std::string& filename, vec3 min, vec3 max,
-        int32_t depth, bool invertUVs, bool addRigidBodies, bool combineMeshes, bool makeMeshesStatic) {
+        int32_t depth, bool invertUVs, bool addRigidBodies, bool makeMeshesStatic) {
 
-        auto scene = Loader::ModelLoader::LoadScene(filename, min, max, depth,
-            combineMeshes, makeMeshesStatic, false, 2048);
+        auto scene = Loader::ModelImporter::ImportScene(filename, min, max, depth,
+            true, makeMeshesStatic, invertUVs, 2048);
 
         auto rootEntity = scene->GetEntityByName("Root");
         auto& mainHierarchy = rootEntity.GetComponent<HierarchyComponent>();
@@ -84,8 +86,7 @@ namespace Atlas::Editor {
         directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 1.0f);
         directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
         directionalLight.intensity = 10.0f;
-        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.05f,
-            glm::vec3(0.0f), vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 2048, 0.05f, 3, 0.9f);
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
@@ -95,7 +96,6 @@ namespace Atlas::Editor {
         // Use SSGI by default
         scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
-        scene->reflection->useShadowMap = true;
 
         scene->fog = CreateRef<Lighting::Fog>();
         scene->fog->enable = true;
@@ -109,11 +109,15 @@ namespace Atlas::Editor {
         scene->postProcessing.sharpen.enable = true;
         scene->postProcessing.sharpen.factor = 0.15f;
 
-        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(20));
+        scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>(Volume::AABB(min, max), ivec3(15), 4);
+        scene->irradianceVolume->rayCount = 32;
+        scene->irradianceVolume->SetAABB(Volume::AABB(vec3(0.0f), vec3(100.0f)));
+        scene->irradianceVolume->scroll = true;
 
         scene->sss = CreateRef<Lighting::SSS>();
 
         scene->ssgi = CreateRef<Lighting::SSGI>();
+        scene->rtgi = CreateRef<Lighting::RTGI>();
 
         scene->sky.clouds = CreateRef<Lighting::VolumetricClouds>();
         scene->sky.clouds->minHeight = 1400.0f;
@@ -139,16 +143,6 @@ namespace Atlas::Editor {
             aabb.Grow(meshComponent.aabb);
         }
 
-        // Adjust settings based on calculated size
-        scene->irradianceVolume->SetAABB(aabb);
-
-        if (invertUVs) {
-            auto meshes = scene->GetMeshes();
-
-            for (const auto& mesh : meshes)
-                mesh->invertUVs = true;
-        }
-
         if (addRigidBodies) {
             for (auto entity : meshSubset) {
                 const auto& meshComponent = meshSubset.Get(entity);
@@ -161,7 +155,7 @@ namespace Atlas::Editor {
                 auto shape = Atlas::Physics::ShapesManager::CreateShape(settings);
 
                 auto bodySettings = Atlas::Physics::BodyCreationSettings{
-                    .objectLayer = Atlas::Physics::Layers::STATIC,
+                    .objectLayer = Atlas::Physics::Layers::Static,
                     .shape = shape,
                 };
                 entity.AddComponent<RigidBodyComponent>(bodySettings);

@@ -2,6 +2,21 @@ name: Build pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+        build_type_release:
+          description: 'Release CMake build type'
+          required: true
+          default: 'Release'
+        build_type_debug:
+          description: 'Debug CMake build type'
+          required: true
+          default: 'Debug'
+        build_use_cache:
+          description: 'Whether to use the vcpkg cache or not'
+          type: boolean
+          required: false
+          default: true
+
   push:
     branches:
       - '*'
@@ -10,9 +25,9 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE_DEBUG: Debug
-  BUILD_TYPE_RELEASE: Release
-  USE_CACHE: true
+  BUILD_TYPE_DEBUG: ${{ github.event.inputs.build_type_debug }}
+  BUILD_TYPE_RELEASE: ${{ github.event.inputs.build_type_release }}
+  USE_CACHE: ${{ github.event.inputs.build_use_cache == true || github.event.inputs.build_use_cache == null }}
   RUN_TESTS: true
 
 jobs:
@@ -47,7 +62,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
           cache: ${{ env.USE_CACHE }}
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
@@ -190,7 +205,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
@@ -320,7 +335,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 5786fcb0cb5eb08d1931a230dad9701e7a6c37f0
+          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja

@@ -19,8 +19,8 @@ namespace Atlas {
 
             hardwareRayTracing = device->support.hardwareRayTracing;
 
-            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit |
-               Buffer::BufferUsageBits::MultiBufferedBit | Buffer::BufferUsageBits::HostAccessBit;
+            auto bufferUsage = Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::HostAccessBit |
+                Buffer::BufferUsageBits::HighPriorityMemoryBit | Buffer::BufferUsageBits::MultiBufferedBit;
 
             materialBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUMaterial));
             bvhInstanceBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHInstance));
@@ -29,19 +29,20 @@ namespace Atlas {
 
         }
 
-        void RayTracingWorld::Update(bool updateTriangleLights) {
+        void RayTracingWorld::Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             if (!device->swapChain->isComplete) return;
-
-            auto subset = scene->GetSubset<MeshComponent, TransformComponent>();
             if (!subset.Any()) return;
 
             blases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
+
+            JobSystem::Wait(scene->bindlessMeshMapUpdateJob);
+
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
                 if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))
@@ -83,6 +84,8 @@ namespace Atlas {
             actorAABBs.clear();
             lastMatrices.clear();
 
+            JobSystem::Wait(scene->bindlessTextureMapUpdateJob);
+
             UpdateMaterials();
 
             for (auto entity : subset) {
@@ -96,10 +99,14 @@ namespace Atlas {
 
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
 
+                uint32_t mask = InstanceCullMasks::MaskAll;
+                mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
+
                 GPUBVHInstance gpuBvhInstance = {
                     .inverseMatrix = inverseMatrix,
                     .meshOffset = meshInfo.offset,
-                    .materialOffset = meshInfo.materialOffset
+                    .materialOffset = meshInfo.materialOffset,
+                    .mask = mask
                 };
 
                 meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
@@ -121,7 +128,7 @@ namespace Atlas {
                     inst.instanceCustomIndex = meshInfo.offset;
                     inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
                     inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                    inst.mask = 0xFF;
+                    inst.mask = mask;
                     inst.instanceShaderBindingTableRecordOffset = 0;
                     hardwareInstances.push_back(inst);
                 }
@@ -186,46 +193,49 @@ namespace Atlas {
                     // Only is persistent when no materials are reorderd in mesh
                     gpuMaterial.ID = int32_t(hash % 65535);
 
-                    gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
-                    gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
-                        * material->emissiveIntensity;
+                    if (material.IsLoaded()) {
+                        gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                        gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                            * material->emissiveIntensity;
 
-                    gpuMaterial.opacity = material->opacity;
+                        gpuMaterial.opacity = material->opacity;
 
-                    gpuMaterial.roughness = material->roughness;
-                    gpuMaterial.metalness = material->metalness;
-                    gpuMaterial.ao = material->ao;
+                        gpuMaterial.roughness = material->roughness;
+                        gpuMaterial.metalness = material->metalness;
+                        gpuMaterial.ao = material->ao;
 
-                    gpuMaterial.reflectance = material->reflectance;
+                        gpuMaterial.reflectance = material->reflectance;
 
-                    gpuMaterial.normalScale = material->normalScale;
+                        gpuMaterial.normalScale = material->normalScale;
 
-                    gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
-                    gpuMaterial.twoSided = material->twoSided ? 1 : 0;
-                    gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
+                        gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
+                        gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                        gpuMaterial.cullBackFaces = mesh->cullBackFaces ? 1 : 0;
+                        gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
-                    if (material->HasBaseColorMap()) {
-                        gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap];
-                    }
+                        if (material->HasBaseColorMap()) {
+                            gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
+                        }
 
-                    if (material->HasOpacityMap()) {
-                        gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap];
-                    }
+                        if (material->HasOpacityMap()) {
+                            gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
+                        }
 
-                    if (material->HasNormalMap()) {
-                        gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap];
-                    }
+                        if (material->HasNormalMap()) {
+                            gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
+                        }
 
-                    if (material->HasRoughnessMap()) {
-                        gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap];
-                    }
+                        if (material->HasRoughnessMap()) {
+                            gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
+                        }
 
-                    if (material->HasMetalnessMap()) {
-                        gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap];
-                    }
+                        if (material->HasMetalnessMap()) {
+                            gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
+                        }
 
-                    if (material->HasAoMap()) {
-                        gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap];
+                        if (material->HasAoMap()) {
+                            gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
+                        }
                     }
 
                     materials.push_back(gpuMaterial);

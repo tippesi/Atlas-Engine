@@ -2,8 +2,9 @@
 
 namespace Atlas::Editor::UI {
 
-    void EntityPropertiesPanel::Render(Ref<Scene::Scene>& scene, Scene::Entity entity) {
+    void EntityPropertiesPanel::Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties) {
 
+        auto entity = entityProperties.entity;
         if (!entity.IsValid())
             return;
 
@@ -11,6 +12,9 @@ namespace Atlas::Editor::UI {
         if (nameComponent) {
             nameComponentPanel.Render(scene, entity, *nameComponent);
         }
+
+        std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
+        bool rootNode = nodeName == "Root";
 
         // General components
         {
@@ -92,7 +96,7 @@ namespace Atlas::Editor::UI {
                 ImGui::OpenPopup("AddComponent");
 
             if (ImGui::BeginPopup("AddComponent")) {
-                if (!entity.HasComponent<NameComponent>() && ImGui::MenuItem("Add name component"))
+                if (!entity.HasComponent<NameComponent>() && !rootNode && ImGui::MenuItem("Add name component"))
                     entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));
                 if (!entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Add transform component"))
                     entity.AddComponent<TransformComponent>(mat4(1.0f), false);
@@ -133,7 +137,7 @@ namespace Atlas::Editor::UI {
                     scale = Common::MatrixDecomposition(globalMatrix).scale;
 
                     auto shape = Physics::ShapesManager::CreateShape(Physics::BoundingBoxShapeSettings { .scale = scale });
-                    auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::MOVABLE, .shape = shape };
+                    auto bodySettings = Physics::BodyCreationSettings { .objectLayer = Physics::Layers::Movable, .shape = shape };
                     entity.AddComponent<RigidBodyComponent>(bodySettings);
                 }
 
@@ -147,7 +151,7 @@ namespace Atlas::Editor::UI {
                 ImGui::OpenPopup("RemoveComponent");
 
             if (ImGui::BeginPopup("RemoveComponent")) {
-                if (entity.HasComponent<NameComponent>() && ImGui::MenuItem("Remove name component"))
+                if (entity.HasComponent<NameComponent>()  && !rootNode && ImGui::MenuItem("Remove name component"))
                     entity.RemoveComponent<NameComponent>();
                 if (entity.HasComponent<TransformComponent>() && ImGui::MenuItem("Remove transform component"))
                     entity.RemoveComponent<TransformComponent>();

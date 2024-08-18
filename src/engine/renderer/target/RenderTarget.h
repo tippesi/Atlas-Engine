@@ -41,8 +41,6 @@ namespace Atlas::Renderer {
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-            swapVelocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         }
 
         void Resize(ivec2 resolution) {
@@ -55,7 +53,6 @@ namespace Atlas::Renderer {
             materialIdxTexture->Resize(resolution.x, resolution.y);
             stencilTexture->Resize(resolution.x, resolution.y);
             velocityTexture->Resize(resolution.x, resolution.y);
-            swapVelocityTexture->Resize(resolution.x, resolution.y);
         }
 
         Ref<Texture::Texture2D> baseColorTexture = nullptr;
@@ -67,7 +64,6 @@ namespace Atlas::Renderer {
         Ref<Texture::Texture2D> materialIdxTexture = nullptr;
         Ref<Texture::Texture2D> stencilTexture = nullptr;
         Ref<Texture::Texture2D> velocityTexture = nullptr;
-        Ref<Texture::Texture2D> swapVelocityTexture = nullptr;
     };
 
     class RenderTarget {
@@ -131,7 +127,7 @@ namespace Atlas::Renderer {
         /*
          * Sets the render resolution for screen space global illumination
          */
-        void SetGIResolution(RenderResolution resolution);
+        void SetGIResolution(RenderResolution resolution, bool createMomentsTexture);
 
         /*
          * Gets the render resolution for screen space global illumination
@@ -206,6 +202,8 @@ namespace Atlas::Renderer {
         Texture::Texture2D historyGiTexture;
         Texture::Texture2D giLengthTexture;
         Texture::Texture2D historyGiLengthTexture;
+        Texture::Texture2D giMomentsTexture;
+        Texture::Texture2D historyGiMomentsTexture;
 
         Texture::Texture2D aoTexture;
         Texture::Texture2D swapAoTexture;
@@ -232,6 +230,7 @@ namespace Atlas::Renderer {
         Texture::Texture2D historyReflectionMomentsTexture;
 
         Texture::Texture2D lightingTexture;
+        Texture::Texture2D reactiveMaskTexture;
         Texture::Texture2D hdrTexture;
 
     private:
@@ -241,6 +240,7 @@ namespace Atlas::Renderer {
         Texture::Texture2D swapHistoryTexture;
 
         RenderTargetData targetData;
+        RenderTargetData targetDataSwap;
         RenderTargetData targetDataDownsampled2x;
         RenderTargetData targetDataSwapDownsampled2x;
 

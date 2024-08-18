@@ -1,5 +1,13 @@
 #include "ComponentSerializer.h"
 
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
+#include "physics/PhysicsSerializer.h"
+
+#include "resource/ResourceManager.h"
+#include "audio/AudioManager.h"
+#include "loader/MeshLoader.h"
+
 namespace Atlas::Scene::Components {
 
     void to_json(json& j, const AudioComponent& p) {
@@ -8,6 +16,7 @@ namespace Atlas::Scene::Components {
             {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
+            {"permanentPlay", p.permanentPlay},
         };
 
         if (p.stream) {
@@ -22,6 +31,7 @@ namespace Atlas::Scene::Components {
         j.at("falloffPower").get_to(p.falloffPower);
         j.at("cutoff").get_to(p.cutoff);
         j.at("volume").get_to(p.volume);
+        try_get_json(j, "permanentPlay", p.permanentPlay);
 
         if (j.contains("stream")) {
             j.at("stream").get_to(*p.stream);
@@ -34,7 +44,8 @@ namespace Atlas::Scene::Components {
             {"falloffPower", p.falloffPower},
             {"cutoff", p.cutoff},
             {"volume", p.volume},
-            {"aabb", p.aabb}
+            {"aabb", p.aabb},
+            {"permanentPlay", p.permanentPlay}
         };
 
         if (p.stream) {
@@ -50,6 +61,7 @@ namespace Atlas::Scene::Components {
         j.at("cutoff").get_to(p.cutoff);
         j.at("aabb").get_to(p.aabb);
         j.at("volume").get_to(p.volume);
+        try_get_json(j, "permanentPlay", p.permanentPlay);
 
         if (j.contains("stream")) {
             j.at("stream").get_to(*p.stream);
@@ -165,7 +177,7 @@ namespace Atlas::Scene::Components {
             j.at("resourcePath").get_to(resourcePath);
 
             p.mesh = ResourceManager<Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(resourcePath,
-                ResourceOrigin::User, Loader::ModelLoader::LoadMesh, false, 8192);
+                ResourceOrigin::User, Loader::MeshLoader::LoadMesh, true);
         }
 
     }
@@ -190,6 +202,12 @@ namespace Atlas::Scene::Components {
     void from_json(const json& j, TransformComponent& p) {
         j.at("matrix").get_to(p.matrix);
         j.at("isStatic").get_to(p.isStatic);
+
+        // Reconstruct some immediate values, don't need to be true.
+        // Just that a call to p.ReconstructLocalMatrix() before a scene updates 
+        // leaves p.matrix in the same state.
+        p.globalMatrix = p.matrix;
+        p.lastGlobalMatrix = p.matrix;
     }
 
     void to_json(json& j, const TextComponent& p) {
@@ -279,32 +297,31 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void to_json(json &j, const LuaScriptComponent &p)
-    {
+    void to_json(json &j, const LuaScriptComponent &p) {
         j = json{};
 
         if (p.script.IsValid())
             j["resourcePath"] = p.script.GetResource()->path;
 
-        for (const auto &prop : p.properties)
-        {
-            switch (prop.type)
-            {
+        j["permanentExecution"] = p.permanentExecution;
+
+        for (const auto& [name, prop] : p.properties) {
+            switch (prop.type) {
             case LuaScriptComponent::PropertyType::Boolean:
-                j["scriptProperties"][prop.name]["type"] = "boolean";
-                j["scriptProperties"][prop.name]["value"] = prop.booleanValue;
+                j["scriptProperties"][name]["type"] = "boolean";
+                j["scriptProperties"][name]["value"] = prop.booleanValue;
                 break;
             case LuaScriptComponent::PropertyType::Integer:
-                j["scriptProperties"][prop.name]["type"] = "integer";
-                j["scriptProperties"][prop.name]["value"] = prop.integerValue;
+                j["scriptProperties"][name]["type"] = "integer";
+                j["scriptProperties"][name]["value"] = prop.integerValue;
                 break;
             case LuaScriptComponent::PropertyType::Double:
-                j["scriptProperties"][prop.name]["type"] = "double";
-                j["scriptProperties"][prop.name]["value"] = prop.doubleValue;
+                j["scriptProperties"][name]["type"] = "double";
+                j["scriptProperties"][name]["value"] = prop.doubleValue;
                 break;
             case LuaScriptComponent::PropertyType::String:
-                j["scriptProperties"][prop.name]["type"] = "string";
-                j["scriptProperties"][prop.name]["value"] = prop.stringValue;
+                j["scriptProperties"][name]["type"] = "string";
+                j["scriptProperties"][name]["value"] = prop.stringValue;
                 break;
             default:
                 AE_ASSERT(false);
@@ -312,13 +329,13 @@ namespace Atlas::Scene::Components {
         }
     }
 
-    void from_json(const json &j, LuaScriptComponent &p)
-    {
+    void from_json(const json &j, LuaScriptComponent &p) {
 
-        if (j.contains("resourcePath"))
-        {
+        if (j.contains("resourcePath")) {
             std::string resourcePath;
             j.at("resourcePath").get_to(resourcePath);
+
+            try_get_json(j, "permanentExecution", p.permanentExecution);
 
             p.script = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(
                 resourcePath, ResourceOrigin::User);
@@ -328,37 +345,24 @@ namespace Atlas::Scene::Components {
         {
             for (const auto &v : j["scriptProperties"].items())
             {
-                LuaScriptComponent::ScriptProperty scriptProperty;
-                scriptProperty.name = v.key();
                 const auto &value = v.value();
                 auto propertyTypeAsString = value["type"].get<std::string>();
                 if (propertyTypeAsString == "boolean")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Boolean;
-                    scriptProperty.booleanValue = value["value"].get<bool>();
+                    p.SetPropertyValue(v.key(), value["value"].get<bool>());
                 }
                 else if (propertyTypeAsString == "integer")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Integer;
-                    scriptProperty.integerValue = value["value"].get<int>();
+                    p.SetPropertyValue(v.key(), value["value"].get<int32_t>());
                 }
                 else if (propertyTypeAsString == "double")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::Double;
-                    scriptProperty.doubleValue = value["value"].get<double>();
+                    p.SetPropertyValue(v.key(), value["value"].get<double>());
                 }
                 else if (propertyTypeAsString == "string")
                 {
-                    scriptProperty.type = LuaScriptComponent::PropertyType::String;
-                    scriptProperty.stringValue = value["value"].get<std::string>();
+                    p.SetPropertyValue(v.key(), value["value"].get<std::string>());
                 }
-                else
-                {
-                    // unknown type
-                    continue;
-                }
-
-                p.properties.push_back(scriptProperty);
             }
         }
     }

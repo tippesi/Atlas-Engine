@@ -76,15 +76,31 @@ void main() {
 #ifdef REALTIME
         // Write out material information and velocity into a g-buffer
         if (ray.ID % Uniforms.samplesPerFrame == 0 && Uniforms.bounceCount == 0) {
-            Instance instance = bvhInstances[ray.hitInstanceID];
-            mat4 lastMatrix = mat4(transpose(instanceLastMatrices[ray.hitInstanceID]));
+            Instance instance;
+            mat4 lastMatrix;
+            vec3 position;
+            uint materialId;
+            vec3 geometryNormal;
+            if (ray.hitID >= 0) {
+                instance = bvhInstances[nonuniformEXT(ray.hitInstanceID)];
+                lastMatrix = mat4(transpose(instanceLastMatrices[nonuniformEXT(ray.hitInstanceID)]));
 
-            vec3 pos = ray.hitID >= 0 ? surface.P : ray.origin + ray.direction * ray.hitDistance;
+                position = surface.P;
+                materialId = surface.material.ID;
+                geometryNormal = surface.geometryNormal;
+            }
+            else {
+                instance.inverseMatrix = mat3x4(1.0);
+                lastMatrix = mat4(1.0);
+                position = ray.origin + ray.direction * 100.0;
+                materialId = 65535;
+                geometryNormal = vec3(1.0, 0.0, 0.0);
+            }
 
             // As a reminder: The current inverse matrix is also transposed
-            vec3 lastPos = vec3(lastMatrix * vec4(vec4(pos, 1.0) * instance.inverseMatrix, 1.0));
+            vec3 lastPos = vec3(lastMatrix * vec4(vec4(position, 1.0) * instance.inverseMatrix, 1.0));
 
-            vec4 viewSpacePos = globalData.vMatrix * vec4(pos, 1.0);
+            vec4 viewSpacePos = globalData.vMatrix * vec4(position, 1.0);
             vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
             vec4 projPositionLast = globalData.pvMatrixLast * vec4(lastPos, 1.0);
 
@@ -94,9 +110,9 @@ void main() {
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
-            imageStore(depthImage, pixel, vec4(viewSpacePos.z, 0.0, 0.0, 0.0));
-            imageStore(materialIdxImage, pixel, uvec4(surface.material.ID, 0.0, 0.0, 0.0));
-            imageStore(normalImage, pixel, vec4(EncodeNormal(surface.geometryNormal), 0.0, 0.0));
+            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? viewSpacePos.z : INF, 0.0, 0.0, 0.0));
+            imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
+            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
         }
 #endif
         
@@ -149,7 +165,7 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     // we add the contribution of the environment map
     if (ray.hitID == -1) {
         // Clamp env map, since there is only a uniform sampling for now
-        payload.radiance += min(SampleEnvironmentMap(ray.direction).rgb * 
+        payload.radiance += min(1.0 * SampleEnvironmentMap(ray.direction).rgb * 
             payload.throughput, vec3(10.0));
         payload.throughput = vec3(0.0);
         return surface;    
@@ -290,7 +306,9 @@ void EvaluateIndirectLight(inout Surface surface, inout Ray ray, inout RayPayloa
 
     // Russain roulette, terminate rays with a chance of one percent
     float probability = clamp(max(payload.throughput.r,
-        max(payload.throughput.g, payload.throughput.b)), 0.1, 0.99);
+        max(payload.throughput.g, payload.throughput.b)), 0.01, 0.99);
+
+    probability = Uniforms.bounceCount < 3 ? min(3.0 * probability, 1.0) : probability;
 
     if (random(raySeed, curSeed) > probability) {
         payload.throughput = vec3(0.0);
@@ -312,7 +330,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
         return 0.0;

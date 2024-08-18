@@ -126,6 +126,8 @@ void App::LoadContent(AppConfiguration config) {
             glm::vec3(0.0f, 5.0f, 0.0f), 512, 86);
     }
 
+    scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
+
     if (config.exampleRenderer) {
         exampleRenderer.Init(graphicsDevice);
     }
@@ -200,6 +202,8 @@ void App::Render(float deltaTime) {
     }
     */
 #endif
+
+    graphicsDevice->WaitForPreviousFrameSubmission();
 
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
@@ -294,19 +298,19 @@ bool App::LoadScene() {
     meshes.reserve(3);
     transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(.05f)));
     auto sponzaMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "sponza/sponza.obj", ModelLoader::LoadMesh, false, 2048
+        "sponza/sponza.obj", ModelImporter::ImportMesh, false, 2048
     );
     meshes.push_back(sponzaMesh);
 
     transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto wallMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "metallicwall.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
+        "metallicwall.gltf", ModelImporter::ImportMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(wallMesh);
 
     transforms.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(1.f)));
     auto sphereMesh = Atlas::ResourceManager<Atlas::Mesh::Mesh>::GetOrLoadResourceWithLoaderAsync(
-        "chromesphere.gltf", ModelLoader::LoadMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
+        "chromesphere.gltf", ModelImporter::ImportMesh, Atlas::Mesh::MeshMobility::Movable, false, 2048
     );
     meshes.push_back(sphereMesh);
 
@@ -352,26 +356,27 @@ void App::CheckLoadScene() {
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
 
-    static std::future<void> future;
+    static Atlas::JobGroup buildBvhGroup;
+    static bool groupStarted = false;
 
-    auto buildRTStructure = [&]() {
+    auto buildRTStructure = [&](Atlas::JobData) {
         auto sceneMeshes = scene->GetMeshes();
 
-        for (auto& mesh : sceneMeshes) {
-            mesh->BuildBVH();
-        }
-    };
+        for (const auto& mesh : sceneMeshes) {
 
-    if (!future.valid()) {
-        future = std::async(std::launch::async, buildRTStructure);
+            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
+
+        }
+        };
+
+    if (!groupStarted) {
+        Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);
+        groupStarted = true;
         return;
     }
-    else {
-        if (future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) {
-            return;
-        }
-        future.get();
-    }
+
+    if (!buildBvhGroup.HasFinished())
+        return;
 
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));

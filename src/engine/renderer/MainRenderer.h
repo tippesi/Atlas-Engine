@@ -19,10 +19,11 @@
 #include "SkyboxRenderer.h"
 #include "AtmosphereRenderer.h"
 #include "PostProcessRenderer.h"
-#include "GBufferDownscaleRenderer.h"
+#include "GBufferRenderer.h"
 #include "TextRenderer.h"
-#include "GIRenderer.h"
+#include "SSGIRenderer.h"
 #include "DDGIRenderer.h"
+#include "RTGIRenderer.h"
 #include "AORenderer.h"
 #include "RTReflectionRenderer.h"
 #include "SSSRenderer.h"
@@ -68,7 +69,7 @@ namespace Atlas {
             Ref<Font> font;
 
         private:
-            struct PackedMaterial {
+            struct alignas(16) PackedMaterial {
 
                 int32_t baseColor;
                 int32_t emissiveColor;
@@ -92,6 +93,8 @@ namespace Atlas {
                 mat4 ipMatrix;
                 mat4 pvMatrixLast;
                 mat4 pvMatrixCurrent;
+                mat4 ipvMatrixLast;
+                mat4 ipvMatrixCurrent;
                 vec2 jitterLast;
                 vec2 jitterCurrent;
                 vec4 cameraLocation;
@@ -108,11 +111,20 @@ namespace Atlas {
                 float mipLodBias;
             };
 
-            struct alignas(16) DDGIUniforms {
+            struct alignas(16) DDGICascade {
                 vec4 volumeMin;
                 vec4 volumeMax;
-                ivec4 volumeProbeCount;
                 vec4 cellSize;
+                ivec4 offsetDifference;
+            };
+
+            struct alignas(16) DDGIUniforms {
+                
+                DDGICascade cascades[MAX_IRRADIANCE_VOLUME_CASCADES];
+
+                vec4 volumeCenter;
+                ivec4 volumeProbeCount;
+                int32_t cascadeCount;
 
                 float volumeBias;
 
@@ -160,6 +172,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
             Ref<Graphics::Sampler> globalSampler;
+            Ref<Graphics::Sampler> globalNearestSampler;
 
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray cubeVertexArray;
@@ -178,9 +191,10 @@ namespace Atlas {
             TemporalAARenderer taaRenderer;
             SkyboxRenderer skyboxRenderer;
             PostProcessRenderer postProcessRenderer;
-            GBufferDownscaleRenderer downscaleRenderer;
-            GIRenderer giRenderer;
+            GBufferRenderer gBufferRenderer;
+            SSGIRenderer ssgiRenderer;
             DDGIRenderer ddgiRenderer;
+            RTGIRenderer rtgiRenderer;
             AORenderer aoRenderer;
             RTReflectionRenderer rtrRenderer;
             SSSRenderer sssRenderer;

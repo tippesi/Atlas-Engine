@@ -53,6 +53,17 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Render AO");
 
+            if (!target->HasHistory()) {
+                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+                std::vector<Graphics::BufferBarrier> bufferBarriers;
+                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    {target->historyAoTexture.image, layout, access},
+                    {target->historyAoLengthTexture.image, layout, access},
+                };
+                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            }
+
             auto downsampledRT = target->GetData(target->GetAOResolution());
             auto downsampledHistoryRT = target->GetHistoryData(target->GetAOResolution());
 
@@ -178,6 +189,9 @@ namespace Atlas {
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
                 commandList->BindImage(historyNormalTexture->image, historyNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+
+                int32_t resetHistory = !target->HasHistory() ? 1 : 0;
+                commandList->PushConstants("constants", &resetHistory, sizeof(int32_t));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

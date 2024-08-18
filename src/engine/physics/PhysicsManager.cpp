@@ -20,7 +20,7 @@ namespace Atlas {
 
             RegisterDefaultAllocator();
 
-            Trace = TraceImpl;
+            // Trace = TraceImpl;
 
             // Create a factory
             Factory::sInstance = new Factory();
@@ -30,7 +30,7 @@ namespace Atlas {
 
             tempAllocator = Atlas::CreateRef<TempAllocatorImpl>(100 * 1024 * 1024);
             jobSystemThreadPool = Atlas::CreateRef<JobSystemThreadPool>(cMaxPhysicsJobs,
-                cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
+                cMaxPhysicsBarriers, std::min(thread::hardware_concurrency() - 1u, 12u));
 
         }
 

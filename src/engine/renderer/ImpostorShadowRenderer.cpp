@@ -14,7 +14,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer, RenderList* renderList,
+        void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer,
             Graphics::CommandList* commandList, RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 

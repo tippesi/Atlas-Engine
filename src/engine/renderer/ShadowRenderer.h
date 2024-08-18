@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../System.h"
-#include "../RenderList.h"
+#include "helper/RenderList.h"
 #include "Renderer.h"
 #include "ImpostorShadowRenderer.h"
 
 #include <mutex>
 #include <map>
+#include <tuple>
 
 namespace Atlas {
 
@@ -22,12 +23,14 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
+            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass);
+
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
             PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
 
-            using LightMap = std::map<ECS::Entity, Ref<Graphics::FrameBuffer>>;
+            using LightMap = std::map<Scene::Entity, Ref<Graphics::FrameBuffer>>;
 
             struct alignas(16) PushConstants {
                 mat4 lightSpaceMatrix;
@@ -36,11 +39,14 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                uint32_t textureID;
             };
 
             LightMap lightMap;
 
             ImpostorShadowRenderer impostorRenderer;
+
+            std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
 
         };
 

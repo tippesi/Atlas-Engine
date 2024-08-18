@@ -51,20 +51,9 @@ namespace Atlas::Editor::UI {
                 shape->settings = CreateRef<MeshShapeSettings>();
 
             auto meshSettings = static_cast<MeshShapeSettings*>(shape->settings.get());
-            auto buttonName = meshSettings->mesh.IsValid() ? meshSettings->mesh.GetResource()->GetFileName() :
-                              "Drop resource here";
-            ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Mesh::Mesh).name())) {
-                    Resource<Mesh::Mesh>* resource;
-                    std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
-                    // We know this mesh is loaded, so we can just request a handle without loading
-                    meshSettings->mesh = ResourceManager<Mesh::Mesh>::GetResource(resource->path);
-                }
-
-                ImGui::EndDragDropTarget();
-            }
+            bool resourceChanged = false;
+            meshSettings->mesh = meshSelectionPanel.Render(meshSettings->mesh, resourceChanged);
 
             if (meshComponent)
                 if (ImGui::Button("Take resource from mesh component"))
@@ -124,10 +113,10 @@ namespace Atlas::Editor::UI {
                 // Need scale from global matrix decomposition
                 *scale = Common::MatrixDecomposition(globalMatrix).scale;
             }
-            ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, 0.0f);
+            ImGui::DragFloat3("Scale", glm::value_ptr(*scale), 0.01f, -100.0f, 100.0f);
         }
 
-        if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }))
+        if (ImGui::Button("Generate shape", { -FLT_MIN, 0 }) || shapeTypeChanged)
             shape->TryCreate();
         else
             shape->Scale(*scale);
@@ -139,8 +128,10 @@ namespace Atlas::Editor::UI {
 
         const char* layerItems[] = { "Static", "Movable" };
         int currentItem = settings.objectLayer;
-        ImGui::Combo("Object layer", &currentItem, layerItems, IM_ARRAYSIZE(layerItems));
-        settings.objectLayer = currentItem;
+        // Mesh can only be static
+        auto layoutItemCount = settings.shape->type != ShapeType::Mesh ? IM_ARRAYSIZE(layerItems) : 1;
+        ImGui::Combo("Object layer", &currentItem, layerItems, layoutItemCount);
+        settings.objectLayer = std::min(currentItem, layoutItemCount - 1);
 
         const char* motionQualityItems[] = { "Discrete", "Linear cast" };
         currentItem = static_cast<int>(settings.motionQuality);

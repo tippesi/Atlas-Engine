@@ -7,6 +7,31 @@
 
 using json = nlohmann::json;
 
+namespace Atlas {
+
+    template<class T>
+    void try_get_json(json j, const char* name, T& t) {
+
+        if (j.contains(name)) {
+            j.at(name).get_to(t);
+        }
+
+    }
+
+    template<class T>
+    void try_get_json(json j, const char* name, T& t, const T def) {
+
+        if (j.contains(name)) {
+            j.at(name).get_to(t);
+        }
+        else {
+            t = def;
+        }
+
+    }
+
+}
+
 namespace glm {
 
     void to_json(json& j, const ivec2& p);

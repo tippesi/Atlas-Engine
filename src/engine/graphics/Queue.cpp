@@ -21,22 +21,25 @@ namespace Atlas::Graphics {
         this->queue = ref->queue;
         this->familyIndex = ref->familyIndex;
 
-        if (threadId == queue->threadId && queue->counter > 0) {
-            this->counter = queue->counter;
-            valid = true;
-            return;
+        {
+            std::scoped_lock locked(ref->aquireMutex);
+            if (threadId == ref->threadId && ref->counter > 0) {
+                this->counter = ref->counter;
+                valid = true;
+                return;
+            }
         }
 
         if (forceLock) {
-            queue->mutex.lock();
-            queue->threadId = threadId;
-            this->counter = queue->counter;
+            ref->mutex.lock();
+            ref->threadId = threadId;
+            this->counter = ref->counter;
             valid = true;
         }
         else {
-            if (queue->mutex.try_lock()) {
-                queue->threadId = threadId;
-                this->counter = queue->counter;
+            if (ref->mutex.try_lock()) {
+                ref->threadId = threadId;
+                this->counter = ref->counter;
                 valid = true;
             }
         }
@@ -48,6 +51,7 @@ namespace Atlas::Graphics {
         if (!valid)
             return;
 
+        std::scoped_lock lock(ref->aquireMutex);
         if (counter.use_count() == 2) {
             counter.reset();
             ref->threadId = std::thread::id();

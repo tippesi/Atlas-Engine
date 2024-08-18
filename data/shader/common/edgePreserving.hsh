@@ -1,0 +1,15 @@
+#include <../globals.hsh>
+
+float GetEdgePreservingNormalWeight(vec3 currentNormal, vec3 historyNormal, float phi) {
+
+    return min(1.0, pow(max(0.0, dot(currentNormal, historyNormal)), phi));
+
+}
+
+float GetEdgePreservingPlaneWeight(vec3 currentPosition, vec3 currentNormal, vec3 historyPosition, float phi) {
+    
+    vec3 currentToHistory = currentPosition - historyPosition;
+    float distToPlane = abs(dot(currentToHistory, currentNormal));
+    return min(1.0, exp(-distToPlane * phi));
+
+}

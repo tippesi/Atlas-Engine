@@ -11,6 +11,7 @@
 #define PROBE_STATE_NEW 0
 #define PROBE_STATE_ACTIVE 1
 #define PROBE_STATE_INACTIVE 2
+#define VOLUME_CASCADE_COUNT 8
 
 layout(set = 2, binding = 24) uniform sampler2DArray irradianceVolume;
 layout(set = 2, binding = 25) uniform sampler2DArray momentsVolume;
@@ -23,11 +24,19 @@ layout(std430, set = 2, binding = 20) buffer ProbeOffsets {
     vec4 probeOffsets[];
 };
 
-layout(std140, set = 2, binding = 26) uniform DDGIBuffer {
+struct DDGICascade {
     vec4 volumeMin;
     vec4 volumeMax;
-    ivec4 volumeProbeCount;
     vec4 cellSize;
+    ivec4 offsetDifference;
+};
+
+layout(std140, set = 2, binding = 26) uniform DDGIBuffer {    
+    DDGICascade cascades[VOLUME_CASCADE_COUNT];
+
+    vec4 volumeCenter;
+    ivec4 volumeProbeCount;
+    int cascadeCount;
 
     float volumeBias;
 
@@ -92,8 +101,8 @@ uint GetProbeRayCount(uint state) {
     return state == PROBE_STATE_INACTIVE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
 }
 
-vec3 GetProbePosition(ivec3 probeIdx) {
-    return ddgiData.volumeMin.xyz + vec3(probeIdx) * ddgiData.cellSize.xyz;
+vec3 GetProbePosition(ivec3 probeIdx, int cascadeIndex) {
+    return ddgiData.cascades[cascadeIndex].volumeMin.xyz + vec3(probeIdx) * ddgiData.cascades[cascadeIndex].cellSize.xyz;
 }
 
 uint GetProbeState(uint idx) {
@@ -104,27 +113,55 @@ vec3 GetProbeOffset(uint idx) {
     return probeOffsets[idx].xyz;
 }
 
-ivec3 GetNearestProbe(vec3 position) {
-    vec3 localPosition = position - ddgiData.volumeMin.xyz;
-    return ivec3(round(localPosition / ddgiData.cellSize.xyz));
+uint GetProbeIdx(ivec3 probe, int cascadeIndex) {
+    return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy) + 
+        uint(cascadeIndex * ddgiData.volumeProbeCount.w);
 }
 
-uint GetProbeIdx(ivec3 probe) {
-    return Flatten3D(probe.xzy, ddgiData.volumeProbeCount.xzy);
+int GetProbeCascadeIndex(uint idx) {
+    return int(idx) / ddgiData.volumeProbeCount.w;
+}
+
+int GetProbeCascadeIndex(ivec3 probe) {
+    return probe.y / ddgiData.volumeProbeCount.y;
 }
 
 ivec3 GetProbeGridCoord(uint idx) {
-    return Unflatten3D(int(idx), ddgiData.volumeProbeCount.xzy).xzy;
+    int index = int(idx) % ddgiData.volumeProbeCount.w;
+    return Unflatten3D(index, ddgiData.volumeProbeCount.xzy).xzy;
 }
 
 bool IsInsideVolume(vec3 position) {
-    return !any(lessThan(position, ddgiData.volumeMin.xyz))
-        && !any(greaterThan(position, ddgiData.volumeMax.xyz));
+    // Cascade 0 has the same size as the whole volume
+    return !any(lessThan(position, ddgiData.cascades[0].volumeMin.xyz))
+        && !any(greaterThan(position, ddgiData.cascades[0].volumeMax.xyz));
 }
 
-vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSize, float volumeRes) {
+bool IsInsideCascade(vec3 position, int cascadeIndex) {
 
-    vec3 coord = vec3(probeRes * vec2(probeIndex.xz) + vec2(1.0), float(probeIndex.y));
+    return !any(lessThan(position, ddgiData.cascades[cascadeIndex].volumeMin.xyz))
+        && !any(greaterThan(position, ddgiData.cascades[cascadeIndex].volumeMax.xyz));
+
+}
+
+void GetProbeHistoryInfo(ivec3 probeIndex, int cascadeIndex, out ivec3 historyProbeCoord, out bool reset) {
+
+    ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);
+    historyProbeCoord = probeIndex + ivec3(ddgiData.cascades[cascadeIndex].offsetDifference);
+    ivec3 historyCascadeProbeIndex = historyProbeCoord - cascadeProbeOffset;
+
+    reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
+        any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
+    // Now calculate the actual valid (clamped) istory probe index
+    historyProbeCoord = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
+    historyProbeCoord += cascadeProbeOffset;
+
+}
+
+vec3 GetProbeCoord(ivec3 probeIndex, int cascadeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSize, float volumeRes) {
+
+    vec3 coord = vec3(probeRes * vec2(probeIndex.xz) + vec2(1.0), 
+        float(probeIndex.y + cascadeIndex * ddgiData.volumeProbeCount.y));
     coord.xy *= texelSize;
 
     vec2 localCoord = octCoord * float(volumeRes) * texelSize;
@@ -134,9 +171,9 @@ vec3 GetProbeCoord(ivec3 probeIndex, vec2 octCoord, vec2 probeRes, vec2 texelSiz
 
 }
 
-vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
+vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, int cascadeIndex) {
 
-    float minAxialDistance = min3(ddgiData.cellSize.xyz);
+    float minAxialDistance = min3(ddgiData.cascades[cascadeIndex].cellSize.xyz);
     vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * 
         (0.75 * minAxialDistance) * ddgiData.volumeBias;
 
@@ -149,28 +186,29 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
     totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
     vec2 momTexelSize = 1.0 / totalResolution;
 
-    vec3 localPosition = biasedP - ddgiData.volumeMin.xyz;
-    ivec3 baseCell = ivec3(localPosition / ddgiData.cellSize.xyz);
+    vec3 localPosition = biasedP - ddgiData.cascades[cascadeIndex].volumeMin.xyz;
+    ivec3 baseCell = ivec3(localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz);
 
     float sumWeight = 0.0;
     vec3 sumIrradiance = vec3(0.0);
 
-    float sumWeightCheb = 0.0;
-    vec3 sumIrradianceCheb = vec3(0.0);
+    float sumWeightIgnoredState = 0.0;
+    vec3 sumIrradianceIgnoredState = vec3(0.0);
 
-    vec3 alpha = localPosition / ddgiData.cellSize.xyz - vec3(baseCell);
+    vec3 alpha = localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz - vec3(baseCell);
+
+    float totalVisibility = 0.0;
 
     for (int i = 0; i < 8; i++) {
         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
-        ivec3 gridCell = min(baseCell + offset, ddgiData.volumeProbeCount.xyz - ivec3(1));
+        ivec3 gridCell = clamp(baseCell + offset, ivec3(0), ddgiData.volumeProbeCount.xyz - ivec3(1));
 
-        uint probeIdx = GetProbeIdx(gridCell);
+        uint probeIdx = GetProbeIdx(gridCell, cascadeIndex);
         uint probeState = GetProbeState(probeIdx);
-        if (probeState == PROBE_STATE_INACTIVE) continue;
 
         vec3 probeOffset = probeOffsets[probeIdx].xyz;
-        vec3 probePos = vec3(gridCell) * ddgiData.cellSize.xyz +
-            probeOffset + ddgiData.volumeMin.xyz;
+        vec3 probePos = vec3(gridCell) * ddgiData.cascades[cascadeIndex].cellSize.xyz +
+            probeOffset + ddgiData.cascades[cascadeIndex].volumeMin.xyz;
         vec3 pointToProbe = probePos - P;
         vec3 L = normalize(pointToProbe);
 
@@ -183,46 +221,115 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
         // Should be used when the chebyshev test is weighted more
         //float weight = sqr((dot(L, geometryNormal) + 1.0) * 0.5) + 0.2;
         float weight = dot(L, geometryNormal);
-        if (weight < 0.0) continue;
-
+        
+#ifdef DDGI_VISIBILITY
         vec2 momOctCoord = UnitVectorToOctahedron(biasedProbeToPosition);
-        vec3 momCoord = GetProbeCoord(gridCell, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
+        vec3 momCoord = GetProbeCoord(gridCell, cascadeIndex, momOctCoord, momRes, momTexelSize, ddgiData.volumeMomentsRes);
         vec2 temp = textureLod(momentsVolume, momCoord, 0).rg;
         float mean = temp.x;
         float mean2 = temp.y;
 
-        float weightCheb = weight;
-
+        float visibilityWeight = 1.0;
         if (biasedDistToProbe > mean) {            
             float variance = abs(mean * mean - mean2);
             float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
-            weight *= max(0.0, visibility * visibility * visibility);
+            visibilityWeight *= max(0.0, visibility * visibility * visibility);
+            totalVisibility += visibilityWeight;
+        }
+        else {
+            totalVisibility += 1.0;
         }
 
+        weight *= max(0.05, visibilityWeight);
+#endif
+
         weight = max(0.000001, weight);
-        weightCheb = max(0.000001, weightCheb);
 
         float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
         weight *= trilinearWeight;
-        weightCheb *= trilinearWeight;
 
-        vec3 irrCoord = GetProbeCoord(gridCell, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
+        vec3 irrCoord = GetProbeCoord(gridCell, cascadeIndex, irrOctCoord, irrRes, irrTexelSize, ddgiData.volumeIrradianceRes);
         vec3 irradiance = pow(textureLod(irradianceVolume, irrCoord, 0).rgb, vec3(0.5 * ddgiData.volumeGamma));
 
+        float weightIgnoredState = weight;
+        weight = probeState != PROBE_STATE_INACTIVE ? weight : 0.0;
+
         sumIrradiance += weight * irradiance;
-        sumIrradianceCheb += weightCheb * irradiance;
         sumWeight += weight;
-        sumWeightCheb += weightCheb;
+
+        sumIrradianceIgnoredState += weightIgnoredState * irradiance;
+        sumWeightIgnoredState += weightIgnoredState;
     }
 
-    if (sumWeight == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
-    vec4 irradiance = vec4(mix(sqr(sumIrradianceCheb / sumWeightCheb),
-        sqr(sumIrradiance / sumWeight), sumWeight), 0.0);
+    if (sumWeight == 0.0 && sumWeightIgnoredState == 0.0) return vec4(0.0, 0.0, 0.0, 0.0);
+
+    // If no probes are activated for the given geometry, at least use the information available
+    vec4 irradiance = sumWeight > 0.0 ? vec4(sqr(sumIrradiance / sumWeight), 0.0) 
+        : vec4(sqr(sumIrradianceIgnoredState / sumWeightIgnoredState), 0.0);
 
     // Due to the texture format we loose a bit of energy
     irradiance *= 1.0989;
 
     return irradiance;
+
+}
+
+vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
+
+    int cascadeIndex = 0;
+    while (cascadeIndex < ddgiData.cascadeCount) {
+
+        bool isInside = IsInsideCascade(P, cascadeIndex);
+        if (!isInside)
+            break;
+
+        cascadeIndex++;
+    }
+
+    return GetLocalIrradianceFromCascade(P, V, N, geometryNormal, max(cascadeIndex - 1, 0));
+
+}
+
+vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
+
+    // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
+    int cascadeIndex = 0;
+    while (cascadeIndex < ddgiData.cascadeCount) {
+
+        bool isInside = IsInsideCascade(P, cascadeIndex);
+        if (!isInside)
+            break;
+
+        cascadeIndex++;
+    }
+
+    cascadeIndex = max(cascadeIndex - 1, 0);
+
+    // Shrink AABB to get a proper blend distance
+    vec3 aabbMin = ddgiData.volumeCenter.xyz - ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
+    vec3 aabbMax = ddgiData.volumeCenter.xyz + ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
+
+    vec3 closestPoint = clamp(P, aabbMin, aabbMax);
+    float distanceToAABB = distance(P, closestPoint);
+
+    float minAxialDistance = min3(ddgiData.cascades[cascadeIndex].cellSize.xyz);
+    float alpha = min(distanceToAABB / minAxialDistance, 1.0);
+
+    vec4 irradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex);
+
+    if (alpha > 0.0 && cascadeIndex > 0) {
+
+        vec4 outerIrradiance = GetLocalIrradianceFromCascade(P, V, N, geometryNormal, cascadeIndex - 1);
+        irradiance = mix(irradiance, outerIrradiance, alpha);
+
+    }
+    else if (alpha > 0.0 && cascadeIndex == 0) {
+
+        irradiance = mix(irradiance, vec4(globalProbeIrradiance, 0.0), max(0.0, 2.0 * (alpha - 0.5)));
+
+    }
+
+    return vec4(irradiance);
 
 }
 

@@ -3,7 +3,6 @@
 #include "../System.h"
 #include "../common/Image.h"
 #include "../common/Path.h"
-#include "AssetLoader.h"
 #include "../Log.h"
 
 #include <vector>
@@ -36,16 +35,12 @@ namespace Atlas {
                 const auto normalizedFileName = Common::Path::Normalize(filename);
 
                 Common::Image<T> image;
-                auto fileStream = AssetLoader::ReadFile(normalizedFileName, std::ios::in | std::ios::binary);
+                auto buffer = ReadFileContent(normalizedFileName);
 
-                if (!fileStream.is_open()) {
+                if (buffer.size() == 0) {
                     Log::Error("Failed to load image " + normalizedFileName);
                     return CreateRef(image);
                 }
-
-                auto buffer = AssetLoader::GetFileContent(fileStream);
-
-                fileStream.close();
 
                 int32_t width, height, channels;
                 void* data = nullptr;
@@ -108,6 +103,7 @@ namespace Atlas {
                 }
 
                 image.fileName = normalizedFileName;
+                image.srgbConversion = colorSpaceConversion;
 
                 Log::Message("Loaded image " + normalizedFileName);
 
@@ -126,19 +122,18 @@ namespace Atlas {
 
                 const auto normalizedFileName = Common::Path::Normalize(filename);
 
-                std::ofstream imageStream;
-
-                if (image->fileFormat == Common::ImageFormat::PGM) {
-                    imageStream = AssetLoader::WriteFile(normalizedFileName, std::ios::out);
-                }
-                else {
-                    imageStream = AssetLoader::WriteFile(normalizedFileName, std::ios::out | std::ios::binary);
-                }
+                std::ofstream imageStream = OpenWriteFileStream(normalizedFileName, image->fileFormat);
 
                 if (!imageStream.is_open()) {
                     Log::Error("Couldn't write image " + normalizedFileName);
                     return;
                 }
+
+                /*
+                if (image->srgbConversion) {
+                    image->LinearToGamma();
+                }
+                */
 
                 auto lambda = [](void* context, void* data, int32_t size) {
                     auto imageStream = (std::ofstream*)context;
@@ -181,6 +176,10 @@ namespace Atlas {
             }
 
         private:
+            static std::vector<char> ReadFileContent(const std::string& filename);
+
+            static std::ofstream OpenWriteFileStream(const std::string& filename, Common::ImageFormat format);
+
             template<typename T>
             static void SavePGM(Ref<Common::Image<T>>& image, std::ofstream& imageStream) {
 
@@ -210,7 +209,7 @@ namespace Atlas {
                     imageStream << " ";
                 }
 
-            }
+            }           
 
         };
 

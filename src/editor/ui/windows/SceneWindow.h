@@ -46,12 +46,21 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity cameraEntity;
 
+        bool snappingEnabled = false;
+        float translationSnap = 0.1f;
+        float rotationSnap = 1.0f;
+        float scaleSnap = 0.01f;
+
         float cameraMovementSpeed = 7.0f;
         float cameraRotationSpeed = 1.5f;
+
+        float resolutionScale = 0.75f;
 
         // Imguizmo translate mode
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
+
+        bool depthTestBoundingVolumes = false;
 
         bool hasMainCamera = false;
         bool hasPlayer = false;

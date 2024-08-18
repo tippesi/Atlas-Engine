@@ -45,6 +45,16 @@ namespace Atlas::Editor {
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab.png") },
+                { IconType::Eye, Texture::Texture2D("editor/icons/eye.png") },
+                { IconType::Move, Texture::Texture2D("editor/icons/move.png") },
+                { IconType::Scale, Texture::Texture2D("editor/icons/scale.png") },
+                { IconType::Rotate, Texture::Texture2D("editor/icons/rotate.png") },
+                { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/moreHoriz.png") },
+                { IconType::MoreVertical, Texture::Texture2D("editor/icons/moreVert.png") },
+                { IconType::Material, Texture::Texture2D("editor/icons/material.png") },
+                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource.png") },
+                { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment.png") },
+                { IconType::Delete, Texture::Texture2D("editor/icons/delete.png") },
             };
         }
         else {
@@ -65,6 +75,16 @@ namespace Atlas::Editor {
                 { IconType::ArrowLeft, Texture::Texture2D("editor/icons/arrowLeft_light.png") },
                 { IconType::ArrowRight, Texture::Texture2D("editor/icons/arrowRight_light.png") },
                 { IconType::Prefab, Texture::Texture2D("editor/icons/prefab_light.png") },
+                { IconType::Eye, Texture::Texture2D("editor/icons/eye_light.png") }, 
+                { IconType::Move, Texture::Texture2D("editor/icons/move_light.png") },
+                { IconType::Scale, Texture::Texture2D("editor/icons/scale_light.png") },
+                { IconType::Rotate, Texture::Texture2D("editor/icons/rotate_light.png") },
+                { IconType::MoreHorizontal, Texture::Texture2D("editor/icons/moreHoriz_light.png") },
+                { IconType::MoreVertical, Texture::Texture2D("editor/icons/moreVert_light.png") },
+                { IconType::Material, Texture::Texture2D("editor/icons/material_light.png") },
+                { IconType::MeshSource, Texture::Texture2D("editor/icons/meshSource_light.png") },
+                { IconType::EnvironmentImage, Texture::Texture2D("editor/icons/environment_light.png") },
+                { IconType::Delete, Texture::Texture2D("editor/icons/delete_light.png") },
             };
         }
 

@@ -56,12 +56,15 @@ namespace Atlas {
             CheckInitialization();
 
             auto relativePath = GetAssetDirectoryPath(path);
-            auto handle = GetHandleOrCreateResource(relativePath, origin);
+            auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[relativePath]->Load(std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
-                handle = ResourceHandle<T>(resources[relativePath]);
+                auto resource = GetResourceInternal(relativePath);
+                resource->Load(std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
+                handle = ResourceHandle<T>(resource);
             }
+
+            handle.WaitForLoad();
 
             return handle;
 
@@ -98,12 +101,15 @@ namespace Atlas {
             CheckInitialization();
 
             auto relativePath = GetAssetDirectoryPath(path);
-            auto handle = GetHandleOrCreateResource(relativePath, origin);
+            auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[relativePath]->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
-                handle = ResourceHandle<T>(resources[relativePath]);
+                auto resource = GetResourceInternal(relativePath);
+                resource->LoadWithExternalLoader(loaderFunction, std::forward<Args>(args)...);
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
+                handle = ResourceHandle<T>(resource);
             }
+
+            handle.WaitForLoad();
 
             return handle;
 
@@ -126,13 +132,14 @@ namespace Atlas {
             CheckInitialization();
 
             auto relativePath = GetAssetDirectoryPath(path);
-            auto handle = GetHandleOrCreateResource(relativePath, origin);
+            auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[relativePath]->future = std::async(std::launch::async,
-                    &Resource<T>::template Load<Args...>,
-                    resources[relativePath].get(), std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
-                handle = ResourceHandle<T>(resources[relativePath]);
+                auto resource = GetResourceInternal(relativePath);
+                JobSystem::Execute(resource->jobGroup, [resource, args...](JobData&) {
+                    resource->Load(args...);
+                });
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
+                handle = ResourceHandle<T>(resource);
             }
 
             return handle;
@@ -170,13 +177,14 @@ namespace Atlas {
             CheckInitialization();
 
             auto relativePath = GetAssetDirectoryPath(path);
-            auto handle = GetHandleOrCreateResource(relativePath, origin);
+            auto handle = GetHandleOrCreateResourceInternal(relativePath, origin);
             if (!handle.IsValid()) {
-                resources[relativePath]->future = std::async(std::launch::async,
-                    &Resource<T>::template LoadWithExternalLoader<Args...>,
-                    resources[relativePath].get(), loaderFunction, std::forward<Args>(args)...);
-                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resources[relativePath]);
-                handle = ResourceHandle<T>(resources[relativePath]);
+                auto resource = GetResourceInternal(relativePath);
+                JobSystem::Execute(resource->jobGroup, [resource, loaderFunction, args...](JobData&) {
+                    resource->LoadWithExternalLoader(loaderFunction, args...);
+                });
+                NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
+                handle = ResourceHandle<T>(resource);
             }
 
             return handle;
@@ -259,7 +267,7 @@ namespace Atlas {
             std::vector<ResourceHandle<T>> resourceHandles;
 
             for (auto& [_, resource] : resources) {
-                if (!resource->origin == origin)
+                if (resource->origin != origin)
                     continue;
                 resourceHandles.emplace_back(resource);
             }
@@ -321,13 +329,13 @@ namespace Atlas {
             if (isInitialized.compare_exchange_strong(expected, true)) {
                 Events::EventManager::FrameEventDelegate.Subscribe(
                     ResourceManager<T>::UpdateHandler);
-                Events::EventManager::QuitEventDelegate.Subscribe(
+                Events::EventManager::ShutdownEventDelegate.Subscribe(
                     ResourceManager<T>::ShutdownHandler);
             }
 
         }
 
-        static inline ResourceHandle<T> GetHandleOrCreateResource(const std::string& path, ResourceOrigin origin) {
+        static inline ResourceHandle<T> GetHandleOrCreateResourceInternal(const std::string& path, ResourceOrigin origin) {
             std::lock_guard lock(mutex);
             if (resources.contains(path)) {
                 auto& resource = resources[path];
@@ -337,6 +345,11 @@ namespace Atlas {
 
             resources[path] = std::make_shared<Resource<T>>(path, origin);
             return ResourceHandle<T>();
+        }
+
+        static inline Ref<Resource<T>> GetResourceInternal(const std::string& path) {
+            std::lock_guard lock(mutex);
+            return resources[path];
         }
 
         static inline std::string GetAssetDirectoryPath(const std::string& path) {
@@ -376,6 +389,13 @@ namespace Atlas {
         }
 
         static void ShutdownHandler() {
+         
+            for (const auto& [_, resource] : resources) {
+                if (!resource->future.valid())
+                    continue;
+                resource->future.wait();
+                resource->future.get();
+            }
 
             resources.clear();
 

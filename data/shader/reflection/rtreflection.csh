@@ -47,6 +47,9 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     uint frameSeed;
     float bias;
     int textureLevel;
+    float roughnessCutoff;
+    int halfRes;
+    ivec2 resolution;
     Shadow shadow;
 } uniforms;
 
@@ -56,7 +59,7 @@ float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
 
-    ivec2 resolution = ivec2(imageSize(rtrImage));
+    ivec2 resolution = uniforms.resolution;
 
     if (int(gl_GlobalInvocationID.x) < resolution.x &&
         int(gl_GlobalInvocationID.y) < resolution.y) {
@@ -65,12 +68,18 @@ void main() {
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+        // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
         ivec2 offset = offsets[offsetIdx];
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
-        vec2 recontructTexCoord = (2.0 * vec2(pixel) + offset + vec2(0.5)) / (2.0 * vec2(resolution));
+        vec2 recontructTexCoord;
+        if (uniforms.halfRes > 0)
+            recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
+        else
+            recontructTexCoord = (vec2(pixel) + 0.5) / (vec2(resolution));
+            
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
@@ -90,7 +99,7 @@ void main() {
 
         vec3 reflection = vec3(0.0);
 
-        if (material.roughness < 1.0 && depth < 1.0) {
+        if (material.roughness <= 1.0 && depth < 1.0) {
 
             float alpha = sqr(material.roughness);
 
@@ -99,55 +108,52 @@ void main() {
 
             Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
-            const uint sampleCount = 1u;
-            for (uint i = 0; i < sampleCount; i++) {
-                Ray ray;
+            Ray ray;
+            blueNoiseVec.y *= (1.0 - uniforms.bias);
 
-                blueNoiseVec.y *= (1.0 - uniforms.bias);
+            float pdf = 1.0;
+            BRDFSample brdfSample;
+            if (material.roughness > 0.01) {
+                ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
+                    ray.direction, pdf);
+            }
+            else {
+                ray.direction = normalize(reflect(-V, N));
+            }
 
-                float pdf = 1.0;
-                BRDFSample brdfSample;
-                if (material.roughness > 0.02) {
-                    ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
-                        ray.direction, pdf);
-                }
-                else {
-                    ray.direction = normalize(reflect(-V, N));
-                }
+            bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
+                !isnan(ray.direction.z) || dot(N, ray.direction) >= 0.0;
 
-                if (isnan(ray.direction.x) ||isnan(ray.direction.y) || isnan(ray.direction.z) || dot(N, ray.direction) < 0.0) {
-                    continue;
-                }
-
-                ray.origin = worldPos + ray.direction * EPSILON + worldNorm * EPSILON;
+            if (isRayValid) {
+                // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
+                float viewOffset = max(1.0, length(viewPos)) * 0.1;
+                ray.origin = worldPos + ray.direction * EPSILON * 0.1 * viewOffset + worldNorm * EPSILON * viewOffset * 0.1;
 
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
 
                 vec3 radiance = vec3(0.0);
 
-                if (material.roughness < 0.9) {
-#ifdef OPACITY_CHECK
-                    HitClosestTransparency(ray, 10e-9, INF);
-#else
-                    HitClosest(ray, 10e-9, INF);
-#endif
+                if (material.roughness <= uniforms.roughnessCutoff) {
+    #ifdef OPACITY_CHECK
+                    HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
+    #else
+                    HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
+    #endif
 
                     radiance = EvaluateHit(ray);
                 }
                 else {
-#ifdef GI
+    #ifdef DDGI
                     radiance = GetLocalIrradiance(worldPos, V, N).rgb;
                     radiance = IsInsideVolume(worldPos) ? radiance : vec3(0.0);
-#endif
+    #endif
                 }
 
                 float radianceMax = max(max(max(radiance.r, 
-                        max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
-                reflection += radiance * (uniforms.radianceLimit / radianceMax);
+                    max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
+                reflection = radiance * (uniforms.radianceLimit / radianceMax);
             }
-
-            reflection /= float(sampleCount);
 
         }
 
@@ -179,7 +185,7 @@ vec3 EvaluateHit(inout Ray ray) {
     radiance += EvaluateDirectLight(surface);
 
     // Evaluate indirect lighting
-#ifdef GI
+#ifdef DDGI
     vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
     // Approximate indirect specular for ray by using the irradiance grid
     // This enables metallic materials to have some kind of secondary reflection
@@ -231,7 +237,7 @@ float CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAnyTransparency(ray, 0.0, lightDistance - 2.0 * EPSILON);
+        return HitAnyTransparency(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON);
     }
     else {
         return 0.0;

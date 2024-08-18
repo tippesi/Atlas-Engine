@@ -3,12 +3,10 @@
 #include "../System.h"
 
 #include "../common/Image.h"
-#include "../loader/ImageLoader.h"
 
 #include "../common/Ref.h"
 #include "../graphics/Image.h"
 #include "../graphics/Sampler.h"
-#include "../graphics/CommandList.h"
 #include "../graphics/GraphicsDevice.h"
 
 #include <unordered_map>
@@ -55,7 +53,7 @@ namespace Atlas {
              * @param set
              * @param binding
              */
-            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding);
+            void Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const;
 
             /**
              * Validates a texture.
@@ -101,6 +99,11 @@ namespace Atlas {
             template<typename T> std::vector<T> GetData(int32_t depth = 0);
 
             /**
+             * Resets the texture and therefore releasing the image and sampler
+             */
+            void Reset();
+
+            /**
              *
              */
             void GenerateMipmap();
@@ -128,7 +131,7 @@ namespace Atlas {
                 int32_t width, int32_t height, int32_t depth);
 
             void Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height,
-                int32_t depth, Filtering filtering, Wrapping wrapping);
+                int32_t depth, Filtering filtering, Wrapping wrapping, bool dedicatedMemory = false);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
 

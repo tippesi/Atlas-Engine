@@ -3,6 +3,7 @@
 #include "Singletons.h"
 #include "Serialization.h"
 #include "Notifications.h"
+#include "ContentDiscovery.h"
 #include "ui/panels/PopupPanels.h"
 #include <ImGuizmo.h>
 
@@ -17,6 +18,8 @@ const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 namespace Atlas::Editor {
 
     void App::LoadContent() {
+
+        ContentDiscovery::Update();
 
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
@@ -38,12 +41,12 @@ namespace Atlas::Editor {
         Singletons::imguiWrapper = CreateRef<ImguiExtension::ImguiWrapper>();
         Singletons::imguiWrapper->Load(&window);
         Singletons::config = CreateRef<Config>();
-       
 
         Serialization::DeserializeConfig();
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
+        Singletons::blockingOperation = CreateRef<BlockingOperation>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
         Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
@@ -69,6 +72,7 @@ namespace Atlas::Editor {
         }
 
         Serialization::SerializeConfig();
+        ContentDiscovery::Shutdown();
 
         Singletons::Destruct();
 
@@ -78,7 +82,15 @@ namespace Atlas::Editor {
 
         const ImGuiIO &io = ImGui::GetIO();
 
+        ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
+
+        Singletons::blockingOperation->Update();
+
+        if (Singletons::blockingOperation->block)
+            return;
+
+        contentBrowserWindow.Update();
 
         // Create new windows for fully loaded scenes
         for (size_t i = 0; i < waitToLoadScenes.size(); i++) {
@@ -186,12 +198,13 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
-        graphicsDevice->WaitForPreviousFrameCompletion();
+        graphicsDevice->WaitForPreviousFrameSubmission();
 
-        
+
+#ifdef AE_BINDLESS
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
-        auto buildRTStructure = [&]() {
+        auto buildRTStructure = [&](JobData) {
             auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
 
             for (const auto& mesh : sceneMeshes) {
@@ -199,23 +212,23 @@ namespace Atlas::Editor {
                     continue;
                 if (mesh->IsBVHBuilt())
                     continue;
-                mesh->BuildBVH();
+                JobSystem::Execute(bvhBuilderGroup, [mesh](JobData&) {
+                    mesh->BuildBVH(false);
+                });
             }
             };
 
-        if (!bvhBuilderFuture.valid()) {
-            bvhBuilderFuture = std::async(std::launch::async, buildRTStructure);
+        if (bvhBuilderGroup.HasFinished()) {
+            JobSystem::Execute(bvhBuilderGroup, buildRTStructure);
             return;
         }
-        else if(bvhBuilderFuture.wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
-            bvhBuilderFuture.get();
-        }
+#endif
         
     }
 
     void App::Render(float deltaTime) {
 
-        graphicsDevice->WaitForPreviousFrameCompletion();
+        graphicsDevice->WaitForPreviousFrameSubmission();
 
         auto windowFlags = window.GetFlags();
         if (windowFlags & AE_WINDOW_HIDDEN || windowFlags & AE_WINDOW_MINIMIZED || !(windowFlags & AE_WINDOW_SHOWN)) {
@@ -223,6 +236,12 @@ namespace Atlas::Editor {
         }
 
         auto& config = Singletons::config;
+
+        auto swapChainVsync = graphicsDevice->swapChain->presentMode == VK_PRESENT_MODE_FIFO_KHR;
+        if (swapChainVsync != config->vsync) {
+            if (config->vsync) graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_FIFO_KHR, Atlas::Graphics::SRGB_NONLINEAR);
+            else graphicsDevice->CreateSwapChain(VK_PRESENT_MODE_IMMEDIATE_KHR, Atlas::Graphics::SRGB_NONLINEAR);
+        }
 
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
@@ -255,13 +274,19 @@ namespace Atlas::Editor {
 
         if (ImGui::BeginMainMenuBar()) {
             static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
+            bool saveScene = false;
             if (ImGui::BeginMenu("File")) {
+                /*
                 ImGui::MenuItem("Open project", nullptr, &openProject);
                 ImGui::MenuItem("Save project", nullptr, &saveProject);
                 ImGui::Separator();
+                */
                 ImGui::MenuItem("New scene", nullptr, &newScene);
+                ImGui::MenuItem("Save scene", nullptr, &saveScene);
+                /*
                 ImGui::Separator();
                 ImGui::MenuItem("Import files", nullptr, &importFiles);
+                */
                 ImGui::EndMenu();
             }
 
@@ -282,6 +307,7 @@ namespace Atlas::Editor {
             }
 
             if (ImGui::BeginMenu("Renderer")) {
+                ImGui::MenuItem("VSync", nullptr, &config->vsync);
                 ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
                 ImGui::EndMenu();
             }
@@ -291,20 +317,26 @@ namespace Atlas::Editor {
                 newScene = false;
             }
 
+            if (saveScene) {
+                auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
+                if (activeSceneWindow != nullptr)
+                    activeSceneWindow->SaveScene();                      
+            }
+
             ImGui::EndMainMenuBar();
         }
 
         UI::PopupPanels::Render();
-
-        contentBrowserWindow.Render();
-        logWindow.Render();
-        profilerWindow.Render();
 
         geometryBrushWindow.Render(sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx]);
 
         for (auto& sceneWindow : sceneWindows) {
             sceneWindow->Render();
         }
+
+        contentBrowserWindow.Render();
+        logWindow.Render();
+        profilerWindow.Render();
 
         Notifications::Display();
 
@@ -324,7 +356,7 @@ namespace Atlas::Editor {
         ImGui::DockBuilderAddNode(dsID);
 
         ImGuiID dsIdUp, dsIdDown;
-        ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.8f, &dsIdUp, &dsIdDown);
+        ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Up, 0.7f, &dsIdUp, &dsIdDown);
 
         for (auto& sceneWindow : sceneWindows) {
             ImGui::DockBuilderDockWindow(sceneWindow->GetNameID(), dsIdUp);

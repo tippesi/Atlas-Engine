@@ -13,9 +13,10 @@ namespace Atlas {
             VkBufferCreateInfo bufferInfo = {};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = desc.size;
-            bufferInfo.usage = desc.usageFlags;
+            bufferInfo.usage = desc.usageFlags;            
 
             VmaAllocationCreateInfo allocationCreateInfo = {};
+            allocationCreateInfo.priority = desc.priority;
             if (desc.domain == BufferDomain::Host) {
                 allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
                 allocationCreateInfo.flags = desc.hostAccess == BufferHostAccess::Random ?
@@ -25,6 +26,12 @@ namespace Atlas {
             else {
                 allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             }
+
+            if (desc.priority == 1.0f)
+                allocationCreateInfo.pool = memoryManager->hightPriorityBufferPool;
+
+            if (desc.dedicatedMemory)
+                allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
             if (alignment == 0) {
                 VK_CHECK(vmaCreateBuffer(memoryManager->allocator, &bufferInfo,

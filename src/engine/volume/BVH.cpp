@@ -11,12 +11,6 @@ namespace Atlas {
 
     namespace Volume {
 
-        uint32_t BVHBuilder::maxDepth = 0;
-        uint32_t BVHBuilder::maxTriangles = 0;
-        uint32_t BVHBuilder::minTriangles = 10000;
-        uint32_t BVHBuilder::spatialSplitCount = 0;
-        float BVHBuilder::totalSurfaceArea = 0.0f;
-
         BVH::BVH(const std::vector<AABB>& aabbs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
 
             Tools::PerformanceCounter perfCounter;
@@ -39,7 +33,10 @@ namespace Atlas {
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
             auto builder = new BVHBuilder(aabb, 0, refs.size(), minOverlap, 256);
 
-            builder->Build(refs, data, parallelBuild);
+            JobGroup group { JobPriority::Low };
+            builder->Build(refs, data, group, parallelBuild);
+            JobSystem::Wait(group);
+
             refs.reserve(data.size());
 
             builder->Flatten(nodes, refs);
@@ -72,9 +69,11 @@ namespace Atlas {
             for (auto& ref : refs)
                 aabb.Grow(aabbs[ref.idx]);
 
-            auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
+            auto builder = new BVHBuilder(aabb, 0, refs.size(), 64);
 
-            builder->Build(refs, parallelBuild);
+            JobGroup group { JobPriority::Medium };
+            builder->Build(refs, group, parallelBuild);
+            JobSystem::Wait(group);
 
             refs.reserve(data.size());
 
@@ -230,8 +229,6 @@ namespace Atlas {
             // Calculate cost for current node
             nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
 
-            totalSurfaceArea += this->aabb.GetSurfaceArea();
-
         }
 
         BVHBuilder::BVHBuilder(const AABB aabb, uint32_t depth, size_t refCount, const uint32_t binCount) :
@@ -239,8 +236,6 @@ namespace Atlas {
 
             // Calculate cost for current node
             nodeCost = float(refCount) * this->aabb.GetSurfaceArea();
-
-            totalSurfaceArea += this->aabb.GetSurfaceArea();
 
         }
 
@@ -251,7 +246,7 @@ namespace Atlas {
 
         }
 
-        void BVHBuilder::Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data, bool parallelBuild) {
+        void BVHBuilder::Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data, JobGroup& jobGroup, bool parallelBuild) {
 
             const size_t refCount = 2;
             // Create leaf node
@@ -303,9 +298,6 @@ namespace Atlas {
                     PerformObjectSplit(refs, rightRefs, leftRefs, objectSplit);
                     split = objectSplit;
                 }
-                else {
-                    spatialSplitCount++;
-                }
             }
 
             // Last resort. This could happend due to spatial unsplitting
@@ -315,40 +307,40 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 5 && parallelBuild) {
-                auto leftLambda = [&]() {
-                    if (!leftRefs.size()) return;
-                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
-                    leftChild->Build(leftRefs, data, parallelBuild);
+            if (depth <= 6 && parallelBuild) {
+                auto leftRefSize = leftRefs.size(), rightRefSize = rightRefs.size();
+                auto leftLambda = [=, &jobGroup, leftRefs = std::move(leftRefs)](JobData&) {
+                    auto refs = std::move(leftRefs);
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, refs.size(), binCount);
+                    leftChild->Build(refs, jobGroup, parallelBuild);
                 };
 
-                auto rightLambda = [&]() {
-                    if (!rightRefs.size()) return;
-                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
-                    rightChild->Build(rightRefs, data, parallelBuild);
+                auto rightLambda = [=, &jobGroup, rightRefs = std::move(rightRefs)](JobData&) {
+                    auto refs = std::move(rightRefs);
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, refs.size(), binCount);
+                    rightChild->Build(refs, jobGroup, parallelBuild);
                 };
 
-                auto leftBuilderFuture = std::async(leftLambda);
-                auto rightBuilderFuture = std::async(rightLambda);
-
-                leftBuilderFuture.get();
-                rightBuilderFuture.get();
-            }
+                if (leftRefSize > 0)
+                    JobSystem::Execute(jobGroup, leftLambda);
+                if (rightRefSize > 0)
+                    JobSystem::Execute(jobGroup, rightLambda);
+            }   
             else {
                 if (leftRefs.size()) {
-                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), minOverlap, binCount);
-                    leftChild->Build(leftRefs, data, parallelBuild);
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
+                    leftChild->Build(leftRefs, jobGroup, parallelBuild);
                 }
 
                 if (rightRefs.size()) {
-                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), minOverlap, binCount);
-                    rightChild->Build(rightRefs, data, parallelBuild);
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
+                    rightChild->Build(rightRefs, jobGroup, parallelBuild);
                 }
             }
 
         }
 
-        void BVHBuilder::Build(std::vector<Ref>& refs, bool parallelBuild) {
+        void BVHBuilder::Build(std::vector<Ref>& refs, JobGroup& jobGroup, bool parallelBuild) {
 
             // Create leaf node
             if (refs.size() == 1) {
@@ -380,35 +372,34 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 5 && parallelBuild) {
-                auto leftLambda = [&]() {
-                    if (!leftRefs.size()) return;
-                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
-                    leftChild->Build(leftRefs, parallelBuild);
+            if (depth <= 6 && parallelBuild) {
+                auto leftRefSize = leftRefs.size(), rightRefSize = rightRefs.size();
+                auto leftLambda = [=, &jobGroup, leftRefs = std::move(leftRefs)](JobData&) {
+                    auto refs = std::move(leftRefs);
+                    leftChild = new BVHBuilder(split.leftAABB, depth + 1, refs.size(), binCount);
+                    leftChild->Build(refs, jobGroup, parallelBuild);
                 };
 
-                auto rightLambda = [&]() {
-                    if (!rightRefs.size()) return;
-                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
-                    rightChild->Build(rightRefs, parallelBuild);
+                auto rightLambda = [=, &jobGroup, rightRefs = std::move(rightRefs)](JobData&) {
+                    auto refs = std::move(rightRefs);
+                    rightChild = new BVHBuilder(split.rightAABB, depth + 1, refs.size(), binCount);
+                    rightChild->Build(refs, jobGroup, parallelBuild);
                 };
 
-                auto leftBuilderFuture = std::async(leftLambda);
-                auto rightBuilderFuture = std::async(rightLambda);
-
-                leftBuilderFuture.get();
-                rightBuilderFuture.get();
-
-            }
+                if (leftRefSize > 0)
+                    JobSystem::Execute(jobGroup, leftLambda);
+                if (rightRefSize > 0)
+                    JobSystem::Execute(jobGroup, rightLambda);
+            }   
             else {
                 if (leftRefs.size()) {
                     leftChild = new BVHBuilder(split.leftAABB, depth + 1, leftRefs.size(), binCount);
-                    leftChild->Build(leftRefs, parallelBuild);
+                    leftChild->Build(leftRefs, jobGroup, parallelBuild);
                 }
 
                 if (rightRefs.size()) {
                     rightChild = new BVHBuilder(split.rightAABB, depth + 1, rightRefs.size(), binCount);
-                    rightChild->Build(rightRefs, parallelBuild);
+                    rightChild->Build(rightRefs, jobGroup, parallelBuild);
                 }
             }
 
@@ -866,10 +857,6 @@ namespace Atlas {
         void BVHBuilder::CreateLeaf(std::vector<Ref>& refs) {
 
             this->refs = refs;
-
-            maxDepth = std::max(depth, maxDepth);
-            minTriangles = std::min(uint32_t(refs.size()), minTriangles);
-            maxTriangles = std::max(uint32_t(refs.size()), maxTriangles);
 
         }
 

@@ -1,8 +1,8 @@
-#ifndef AE_BVH_H
-#define AE_BVH_H
+#pragma once
 
 #include "AABB.h"
 #include "Ray.h"
+#include "jobsystem/JobSystem.h"
 
 #include <vector>
 #include <algorithm>
@@ -49,9 +49,9 @@ namespace Atlas {
 
             ~BVHBuilder();
 
-            void Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data, bool parallelBuild);
+            void Build(std::vector<Ref>& refs, const std::vector<BVHTriangle>& data, JobGroup& jobGroup, bool parallelBuild);
 
-            void Build(std::vector<Ref>& refs, bool parallelBuild);
+            void Build(std::vector<Ref>& refs, JobGroup& jobGroup, bool parallelBuild);
 
             void Flatten(std::vector<BVHNode>& nodes, std::vector<Ref>& refs);
 
@@ -66,12 +66,6 @@ namespace Atlas {
 
             AABB aabb;
             std::vector<Ref> refs;
-
-            static uint32_t maxDepth;
-            static uint32_t minTriangles;
-            static uint32_t maxTriangles;
-            static uint32_t spatialSplitCount;
-            static float totalSurfaceArea;
 
         private:
             struct Bin {
@@ -146,5 +140,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

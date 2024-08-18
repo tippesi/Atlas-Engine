@@ -93,19 +93,19 @@ void GetOceanGradientAndFold(vec2 texCoord, float dist, out float fold, out vec2
     
     vec4 fade = saturate((fadeoutDistances - vec4(dist)) / fadeDistances);
     if (Uniforms.spectrumCount > 0 && fade[0] > 0.0) {
-        data0 = texture(normalMap, vec3(texCoord / tilingFactors[0], 0.0)) * spectrumScaling.x;
+        data0 = texture(normalMap, vec3(texCoord / tilingFactors[0], 0.0));
         data0 *= fade[0];
     }
     if (Uniforms.spectrumCount > 1 && fade[1] > 0.0) {
-        data1 = texture(normalMap, vec3(texCoord / tilingFactors[1] + vec2(0.25), 1.0)) * spectrumScaling.y;
+        data1 = texture(normalMap, vec3(texCoord / tilingFactors[1] + vec2(0.25), 1.0));
         data1 *= fade[1];
     }
     if (Uniforms.spectrumCount > 2 && fade[2] > 0.0) {
-        data2 = texture(normalMap, vec3(texCoord / tilingFactors[2] + vec2(0.5), 2.0)) * spectrumScaling.z;
+        data2 = texture(normalMap, vec3(texCoord / tilingFactors[2] + vec2(0.5), 2.0));
         data2 *= fade[2];
     }
     if (Uniforms.spectrumCount > 3 && fade[3] > 0.0) {
-        data3 = texture(normalMap, vec3(texCoord / tilingFactors[3] + vec2(0.75), 3.0)) * spectrumScaling.w;
+        data3 = texture(normalMap, vec3(texCoord / tilingFactors[3] + vec2(0.75), 3.0));
         data3 *= fade[3];
     }
 
@@ -114,8 +114,8 @@ void GetOceanGradientAndFold(vec2 texCoord, float dist, out float fold, out vec2
     
     float weightSum = dot(vec4(1.0), spectrumScaling);
     fold = saturate(10.0 * ((data0.a + data1.a + data2.a + data3.a) / weightSum));
-    gradient = ((data0.rg / tilingFactors[0]) + (data1.rg / tilingFactors[1])
-        + (data2.rg / tilingFactors[2]) + (data3.rg / tilingFactors[3])) / weightSum;
+    gradient = ((data0.rg) + (data1.rg)
+        + (data2.rg) + (data3.rg));
     
     //fold *= perlinScale;
     //gradient *= perlinScale;

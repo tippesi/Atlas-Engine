@@ -1,4 +1,4 @@
-#define SHADOW_FILTER_7x7
+#define SHADOW_FILTER_VOGEL
 #define SHADOW_CASCADE_BLENDING
 
 #include <deferred.hsh>
@@ -66,15 +66,17 @@ void main() {
         shadowFactor = CalculateCascadedShadow(uniforms.light.shadow, cascadeMaps, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-uniforms.light.direction.xyz, shadowNormal)));
 #endif
-#ifdef SCREEN_SPACE_SHADOWS
-        float sssFactor = textureLod(sssTexture, texCoord, 0).r;
-        shadowFactor = min(sssFactor, shadowFactor);
-#endif
 #ifdef CLOUD_SHADOWS
         float cloudShadowFactor = CalculateCloudShadow(surface.P, cloudShadowUniforms.cloudShadow, cloudMap);
 
         shadowFactor = min(shadowFactor, cloudShadowFactor);
 #endif
+        float shadowFactorTransmissive = shadowFactor;
+#ifdef SCREEN_SPACE_SHADOWS
+        float sssFactor = textureLod(sssTexture, texCoord, 0).r;
+        shadowFactor = min(sssFactor, shadowFactor);
+#endif
+
         vec3 radiance = uniforms.light.color.rgb * uniforms.light.intensity;
         direct = direct * radiance * surface.NdotL * shadowFactor;
 
@@ -82,11 +84,11 @@ void main() {
             Surface backSurface = CreateSurface(surface.V, -surface.N, surface.L, surface.material);
 
             float viewDependency = saturate(dot(-surface.V, surface.L));
-            viewDependency = sqr(viewDependency);
+            // viewDependency = sqr(viewDependency);
 
             // Direct diffuse BRDF backside
-            directDiffuse = surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
-            direct += directDiffuse * radiance * backSurface.NdotL * shadowFactor;
+            directDiffuse = viewDependency * surface.material.transmissiveColor * EvaluateDiffuseBRDF(backSurface);
+            direct += directDiffuse * radiance * backSurface.NdotL * shadowFactorTransmissive;
         }
 
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {    

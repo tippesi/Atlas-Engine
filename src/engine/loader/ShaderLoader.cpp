@@ -10,7 +10,7 @@ namespace Atlas {
 
         std::string ShaderLoader::sourceDirectory = "";
 
-        Graphics::ShaderStageFile ShaderLoader::LoadFile(const std::string &filename, VkShaderStageFlagBits shaderStage) {
+        Graphics::ShaderStageFile ShaderLoader::LoadFile(const std::string& filename, VkShaderStageFlagBits shaderStage) {
 
             auto path = sourceDirectory.length() != 0 ? sourceDirectory + "/" : "";
             path += filename;
@@ -23,7 +23,7 @@ namespace Atlas {
             // Erase all versioning qualifiers, will be filled automatically
             std::string removeVersion = "#version";
             auto pos = code.find(removeVersion);
-            while(pos != std::string::npos) {
+            while (pos != std::string::npos) {
                 code.erase(pos, removeVersion.length() + size_t(4));
                 pos = code.find(removeVersion);
             }
@@ -52,7 +52,7 @@ namespace Atlas {
 
         }
 
-        void ShaderLoader::SetSourceDirectory(const std::string &directory) {
+        void ShaderLoader::SetSourceDirectory(const std::string& directory) {
 
             sourceDirectory = directory;
 

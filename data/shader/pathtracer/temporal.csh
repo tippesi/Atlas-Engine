@@ -7,6 +7,7 @@
 #include <../common/material.hsh>
 #include <../common/random.hsh>
 #include <../common/normalencode.hsh>
+#include <../common/edgePreserving.hsh>
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -175,21 +176,21 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    confidence *= pow(abs(dot(historyNormal, normal)), 16.0);
+    confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
     uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
-    float depthPhi = max(1.0, abs(0.25 * linearDepth));
+    float depthPhi = 16.0 / abs(linearDepth);
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth)));
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
     return confidence > 0.1 ? 1.0 : 0.0;
 
 }
 
-bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 historyMoments) {
+bool SampleHistory(ivec2 pixel, vec2 historyPixel, vec2 velocity, out vec4 history, out vec4 historyMoments) {
     
     history = vec4(0.0);
     historyMoments = vec4(0.0);
@@ -205,6 +206,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = depth;
+    float depthPhi = 16.0 / abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -225,6 +227,10 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         return true;
     }
 
+    ivec2 gridOffset = ivec2(0);
+    gridOffset.x = velocity.x < 0.0 ? -1 : 1;
+    gridOffset.y = velocity.y < 0.0 ? -1 : 1;
+
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
 
@@ -239,7 +245,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
 
     if (totalWeight > 0.0) {
         history /= totalWeight;
-        //historyMoments /= totalWeight;
+        historyMoments /= totalWeight;
         return true;
     }
 
@@ -309,8 +315,9 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     
     if (totalWeight > 0.5) {
         history /= totalWeight;
+        history = max(history, 0.0);
    
-    return true;
+        return true;
     }
 
     return false;
@@ -378,7 +385,7 @@ void main() {
     bool valid = true;
     vec4 history;
     vec4 historyMoments;
-    valid = SampleHistory(pixel, historyPixel, history, historyMoments);
+    valid = SampleHistory(pixel, historyPixel, velocity, history, historyMoments);
     float historyLength = history.a;
     vec3 historyRadiance = history.rgb;
 
@@ -400,6 +407,8 @@ void main() {
     float adjClipBlend = clamp(clipBlend, 0.0, pushConstants.historyClipMax);
     currentRadiance = clamp(currentRadiance, currentNeighbourhoodMin, currentNeighbourhoodMax);
     // historyRadiance = mix(historyRadiance, currentRadiance, adjClipBlend);
+
+    currentRadiance = valid ? currentRadiance : mean;
 
     historyRadiance = YCoCgToRGB(historyRadiance);
     currentRadiance = YCoCgToRGB(currentRadiance);

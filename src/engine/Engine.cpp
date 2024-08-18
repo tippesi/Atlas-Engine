@@ -8,6 +8,8 @@
 #include "physics/PhysicsManager.h"
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
+#include "events/EventManager.h"
+#include "jobsystem/JobSystem.h"
 
 #include "graphics/ShaderCompiler.h"
 
@@ -36,17 +38,28 @@ namespace Atlas {
 #ifndef AE_HEADLESS
         DefaultWindow = new Window("Default window", AE_WINDOWPOSITION_UNDEFINED,
             AE_WINDOWPOSITION_UNDEFINED, 100, 100, AE_WINDOW_HIDDEN);
+
+        // Need to retrieve the extension names required to create an SDL surface
+        uint32_t extensionCount;
+        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, nullptr);
+        std::vector<const char*> requiredExtensions(extensionCount);
+        SDL_Vulkan_GetInstanceExtensions(DefaultWindow->sdlWindow, &extensionCount, requiredExtensions.data());
 #endif
 
         // Then create graphics instance
         auto instanceDesc = Graphics::InstanceDesc{
             .instanceName = "AtlasEngineInstance",
-#ifdef AE_BUILDTYPE_RELEASE
-            .enableValidationLayers = false,
-#else
+#ifdef AE_BUILDTYPE_DEBUG
             .enableValidationLayers = true,
+#else
+            .enableValidationLayers = false,
 #endif
-            .validationLayerSeverity = config.validationLayerSeverity
+            .validationLayerSeverity = config.validationLayerSeverity,
+#ifndef AE_HEADLESS
+            .requiredExtensions = requiredExtensions
+#else
+            .requiredExtensions = { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME }
+#endif
         };
 
         Graphics::Instance::DefaultInstance = new Graphics::Instance(instanceDesc);
@@ -68,6 +81,7 @@ namespace Atlas {
         Graphics::Extensions::Process();
 
         // Do the setup for all the classes that need static setup
+        JobSystem::Init(config.jobSystemConfig);
         Loader::AssetLoader::Init();
         Common::Random::Init();
         PipelineManager::Init();
@@ -83,6 +97,7 @@ namespace Atlas {
 
     void Engine::Shutdown() {
 
+        JobSystem::Shutdown();
         Graphics::ShaderCompiler::Shutdown();
         Graphics::Profiler::Shutdown();
         PipelineManager::Shutdown();
@@ -90,6 +105,8 @@ namespace Atlas {
         Texture::Texture::Shutdown();
         Audio::AudioManager::Shutdown();
         Input::KeyboardMap::Shutdown();
+
+        Events::EventManager::ShutdownEventDelegate.Fire();
 
 #ifdef AE_NO_APP
         SDL_Quit();

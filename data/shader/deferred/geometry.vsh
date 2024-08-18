@@ -46,9 +46,11 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
+layout(location=6) out float normalInversionVS;
+
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=6) out mat3 TBN;
+layout(location=7) out mat3 TBN;
 #endif
 
 layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
@@ -64,6 +66,13 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    uint baseColorTextureIdx;
+    uint opacityTextureIdx;
+    uint normalTextureIdx;
+    uint roughnessTextureIdx;
+    uint metalnessTextureIdx;
+    uint aoTextureIdx;
+    uint heightTextureIdx;
 } PushConstants;
 
 // Functions
@@ -71,6 +80,8 @@ void main() {
 
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
+
+    normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
 
 #ifdef TEX_COORDS
     texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
@@ -83,11 +94,14 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, mMatrix[3].xyz);
-        lastPosition = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
+        // This is not well optimized and could use some work
+        vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
+        vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
+        position = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
+        lastPosition = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
             PushConstants.windWiggleScale, PushConstants.windTextureLod,
-            globalData.time - globalData.deltaTime, mMatrix[3].xyz);
+            globalData.time - globalData.deltaTime, windPosition);
 
     }
 

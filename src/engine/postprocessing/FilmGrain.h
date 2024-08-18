@@ -11,7 +11,7 @@ namespace Atlas {
         public:
             FilmGrain() = default;
 
-            FilmGrain(float strength) : strength(strength), enable(true) {};
+            FilmGrain(float strength) : enable(true), strength(strength) {};
 
             bool enable = false;
 

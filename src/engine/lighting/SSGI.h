@@ -22,8 +22,7 @@ namespace Atlas {
             float irradianceLimit = 10.0f;
             float aoStrength = 1.0f;
 
-            bool rt = false;
-            bool opacityCheck = false;
+            bool halfResolution = true;
 
         };
 

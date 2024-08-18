@@ -72,7 +72,7 @@ float offsetLookup(sampler2DArrayShadow cascadeMaps, vec2 uv, float cascadeIndex
     vec2 texelSize, vec2 invResolution, vec3 fragmentPosition, int lookupIndex, float depth, float bias) {
 
     uv = 0.5 * (uv * invResolution) + 0.5;
-    vec2 samplingSpread = edgeSoftness *  invResolution / texelSize;
+    vec2 samplingSpread = edgeSoftness *  invResolution * 64.0;
 
     float phi = 2.0 * PI * GetInterleavedGradientNoise(fragmentPosition.xy);
     vec2 offset = VogelDiskSample(lookupIndex, 16, phi) * samplingSpread;
@@ -214,11 +214,7 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
     visibility /= 2704.0;
 #endif
 
-#define SHADOW_FILTER_VOGEL
-
 #ifdef SHADOW_FILTER_VOGEL
-    visibility = 0.0;
-
     vec2 texelSize = vec2(shadow.cascades[int(cascadeIndex)].texelSize);
     for (int i = 0; i < 16; i++) {
         visibility += offsetLookup(cascadeMaps, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);

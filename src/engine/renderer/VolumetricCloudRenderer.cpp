@@ -27,9 +27,9 @@ namespace Atlas {
             temporalPipelineConfig = PipelineConfig("clouds/temporal.csh");
             shadowPipelineConfig = PipelineConfig("clouds/shadow.csh");
 
-            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
+            volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(CloudUniforms), 1);
             shadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadowUniforms), 1);
-            shadowVolumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricCloudUniforms), 1);
+            shadowVolumetricUniformBuffer = Buffer::UniformBuffer(sizeof(CloudUniforms), 1);
 
         }
 
@@ -42,6 +42,11 @@ namespace Atlas {
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!clouds || !clouds->enable || !mainLightEntity.IsValid()) return;
 
+            if (clouds->halfResolution && target->GetVolumetricResolution() == FULL_RES)
+                target->SetVolumetricResolution(HALF_RES);
+            else if (!clouds->halfResolution && target->GetVolumetricResolution() != FULL_RES)
+                target->SetVolumetricResolution(FULL_RES);
+
             Graphics::Profiler::BeginQuery("Volumetric clouds");
 
             if (clouds->needsNoiseUpdate) {
@@ -49,8 +54,13 @@ namespace Atlas {
                 clouds->needsNoiseUpdate = false;
             }
 
+            if (target->historyVolumetricCloudsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                commandList->ImageMemoryBarrier(target->historyVolumetricCloudsTexture.image,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            }
+
             auto downsampledRT = target->GetData(target->GetVolumetricResolution());
-            auto downsampledHistoryRT = target->GetHistoryData(target->GetReflectionResolution());
+            auto downsampledHistoryRT = target->GetHistoryData(target->GetVolumetricResolution());
 
             ivec2 res = ivec2(target->volumetricCloudsTexture.width, target->volumetricCloudsTexture.height);
 
@@ -72,7 +82,11 @@ namespace Atlas {
                 auto uniforms = GetUniformStructure(scene, mainLightEntity);
                 volumetricUniformBuffer.SetData(&uniforms, 0);
 
+                auto ocean = scene->ocean;
+                bool oceanEnabled = ocean && ocean->enable;
+
                 integratePipelineConfig.ManageMacro("STOCHASTIC_OCCLUSION_SAMPLING", clouds->stochasticOcclusionSampling);
+                integratePipelineConfig.ManageMacro("OCEAN", oceanEnabled);
 
                 auto pipeline = PipelineManager::GetPipeline(integratePipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -85,10 +99,15 @@ namespace Atlas {
                 commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
                 commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
                 commandList->BindImage(clouds->coverageTexture.image, clouds->coverageTexture.sampler, 3, 4);
-                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 5);
-                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 6);
+                volumetricUniformBuffer.Bind(commandList, 3, 5);
 
-                volumetricUniformBuffer.Bind(commandList, 3, 7);
+                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 6);
+                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 7);               
+
+                if (oceanEnabled) {
+                    target->oceanDepthTexture.Bind(commandList, 3, 8);
+                    target->oceanStencilTexture.Bind(commandList, 3, 9);
+                }                
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -118,6 +137,12 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
                 commandList->BindImage(target->historyVolumetricCloudsTexture.image, target->historyVolumetricCloudsTexture.sampler, 3, 4);
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 5);
+
+                CloudTemporalPushConstants constants {
+                    .resetHistory = !target->HasHistory() ? 1 : 0,
+                    .downsampled2x = target->GetVolumetricResolution() == HALF_RES ? 1 : 0
+                };
+                commandList->PushConstants("constants", &constants, sizeof(CloudTemporalPushConstants));
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -201,7 +226,7 @@ namespace Atlas {
             uniforms.distanceLimit = 10e9f;
             shadowVolumetricUniformBuffer.SetData(&uniforms, 0);
 
-            shadowVolumetricUniformBuffer.Bind(commandList, 3, 7);
+            shadowVolumetricUniformBuffer.Bind(commandList, 3, 5);
             shadowUniformBuffer.Bind(commandList, 3, 8);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
@@ -290,7 +315,7 @@ namespace Atlas {
 
         }
 
-        VolumetricCloudRenderer::VolumetricCloudUniforms VolumetricCloudRenderer::GetUniformStructure(
+        VolumetricCloudRenderer::CloudUniforms VolumetricCloudRenderer::GetUniformStructure(
             Ref<Scene::Scene> scene, Scene::Entity mainLightEntity) {
 
             auto clouds = scene->sky.clouds;
@@ -318,7 +343,7 @@ namespace Atlas {
             float outerRadius = scene->sky.planetRadius + clouds->maxHeight;
             vec3 cloudCenter = scene->sky.planetCenter;
 
-            VolumetricCloudUniforms uniforms{
+            CloudUniforms uniforms{
                 .planetRadius = scene->sky.planetRadius,
                 .innerRadius = innerRadius,
                 .outerRadius = outerRadius,

@@ -75,6 +75,16 @@ namespace Atlas {
 
         }
 
+        AABB AABB::Scale(vec3 scale) {
+
+            auto center = 0.5f * (min + max);
+            auto scaledMin = center + scale * (min - center);
+            auto scaledMax = center + scale * (max - center);
+
+            return AABB(scaledMin, scaledMax);
+
+        }
+
         void AABB::Grow(AABB aabb) {
 
             max = glm::max(max, aabb.max);
@@ -115,6 +125,12 @@ namespace Atlas {
             auto closestPoint = glm::clamp(point, min, max);
 
             return glm::distance(point, closestPoint);
+
+        }
+
+        vec3 AABB::GetCenter() const {
+
+            return 0.5f * (max + min);
 
         }
 

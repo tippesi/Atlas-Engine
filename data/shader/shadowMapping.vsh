@@ -14,7 +14,7 @@ layout(std430, set = 1, binding = 1) buffer Matrices {
     mat3x4 matrices[];
 };
 
-layout(set = 3, binding = 1) uniform sampler2D windNoiseMap;
+layout(set = 3, binding = 0) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
@@ -23,6 +23,7 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    uint textureID;
 } PushConstants;
 
 void main() {
@@ -38,8 +39,11 @@ void main() {
 
     if (PushConstants.vegetation > 0) {
 
-        position = WindAnimation(windNoiseMap, vPosition, PushConstants.windBendScale,
-            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, mMatrix[3].xyz);
+        // This is not well optimized and could use some work
+        vec3 windPosition = vec3(mMatrix * vec4(position, 1.0));
+        vec2 windDir = normalize((inverse(mMatrix) * vec4(globalData.windDir.x, 0.0, globalData.windDir.y, 0.0)).xz);
+        position = WindAnimation(windNoiseMap, vPosition, windDir, PushConstants.windBendScale,
+            PushConstants.windWiggleScale, PushConstants.windTextureLod, globalData.time, windPosition);
 
     }
     

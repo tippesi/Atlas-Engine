@@ -20,6 +20,40 @@ namespace Atlas::Scene::Components {
         this->scene = scene;
         this->entity = entity;
 
+        environmentNeedsInitialization = true;
+
+    }
+
+    LuaScriptComponent::LuaScriptComponent(Scene* scene, Entity entity, const ResourceHandle<Scripting::Script>& script)
+         : script(script), scene(scene), entity(entity) {
+
+        
+
+    }
+
+    void LuaScriptComponent::ChangeResource(const ResourceHandle<Scripting::Script>& script) {
+
+        this->script = script;
+
+        environmentNeedsInitialization = true;
+
+    }
+
+    bool LuaScriptComponent::HasProperty(const std::string& name) const {
+
+        return properties.contains(name);
+
+    }
+
+    LuaScriptComponent::PropertyType LuaScriptComponent::GetPropertyType(const std::string& name) const {
+
+        ScriptProperty prop{};
+
+        if (properties.contains(name))
+            prop = properties.at(name);
+
+        return prop.type;
+
     }
 
     void LuaScriptComponent::Update(Scripting::LuaScriptManager& scriptManager, float deltaTime) {
@@ -50,7 +84,7 @@ namespace Atlas::Scene::Components {
             }
         }
 
-        if (scriptWasModifiedInLastUpdate) {
+        if (scriptWasModifiedInLastUpdate || environmentNeedsInitialization) {
             // the script was modified
 
             // reset the saved references
@@ -63,9 +97,11 @@ namespace Atlas::Scene::Components {
 
             // and then get or update the properties from the script
             GetOrUpdatePropertiesFromScript();
+
+            environmentNeedsInitialization = false;
         }
 
-        if (scene->physicsWorld->pauseSimulation) {
+        if (scene->physicsWorld->pauseSimulation && !permanentExecution) {
             // the instance is not running, discard the state
             updateFunction.reset();
             scriptEnvironment.reset();
@@ -112,10 +148,9 @@ namespace Atlas::Scene::Components {
             sol::environment scriptEnv(state, sol::create, state.globals());
             scriptEnvironment = scriptEnv;
 
-            // create environment based functions
-            scriptEnv.set_function("GetThisEntity", [&]() { return this->entity; });
-
-            scriptEnv.set_function("GetThisScene", [&]() { return this->scene; });
+            // create environment based functions (and copy the necessary lambda captures)
+            scriptEnv.set_function("GetThisEntity", [entity = this->entity]() { return entity; });
+            scriptEnv.set_function("GetThisScene", [scene = this->scene]() { return scene; });
 
             // load script
             state.script(script->code, scriptEnv);
@@ -138,7 +173,7 @@ namespace Atlas::Scene::Components {
         return true;
     }
 
-    std::vector<LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
+    std::map<std::string, LuaScriptComponent::ScriptProperty> LuaScriptComponent::GetPropertiesFromScript() {
         AE_ASSERT(scriptEnvironment.has_value());
 
         const auto& state = scriptEnvironment.value();
@@ -148,7 +183,7 @@ namespace Atlas::Scene::Components {
             return {};
         }
 
-        std::vector<ScriptProperty> foundProperties;
+        std::map<std::string, ScriptProperty> foundProperties;
         for (const auto& entry : scriptProperties.value()) {
             ScriptProperty scriptProperty = {};
 
@@ -158,7 +193,7 @@ namespace Atlas::Scene::Components {
                 continue;
             if (!key.is<std::string>())
                 continue;
-            scriptProperty.name = key.as<std::string>();
+            const auto name = key.as<std::string>();
 
             // determine property type and value
             const auto& propertyTable = entry.second;
@@ -219,74 +254,57 @@ namespace Atlas::Scene::Components {
                     continue;
                 scriptProperty.booleanValue = value.get<bool>();
                 break;
+            case PropertyType::Undefined:
+                break;
             }
 
-            foundProperties.push_back(scriptProperty);
+            foundProperties[name] = scriptProperty;
         }
 
         return foundProperties;
     }
 
     void LuaScriptComponent::GetOrUpdatePropertiesFromScript() {
-        // generate a map for the old properties
-        std::unordered_map<std::string, int> oldPropertyMap;
-        std::set<int> toRemove;
-        for (auto i = 0; i < properties.size(); i++) {
-            oldPropertyMap[properties[i].name] = i;
-            toRemove.insert(i);
-        }
 
         // obtain the new properties from the script
         auto newProperties = GetPropertiesFromScript();
-        for (auto& newProp : newProperties) {
+        for (auto& [name, prop] : newProperties) {
             bool oldPropEqualToNewProp = false;
-            auto find = oldPropertyMap.find(newProp.name);
-            if (find != oldPropertyMap.end()) {
-                // a property with this name already exists
-                const auto& oldProperty = properties[(*find).second];
-                if (newProp.type == oldProperty.type) {
-                    // the new and old property also have the same type
-                    // therefore it is not necessary to remove the old property
-                    toRemove.erase((*find).second);
-                    oldPropEqualToNewProp = true;
-                }
-            }
 
-            if (!oldPropEqualToNewProp) {
-                // the new property is not covered by an old one, hence add it
-                properties.push_back(newProp);
-            }
-        }
-
-        // generate the new property set by skipping the ones that are no longer defined
-        std::vector<ScriptProperty> mergedProperties;
-        for (auto i = 0; i < properties.size(); i++) {
-            if (toRemove.contains(i))
+            if (!properties.contains(name))
                 continue;
-            mergedProperties.push_back(properties[i]);
+
+            const auto& existingProperty = properties[name];
+            if (!existingProperty.wasChanged)
+                continue;
+
+            // Only update if there was a server side change of the script properties
+            prop = existingProperty;
         }
 
         // update the member
-        properties = mergedProperties;
+        properties = newProperties;
     }
 
     void LuaScriptComponent::SetPropertyValuesInLuaState() {
         AE_ASSERT(scriptEnvironment.has_value());
         auto& state = scriptEnvironment.value();
 
-        for (const auto& property : properties) {
+        for (const auto& [propertyName, property] : properties) {
             switch (property.type) {
             case PropertyType::String:
-                state["ScriptProperties"][property.name]["value"] = property.stringValue;
+                state["ScriptProperties"][propertyName]["value"] = property.stringValue;
                 break;
             case PropertyType::Double:
-                state["ScriptProperties"][property.name]["value"] = property.doubleValue;
+                state["ScriptProperties"][propertyName]["value"] = property.doubleValue;
                 break;
             case PropertyType::Integer:
-                state["ScriptProperties"][property.name]["value"] = property.integerValue;
+                state["ScriptProperties"][propertyName]["value"] = property.integerValue;
                 break;
             case PropertyType::Boolean:
-                state["ScriptProperties"][property.name]["value"] = property.booleanValue;
+                state["ScriptProperties"][propertyName]["value"] = property.booleanValue;
+                break;
+            case PropertyType::Undefined:
                 break;
             }
         }

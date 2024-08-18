@@ -26,8 +26,6 @@ namespace Atlas {
 
         TLAS::~TLAS() {
 
-            AE_ASSERT(isComplete);
-
             if (isComplete)
                 vkDestroyAccelerationStructureKHR(device->device, accelerationStructure, nullptr);
 
@@ -62,7 +60,8 @@ namespace Atlas {
                 .usageFlags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
                               | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                 .domain = BufferDomain::Device,
-                .size = sizesInfo.accelerationStructureSize
+                .size = sizesInfo.accelerationStructureSize,
+                .priority = 1.0f
             };
             buffer = device->CreateBuffer(desc);
 

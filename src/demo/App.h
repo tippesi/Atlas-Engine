@@ -5,7 +5,7 @@
 #include <input/Keyboard.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
-#include <loader/ModelLoader.h>
+#include <loader/ModelImporter.h>
 
 #include <ImguiExtension/ImguiWrapper.h>
 #include <ImguiExtension/Panels.h>
@@ -84,12 +84,14 @@ private:
     Atlas::ImguiExtension::FogPanel fogPanel;
     Atlas::ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
     Atlas::ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;
-    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;
+    Atlas::ImguiExtension::RTGIPanel rtgiPanel;
     Atlas::ImguiExtension::SSGIPanel ssgiPanel;
+    Atlas::ImguiExtension::ReflectionPanel reflectionPanel;    
     Atlas::ImguiExtension::SSSPanel sssPanel;
     Atlas::ImguiExtension::PostProcessingPanel postProcessingPanel;
     Atlas::ImguiExtension::GPUProfilerPanel gpuProfilerPanel;
     Atlas::ImguiExtension::MaterialsPanel materialsPanel;
+    Atlas::ImguiExtension::WindPanel windPanel;
 
     bool renderUI = true;
     bool renderEnvProbe = true;

@@ -5,6 +5,8 @@
 #include <imgui_stdlib.h>
 
 #include "DataCreator.h"
+#include "Singletons.h"
+#include "Notifications.h"
 
 namespace Atlas::Editor::UI {
 
@@ -17,6 +19,7 @@ namespace Atlas::Editor::UI {
 
         RenderNewScenePopup();
         RenderImportScenePopup();
+        RenderBlockingPopup();
 
     }
 
@@ -86,9 +89,8 @@ namespace Atlas::Editor::UI {
         static auto minSize = glm::vec3(-2048.0f);
         static auto maxSize = glm::vec3(2048.0f);
         static int32_t octreeDepth = 5;
-        static bool invertUVs = false;
-        static bool addRigidBodies = false;
-        static bool combineMeshes = false;
+        static bool invertUVs = true;
+        static bool addRigidBodies = true;
         static bool makeMeshesStatic = false;
 
         SetupPopupSize(0.6f, 0.3f);
@@ -118,7 +120,6 @@ namespace Atlas::Editor::UI {
             ImGui::Text("Import properties");
             ImGui::Checkbox("Invert UVs", &invertUVs);
             ImGui::Checkbox("Attach mesh rigid body components", &addRigidBodies);
-            ImGui::Checkbox("Combine meshes", &combineMeshes);
             ImGui::Checkbox("Make meshes static", &makeMeshesStatic);
 
             if (ImGui::Button("Cancel")) {
@@ -129,16 +130,23 @@ namespace Atlas::Editor::UI {
             ImGui::SameLine();
 
             if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
-                auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize, 
-                    octreeDepth, invertUVs, addRigidBodies, combineMeshes, makeMeshesStatic);
-                scene->name = name;
+                Singletons::blockingOperation->Block("Importing scene. Please wait...",
+                    [&]() {
+                        auto scene = DataCreator::CreateSceneFromMesh(filename, minSize, maxSize,
+                            octreeDepth, invertUVs, addRigidBodies, makeMeshesStatic);
+                        scene->name = name;
 
-                bool alreadyExisted;
-                Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
+                        bool alreadyExisted;
+                        Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
 
-                if (alreadyExisted) {
-                    Log::Warning("Scene couldn't be created due to scene with same name existing already");
-                }
+                        if (alreadyExisted) {
+                            Log::Warning("Scene couldn't be created due to scene with same name existing already");
+                            Notifications::Push({ .message = "Error importing scene " + scene->name });
+                            return;
+                        }
+
+                        Notifications::Push({ .message = "Imported scene " + scene->name });                        
+                    });
 
                 isImportScenePopupVisible = false;
                 ImGui::CloseCurrentPopup();
@@ -147,6 +155,48 @@ namespace Atlas::Editor::UI {
             ImGui::EndPopup();
 
         }
+
+    }
+
+    void PopupPanels::RenderBlockingPopup() {
+
+        if (!ImGui::IsPopupOpen("Blocking popup") && !Singletons::blockingOperation->block)
+            return;
+
+        if (!ImGui::IsPopupOpen("Blocking popup")) {
+            ImGui::OpenPopup("Blocking popup");
+        }
+
+        auto config = Singletons::config;
+
+        if (config->darkMode) {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        }
+        else {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(1.0f, 1.0f, 1.0f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        }
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 2.0f);
+
+        SetupPopupSize(0.2f, 0.05f);
+
+        if (ImGui::BeginPopupModal("Blocking popup", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar)) {
+
+            ImGui::SetKeyboardFocusHere();
+
+            ImGui::Text("%s", Singletons::blockingOperation->blockText.c_str());
+
+            if (!Singletons::blockingOperation->block)
+                ImGui::CloseCurrentPopup();
+
+            ImGui::EndPopup();
+
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
 
     }
 

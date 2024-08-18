@@ -47,14 +47,17 @@ void main() {
     if (IsRayInvocationValid()) {    
         Ray ray = ReadRay();
         
-        vec3 radiance = EvaluateHit(ray);
+        vec3 radiance = vec3(0.0);
+        if (ray.ID >= 0) {
+            radiance = EvaluateHit(ray);
         
-        RayHit hit;
-        hit.radiance = radiance;
-        hit.direction = ray.direction;
-        hit.hitDistance = ray.hitDistance;
+            RayHit hit;
+            hit.radiance = radiance;
+            hit.direction = ray.direction;
+            hit.hitDistance = ray.hitDistance;
 
-        hits[ray.ID] = PackRayHit(hit);
+            hits[GetRayInvocation()] = PackRayHit(hit);
+        }
     }
 
 }
@@ -140,7 +143,7 @@ bool CheckVisibility(Surface surface, float lightDistance) {
         Ray ray;
         ray.direction = surface.L;
         ray.origin = surface.P + surface.N * EPSILON;
-        return HitAny(ray, 0.0, lightDistance - 2.0 * EPSILON) == false;
+        return HitAny(ray, INSTANCE_MASK_SHADOW, 0.0, lightDistance - 2.0 * EPSILON) == false;
     }
     else {
         return false;

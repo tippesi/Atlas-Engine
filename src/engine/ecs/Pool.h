@@ -26,6 +26,8 @@ namespace Atlas {
 
             Comp* TryGet(const Entity entity);
 
+            std::vector<Comp>& GetAll();
+
             size_t Subscribe(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
         private:
@@ -94,6 +96,13 @@ namespace Atlas {
                 return nullptr;
 
             return &components[idx];
+
+        }
+
+        template<typename Comp>
+        std::vector<Comp>& Pool<Comp>::GetAll() {
+
+            return components;
 
         }
 

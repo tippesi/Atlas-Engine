@@ -42,6 +42,7 @@ namespace Atlas {
         };
 
         struct ShaderDesc {
+            std::string name;
             std::vector<ShaderStageFile> stages;
         };
 
@@ -55,7 +56,7 @@ namespace Atlas {
             size_t hash = 0;
 
             uint32_t set = 0;
-           
+
             DescriptorSetBinding binding;
 
             bool valid = false;
@@ -128,6 +129,8 @@ namespace Atlas {
             Ref<ShaderVariant> GetVariant(std::vector<std::string> macros);
 
             bool Reload(std::unordered_map<std::string, std::filesystem::file_time_type>& lastModifiedMap);
+
+            std::string name;
 
         private:
             Ref<ShaderVariant> FindVariant(const std::vector<std::string>& macros);

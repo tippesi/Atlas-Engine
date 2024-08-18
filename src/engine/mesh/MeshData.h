@@ -3,8 +3,10 @@
 #include "../System.h"
 #include "../volume/AABB.h"
 #include "raytracing/RTStructures.h"
+#include "resource/Resource.h"
 #include "DataComponent.h"
 #include "Material.h"
+#include "pipeline/PipelineConfig.h"
 
 #include <vector>
 
@@ -23,10 +25,13 @@ namespace Atlas {
             uint32_t indicesOffset;
             uint32_t indicesCount;
             
-            Ref<Material> material;
+            ResourceHandle<Material> material;
             int32_t materialIdx;
 
             Volume::AABB aabb;
+
+            PipelineConfig mainConfig;
+            PipelineConfig shadowConfig;
         
         };
 
@@ -78,12 +83,6 @@ namespace Atlas {
             int32_t GetVertexCount() const;
 
             /**
-             * Applies a transformation matrix to the data.
-             * @param transform
-             */
-            void SetTransform(mat4 transform);
-
-            /**
              * Builds a blas from the data
              */
             void BuildBVH(bool parallelBuild);
@@ -94,7 +93,7 @@ namespace Atlas {
              */
             bool IsBVHBuilt();
 
-            std::string filename;
+            std::string name;
 
             DataComponent<uint32_t> indices;
 
@@ -104,15 +103,12 @@ namespace Atlas {
             DataComponent<vec4> tangents;
             DataComponent<vec4> colors;
 
-            std::vector<Ref<Material>> materials;
+            std::vector<ResourceHandle<Material>> materials;
             std::vector<MeshSubData> subData;
 
             int32_t primitiveType = 0;
 
             Volume::AABB aabb;
-
-            mat4 transform;
-
             float radius = 0.0f;
 
         private:

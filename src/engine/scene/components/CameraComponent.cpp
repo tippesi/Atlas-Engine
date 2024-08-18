@@ -21,19 +21,19 @@ namespace Atlas {
 
                 direction = normalize(vec3(cos(rotation.y) * sin(rotation.x),
                     sin(rotation.y), cos(rotation.y) * cos(rotation.x)));
-
                 right = normalize(vec3(sin(rotation.x - 3.14f / 2.0f),
                     0.0f, cos(rotation.x - 3.14f / 2.0f)));
-
                 up = cross(right, direction);
 
                 globalDirection = direction;
-                vec3 globalUp = up;
+                globalRight = right;
 
                 if (useEntityRotation) {
-                    globalDirection = normalize(vec3(transform * vec4(direction, 0.0f)));
-                    globalUp = normalize(vec3(transform * vec4(up, 0.0f)));
-                }                
+                    globalDirection = normalize(mat3(transform) * direction);
+                    globalRight = normalize(mat3(transform) * right);
+                } 
+
+                globalUp = cross(globalRight, globalDirection);
 
                 globalLocation = location;
                 if (useEntityTranslation) {
@@ -138,15 +138,15 @@ namespace Atlas {
                 vec3 farPoint = cameraLocation + globalDirection * farPlane;
                 vec3 nearPoint = cameraLocation + globalDirection * nearPlane;
 
-                corners.push_back(farPoint + farHeight * up - farWidth * right);
-                corners.push_back(farPoint + farHeight * up + farWidth * right);
-                corners.push_back(farPoint - farHeight * up - farWidth * right);
-                corners.push_back(farPoint - farHeight * up + farWidth * right);
+                corners.push_back(farPoint + farHeight * globalUp - farWidth * globalRight);
+                corners.push_back(farPoint + farHeight * globalUp + farWidth * globalRight);
+                corners.push_back(farPoint - farHeight * globalUp - farWidth * globalRight);
+                corners.push_back(farPoint - farHeight * globalUp + farWidth * globalRight);
 
-                corners.push_back(nearPoint + nearHeight * up - nearWidth * right);
-                corners.push_back(nearPoint + nearHeight * up + nearWidth * right);
-                corners.push_back(nearPoint - nearHeight * up - nearWidth * right);
-                corners.push_back(nearPoint - nearHeight * up + nearWidth * right);
+                corners.push_back(nearPoint + nearHeight * globalUp - nearWidth * globalRight);
+                corners.push_back(nearPoint + nearHeight * globalUp + nearWidth * globalRight);
+                corners.push_back(nearPoint - nearHeight * globalUp - nearWidth * globalRight);
+                corners.push_back(nearPoint - nearHeight * globalUp + nearWidth * globalRight);
 
                 return corners;
 

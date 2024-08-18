@@ -22,7 +22,7 @@ namespace Atlas {
             public:
                 Iterator() = delete;
 
-                Iterator(const std::vector<Entity>* entities, size_t idx) : entities(entities), idx(idx) {
+                Iterator(const std::vector<Entity>* entities, size_t idx) : idx(idx), entities(entities) {
 
                     if (idx < entities->size() && !ValidEntity()) {
                         operator++();
@@ -194,6 +194,14 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            /**
+             * Returns a reference to the internal vector of components of type Comp.
+             * @note Actually changing this vector in terms of content might lead to issues. Prefer
+             * to create a copy instead of a reference. 
+             */
+            template<typename Comp>
+            std::vector<Comp>& GetComponents();
+
             template<typename Comp>
             size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
@@ -284,6 +292,13 @@ namespace Atlas {
                 return std::forward_as_tuple(Subset<Comp>()...);
             }
             */
+
+        }
+
+        template<typename Comp>
+        std::vector<Comp>& EntityManager::GetComponents() {
+
+            return pools.Get<Comp>().GetAll();
 
         }
 

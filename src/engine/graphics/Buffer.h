@@ -31,6 +31,9 @@ namespace Atlas {
             void* data = nullptr;
             size_t size;
             size_t alignment = 0;
+
+            bool dedicatedMemory = false;
+            float priority = 0.5f;
         };
 
         struct BufferAllocation {

@@ -18,7 +18,7 @@ namespace Atlas {
                 friend Scene;
 
             public:
-                HierarchyComponent(Scene* scene, Entity entity) : scene(scene), owningEntity(entity) {}
+                HierarchyComponent(Scene* scene, Entity entity) : owningEntity(entity), scene(scene) {}
                 HierarchyComponent(const HierarchyComponent& that) = default;
 
                 void AddChild(Entity entity);
@@ -37,9 +37,9 @@ namespace Atlas {
                 std::vector<Entity> entities;
 
                 bool updated = false;
+                Entity owningEntity;
 
                 Scene* scene = nullptr;
-                Entity owningEntity;
 
             };
 

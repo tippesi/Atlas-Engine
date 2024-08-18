@@ -10,11 +10,12 @@
 #include "../lighting/Sky.h"
 #include "../lighting/Fog.h"
 #include "../lighting/IrradianceVolume.h"
+#include "../lighting/RTGI.h"
+#include "../lighting/SSGI.h"
 #include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
-#include "../lighting/SSGI.h"
 #include "../postprocessing/PostProcessing.h"
 
 #include "../mesh/Mesh.h"
@@ -59,10 +60,10 @@ namespace Atlas {
         public:
             Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
-            explicit Scene(const std::string& name) : name(name),
-                SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
+                name(name) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : name(name), SpacePartitioning(this, min, max, depth) { RegisterSubscribers(); }
+                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -101,7 +102,7 @@ namespace Atlas {
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
-            void GetRenderList(Volume::Frustum frustum, RenderList& renderList, const Ref<RenderList::Pass>& pass);
+            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 
@@ -135,11 +136,15 @@ namespace Atlas {
             Lighting::Sky sky;
             Ref<Lighting::Fog> fog = nullptr;
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
+            Ref<Lighting::RTGI> rtgi = nullptr;
+            Ref<Lighting::SSGI> ssgi = nullptr;
             Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
-            Ref<Lighting::SSGI> ssgi = nullptr;
             PostProcessing::PostProcessing postProcessing;
+
+            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
+            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
 
         private:
             void UpdateBindlessIndexMaps();
@@ -167,19 +172,19 @@ namespace Atlas {
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
-
             Entity mainCameraEntity;
             float deltaTime = 1.0f;
 
+            bool firstTimestep = true;
             bool hasChanged = true;
             bool rtDataValid = false;
             bool vegetationChanged = false;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            std::future<void> rayTracingWorldUpdateFuture;
+            JobGroup rayTracingWorldUpdateJob { JobPriority::High };
+            JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
+            JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
 
             friend Entity;
             friend SpacePartitioning;

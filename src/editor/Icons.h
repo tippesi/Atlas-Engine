@@ -22,7 +22,17 @@ namespace Atlas::Editor {
         ArrowUp,
         ArrowLeft,
         ArrowRight,
-        Prefab
+        Prefab,
+        Eye,
+        Move,
+        Scale,
+        Rotate,
+        MoreHorizontal,
+        MoreVertical,
+        Material,
+        MeshSource,
+        EnvironmentImage,
+        Delete
     };
 
     class Icons {

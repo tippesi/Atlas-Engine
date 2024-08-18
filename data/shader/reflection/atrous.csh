@@ -70,7 +70,7 @@ PixelData UnpackPixelData(PackedPixelData compressed) {
     vec2 temp = unpackHalf2x16(compressed.data.w);
     data.normal.z = temp.x;
     data.roughness = temp.y;
-    data.depth = data.depth;
+    data.depth = compressed.depth;
 
     return data;
 }
@@ -91,7 +91,7 @@ void LoadGroupSharedData() {
 
         data.color = texelFetch(inputTexture, texel, 0);
 
-        data.depth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+        data.depth = texelFetch(depthTexture, texel, 0).r;
 
         uint materialIdx = texelFetch(materialIdxTexture, texel, 0).r;
         Material material = UnpackMaterial(materialIdx);
@@ -139,7 +139,7 @@ float ComputeEdgeStoppingWeight(float centerLuminance, float sampleLuminance,
     float normalWeight = min(pow(normalDiff, normalPhi), 1.0);
 
     float depthDiff = abs(centerDepth - sampleDepth);
-    float depthWeight = min(exp(-depthDiff / (depthPhi + epsilon)), 1.0);
+    float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
 
     float roughnessDiff = abs(centerRoughness - sampleRoughness);
     float roughnessWeight = min(exp(-roughnessDiff / (roughnessPhi + epsilon)), 1.0);
@@ -193,13 +193,15 @@ void main() {
         return;
 
     float centerLuminance = Luma(centerColor.rgb);
-    float centerLinearDepth = ConvertDepthToViewSpaceDepth(centerDepth);
+    float centerLinearDepth = centerDepth;
     
     vec4 outputColor = centerColor;
     float totalWeight = 1.0;
 
     float variance = GetFilteredVariance(pixel);
     float stdDeviation = sqrt(max(0.0, variance));
+
+    float depthPhi = 32.0 / abs(centerLinearDepth);
 
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {
@@ -230,7 +232,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerRoughness, sampleRoughness,
                                     stdDeviation * pushConstants.strength, 
-                                    32.0, 1.0, 0.05);
+                                    256.0, 128.0, 0.05);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

@@ -23,20 +23,26 @@ namespace Atlas {
             auto ao = scene->ao;
             auto reflection = scene->reflection;
             auto ssgi = scene->ssgi;
+            auto rtgi = scene->rtgi;
 
             auto rtDataValid = scene->IsRtDataValid();
-            auto ddgiEnabled = volume && volume->enable && rtDataValid;
+            auto rtgiEnabled = rtgi && rtgi->enable && rtDataValid;
+            auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
+            auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
             auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
-            auto ssgiEnabled = ssgi && ssgi->enable && (!ssgi->rt || rtDataValid);
-            bool ssgiAo = ssgi && ssgi->enable && ssgi->enableAo;            
+            auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
+            bool ssgiAo = ssgiEnabled && ssgi->enableAo;            
 
+            pipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
+            pipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
             pipelineConfig.ManageMacro("AO", aoEnabled);
             pipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
+            auto normalTexture = target->GetData(HALF_RES)->normalTexture;
 
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -47,23 +53,24 @@ namespace Atlas {
             if (reflectionEnabled) {
                 commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
             }
-            if (ssgiEnabled) {
+            if (ssgiEnabled || rtgiEnabled) {
                 commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 3);
             }
 
-            auto uniforms = Uniforms{
-                .aoEnabled = aoEnabled || ssgiAo ? 1 : 0,
-                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES : 
+            auto uniforms = Uniforms {
+                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES :
                     target->GetAOResolution() == RenderResolution::HALF_RES,
-                .reflectionEnabled = reflectionEnabled ? 1 : 0,
+                .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
+                .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
                 .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ao->strength : ssgi->aoStrength / sqrt(ssgi->radius)) : 1.0f,
-                .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->cubemap.image->mipLevels : 1)
+                .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->GetCubemap().image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
-            commandList->BindBuffer(uniformBuffer.Get(), 3, 5);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 5);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 6);
 
             auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;

@@ -1,11 +1,13 @@
 #include "ContentBrowserWindow.h"
 #include "FileImporter.h"
 #include "DataCreator.h"
+#include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
 #include "audio/AudioData.h"
+#include "loader/AssetLoader.h"
 
 #include <filesystem>
 #include <imgui_internal.h>
@@ -21,6 +23,17 @@ namespace Atlas::Editor::UI {
     ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
 
 
+
+    }
+
+    void ContentBrowserWindow::Update() {
+
+        if (!show)
+            return;
+
+        JobSystem::Execute(searchAndFilterJob, [&](JobData&) {
+            UpdateFilteredAndSortedDirEntries();
+            });
 
     }
 
@@ -41,8 +54,8 @@ namespace Atlas::Editor::UI {
             uint32_t dockIdLeft, dockIdRight;
             ImGui::DockBuilderSplitNode(dsID, ImGuiDir_Left, 0.05f, &dockIdLeft, &dockIdRight);
 
-            ImGuiDockNode *leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
-            ImGuiDockNode *rightNode = ImGui::DockBuilderGetNode(dockIdRight);
+            ImGuiDockNode* leftNode = ImGui::DockBuilderGetNode(dockIdLeft);
+            ImGuiDockNode* rightNode = ImGui::DockBuilderGetNode(dockIdRight);
             leftNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
             rightNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe;
 
@@ -68,7 +81,8 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
-        const char *items[] = {"Audio", "Mesh", "Terrain", "Scene", "Script", "Font", "Prefab"};
+        const char* items[] = { "Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene",
+            "Script", "Font", "Prefab", "Texture", "Environment texture" };
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = selectedFilter == i;
             ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
@@ -95,7 +109,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::EndChild();
 
-        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly)) {
+        if (ImGui::IsDragDropActive() && ImGui::IsWindowHovered()) {
             ImGui::SetWindowFocus();
         }
 
@@ -116,7 +130,7 @@ namespace Atlas::Editor::UI {
                         [&](const ResourceHandle<Scene::Scene>& item) -> bool {
                             if (!item.IsLoaded())
                                 return false;
-                            return item->name == scene->name;                        
+                            return item->name == scene->name;
                         });
                     auto sceneHandle = *iter;
 
@@ -147,7 +161,7 @@ namespace Atlas::Editor::UI {
         ImGui::SetWindowFontScale(1.5f);
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(Singletons::icons->Get(IconType::ArrowLeft));
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&Singletons::icons->Get(IconType::ArrowLeft));
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -179,14 +193,35 @@ namespace Atlas::Editor::UI {
 
         ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
 
+        auto region = ImGui::GetContentRegionAvail();
+        auto& moreIcon = Singletons::icons->Get(IconType::Settings);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreIcon);
+
+        lineHeight = ImGui::GetTextLineHeight();
+        auto buttonSize = ImVec2(lineHeight, lineHeight);
+
+        auto uvMin = ImVec2(0.1f, 0.1f);
+        auto uvMax = ImVec2(0.9f, 0.9f);
+
+        ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            ImGui::OpenPopup("Content browser settings");
+        }
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopup("Content browser settings")) {
+            auto& settings = Singletons::config->contentBrowserSettings;
+
+            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
+            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+
+            ImGui::EndPopup();
+        }
+
     }
 
     void ContentBrowserWindow::RenderDirectoryContent() {
-
-        const float padding = 8.0f;
-        const float iconSize = 64.f;
-
-        const float itemSize = iconSize + 2.0f * padding;
 
         float totalWidth = ImGui::GetContentRegionAvail().x;
         auto columnItemCount = int32_t(totalWidth / itemSize);
@@ -194,109 +229,24 @@ namespace Atlas::Editor::UI {
 
         ImGui::Columns(columnItemCount, nullptr, false);
 
-        auto entries = GetFilteredAndSortedDirEntries();
+        if (!std::filesystem::exists(currentDirectory)) {
+            auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
+            Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
+            currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        }
+
+        JobSystem::Wait(searchAndFilterJob);
 
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 
-        std::string nextDirectory;
-        for (const auto& dirEntry : entries) {
+        nextDirectory = std::string();
 
-            if (!dirEntry.exists())
-                continue;
+        for (const auto& directory : directories) {
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None);
+        }
 
-            auto isDirectory = dirEntry.is_directory();
-
-            auto path = dirEntry.path().string();
-            auto assetPath = Common::Path::GetRelative(assetDirectory, path);
-
-            // Ignore 'invisible' directories
-            if (isDirectory && assetPath.at(0) == '.')
-                continue;
-
-            auto filename = Common::Path::GetFileName(path);
-
-            ImVec2 buttonSize = ImVec2(iconSize, iconSize);
-
-            ImGui::BeginGroup();
-
-            ImGui::PushID(path.c_str());
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-
-            auto& icon = GetIcon(dirEntry);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(icon);
-
-            std::string fileType = Common::Path::GetFileType(path);
-            std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
-
-            // Assign default value, which is not valid if this dir entry is a directory
-            auto type = FileType::Audio;
-            if (!dirEntry.is_directory())
-                type = FileImporter::fileTypeMapping.at(fileType);
-
-            auto assetRelativePath = Common::Path::GetRelative(assetDirectory, path);
-            assetRelativePath = Common::Path::Normalize(assetRelativePath);
-            if (assetRelativePath.starts_with('/'))
-                assetRelativePath.erase(assetRelativePath.begin());
-
-            auto buttonFlags = isDirectory || type == FileType::Scene ? ImGuiButtonFlags_PressedOnDoubleClick : 0;            
-            if (ImGui::ImageButtonEx(ImGui::GetID("ImageButton"), set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-                ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
-                if (isDirectory) 
-                    nextDirectory = path;
-                else if (type == FileType::Scene)
-                    FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
-            }
-
-            if (!isDirectory && ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.c_str(), assetRelativePath.length());
-                ImGui::Text("Drag to entity component");
-
-                ImGui::EndDragDropSource();
-            }
-
-            if (ImGui::BeginPopupContextItem()) {
-                // Do a direct import here without relying on the file importer
-                if (type == FileType::Mesh && ImGui::MenuItem("Import as scene")) {
-                    PopupPanels::filename = assetRelativePath;
-                    PopupPanels::isImportScenePopupVisible = true;
-                }
-
-                // We shouldn't allow the user to delete the root entity
-                if (ImGui::MenuItem("Open externally"))
-                    OpenExternally(std::filesystem::absolute(dirEntry.path()).string(), isDirectory);
-
-                if (ImGui::MenuItem("Rename")) {
-                    renamePopupVisible = true;
-                    auto dirEntryFilename = dirEntry.path().filename();
-                    renameString = dirEntryFilename.replace_extension("").string();
-                    renameDirEntry = dirEntry;
-                }
-
-                if (ImGui::MenuItem("Delete"))
-                    std::filesystem::remove(dirEntry.path());
-
-                ImGui::EndPopup();
-            }
-
-            ImGui::PopStyleColor();
-
-            auto offset = 0.0f;
-
-            auto textSize = ImGui::CalcTextSize(filename.c_str());
-            if (textSize.x < iconSize + padding)
-                offset = (iconSize + padding - textSize.x) / 2.0f;
-
-            auto cursorX = ImGui::GetCursorPosX();
-            ImGui::SetCursorPosX(cursorX + offset);
-            ImGui::TextWrapped("%s", filename.c_str());
-
-            ImGui::PopID();
-
-            ImGui::EndGroup();
-
-            ImGui::NextColumn();
-
+        for (const auto& file : files) {
+            RenderContentEntry(file.path, file.assetPath, file.type);
         }
 
         if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
@@ -314,11 +264,11 @@ namespace Atlas::Editor::UI {
         }
 
         if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
-            auto newPath = renameDirEntry.path();
-            newPath = newPath.filename().replace_filename(renameString);
-            if (renameDirEntry.path().has_extension())
-                newPath = newPath.replace_extension(renameDirEntry.path().extension());
-            std::filesystem::rename(renameDirEntry.path(), newPath);
+            auto newPath = renamePath;
+            newPath = newPath.replace_filename(renameString);
+            if (renamePath.has_extension())
+                newPath = newPath.replace_extension(renamePath.extension());
+            std::filesystem::rename(renamePath, newPath);
         }
 
         if (!nextDirectory.empty()) {
@@ -327,100 +277,184 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType) {
+
+        bool isDirectory = contentType == ContentType::None;
+        // Ignore 'invisible' directories
+        if (isDirectory && assetPath.at(0) == '.')
+            return;
+
+        auto filename = Common::Path::GetFileName(assetPath);
+
+        ImVec2 buttonSize = ImVec2(iconSize, iconSize);
+
+        ImGui::BeginGroup();
+
+        ImGui::PushID(path.c_str());
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+        Texture::Texture2D iconTexture;
+        if (isDirectory)
+            iconTexture = Singletons::icons->Get(IconType::Folder);
+        else
+            iconTexture = GetIcon(contentType);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
+
+        std::string fileType = Common::Path::GetFileType(assetPath);
+        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
+
+        // Assign default value, which is not valid if this dir entry is a directory
+        auto type = ContentType::Audio;
+        if (!isDirectory)
+            type = Content::contentTypeMapping.at(fileType);
+
+        auto assetRelativePath = Common::Path::Normalize(assetPath);
+        auto buttonFlags = isDirectory || type == ContentType::Scene ? ImGuiButtonFlags_PressedOnDoubleClick : 0;
+        if (ImGui::ImageButtonEx(ImGui::GetID("ImageButton"), set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+            ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
+            if (isDirectory)
+                nextDirectory = path.string();
+            else if (type == ContentType::Scene)
+                FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+        }
+
+        if (!isDirectory && ImGui::BeginDragDropSource()) {
+            // Size doesn't count the termination character, so add +1
+            ImGui::SetDragDropPayload("ContentBrowserResource", assetRelativePath.data(), assetRelativePath.size() + 1);
+            ImGui::Text("Drag to entity component");
+
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginPopupContextItem()) {
+            // Do a direct import here without relying on the file importer
+            if (type == ContentType::MeshSource && ImGui::MenuItem("Import as scene")) {
+                PopupPanels::filename = assetRelativePath;
+                PopupPanels::isImportScenePopupVisible = true;
+            }
+
+            // We shouldn't allow the user to delete the root entity
+            if (ImGui::MenuItem("Open externally"))
+                OpenExternally(std::filesystem::absolute(path).string(), isDirectory);
+
+            if (ImGui::MenuItem("Rename")) {
+                renamePopupVisible = true;
+                auto dirEntryFilename = path.filename();
+                renameString = dirEntryFilename.replace_extension("").string();
+                renamePath = path;
+            }
+
+            if (ImGui::MenuItem("Delete"))
+                std::filesystem::remove(path);
+
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopStyleColor();
+
+        auto offset = 0.0f;
+
+        auto textSize = ImGui::CalcTextSize(filename.c_str());
+        if (textSize.x < iconSize + padding)
+            offset = (iconSize + padding - textSize.x) / 2.0f;
+
+        auto cursorX = ImGui::GetCursorPosX();
+        ImGui::SetCursorPosX(cursorX + offset);
+        ImGui::TextWrapped("%s", filename.c_str());
+
+        ImGui::PopID();
+
+        ImGui::EndGroup();
+
+        ImGui::NextColumn();
+
+    }
+
     bool ContentBrowserWindow::IsValidFileType(const std::string& filename) {
 
         std::string fileType = Common::Path::GetFileType(filename);
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
 
-        return FileImporter::fileTypeMapping.contains(fileType);
+        return Content::contentTypeMapping.contains(fileType);
 
     }
 
-    Texture::Texture2D& ContentBrowserWindow::GetIcon(const std::filesystem::directory_entry& dirEntry) {
-        
+    Texture::Texture2D& ContentBrowserWindow::GetIcon(const ContentType contentType) {
+
         auto& icons = Singletons::icons;
 
-        if (dirEntry.is_directory())
-            return icons->Get(IconType::Folder);
-
-        auto path = dirEntry.path().string();
-        std::string fileType = Common::Path::GetFileType(path);
-        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
-
-        auto type = FileImporter::fileTypeMapping.at(fileType);
-
-        switch (type) {
-        case FileType::Audio: return icons->Get(IconType::Audio);
-        case FileType::Mesh: return icons->Get(IconType::Mesh);
-        case FileType::Scene: return icons->Get(IconType::Scene);
-        case FileType::Font: return icons->Get(IconType::Font);
-        case FileType::Prefab: return icons->Get(IconType::Prefab);
+        switch (contentType) {
+        case ContentType::Audio: return icons->Get(IconType::Audio);
+        case ContentType::Mesh: return icons->Get(IconType::Mesh);
+        case ContentType::MeshSource: return icons->Get(IconType::MeshSource);
+        case ContentType::Material: return icons->Get(IconType::Material);
+        case ContentType::Scene: return icons->Get(IconType::Scene);
+        case ContentType::Font: return icons->Get(IconType::Font);
+        case ContentType::Prefab: return icons->Get(IconType::Prefab);
+        case ContentType::Texture: return icons->Get(IconType::Image);
+        case ContentType::EnvironmentTexture: return icons->Get(IconType::EnvironmentImage);
         default: return icons->Get(IconType::Document);
         }
 
     }
 
-    std::vector<std::filesystem::directory_entry> ContentBrowserWindow::GetFilteredAndSortedDirEntries() {
+    void ContentBrowserWindow::UpdateFilteredAndSortedDirEntries() {
 
-        using dir_entry = std::filesystem::directory_entry;
-
-        FileType filterFileType;
+        ContentType filterFileType = ContentType::None;
         if (selectedFilter >= 0)
-            filterFileType = static_cast<FileType>(selectedFilter);
+            filterFileType = static_cast<ContentType>(selectedFilter);
 
-        std::vector<dir_entry> entries;
-        if (assetSearch.empty() && selectedFilter < 0) {
-            for (const auto& dirEntry : std::filesystem::directory_iterator(currentDirectory)) {
-                auto path = dirEntry.path().string();
-                if (dirEntry.is_directory() || IsValidFileType(path))
-                    entries.push_back(dirEntry);
-            }
+        auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
+        if (!contentDirectory)
+            return;
+
+        std::string searchQuery = assetSearch;
+        if (!searchQuery.empty()) {
+            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
+        }
+
+        const auto& settings = Singletons::config->contentBrowserSettings;
+
+        std::vector<Content> discoverdFiles;
+        bool recursively = searchQuery.empty() ? settings.filterRecursively && filterFileType != ContentType::None : settings.searchRecursively;
+        SearchDirectory(contentDirectory, discoverdFiles, filterFileType, searchQuery, recursively);
+
+        std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
+            return file0.name < file1.name;
+        });
+
+        if (assetSearch.empty() && !settings.filterRecursively) {
+            directories = contentDirectory->directories;
+            files = discoverdFiles;
         }
         else {
-            std::string searchQuery = assetSearch;
-            std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
-            for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(currentDirectory)) {
-                if (dirEntry.is_directory())
-                    continue;
-
-                auto path = dirEntry.path().string();
-                auto filename = Common::Path::GetFileName(path);
-                std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
-
-                if (!IsValidFileType(path))
-                    continue;
-
-                // Filter out by file type, if a filter is selected
-                if (selectedFilter >= 0) {
-                    std::string fileType = Common::Path::GetFileType(filename);
-                    std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
-
-                    auto type = FileImporter::fileTypeMapping.at(fileType);
-                    if (type != filterFileType)
-                        continue;
-                }
-
-                // Filter out by search query, if it is a valid (non-empty) query
-                if (searchQuery.empty() || filename.find(searchQuery) != std::string::npos)
-                    entries.push_back(dirEntry);
-            }
+            files = discoverdFiles;
+            directories.clear();
         }
 
-        // Sort for directories to be first and everything to be ordered alphabetically
-        std::sort(entries.begin(), entries.end(),
-            [](const dir_entry& entry0, const dir_entry& entry1) {
-                if (entry0.is_directory() && entry1.is_directory()) {
-                    return entry0.path() < entry1.path();
-                }
-                if (entry0.is_directory())
-                    return true;
-                if (entry1.is_directory())
-                    return false;
+    }
 
-                return entry0.path() < entry1.path();
-            });
+    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
+            const ContentType contentType, const std::string& searchQuery, bool recursively) {
 
-        return entries;
+        for (const auto& file : directory->files) {
+            if (file.type != contentType && contentType != ContentType::None) {
+                continue;
+            }
+            
+            if (!searchQuery.empty() && file.name.find(searchQuery) == std::string::npos) {
+                continue;
+            }
+
+            contentFiles.push_back(file);
+        }
+
+        if (recursively) {
+            for (const auto& childDirectory : directory->directories) {
+                SearchDirectory(childDirectory, contentFiles, contentType, searchQuery, true);
+            }
+        }
 
     }
 
@@ -433,12 +467,12 @@ namespace Atlas::Editor::UI {
         auto command = "open " + path;
         system(command.c_str());
 #endif
-        
+
     }
 
     bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
 
-         if (!isVisible)
+        if (!isVisible)
             return false;
 
         PopupPanels::SetupPopupSize(0.4f, 0.1f);
@@ -456,8 +490,8 @@ namespace Atlas::Editor::UI {
 
             if (popupNew)
                 ImGui::SetKeyboardFocusHere();
-                
-            ImGui::InputText("New name",  &input);
+
+            ImGui::InputText("New name", &input);
 
             if (ImGui::Button("Cancel")) {
                 isVisible = false;

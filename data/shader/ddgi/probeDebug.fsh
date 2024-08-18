@@ -29,15 +29,18 @@ void main() {
     vec2 totalResolution = vec2(ddgiData.volumeProbeCount.xz) * momRes;
     vec2 momTexelSize = 1.0 / totalResolution;
 
+    int probeCascadeIndex = GetProbeCascadeIndex(instanceID);
     ivec3 probeCoord = GetProbeGridCoord(instanceID);
     vec3 probeOffset = GetProbeOffset(instanceID);
-    vec3 probePosition = GetProbePosition(probeCoord);
+    vec3 probePosition = GetProbePosition(probeCoord, probeCascadeIndex);
 
     vec2 momOctCoord = UnitVectorToOctahedron(worldSpaceNormal);
-    vec3 momCoord = GetProbeCoord(probeCoord, momOctCoord, momRes, momTexelSize, 14);
+    vec3 momCoord = GetProbeCoord(probeCoord, probeCascadeIndex, momOctCoord, momRes, momTexelSize, 14);
     vec2 moments = textureLod(momentsVolume, momCoord, 0).rg;
 
-    baseColorFS = vec3(moments.x) / length(ddgiData.cellSize.xyz);
+    float probeAge = probeStates[instanceID].w;
+    baseColorFS = vec3(probeAge / 32.0);
+    //baseColorFS = vec3(moments.x) / length(ddgiData.cascades[probeCascadeIndex].cellSize.xyz);
     
     geometryNormalFS = normalize(normalVS);
     geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
@@ -57,6 +60,6 @@ void main() {
 
     materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ?
         pushConstants.probeActiveMaterialIdx : pushConstants.probeInactiveMaterialIdx;
-    materialIdxFS = moments.x < 0.6 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
+    materialIdxFS = probeAge > 32 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
     
 }

@@ -22,6 +22,8 @@ namespace Atlas::Editor::UI {
 
         static void RenderImportScenePopup();
 
+        static void RenderBlockingPopup();
+
     };
 
 }

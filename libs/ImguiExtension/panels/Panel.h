@@ -2,6 +2,7 @@
 
 #include <string>
 #include <imgui.h>
+#include <limits>
 
 #include "../UiElements.h"
 
@@ -27,7 +28,8 @@ namespace Atlas::ImguiExtension {
         static int32_t GetID() {
 
             static int32_t counter = 0;
-            return counter++;
+            static int32_t max = std::numeric_limits<int>::max();
+            return (counter++) % max;
 
         }
 

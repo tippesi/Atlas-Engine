@@ -62,8 +62,10 @@ namespace Atlas {
             auto constants = PushConstants {
                 .resolution = vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
                 .invResolution = 1.0f / vec2((float)target->GetScaledWidth(), (float)target->GetScaledHeight()),
-                .jitter = camera.GetJitter()
+                .jitter = camera.GetJitter(),
+                .resetHistory = !target->HasHistory() ? 1 : 0
             };
+
             commandList->PushConstants("constants", &constants);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
@@ -92,7 +94,9 @@ namespace Atlas {
             imageBarriers.push_back({ lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT });
             commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-            PushConstants constants;
+            PushConstants constants = {
+                .resetHistory = false
+            };
             Render(output, &target->radianceTexture, history, velocity, lastVelocity, depth,
                 nullptr, constants, commandList);
 

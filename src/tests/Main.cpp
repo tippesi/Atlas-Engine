@@ -43,6 +43,11 @@ public:
         Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
 
         auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
+        if (graphicsInstance->validationLayersEnabled)
+            Atlas::Log::Message("Validation layers are set up to be enalbed");
+        else
+            Atlas::Log::Message("Validation layers are disabled");
+
         ASSERT_EQ(graphicsInstance->isComplete, true);
     }
 
@@ -75,7 +80,7 @@ TEST_P(EngineEndToEndTest, DemoTest) {
             engineInstance->Update(deltaTime);
             engineInstance->Render(deltaTime);
 
-            graphicsDevice->CompleteFrame();
+            graphicsDevice->SubmitFrame();
 
         }
 

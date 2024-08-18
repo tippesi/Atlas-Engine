@@ -18,35 +18,25 @@ namespace Atlas::Editor {
         std::string fileType = Common::Path::GetFileType(filename);
         std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
 
-        if (!fileTypeMapping.contains(fileType)) {
+        if (!Content::contentTypeMapping.contains(fileType)) {
             Log::Warning("Incompatible file type " + fileType);
             return;
         }
 
         // Prefabs can't be imported via the resource manager (need to be created on scene by scene basis)
-        auto type = fileTypeMapping.at(fileType);
+        auto type = Content::contentTypeMapping.at(fileType);
         switch(type) {
-        case FileType::Audio: ImportFile<Audio::AudioData>(filename); break;
-        case FileType::Mesh: ImportFile<Mesh::Mesh>(filename); break;
-        case FileType::Scene: ImportFile<Scene::Scene>(filename); break;
-        case FileType::Script: ImportFile<Scripting::Script>(filename); break;
-        case FileType::Font: ImportFile<Font>(filename); break;
+        case ContentType::Audio: ImportFile<Audio::AudioData>(filename); break;
+        case ContentType::Mesh: ImportFile<Mesh::Mesh>(filename); break;
+        case ContentType::Material: ImportFile<Mesh::Mesh>(filename); break;
+        case ContentType::Texture: ImportFile<Texture::Texture2D>(filename); break;
+        case ContentType::EnvironmentTexture: ImportFile<Texture::Cubemap>(filename); break;
+        case ContentType::Scene: ImportFile<Scene::Scene>(filename); break;
+        case ContentType::Script: ImportFile<Scripting::Script>(filename); break;
+        case ContentType::Font: ImportFile<Font>(filename); break;
         default: break;
         }
 
     }
-
-    const std::map<const std::string, FileType> FileImporter::fileTypeMapping = {
-        { "wav", FileType::Audio },
-        { "gltf", FileType::Mesh },
-        { "glb", FileType::Mesh },
-        { "obj", FileType::Mesh },
-        { "fbx", FileType::Mesh },
-        { "aeterrain", FileType::Terrain },
-        { "aescene", FileType::Scene },
-        { "lua", FileType::Script },
-        { "ttf", FileType::Font },
-        { "aeprefab", FileType::Prefab },
-    };
 
 }

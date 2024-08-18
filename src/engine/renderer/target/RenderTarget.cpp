@@ -3,15 +3,18 @@
 
 namespace Atlas::Renderer {
 
-    RenderTarget::RenderTarget(int32_t width, int32_t height) : width(width), height(height) {
+    RenderTarget::RenderTarget(int32_t width, int32_t height) : 
+        width(glm::max(4, width)), height(glm::max(4, height)) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
-        scaledWidth = int32_t(scalingFactor * width);
-        scaledHeight = int32_t(scalingFactor * height);
+        // Need to at least have a size of 2x2 pixels
+        scaledWidth = glm::max(2, int32_t(scalingFactor * width));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
 
         ivec2 res = GetRelativeResolution(FULL_RES);
         targetData = RenderTargetData(res, true);
+        targetDataSwap = RenderTargetData(res, true);
 
         ivec2 halfRes = GetRelativeResolution(HALF_RES);
         targetDataDownsampled2x = RenderTargetData(halfRes, false);
@@ -23,6 +26,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledWidth, VK_FORMAT_R8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -31,7 +36,7 @@ namespace Atlas::Renderer {
         oceanDepthTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_D32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
 
         {
             Graphics::RenderPassColorAttachment colorAttachments[] = {
@@ -131,7 +136,7 @@ namespace Atlas::Renderer {
 
         CreateFrameBuffers();
 
-        SetGIResolution(HALF_RES);
+        SetGIResolution(HALF_RES, false);
         SetAOResolution(HALF_RES);
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
@@ -143,25 +148,28 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Resize(int32_t width, int32_t height) {
 
-        this->width = width;
-        this->height = height;
+        this->width = glm::max(4, width);
+        this->height = glm::max(4, height);
 
-        scaledWidth = int32_t(scalingFactor * width);
-        scaledHeight = int32_t(scalingFactor * height);
+        // Need to at least have a size of 2x2 pixels
+        scaledWidth = glm::max(2, int32_t(scalingFactor * width));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
 
         targetData.Resize(ivec2(scaledWidth, scaledHeight));
+        targetDataSwap.Resize(ivec2(scaledWidth, scaledHeight));
 
         // We have to also resize the other part of the history
         historyTexture.Resize(scaledWidth, scaledHeight);
         swapHistoryTexture.Resize(scaledWidth, scaledHeight);
         lightingTexture.Resize(scaledWidth, scaledHeight);
+        reactiveMaskTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
         outputTexture.Resize(width, height);
         sssTexture.Resize(scaledWidth, scaledHeight);
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);
         oceanStencilTexture.Resize(scaledWidth, scaledHeight);
 
-        SetGIResolution(giResolution);
+        SetGIResolution(giResolution, giMomentsTexture.IsValid());
         SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
@@ -202,16 +210,10 @@ namespace Atlas::Renderer {
 
     void RenderTarget::Swap() {
 
-        targetData.velocityTexture.swap(targetData.swapVelocityTexture);
-
-        gBufferFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 5);
-        gBufferFrameBuffer->Refresh();
-
-        afterLightingFrameBuffer->ChangeColorAttachmentImage(targetData.velocityTexture->image, 1);
-        afterLightingFrameBuffer->Refresh();
-
         hasHistory = true;
         swap = !swap;
+
+        CreateFrameBuffers();
 
     }
 
@@ -228,7 +230,7 @@ namespace Atlas::Renderer {
 
     }
 
-    void RenderTarget::SetGIResolution(RenderResolution resolution) {
+    void RenderTarget::SetGIResolution(RenderResolution resolution, bool createMomentsTexture) {
 
         auto res = GetRelativeResolution(resolution);
         giResolution = resolution;
@@ -240,10 +242,24 @@ namespace Atlas::Renderer {
         historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        if (createMomentsTexture) {
+            giLengthTexture.Reset();
+            historyGiLengthTexture.Reset();
+            giMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            historyGiMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        }
+        else {
+            giMomentsTexture.Reset();
+            historyGiMomentsTexture.Reset();
+            giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        }
+
+        hasHistory = false;
 
     }
 
@@ -270,6 +286,8 @@ namespace Atlas::Renderer {
         historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+        hasHistory = false;
+
     }
 
     RenderResolution RenderTarget::GetAOResolution() {
@@ -292,6 +310,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        hasHistory = false;
 
     }
 
@@ -317,6 +337,8 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        hasHistory = false;
     
     }
 
@@ -329,7 +351,7 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return &targetData;
+        case FULL_RES: return swap ? &targetData : &targetDataSwap;
         default: return swap ? &targetDataDownsampled2x : &targetDataSwapDownsampled2x;
         }
 
@@ -338,7 +360,7 @@ namespace Atlas::Renderer {
     RenderTargetData* RenderTarget::GetHistoryData(RenderResolution resolution) {
 
         switch (resolution) {
-        case FULL_RES: return &targetData; // This is not correct
+        case FULL_RES: return swap ? &targetDataSwap : &targetData;
         default: return swap ? &targetDataSwapDownsampled2x : &targetDataDownsampled2x;
         }
 
@@ -368,13 +390,13 @@ namespace Atlas::Renderer {
 
     Texture::Texture2D* RenderTarget::GetVelocity() {
 
-        return targetData.velocityTexture.get();
+        return GetData(FULL_RES)->velocityTexture.get();
 
     }
 
     Texture::Texture2D* RenderTarget::GetLastVelocity() {
 
-        return targetData.swapVelocityTexture.get();
+        return GetHistoryData(FULL_RES)->velocityTexture.get();
 
     }
 
@@ -402,18 +424,20 @@ namespace Atlas::Renderer {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
+        auto target = GetData(FULL_RES);
+
         auto gBufferFrameBufferDesc = Graphics::FrameBufferDesc{
                .renderPass = gBufferRenderPass,
                .colorAttachments = {
-                   {targetData.baseColorTexture->image, 0, true},
-                   {targetData.normalTexture->image, 0, true},
-                   {targetData.geometryNormalTexture->image, 0, true},
-                   {targetData.roughnessMetallicAoTexture->image, 0, true},
-                   {targetData.materialIdxTexture->image, 0, true},
-                   {targetData.velocityTexture->image, 0, true},
-                   {targetData.stencilTexture->image, 0, false},
+                   {target->baseColorTexture->image, 0, true},
+                   {target->normalTexture->image, 0, true},
+                   {target->geometryNormalTexture->image, 0, true},
+                   {target->roughnessMetallicAoTexture->image, 0, true},
+                   {target->materialIdxTexture->image, 0, true},
+                   {target->velocityTexture->image, 0, true},
+                   {target->stencilTexture->image, 0, false},
                },
-               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .depthAttachment = {target->depthTexture->image, 0, true},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
@@ -422,10 +446,10 @@ namespace Atlas::Renderer {
                .renderPass = afterLightingRenderPass,
                .colorAttachments = {
                    {lightingTexture.image, 0, true},
-                   {targetData.velocityTexture->image, 0, true},
-                   {targetData.stencilTexture->image, 0, false}
+                   {target->velocityTexture->image, 0, true},
+                   {target->stencilTexture->image, 0, false}
                },
-               .depthAttachment = {targetData.depthTexture->image, 0, true},
+               .depthAttachment = {target->depthTexture->image, 0, true},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
@@ -434,10 +458,10 @@ namespace Atlas::Renderer {
             .renderPass = afterLightingRenderPass,
             .colorAttachments = {
                 {lightingTexture.image, 0, true},
-                {targetData.velocityTexture->image, 0, true},
-                {targetData.stencilTexture->image, 0, true}
+                {target->velocityTexture->image, 0, true},
+                {target->stencilTexture->image, 0, true}
             },
-            .depthAttachment = {targetData.depthTexture->image, 0, true},
+            .depthAttachment = {target->depthTexture->image, 0, true},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
@@ -445,7 +469,7 @@ namespace Atlas::Renderer {
         auto oceanDepthOnlyFrameBufferDesc = Graphics::FrameBufferDesc{
             .renderPass = oceanRenderPass,
             .colorAttachments = {
-                {oceanStencilTexture.image, 0, false},
+                {oceanStencilTexture.image, 0, true},
             },
             .depthAttachment = {oceanDepthTexture.image, 0, true},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}

@@ -92,7 +92,7 @@ namespace Atlas {
                     // the frame buffer object might be destroyed in the meanwhile
                     [device = device, frameBuffer = frameBuffer]() {
                     vkDestroyFramebuffer(device->device, frameBuffer, nullptr);
-                });
+                }); 
             }
 
             VkFramebufferCreateInfo frameBufferInfo = {};

@@ -1,14 +1,9 @@
 #pragma once
 
 #include "Components.h"
-#include "common/SerializationHelper.h"
-#include "lighting/LightingSerializer.h"
-#include "audio/AudioSerializer.h"
-#include "physics/PhysicsSerializer.h"
+#include "LuaScriptComponent.h"
 
-#include "resource/ResourceManager.h"
-#include "audio/AudioManager.h"
-#include "loader/ModelLoader.h"
+#include "common/SerializationHelper.h"
 
 namespace Atlas::Scene::Components {
 

@@ -5,7 +5,7 @@
 #include <input/Keyboard.h>
 #include <input/Controller.h>
 #include <input/Touch.h>
-#include <loader/ModelLoader.h>
+#include <loader/ModelImporter.h>
 #include <ImguiExtension/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>
@@ -51,7 +51,7 @@ namespace Atlas::Editor {
 
         size_t activeSceneIdx = 0;
 
-        std::future<void> bvhBuilderFuture;
+        JobGroup bvhBuilderGroup;
 
         ImGuiID upperDockNodeID;
 

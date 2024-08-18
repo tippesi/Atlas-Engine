@@ -1,5 +1,7 @@
 #include "SceneSerializer.h"
 
+#include "lighting/LightingSerializer.h"
+#include "audio/AudioSerializer.h"
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
 
@@ -161,6 +163,7 @@ namespace Atlas::Scene {
         j["entities"] = entities;
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
+        j["wind"] = scene->wind;
 
         // Parse all optional members
         if (scene->fog)
@@ -171,6 +174,8 @@ namespace Atlas::Scene {
             j["ao"] = *scene->ao;
         if (scene->reflection)
             j["reflection"] = *scene->reflection;
+        if (scene->rtgi)
+            j["rtgi"] = *scene->rtgi;
         if (scene->sss)
             j["sss"] = *scene->sss;
         if (scene->ssgi)
@@ -220,6 +225,10 @@ namespace Atlas::Scene {
             scene->reflection = CreateRef<Lighting::Reflection>();
             *scene->reflection = j["reflection"];
         }
+        if (j.contains("rtgi")) {
+            scene->rtgi = CreateRef<Lighting::RTGI>();
+            *scene->rtgi = j["rtgi"];
+        }
         if (j.contains("sss")) {
             scene->sss = CreateRef<Lighting::SSS>();
             *scene->sss = j["sss"];
@@ -228,10 +237,29 @@ namespace Atlas::Scene {
             scene->ssgi = CreateRef<Lighting::SSGI>();
             *scene->ssgi = j["ssgi"];
         }
+        if (j.contains("wind")) {
+            scene->wind = j["wind"];
+        }
 
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void to_json(json& j, const Wind& p) {
+
+        j = json{
+            {"direction", p.direction},
+            {"speed", p.speed}
+        };
+
+    }
+
+    void from_json(const json& j, Wind& p) {
+
+        try_get_json(j, "direction", p.direction);
+        try_get_json(j, "speed", p.speed);
 
     }
 

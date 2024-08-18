@@ -4,6 +4,7 @@
 
 #include <volk.h>
 #include <set>
+#include <iterator>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_macos.h>
 
@@ -23,27 +24,42 @@ namespace Atlas {
             appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
-            appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 0);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
             LoadSupportedLayersAndExtensions();
 
-            auto requiredExtensions = extensionNames;
-#ifdef AE_HEADLESS
-            AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
-            requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-#endif
-
-            CheckExtensionSupport(requiredExtensions);
-
             const std::vector<const char*> validationLayers = {
-                    "VK_LAYER_KHRONOS_validation",
+                "VK_LAYER_KHRONOS_validation",
             };
 
             if (validationLayersEnabled && !CheckValidationLayerSupport(validationLayers)) {
                 Log::Warning("Required validation layers were not found. Disabling validation layers");
                 validationLayersEnabled = false;
             }
+
+            auto requiredExtensions = desc.requiredExtensions;
+#ifdef AE_HEADLESS
+            AE_ASSERT(supportedExtensions.contains(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME) && "Headless instance extension not supported");
+            requiredExtensions.push_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+#endif
+#ifndef AE_BUILDTYPE_RELEASE
+            if (supportedExtensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) &&
+                supportedExtensions.contains(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
+                requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+                requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            }
+#endif
+#ifdef AE_OS_MACOS
+            if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+                requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            }
+#endif
+            if (supportedExtensions.contains(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) && validationLayersEnabled) {
+                requiredExtensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
+            }
+
+            CheckExtensionSupport(requiredExtensions);
 
             VkInstanceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -54,7 +70,6 @@ namespace Atlas {
                 createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
             }
 #endif
-
             createInfo.enabledExtensionCount = uint32_t(requiredExtensions.size());
             createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
@@ -62,7 +77,9 @@ namespace Atlas {
 
             // Only enable these with validation layers enabled as well as debug mode enabled
             // They do take away a large chunk of performance
-            VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+            VkValidationFeatureEnableEXT enables[] = {
+                VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+            };
             VkValidationFeaturesEXT validationFeatures = {};
 
             StructureChainBuilder structureChainBuilder(createInfo);
@@ -75,7 +92,7 @@ namespace Atlas {
 
 #ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-                validationFeatures.enabledValidationFeatureCount = 1;
+                validationFeatures.enabledValidationFeatureCount = std::size(enables);
                 validationFeatures.pEnabledValidationFeatures = enables;
 
                 structureChainBuilder.Append(validationFeatures);                
@@ -150,6 +167,9 @@ namespace Atlas {
         }
 
         void Instance::LoadSupportedLayersAndExtensions() {
+
+            if (vkEnumerateInstanceExtensionProperties == nullptr)
+                Log::Warning("Stuff not loaded");
 
             unsigned int extensionCount = 0;
             bool success = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) == VK_SUCCESS;
@@ -237,7 +257,8 @@ namespace Atlas {
 
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;

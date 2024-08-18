@@ -21,6 +21,7 @@ layout(push_constant) uniform constants {
     vec2 resolution;
     vec2 invResolution;
     vec2 jitter;
+    int resetHistory;
 } PushConstants;
 
 const float minVelocityBlend = 0.05;
@@ -414,7 +415,8 @@ void main() {
     // Check if we sampled outside the viewport area
     blendFactor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 1.0 : blendFactor;
-
+    blendFactor = PushConstants.resetHistory > 0 ? 1.0 : blendFactor;
+    
     const vec3 luma = vec3(0.299, 0.587, 0.114);
     float weightHistory = (1.0 - blendFactor) / (1.0 + dot(historyColor.rgb, luma));
     float weightCurrent =  blendFactor / (1.0 + dot(currentColor.rgb, luma));

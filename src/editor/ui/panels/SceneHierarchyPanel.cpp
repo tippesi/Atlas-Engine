@@ -6,6 +6,26 @@
 
 namespace Atlas::Editor::UI {
 
+    void SceneHierarchyPanel::Update(Ref<Scene::Scene>& scene) {
+
+        JobSystem::Execute(searchJob, [&](JobData&) {
+            auto root = scene->GetEntityByName("Root");
+
+            // Search should be case-insensitive
+            transformedEntitySearch = entitySearch;
+            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
+                transformedEntitySearch.begin(), ::tolower);
+            
+            matchSet.clear();
+            matchSet.reserve(scene->GetEntityCount());
+            if (!transformedEntitySearch.empty()) {
+                std::string nodeName;
+                SearchHierarchy(scene, root, matchSet, nodeName, false);
+            }
+            });
+
+    }
+
     void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
 
         ImGui::Begin(GetNameID());
@@ -16,6 +36,8 @@ namespace Atlas::Editor::UI {
         isFocused = ImGui::IsWindowFocused();
 
         if (scene != nullptr) {
+
+            bool selectionChanged = false;
 
             auto root = scene->GetEntityByName("Root");
 
@@ -40,20 +62,13 @@ namespace Atlas::Editor::UI {
             }
 
             ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+            if (ImGui::IsItemClicked()) selectionChanged = true;
 
-            // Search should be case-insensitive
-            transformedEntitySearch = entitySearch;
-            std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
-                transformedEntitySearch.begin(), ::tolower);
+            JobSystem::Wait(searchJob);
 
-            std::unordered_map<ECS::Entity, bool> matchMap;
-            matchMap.reserve(scene->GetEntityCount());
-            if (!transformedEntitySearch.empty())
-                SearchHierarchy(scene, root, matchMap, false);
+            TraverseHierarchy(scene, root, matchSet, inFocus, &selectionChanged);
 
-            TraverseHierarchy(scene, root, matchMap, inFocus);
-
-            RenderExtendedHierarchy(scene);
+            RenderExtendedHierarchy(scene, &selectionChanged);
 
             const auto& io = ImGui::GetIO();
             bool controlDown;
@@ -67,6 +82,12 @@ namespace Atlas::Editor::UI {
             if (inFocus && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntity(scene);
 
+            if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
+                selectedEntity = Scene::Entity();
+                selectedProperty = SelectedProperty();
+            }
+
+
         }
 
         ImGui::End();
@@ -74,7 +95,7 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
-        std::unordered_map<ECS::Entity, bool>& matchMap, bool inFocus) {
+        std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -89,10 +110,12 @@ namespace Atlas::Editor::UI {
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
         // If the search term matches we want to display everything below this item in the hierarchy
-        bool validSearch = (transformedEntitySearch.empty() || matchMap[entity]);
+        bool validSearch = (transformedEntitySearch.empty() || matchSet.contains(entity));
+
+        bool rootNode = nodeName == "Root";
 
         // If we have a search term and the name doesn't match, return
-        if (nodeName != "Root" && !validSearch)
+        if (!rootNode && !validSearch)
             return;
 
         auto nodeFlags = baseFlags;
@@ -103,6 +126,7 @@ namespace Atlas::Editor::UI {
             ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen()) {
             selectedEntity = entity;
             selectedProperty = SelectedProperty();
+            *selectionChanged = true;
         }
 
         if (ImGui::BeginDragDropSource()) {
@@ -129,15 +153,15 @@ namespace Atlas::Editor::UI {
         bool deleteEntity = false;
         bool duplicateEntity = false;
         if (ImGui::BeginPopupContextItem()) {
-            // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Delete entity"))
-                deleteEntity = true;
-
             if (ImGui::MenuItem("Add emtpy entity"))
                 createEntity = true;
 
-            if (ImGui::MenuItem("Duplicate entity"))
+            if (!rootNode && ImGui::MenuItem("Duplicate entity"))
                 duplicateEntity = true;
+
+            // We shouldn't allow the user to delete the root entity
+            if (!rootNode && ImGui::MenuItem("Delete entity"))
+                deleteEntity = true;
 
             ImGui::EndPopup();
         }
@@ -147,7 +171,7 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity, matchMap, inFocus);
+                TraverseHierarchy(scene, childEntity, matchSet, inFocus, selectionChanged);
 
             }
 
@@ -185,6 +209,8 @@ namespace Atlas::Editor::UI {
             DuplicateSelectedEntity(scene);
         }
 
+        *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
+
         if (dropEntity.IsValid()) {
             auto dropParentEntity = scene->GetParentEntity(dropEntity);
 
@@ -210,27 +236,31 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged) {
 
         ImGui::Separator();
 
-        if (scene->fog)
-            RenderExtendedItem("Fog", &selectedProperty.fog);
-        if (scene->sky.clouds)
-            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds);
         if (scene->irradianceVolume)
-            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume);
-        if (scene->reflection)
-            RenderExtendedItem("Reflection", &selectedProperty.reflection);
+            RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
+        if (scene->rtgi)
+            RenderExtendedItem("Raytraced global illumination", &selectedProperty.rtgi, selectionChanged);
         if (scene->ssgi)
-            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi);
+            RenderExtendedItem("Screen-space global illumination", &selectedProperty.ssgi, selectionChanged);
+        if (scene->reflection)
+            RenderExtendedItem("Reflection", &selectedProperty.reflection, selectionChanged);
         if (scene->sss)
-            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss);
-        RenderExtendedItem("Post processing", &selectedProperty.postProcessing);
+            RenderExtendedItem("Screen-space shadows", &selectedProperty.sss, selectionChanged);
+        if (scene->sky.clouds)
+            RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
+        if (scene->fog)
+            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);        
+        RenderExtendedItem("Sky", &selectedProperty.sky, selectionChanged);
+        RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
+        RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected) {
+    void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected, bool *selectionChanged) {
 
         ImGuiTreeNodeFlags nodeFlags =  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
@@ -241,6 +271,7 @@ namespace Atlas::Editor::UI {
             selectedProperty = SelectedProperty();
             selectedEntity = Scene::Entity();
             *selected = true;
+            *selectionChanged = true;
         }
 
     }
@@ -289,15 +320,23 @@ namespace Atlas::Editor::UI {
     }
 
     bool SceneHierarchyPanel::SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
-        std::unordered_map<ECS::Entity, bool>& matchMap, bool parentMatches) {
+        std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches) {
 
         auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
         auto nameComponent = entity.TryGetComponent<NameComponent>();
 
-        std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
-        std::transform(nodeName.begin(), nodeName.end(), nodeName.begin(), ::tolower);
+        // Only allocate a new string when there is no name component
+        if (nameComponent) {
+            nodeName = nameComponent->name;
+        }
+        else {
+            nodeName = "entity " + std::to_string(entity);
+        }
 
-        parentMatches |= nodeName.find(transformedEntitySearch) != std::string::npos;
+        auto it = std::search(nodeName.begin(), nodeName.end(), transformedEntitySearch.begin(), transformedEntitySearch.end(),
+            [](unsigned char nodeChar, unsigned char searchChar) { return std::tolower(nodeChar) == searchChar; });
+
+        parentMatches |= it != nodeName.end();
         bool matches = parentMatches;
 
         if (hierarchyComponent) {
@@ -305,13 +344,14 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                matches |= SearchHierarchy(scene, childEntity, matchMap, parentMatches);
+                matches |= SearchHierarchy(scene, childEntity, matchSet, nodeName, parentMatches);
 
             }
 
         }
 
-        matchMap[entity] = matches;
+        if (matches)
+            matchSet.insert(entity);
 
         return matches;
 

@@ -7,8 +7,8 @@ namespace Atlas {
 
    namespace Texture {
 
-       Cubemap::Cubemap(std::string right, std::string left, std::string top,
-                        std::string bottom, std::string front, std::string back) {
+       Cubemap::Cubemap(const std::string& right, const std::string& left, const std::string& top,
+           const std::string& bottom, const std::string& front, const std::string& back) {
 
            std::string filenames[] = { right, left, top, bottom, front, back };
            Ref<Common::Image<uint8_t>> images[6];
@@ -35,7 +35,7 @@ namespace Atlas {
 
        }
 
-       Cubemap::Cubemap(std::string filename, int32_t resolution) {
+       Cubemap::Cubemap(const std::string& filename) {
 
            auto image = Loader::ImageLoader::LoadImage<float>(filename, false, 4);
 
@@ -48,6 +48,7 @@ namespace Atlas {
            filtering = Filtering::MipMapLinear;
            wrapping = Wrapping::ClampToEdge;
 
+           auto resolution = image->width / 4;
            Reallocate(Graphics::ImageType::ImageCube, resolution, resolution, 6, filtering, wrapping);
            RecreateSampler(filtering, wrapping);
 

@@ -3,13 +3,14 @@
 #include "Window.h"
 #include "Singletons.h"
 #include "Icons.h"
+#include "ContentDiscovery.h"
 #include "resource/ResourceManager.h"
 #include "common/Path.h"
 #include "ImguiExtension/ImguiWrapper.h"
-#include "loader/AssetLoader.h"
 
 #include <cctype>
 #include <filesystem>
+#include <tuple>
 
 namespace Atlas::Editor::UI {
 
@@ -18,6 +19,10 @@ namespace Atlas::Editor::UI {
     public:
         explicit ContentBrowserWindow(bool show);
 
+        ~ContentBrowserWindow() { JobSystem::Wait(searchAndFilterJob); }
+
+        void Update();
+
         void Render();
 
     private:
@@ -25,11 +30,16 @@ namespace Atlas::Editor::UI {
 
         void RenderDirectoryContent();
 
+        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType);
+
         bool IsValidFileType(const std::string& filename);
 
-        Texture::Texture2D& GetIcon(const std::filesystem::directory_entry& dirEntry);
+        Texture::Texture2D& GetIcon(const ContentType contentType);
 
-        std::vector<std::filesystem::directory_entry> GetFilteredAndSortedDirEntries();
+        void UpdateFilteredAndSortedDirEntries();
+
+        void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
+            const ContentType contentType, const std::string& searchQuery, bool recursively);
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
@@ -38,11 +48,21 @@ namespace Atlas::Editor::UI {
         int selectedFilter = -1;
 
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        std::string nextDirectory;
         std::string assetSearch;
 
         std::string renameString;
-        std::filesystem::directory_entry renameDirEntry;
+        std::filesystem::path renamePath;
         bool renamePopupVisible = false;
+
+        std::vector<Ref<ContentDirectory>> directories;
+        std::vector<Content> files;
+
+        JobGroup searchAndFilterJob{ JobPriority::Medium };
+
+        const float padding = 8.0f;
+        const float iconSize = 64.f;
+        const float itemSize = iconSize + 2.0f * padding;
 
     };
 

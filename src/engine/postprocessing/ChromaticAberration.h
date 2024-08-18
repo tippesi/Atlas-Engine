@@ -11,11 +11,8 @@ namespace Atlas {
         public:
             ChromaticAberration() = default;
 
-            ///
-            /// \param strength
-            /// \param colorsReversed
             ChromaticAberration(float strength, bool colorsReversed = false) :
-                    strength(strength), colorsReversed(colorsReversed), enable(true) {};
+                enable(true), strength(strength), colorsReversed(colorsReversed) {};
 
             bool enable = false;
 

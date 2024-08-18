@@ -2,6 +2,7 @@
 
 #include "../System.h"
 
+#include "../resource/Resource.h"
 #include "../texture/Cubemap.h"
 #include "../texture/Texture2D.h"
 
@@ -14,7 +15,7 @@ namespace Atlas {
         public:
             EnvironmentProbe() = default;
 
-            explicit EnvironmentProbe(const Texture::Cubemap& cubemap);
+            explicit EnvironmentProbe(const ResourceHandle<Texture::Cubemap>& cubemap);
 
             explicit EnvironmentProbe(int32_t resolution, vec3 position = vec3(0.0f, 10.0f, 0.0f));
 
@@ -22,12 +23,14 @@ namespace Atlas {
 
             vec3 GetPosition() const;
 
-            int32_t resolution;
+            const Texture::Cubemap& GetCubemap() const;
 
             std::vector<mat4> viewMatrices;
             mat4 projectionMatrix;
 
-            Texture::Cubemap cubemap;
+            ResourceHandle<Texture::Cubemap> cubemap;
+
+            Texture::Cubemap generatedCubemap;
             Texture::Cubemap depth;
 
             Texture::Cubemap filteredDiffuse;

@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "SceneSerializer.h"
 #include "components/Components.h"
+#include "components/LuaScriptComponent.h"
 
 namespace Atlas {
 
@@ -12,6 +13,7 @@ namespace Atlas {
         Scene::~Scene() {
 
             Clear();
+            WaitForAsyncWorkCompletion();
 
         }
 
@@ -90,14 +92,26 @@ namespace Atlas {
 
             this->deltaTime = deltaTime;
 
+            WaitForAsyncWorkCompletion();
+
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-            // Update scripting components
-            auto luaScriptComponentSubset = entityManager.GetSubset<LuaScriptComponent>();
-            for (auto entity : luaScriptComponentSubset) {
-                auto& luaScriptComponent = luaScriptComponentSubset.Get<LuaScriptComponent>(entity);
-                luaScriptComponent.Update(luaScriptManager, deltaTime);
+#ifdef AE_BINDLESS
+            UpdateBindlessIndexMaps();
+#endif
+
+            // Update scripting components (but only after the first timestep when everything else is settled)
+            if (!firstTimestep) {
+                // Work with a copy here
+                auto luaScriptComponents = entityManager.GetComponents<LuaScriptComponent>();
+                for (auto& luaScriptComponent : luaScriptComponents) {
+                    luaScriptComponent.Update(luaScriptManager, deltaTime);
+
+                    // Replace original one with the updated component
+                    auto& originalComponent = entityManager.Get<LuaScriptComponent>(luaScriptComponent.entity);
+                    originalComponent = luaScriptComponent;
+                }
             }
 
             TransformComponent rootTransform = {};
@@ -185,7 +199,7 @@ namespace Atlas {
                         const auto& [rigidBodyComponent, transformComponent] = rigidBodySubset.Get(entity);
 
                         if (!rigidBodyComponent.IsValid() || transformComponent.isStatic ||
-                            rigidBodyComponent.layer == Physics::Layers::STATIC)
+                            rigidBodyComponent.layer == Physics::Layers::Static)
                             continue;
 
                         // This happens if no change was triggered by the user, then we still need
@@ -269,19 +283,17 @@ namespace Atlas {
             }
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-
-            // Make sure this is changed just once at the start of a frame
-            rayTracingWorldUpdateFuture = std::async(std::launch::async, [&]() {
+            auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+            JobSystem::Execute(rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
                 // Need to wait before updating graphic resources
-                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameCompletion();
+                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
                     rayTracingWorld->scene = this;
-                    rayTracingWorld->Update(true);
+                    // Don't update triangle lights for now (second argument)
+                    rayTracingWorld->Update(rayTracingSubset, false);
                 }
                 rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
-                });
-            
+                });          
 #endif
 
             // We also need to reset the hierarchy components as well
@@ -307,6 +319,8 @@ namespace Atlas {
 
                 textComponent.Update(transformComponent);
             }
+
+            firstTimestep = false;
 
         }
 
@@ -375,6 +389,7 @@ namespace Atlas {
         std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {
 
             std::vector<ResourceHandle<Mesh::Mesh>> meshes;
+            meshes.reserve(registeredMeshes.size());
 
             // Not really efficient, but does the job
             for (auto& [meshId, registeredMesh] : registeredMeshes) {
@@ -411,7 +426,10 @@ namespace Atlas {
                 if (!mesh.IsLoaded())
                     continue;
                 for (auto& material : mesh->data.materials) {
-                    materials.push_back(material);
+                    if (!material.IsLoaded())
+                        continue;
+
+                    materials.push_back(material.Get());
                 }
             }
 
@@ -503,15 +521,29 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, Atlas::RenderList& renderList, const Ref<RenderList::Pass>& pass) {
+        void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
+
+            if (!mainCameraEntity.IsValid())
+                return;
+
+            auto cameraPos = mainCameraEntity.GetComponent<CameraComponent>().GetLocation();
 
             // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
             auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto& entity : subset) {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
-                if (comp.dontCull || comp.visible && frustum.Intersects(comp.aabb))
-                    renderList.Add(pass, entity, comp);
+                if (!comp.mesh.IsLoaded())
+                    continue;
+
+                auto diff = comp.aabb.GetCenter() - cameraPos;
+
+                float dist2 = glm::dot(diff, diff);
+                float cullingDist = pass->type == RenderList::RenderPassType::Main ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
+                float cullingDist2 = cullingDist * cullingDist;
+
+                if (comp.dontCull || comp.visible && dist2 < cullingDist2 && frustum.Intersects(comp.aabb))
+                    pass->Add(entity, comp);
             }
 
         }
@@ -536,8 +568,9 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            if (rayTracingWorldUpdateFuture.valid())
-                rayTracingWorldUpdateFuture.get();
+            JobSystem::Wait(bindlessMeshMapUpdateJob);
+            JobSystem::Wait(bindlessTextureMapUpdateJob);
+            JobSystem::Wait(rayTracingWorldUpdateJob);
 
         }
 
@@ -585,47 +618,63 @@ namespace Atlas {
 
         }
 
-        void Scene::UpdateBindlessIndexMaps() {
+        void Scene::UpdateBindlessIndexMaps() {            
 
-            std::set<Ref<Texture::Texture2D>> textures;
+            JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
+                auto meshes = GetMeshes();
+                meshIdToBindlessIdx.clear();
 
-            uint32_t textureIdx = 0;
-            uint32_t bufferIdx = 0;
+                uint32_t bufferIdx = 0;
+                for (const auto& mesh : meshes) {
+                    if (!mesh.IsLoaded()) continue;
 
-            textureToBindlessIdx.clear();
-            meshIdToBindlessIdx.clear();
+                    // Not all meshes might have a bvh
+                    if (!mesh->IsBVHBuilt())
+                        continue;
 
-            auto meshes = GetMeshes();
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded()) continue;
+                    meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
+                }
+                });
 
-                for (auto& material : mesh->data.materials) {
-                    if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap);
-                    if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap);
-                    if (material->HasNormalMap())
-                        textures.insert(material->normalMap);
-                    if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap);
-                    if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap);
-                    if (material->HasAoMap())
-                        textures.insert(material->aoMap);
+            JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
+                auto meshes = GetMeshes();
+                textureToBindlessIdx.clear();
+
+                std::set<Ref<Material>> materials;
+                std::set<Ref<Texture::Texture2D>> textures;
+
+                uint32_t textureIdx = 0;
+                for (const auto& mesh : meshes) {
+                    if (!mesh.IsLoaded()) continue;
+
+                    for (auto& material : mesh->data.materials)
+                        if (material.IsLoaded())
+                            materials.insert(material.Get());
                 }
 
-                // Not all meshes might have a bvh
-                if (!mesh->IsBVHBuilt())
-                    continue;
+                for (const auto& material : materials) {
+                    if (material->HasBaseColorMap())
+                        textures.insert(material->baseColorMap.Get());
+                    if (material->HasOpacityMap())
+                        textures.insert(material->opacityMap.Get());
+                    if (material->HasNormalMap())
+                        textures.insert(material->normalMap.Get());
+                    if (material->HasRoughnessMap())
+                        textures.insert(material->roughnessMap.Get());
+                    if (material->HasMetalnessMap())
+                        textures.insert(material->metalnessMap.Get());
+                    if (material->HasAoMap())
+                        textures.insert(material->aoMap.Get());
+                    if (material->HasDisplacementMap())
+                        textures.insert(material->displacementMap.Get());
+                }
 
-                meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-            }
+                for (const auto& texture : textures) {
 
-            for (const auto& texture : textures) {
+                    textureToBindlessIdx[texture] = textureIdx++;
 
-                textureToBindlessIdx[texture] = textureIdx++;
-
-            }
+                }
+                });
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();
             for (auto entity : lightSubset) {

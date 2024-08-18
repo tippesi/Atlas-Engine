@@ -2,11 +2,13 @@
 
 namespace Atlas::ImguiExtension {
 
-    void SSGIPanel::Render(Ref<Lighting::SSGI>& ssgi) {
+    void SSGIPanel::Render(Ref<Lighting::SSGI>& ssgi, Ref<Renderer::RenderTarget>& target) {
 
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &ssgi->enable);
+        ImGui::Checkbox("Half resolution", &ssgi->halfResolution);
+
         ImGui::Checkbox("Enable ambient occlusion", &ssgi->enableAo);
         ImGui::SliderInt("Ray count", &ssgi->rayCount, 1, 8);
         ImGui::SliderInt("Sample count", &ssgi->sampleCount, 1, 16);

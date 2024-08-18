@@ -27,8 +27,8 @@ namespace Atlas {
              * @param back
              * @note All textures are expected to have the same dimensions
              */
-            Cubemap(std::string right, std::string left, std::string top,
-                    std::string bottom, std::string front, std::string back);
+            Cubemap(const std::string& right, const std::string& left, const std::string& top,
+                const std::string& bottom, const std::string& front, const std::string& back);
 
             /**
             * Constructs a Cubemap object.
@@ -36,7 +36,7 @@ namespace Atlas {
             * @param resolution
             * @note The file has to be a equirectangular map.
             */
-            Cubemap(std::string filename, int32_t resolution);
+            Cubemap(const std::string& filename);
 
             /**
              * Construct a Cubemap object.

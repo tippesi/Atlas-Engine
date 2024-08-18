@@ -19,12 +19,12 @@
 #include "MemoryManager.h"
 
 #include "../common/Ref.h"
+#include "../jobsystem/JobSystem.h"
 
 #include <optional>
 #include <vector>
 #include <mutex>
 #include <set>
-#include <future>
 #include <shared_mutex>
 
 namespace Atlas {
@@ -41,6 +41,8 @@ namespace Atlas {
             bool debugMarker = false;
             bool wideLines = false;
             bool shaderFloat16 = false;
+            bool extendedDynamicState = false;
+            bool memoryPriority = false;
         };
 
         struct CommandListSubmission {
@@ -75,6 +77,9 @@ namespace Atlas {
 
                 for (auto commandList : submittedCommandLists) {
                     commandList->ResetDescriptors();
+                    commandList->frameBufferInUse = nullptr;
+                    commandList->renderPassInUse = nullptr;
+                    commandList->pipelineInUse = nullptr;
                     commandList->wasSwapChainAccessed = false;
                     commandList->isLocked = false;
                 }
@@ -142,13 +147,13 @@ namespace Atlas {
 
             void FlushCommandList(CommandList* cmd);
 
-            bool IsPreviousFrameComplete();
+            bool IsPreviousFrameSubmitted();
 
-            void WaitForPreviousFrameCompletion();
+            void WaitForPreviousFrameSubmission();
 
-            void CompleteFrameAsync();
+            void SubmitFrameAsync();
 
-            void CompleteFrame();
+            void SubmitFrame();
 
             bool CheckFormatSupport(VkFormat format, VkFormatFeatureFlags featureFlags);
 
@@ -157,6 +162,8 @@ namespace Atlas {
             void WaitForIdle();
 
             void ForceMemoryCleanup();
+
+            void SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle);
 
             template <class T>
             struct Resources {
@@ -179,9 +186,9 @@ namespace Atlas {
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
 
-            VkPhysicalDeviceFeatures2 features = {};
-            VkPhysicalDeviceVulkan11Features features11 = {};
-            VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceFeatures2 availableFeatures = {};
+            VkPhysicalDeviceVulkan11Features availableFeatures11 = {};
+            VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
 
             DeviceSupport support;
             std::set<std::string> supportedExtensions;
@@ -306,8 +313,8 @@ namespace Atlas {
 
             std::shared_mutex queueMutex;
 
-            std::atomic_bool frameComplete = true;
-            std::future<void> completeFrameFuture;
+            std::atomic_bool frameSubmissionComplete = true;
+            JobGroup submitFrameJob { JobPriority::High };
 
         };
 

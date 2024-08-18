@@ -21,7 +21,7 @@ namespace Atlas {
             instance = Instance::DefaultInstance;
 
             std::vector<const char*> requiredExtensions = {
-                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             };
 
             std::vector<const char*> optionalExtensions = {
@@ -31,7 +31,9 @@ namespace Atlas {
                 VK_KHR_RAY_QUERY_EXTENSION_NAME,
                 VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
                 VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
-                VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME
+                VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+                VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+                VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME
 #ifdef AE_BINDLESS
                 , VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 #endif
@@ -441,34 +443,31 @@ namespace Atlas {
 
         }
 
-        bool GraphicsDevice::IsPreviousFrameComplete() {
+        bool GraphicsDevice::IsPreviousFrameSubmitted() {
 
-            return frameComplete;
-
-        }
-
-        void GraphicsDevice::WaitForPreviousFrameCompletion() {
-
-            if (completeFrameFuture.valid())
-                completeFrameFuture.get();
+            return frameSubmissionComplete;
 
         }
 
-        void GraphicsDevice::CompleteFrameAsync() {
+        void GraphicsDevice::WaitForPreviousFrameSubmission() {
 
-            frameComplete = false;
+            JobSystem::Wait(submitFrameJob);
 
-            if (completeFrameFuture.valid())
-                completeFrameFuture.get();
+        }
+
+        void GraphicsDevice::SubmitFrameAsync() {
+
+            frameSubmissionComplete = false;
+
+            JobSystem::Wait(submitFrameJob);
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
             // Refrain from using complete frame async for now
-            completeFrameFuture = std::async(std::launch::async,
-                [this] () { CompleteFrame(); });
+            JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
 
         }
 
-        void GraphicsDevice::CompleteFrame() {
+        void GraphicsDevice::SubmitFrame() {
 
             bool recreateSwapChain = false;
 
@@ -569,12 +568,12 @@ namespace Atlas {
                 recreateSwapChain = true;
             }
 
-            if (recreateSwapChain || CheckForWindowResize()) {
+            if (recreateSwapChain || CheckForWindowResize() || !swapChain->isComplete) {
                 // A new image index is automatically acquired
                 CreateSwapChain(swapChain->presentMode, swapChain->colorSpace);
             }
 
-            frameComplete = true;
+            frameSubmissionComplete = true;
 
         }
 
@@ -594,7 +593,7 @@ namespace Atlas {
 
         void GraphicsDevice::WaitForIdle() {
 
-            WaitForPreviousFrameCompletion();
+            WaitForPreviousFrameSubmission();
 
             std::unique_lock lock(queueMutex);
 
@@ -608,6 +607,20 @@ namespace Atlas {
             DestroyUnusedGraphicObjects();
 
             memoryManager->DestroyAllImmediate();
+
+        }
+
+        void GraphicsDevice::SetDebugObjectName(const std::string& name, VkObjectType objectType, uint64_t handle) {
+
+            if (!support.debugMarker)
+                return;
+
+            VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+            nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+            nameInfo.objectType = objectType;
+            nameInfo.objectHandle = handle;
+            nameInfo.pObjectName = name.c_str();
+            vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
 
         }
 
@@ -960,19 +973,19 @@ namespace Atlas {
         void GraphicsDevice::BuildPhysicalDeviceFeatures(VkPhysicalDevice device) {
 
             // Initialize feature struct appropriately
-            features = {};
-            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features11 = {};
-            features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-            features12 = {};
-            features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            availableFeatures = {};
+            availableFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            availableFeatures11 = {};
+            availableFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+            availableFeatures12 = {};
+            availableFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 
             // Point to the next features
-            features.pNext = &features11;
-            features11.pNext = &features12;
+            availableFeatures.pNext = &availableFeatures11;
+            availableFeatures11.pNext = &availableFeatures12;
 
             // This queries all features in the chain
-            vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+            vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
 
         }
 
@@ -1025,6 +1038,48 @@ namespace Atlas {
             VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeature = {};
             rayQueryFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 
+            VkPhysicalDeviceMemoryPriorityFeaturesEXT memoryPriorityFeature = {};
+            memoryPriorityFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT;
+
+            VkPhysicalDeviceRayTracingValidationFeaturesNV validationFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV };
+
+            VkPhysicalDeviceFeatures2 features = {};
+            VkPhysicalDeviceVulkan11Features features11 = {};
+            VkPhysicalDeviceVulkan12Features features12 = {};
+            features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+            features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+            features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
+            features.features.tessellationShader = availableFeatures.features.tessellationShader;
+            features.features.multiDrawIndirect = availableFeatures.features.tessellationShader;
+            features.features.depthBounds = availableFeatures.features.depthBounds;
+            features.features.wideLines = availableFeatures.features.wideLines;
+            features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;
+            features.features.shaderUniformBufferArrayDynamicIndexing = availableFeatures.features.shaderUniformBufferArrayDynamicIndexing;
+            features.features.shaderSampledImageArrayDynamicIndexing = availableFeatures.features.shaderSampledImageArrayDynamicIndexing;
+            features.features.shaderStorageBufferArrayDynamicIndexing = availableFeatures.features.shaderStorageBufferArrayDynamicIndexing;
+            features.features.shaderStorageImageArrayDynamicIndexing = availableFeatures.features.shaderStorageImageArrayDynamicIndexing;
+            features.features.shaderStorageImageWriteWithoutFormat = availableFeatures.features.shaderStorageImageWriteWithoutFormat;
+            features.features.shaderFloat64 = availableFeatures.features.shaderFloat64;
+            features.features.shaderInt64 = availableFeatures.features.shaderInt64;
+            features.features.shaderInt16 = availableFeatures.features.shaderInt16;
+            features.features.independentBlend = availableFeatures.features.independentBlend;
+
+            features12.descriptorIndexing = availableFeatures12.descriptorIndexing;
+            features12.shaderUniformBufferArrayNonUniformIndexing = availableFeatures12.shaderUniformBufferArrayNonUniformIndexing;
+            features12.shaderSampledImageArrayNonUniformIndexing = availableFeatures12.shaderSampledImageArrayNonUniformIndexing;
+            features12.shaderStorageBufferArrayNonUniformIndexing = availableFeatures12.shaderStorageBufferArrayNonUniformIndexing;
+            features12.shaderStorageImageArrayNonUniformIndexing = availableFeatures12.shaderStorageImageArrayNonUniformIndexing;
+            features12.descriptorBindingUniformBufferUpdateAfterBind = availableFeatures12.descriptorBindingUniformBufferUpdateAfterBind;
+            features12.descriptorBindingSampledImageUpdateAfterBind = availableFeatures12.descriptorBindingSampledImageUpdateAfterBind;
+            features12.descriptorBindingStorageImageUpdateAfterBind = availableFeatures12.descriptorBindingStorageImageUpdateAfterBind;
+            features12.descriptorBindingStorageBufferUpdateAfterBind = availableFeatures12.descriptorBindingStorageBufferUpdateAfterBind;
+            features12.descriptorBindingPartiallyBound = availableFeatures12.descriptorBindingPartiallyBound;
+            features12.descriptorBindingVariableDescriptorCount = availableFeatures12.descriptorBindingVariableDescriptorCount;
+            features12.hostQueryReset = availableFeatures12.hostQueryReset;
+            features12.bufferDeviceAddress = availableFeatures12.bufferDeviceAddress;
+            features12.shaderFloat16 = availableFeatures12.shaderFloat16;
+
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
                 supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
@@ -1038,6 +1093,11 @@ namespace Atlas {
                 featureBuilder.Append(accelerationStructureFeature);
                 featureBuilder.Append(rtPipelineFeature);
                 featureBuilder.Append(rayQueryFeature);
+
+                if (supportedExtensions.contains(VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME) && instance->validationLayersEnabled) {
+                    validationFeatures.rayTracingValidation = VK_TRUE;
+                    featureBuilder.Append(validationFeatures);
+                }
 
                 support.hardwareRayTracing = true;
             }
@@ -1054,9 +1114,32 @@ namespace Atlas {
                 support.shaderFloat16 = true;
             }
 
+            if (supportedExtensions.contains(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)) {
+                memoryPriorityFeature.memoryPriority = VK_TRUE;
+
+                featureBuilder.Append(memoryPriorityFeature);
+
+                support.memoryPriority = true;
+            }
+
+            VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedStateFeatures = {};
+            extendedStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+
+            if (supportedExtensions.contains(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
+                extendedStateFeatures.extendedDynamicState = VK_TRUE;
+
+                featureBuilder.Append(extendedStateFeatures);
+
+                support.extendedDynamicState = true;
+            }
+
 #ifdef AE_BINDLESS
             if (supportedExtensions.contains(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-                features12.descriptorBindingPartiallyBound && features12.runtimeDescriptorArray) {
+                availableFeatures12.descriptorBindingPartiallyBound && availableFeatures12.runtimeDescriptorArray) {
+
+                features12.descriptorBindingPartiallyBound = VK_TRUE;
+                features12.runtimeDescriptorArray = VK_TRUE;
+
                 support.bindless = true;
             }
 #endif
@@ -1116,7 +1199,7 @@ namespace Atlas {
         void GraphicsDevice::DestroyFrameData() {
 
             for (int32_t i = 0; i < FRAME_DATA_COUNT; i++) {
-                auto& frameCommandLists = frameData[i].commandLists;
+                const auto& frameCommandLists = frameData[i].commandLists;
                 for (auto commandList : frameCommandLists) {
                     delete commandList;
                 }

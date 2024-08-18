@@ -46,11 +46,14 @@ namespace Atlas {
 
             private:
                 struct alignas(16) PushConstants {
-                    int32_t lightCount;
-                    uint32_t rayBufferOffset;
-                    uint32_t rayPayloadBufferOffset;
-                    uint32_t rayBufferSize;
-                    int32_t useRayBinning;
+                    int32_t lightCount = 0;
+                    uint32_t rayBufferOffset = 0;
+                    uint32_t rayPayloadBufferOffset = 0;
+                    uint32_t rayBufferSize = 0;
+                    int32_t useRayBinning = 0;
+                    int32_t padding0 = 0;
+                    int32_t padding1 = 0;
+                    int32_t padding2 = 0;
                 };
                 
                 std::vector<GPULight> lights;

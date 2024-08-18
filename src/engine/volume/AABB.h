@@ -1,5 +1,4 @@
-#ifndef AE_AABB_H
-#define AE_AABB_H
+#pragma once
 
 #include "../System.h"
 
@@ -73,6 +72,8 @@ namespace Atlas {
              */
             AABB Scale(float scale);
 
+            AABB Scale(vec3 scale);
+
             void Grow(AABB aabb);
 
             void Grow(vec3 vector);
@@ -84,6 +85,8 @@ namespace Atlas {
             vec3 GetSize() const;
 
             float GetDistance(vec3 point) const;
+
+            vec3 GetCenter() const;
 
             /**
              * Returns the eight corners of the AABB.
@@ -104,5 +107,3 @@ namespace Atlas {
     }
 
 }
-
-#endif

@@ -35,7 +35,7 @@ namespace Atlas {
             vec4 lastCameraLocation = vec4(camera.GetLastLocation(), 1.0f);
             commandList->PushConstants("constants", &lastCameraLocation);
 
-            const auto& cubeMap = scene->sky.probe->cubemap;
+            const auto& cubeMap = scene->sky.probe->GetCubemap();
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(velocityTexture->image, 3, 1);

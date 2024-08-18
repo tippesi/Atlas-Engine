@@ -34,6 +34,8 @@ namespace Atlas {
 
                 Ref<Audio::AudioStream> stream = nullptr;
 
+                bool permanentPlay = false;
+
             private:
                 void Update(float deltaTime, const TransformComponent& transformComponent,
                     vec3 listenerLocation, vec3 lastListenerLocation, vec3 listenerRight);

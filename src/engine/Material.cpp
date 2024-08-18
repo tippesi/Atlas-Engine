@@ -10,43 +10,43 @@ namespace Atlas {
 
     bool Material::HasBaseColorMap() const {
 
-        return baseColorMap ? true : false;
+        return baseColorMap.IsValid();
 
     }
 
     bool Material::HasOpacityMap() const {
 
-        return opacityMap ? true : false;
+        return opacityMap.IsValid();
 
     }
 
     bool Material::HasNormalMap() const {
 
-        return normalMap ? true : false;
+        return normalMap.IsValid();
 
     }
 
     bool Material::HasRoughnessMap() const {
 
-        return roughnessMap ? true : false;
+        return roughnessMap.IsValid();
 
     }
 
     bool Material::HasMetalnessMap() const {
 
-        return metalnessMap ? true : false;
+        return metalnessMap.IsValid();
 
     }
 
     bool Material::HasAoMap() const {
 
-        return aoMap ? true : false;
+        return aoMap.IsValid();
 
     }
 
     bool Material::HasDisplacementMap() const {
 
-        return displacementMap ? true : false;
+        return displacementMap.IsValid();
 
     }
 

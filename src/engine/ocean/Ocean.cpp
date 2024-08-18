@@ -47,11 +47,12 @@ namespace Atlas {
             renderList.clear();
 
             for (auto node : leafs) {
+                // Scale in order to avoid culling when nodes move on simulation displacement on xz plane
                 auto aabb = Volume::AABB(
                     vec3(node->location.x, -50.0, node->location.y) + translation,
                     vec3(node->location.x + node->sideLength, 50.0f,
                         node->location.y + node->sideLength) + translation
-                );
+                ).Scale(2.0f);
 
                 if (camera.frustum.Intersects(aabb))
                     renderList.push_back(node);

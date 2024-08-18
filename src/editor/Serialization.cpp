@@ -24,7 +24,13 @@ namespace Atlas::Editor {
         json j = {
             { "darkMode", config->darkMode },
             { "pathTrace", config->pathTrace },
+            { "vsync", config->vsync },
             { "scenes", scenePaths }
+        };
+
+        j["contentBrowserSettings"] = {
+            { "searchRecursively", config->contentBrowserSettings.searchRecursively },
+            { "filterRecursively", config->contentBrowserSettings.filterRecursively },
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -48,8 +54,16 @@ namespace Atlas::Editor {
             j.at("darkMode").get_to(config->darkMode);
         if (j.contains("pathTrace"))
             j.at("pathTrace").get_to(config->pathTrace);
+        if (j.contains("vsync"))
+            j.at("vsync").get_to(config->vsync);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
+
+        if (j.contains("contentBrowserSettings")) {
+            auto s = j["contentBrowserSettings"];
+            s.at("searchRecursively").get_to(config->contentBrowserSettings.searchRecursively);
+            s.at("filterRecursively").get_to(config->contentBrowserSettings.filterRecursively);
+        }
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
@@ -67,8 +81,14 @@ namespace Atlas::Editor {
         Scene::EntityToJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), insertedEntites);
 
         json j = {
+            { "resolutionScale", sceneWindow->resolutionScale },
+            { "snappingEnabled", sceneWindow->snappingEnabled },
+            { "translationSnap", sceneWindow->translationSnap },
+            { "rotationSnap", sceneWindow->rotationSnap },
+            { "scaleSnap", sceneWindow->scaleSnap },
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
+            { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
             { "camera", camera }
         };
 
@@ -96,12 +116,15 @@ namespace Atlas::Editor {
 
         json camera;
 
-        if (j.contains("cameraMovementSpeed"))
-            j.at("cameraMovementSpeed").get_to(sceneWindow->cameraMovementSpeed);
-        if (j.contains("cameraRotationSpeed"))
-            j.at("cameraRotationSpeed").get_to(sceneWindow->cameraRotationSpeed);
-        if (j.contains("camera"))
-            j.at("camera").get_to(camera);
+        try_get_json(j, "resolutionScale", sceneWindow->resolutionScale);
+        try_get_json(j, "snappingEnabled", sceneWindow->snappingEnabled);
+        try_get_json(j, "translationSnap", sceneWindow->translationSnap);
+        try_get_json(j, "rotationSnap", sceneWindow->rotationSnap);
+        try_get_json(j, "scaleSnap", sceneWindow->scaleSnap);
+        try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
+        try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
+        try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "camera", camera);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());

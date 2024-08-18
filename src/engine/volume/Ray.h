@@ -1,5 +1,4 @@
-#ifndef AE_RAY_H
-#define AE_RAY_H
+#pragma once
 
 #include "../System.h"
 #include "AABB.h"
@@ -54,6 +53,3 @@ namespace Atlas {
     }
 
 }
-
-
-#endif

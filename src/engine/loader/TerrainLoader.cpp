@@ -179,7 +179,7 @@ namespace Atlas {
 
                 auto pos = line.find_last_of("\r\n");
                 auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
-                auto material = MaterialLoader::LoadMaterial(materialPath, 1024);
+                auto material = MaterialLoader::LoadMaterial(materialPath);
 
                 if (material)
                     terrain->storage.WriteMaterial(slot, material);
@@ -276,7 +276,7 @@ namespace Atlas {
             if (initWithHeightData) {
                 cell->heightData.resize(tileResolution * tileResolution);
 
-                for (uint32_t i = 0; i < cell->heightData.size(); i++)
+                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
                     cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
             }
 

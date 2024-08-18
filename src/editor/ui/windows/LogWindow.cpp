@@ -14,7 +14,7 @@ namespace Atlas::Editor::UI {
 
         static size_t entriesCount = 0;
 
-        auto entries = Atlas::Log::GetEntries();
+        auto entries = Atlas::Log::GetLatestEntries(10000);
         for (auto& entry : entries) {
             std::string logText;
             logText.append("[" + std::to_string(entry.time) + "] ");

@@ -5,6 +5,7 @@
 #include "../common/Hash.h"
 #include "../common/Path.h"
 #include "../loader/AssetLoader.h"
+#include "../jobsystem/JobSystem.h"
 
 #include <vector>
 #include <mutex>
@@ -38,7 +39,7 @@ namespace Atlas {
         Resource() = default;
 
         Resource(const std::string& path, ResourceOrigin origin, Ref<T> data = nullptr) :
-            path(path), origin(origin), data(data), isLoaded(data != nullptr) {
+            origin(origin), path(path), data(data), isLoaded(data != nullptr) {
 
             HashCombine(ID, path);
 
@@ -60,6 +61,7 @@ namespace Atlas {
             catch (const ResourceLoadException& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
+                Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
@@ -78,7 +80,7 @@ namespace Atlas {
             catch (const std::exception& exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
-                Log::Error("Exception on load: " + std::string(exception.what()));
+                Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
             catch(...) {
                 errorOnLoad = true;
@@ -134,7 +136,8 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
-        std::future<void> future;
+        JobGroup jobGroup;
+        std::shared_future<void> future;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };
@@ -157,10 +160,8 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                if (!resource->future.valid())
-                    return;
-                resource->future.wait();
-                resource->future.get();
+                while (!resource->isLoaded)
+                    JobSystem::Wait(resource->jobGroup);                
             }
         }
 

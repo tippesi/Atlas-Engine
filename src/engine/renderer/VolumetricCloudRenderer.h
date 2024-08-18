@@ -22,7 +22,7 @@ namespace Atlas {
             void GenerateTextures(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) VolumetricCloudUniforms {
+            struct alignas(16) CloudUniforms {
                 Light light;
 
                 float planetRadius;
@@ -62,6 +62,11 @@ namespace Atlas {
                 vec4 planetCenter;
             };
 
+            struct alignas(16) CloudTemporalPushConstants {
+                int32_t resetHistory;
+                int32_t downsampled2x;
+            };
+
             struct alignas(16) CloudShadowUniforms {
                 mat4 ivMatrix;
                 mat4 ipMatrix;
@@ -75,7 +80,7 @@ namespace Atlas {
             void GenerateDetailTexture(Graphics::CommandList* commandList,
                 Texture::Texture3D* texture, float baseScale);
 
-            VolumetricCloudUniforms GetUniformStructure(Ref<Scene::Scene> scene,
+            CloudUniforms GetUniformStructure(Ref<Scene::Scene> scene,
                 Scene::Entity mainLightEntity);
 
             PipelineConfig shapeNoisePipelineConfig;

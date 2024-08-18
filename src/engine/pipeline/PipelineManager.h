@@ -3,13 +3,15 @@
 #include "PipelineConfig.h"
 
 #include "../graphics/Pipeline.h"
+#include "../jobsystem/JobSystem.h"
 
 #include <vector>
 #include <string>
 #include <functional>
 #include <unordered_map>
-#include <mutex>
+#include <shared_mutex>
 #include <utility>
+#include <future>
 
 namespace Atlas {
 
@@ -47,8 +49,9 @@ namespace Atlas {
         static Ref<Graphics::Pipeline> GetOrCreatePipeline(PipelineConfig &config);
 
         static bool hotReload;
-        static std::mutex shaderToVariantsMutex;
+        static std::shared_mutex shaderToVariantsMutex;
         static std::unordered_map<size_t, Ref<PipelineVariants>> shaderToVariantsMap;
+        static JobGroup hotReloadGroup;
 
         static Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
 

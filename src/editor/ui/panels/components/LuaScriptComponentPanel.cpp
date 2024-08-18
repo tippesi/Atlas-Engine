@@ -19,38 +19,40 @@ namespace Atlas::Editor::UI
         }
 
         auto handle = ResourcePayloadHelper::AcceptDropResource<Scripting::Script>();
+        if (handle.IsValid()) {
+            luaScriptComponent.ChangeResource(handle);
+        }
 
         auto scriptResources = ResourceManager<Scripting::Script>::GetResources();
         handle = scriptSelectionPopup.Render(scriptResources);
 
         if (handle.IsValid()) {
-            // Needs to be implemented
-            // luaScriptComponent.ChangeResource(handle);
-            luaScriptComponent.script = handle;
+            luaScriptComponent.ChangeResource(handle);
         }
 
         if (!luaScriptComponent.script.IsLoaded())
             return false;
 
+        ImGui::Checkbox("Permanent execution", &luaScriptComponent.permanentExecution);
         ImGui::InputTextMultiline("Code", &luaScriptComponent.script->code, ImVec2(0, 0), ImGuiInputTextFlags_ReadOnly);
 
         ImGui::Separator();
         ImGui::Text("Script defined properties:");
-        for (auto &property : luaScriptComponent.properties)
-        {
-            switch (property.type)
-            {
+        for (auto& [name, property] : luaScriptComponent.properties) {
+            switch (property.type) {
             case LuaScriptComponent::PropertyType::Boolean:
-                ImGui::Checkbox(property.name.c_str(), &property.booleanValue);
+                ImGui::Checkbox(name.c_str(), &property.booleanValue);
                 break;
             case LuaScriptComponent::PropertyType::Integer:
-                ImGui::InputInt(property.name.c_str(), &property.integerValue);
+                ImGui::InputInt(name.c_str(), &property.integerValue);
                 break;
             case LuaScriptComponent::PropertyType::Double:
-                ImGui::InputDouble(property.name.c_str(), &property.doubleValue);
+                ImGui::InputDouble(name.c_str(), &property.doubleValue);
                 break;
             case LuaScriptComponent::PropertyType::String:
-                ImGui::InputText(property.name.c_str(), &property.stringValue);
+                ImGui::InputText(name.c_str(), &property.stringValue);
+                break;
+            case LuaScriptComponent::PropertyType::Undefined:
                 break;
             }
         }

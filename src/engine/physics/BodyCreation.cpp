@@ -29,8 +29,8 @@ namespace Atlas::Physics {
 
         JPH::EMotionType motionType;
         switch(objectLayer) {
-            case Layers::STATIC: motionType = JPH::EMotionType::Static; break;
-            case Layers::MOVABLE: motionType = JPH::EMotionType::Dynamic; break;
+            case Layers::Static: motionType = JPH::EMotionType::Static; break;
+            case Layers::Movable: motionType = JPH::EMotionType::Dynamic; break;
             default: motionType = JPH::EMotionType::Static; break;
         }
 

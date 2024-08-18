@@ -72,9 +72,9 @@ const ivec2 offsets[9] = ivec2[9](
 
 int NearestDepth(float referenceDepth, float[9] depthVec) {
 
-    int idx = 0;
-    float nearest = distance(referenceDepth, depthVec[0]);
-    for (int i = 1; i < 9; i++) {
+    int idx = 4;
+    float nearest = distance(referenceDepth, depthVec[4]);
+    for (int i = 0; i < 9; i++) {
         float dist = distance(referenceDepth, depthVec[i]);
         if (dist < nearest) {
             nearest = dist;
@@ -94,6 +94,7 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
     float minWeight = 1.0;
 
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
+    float depthPhi = 128.0 / max(1.0, abs(referenceDepth));
 
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
@@ -101,7 +102,8 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
         float depth = ConvertDepthToViewSpaceDepth(depths[sharedMemoryOffset]);
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff), 1.0);
+        float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
+        
         minWeight = min(minWeight, depthWeight);
 
         invocationDepths[i] = depth;
@@ -138,7 +140,7 @@ void main() {
     else {
         volumetricFog = textureLod(lowResVolumetricTexture, texCoord, 0);
 #ifdef CLOUDS
-        volumetricClouds = texture(lowResVolumetricCloudsTexture, texCoord);
+        volumetricClouds = textureLod(lowResVolumetricCloudsTexture, texCoord, 0);
 #endif
     }
 

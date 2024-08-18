@@ -37,7 +37,7 @@ struct Material {
     bool metalnessMap;
     bool aoMap;
     bool transmissive;
-    bool vertexColors;    
+    bool vertexColors;
 };
 
 struct PackedMaterial {

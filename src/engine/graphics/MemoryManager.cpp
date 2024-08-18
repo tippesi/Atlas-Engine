@@ -27,6 +27,28 @@ namespace Atlas {
 
             VK_CHECK(vmaCreateAllocator(&allocatorInfo, &allocator))
 
+            VkBufferCreateInfo sampleBufCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+            sampleBufCreateInfo.size = 0x100;
+            sampleBufCreateInfo.usage =  
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+
+            if (device->support.hardwareRayTracing)
+                sampleBufCreateInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+
+            VmaAllocationCreateInfo sampleAllocCreateInfo = {};
+            sampleAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            sampleAllocCreateInfo.priority = 1.0f;
+
+            uint32_t memTypeIndex;
+            VkResult res = vmaFindMemoryTypeIndexForBufferInfo(allocator,
+                &sampleBufCreateInfo, &sampleAllocCreateInfo, &memTypeIndex);
+
+            VmaPoolCreateInfo poolCreateInfo = {};
+            poolCreateInfo.memoryTypeIndex = memTypeIndex;
+
+            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &hightPriorityBufferPool));
+
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
 
             transferManager = new MemoryTransferManager(device, this);
@@ -39,6 +61,7 @@ namespace Atlas {
 
             DestroyAllImmediate();
 
+            vmaDestroyPool(allocator, hightPriorityBufferPool);
             vmaDestroyAllocator(allocator);
 
         }

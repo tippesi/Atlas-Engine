@@ -2,6 +2,8 @@
 #include <common/convert.hsh>
 #include <common/PI.hsh>
 
+// Based on https://github.com/wwwtyro/glsl-atmosphere. Need a more performant version in the future (see Brunetton)
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 #ifndef ENVIRONMENT_PROBE
@@ -21,6 +23,10 @@ layout(set = 3, binding = 3, std140) uniform UniformBuffer {
     vec4 cameraLocation;
     vec4 planetCenter;
     vec4 sunDirection;
+    vec4 rayleighScatteringCoeff;
+    float mieScatteringCoeff;
+    float rayleighHeightScale;
+    float mieHeightScale;
     float sunIntensity;
     float planetRadius;
     float atmosphereRadius;
@@ -33,9 +39,6 @@ layout(set = 3, binding = 4, std140) uniform MatricesBuffer {
 #endif
 
 vec2 resolution = vec2(imageSize(colorImage));
-
-const float rayScaleHeight = 8.0e3;
-const float mieScaleHeight = 1.2e3;
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos,
     vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie);
@@ -72,13 +75,13 @@ void main() {
     vec3 totalMie;
 
     atmosphere(
-        r,           // normalized ray direction
-        uniforms.cameraLocation.xyz,               // ray origin
-        -uniforms.sunDirection.xyz,                        // position of the sun
-        uniforms.planetRadius,                         // radius of the planet in meters
-        uniforms.atmosphereRadius,                         // radius of the atmosphere in meters
-        vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-        21e-6,                          // Mie scattering coefficient
+        r,        
+        uniforms.cameraLocation.xyz,
+        -uniforms.sunDirection.xyz, 
+        uniforms.planetRadius,
+        uniforms.atmosphereRadius,
+        uniforms.rayleighScatteringCoeff.rgb,
+        uniforms.mieScatteringCoeff,
         totalRlh,
         totalMie
     );
@@ -197,8 +200,8 @@ out float opticalDepthRay) {
         if (height < 0.0)
         return false;
 
-        opticalDepthMie += exp(-height / mieScaleHeight) * stepSize;
-        opticalDepthRay += exp(-height / rayScaleHeight) * stepSize;
+        opticalDepthMie += exp(-height / uniforms.mieHeightScale) * stepSize;
+        opticalDepthRay += exp(-height / uniforms.rayleighHeightScale) * stepSize;
 
         time += stepSize;
 
@@ -209,7 +212,6 @@ out float opticalDepthRay) {
 }
 
 void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kRlh, float kMie, out vec3 totalRlh, out vec3 totalMie) {
-    // Normalize the sun and view directions.
     pSun = normalize(pSun);
     r = normalize(r);
 
@@ -219,52 +221,39 @@ void atmosphere(vec3 r, vec3 r0, vec3 pSun, float rPlanet, float rAtmos, vec3 kR
     float inDist, outDist;
     CalculateRayLength(r0, r, inDist, outDist);
     if (inDist <= 0.0 && outDist <= 0.0)
-    return;
+        return;
 
     float iStepSize = (outDist - inDist) / float(iSteps);
 
-    // Initialize the primary ray time.
     float iTime = inDist;
 
-    // Initialize accumulators for Rayleigh and Mie scattering.
-
-    // Initialize optical depth accumulators for the primary ray.
     float iOdRlh = 0.0;
     float iOdMie = 0.0;
 
-    // Sample the primary ray.
     for (int i = 0; i < iSteps; i++) {
 
-        // Calculate the primary ray sample position.
         vec3 iPos = r0 + r * (iTime + iStepSize * 0.5);
 
-        // Calculate the height of the sample.
         float iHeight = distance(iPos, uniforms.planetCenter.xyz) - rPlanet;
 
-        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
-        float odStepRlh = exp(-iHeight / rayScaleHeight) * iStepSize;
-        float odStepMie = exp(-iHeight / mieScaleHeight) * iStepSize;
+        float odStepRlh = exp(-iHeight /  uniforms.rayleighHeightScale) * iStepSize;
+        float odStepMie = exp(-iHeight / uniforms.mieHeightScale) * iStepSize;
 
-        // Accumulate optical depth.
         iOdRlh += odStepRlh;
         iOdMie += odStepMie;
 
-        // Initialize optical depth accumulators for the secondary ray.
         float jOdRlh = 0.0;
         float jOdMie = 0.0;
 
         bool overground = LightSampling(iPos, pSun, rPlanet, rAtmos, jOdMie, jOdRlh);
 
         if (overground) {
-            // Calculate attenuation.
             vec3 transmittance = exp(-(kMie * (iOdMie + jOdMie) + kRlh * (iOdRlh + jOdRlh)));
 
-            // Accumulate scattering.
             totalRlh += odStepRlh * transmittance;
             totalMie += odStepMie * transmittance;
         }
 
-        // Increment the primary ray time.
         iTime += iStepSize;
 
     }

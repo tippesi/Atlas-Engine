@@ -7,10 +7,14 @@
 
 #include "loader/AssetLoader.h"
 #include "loader/TerrainLoader.h"
+#include "loader/MeshLoader.h"
+#include "loader/MaterialLoader.h"
+
+#include <map>
 
 namespace Atlas {
 
-    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool binaryJson,  bool formatJson) {
+    void Serializer::SerializeScene(Ref<Scene::Scene> scene, const std::string& filename, bool saveDependencies, bool binaryJson,  bool formatJson) {
 
             auto path = Loader::AssetLoader::GetFullPath(filename);
             auto fileStream = Loader::AssetLoader::WriteFile(path, std::ios::out | std::ios::binary);
@@ -29,6 +33,10 @@ namespace Atlas {
             }
             else {
                 fileStream << (formatJson ? j.dump(2) : j.dump());
+            }
+
+            if (saveDependencies) {
+                SaveDependencies(scene);
             }
 
             fileStream.close();
@@ -123,6 +131,51 @@ namespace Atlas {
                 *rigidBody->creationSettings = j["body"];
 
             return entity;
+
+        }
+
+        void Serializer::SaveDependencies(Ref<Scene::Scene> scene, bool multithreaded) {
+
+            auto meshes = scene->GetMeshes();
+            std::map<Hash, ResourceHandle<Material>> materials;
+
+            std::sort(meshes.begin(), meshes.end(), [](const auto& mesh0, const auto& mesh1) {
+                if (!mesh0.IsLoaded())
+                    return false;
+                if (!mesh1.IsLoaded())
+                    return true;
+                return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
+            });
+
+            if (multithreaded) {
+                JobGroup group{ JobPriority::Medium };
+                JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
+                    [&](JobData& data) {
+                        auto& mesh = meshes[data.idx];
+
+                        if (!mesh.IsLoaded()) return;
+
+                        Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
+                    });
+
+                JobSystem::Wait(group);
+            }
+
+            for (const auto& mesh : meshes) {
+                if (!mesh.IsLoaded()) continue;
+
+                if (!multithreaded)
+                    Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
+
+                for (const auto& material : mesh->data.materials)
+                    materials[material.GetID()] = material;
+            }
+
+            for (const auto& [_, material] : materials) {
+                if (!material.IsLoaded()) continue;
+
+                Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
+            }
 
         }
 

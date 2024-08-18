@@ -23,14 +23,6 @@ namespace Atlas {
 
         }
 
-        void Mesh::SetTransform(mat4 matrix) {
-
-            data.SetTransform(matrix);
-
-            UpdateData();
-
-        }
-
         void Mesh::UpdateData() {
 
             bool hostAccessible = usage & MeshUsageBits::HostAccessBit;
@@ -65,6 +57,16 @@ namespace Atlas {
 
         }
 
+        void Mesh::UpdatePipelines() {
+
+            for (auto& subData : data.subData) {
+                subData.material = data.materials[subData.materialIdx];
+                subData.mainConfig = PipelineConfig();
+                subData.shadowConfig = PipelineConfig();
+            }
+
+        }
+
         void Mesh::UpdateVertexArray() {
 
             vertexArray.AddIndexComponent(indexBuffer);
@@ -92,16 +94,16 @@ namespace Atlas {
 
             data.BuildBVH(parallelBuild);
 
-            triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUTriangle));
+            triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUTriangle));
             triangleBuffer.SetSize(data.gpuTriangles.size());
             triangleBuffer.SetData(data.gpuTriangles.data(), 0, data.gpuTriangles.size());
 
             if (!hardwareRayTracing) {
-                blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHNode));
+                blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHNode));
                 blasNodeBuffer.SetSize(data.gpuBvhNodes.size());
                 blasNodeBuffer.SetData(data.gpuBvhNodes.data(), 0, data.gpuBvhNodes.size());
                
-                bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(GPUBVHTriangle));
+                bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHTriangle));
                 bvhTriangleBuffer.SetSize(data.gpuBvhTriangles.size());
                 bvhTriangleBuffer.SetData(data.gpuBvhTriangles.data(), 0, data.gpuBvhTriangles.size());
             }
@@ -128,11 +130,17 @@ namespace Atlas {
                     triangleOffsets.push_back(triangleOffset);
                 }
 
-                triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
+                triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(uint32_t));
                 triangleOffsetBuffer.SetSize(triangleOffsets.size(), triangleOffsets.data());
 
                 needsBvhRefresh = true;
             }
+
+            data.gpuBvhNodes.clear();
+            data.gpuBvhNodes.shrink_to_fit();
+
+            data.gpuBvhTriangles.clear();
+            data.gpuBvhTriangles.shrink_to_fit();
 
             isBvhBuilt = true;
 

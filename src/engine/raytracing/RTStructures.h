@@ -6,6 +6,11 @@
 
 namespace Atlas {
 
+    enum InstanceCullMasks {
+        MaskAll = 1 << 7,
+        MaskShadow = 1 << 6
+    };
+
     struct GPUTriangle {
         vec4 v0;
         vec4 v1;
@@ -44,24 +49,25 @@ namespace Atlas {
     };
 
     struct GPUMaterial {
-        int32_t ID;
+        int32_t ID = 0;
 
-        vec3 baseColor;
-        vec3 emissiveColor;
+        vec3 baseColor = vec3(1.0f);
+        vec3 emissiveColor = vec3(0.0f);
 
-        float opacity;
+        float opacity = 1.0f;
 
-        float roughness;
-        float metalness;
-        float ao;
+        float roughness = 1.0f;
+        float metalness = 0.0f;
+        float ao = 1.0f;
 
-        float reflectance;
+        float reflectance = 0.5f;
 
-        float normalScale;
+        float normalScale = 1.0f;
 
-        int32_t invertUVs;
-        int32_t twoSided;
-        int32_t useVertexColors;
+        int32_t invertUVs = 0;
+        int32_t twoSided = 0;
+        int32_t cullBackFaces = 0;
+        int32_t useVertexColors = 0;
 
         int32_t baseColorTexture = -1;
         int32_t opacityTexture = -1;
@@ -83,7 +89,7 @@ namespace Atlas {
         int32_t materialOffset;
 
         int32_t nextInstance;
-        int32_t padding1;
+        uint32_t mask;
     };
 
     struct GPUBVHNode {

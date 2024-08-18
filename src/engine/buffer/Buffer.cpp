@@ -18,7 +18,7 @@ namespace Atlas {
 
         }
 
-        void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) {
+        void Buffer::Bind(Graphics::CommandList* commandList, uint32_t set, uint32_t binding) const {
 
             if (multiBuffer != nullptr) {
                 commandList->BindBuffer(multiBuffer, set, binding);
@@ -30,6 +30,12 @@ namespace Atlas {
         }
 
         Ref<Graphics::Buffer> Buffer::Get() {
+
+            return buffer;
+
+        }
+
+        const Ref<Graphics::Buffer> Buffer::Get() const {
 
             return buffer;
 
@@ -183,7 +189,9 @@ namespace Atlas {
                 .usageFlags = usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 .domain = hostAccessible ? Graphics::BufferDomain::Host : Graphics::BufferDomain::Device,
                 .data = data,
-                .size = sizeInBytes
+                .size = sizeInBytes,
+                .dedicatedMemory = (usageFlags & BufferUsageBits::DedicatedMemoryBit) > 0,
+                .priority = (usageFlags & BufferUsageBits::HighPriorityMemoryBit) > 0 ? 1.0f : 0.5f
             };
 
             if (multiBuffered) {

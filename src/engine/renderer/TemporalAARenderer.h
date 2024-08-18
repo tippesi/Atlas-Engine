@@ -24,6 +24,7 @@ namespace Atlas {
                 vec2 resolution;
                 vec2 invResolution;
                 vec2 jitter;
+                int32_t resetHistory;
             };
 
             void Render(const Texture::Texture2D* outputTexture, const Texture::Texture2D* currentTexture, const Texture::Texture2D* historyTexture,

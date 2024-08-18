@@ -24,6 +24,9 @@ namespace Atlas {
                 uint32_t frameSeed;
                 float bias;
                 int32_t textureLevel;
+                float roughnessCutoff;
+                int32_t halfRes;
+                ivec2 resolution;                
                 Shadow shadow;
             };
 
@@ -31,6 +34,7 @@ namespace Atlas {
                 float temporalWeight;
                 float historyClipMax;
                 float currentClipFactor;
+                int32_t resetHistory;
             };
 
             struct alignas(16) AtrousConstants {
@@ -44,8 +48,8 @@ namespace Atlas {
             Texture::Texture2D sobolSequenceTexture;
 
             PipelineConfig rtrPipelineConfig;
+            PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;
-
             PipelineConfig atrousPipelineConfig[3];
 
             Buffer::UniformBuffer rtrUniformBuffer;

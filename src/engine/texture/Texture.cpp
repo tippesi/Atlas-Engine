@@ -22,7 +22,7 @@ namespace Atlas {
 
         }
 
-        void Texture::Bind(Graphics::CommandList *commandList, uint32_t set, uint32_t binding) {
+        void Texture::Bind(Graphics::CommandList *commandList, uint32_t set, uint32_t binding) const {
 
             commandList->BindImage(image, sampler, set, binding);
 
@@ -81,8 +81,19 @@ namespace Atlas {
 
         }
 
+        void Texture::Reset() {
+
+            width = 0;
+            height = 0;
+            depth = 0;
+            channels = 0;
+            image.reset();
+            sampler.reset();
+
+        }
+
         void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
-            Filtering filtering, Wrapping wrapping) {
+            Filtering filtering, Wrapping wrapping, bool dedicatedMemory) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -123,6 +134,7 @@ namespace Atlas {
                 .layers = arrayType ? uint32_t(depth) : 1,
                 .format = format,
                 .mipMapping = generateMipMaps,
+                .dedicatedMemory = true
             };
             image = graphicsDevice->CreateImage(imageDesc);
 

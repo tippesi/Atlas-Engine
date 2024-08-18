@@ -1,0 +1,123 @@
+#include <../globals.hsh>
+
+#ifndef BINDLESS_TEXTURES
+#ifdef BASE_COLOR_MAP
+layout(set = 3, binding = 0) uniform sampler2D baseColorMap;
+#endif
+#ifdef OPACITY_MAP
+layout(set = 3, binding = 1) uniform sampler2D opacityMap;
+#endif
+#ifdef NORMAL_MAP
+layout(set = 3, binding = 2) uniform sampler2D normalMap;
+#endif
+#ifdef ROUGHNESS_MAP
+layout(set = 3, binding = 3) uniform sampler2D roughnessMap;
+#endif
+#ifdef METALNESS_MAP
+layout(set = 3, binding = 4) uniform sampler2D metalnessMap;
+#endif
+#ifdef AO_MAP
+layout(set = 3, binding = 5) uniform sampler2D aoMap;
+#endif
+#ifdef HEIGHT_MAP
+layout(set = 3, binding = 6) uniform sampler2D heightMap;
+#endif
+#endif
+
+vec3 SampleBaseColor(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).rgb;    
+#else
+#ifdef BASE_COLOR_MAP
+    return texture(baseColorMap, texCoords, bias).rgb;
+#else
+    return vec3(0.0);
+#endif
+#endif
+
+}
+
+float SampleOpacity(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
+#else
+#ifdef OPACITY_MAP
+    return texture(opacityMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
+#endif
+
+}
+
+vec3 SampleNormal(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return 2.0 * texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).rgb - 1.0;    
+#else
+#ifdef NORMAL_MAP
+    return 2.0 * texture(normalMap, texCoords, bias).rgb - 1.0;
+#else
+    return vec3(0.0);
+#endif
+#endif
+
+}
+
+float SampleRoughness(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
+#else
+#ifdef ROUGHNESS_MAP
+    return texture(roughnessMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
+#endif
+
+}
+
+float SampleMetalness(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
+#else
+#ifdef METALNESS_MAP
+    return texture(metalnessMap, texCoords, bias).r;
+#else
+    return 0.0;
+#endif
+#endif
+
+}
+
+float SampleAo(vec2 texCoords, uint textureID, float bias) {
+
+#ifdef BINDLESS_TEXTURES
+    return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).r;    
+#else
+#ifdef AO_MAP
+    return texture(aoMap, texCoords, bias).r;
+#else
+    return 1.0;
+#endif
+#endif
+
+}
+
+float SampleHeight(vec2 texCoords, uint textureID, vec2 ddx, vec2 ddy) {
+
+#ifdef BINDLESS_TEXTURES
+    return textureGrad(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, ddx, ddy).r;    
+#else
+#ifdef HEIGHT_MAP
+    return textureGrad(heightMap, texCoords, ddx, ddy).r;
+#else
+    return 0.0;
+#endif
+#endif
+
+}

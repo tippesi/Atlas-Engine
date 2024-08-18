@@ -185,18 +185,18 @@ namespace Atlas::ImguiExtension {
 
     }
 
-    VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture2D &texture,
+    VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture* texture,
         VkImageLayout layout) {
 
-        if (!imageViewToDescriptorSetMap.contains(texture.image->view)) {
-            auto set = ImGui_ImplVulkan_AddTexture(texture.sampler->sampler, texture.image->view, layout);
-            imageViewToDescriptorSetMap[texture.image->view] = {
+        if (!imageViewToDescriptorSetMap.contains(texture->image->view)) {
+            auto set = ImGui_ImplVulkan_AddTexture(texture->sampler->sampler, texture->image->view, layout);
+            imageViewToDescriptorSetMap[texture->image->view] = {
                 .set = set,
                 .lastAccess = 0,
             };
         }
 
-        auto &handle = imageViewToDescriptorSetMap[texture.image->view];
+        auto &handle = imageViewToDescriptorSetMap[texture->image->view];
         handle.lastAccess = 0;
 
         return handle.set;

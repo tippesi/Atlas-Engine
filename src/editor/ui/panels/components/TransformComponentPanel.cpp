@@ -1,6 +1,7 @@
 #include "TransformComponentPanel.h"
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace Atlas::Editor::UI {
 
@@ -18,7 +19,7 @@ namespace Atlas::Editor::UI {
         // we work with fixed information that is recomposed when changed,
         // but only decomposed when the entity changes. Note, that all
         // component panels are unique per scene window
-        if (lastEntity != entity || lastTransform != transform.matrix) {
+        if (lastEntity != entity || ImGuizmo::IsUsing()) {
             auto decomposition = transform.Decompose();
             position = decomposition.translation;
             rotation = decomposition.rotation;
@@ -30,7 +31,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::DragFloat3("Position", &position[0], 0.01f);
         ImGui::DragFloat3("Rotation", &rotation[0], 0.01f);
-        ImGui::DragFloat3("Scale", &scale[0], 0.01f, 0.01f, 100.0f);
+        ImGui::DragFloat3("Scale", &scale[0], 0.01f, -100.0f, 100.0f);
 
         // Only recompose when a local change happened
         if (localPosition != position || localScale != scale ||

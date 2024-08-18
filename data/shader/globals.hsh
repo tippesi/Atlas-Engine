@@ -12,6 +12,8 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     mat4 ipMatrix;
     mat4 pvMatrixLast;
     mat4 pvMatrixCurrent;
+    mat4 ipvMatrixLast;
+    mat4 ipvMatrixCurrent;
     vec2 jitterLast;
     vec2 jitterCurrent;
     vec4 cameraLocation;
@@ -32,5 +34,5 @@ layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
 
 layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
 
-// Binding 2 is taken by materials buffer in common/material.hsh
 layout(set = 1, binding = 13) uniform sampler bindlessSampler;
+layout(set = 1, binding = 15) uniform sampler bindlessNearestSampler;

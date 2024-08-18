@@ -18,134 +18,175 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
-            auto lightSubset = scene->GetSubset<LightComponent>();
+            lightMap.clear();
 
-            LightMap usedLightMap;
-            for (auto& lightEntity : lightSubset) {
-
-                auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || !light.shadow->update)
+            Ref<RenderList::Pass> shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
+            while (!renderList->doneProcessingShadows || shadowPass != nullptr) {
+                if (!shadowPass) {
+                    // We might need to wait for the next pass to be processed and culled
+                    std::this_thread::yield();
+                    shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
                     continue;
+                }
 
-                auto shadow = light.shadow;
-                auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
-                usedLightMap[lightEntity] = frameBuffer;
+                ProcessPass(target, scene, commandList, shadowPass);
 
-                if (frameBuffer->depthAttachment.layer != 0) {
-                    frameBuffer->depthAttachment.layer = 0;
+                shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
+            }
+
+            // It might be that between asking for the last pass and checking doneProcessing, that 
+            // another push to the queue has been happening. So check again here
+            shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
+            if (shadowPass != nullptr) {
+                ProcessPass(target, scene, commandList, shadowPass);
+            }
+
+            // Need to also keep track of non processed layer (e.g. long range layers)
+            for (auto& [lightEntity, frameBuffer] : lightMap) {
+                const auto& light = lightEntity.GetComponent<LightComponent>();
+                
+                if (light.type == LightType::DirectionalLight && light.shadow->longRange) {
+                    // Need to go through render passes to make sure images have transitioned
+                    frameBuffer->depthAttachment.layer = light.shadow->viewCount - 1;
                     frameBuffer->Refresh();
-                }
-
-                // We don't want to render to the long range component if it exists
-                auto componentCount = shadow->viewCount;
-
-                bool isDirectionalLight = false;
-                vec3 lightLocation;
-
-                if (light.type == LightType::DirectionalLight) {
-                    lightLocation = 1000000.0f * -normalize(light.transformedProperties.directional.direction);
-                    isDirectionalLight = true;
-                }
-                else if (light.type == LightType::PointLight) {
-                    lightLocation = light.transformedProperties.point.position;
-                }
-
-                for (uint32_t i = 0; i < uint32_t(componentCount); i++) {
-
-                    auto component = &shadow->views[i];
-
-                    if (frameBuffer->depthAttachment.layer != i) {
-                        frameBuffer->depthAttachment.layer = i;
-                        frameBuffer->Refresh();
-                    }
-
-                    auto shadowPass = renderList->GetShadowPass(lightEntity, i);
-                    if (!shadowPass) {
-                        // Need to go through render passes to make sure images have transitioned
-                        commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
-                        commandList->EndRenderPass();
-                        continue;
-                    }
-
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
-
-                    auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
-
-                    // Retrieve all possible materials
-                    std::vector<std::pair<Mesh::MeshSubData*, ResourceHandle<Mesh::Mesh>>> subDatas;
-                    for (auto& [meshId, _] : shadowPass->meshToInstancesMap) {
-                        auto mesh = shadowPass->meshIdToMeshMap[meshId];
-                        for (auto& subData : mesh->data.subData) {
-                            subDatas.push_back({ &subData, mesh });
-                        }
-                    }
-
-                    // Check whether materials have pipeline configs
-                    for (auto [subData, mesh] : subDatas) {
-                        auto material = subData->material;
-                        if (material->shadowConfig.IsValid()) continue;
-
-                        material->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
-                    }
-
-                    // Sort materials by hash
-                    std::sort(subDatas.begin(), subDatas.end(),
-                        [](auto subData0, auto subData1) {
-                            return subData0.first->material->shadowConfig.variantHash <
-                                   subData1.first->material->shadowConfig.variantHash;
-                        });
-
-                    size_t prevHash = 0;
-                    Ref<Graphics::Pipeline> currentPipeline = nullptr;
-                    Hash prevMesh = 0;
-                    for (auto& [subData, mesh] : subDatas) {
-                        auto& instance = shadowPass->meshToInstancesMap[mesh.GetID()];
-                        if (!instance.count) continue;
-
-                        auto material = subData->material;
-                        if (material->shadowConfig.variantHash != prevHash) {
-                            currentPipeline = PipelineManager::GetPipeline(material->shadowConfig);
-                            commandList->BindPipeline(currentPipeline);
-                            prevHash = material->shadowConfig.variantHash;
-                        }
-
-                        if (mesh.GetID() != prevMesh) {
-                            mesh->vertexArray.Bind(commandList);
-                            prevMesh = mesh.GetID();
-                        }                        
-
-                        if (material->HasOpacityMap())
-                            commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 0);
-
-                        scene->wind.noiseMap.Bind(commandList, 3, 1);
-
-                        auto pushConstants = PushConstants {
-                            .lightSpaceMatrix = lightSpaceMatrix,
-                            .vegetation = mesh->vegetation ? 1u : 0u,
-                            .invertUVs = mesh->invertUVs ? 1u : 0u,
-                            .windTextureLod = mesh->windNoiseTextureLod,
-                            .windBendScale = mesh->windBendScale,
-                            .windWiggleScale = mesh->windWiggleScale
-                        };
-                        commandList->PushConstants("constants", &pushConstants);
-
-                        commandList->DrawIndexed(subData->indicesCount, instance.count, subData->indicesOffset,
-                            0, instance.offset);
-
-                    }
-
-                    impostorRenderer.Render(frameBuffer, renderList, commandList,
-                        shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
-
                     commandList->EndRenderPass();
-
                 }
+            }
+
+            Graphics::Profiler::EndQuery();
+
+        }
+
+        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass) {
+
+            auto lightEntity = shadowPass->lightEntity;
+            auto& light = lightEntity.GetComponent<LightComponent>();
+            if (!light.shadow || !light.shadow->update)
+                return;
+
+            Ref<Graphics::FrameBuffer> frameBuffer = nullptr;
+            if (lightMap.contains(lightEntity))
+                frameBuffer = lightMap[lightEntity];
+            else
+                frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+
+            lightMap[lightEntity] = frameBuffer;
+
+            if (frameBuffer->depthAttachment.layer != shadowPass->layer) {
+                frameBuffer->depthAttachment.layer = shadowPass->layer;
+                frameBuffer->Refresh();
+            }
+
+            auto shadow = light.shadow;
+
+            bool isDirectionalLight = false;
+            vec3 lightLocation;
+
+            if (light.type == LightType::DirectionalLight) {
+                lightLocation = 1000000.0f * -normalize(light.transformedProperties.directional.direction);
+                isDirectionalLight = true;
+            }
+            else if (light.type == LightType::PointLight) {
+                lightLocation = light.transformedProperties.point.position;
+            }
+
+            commandList->BindBuffer(shadowPass->currentMatricesBuffer, 1, 1);
+            commandList->BindBuffer(shadowPass->impostorMatricesBuffer, 1, 3);
+
+            commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
+
+            auto component = &shadow->views[shadowPass->layer];
+            auto lightSpaceMatrix = component->projectionMatrix * component->viewMatrix;
+
+            // Bind wind map (need to bind for each render pass, since impostor renderer resets this binding)
+            scene->wind.noiseMap.Bind(commandList, 3, 0);
+
+            int32_t subDataCount = 0;
+            // Retrieve all possible materials
+            for (auto& [meshId, instances] : shadowPass->meshToInstancesMap) {
+                if (!instances.count) continue;
+
+                auto& mesh = shadowPass->meshIdToMeshMap[meshId];
+                for (auto& subData : mesh->data.subData) {
+                    if (!subData.material.IsLoaded())
+                        continue;
+
+                    if (subDataCount < subDatas.size())
+                        subDatas[subDataCount] = { &subData, mesh.GetID(), mesh.Get().get() };
+                    else
+                        subDatas.push_back({ &subData, mesh.GetID(), mesh.Get().get() });
+                    subDataCount++;
+                }
+            }
+
+            // Check whether materials have pipeline configs
+            for (int32_t i = 0; i < subDataCount; i++) {
+                auto& [subData, _, mesh] = subDatas[i];
+                const auto& material = subData->material;
+                if (subData->shadowConfig.IsValid()) continue;
+
+                subData->shadowConfig = GetPipelineConfigForSubData(subData, mesh, frameBuffer);
+            }
+
+            // Sort materials by hash
+            std::sort(subDatas.begin(), subDatas.begin() + size_t(subDataCount),
+                [](auto& subData0, auto& subData1) {
+                    return std::get<0>(subData0)->shadowConfig.variantHash <
+                        std::get<0>(subData1)->shadowConfig.variantHash;
+                });
+
+            Hash prevHash = 0;
+            Hash prevMesh = 0;
+            Ref<Graphics::Pipeline> currentPipeline = nullptr;
+            for (int32_t i = 0; i < subDataCount; i++) {
+                auto& [subData, meshID, mesh] = subDatas[i];
+                const auto& instances = shadowPass->meshToInstancesMap[meshID];
+
+                auto material = subData->material;
+
+                // Overwrite material config frame buffer (and assume these have the same format)
+                subData->shadowConfig.graphicsPipelineDesc.frameBuffer = frameBuffer;
+
+                if (subData->shadowConfig.variantHash != prevHash) {
+                    currentPipeline = PipelineManager::GetPipeline(subData->shadowConfig);
+                    commandList->BindPipeline(currentPipeline);
+                    prevHash = subData->shadowConfig.variantHash;
+                }
+
+                if (meshID != prevMesh) {
+                    mesh->vertexArray.Bind(commandList);
+                    prevMesh = meshID;
+                }
+
+#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
+                if (material->HasOpacityMap())
+                    commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
+#endif
+
+                auto pushConstants = PushConstants{
+                    .lightSpaceMatrix = lightSpaceMatrix,
+                    .vegetation = mesh->vegetation ? 1u : 0u,
+                    .invertUVs = mesh->invertUVs ? 1u : 0u,
+                    .windTextureLod = mesh->windNoiseTextureLod,
+                    .windBendScale = mesh->windBendScale,
+                    .windWiggleScale = mesh->windWiggleScale,
+                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0
+                };
+                commandList->PushConstants("constants", &pushConstants);
+
+                commandList->DrawIndexed(subData->indicesCount, instances.count, subData->indicesOffset,
+                    0, instances.offset);
+
+                // Reset the frame buffer here to let it be able to be deleted
+                subData->shadowConfig.graphicsPipelineDesc.frameBuffer = nullptr;
 
             }
 
-            lightMap = usedLightMap;
+            impostorRenderer.Render(frameBuffer, commandList,
+                shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
-            Graphics::Profiler::EndQuery();
+            commandList->EndRenderPass();
 
         }
 
@@ -186,7 +227,7 @@ namespace Atlas {
         }
 
         PipelineConfig ShadowRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            const ResourceHandle<Mesh::Mesh>& mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+            Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 
@@ -203,10 +244,16 @@ namespace Atlas {
                 pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
             }
 
+            bool hasTexCoords = mesh->data.texCoords.ContainsData();
+
             std::vector<std::string> macros;
-            if (material->HasOpacityMap()) {
+            if (material->HasOpacityMap() && hasTexCoords) {
                 macros.push_back("OPACITY_MAP");
             }
+
+#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
+            macros.push_back("BINDLESS_TEXTURES");
+#endif
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 
