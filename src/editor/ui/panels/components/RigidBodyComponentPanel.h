@@ -6,6 +6,8 @@
 #include "scene/Entity.h"
 #include "scene/components/RigidBodyComponent.h"
 
+#include "../ResourceSelectionPanel.h"
+
 namespace Atlas::Editor::UI {
 
     class RigidBodyComponentPanel : public Panel {
@@ -19,6 +21,8 @@ namespace Atlas::Editor::UI {
         void RenderShapeSettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);
 
         void RenderBodySettings(Scene::Entity entity, Physics::BodyCreationSettings& creationSettings);
+
+        ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
 
     };
 

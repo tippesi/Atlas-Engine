@@ -319,7 +319,8 @@ namespace Atlas::Editor {
 
             if (saveScene) {
                 auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
-                activeSceneWindow->SaveScene();                      
+                if (activeSceneWindow != nullptr)
+                    activeSceneWindow->SaveScene();                      
             }
 
             ImGui::EndMainMenuBar();

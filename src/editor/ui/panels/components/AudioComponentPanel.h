@@ -5,7 +5,7 @@
 #include "scene/Scene.h"
 #include "scene/components/AudioComponent.h"
 
-#include "../../popups/ResourceSelectionPopup.h"
+#include "../ResourceSelectionPanel.h"
 
 namespace Atlas::Editor::UI {
 
@@ -17,7 +17,7 @@ namespace Atlas::Editor::UI {
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, AudioComponent& audioVolumeComponent);
 
     private:
-        ResourceSelectionPopup audioSelectionPopup;
+        ResourceSelectionPanel<Audio::AudioData> audioSelectionPanel;
 
     };
 

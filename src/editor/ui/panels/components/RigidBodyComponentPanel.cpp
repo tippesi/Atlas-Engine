@@ -51,20 +51,9 @@ namespace Atlas::Editor::UI {
                 shape->settings = CreateRef<MeshShapeSettings>();
 
             auto meshSettings = static_cast<MeshShapeSettings*>(shape->settings.get());
-            auto buttonName = meshSettings->mesh.IsValid() ? meshSettings->mesh.GetResource()->GetFileName() :
-                              "Drop resource here";
-            ImGui::Button(buttonName.c_str(), {-FLT_MIN, 0});
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (auto dropPayload = ImGui::AcceptDragDropPayload(typeid(Mesh::Mesh).name())) {
-                    Resource<Mesh::Mesh>* resource;
-                    std::memcpy(&resource, dropPayload->Data, dropPayload->DataSize);
-                    // We know this mesh is loaded, so we can just request a handle without loading
-                    meshSettings->mesh = ResourceManager<Mesh::Mesh>::GetResource(resource->path);
-                }
-
-                ImGui::EndDragDropTarget();
-            }
+            bool resourceChanged = false;
+            meshSettings->mesh = meshSelectionPanel.Render(meshSettings->mesh, resourceChanged);
 
             if (meshComponent)
                 if (ImGui::Button("Take resource from mesh component"))

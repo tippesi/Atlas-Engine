@@ -57,6 +57,8 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Mesh::Mesh>) {
             if (type == ContentType::MeshSource) {
                 auto resourcePath = Common::Path::GetFileNameWithoutExtension(filename) + ".aemesh";
+                auto directoryPath = Common::Path::GetDirectory(filename) + "/meshes/";
+                resourcePath = directoryPath + resourcePath;
                 auto loader = [filename](const std::string& resourcePath) -> auto {
                     return Loader::ModelImporter::ImportMesh(filename, true);
                     };

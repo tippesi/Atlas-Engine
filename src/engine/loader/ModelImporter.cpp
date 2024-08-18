@@ -127,7 +127,7 @@ namespace Atlas {
             tangents.SetElementCount(hasTangents ? vertexCount : 0);
             colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-            auto materials = ImportMaterials(state, maxTextureResolution);
+            auto materials = ImportMaterials(state, maxTextureResolution, saveToDisk);
 
             meshData.subData = std::vector<Mesh::MeshSubData>(state.scene->mNumMaterials);
 
@@ -242,7 +242,7 @@ namespace Atlas {
             ImporterState state;
             InitImporterState(state, filename, false);
 
-            auto materials = ImportMaterials(state, maxTextureResolution);
+            auto materials = ImportMaterials(state, maxTextureResolution, saveToDisk);
 
             struct MeshInfo {
                 ResourceHandle<Mesh::Mesh> mesh;
@@ -476,7 +476,7 @@ namespace Atlas {
 
         }
 
-        std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution) {
+        std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk) {
 
             JobGroup group;
             JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
@@ -507,7 +507,8 @@ namespace Atlas {
                     Log::Warning("Material " + materialFilename + " was already loaded in the resource manager");
                 materials.push_back(handle);
 
-                Loader::MaterialLoader::SaveMaterial(material, materialFilename);
+                if (saveToDisk)
+                    Loader::MaterialLoader::SaveMaterial(material, materialFilename);
             }
 
             return materials;

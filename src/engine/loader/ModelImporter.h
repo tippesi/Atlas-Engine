@@ -126,7 +126,7 @@ namespace Atlas {
 
             static void InitImporterState(ImporterState& state, const std::string& filename, bool optimizeMeshes);
 
-            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution);
+            static std::vector<ResourceHandle<Material>> ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk);
 
             static void LoadMaterial(ImporterState& state, aiMaterial* assimpMaterial, Material& material);
 
