@@ -8,12 +8,6 @@ namespace Atlas {
 
             this->device = device;
 
-            auto bufferDesc = Graphics::BufferDesc {
-                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = Graphics::BufferDomain::Host,
-                .size = sizeof(Uniforms)
-            };
-            uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             pipelineConfig = PipelineConfig("deferred/direct.csh");
@@ -43,23 +37,25 @@ namespace Atlas {
             std::vector<Ref<Graphics::Image>> cascadeMaps;
             std::vector<Ref<Graphics::Image>> cubeMaps;
 
-            Uniforms uniforms;
-            uniforms.lightCount = std::min(8, int32_t(lightData.lightEntities.size()));
-            for (int32_t i = 0; i < uniforms.lightCount; i++) {
+            PushConstants pushConstants;
+            pushConstants.lightCount = std::min(8, int32_t(lightData.lightEntities.size()));
+            for (int32_t i = 0; i < pushConstants.lightCount; i++) {
                 auto& comp = lightData.lightEntities[i].comp;
 
                 if (comp.shadow) {
                     auto& shadow = comp.shadow;
                     if (shadow->useCubemap) {
-                        uniforms.mapIndices[i] = int32_t(cubeMaps.size());
+                        pushConstants.mapIndices[i] = int32_t(cubeMaps.size());
                         cubeMaps.push_back(shadow->cubemap->image);
                     }
                     else {
-                        uniforms.mapIndices[i] = int32_t(cascadeMaps.size());
+                        pushConstants.mapIndices[i] = int32_t(cascadeMaps.size());
                         cascadeMaps.push_back(shadow->maps->image);
                     }
                 }
             }
+
+            commandList->PushConstants("constants", &pushConstants);
 
             commandList->BindSampledImages(cascadeMaps, 3, 6);
             commandList->BindSampledImages(cubeMaps, 3, 14);
@@ -70,7 +66,6 @@ namespace Atlas {
             commandList->BindPipeline(pipeline);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            uniformBuffer.Bind(commandList, 3, 3);
 
             if (sss && sss->enable) {
                 commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 1);

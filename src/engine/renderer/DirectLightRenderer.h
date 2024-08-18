@@ -18,14 +18,16 @@ namespace Atlas {
                 Helper::LightData& lightData, Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) Uniforms {
-                int32_t mapIndices[16];
+            struct alignas(16) PushConstants {
                 int32_t lightCount;
+                int32_t padding0;
+                int32_t padding1;
+                int32_t padding2;
+                int32_t mapIndices[16];
             };
 
             PipelineConfig pipelineConfig;
 
-            Buffer::UniformBuffer uniformBuffer;
             Buffer::UniformBuffer cloudShadowUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
 

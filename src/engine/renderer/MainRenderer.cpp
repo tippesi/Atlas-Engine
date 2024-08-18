@@ -224,6 +224,7 @@ namespace Atlas {
 
             JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
 
+            lightData.FillBuffer(scene);
             lightData.lightBuffer.Bind(commandList, 1, 16);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);

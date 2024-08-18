@@ -26,11 +26,6 @@ layout(set = 3, binding = 1) uniform sampler2D sssTexture;
 layout(set = 3, binding = 2) uniform sampler2D cloudMap;
 #endif
 
-layout(std140, set = 3, binding = 3) uniform UniformBuffer {
-    int mapIndices[16];
-    int lightCount;
-} uniforms;
-
 layout(std140, set = 3, binding = 4) uniform CloudShadowUniformBuffer {
     CloudShadow cloudShadow;
 } cloudShadowUniforms;
@@ -39,6 +34,14 @@ layout(set = 3, binding = 5) uniform sampler shadowSampler;
 
 layout(set = 3, binding = 6) uniform texture2DArray cascadeMaps[8];
 layout(set = 3, binding = 14) uniform textureCube cubeMaps[8];
+
+layout(push_constant) uniform constants {
+    int lightCount;
+    int padding0;
+    int padding1;
+    int padding2;
+    int mapIndices[16];
+} pushConstants;
 
 vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMain);
 float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometryNormal, bool isMain);
@@ -58,10 +61,12 @@ void main() {
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
         Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-        for (int i = 0; i < uniforms.lightCount && i < 8; i++) {
+        direct = vec3(.0);
+
+        for (int i = 0; i < pushConstants.lightCount && i < 8; i++) {
             Light light = lights[i];
 
-            light.shadow.mapIdx = uniforms.mapIndices[i];
+            light.shadow.mapIdx = pushConstants.mapIndices[i];
             bool isMain = i == 0 ? true : false;
             direct += EvaluateLight(light, surface, geometryNormal, isMain);
         }
@@ -129,6 +134,15 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
 
 }
 
+vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
+
 float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometryNormal, bool isMain) {
 
     if (light.shadow.cascadeCount <= 0)
@@ -144,14 +158,24 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
             -geometryNormal : geometryNormal : geometryNormal;
 
     if (lightType == DIRECTIONAL_LIGHT) {
-        /*
         shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
             shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
-            */
     }
     else if (lightType == POINT_LIGHT) {
-        
+        int samples  = 20;
+        float diskRadius = 0.0075;
+        shadowFactor = 0.0;
+        vec4 position = light.shadow.cascades[1].cascadeSpace * vec4(surface.P, 1.0);
+        vec4 absPosition = abs(position);
+        float depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
+        vec4 clip = light.shadow.cascades[0].cascadeSpace * vec4(0.0, 0.0, depth, 1.0);    
+        depth = (clip.z - 0.0005) / clip.w;
+        for(int i = 0; i < samples; i++) {
+            shadowFactor += clamp(texture(samplerCubeShadow(cubeMaps[nonuniformEXT(light.shadow.mapIdx)], shadowSampler), 
+                vec4(position.xyz + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
+        }
+        shadowFactor /= float(samples + 1);  
     }
 
     if (isMain) {

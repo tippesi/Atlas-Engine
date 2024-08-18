@@ -118,7 +118,12 @@ namespace Atlas {
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, properties.point.radius);
+                    const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, 0.0f, 0.0f,
+                        0.0f, 0.0f, 0.5f, 0.0f,
+                        0.0f, 0.0f, 0.5f, 1.0f);
+
+                    mat4 projectionMatrix = clip * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
                     const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
                                      vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
                                      vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };

@@ -92,7 +92,7 @@ void main() {
 
     if (shadowEnabled) {
         for(int i = 0; i < samples; i++) {
-            shadowFactor += clamp(texture(shadowCubemap, vec4(lsPosition.xyz + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
+            shadowFactor += clamp(texture(shadowCubemap, vec4(surface.P + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
         }
         shadowFactor /= float(samples + 1);  
     }

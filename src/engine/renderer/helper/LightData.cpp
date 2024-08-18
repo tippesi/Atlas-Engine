@@ -93,8 +93,16 @@ namespace Atlas::Renderer::Helper {
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
                             abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
-                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                            cascade->viewMatrix * camera.invViewMatrix;
+                        if (light.type == LightType::DirectionalLight) {
+                            shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                cascade->viewMatrix * camera.invViewMatrix;
+                        }
+                        else if (light.type == LightType::PointLight) {
+                            if (i == 0)
+                                shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix;
+                            else
+                                shadowUniform.cascades[i].cascadeSpace = glm::translate(mat4(1.0f), -prop.point.position) * camera.invViewMatrix;
+                        }
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -104,12 +112,12 @@ namespace Atlas::Renderer::Helper {
                 }
             }
 
-            lights.emplace_back(std::move(lightUniform));
+            lights.emplace_back(lightUniform);
         }
 
         if (lightBuffer.GetElementCount() < lightEntities.size()) {
             lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit
-                | Buffer::BufferUsageBits::UniformBufferBit, sizeof(Light), lightEntities.size(), lights.data());
+                | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Light), lightEntities.size(), lights.data());
         }
         else {
             lightBuffer.SetData(lights.data(), 0, lights.size());
