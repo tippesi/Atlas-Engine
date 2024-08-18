@@ -81,7 +81,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Windows
+          name: Atlas Engine Windows
           path: |
             data
             README.md
@@ -148,7 +148,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine Demo Linux
+          name: Atlas Engine Linux
           path: |
             data
             README.md
@@ -177,7 +177,6 @@ jobs:
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
           committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
-          cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -217,7 +216,7 @@ jobs:
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
-          name: Atlas Engine MacOS ${{ matrix.build-type }}
+          name: Atlas Engine MacOS
           path: |
             data
             README.md
@@ -244,11 +243,15 @@ jobs:
         uses: montudor/action-zip@v1
 
       - name: Zip Windows artifact
-        run: zip -r "Atlas Engine Demo Windows.zip" "Atlas Engine Demo Windows"
+        run: zip -r "Atlas Engine Windows.zip" "Atlas Engine Windows"
         working-directory: ${{ github.workspace }}
 
       - name: Zip Linux artifact
-        run: zip -r "Atlas Engine Demo Linux.zip" "Atlas Engine Demo Linux"
+        run: zip -r "Atlas Engine Linux.zip" "Atlas Engine Linux"
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Linux artifact
+        run: zip -r "Atlas Engine MacOS.zip" "Atlas Engine MacOS"
         working-directory: ${{ github.workspace }}
         
       - name: Create tag
@@ -293,8 +296,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "${{ github.workspace }}/Atlas Engine Demo Windows.zip"
-          asset_name: "AtlasEngineDemoWindows.zip"
+          asset_path: "${{ github.workspace }}/Atlas Engine Windows.zip"
+          asset_name: "AtlasEngineWindows.zip"
           asset_content_type: application/zip
 
       - name: Upload Linux Asset
@@ -303,6 +306,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "${{ github.workspace }}/Atlas Engine Demo Linux.zip"
-          asset_name: "AtlasEngineDemoLinux.zip"
+          asset_path: "${{ github.workspace }}/Atlas Engine Linux.zip"
+          asset_name: "AtlasEngineLinux.zip"
+          asset_content_type: application/zip
+
+      - name: Upload MacOS Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: "${{ github.workspace }}/Atlas Engine MacOS.zip"
+          asset_name: "AtlasEngineMacOS.zip"
           asset_content_type: application/zip
