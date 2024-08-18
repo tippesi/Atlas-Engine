@@ -5,6 +5,7 @@
 #include "../common/Packing.h"
 #include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
+#include <glm/gtx/norm.hpp>
 
 #define FEATURE_BASE_COLOR_MAP (1 << 1)
 #define FEATURE_OPACITY_MAP (1 << 2)
@@ -213,7 +214,7 @@ namespace Atlas {
 
                     auto shadow = light.shadow;
                     imageBarriers.push_back({ shadow->useCubemap ?
-                        shadow->cubemap.image : shadow->maps.image, layout, access });
+                        shadow->cubemap->image : shadow->maps->image, layout, access });
                 }
 
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
@@ -1069,6 +1070,50 @@ namespace Atlas {
                 };
 
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
+            }
+
+            
+            std::vector<LightComponent> lightComponents;
+            auto lightSubset = scene->GetSubset<LightComponent>();
+            for (auto& lightEntity : lightSubset) {
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                lightComponents.emplace_back(light);
+            }
+
+            std::sort(lightComponents.begin(), lightComponents.end(),
+                [&](const LightComponent& light0, const LightComponent& light1) {
+                    if (light0.isMain)
+                        return true;
+
+                    if (light0.type == LightType::DirectionalLight)
+                        return true;
+
+                    if (light0.type == LightType::PointLight &&
+                        light1.type == LightType::PointLight) {
+                        return glm::distance2(light0.transformedProperties.point.position, camera.GetLocation())
+                            < glm::distance2(light1.transformedProperties.point.position, camera.GetLocation());
+                    }
+
+                    return false;
+                });
+
+            std::vector<Light> lights;
+            for (const auto& comp : lightComponents) {
+                Light light {
+                    .color = vec4(Common::ColorConverter::ConvertSRGBToLinear(comp.color), 0.0f),
+                    .intensity = comp.intensity,
+                    .scatteringFactor = 1.0f,
+                };
+                
+                const auto& prop = comp.transformedProperties;
+                if (comp.type == LightType::DirectionalLight) {
+                    light.direction = vec4(prop.directional.direction, 0.0f);
+                }
+                else if (comp.type == LightType::PointLight) {
+                    light.location = vec4(prop.point.position, 1.0f);
+                    light.radius = prop.point.radius;
+                    light.attenuation = prop.point.attenuation;
+                }
             }
 
         } 

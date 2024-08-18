@@ -68,22 +68,19 @@ namespace Atlas {
                 imageViewInfo.subresourceRange.levelCount = mipLevels;
             }
             VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &view))
-
-            // This will just duplicate the view for single-layered images, don't care for now
-            if (desc.type != ImageType::ImageCube) {
-                attachmentViews.resize(layers);
-                for (uint32_t i = 0; i < layers; i++) {
-                    imageViewInfo.subresourceRange.baseArrayLayer = i;
-                    imageViewInfo.subresourceRange.layerCount = 1;
-                    // For attachments, we only want one mip level
-                    imageViewInfo.subresourceRange.levelCount = 1;
-                    VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[i]))
-                }
+            
+            if (desc.type == ImageType::ImageCube) {
+                // We need to set it back to a 2D view type when rendering to each cubemap face
+                imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
             }
-            else {
-                // A cubemap can only have one valid view
-                attachmentViews.resize(1);
-                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[0]))
+
+            attachmentViews.resize(layers);
+            for (uint32_t i = 0; i < layers; i++) {
+                imageViewInfo.subresourceRange.baseArrayLayer = i;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                // For attachments, we only want one mip level
+                imageViewInfo.subresourceRange.levelCount = 1;
+                VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[i]))
             }
 
             if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers);

@@ -9,7 +9,7 @@ namespace Atlas::Editor::UI {
     bool LightComponentPanel::Render(Ref<Scene::Scene>& scene,
         Scene::Entity entity, LightComponent &lightComponent) {
 
-        const char* typeItems[] = { "Directional" };
+        const char* typeItems[] = { "Directional", "Point" };
         int typeItem = static_cast<int>(lightComponent.type);
         ImGui::Combo("Light type", &typeItem, typeItems, IM_ARRAYSIZE(typeItems));
         lightComponent.type = static_cast<LightType>(typeItem);
@@ -25,10 +25,13 @@ namespace Atlas::Editor::UI {
         if (lightComponent.type == LightType::DirectionalLight) {
             ImGui::Checkbox("Main", &lightComponent.isMain);
             auto& directional = lightComponent.properties.directional;
-            ImGui::DragFloat3("Direction", &directional.direction[0], 0.005f, -1.0f, 1.0f);
+            ImGui::DragFloat3("Direction", glm::value_ptr(directional.direction), 0.005f, -1.0f, 1.0f);
         }
         else if (lightComponent.type == LightType::PointLight) {
-
+            auto& point = lightComponent.properties.point;
+            ImGui::DragFloat3("Position", glm::value_ptr(point.position), 0.1f, -10000.0f, 10000.0f);
+            ImGui::DragFloat("Radius", &point.radius, 0.1f, 0.01f, 10000.0f);
+            ImGui::DragFloat("Attenuation", &point.attenuation, 0.01f, -0.01f, 10.0f);
         }
 
         ImGui::Separator();
@@ -43,6 +46,9 @@ namespace Atlas::Editor::UI {
         if (!lightComponent.shadow && castShadow) {
             if (lightComponent.type == LightType::DirectionalLight) {
                 lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 0.05f, 3, 0.95f, true, 2048.0f);
+            }
+            if (lightComponent.type == LightType::PointLight) {
+                lightComponent.AddPointShadow(0.1f, 1024);
             }
         }
         else if (lightComponent.shadow && !castShadow) {

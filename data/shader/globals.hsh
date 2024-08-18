@@ -1,7 +1,11 @@
 #ifdef AE_BINDLESS
 #define TEXTURE_COUNT 16384
+#define CUBEMAP_COUNT 1024
+#define TEXTURE_ARRAY_COUNT 128
 #else
 #define TEXTURE_COUNT 1
+#define CUBEMAP_COUNT 1
+#define TEXTURE_ARRAY_COUNT 1
 #endif
 
 layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
@@ -31,6 +35,8 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
+layout(set = 0, binding = 4) uniform texture2D bindlessCubemaps[CUBEMAP_COUNT];
+layout(set = 0, binding = 5) uniform texture2D bindlessTextureArrays[TEXTURE_ARRAY_COUNT];
 
 layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
 

@@ -3,7 +3,7 @@
 
 #include <deferred.hsh>
 
-#include <../structures>
+#include <../structures.hsh>
 #include <../shadow.hsh>
 #include <../globals.hsh>
 

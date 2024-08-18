@@ -30,7 +30,7 @@ struct Shadow {
     
     int cascadeCount;
 
-    float aligment1;
+    float mapIdx;
 
     vec2 resolution;
 

@@ -60,7 +60,7 @@ namespace Atlas {
                 shadow->views[0].frustumMatrix = clipMatrix * orthoProjection;
                 shadow->views[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
                 shadow->views[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
-                                                                        properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
+                    properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
 
             }
 
@@ -68,7 +68,7 @@ namespace Atlas {
 
 				AE_ASSERT(type == LightType::PointLight && "Component must be of type point light");
 
-                shadow = CreateRef<Lighting::Shadow>(0.0f, bias, resolution, true);
+                shadow = CreateRef<Lighting::Shadow>(0.0f, bias, resolution, 0.0f, true);
 
 			}
 
@@ -118,7 +118,7 @@ namespace Atlas {
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
+                    mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.01f, properties.point.radius);
                     const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
                                      vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
                                      vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };

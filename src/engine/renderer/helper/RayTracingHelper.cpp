@@ -8,6 +8,7 @@
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
+#define POINT_LIGHT 2
 
 namespace Atlas {
 
@@ -448,6 +449,7 @@ namespace Atlas {
                     vec3 N = vec3(0.0f);
                     float weight = 0.0f;
                     float area = 0.0f;
+                    float specific = 0.0f;
 
                     uint32_t data = 0;
 
@@ -458,7 +460,11 @@ namespace Atlas {
                         N = light.transformedProperties.directional.direction;
                     }
                     else if (light.type == LightType::PointLight) {
-
+                        data |= (POINT_LIGHT << 28u);
+                        weight = brightness;
+                        P = light.transformedProperties.point.position;
+                        area = light.transformedProperties.point.radius;
+                        specific = light.transformedProperties.point.attenuation;
                     }
 
                     data |= uint32_t(lights.size());
@@ -468,7 +474,7 @@ namespace Atlas {
                     gpuLight.P = vec4(P, 1.0f);
                     gpuLight.N = vec4(N, 0.0f);
                     gpuLight.color = vec4(radiance, 0.0f);
-                    gpuLight.data = vec4(cd, weight, area, 0.0f);
+                    gpuLight.data = vec4(cd, weight, area, specific);
 
                     lights.push_back(gpuLight);
                 }

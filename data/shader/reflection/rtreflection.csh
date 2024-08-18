@@ -54,7 +54,7 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
 } uniforms;
 
 vec3 EvaluateHit(inout Ray ray);
-vec3 EvaluateDirectLight(inout Surface surface);
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
@@ -181,8 +181,14 @@ vec3 EvaluateHit(inout Ray ray) {
     
     radiance += surface.material.emissiveColor;
 
+    int directSampleCount = 4;
+    float curSeed = float(uniforms.frameSeed) / 255.0;
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);
+    for (int i = 0; i < directSampleCount; i++) {
+        radiance += EvaluateDirectLight(surface, curSeed);
+    }
+
+    radiance /= float(directSampleCount);
 
     // Evaluate indirect lighting
 #ifdef DDGI
@@ -198,19 +204,18 @@ vec3 EvaluateHit(inout Ray ray) {
 
 }
 
-vec3 EvaluateDirectLight(inout Surface surface) {
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
 
     if (GetLightCount() == 0)
         return vec3(0.0);
-
-    float curSeed = float(uniforms.frameSeed) / 255.0;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    
+    float raySeed = float(gl_GlobalInvocationID.x * uniforms.resolution.y + gl_GlobalInvocationID.y);
 
     float lightPdf;
-    Light light = GetLight(surface, raySeed, curSeed, lightPdf);
+    Light light = GetLight(surface, raySeed, seed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
 
     // Evaluate the BRDF
     vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);

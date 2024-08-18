@@ -1,5 +1,5 @@
 #include <../common/utility.hsh>
-#include <../structures>
+#include <../structures.hsh>
 
 layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler3D shapeTexture;

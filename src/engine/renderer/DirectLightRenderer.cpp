@@ -63,10 +63,10 @@ namespace Atlas {
                 shadowUniform.resolution = vec2(shadow->resolution);
 
                 if (shadow->useCubemap) {
-                    commandList->BindImage(shadow->cubemap.image, shadowSampler, 3, 1);
+                    commandList->BindImage(shadow->cubemap->image, shadowSampler, 3, 1);
                 }
                 else {
-                    commandList->BindImage(shadow->maps.image, shadowSampler, 3, 1);
+                    commandList->BindImage(shadow->maps->image, shadowSampler, 3, 1);
                 }
 
                 auto componentCount = shadow->viewCount;

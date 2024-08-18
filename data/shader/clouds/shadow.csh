@@ -1,5 +1,5 @@
 #include <../globals.hsh>
-#include <../structures>
+#include <../structures.hsh>
 #include <../common/convert.hsh>
 #include <../common/utility.hsh>
 #include <../common/random.hsh>

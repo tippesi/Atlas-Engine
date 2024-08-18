@@ -81,7 +81,7 @@ namespace Atlas {
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
-                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
+                commandList->BindImage(shadow->maps->image, shadowSampler, 3, 8);
 
                 auto componentCount = shadow->viewCount;
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {

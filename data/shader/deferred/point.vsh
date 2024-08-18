@@ -1,4 +1,4 @@
-#include "../structures"
+#include <../structures.hsh>
 
 layout(location=0)in vec3 vPosition;
 

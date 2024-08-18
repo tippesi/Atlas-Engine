@@ -55,8 +55,8 @@ namespace Atlas {
             std::vector<ShadowView> views;
             int32_t viewCount;
 
-            Texture::Texture2DArray maps;
-            Texture::Cubemap cubemap;
+            Ref<Texture::Texture2DArray> maps;
+            Ref<Texture::Cubemap> cubemap;
 
             bool isCascaded = false;
             bool followMainCamera = false;

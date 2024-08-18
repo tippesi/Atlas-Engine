@@ -32,7 +32,15 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
         else if (light.type == uint(DIRECTIONAL_LIGHT)) {
             weight = light.brightness;
         }
-        weight = clamp(weight, 0.0000001, 1.0);
+        else if (light.type == uint(POINT_LIGHT)) {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            float lightDistance = sqrt(sqrDistance);
+
+            weight = light.brightness * light.radius / sqrDistance;
+        }
+
+        weight = clamp(weight, 0.0000001, 1000000000000.0);
         totalWeight += weight;
 
         float rnd = random(seed0, seed1);
@@ -80,7 +88,17 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
         if (light.type == uint(DIRECTIONAL_LIGHT)) {
             surface.L = normalize(-light.N);
             UpdateSurface(surface);
+            solidAngle = 1.0;
             dist = INF;
+        }
+        else {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            dist = sqrt(sqrDistance);
+            solidAngle = pow(max(light.radius - dist, 0.0001) / light.radius, light.attenuation);
+
+            surface.L = pointToLight / dist;
+            UpdateSurface(surface);
         }
     }
 }

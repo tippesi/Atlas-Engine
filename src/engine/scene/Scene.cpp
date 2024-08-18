@@ -836,8 +836,10 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<LightComponent>();
                 auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
                 // Need to create a new shadow, since right now the memory is shared between components
-                comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
-                comp.shadow->SetResolution(comp.shadow->resolution);
+                if (otherComp.shadow) {
+                    comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
+                    comp.shadow->SetResolution(comp.shadow->resolution);
+                }
                 comp.isMain = false;
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {

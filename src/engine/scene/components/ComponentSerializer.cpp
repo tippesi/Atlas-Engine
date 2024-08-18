@@ -124,24 +124,23 @@ namespace Atlas::Scene::Components {
             {"color", p.color},
             {"intensity", p.intensity},
             {"properties", typeProperties},
-            {"shadow", *p.shadow},
             {"isMain", p.isMain},
             {"volumetric", p.volumetric}
         };
+
+        if (p.shadow)
+            j["shadow"] = *p.shadow;
     }
 
     void from_json(const json& j, LightComponent& p) {
         json typeProperties;
-        int type, mobility;
-
-        p.shadow = CreateRef<Lighting::Shadow>();
+        int type, mobility;        
 
         j.at("type").get_to(type);
         j.at("mobility").get_to(mobility);
         j.at("color").get_to(p.color);
         j.at("intensity").get_to(p.intensity);
         j.at("properties").get_to(typeProperties);
-        j.at("shadow").get_to(*p.shadow);
         j.at("isMain").get_to(p.isMain);
         j.at("volumetric").get_to(p.volumetric);
 
@@ -155,6 +154,11 @@ namespace Atlas::Scene::Components {
             typeProperties.at("position").get_to(p.properties.point.position);
             typeProperties.at("radius").get_to(p.properties.point.radius);
             typeProperties.at("attenuation").get_to(p.properties.point.attenuation);
+        }
+
+        if (j.contains("shadow")) {
+            p.shadow = CreateRef<Lighting::Shadow>();
+            j.at("shadow").get_to(*p.shadow);
         }
     }
 
