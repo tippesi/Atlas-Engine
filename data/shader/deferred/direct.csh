@@ -114,7 +114,7 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
 
     float shadowFactor = GetShadowFactor(light, surface, lightType, geometryNormal, isMain);
 
-    vec3 radiance = light.color.rgb * light.intensity;
+    vec3 radiance = light.color.rgb * light.intensity * lightMultiplier;
     direct = direct * radiance * surface.NdotL * shadowFactor;
 
     if (surface.material.transmissive) {
@@ -133,15 +133,6 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
     return direct;
 
 }
-
-vec3 sampleOffsetDirections[20] = vec3[]
-(
-   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
-   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-);
 
 float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometryNormal, bool isMain) {
 
@@ -163,19 +154,8 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
     }
     else if (lightType == POINT_LIGHT) {
-        int samples  = 20;
-        float diskRadius = 0.0075;
-        shadowFactor = 0.0;
-        vec4 position = light.shadow.cascades[1].cascadeSpace * vec4(surface.P, 1.0);
-        vec4 absPosition = abs(position);
-        float depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
-        vec4 clip = light.shadow.cascades[0].cascadeSpace * vec4(0.0, 0.0, depth, 1.0);    
-        depth = (clip.z - 0.0005) / clip.w;
-        for(int i = 0; i < samples; i++) {
-            shadowFactor += clamp(texture(samplerCubeShadow(cubeMaps[nonuniformEXT(light.shadow.mapIdx)], shadowSampler), 
-                vec4(position.xyz + sampleOffsetDirections[i] * diskRadius, depth)), 0.0, 1.0); 
-        }
-        shadowFactor /= float(samples + 1);  
+        shadowFactor = CalculatePointShadow(light.shadow, cubeMaps[nonuniformEXT(light.shadow.mapIdx)],
+            shadowSampler, surface.P);
     }
 
     if (isMain) {

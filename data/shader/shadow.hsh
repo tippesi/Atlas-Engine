@@ -754,3 +754,35 @@ float CalculateShadowWorldSpace(Shadow shadow, texture2DArray cascadeMaps, sampl
     return cascadeLookup(shadow, cascadeMaps, shadowSampler, 0.0,
         cascadeMatrix, position, position, 0.0, false);
 }
+
+vec3 sampleOffsetDirections[20] = vec3[] (
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
+
+
+float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position) {
+
+    int samples  = 20;
+    float diskRadius = shadow.edgeSoftness;
+    
+    vec4 shadowCoords = shadow.cascades[1].cascadeSpace * vec4(position, 1.0);
+    shadowCoords.y *= -1.0;
+    vec4 absPosition = abs(shadowCoords);
+    float depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
+    vec4 clip = shadow.cascades[0].cascadeSpace * vec4(0.0, 0.0, depth, 1.0);    
+    depth = clip.z / clip.w;
+
+    float shadowFactor = 0.0;
+    for(int i = 0; i < samples; i++) {
+        shadowFactor += clamp(texture(samplerCubeShadow(cubeMap, shadowSampler), 
+            vec4(shadowCoords.xyz + sampleOffsetDirections[i] * diskRadius, depth - shadow.bias * 0.001)), 0.0, 1.0); 
+    }
+    shadowFactor /= float(samples + 1);  
+
+    return shadowFactor;
+
+}

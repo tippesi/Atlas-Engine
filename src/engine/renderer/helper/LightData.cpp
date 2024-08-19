@@ -72,7 +72,6 @@ namespace Atlas::Renderer::Helper {
                 lightUniform.attenuation = prop.point.attenuation;
             }
 
-            auto& shadowUniform = lightUniform.shadow;
             if (light.shadow) {
                 auto shadow = light.shadow;
                 auto& shadowUniform = lightUniform.shadow;
