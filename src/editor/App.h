@@ -38,6 +38,8 @@ namespace Atlas::Editor {
 
         void SubscribeToResourceEvents();
 
+        void SetDefaultWindowResolution();
+
         Input::MouseHandler mouseHandler;
         Input::KeyboardHandler keyboardHandler;
 

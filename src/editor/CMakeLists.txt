@@ -33,6 +33,11 @@ endforeach()
 if (UNIX AND NOT APPLE AND NOT ANDROID)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
 endif()
+# Need to reference the vulkan SDK for MacOS to search at runtime
+if (APPLE)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'/usr/local/lib'")
+endif()
+
 # We use the exported main file from the AtlasEngine library to able to use
 # the app class. Alternatively, you can write a main function yourself.
 # To export the main file the ATLAS_EXPORT_MAIN option has to be turned on.

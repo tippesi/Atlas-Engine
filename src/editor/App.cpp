@@ -21,6 +21,8 @@ namespace Atlas::Editor {
 
         ContentDiscovery::Update();
 
+        SetDefaultWindowResolution();
+
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
 
@@ -402,6 +404,21 @@ namespace Atlas::Editor {
             if (!event.file.empty())
                 FileImporter::ImportFile(event.file);
         });
+
+    }
+
+    void App::SetDefaultWindowResolution() {
+
+        auto resolution = GetScreenSize();
+        if (resolution.y <= 1080) {
+            window.SetSize(1280, 720);
+        }
+        else if (resolution.y <= 1440) {
+            window.SetSize(1920, 1080);
+        }
+        else {
+            window.SetSize(2560, 1440);
+        }
 
     }
 
