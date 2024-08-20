@@ -44,6 +44,8 @@ namespace Atlas {
             // Need to also keep track of non processed layer (e.g. long range layers)
             for (auto& [lightEntity, frameBuffer] : lightMap) {
                 const auto& light = lightEntity.GetComponent<LightComponent>();
+                // Will be activated automatically by movable lights
+                light.shadow->update = false;
                 
                 if (light.type == LightType::DirectionalLight && light.shadow->longRange) {
                     // Need to go through render passes to make sure images have transitioned

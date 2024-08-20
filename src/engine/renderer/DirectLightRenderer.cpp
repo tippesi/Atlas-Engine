@@ -55,7 +55,7 @@ namespace Atlas {
                 }
             }
 
-            commandList->PushConstants("constants", &pushConstants);
+            commandList->PushConstants("constants", &pushConstants, sizeof(PushConstants));
 
             commandList->BindSampledImages(cascadeMaps, 3, 6);
             commandList->BindSampledImages(cubeMaps, 3, 14);

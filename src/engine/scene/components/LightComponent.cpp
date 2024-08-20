@@ -118,18 +118,13 @@ namespace Atlas {
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 1.0f);
+                    mat4 projectionMatrix = clipMatrix * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
+                    vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                              vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f),
+                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-                    mat4 projectionMatrix = clip * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
-                    const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                                     vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                     vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
-
-                    const vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                    vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                                   vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
                                    vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
                     for (uint8_t i = 0; i < 6; i++) {
