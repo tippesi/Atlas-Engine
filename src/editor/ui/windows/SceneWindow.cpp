@@ -61,6 +61,10 @@ namespace Atlas::Editor::UI {
             SaveScene();
         }
 
+        if (controlDown && playMaximized && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+            StopPlaying();
+        }
+
     }
 
     void SceneWindow::Render() {
@@ -356,6 +360,8 @@ namespace Atlas::Editor::UI {
                 ImGui::Text("Path traces samples");
                 ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
 
+                ImGui::Checkbox("Play maximized", &playMaximized);
+
                 ImGui::EndPopup();
             }
 
@@ -603,6 +609,10 @@ namespace Atlas::Editor::UI {
         sceneHierarchyPanel.selectedEntity = Scene::Entity();
 
         isPlaying = true;
+
+        if (playMaximized) {
+            Notifications::Push({ "To stop playing, press Ctrl + Esc" });
+        }
 
     }
 

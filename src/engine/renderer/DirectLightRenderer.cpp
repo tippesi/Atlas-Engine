@@ -55,8 +55,6 @@ namespace Atlas {
                 }
             }
 
-            commandList->PushConstants("constants", &pushConstants, sizeof(PushConstants));
-
             commandList->BindSampledImages(cascadeMaps, 3, 6);
             commandList->BindSampledImages(cubeMaps, 3, 14);
 
@@ -88,6 +86,8 @@ namespace Atlas {
             cloudShadowUniformBuffer.Bind(commandList, 3, 4);
 
             commandList->BindSampler(shadowSampler, 3, 5);
+
+            commandList->PushConstants("constants", &pushConstants);
 
             ivec2 res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             int32_t groupSize = 8;

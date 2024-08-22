@@ -32,6 +32,8 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene, bool isActiveWindow);
 
+        void RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive);
+
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;
 

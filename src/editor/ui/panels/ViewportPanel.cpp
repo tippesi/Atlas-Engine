@@ -52,16 +52,44 @@ namespace Atlas::Editor::UI {
         auto region = ImGui::GetContentRegionAvail();
         auto windowPos = ImGui::GetWindowPos();
 
-        bool validRegion = region.x > 0.0f && region.y > 0.0f;
+        auto pos = ivec2(int32_t(windowPos.x), int32_t(windowPos.y));
+        auto size = ivec2(int32_t(region.x), int32_t(region.y));
+        RenderScene(scene, pos, size, isActiveWindow);
 
-        if ((viewportTexture.width != int32_t(region.x) ||
-            viewportTexture.height != int32_t(region.y)) && validRegion) {
-            viewport->Set(int32_t(windowPos.x), int32_t(windowPos.y), int32_t(region.x), int32_t(region.y));
-            viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
+        if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&viewportTexture);
+            ImGui::Image(set, region);
+        }
+
+        if (drawOverlayFunc && !isBlocked)
+            drawOverlayFunc();
+
+        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+
+        if (drawMenuBarFunc && !isBlocked) {
+            isFocused |= ImGui::IsWindowFocused();            
+
+            drawMenuBarFunc(); 
+        }
+
+        ImGui::EndChild();
+
+        ImGui::End();
+
+    }
+
+    void ViewportPanel::RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive) { 
+
+        bool validSize = size.x > 0 && size.y > 0;
+
+        if ((viewportTexture.width != size.x ||
+            viewportTexture.height != size.y) && validSize) {
+            viewport->Set(pos.x, pos.y, size.x, size.y);
+            viewportTexture.Resize(size.x, size.y);
             CreateRenderPass();
         }
 
-        if (scene != nullptr && validRegion && isActiveWindow && !isBlocked) {
+        if (scene != nullptr && validSize && isActive && !Singletons::blockingOperation->block) {
             auto& config = Singletons::config;
 
             if (config->pathTrace) {
@@ -91,28 +119,7 @@ namespace Atlas::Editor::UI {
             }
 
             primitiveBatchWrapper.primitiveBatch->Clear();
-
         }
-
-        if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&viewportTexture);
-            ImGui::Image(set, region);
-        }
-
-        if (drawOverlayFunc && !isBlocked)
-            drawOverlayFunc();
-
-        ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
-
-        if (drawMenuBarFunc && !isBlocked) {
-            isFocused |= ImGui::IsWindowFocused();            
-
-            drawMenuBarFunc(); 
-        }
-
-        ImGui::EndChild();
-
-        ImGui::End();
 
     }
 

@@ -145,7 +145,7 @@ namespace Atlas::Scene::Components {
         j.at("volumetric").get_to(p.volumetric);
 
         p.type = static_cast<LightType>(type);
-        p.mobility = static_cast<LightMobility>(type);
+        p.mobility = static_cast<LightMobility>(mobility);
 
         if (p.type == LightType::DirectionalLight) {
             typeProperties.at("direction").get_to(p.properties.directional.direction);
