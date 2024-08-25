@@ -98,8 +98,11 @@ namespace Atlas {
             CleanupUnusedResources();
 
 #ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
+            renderState.UpdateMeshBindlessData();
+            renderState.UpdateTextureBindlessData();
+            renderState.UpdateOtherTextureBindlessData();
 #endif
+            renderState.PrepareMaterials();
 
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
@@ -193,6 +196,28 @@ namespace Atlas {
 
                 // This part only needs to be executed if the simulation is running
                 if (!physicsWorld->pauseSimulation) {
+                    // Player update needs to be performed after normal rigid bodies, such that
+                    // player can override rigid body behaviour
+                    for (auto entity : playerSubset) {
+                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                        if (!playerComponent.IsValid())
+                            continue;
+
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
+
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = playerComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
+
                     physicsWorld->Update(deltaTime);
 
                     for (auto entity : rigidBodySubset) {
@@ -213,28 +238,6 @@ namespace Atlas {
 
                         // Physics are updated in global space, so we don't need the parent transform
                         transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
-                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
-                    }
-
-                    // Player update needs to be performed after normal rigid bodies, such that
-                    // player can override rigid body behaviour
-                    for (auto entity : playerSubset) {
-                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
-
-                        if (!playerComponent.IsValid())
-                            continue;
-
-                        // This happens if no change was triggered by the user, then we still need
-                        // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
-                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
-
-                        // Need to set changed to true such that the space partitioning is updated
-                        transformComponent.changed = true;
-                        transformComponent.updated = true;
-
-                        // Physics are updated in global space, so we don't need the parent transform
-                        transformComponent.globalMatrix = playerComponent.GetMatrix();
                         transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
                     }
                 }
@@ -284,7 +287,7 @@ namespace Atlas {
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            JobSystem::Execute(rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
+            JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
@@ -568,9 +571,11 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(bindlessMeshMapUpdateJob);
-            JobSystem::Wait(bindlessTextureMapUpdateJob);
-            JobSystem::Wait(rayTracingWorldUpdateJob);
+            JobSystem::Wait(renderState.bindlessMeshMapUpdateJob);
+            JobSystem::Wait(renderState.bindlessTextureMapUpdateJob);
+            JobSystem::Wait(renderState.bindlessOtherTextureMapUpdateJob);
+            JobSystem::Wait(renderState.materialUpdateJob);
+            JobSystem::Wait(renderState.rayTracingWorldUpdateJob);
 
         }
 
@@ -615,81 +620,6 @@ namespace Atlas {
         SceneIterator Scene::end() {
 
             return { &entityManager, entityManager.end() };
-
-        }
-
-        void Scene::UpdateBindlessIndexMaps() {            
-
-            JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                meshIdToBindlessIdx.clear();
-
-                uint32_t bufferIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    // Not all meshes might have a bvh
-                    if (!mesh->IsBVHBuilt())
-                        continue;
-
-                    meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-                }
-                });
-
-            JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                textureToBindlessIdx.clear();
-
-                std::set<Ref<Material>> materials;
-                std::set<Ref<Texture::Texture2D>> textures;
-
-                uint32_t textureIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    for (auto& material : mesh->data.materials)
-                        if (material.IsLoaded())
-                            materials.insert(material.Get());
-                }
-
-                for (const auto& material : materials) {
-                    if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap.Get());
-                    if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap.Get());
-                    if (material->HasNormalMap())
-                        textures.insert(material->normalMap.Get());
-                    if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap.Get());
-                    if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap.Get());
-                    if (material->HasAoMap())
-                        textures.insert(material->aoMap.Get());
-                    if (material->HasDisplacementMap())
-                        textures.insert(material->displacementMap.Get());
-                }
-
-                for (const auto& texture : textures) {
-
-                    textureToBindlessIdx[texture] = textureIdx++;
-
-                }
-                });
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                const auto& lightComponent = lightSubset.Get(entity);
-
-                if (!lightComponent.shadow)
-                    continue;
-
-                if (lightComponent.shadow->useCubemap) {
-
-                }
-                else {
-
-                }
-            }
 
         }
 

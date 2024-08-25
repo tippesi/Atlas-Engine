@@ -27,11 +27,6 @@ namespace Atlas {
             irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
             momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
-            probeDebugMaterial = CreateRef<Material>();
-            probeDebugActiveMaterial = CreateRef<Material>();
-            probeDebugInactiveMaterial = CreateRef<Material>();
-            probeDebugOffsetMaterial = CreateRef<Material>();
-
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -317,17 +312,13 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            probeDebugActiveMaterial->emissiveColor = vec3(0.0f, 1.0f, 0.0f);
-            probeDebugInactiveMaterial->emissiveColor = vec3(1.0f, 0.0f, 0.0f);
-            probeDebugOffsetMaterial->emissiveColor = vec3(0.0f, 0.0f, 1.0f);
-
             sphereArray.Bind(commandList);
 
             ProbeDebugConstants constants = {
-                .probeMaterialIdx = uint32_t(materialMap[probeDebugMaterial.get()]),
-                .probeActiveMaterialIdx = uint32_t(materialMap[probeDebugActiveMaterial.get()]),
-                .probeInactiveMaterialIdx = uint32_t(materialMap[probeDebugInactiveMaterial.get()]),
-                .probeOffsetMaterialIdx = uint32_t(materialMap[probeDebugOffsetMaterial.get()])
+                .probeMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugMaterial.get()]),
+                .probeActiveMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugActiveMaterial.get()]),
+                .probeInactiveMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugInactiveMaterial.get()]),
+                .probeOffsetMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugOffsetMaterial.get()])
             };
             commandList->PushConstants("constants", &constants);
 

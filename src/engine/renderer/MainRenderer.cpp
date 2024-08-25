@@ -6,15 +6,6 @@
 #include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
 
-#define FEATURE_BASE_COLOR_MAP (1 << 1)
-#define FEATURE_OPACITY_MAP (1 << 2)
-#define FEATURE_NORMAL_MAP (1 << 3)
-#define FEATURE_ROUGHNESS_MAP (1 << 4)
-#define FEATURE_METALNESS_MAP (1 << 5)
-#define FEATURE_AO_MAP (1 << 6)
-#define FEATURE_TRANSMISSION (1 << 7)
-#define FEATURE_VERTEX_COLORS (1 << 8)
-
 namespace Atlas {
 
     namespace Renderer {
@@ -106,6 +97,8 @@ namespace Atlas {
                 camera.Jitter(vec2(0.0f));
             }
 
+            auto sceneState = &scene->renderState;
+
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
 
@@ -114,40 +107,12 @@ namespace Atlas {
 
             lightData.CullAndSort(scene);
 
-            Ref<Graphics::Buffer> materialBuffer;
-            std::vector<PackedMaterial> materials;
-            std::unordered_map<void*, uint16_t> materialMap;
-
-            JobGroup prepareMaterialsGroup { JobPriority::High };
-            JobSystem::Execute(prepareMaterialsGroup, [&](JobData&) { 
-                PrepareMaterials(scene, materials, materialMap); 
-                auto materialBufferDesc = Graphics::BufferDesc {
-                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .hostAccess = Graphics::BufferHostAccess::Sequential,
-                    .data = materials.data(),
-                    .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
-                };
-                materialBuffer = device->CreateBuffer(materialBufferDesc);
-                });
-
-            std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-
-            JobGroup prepareBindlessGroup { JobPriority::High };
-            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
-                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
-                });
-
             SetUniforms(target, scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindSampler(globalNearestSampler, 1, 15);
-
-            JobSystem::WaitSpin(prepareMaterialsGroup);
-            commandList->BindBuffer(materialBuffer, 1, 14);
 
             if (scene->clutter)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
@@ -172,19 +137,29 @@ namespace Atlas {
 
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
+            Log::Warning("Begin wait material");
+            JobSystem::WaitSpin(sceneState->materialUpdateJob);
+            Log::Warning("End wait material");
+            sceneState->materialBuffer.Bind(commandList, 1, 14);
+
             // Wait as long as possible for this to finish
-            JobSystem::WaitSpin(prepareBindlessGroup);
+            Log::Warning("Begin wait bindless");
+            JobSystem::WaitSpin(sceneState->bindlessMeshMapUpdateJob);
+            JobSystem::WaitSpin(sceneState->bindlessTextureMapUpdateJob);
+            JobSystem::WaitSpin(sceneState->prepareBindlessMeshesJob);
+            JobSystem::WaitSpin(sceneState->prepareBindlessTexturesJob);
+            Log::Warning("End wait bindless");
             lightData.UpdateBindlessIndices(scene);
-            commandList->BindBuffers(triangleBuffers, 0, 1);
-            if (images.size())
-                commandList->BindSampledImages(images, 0, 3);
+            commandList->BindBuffers(sceneState->triangleBuffers, 0, 1);
+            if (sceneState->images.size())
+                commandList->BindSampledImages(sceneState->images, 0, 3);
 
             if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+                commandList->BindBuffers(sceneState->triangleOffsetBuffers, 0, 2);
             }
             else {
-                commandList->BindBuffers(blasBuffers, 0, 0);
-                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+                commandList->BindBuffers(sceneState->blasBuffers, 0, 0);
+                commandList->BindBuffers(sceneState->bvhTriangleBuffers, 0, 2);
             }
 
             {
@@ -222,7 +197,9 @@ namespace Atlas {
                 commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
+            Log::Warning("Begin wait ray tracing");
+            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+            Log::Warning("End wait ray tracing");
 
             lightData.FillBuffer(scene);
             lightData.lightBuffer.Bind(commandList, 1, 16);
@@ -237,15 +214,15 @@ namespace Atlas {
 
                 commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
 
-                opaqueRenderer.Render(target, scene, commandList, &renderList, materialMap);
+                opaqueRenderer.Render(target, scene, commandList, &renderList, sceneState->materialMap);
 
-                ddgiRenderer.DebugProbes(target, scene, commandList, materialMap);
+                ddgiRenderer.DebugProbes(target, scene, commandList, sceneState->materialMap);
 
-                vegetationRenderer.Render(target, scene, commandList, materialMap);
+                vegetationRenderer.Render(target, scene, commandList, sceneState->materialMap);
 
-                terrainRenderer.Render(target, scene, commandList, materialMap);
+                terrainRenderer.Render(target, scene, commandList, sceneState->materialMap);
 
-                impostorRenderer.Render(target, scene, commandList, &renderList, materialMap);
+                impostorRenderer.Render(target, scene, commandList, &renderList, sceneState->materialMap);
 
                 commandList->EndRenderPass();
 
@@ -434,6 +411,8 @@ namespace Atlas {
             if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
+            auto sceneState = &scene->renderState;
+
             static vec2 lastJitter = vec2(0.0f);
 
             auto& camera = scene->GetMainCamera();
@@ -475,31 +454,26 @@ namespace Atlas {
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-            std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            JobGroup prepareBindlessGroup { JobPriority::High };
-            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
-                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
-                });
-
-
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
-            JobSystem::WaitSpin(prepareBindlessGroup);
+            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+            JobSystem::WaitSpin(sceneState->prepareBindlessMeshesJob);
+            JobSystem::WaitSpin(sceneState->prepareBindlessTexturesJob);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
             commandList->BindSampler(globalSampler, 1, 13);
             commandList->BindSampler(globalNearestSampler, 1, 15);
-            commandList->BindBuffers(triangleBuffers, 0, 1);
-            commandList->BindSampledImages(images, 0, 3);
+            commandList->BindBuffers(sceneState->triangleBuffers, 0, 1);
+            if (sceneState->images.size())
+                commandList->BindSampledImages(sceneState->images, 0, 3);
 
             if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+                commandList->BindBuffers(sceneState->triangleOffsetBuffers, 0, 2);
             }
             else {
-                commandList->BindBuffers(blasBuffers, 0, 0);
-                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+                commandList->BindBuffers(sceneState->blasBuffers, 0, 0);
+                commandList->BindBuffers(sceneState->bvhTriangleBuffers, 0, 2);
             }
+
 
             Graphics::Profiler::EndQuery();
 
@@ -1075,163 +1049,6 @@ namespace Atlas {
                 };
 
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
-            }
-
-        } 
-
-        void MainRenderer::PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
-            std::unordered_map<void*, uint16_t>& materialMap) {
-
-            auto sceneMaterials = scene->GetMaterials();
-
-            // For debugging purpose
-            if (scene->irradianceVolume && scene->irradianceVolume->debug) {
-                sceneMaterials.push_back(ddgiRenderer.probeDebugMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugActiveMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugInactiveMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugOffsetMaterial);
-            }
-
-            uint16_t idx = 0;
-
-            for (auto material : sceneMaterials) {
-                // Might happen due to the scene giving back materials on a mesh basis
-                if (materialMap.contains(material.get()))
-                    continue;
-
-                PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor), 0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 0.0f));
-
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(material->emissiveIntensity, material->tiling));
-
-                vec4 data0, data1, data2;
-
-                data0.x = material->opacity;
-                data0.y = material->roughness;
-                data0.z = material->metalness;
-
-                data1.x = material->ao;
-                data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
-                data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
-
-                data2.x = material->reflectance;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= material->HasBaseColorMap() ? FEATURE_BASE_COLOR_MAP : 0;
-                packed.features |= material->HasOpacityMap() ? FEATURE_OPACITY_MAP : 0;
-                packed.features |= material->HasNormalMap() ? FEATURE_NORMAL_MAP : 0;
-                packed.features |= material->HasRoughnessMap() ? FEATURE_ROUGHNESS_MAP : 0;
-                packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
-                packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
-                packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
-                packed.features |= material->vertexColors ? FEATURE_VERTEX_COLORS : 0;
-
-                materials.push_back(packed);
-
-                materialMap[material.get()] = idx++;
-            }
-            
-            auto meshes = scene->GetMeshes();
-
-            for (auto mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                auto impostor = mesh->impostor;
-
-                if (!impostor)
-                    continue;
-
-                PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->transmissiveColor), 1.0f));
-
-                vec4 data0, data1, data2;
-
-                data0.x = 1.0f;
-                data0.y = 1.0f;
-                data0.z = 1.0f;
-
-                data1.x = 1.0f;
-                data1.y = 0.0f;
-                data1.z = 0.0f;
-
-                data2.x = 0.5f;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= FEATURE_BASE_COLOR_MAP | 
-                    FEATURE_ROUGHNESS_MAP | FEATURE_METALNESS_MAP | FEATURE_AO_MAP;
-                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
-
-                materials.push_back(packed);
-
-                materialMap[impostor.get()] =  idx++;
-            }
-
-
-        }
-
-        void MainRenderer::PrepareBindlessData(Ref<Scene::Scene> scene, std::vector<Ref<Graphics::Image>>& images,
-            std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
-            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
-
-            if (!device->support.bindless)
-                return;
-
-            JobSystem::WaitSpin(scene->bindlessMeshMapUpdateJob);
-
-            blasBuffers.resize(scene->meshIdToBindlessIdx.size());
-            triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
-            bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
-            triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
-
-            for (const auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
-                if (!scene->registeredMeshes.contains(meshId)) continue;
-
-                const auto& mesh = scene->registeredMeshes[meshId].resource;
-
-                auto blasBuffer = mesh->blasNodeBuffer.Get();
-                auto triangleBuffer = mesh->triangleBuffer.Get();
-                auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
-                auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
-
-                AE_ASSERT(triangleBuffer != nullptr);
-
-                blasBuffers[idx] = blasBuffer;
-                triangleBuffers[idx] = triangleBuffer;
-                bvhTriangleBuffers[idx] = bvhTriangleBuffer;
-                triangleOffsetBuffers[idx] = triangleOffsetBuffer;
-            }
-
-            JobSystem::WaitSpin(scene->bindlessTextureMapUpdateJob);
-
-            images.resize(scene->textureToBindlessIdx.size());
-
-            for (const auto& [texture, idx] : scene->textureToBindlessIdx) {
-
-                images[idx] = texture->image;
-
             }
 
         }

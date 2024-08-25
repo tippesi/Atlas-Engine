@@ -36,16 +36,18 @@ namespace Atlas {
             if (!device->swapChain->isComplete) return;
             if (!subset.Any()) return;
 
+            auto sceneState = &scene->renderState;
+
             blases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
 
-            JobSystem::Wait(scene->bindlessMeshMapUpdateJob);
+            JobSystem::Wait(sceneState->bindlessMeshMapUpdateJob);
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))
+                if (!sceneState->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -54,7 +56,7 @@ namespace Atlas {
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.offset = int32_t(scene->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.offset = int32_t(sceneState->meshIdToBindlessIdx[mesh.GetID()]);
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
@@ -84,14 +86,14 @@ namespace Atlas {
             actorAABBs.clear();
             lastMatrices.clear();
 
-            JobSystem::Wait(scene->bindlessTextureMapUpdateJob);
+            JobSystem::Wait(sceneState->bindlessTextureMapUpdateJob);
 
             UpdateMaterials();
 
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!scene->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                if (!sceneState->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
                     continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
@@ -172,6 +174,8 @@ namespace Atlas {
 
             std::lock_guard lock(mutex);
 
+            auto sceneState = &scene->renderState;
+
             auto meshes = scene->GetMeshes();
             materials.clear();
 
@@ -214,27 +218,27 @@ namespace Atlas {
                         gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                         if (material->HasBaseColorMap()) {
-                            gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
+                            gpuMaterial.baseColorTexture = sceneState->textureToBindlessIdx[material->baseColorMap.Get()];
                         }
 
                         if (material->HasOpacityMap()) {
-                            gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
+                            gpuMaterial.opacityTexture = sceneState->textureToBindlessIdx[material->opacityMap.Get()];
                         }
 
                         if (material->HasNormalMap()) {
-                            gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
+                            gpuMaterial.normalTexture = sceneState->textureToBindlessIdx[material->normalMap.Get()];
                         }
 
                         if (material->HasRoughnessMap()) {
-                            gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
+                            gpuMaterial.roughnessTexture = sceneState->textureToBindlessIdx[material->roughnessMap.Get()];
                         }
 
                         if (material->HasMetalnessMap()) {
-                            gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
+                            gpuMaterial.metalnessTexture = sceneState->textureToBindlessIdx[material->metalnessMap.Get()];
                         }
 
                         if (material->HasAoMap()) {
-                            gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
+                            gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
                         }
                     }
 

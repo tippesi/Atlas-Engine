@@ -24,6 +24,8 @@ namespace Atlas {
             if (!mainPass)
                 return;
 
+            auto sceneState = &scene->renderState;
+
             commandList->BindBuffer(mainPass->currentMatricesBuffer, 1, 1);
             commandList->BindBuffer(mainPass->lastMatricesBuffer, 1, 2);
             commandList->BindBuffer(mainPass->impostorMatricesBuffer, 1, 3);
@@ -116,13 +118,13 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .baseColorTextureIdx = material->HasBaseColorMap() ? scene->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
-                    .opacityTextureIdx = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0,
-                    .normalTextureIdx = material->HasNormalMap() ? scene->textureToBindlessIdx[material->normalMap.Get()] : 0,
-                    .roughnessTextureIdx = material->HasRoughnessMap() ? scene->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
-                    .metalnessTextureIdx = material->HasMetalnessMap() ? scene->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
-                    .aoTextureIdx = material->HasAoMap() ? scene->textureToBindlessIdx[material->aoMap.Get()] : 0,
-                    .heightTextureIdx = material->HasDisplacementMap() ? scene->textureToBindlessIdx[material->displacementMap.Get()] : 0,
+                    .baseColorTextureIdx = material->HasBaseColorMap() ? sceneState->textureToBindlessIdx[material->baseColorMap.Get()] : 0,
+                    .opacityTextureIdx = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0,
+                    .normalTextureIdx = material->HasNormalMap() ? sceneState->textureToBindlessIdx[material->normalMap.Get()] : 0,
+                    .roughnessTextureIdx = material->HasRoughnessMap() ? sceneState->textureToBindlessIdx[material->roughnessMap.Get()] : 0,
+                    .metalnessTextureIdx = material->HasMetalnessMap() ? sceneState->textureToBindlessIdx[material->metalnessMap.Get()] : 0,
+                    .aoTextureIdx = material->HasAoMap() ? sceneState->textureToBindlessIdx[material->aoMap.Get()] : 0,
+                    .heightTextureIdx = material->HasDisplacementMap() ? sceneState->textureToBindlessIdx[material->displacementMap.Get()] : 0,
                 };
                 commandList->PushConstants("constants", &pushConstants);
 

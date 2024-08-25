@@ -152,6 +152,15 @@ namespace Atlas {
             momentsArray1 = Texture::Texture2DArray(momRes.x, momRes.y, probeCount.y * cascadeCount, 
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
+            probeDebugMaterial = CreateRef<Material>();
+            probeDebugActiveMaterial = CreateRef<Material>();
+            probeDebugInactiveMaterial = CreateRef<Material>();
+            probeDebugOffsetMaterial = CreateRef<Material>();
+            
+            probeDebugActiveMaterial->emissiveColor = vec3(0.0f, 1.0f, 0.0f);
+            probeDebugInactiveMaterial->emissiveColor = vec3(1.0f, 0.0f, 0.0f);
+            probeDebugOffsetMaterial->emissiveColor = vec3(0.0f, 0.0f, 1.0f);
+
             SwapTextures();
             ClearProbes(irrRes, momRes, probeCount, cascadeCount);
 

@@ -372,7 +372,7 @@ namespace Atlas {
             refs.clear();
             refs.shrink_to_fit();
 
-            if (depth <= 6 && parallelBuild) {
+            if (depth <= 8 && parallelBuild) {
                 auto leftRefSize = leftRefs.size(), rightRefSize = rightRefs.size();
                 auto leftLambda = [=, &jobGroup, leftRefs = std::move(leftRefs)](JobData&) {
                     auto refs = std::move(leftRefs);

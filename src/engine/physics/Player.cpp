@@ -17,9 +17,17 @@ namespace Atlas::Physics {
 
         settings.mPredictiveContactDistance = predictiveContactDistance;
 
-        settings.mCharacterPadding = shapePadding;
+        settings.mMaxCollisionIterations = 10;
+        settings.mMaxConstraintIterations = 10;
         settings.mShapeOffset = VecToJPHVec(shapeOffset);
 		settings.mShape = shape->ref;
+        settings.mInnerBodyShape = shape->ref;
+        settings.mInnerBodyLayer = Layers::Movable;
+
+        if (shape->type == ShapeType::Capsule) {
+            auto shapeSettings = static_cast<CapsuleShapeSettings*>(shape->settings.get());
+            settings.mSupportingVolume = { JPH::Vec3::sAxisY(), -shapeSettings->radius };
+        }
 		
 		return settings;
 
@@ -140,6 +148,8 @@ namespace Atlas::Physics {
 
         auto gravityVector = -GetUp() * glm::length(world->GetGravity());
 
+        character->SetEnhancedInternalEdgeRemoval(true);
+
         JPH::CharacterVirtual::ExtendedUpdateSettings settings;
 
         settings.mStickToFloorStepDown = VecToJPHVec(stickToGroundDist);
@@ -159,6 +169,15 @@ namespace Atlas::Physics {
 
         character = CreateRef<JPH::CharacterVirtual>(settings, VecToJPHVec(initialPosition),
             QuatToJPHQuat(initialRotation), world->system.get());
+
+        character->SetListener(this);
+
+    }
+
+    void Player::OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, 
+			JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) {
+
+        ioSettings.mCanPushCharacter = false;
 
     }
 

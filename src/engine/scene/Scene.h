@@ -21,6 +21,7 @@
 #include "../mesh/Mesh.h"
 
 #include "SceneIterator.h"
+#include "SceneRenderState.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
 #include "Wind.h"
@@ -58,12 +59,13 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), renderState(this)
+                { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
             explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
-                name(name) { RegisterSubscribers(); }
+                name(name), renderState(this) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
+                : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -143,12 +145,9 @@ namespace Atlas {
             Ref<Lighting::SSS> sss = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+            SceneRenderState renderState;
 
         private:
-            void UpdateBindlessIndexMaps();
-
             Entity ToSceneEntity(ECS::Entity entity);
 
             void RegisterSubscribers();
@@ -182,12 +181,9 @@ namespace Atlas {
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            JobGroup rayTracingWorldUpdateJob { JobPriority::High };
-            JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
-            JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
-
             friend Entity;
             friend SpacePartitioning;
+            friend SceneRenderState;
             friend RayTracing::RayTracingWorld;
             friend HierarchyComponent;
             friend MeshComponent;

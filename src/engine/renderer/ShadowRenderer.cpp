@@ -67,6 +67,8 @@ namespace Atlas {
             if (!light.shadow || !light.shadow->update)
                 return;
 
+            auto sceneState = &scene->renderState;
+
             Ref<Graphics::FrameBuffer> frameBuffer = nullptr;
             if (lightMap.contains(lightEntity))
                 frameBuffer = lightMap[lightEntity];
@@ -173,7 +175,7 @@ namespace Atlas {
                     .windTextureLod = mesh->windNoiseTextureLod,
                     .windBendScale = mesh->windBendScale,
                     .windWiggleScale = mesh->windWiggleScale,
-                    .textureID = material->HasOpacityMap() ? scene->textureToBindlessIdx[material->opacityMap.Get()] : 0
+                    .textureID = material->HasOpacityMap() ? sceneState->textureToBindlessIdx[material->opacityMap.Get()] : 0
                 };
                 commandList->PushConstants("constants", &pushConstants);
 
