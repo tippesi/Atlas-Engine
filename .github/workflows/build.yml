@@ -418,7 +418,6 @@ jobs:
           VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
-        if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine MacOS ${{ matrix.build-type }}
