@@ -16,6 +16,8 @@ extern Atlas::EngineInstance* GetEngineInstance();
 
 int main(int argc, char* argv[]) {
 
+    printf("Start");
+
     // Automatically change working directory to load
     // shaders properly.
     if (argc > 0) {
@@ -27,6 +29,8 @@ int main(int argc, char* argv[]) {
 #endif
     }
 
+    printf("Args");
+
 #if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "2", 1);
     setenv("MVK_DEBUG", "0", 1);
@@ -34,10 +38,14 @@ int main(int argc, char* argv[]) {
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
 #endif
 
+    printf("Envs");
+    
     // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)
     // SetEnvironmentVariable("VK_ICD_FILENAMES", "..\\vk_swiftshader_icd.json");
 
     Atlas::Engine::Init(Atlas::EngineInstance::engineConfig);
+
+    printf("Init");
 
     auto graphicsInstance = Atlas::Graphics::Instance::DefaultInstance;
 
@@ -69,7 +77,11 @@ int main(int argc, char* argv[]) {
             quit = true;
     });
 
+    printf("Ready");
+
     engineInstance->LoadContent();
+
+    printf("Load content");
 
     // Update now such the first delta is actually valid and not skewed by the loading
     Atlas::Clock::Update();
