@@ -29,7 +29,9 @@ namespace Atlas::Renderer {
         reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledWidth, VK_FORMAT_R8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
+        bloomTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
@@ -164,6 +166,7 @@ namespace Atlas::Renderer {
         lightingTexture.Resize(scaledWidth, scaledHeight);
         reactiveMaskTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
+        bloomTexture.Resize(width, height);
         outputTexture.Resize(width, height);
         sssTexture.Resize(scaledWidth, scaledHeight);
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);

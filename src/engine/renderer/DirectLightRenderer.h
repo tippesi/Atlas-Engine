@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Renderer.h"
-#include "helper/LightData.h"
 
 namespace Atlas {
 
@@ -15,7 +14,7 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, 
-                Helper::LightData& lightData, Graphics::CommandList* commandList);
+                Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) PushConstants {

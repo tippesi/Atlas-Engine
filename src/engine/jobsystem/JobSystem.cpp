@@ -65,7 +65,7 @@ namespace Atlas {
 
         auto& worker = priorityPool.GetNextWorker();
         worker.queue.Push(job);
-        worker.semaphore.release();
+        worker.signal.Notify();
 
     }
 
@@ -87,7 +87,7 @@ namespace Atlas {
 
                 job.idx = i;
                 worker.queue.Push(job);
-                worker.semaphore.release();
+                worker.signal.Notify();
             }
             return;
         }
@@ -110,7 +110,7 @@ namespace Atlas {
 
             auto& worker = priorityPool.GetNextWorker();
             worker.queue.PushMultiple(jobs);
-            worker.semaphore.release();
+            worker.signal.Notify();
             jobs.clear();
 
             remainingJobs -= jobsToPush;
@@ -153,6 +153,13 @@ namespace Atlas {
     void JobSystem::WaitAll() {
 
 
+
+    }
+
+    int32_t JobSystem::GetWorkerCount(const JobPriority priority) {
+
+        auto& priorityPool = priorityPools[static_cast<int>(priority)];
+        return priorityPool.workerCount;
 
     }
 

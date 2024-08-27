@@ -16,6 +16,7 @@ namespace Atlas {
 
     struct JobData {
         int32_t idx = 0;
+        int32_t workerIdx = 0;
         void* userData = nullptr;
     };
 

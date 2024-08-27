@@ -4,7 +4,6 @@
 #include "../graphics/GraphicsDevice.h"
 
 #include "PrimitiveBatch.h"
-#include "helper/LightData.h"
 
 #include "OpaqueRenderer.h"
 #include "ImpostorRenderer.h"
@@ -74,8 +73,6 @@ namespace Atlas {
 
             void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera);
 
-            void FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera);
-
             void PreintegrateBRDF();
 
             PipelineConfig GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer>& frameBuffer,
@@ -120,9 +117,6 @@ namespace Atlas {
             VolumetricRenderer volumetricRenderer;
             VolumetricCloudRenderer volumetricCloudRenderer;
             FSR2Renderer fsr2Renderer;
-
-            RenderList renderList;
-            Helper::LightData lightData;
 
             std::vector<vec2> haltonSequence;
             size_t haltonIndex = 0;

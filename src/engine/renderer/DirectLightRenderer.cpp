@@ -22,10 +22,12 @@ namespace Atlas {
         }
 
         void DirectLightRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, 
-            Helper::LightData& lightData, Graphics::CommandList* commandList) {
+            Graphics::CommandList* commandList) {
 
             auto mainLightEntity = GetMainLightEntity(scene);
             if (!mainLightEntity.IsValid()) return;
+
+            auto renderState = &scene->renderState;
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 
@@ -38,9 +40,9 @@ namespace Atlas {
             std::vector<Ref<Graphics::Image>> cubeMaps;
 
             PushConstants pushConstants;
-            pushConstants.lightCount = std::min(8, int32_t(lightData.lightEntities.size()));
+            pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
             for (int32_t i = 0; i < pushConstants.lightCount; i++) {
-                auto& comp = lightData.lightEntities[i].comp;
+                auto& comp = renderState->lightEntities[i].comp;
 
                 if (comp.shadow) {
                     auto& shadow = comp.shadow;

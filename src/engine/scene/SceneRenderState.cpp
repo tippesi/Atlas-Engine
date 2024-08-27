@@ -1,8 +1,12 @@
 #include "SceneRenderState.h"
 #include "Scene.h"
+#include "renderer/helper/CommonStructures.h"
 
 #include "common/ColorConverter.h"
 #include "common/Packing.h"
+
+#include "common/ColorConverter.h"
+#include <glm/gtx/norm.hpp>
 
 // Move most of the things in the main renderer, like the bindless update or the materials to here
 // Also move rendering related map updates from the scene to here
@@ -10,9 +14,15 @@ namespace Atlas::Scene {
 
     SceneRenderState::SceneRenderState(Scene* scene) : scene(scene) {
 
-        materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | 
+        materialBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit |
             Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit, sizeof(Renderer::PackedMaterial));
 
+    }
+
+    SceneRenderState::~SceneRenderState() {
+        
+        WaitForAsyncWorkCompletion();
+        
     }
 
     void SceneRenderState::PrepareMaterials() {
@@ -71,19 +81,19 @@ namespace Atlas::Scene {
                 packed.features = 0;
 
                 packed.features |= material->HasBaseColorMap() ? Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP : 0;
-                packed.features |= material->HasOpacityMap() ?  Renderer::MaterialFeatures::FEATURE_OPACITY_MAP : 0;
-                packed.features |= material->HasNormalMap() ?  Renderer::MaterialFeatures::FEATURE_NORMAL_MAP : 0;
-                packed.features |= material->HasRoughnessMap() ?  Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP : 0;
-                packed.features |= material->HasMetalnessMap() ?  Renderer::MaterialFeatures::FEATURE_METALNESS_MAP : 0;
-                packed.features |= material->HasAoMap() ?  Renderer::MaterialFeatures::FEATURE_AO_MAP : 0;
-                packed.features |= glm::length(material->transmissiveColor) > 0.0f ?  Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
-                packed.features |= material->vertexColors ?  Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
+                packed.features |= material->HasOpacityMap() ? Renderer::MaterialFeatures::FEATURE_OPACITY_MAP : 0;
+                packed.features |= material->HasNormalMap() ? Renderer::MaterialFeatures::FEATURE_NORMAL_MAP : 0;
+                packed.features |= material->HasRoughnessMap() ? Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP : 0;
+                packed.features |= material->HasMetalnessMap() ? Renderer::MaterialFeatures::FEATURE_METALNESS_MAP : 0;
+                packed.features |= material->HasAoMap() ? Renderer::MaterialFeatures::FEATURE_AO_MAP : 0;
+                packed.features |= glm::length(material->transmissiveColor) > 0.0f ? Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
+                packed.features |= material->vertexColors ? Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
 
                 materials.push_back(packed);
 
                 materialMap[material.get()] = idx++;
             }
-            
+
             auto meshes = scene->GetMeshes();
 
             for (auto mesh : meshes) {
@@ -122,23 +132,24 @@ namespace Atlas::Scene {
 
                 packed.features = 0;
 
-                packed.features |=  Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP | 
-                    Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP | 
-                    Renderer::MaterialFeatures::FEATURE_METALNESS_MAP | 
+                packed.features |= Renderer::MaterialFeatures::FEATURE_BASE_COLOR_MAP |
+                    Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP |
+                    Renderer::MaterialFeatures::FEATURE_METALNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_AO_MAP;
-                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ? 
+                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ?
                     Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
 
                 materials.push_back(packed);
 
-                materialMap[impostor.get()] =  idx++;
+                materialMap[impostor.get()] = idx++;
             }
 
             if (materials.size() > materialBuffer.GetElementCount()) {
                 materialBuffer.SetSize(materials.size());
             }
 
-            materialBuffer.SetData(materials.data(), 0, materials.size());
+            if (!materials.empty())
+                materialBuffer.SetData(materials.data(), 0, materials.size());
 
             });
 
@@ -190,11 +201,10 @@ namespace Atlas::Scene {
 
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
             }
-
-            JobSystem::Execute(prepareBindlessMeshesJob, bindlessMeshBuffersUpdate);
             };
 
         JobSystem::Execute(bindlessMeshMapUpdateJob, bindlessMeshMapUpdate);
+        JobSystem::Execute(prepareBindlessMeshesJob, bindlessMeshBuffersUpdate);
 
     }
 
@@ -252,11 +262,10 @@ namespace Atlas::Scene {
                 textureToBindlessIdx[texture] = textureIdx++;
 
             }
+            };
 
-            JobSystem::Execute(prepareBindlessTexturesJob, bindlessTextureBuffersUpdate);
-        };
-        
         JobSystem::Execute(bindlessTextureMapUpdateJob, bindlessTextureMapUpdate);
+        JobSystem::Execute(prepareBindlessTexturesJob, bindlessTextureBuffersUpdate);
 
     }
 
@@ -278,6 +287,197 @@ namespace Atlas::Scene {
                 }
             }
             });
+
+    }
+
+    void SceneRenderState::FillRenderList() {
+
+        if (!scene->HasMainCamera())
+            return;
+
+        JobSystem::Execute(fillRenderListJob, [&](JobData&) {
+            auto& camera = scene->GetMainCamera();
+
+            auto meshes = scene->GetMeshes();
+            renderList.NewFrame(scene);
+
+            auto lightSubset = scene->GetSubset<LightComponent>();
+
+            JobGroup group;
+            for (auto& lightEntity : lightSubset) {
+
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.shadow || !light.shadow->update)
+                    continue;
+
+                auto& shadow = light.shadow;
+
+                auto componentCount = shadow->longRange ?
+                    shadow->viewCount - 1 : shadow->viewCount;
+
+                JobSystem::ExecuteMultiple(group, componentCount,
+                    [&, shadow = shadow, lightEntity = lightEntity](JobData& data) {
+                        auto component = &shadow->views[data.idx];
+                        auto frustum = Volume::Frustum(component->frustumMatrix);
+
+                        auto shadowPass = renderList.GetShadowPass(lightEntity, data.idx);
+                        if (shadowPass == nullptr)
+                            shadowPass = renderList.NewShadowPass(lightEntity, data.idx);
+
+                        shadowPass->NewFrame(scene, meshes);
+                        scene->GetRenderList(frustum, shadowPass);
+                        shadowPass->Update(camera.GetLocation());
+                        shadowPass->FillBuffers();
+                        renderList.FinishPass(shadowPass);
+                    });
+            }
+
+            JobSystem::Wait(group);
+
+            auto mainPass = renderList.GetMainPass();
+            if (mainPass == nullptr)
+                mainPass = renderList.NewMainPass();
+
+            mainPass->NewFrame(scene, meshes);
+            scene->GetRenderList(camera.frustum, mainPass);
+            mainPass->Update(camera.GetLocation());
+            mainPass->FillBuffers();
+            renderList.FinishPass(mainPass);
+
+            });
+    }
+
+    void SceneRenderState::CullAndSortLights() {
+
+        JobSystem::Execute(cullAndSortLightsJob, [&](JobData&) {
+            auto& camera = scene->GetMainCamera();
+
+            lightEntities.clear();
+            auto lightSubset = scene->GetSubset<LightComponent>();
+            for (auto& lightEntity : lightSubset) {
+                auto& light = lightEntity.GetComponent<LightComponent>();
+                lightEntities.emplace_back(LightEntity{ lightEntity, light, -1 });
+            }
+
+            if (lightEntities.size() > 1) {
+                std::sort(lightEntities.begin(), lightEntities.end(),
+                    [&](const LightEntity& light0, const LightEntity& light1) {
+                        if (light0.comp.isMain)
+                            return true;
+
+                        if (light0.comp.type == LightType::DirectionalLight)
+                            return true;
+
+                        if (light0.comp.type == LightType::PointLight &&
+                            light1.comp.type == LightType::PointLight) {
+                            return glm::distance2(light0.comp.transformedProperties.point.position, camera.GetLocation())
+                                < glm::distance2(light1.comp.transformedProperties.point.position, camera.GetLocation());
+                        }
+
+                        return false;
+                    });
+            }
+
+            std::vector<Renderer::Light> lights;
+            if (lightEntities.size()) {
+                lights.reserve(lightEntities.size());
+                for (const auto& entity : lightEntities) {
+                    auto& light = entity.comp;
+
+                    auto type = static_cast<uint32_t>(light.type);
+                    auto packedType = reinterpret_cast<float&>(type);
+                    Renderer::Light lightUniform {
+                        .color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), packedType),
+                        .intensity = light.intensity,
+                        .scatteringFactor = 1.0f,
+                    };
+
+                    const auto& prop = light.transformedProperties;
+                    if (light.type == LightType::DirectionalLight) {
+                        lightUniform.direction = camera.viewMatrix * vec4(prop.directional.direction, 0.0f);
+                    }
+                    else if (light.type == LightType::PointLight) {
+                        lightUniform.location = camera.viewMatrix * vec4(prop.point.position, 1.0f);
+                        lightUniform.radius = prop.point.radius;
+                        lightUniform.attenuation = prop.point.attenuation;
+                    }
+
+                    if (light.shadow) {
+                        auto shadow = light.shadow;
+                        auto& shadowUniform = lightUniform.shadow;
+                        shadowUniform.distance = !shadow->longRange ? shadow->distance : shadow->longRangeDistance;
+                        shadowUniform.bias = shadow->bias;
+                        shadowUniform.edgeSoftness = shadow->edgeSoftness;
+                        shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
+                        shadowUniform.cascadeCount = shadow->viewCount;
+                        shadowUniform.resolution = vec2(shadow->resolution);
+                        shadowUniform.mapIdx = entity.mapIdx;
+
+                        auto componentCount = shadow->viewCount;
+                        for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
+                            if (i < componentCount) {
+                                auto cascade = &shadow->views[i];
+                                auto frustum = Volume::Frustum(cascade->frustumMatrix);
+                                auto corners = frustum.GetCorners();
+                                auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
+                                    abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
+                                shadowUniform.cascades[i].distance = cascade->farDistance;
+                                if (light.type == LightType::DirectionalLight) {
+                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                        cascade->viewMatrix * camera.invViewMatrix;
+                                }
+                                else if (light.type == LightType::PointLight) {
+                                    if (i == 0)
+                                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix;
+                                    else
+                                        shadowUniform.cascades[i].cascadeSpace = glm::translate(mat4(1.0f), -prop.point.position) * camera.invViewMatrix;
+                                }
+                                shadowUniform.cascades[i].texelSize = texelSize;
+                            }
+                            else {
+                                auto cascade = &shadow->views[componentCount - 1];
+                                shadowUniform.cascades[i].distance = cascade->farDistance;
+                            }
+                        }
+                    }
+
+                    lights.emplace_back(lightUniform);
+                }
+            }
+            else {
+                // We need to have at least a fake light
+                auto type = 0;
+                auto packedType = reinterpret_cast<float&>(type);
+                lights.emplace_back(Renderer::Light {
+                        .color = vec4(vec3(0.0f), packedType),
+                        .intensity = 0.0f,
+                        .direction = vec4(0.0f, -1.0f, 0.0f, 0.0f)
+                    });
+            }
+
+            if (lightBuffer.GetElementCount() < lightEntities.size()) {
+                lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit
+                    | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Renderer::Light), lightEntities.size(), lights.data());
+            }
+            else {
+                lightBuffer.SetData(lights.data(), 0, lights.size());
+            }
+
+            });
+
+    }
+
+    void SceneRenderState::WaitForAsyncWorkCompletion() {
+
+        JobSystem::Wait(bindlessMeshMapUpdateJob);
+        JobSystem::Wait(bindlessTextureMapUpdateJob);
+        JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
+        JobSystem::Wait(materialUpdateJob);
+        JobSystem::Wait(rayTracingWorldUpdateJob);
+        JobSystem::Wait(prepareBindlessMeshesJob);
+        JobSystem::Wait(prepareBindlessTexturesJob);
+        JobSystem::Wait(fillRenderListJob);
+        JobSystem::Wait(cullAndSortLightsJob);
 
     }
 

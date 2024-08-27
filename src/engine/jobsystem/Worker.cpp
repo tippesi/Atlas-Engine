@@ -9,7 +9,6 @@
 #include <pthread.h>
 #endif
 
-
 namespace Atlas {
 
     Worker::Worker(int32_t workerId, JobPriority priority) : workerId(workerId), priority(priority) {

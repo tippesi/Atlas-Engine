@@ -54,7 +54,7 @@ namespace Atlas {
             Scene::Entity lightEntity;
             uint32_t layer;
 
-            Ref<Scene::Scene> scene = nullptr;
+            Scene::Scene* scene = nullptr;
 
             std::unordered_map<size_t, EntityBatch> meshToEntityMap;
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
@@ -70,7 +70,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-            void NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
+            void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
 
             void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 
@@ -85,7 +85,7 @@ namespace Atlas {
 
         ~RenderList();
 
-        void NewFrame(const Ref<Scene::Scene>& scene);
+        void NewFrame(Scene::Scene* scene);
 
         // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();
@@ -102,7 +102,7 @@ namespace Atlas {
 
         void Clear();
 
-        Ref<Scene::Scene> scene = nullptr;
+        Scene::Scene* scene = nullptr;
 
         std::vector<Ref<Pass>> passes;
         std::deque<Ref<Pass>> processedPasses;

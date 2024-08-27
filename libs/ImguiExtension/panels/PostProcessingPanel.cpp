@@ -31,6 +31,8 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Film grain");
         ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
         ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
+        ImGui::Text("Bloom");
+        ImGui::Checkbox("Enable##Bloom", &postProcessing.bloom.enable);
 
         ImGui::PopID();
 

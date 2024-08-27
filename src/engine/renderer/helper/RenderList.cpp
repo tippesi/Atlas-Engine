@@ -20,7 +20,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::NewFrame(const Ref<Scene::Scene>& scene) {
+    void RenderList::NewFrame(Scene::Scene* scene) {
 
         this->scene = scene;
 
@@ -133,7 +133,7 @@ namespace Atlas {
 
     }
 
-    void RenderList::Pass::NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
+    void RenderList::Pass::NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
 
         this->scene = scene;
 

@@ -24,6 +24,7 @@ struct AppConfiguration {
     bool reflection = true;
     bool volumetric = true;
     bool ocean = true;
+    bool light = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;
@@ -68,7 +69,6 @@ private:
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
 
     Atlas::Scene::Entity cameraEntity;
-    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;

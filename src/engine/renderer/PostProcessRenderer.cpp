@@ -33,8 +33,13 @@ namespace Atlas {
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
+            auto& bloom = postProcessing.bloom;
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
+
+            if (bloom.enable) {
+                GenerateBloom(bloom, &target->hdrTexture, &target->bloomTexture, commandList);
+            }
 
             ivec2 groupCount = resolution / 8;
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
@@ -182,6 +187,7 @@ namespace Atlas {
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
+            auto& bloom = postProcessing.bloom;
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
@@ -276,6 +282,66 @@ namespace Atlas {
             }
 
             Graphics::Profiler::EndQuery();
+
+        }
+
+        void PostProcessRenderer::GenerateBloom(PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
+            Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
+
+            CopyToTexture(hdrTexture, bloomTexture, commandList);
+
+            // Downsample
+            {
+                struct PushConstants {
+                    int mipLevel;
+                };
+
+                auto textureIn = hdrTexture;
+                auto textureOut = bloomTexture;
+
+                auto pipelineConfig = PipelineConfig("bloom/bloomDownsample.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                ivec2 resolution = ivec2(bloomTexture->width, bloomTexture->height);
+                auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
+                // Want to end on the bloom texture
+                if (mipLevels % 2 != 1)
+                    mipLevels--;
+
+                for (int32_t i = 1; i < mipLevels; i++) {
+                    
+                    std::vector<Graphics::BufferBarrier> bufferBarriers;
+                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                        {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                    ivec2 groupCount = resolution / 8;
+                    groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+
+                    PushConstants constants {
+                        .mipLevel = i
+                    };
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->BindImage(textureOut->image, 3, 0, i);
+                    textureIn->Bind(commandList, 3, 1);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                    
+                    std::swap(textureIn, textureOut);
+                    resolution /= 2;
+                }
+
+            }
+
+            // Upsample
+            {
+
+            }
 
         }
 

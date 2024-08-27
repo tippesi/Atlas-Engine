@@ -15,9 +15,11 @@ namespace Atlas {
         for (int32_t i = 0; i < workerCount; i++) {
             workers[i].Start([&](Worker& worker) {
                 while (!shutdown) {
-                    worker.semaphore.acquire();
+                    worker.signal.Wait();
+
                     Work(worker.workerId);
                 }
+                worker.quit = true;
                 });
         }
 
@@ -27,7 +29,11 @@ namespace Atlas {
 
         shutdown = true;
         for (auto& worker : workers) {
-            worker.semaphore.release();
+            // Try to get it to quit
+            while(!worker.quit) {
+                worker.signal.Notify();
+                std::this_thread::yield();
+            }
             worker.thread.join();
         }
 

@@ -29,7 +29,9 @@ namespace Atlas {
             const auto& scale = settings.scale;
 
             // This all assumes right now that mesh data doesn't change in the objects lifetime
+            meshShapeCacheMutex.lock();
             if (!meshShapeCache.contains(mesh.GetID())) {
+                meshShapeCacheMutex.unlock();
 
                 JPH::VertexList vertexList;
                 JPH::IndexedTriangleList triangleList;
@@ -59,6 +61,7 @@ namespace Atlas {
 
                 shape->ref = result.Get();
 
+                meshShapeCacheMutex.lock();
                 meshShapeCache[mesh.GetID()] = { mesh.Get(), shape->ref };
 
             }
@@ -67,6 +70,7 @@ namespace Atlas {
                 shape->ref = meshShapeCache[mesh.GetID()].ref;
 
             }
+            meshShapeCacheMutex.unlock();
 
             if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
                 return shape->Scale(scale);
@@ -196,6 +200,7 @@ namespace Atlas {
 
         void ShapesManager::Update() {
 
+            std::scoped_lock lock(meshShapeCacheMutex);
             std::erase_if(meshShapeCache, [](auto& item) { return item.second.resource.expired(); } );
 
         }

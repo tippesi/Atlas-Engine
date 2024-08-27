@@ -38,6 +38,8 @@ namespace Atlas {
         static void WaitSpin(JobGroup& group);
 
         static void WaitAll();
+
+        static int32_t GetWorkerCount(const JobPriority priority);
     
     private:
         static PriorityPool priorityPools[static_cast<int>(JobPriority::Count)];
