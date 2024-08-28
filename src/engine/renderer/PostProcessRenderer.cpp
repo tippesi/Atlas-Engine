@@ -296,16 +296,21 @@ namespace Atlas {
             const uint32_t maxDownsampleCount = 12;
             ivec2 resolutions[maxDownsampleCount];
 
+            Graphics::Profiler::BeginQuery("Bloom");
+            Graphics::Profiler::BeginQuery("Copy texture");
+
             CopyToTexture(hdrTexture, bloomTexture, commandList);
 
             auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
             mipLevels = std::min(mipLevels, maxDownsampleCount);
 
             auto textureIn = bloomTexture;
-            auto textureOut = hdrTexture;
+            auto textureOut = hdrTexture;           
 
             // Downsample
             {
+                Graphics::Profiler::EndAndBeginQuery("Downsample");
+
                 struct PushConstants {
                     int mipLevel;
                     float threshold;
@@ -351,6 +356,8 @@ namespace Atlas {
 
             // Upsample
             {
+                Graphics::Profiler::EndAndBeginQuery("Upsample");
+
                 struct PushConstants {
                     int mipLevel;
                     float filterSize = 2.0f;
@@ -386,6 +393,9 @@ namespace Atlas {
                     
                     std::swap(textureIn, textureOut);
                 }
+
+                Graphics::Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
         }

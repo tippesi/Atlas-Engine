@@ -1,8 +1,5 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
-#include <common/sample.hsh>
-#include <common/tiling.hsh>
-
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
 

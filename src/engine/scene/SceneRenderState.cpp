@@ -462,9 +462,9 @@ namespace Atlas::Scene {
                 auto type = 0;
                 auto packedType = reinterpret_cast<float&>(type);
                 lights.emplace_back(Renderer::Light {
+                        .direction = vec4(0.0f, -1.0f, 0.0f, 0.0f),
                         .color = vec4(vec3(0.0f), packedType),
                         .intensity = 0.0f,
-                        .direction = vec4(0.0f, -1.0f, 0.0f, 0.0f)
                     });
             }
 

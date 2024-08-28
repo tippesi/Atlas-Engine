@@ -60,8 +60,8 @@ namespace Atlas::Editor::UI {
         if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_S, false) && !isPlaying) {
             SaveScene();
         }
-
-        if (controlDown && playMaximized && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+        
+        if (controlDown && playMaximized && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
         }
 
@@ -611,7 +611,7 @@ namespace Atlas::Editor::UI {
         isPlaying = true;
 
         if (playMaximized) {
-            Notifications::Push({ "To stop playing, press Ctrl + Esc" });
+            Notifications::Push({ "To stop playing, press Ctrl + Q" });
         }
 
     }

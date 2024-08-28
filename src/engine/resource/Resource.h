@@ -136,7 +136,7 @@ namespace Atlas {
         Ref<T> data;
 
         std::atomic_bool isLoaded = false;
-        JobGroup jobGroup;
+        JobGroup jobGroup{ JobPriority::Low };
         std::shared_future<void> future;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
