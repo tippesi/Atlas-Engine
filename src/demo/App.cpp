@@ -639,6 +639,7 @@ void App::Render(float deltaTime) {
         }
 
         recreateSwapchain = false;
+
     }
 
     if (slowMode) { using namespace std::chrono_literals; std::this_thread::sleep_for(60ms); }

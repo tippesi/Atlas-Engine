@@ -364,6 +364,8 @@ namespace Atlas {
                 };
 
                 auto pipelineConfig = PipelineConfig("bloom/bloomUpsample.csh");
+                pipelineConfig.ManageMacro("DIRT_MAP", bloom.dirtMap.IsLoaded());
+                
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
                 

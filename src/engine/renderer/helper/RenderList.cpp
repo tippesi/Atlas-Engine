@@ -22,6 +22,7 @@ namespace Atlas {
 
     void RenderList::NewFrame(Scene::Scene* scene) {
 
+        std::scoped_lock lock(mutex);
         this->scene = scene;
 
         doneProcessingShadows = false;

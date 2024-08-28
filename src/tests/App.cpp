@@ -154,6 +154,7 @@ void App::Update(float deltaTime) {
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -211,6 +212,7 @@ void App::Render(float deltaTime) {
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 

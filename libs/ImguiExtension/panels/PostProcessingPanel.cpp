@@ -27,7 +27,7 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Chromatic aberration");
         ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);
         ImGui::Checkbox("Colors reversed", &postProcessing.chromaticAberration.colorsReversed);
-        ImGui::SliderFloat("Strength##v", &postProcessing.chromaticAberration.strength, 0.0f, 4.0f);
+        ImGui::SliderFloat("Strength##Chromatic abberation", &postProcessing.chromaticAberration.strength, 0.0f, 4.0f);
         ImGui::Text("Film grain");
         ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
         ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);

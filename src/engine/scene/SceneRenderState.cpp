@@ -468,9 +468,9 @@ namespace Atlas::Scene {
                     });
             }
 
-            if (lightBuffer.GetElementCount() < lightEntities.size()) {
+            if (lightBuffer.GetElementCount() < lights.size()) {
                 lightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit
-                    | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Renderer::Light), lightEntities.size(), lights.data());
+                    | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Renderer::Light), lights.size(), lights.data());
             }
             else {
                 lightBuffer.SetData(lights.data(), 0, lights.size());

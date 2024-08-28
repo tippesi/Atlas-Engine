@@ -576,11 +576,7 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(renderState.bindlessMeshMapUpdateJob);
-            JobSystem::Wait(renderState.bindlessTextureMapUpdateJob);
-            JobSystem::Wait(renderState.bindlessOtherTextureMapUpdateJob);
-            JobSystem::Wait(renderState.materialUpdateJob);
-            JobSystem::Wait(renderState.rayTracingWorldUpdateJob);
+            renderState.WaitForAsyncWorkCompletion();
 
         }
 
