@@ -355,8 +355,6 @@ namespace Atlas {
             if (!mainCameraEntity.IsValid())
                 return;
 
-            renderState.FillRenderList();
-
             auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
             auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
@@ -381,6 +379,7 @@ namespace Atlas {
                 lightComponent.Update(mainCamera);
             }
 
+            renderState.FillRenderList();
             renderState.CullAndSortLights();
 
             if (terrain) {

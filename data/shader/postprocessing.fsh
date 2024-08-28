@@ -7,9 +7,7 @@ layout (location = 0) out vec4 outColor;
 layout (location = 0) in vec2 positionVS;
 
 layout(set = 3, binding = 0) uniform sampler2D hdrTexture;
-layout(set = 3, binding = 1) uniform sampler2D bloomFirstTexture;
-layout(set = 3, binding = 2) uniform sampler2D bloomSecondTexture;
-layout(set = 3, binding = 3) uniform sampler2D bloomThirdTexture;
+layout(set = 3, binding = 1) uniform sampler2D bloomTexture;
 
 layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
@@ -18,7 +16,7 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float saturation;
     float contrast;
     float filmGrainStrength;
-    int bloomPasses;
+    float bloomStrength;
     float aberrationStrength;
     float aberrationReversed;
     float vignetteOffset;
@@ -96,42 +94,19 @@ void main() {
     vec2 uvBlueChannel =  (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
         * (1.0f - Uniforms.aberrationReversed)) * 0.5f + 0.5f;
     
-    color.r = texture(hdrTexture, uvRedChannel).r;
-    color.g = texture(hdrTexture, uvGreenChannel).g;
-    color.b = texture(hdrTexture, uvBlueChannel).b;
+    color.r = textureLod(hdrTexture, uvRedChannel, 0.0).r;
+    color.g = textureLod(hdrTexture, uvGreenChannel, 0.0).g;
+    color.b = textureLod(hdrTexture, uvBlueChannel, 0.0).b;
     
 #ifdef BLOOM
-    // We want to keep a constant expression in texture[const]
-    // because OpenGL ES doesn't support dynamic texture fetches
-    // inside a loop
-    if (Uniforms.bloomPasses > 0) {
-        color.r += texture(bloomFirstTexture, uvRedChannel).r;
-        color.g += texture(bloomFirstTexture, uvGreenChannel).g;
-        color.b += texture(bloomFirstTexture, uvBlueChannel).b;
-    }
-    if (Uniforms.bloomPasses > 1) {
-        color.r += texture(bloomSecondTexture, uvRedChannel).r;
-        color.g += texture(bloomSecondTexture, uvGreenChannel).g;
-        color.b += texture(bloomSecondTexture, uvBlueChannel).b;
-    }
-    if (Uniforms.bloomPasses > 2) {
-        color.r += texture(bloomThirdTexture, uvRedChannel).r;
-        color.g += texture(bloomThirdTexture, uvGreenChannel).g;
-        color.b += texture(bloomThirdTexture, uvBlueChannel).b;
-    }
+    color.r += Uniforms.bloomStrength * textureLod(bloomTexture, uvRedChannel, 0.0).r;
+    color.g += Uniforms.bloomStrength * textureLod(bloomTexture, uvGreenChannel, 0.0).g;
+    color.b += uniforms.bloomStrength * textureLod(bloomTexture, uvBlueChannel, 0.0).b;
 #endif
 #else
-    color = texture(hdrTexture, texCoord).rgb;
+    color = textureLod(hdrTexture, texCoord, 0.0).rgb;
 #ifdef BLOOM
-    if (Uniforms.bloomPasses > 0) {
-        color += texture(bloomFirstTexture, texCoord).rgb;
-    }
-    if (Uniforms.bloomPasses > 1) {
-        color += texture(bloomSecondTexture, texCoord).rgb;
-    }
-    if (Uniforms.bloomPasses > 2) {
-        color += texture(bloomThirdTexture, texCoord).rgb;
-    }
+    color += Uniforms.bloomStrength * textureLod(bloomTexture, texCoord, 0.0).rgb;
 #endif
 #endif
 

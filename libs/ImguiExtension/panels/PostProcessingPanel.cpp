@@ -33,6 +33,12 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
         ImGui::Text("Bloom");
         ImGui::Checkbox("Enable##Bloom", &postProcessing.bloom.enable);
+        ImGui::DragFloat("Strength##Bloom", &postProcessing.bloom.strength, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Threshold##Bloom", &postProcessing.bloom.threshold, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Filter size##Bloom", &postProcessing.bloom.filterSize, 0.001f, 0.0f, 1.0f);
+        auto mipLevels = int32_t(postProcessing.bloom.mipLevels);
+        ImGui::DragInt("Mip levels##Bloom", &mipLevels, 1, 2, 12);
+        postProcessing.bloom.mipLevels = mipLevels;
 
         ImGui::PopID();
 

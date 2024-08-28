@@ -119,10 +119,13 @@ void App::UnloadContent() {
 }
 
 void App::Update(float deltaTime) {
+    
+    scene->WaitForAsyncWorkCompletion();
 
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -646,6 +649,8 @@ void App::Render(float deltaTime) {
         Atlas::Clock::ResetAverage();
         firstFrame = false;
     }
+    
+    scene->WaitForAsyncWorkCompletion();
 
 }
 

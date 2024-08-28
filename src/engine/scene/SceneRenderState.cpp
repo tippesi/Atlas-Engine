@@ -27,6 +27,8 @@ namespace Atlas::Scene {
 
     void SceneRenderState::PrepareMaterials() {
 
+        JobSystem::Wait(materialUpdateJob);
+
         JobSystem::Execute(materialUpdateJob, [&](JobData&) {
             auto sceneMaterials = scene->GetMaterials();
 
@@ -150,7 +152,6 @@ namespace Atlas::Scene {
 
             if (!materials.empty())
                 materialBuffer.SetData(materials.data(), 0, materials.size());
-
             });
 
     }
@@ -202,6 +203,9 @@ namespace Atlas::Scene {
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
             }
             };
+
+        JobSystem::Wait(bindlessMeshMapUpdateJob);
+        JobSystem::Wait(prepareBindlessMeshesJob);
 
         JobSystem::Execute(bindlessMeshMapUpdateJob, bindlessMeshMapUpdate);
         JobSystem::Execute(prepareBindlessMeshesJob, bindlessMeshBuffersUpdate);
@@ -264,12 +268,17 @@ namespace Atlas::Scene {
             }
             };
 
+        JobSystem::Wait(bindlessTextureMapUpdateJob);
+        JobSystem::Wait(prepareBindlessTexturesJob);
+
         JobSystem::Execute(bindlessTextureMapUpdateJob, bindlessTextureMapUpdate);
         JobSystem::Execute(prepareBindlessTexturesJob, bindlessTextureBuffersUpdate);
 
     }
 
     void SceneRenderState::UpdateOtherTextureBindlessData() {
+
+        JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
         JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [&](JobData&) {
             auto lightSubset = scene->entityManager.GetSubset<LightComponent>();
@@ -294,6 +303,8 @@ namespace Atlas::Scene {
 
         if (!scene->HasMainCamera())
             return;
+
+        JobSystem::Wait(fillRenderListJob);
 
         JobSystem::Execute(fillRenderListJob, [&](JobData&) {
             auto& camera = scene->GetMainCamera();
@@ -348,6 +359,8 @@ namespace Atlas::Scene {
     }
 
     void SceneRenderState::CullAndSortLights() {
+
+        JobSystem::Wait(cullAndSortLightsJob);
 
         JobSystem::Execute(cullAndSortLightsJob, [&](JobData&) {
             auto& camera = scene->GetMainCamera();

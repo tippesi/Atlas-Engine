@@ -150,9 +150,14 @@ namespace Atlas {
                     pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
                     pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
+                    pipelineConfig.ManageMacro("BLOOM", postProcessing.bloom.enable);
 
                     auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                     commandList->BindPipeline(pipeline);
+
+                    if (bloom.enable) {
+                        target->bloomTexture.Bind(commandList, 3, 1);
+                    }
 
                     SetUniforms(camera, scene);
 
@@ -287,30 +292,34 @@ namespace Atlas {
 
         void PostProcessRenderer::GenerateBloom(PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
             Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
+            
+            const uint32_t maxDownsampleCount = 12;
+            ivec2 resolutions[maxDownsampleCount];
 
             CopyToTexture(hdrTexture, bloomTexture, commandList);
+
+            auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
+            mipLevels = std::min(mipLevels, maxDownsampleCount);
+
+            auto textureIn = bloomTexture;
+            auto textureOut = hdrTexture;
 
             // Downsample
             {
                 struct PushConstants {
                     int mipLevel;
+                    float threshold;
                 };
-
-                auto textureIn = hdrTexture;
-                auto textureOut = bloomTexture;
 
                 auto pipelineConfig = PipelineConfig("bloom/bloomDownsample.csh");
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
 
                 ivec2 resolution = ivec2(bloomTexture->width, bloomTexture->height);
-                auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
-                // Want to end on the bloom texture
-                if (mipLevels % 2 != 1)
-                    mipLevels--;
-
+                resolutions[0] = resolution;
+                resolution /= 2;
+                
                 for (int32_t i = 1; i < mipLevels; i++) {
-                    
                     std::vector<Graphics::BufferBarrier> bufferBarriers;
                     std::vector<Graphics::ImageBarrier> imageBarriers = {
                         {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
@@ -318,12 +327,13 @@ namespace Atlas {
                     };
                     commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
-                    ivec2 groupCount = resolution / 8;
-                    groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-                    groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+                    ivec2 groupCount = resolution / 16;
+                    groupCount.x += ((groupCount.x * 16 == resolution.x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
 
                     PushConstants constants {
-                        .mipLevel = i
+                        .mipLevel = i - 1,
+                        .threshold = bloom.threshold
                     };
                     commandList->PushConstants("constants", &constants);
 
@@ -333,14 +343,49 @@ namespace Atlas {
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
                     
                     std::swap(textureIn, textureOut);
+                    
+                    resolutions[i] = resolution;
                     resolution /= 2;
                 }
-
             }
 
             // Upsample
             {
+                struct PushConstants {
+                    int mipLevel;
+                    float filterSize = 2.0f;
+                };
 
+                auto pipelineConfig = PipelineConfig("bloom/bloomUpsample.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+                
+                for (int32_t i = mipLevels - 2; i >= 0; i--) {
+                    
+                    std::vector<Graphics::BufferBarrier> bufferBarriers;
+                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                        {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    };
+                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+
+                    ivec2 groupCount = resolutions[i] / 8;
+                    groupCount.x += ((groupCount.x * 8 == resolutions[i].x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 8 == resolutions[i].y) ? 0 : 1);
+
+                    PushConstants constants {
+                        .mipLevel = i + 1,
+                        .filterSize = bloom.filterSize,
+                    };
+                    commandList->PushConstants("constants", &constants);
+
+                    commandList->BindImage(textureOut->image, 3, 0, i);
+                    textureIn->Bind(commandList, 3, 1);
+
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                    
+                    std::swap(textureIn, textureOut);
+                }
             }
 
         }
@@ -379,6 +424,7 @@ namespace Atlas {
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             const auto& filmGrain = postProcessing.filmGrain;
+            const auto& bloom = postProcessing.bloom;
 
             Uniforms uniforms = {
                 .exposure = camera.exposure,
@@ -406,6 +452,10 @@ namespace Atlas {
 
             if (filmGrain.enable) {
                 uniforms.filmGrainStrength = filmGrain.strength;
+            }
+
+            if (bloom.enable) {
+                uniforms.bloomStrength = bloom.strength;
             }
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));
