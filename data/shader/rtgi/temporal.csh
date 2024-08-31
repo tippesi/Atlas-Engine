@@ -401,7 +401,7 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
-    vec2 historyPixel = vec2(pixel) + (velocity * resolution) + 0.5;
+    vec2 historyPixel = vec2(pixel) + (velocity * resolution) ;
 
     bool valid = true;
     vec4 history;

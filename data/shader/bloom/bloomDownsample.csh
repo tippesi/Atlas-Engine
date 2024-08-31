@@ -3,6 +3,8 @@ layout (local_size_x = 16, local_size_y = 16) in;
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 
+//#define NO_SHARED
+
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
 
@@ -84,24 +86,22 @@ vec3 Sample(vec2 texCoord) {
 
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
-    bool invalidIdx = false;
-
     vec3 color = vec3(0.0);
     for (int i = 0; i < 4; i++) {
         ivec2 offsetPixel = ivec2(pixel) + pixelOffsets[i];
         offsetPixel -= groupOffset;
+        offsetPixel = clamp(offsetPixel, ivec2(0), unflattenedSharedDataSize - ivec2(1));
         int sharedMemoryIdx = Flatten2D(offsetPixel, unflattenedSharedDataSize);
-        if (sharedMemoryIdx < 0 || sharedMemoryIdx >= sharedDataSize)
-            invalidIdx = true;
         color += weights[i] * sharedMemory[sharedMemoryIdx];
     }
-    return invalidIdx ? vec3(10000.0, 0.0, 0.0) : color;
+    return color;
 #endif
 
 }
 
 vec3 SampleShared(ivec2 texel) {
 
+    // This is offcenter
     bool invalidIdx = false;
 
     const ivec2 localOffset = 2 * ivec2(gl_LocalInvocationID);
@@ -127,7 +127,7 @@ void main() {
     if (coord.x < size.x &&
         coord.y < size.y) {
 
-#ifdef NO_SHARED
+#if 1
         // Lower mip tex coord 
         vec2 texCoord = (coord + 0.5) / size;
         // Upper mip texel size
