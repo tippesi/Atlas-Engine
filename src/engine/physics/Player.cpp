@@ -21,8 +21,8 @@ namespace Atlas::Physics {
         settings.mMaxConstraintIterations = 10;
         settings.mShapeOffset = VecToJPHVec(shapeOffset);
 		settings.mShape = shape->ref;
-        settings.mInnerBodyShape = shape->ref;
-        settings.mInnerBodyLayer = Layers::Movable;
+        //settings.mInnerBodyShape = shape->ref;
+        //settings.mInnerBodyLayer = Layers::Movable;
 
         if (shape->type == ShapeType::Capsule) {
             auto shapeSettings = static_cast<CapsuleShapeSettings*>(shape->settings.get());
@@ -148,7 +148,7 @@ namespace Atlas::Physics {
 
         auto gravityVector = -GetUp() * glm::length(world->GetGravity());
 
-        character->SetEnhancedInternalEdgeRemoval(true);
+        //character->SetEnhancedInternalEdgeRemoval(true);
 
         JPH::CharacterVirtual::ExtendedUpdateSettings settings;
 
