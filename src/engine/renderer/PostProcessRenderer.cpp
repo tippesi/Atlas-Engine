@@ -37,10 +37,6 @@ namespace Atlas {
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
-            if (bloom.enable) {
-                GenerateBloom(bloom, &target->hdrTexture, &target->bloomTexture, commandList);
-            }
-
             ivec2 groupCount = resolution / 8;
             groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
@@ -127,6 +123,10 @@ namespace Atlas {
                 std::swap(readTexture, writeTexture);
 
                 Graphics::Profiler::EndQuery();
+            }
+
+            if (bloom.enable) {
+                GenerateBloom(bloom, &target->hdrTexture, &target->bloomTexture, commandList);
             }
 
             {

@@ -46,9 +46,13 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
+    int lightSampleCount;
     int textureLevel;
     float roughnessCutoff;
     int halfRes;
+    int padding0;
+    int padding1;
+    int padding2;
     ivec2 resolution;
     Shadow shadow;
 } uniforms;
@@ -170,14 +174,13 @@ vec3 EvaluateHit(inout Ray ray) {
     
     radiance += surface.material.emissiveColor;
 
-    int directSampleCount = 4;
     float curSeed = float(uniforms.frameSeed) / 255.0;
     // Evaluate direct light
-    for (int i = 0; i < directSampleCount; i++) {
+    for (int i = 0; i < uniforms.lightSampleCount; i++) {
         radiance += EvaluateDirectLight(surface, curSeed);
     }
 
-    radiance /= float(directSampleCount);
+    radiance /= float(uniforms.lightSampleCount);
 
     // Evaluate indirect lighting
 #ifdef DDGI

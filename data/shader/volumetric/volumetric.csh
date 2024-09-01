@@ -12,6 +12,7 @@ layout (local_size_x = 8, local_size_y = 8) in;
 #include <../common/utility.hsh>
 #include <../common/random.hsh>
 #include <../clouds/shadow.hsh>
+#include <../common/bluenoise.hsh>
 
 #include <fog.hsh>
 
@@ -22,6 +23,8 @@ layout(set = 3, binding = 3) uniform sampler2D cloudMap;
 layout(set = 3, binding = 4) uniform sampler2D oceanDepthTexture;
 layout(set = 3, binding = 5) uniform usampler2D oceanStencilTexture;
 layout(set = 3, binding = 6) uniform sampler2D volumetricCloudTexture;
+layout(set = 3, binding = 8) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 9) uniform sampler2D sobolSequenceTexture;
 
 layout(std140, set = 3, binding = 7) uniform UniformBuffer {
     int sampleCount;
@@ -86,9 +89,14 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
     vec4 extinction = vec4(1.0);
     vec4 extinctionWithClouds = vec4(1.0);
     
-    vec2 interleavedTexCoords = (0.5 * texCoords + 0.5) * resolution;
+    vec2 interleavedTexCoords = (0.5 * texCoords + 0.5) * resolution * 4.0;
 
     float noiseOffset = GetInterleavedGradientNoise(interleavedTexCoords);
+
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    int sampleIdx = int(globalData.frameCount) % 16;
+    //noiseOffset = SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture);
+
     vec3 currentPosition = stepVector * (noiseOffset + startDepth);
 
     int cascadeIndex = 0;
@@ -125,6 +133,9 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 
         lastCascadeIndex = cascadeIndex;
 
+        float positionLength = dist;
+        float positionRatio = positionLength / uniforms.light.shadow.distance;
+        vec3 shadowPosition = positionRatio <= 1.0 ? currentPosition : currentPosition / positionRatio;
         vec4 cascadeSpace = cascadeMatrix * vec4(currentPosition, 1.0);
         cascadeSpace.xyz /= cascadeSpace.w;
 
@@ -142,7 +153,7 @@ vec4 ComputeVolumetric(vec3 fragPos, float startDepth, vec2 texCoords) {
 #endif
 #endif
 
-        //shadowValue = distance > uniforms.light.shadow.distance ? 1.0 : shadowValue;
+        //shadowValue = dist > uniforms.light.shadow.distance ? 1.0 : shadowValue;
         vec3 worldPosition = vec3(globalData.ivMatrix * vec4(currentPosition, 1.0));
 
 #ifdef CLOUDS

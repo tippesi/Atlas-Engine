@@ -53,6 +53,9 @@ namespace Atlas {
 
             PipelineConfig resolvePipelineConfig;
 
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
+
             Buffer::UniformBuffer volumetricUniformBuffer;
             Buffer::UniformBuffer blurWeightsUniformBuffer;
             Buffer::UniformBuffer resolveUniformBuffer;

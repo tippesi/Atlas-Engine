@@ -123,7 +123,7 @@ void main() {
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
+    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
     vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
     
     vec3 bitangent = normalize(correctionFactor * 

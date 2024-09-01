@@ -88,11 +88,11 @@ void main() {
     vec3 color = vec3(0.0);
     
 #ifdef CHROMATIC_ABERRATION
-    vec2 uvRedChannel = (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
-        * Uniforms.aberrationReversed) * 0.5f + 0.5f;
-    vec2 uvGreenChannel = (positionVS - positionVS * 0.0025f * Uniforms.aberrationStrength) * 0.5f + 0.5f;
-    vec2 uvBlueChannel =  (positionVS - positionVS * 0.005f * Uniforms.aberrationStrength
-        * (1.0f - Uniforms.aberrationReversed)) * 0.5f + 0.5f;
+    vec2 uvRedChannel = (positionVS - positionVS * 0.005 * Uniforms.aberrationStrength
+        * Uniforms.aberrationReversed) * 0.5 + 0.5;
+    vec2 uvGreenChannel = (positionVS - positionVS * 0.0025 * Uniforms.aberrationStrength) * 0.5 + 0.5;
+    vec2 uvBlueChannel =  (positionVS - positionVS * 0.005 * Uniforms.aberrationStrength
+        * (1.0f - Uniforms.aberrationReversed)) * 0.5 + 0.5;
     
     color.r = textureLod(hdrTexture, uvRedChannel, 0.0).r;
     color.g = textureLod(hdrTexture, uvGreenChannel, 0.0).g;
@@ -101,7 +101,7 @@ void main() {
 #ifdef BLOOM
     color.r += Uniforms.bloomStrength * textureLod(bloomTexture, uvRedChannel, 0.0).r;
     color.g += Uniforms.bloomStrength * textureLod(bloomTexture, uvGreenChannel, 0.0).g;
-    color.b += uniforms.bloomStrength * textureLod(bloomTexture, uvBlueChannel, 0.0).b;
+    color.b += Uniforms.bloomStrength * textureLod(bloomTexture, uvBlueChannel, 0.0).b;
 #endif
 #else
     color = textureLod(hdrTexture, texCoord, 0.0).rgb;

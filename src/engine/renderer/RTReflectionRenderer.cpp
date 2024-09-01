@@ -129,7 +129,8 @@ namespace Atlas {
                         uniforms.radianceLimit = reflection->radianceLimit;
                         uniforms.bias = reflection->bias;
                         uniforms.roughnessCutoff = reflection->roughnessCutoff;
-                        uniforms.frameSeed = frameCount++;                        
+                        uniforms.frameSeed = frameCount++;
+                        uniforms.lightSampleCount = reflection->lightSampleCount;
                         uniforms.textureLevel = reflection->textureLevel;
                         uniforms.halfRes = target->GetReflectionResolution() == HALF_RES ? 1 : 0;
                         uniforms.resolution = rayRes;

@@ -41,6 +41,8 @@ namespace Atlas::Scripting::Bindings {
 
         auto entityType = ns->new_usertype<Scene::Entity>("Entity",
             "IsValid", &Scene::Entity::IsValid,
+            "GetID", &Scene::Entity::GetID,
+            "GetVersion", &Scene::Entity::GetVersion,
             // Add components
             "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,

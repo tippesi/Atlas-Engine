@@ -66,6 +66,7 @@ namespace Atlas::Editor::UI {
         bool hasPlayer = false;
         bool isPlaying = false;
         bool playMaximized = false;
+        bool perfOverlayMaximized = false;
         bool isActiveWindow = false;
         bool lockSelection = false;
 

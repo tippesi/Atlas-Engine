@@ -12,6 +12,16 @@ namespace Atlas {
             const int32_t filterSize = 4;
             blurFilter.CalculateBoxFilter(filterSize);
 
+            auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
+            scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            scramblingRankingTexture.SetData(noiseImage->GetData());
+
+            noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("sobol.png");
+            sobolSequenceTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            sobolSequenceTexture.SetData(noiseImage->GetData());
+
             volumetricPipelineConfig = PipelineConfig("volumetric/volumetric.csh");
 
             horizontalBlurPipelineConfig = PipelineConfig("bilateralBlur.csh",
@@ -161,6 +171,9 @@ namespace Atlas {
 
                 volumetricUniformBuffer.SetData(&uniforms, 0);
                 commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
+
+                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 8);
+                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 9);
 
                 volumetricPipelineConfig.ManageMacro("SHADOWS", light.shadow != nullptr);
                 volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);

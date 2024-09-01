@@ -338,7 +338,21 @@ namespace Atlas::Editor::UI {
             if (ImGui::MenuItem("Open externally"))
                 OpenExternally(std::filesystem::absolute(path).string(), isDirectory);
 
-            if (ImGui::MenuItem("Rename")) {
+            // We shouldn't allow the user to delete the root entity
+            if (ImGui::MenuItem("Duplicate")) {
+                int32_t counter = 0;
+                auto dupFilePath = path;
+                do {
+                    dupFilePath = path;
+                    dupFilePath.replace_extension("");
+                    auto replacement = dupFilePath.filename().string() + "(" + std::to_string(++counter) + ")";
+                    dupFilePath.replace_filename(replacement);
+                    dupFilePath.replace_extension(path.extension());
+                } while (std::filesystem::exists(dupFilePath));
+                std::filesystem::copy(path, dupFilePath);
+            }
+
+            if (ImGui::MenuItem("Rename") && !isDirectory) {
                 renamePopupVisible = true;
                 auto dirEntryFilename = path.filename();
                 renameString = dirEntryFilename.replace_extension("").string();

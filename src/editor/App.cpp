@@ -372,6 +372,30 @@ namespace Atlas::Editor {
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&activeSceneWindow->viewportPanel.viewportTexture);
             ImGui::Image(set, renderArea);
 
+            if (activeSceneWindow->perfOverlayMaximized) {
+                ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+                auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
+
+                std::string perfString;
+                int32_t slowestThreadIdx = 0;
+                double slowestTime = 0.0;
+                for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
+                    const auto& threadData = gpuProfilerData[i];
+                    double threadTime = 0.0;
+                    for (const auto& query : threadData.queries) {
+                        threadTime += query.timer.elapsedTime;
+                    }
+                    if (threadTime > slowestTime) {
+                        slowestTime = threadTime;
+                        slowestThreadIdx = i;
+                    }
+                }
+
+                ImGui::SetWindowFontScale(1.5f);
+                ImGui::Text("Frame time: %.3fms, GPU time: %.3f", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
+                ImGui::SetWindowFontScale(1.0f);
+            }
+
             ImGui::PopStyleVar();
             ImGui::PopStyleVar();
             ImGui::PopStyleVar();

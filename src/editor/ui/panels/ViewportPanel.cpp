@@ -152,6 +152,14 @@ namespace Atlas::Editor::UI {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->geometryNormalTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
         }
+        if (visualization == GBufferMaterialIdx) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->materialIdxTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 10000.0f, false, true);
+        }
+        if (visualization == GBufferStencil) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->stencilTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 255.0f, false, true);
+        }
         if (visualization == GBufferDepth) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->depthTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
@@ -162,6 +170,10 @@ namespace Atlas::Editor::UI {
         }
         else if (visualization == Reflections) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == Volumetrics) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricTexture,
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
         }
         else if (visualization == Clouds) {

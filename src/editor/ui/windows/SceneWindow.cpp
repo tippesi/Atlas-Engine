@@ -342,6 +342,7 @@ namespace Atlas::Editor::UI {
 
                 auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
+                ImGui::Separator();
                 ImGui::Text("Editor camera");
 
                 ImGui::DragFloat("Exposure", &camera.exposure, 0.1f, 0.01f, 180.0f);
@@ -350,6 +351,7 @@ namespace Atlas::Editor::UI {
                 ImGui::DragFloat("Near plane", &camera.nearPlane, 0.01f, 0.01f, 10.0f);
                 ImGui::DragFloat("Far plane", &camera.farPlane, 1.0f, 1.0f, 20000.0f);
 
+                ImGui::Separator();
                 ImGui::Text("Rendering scale");
 
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
@@ -357,10 +359,14 @@ namespace Atlas::Editor::UI {
                 if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
                     Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
+                ImGui::Separator();
                 ImGui::Text("Path traces samples");
                 ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
 
+                ImGui::Separator();
+                ImGui::Text("Playing");
                 ImGui::Checkbox("Play maximized", &playMaximized);
+                ImGui::Checkbox("Show performance overlay", &perfOverlayMaximized);
 
                 ImGui::EndPopup();
             }
@@ -393,9 +399,12 @@ namespace Atlas::Editor::UI {
                     menuItem("Normals", ViewportVisualization::GBufferNormals);
                     menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);
                     menuItem("Velocity", ViewportVisualization::GBufferVelocity);
+                    menuItem("Material index", ViewportVisualization::GBufferMaterialIdx);
+                    menuItem("Stencil", ViewportVisualization::GBufferStencil);
                     ImGui::EndMenu();
                 }
 
+                menuItem("Volumetrics", ViewportVisualization::Volumetrics);
                 menuItem("Clouds", ViewportVisualization::Clouds);
                 menuItem("Reflections", ViewportVisualization::Reflections);
                 menuItem("SSS", ViewportVisualization::SSS);
