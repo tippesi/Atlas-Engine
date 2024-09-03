@@ -56,6 +56,8 @@ void App::LoadContent(AppConfiguration config) {
     
     Atlas::PipelineManager::EnableHotReload();
 
+    scene->postProcessing.fsr2 = config.fsr;
+
     if (config.light) {
         auto directionalLightEntity = scene->CreateEntity();
         auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);

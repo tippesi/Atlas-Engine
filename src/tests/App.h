@@ -25,6 +25,7 @@ struct AppConfiguration {
     bool volumetric = true;
     bool ocean = true;
     bool light = true;
+    bool fsr = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;

@@ -8,6 +8,10 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_macos.h>
 
+#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+#include <stacktrace>
+#endif
+
 namespace Atlas {
 
     namespace Graphics {
@@ -314,6 +318,10 @@ namespace Atlas {
                 case Log::Type::TYPE_WARNING: Log::Warning(pCallbackData->pMessage, logSeverity); break;
                 case Log::Type::TYPE_ERROR: Log::Error(pCallbackData->pMessage, logSeverity); break;
             }
+
+#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+            output.append("\nStack trace:\n" + std::stacktrace::current());
+#endif
 
 #ifndef AE_BUILDTYPE_RELEASE
             if (logSeverity == Log::Severity::SEVERITY_HIGH)
