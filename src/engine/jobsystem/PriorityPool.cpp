@@ -39,19 +39,6 @@ namespace Atlas {
 
     }
 
-    void PriorityPool::Work(int32_t workerId) {
-
-        auto& worker = workers[workerId];
-        worker.Work();
-
-        for (int32_t i = 1; i < workerCount; i++) {
-            auto stealIdx = (-i + workerId + workerCount) % workerCount;
-            auto& stealFrom = workers[stealIdx];
-            stealFrom.Work();
-        }
-
-    }
-
     Worker& PriorityPool::GetNextWorker() {
 
         auto counter = workerCounter++;

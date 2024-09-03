@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <set>
 
+#include <glm/gtx/norm.hpp>
+
 namespace Atlas {
 
     namespace RayTracing {
@@ -36,18 +38,18 @@ namespace Atlas {
             if (!device->swapChain->isComplete) return;
             if (!subset.Any()) return;
 
-            auto sceneState = &scene->renderState;
+            auto renderState = &scene->renderState;
 
             blases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
 
-            JobSystem::Wait(sceneState->bindlessMeshMapUpdateJob);
+            JobSystem::Wait(renderState->bindlessMeshMapUpdateJob);
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!sceneState->meshIdToBindlessIdx.contains(mesh.GetID()))
+                if (!renderState->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -56,7 +58,8 @@ namespace Atlas {
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.offset = int32_t(sceneState->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.offset = int32_t(renderState->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
@@ -86,19 +89,33 @@ namespace Atlas {
             actorAABBs.clear();
             lastMatrices.clear();
 
-            JobSystem::Wait(sceneState->bindlessTextureMapUpdateJob);
+            JobSystem::Wait(renderState->bindlessTextureMapUpdateJob);
 
             UpdateMaterials();
+
+            JobSystem::Wait(renderState->mainCameraSignal, JobPriority::High);
+
+            vec3 cameraLocation;
+            auto hasCamera = scene->HasMainCamera();
+            if (hasCamera) {
+                auto& camera = scene->GetMainCamera();
+                cameraLocation = camera.GetLocation();
+            }
 
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!sceneState->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                if (!renderState->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                    continue;
+
+                auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
+                auto distSqd = glm::distance2(
+                    vec3(transformComponent.globalMatrix[3]),
+                    cameraLocation);
+                if (hasCamera && distSqd > meshInfo.cullingDistanceSqr)
                     continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
-                auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
-
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
 
                 uint32_t mask = InstanceCullMasks::MaskAll;

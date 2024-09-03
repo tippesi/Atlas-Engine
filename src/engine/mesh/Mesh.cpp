@@ -146,6 +146,32 @@ namespace Atlas {
 
         }
 
+        void Mesh::ClearBVH() {
+
+            isBvhBuilt = false;
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            bool hardwareRayTracing = device->support.hardwareRayTracing;
+            bool bindless = device->support.bindless;
+
+            AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
+
+            if (data.indexCount == 0 || !bindless) return;
+
+            data.gpuTriangles.clear();
+            data.gpuBvhNodes.shrink_to_fit();
+
+            triangleBuffer.Reset();
+            if (!hardwareRayTracing) {
+                blasNodeBuffer.Reset();
+                bvhTriangleBuffer.Reset();
+            }
+            else {
+                triangleOffsetBuffer.Reset();
+            }
+
+        }
+
         bool Mesh::IsBVHBuilt() const {
 
             return isBvhBuilt;

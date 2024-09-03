@@ -124,8 +124,7 @@ void main() {
     ivec2 size = imageSize(textureOut);
     ivec2 coord = ivec2(gl_GlobalInvocationID);
     
-    if (coord.x < size.x &&
-        coord.y < size.y) {
+    if (coord.x < size.x && coord.y < size.y) {
 
 #if 1
         // Lower mip tex coord 

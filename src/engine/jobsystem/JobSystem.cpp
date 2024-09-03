@@ -59,7 +59,7 @@ namespace Atlas {
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = func,
+            .function = std::move(func),
             .userData = userData
         };
 
@@ -114,6 +114,17 @@ namespace Atlas {
             jobs.clear();
 
             remainingJobs -= jobsToPush;
+        }
+
+    }
+
+    void JobSystem::Wait(JobSemaphore& semaphore, JobPriority priority) {
+
+        auto& priorityPool = priorityPools[static_cast<int>(priority)];        
+
+        while (!semaphore.TryAquire()) {
+            auto& worker = priorityPool.GetNextWorker();
+            priorityPool.Work(worker.workerId);
         }
 
     }

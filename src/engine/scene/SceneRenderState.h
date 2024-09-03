@@ -63,6 +63,8 @@ namespace Atlas::Scene {
         std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
         std::vector<LightEntity> lightEntities;
 
+        JobSemaphore mainCameraSignal;
+
         JobGroup materialUpdateJob{ JobPriority::High };
         JobGroup rayTracingWorldUpdateJob{ JobPriority::High };
         JobGroup bindlessMeshMapUpdateJob{ JobPriority::High };

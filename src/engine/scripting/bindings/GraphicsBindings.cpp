@@ -12,27 +12,47 @@ namespace Atlas::Scripting::Bindings {
         ns->new_usertype<Texture::Texture2D>("Texture2D",
             "width", &Texture::Texture2D::width,
             "height", &Texture::Texture2D::height,
-            "channels", &Texture::Texture2D::channels
+            "channels", &Texture::Texture2D::channels,
+            "IsValid", &Texture::Texture2D::IsValid,
+            "Reset", &Texture::Texture2D::Reset,
+            "GetData", &Texture::Texture2D::GetData<uint8_t>,
+            "GetData", &Texture::Texture2D::GetData<float16>,
+            "GetData", &Texture::Texture2D::GetData<float>
         );
 
         ns->new_usertype<Texture::Texture2DArray>("Texture2DArray",
             "width", &Texture::Texture2DArray::width,
             "height", &Texture::Texture2DArray::height,
             "depth", &Texture::Texture2DArray::depth,
-            "channels", &Texture::Texture2DArray::channels
+            "channels", &Texture::Texture2DArray::channels,
+            "IsValid", &Texture::Texture2D::IsValid,
+            "Reset", &Texture::Texture2D::Reset,
+            "GetData", &Texture::Texture2D::GetData<uint8_t>,
+            "GetData", &Texture::Texture2D::GetData<float16>,
+            "GetData", &Texture::Texture2D::GetData<float>
         );
 
         ns->new_usertype<Texture::Texture3D>("Texture3D",
             "width", &Texture::Texture3D::width,
             "height", &Texture::Texture3D::height,
             "depth", &Texture::Texture3D::depth,
-            "channels", &Texture::Texture3D::channels
+            "channels", &Texture::Texture3D::channels,
+            "IsValid", &Texture::Texture2D::IsValid,
+            "Reset", &Texture::Texture2D::Reset,
+            "GetData", &Texture::Texture2D::GetData<uint8_t>,
+            "GetData", &Texture::Texture2D::GetData<float16>,
+            "GetData", &Texture::Texture2D::GetData<float>
         );
 
         ns->new_usertype<Texture::Cubemap>("Cubemap",
             "width", &Texture::Cubemap::width,
             "height", &Texture::Cubemap::height,
-            "channels", &Texture::Cubemap::channels
+            "channels", &Texture::Cubemap::channels,
+            "IsValid", &Texture::Texture2D::IsValid,
+            "Reset", &Texture::Texture2D::Reset,
+            "GetData", &Texture::Texture2D::GetData<uint8_t>,
+            "GetData", &Texture::Texture2D::GetData<float16>,
+            "GetData", &Texture::Texture2D::GetData<float>
         );
 
     }

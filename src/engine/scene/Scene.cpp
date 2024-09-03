@@ -285,6 +285,8 @@ namespace Atlas {
                 lightComponent.Update(transformComponent);
             }
 
+            renderState.mainCameraSignal.Reset();
+
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
             JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
@@ -349,6 +351,8 @@ namespace Atlas {
                     mainCameraEntity = { entity, &entityManager };
                 }
             }
+
+            renderState.mainCameraSignal.Release();
 
             AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
 

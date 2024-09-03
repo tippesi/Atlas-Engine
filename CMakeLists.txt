@@ -12,7 +12,7 @@ endif(COMMAND cmake_policy)
 
 cmake_minimum_required(VERSION 3.24)
 
-project(AtlasEngine VERSION 0.2.0)
+project(AtlasEngine VERSION 0.2.1)
 
 # Only 64 bit is supported
 ###################################################################
@@ -48,13 +48,13 @@ if (ATLAS_EDITOR)
     set (ATLAS_IMGUI ON)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 if (CYGWIN OR MINGW)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -std=gnu++20" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -O3 -std=gnu++23" )
 endif()
 
 if (ANDROID)

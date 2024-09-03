@@ -14,6 +14,7 @@ namespace Atlas::Mesh {
             {"mobility", mobility},
             {"usage", usage},
             {"cullBackFaces", p.cullBackFaces},
+            {"rayTrace", p.rayTrace},
             {"castShadow", p.castShadow},
             {"vegetation", p.vegetation},
             {"windNoiseTextureLod", p.windNoiseTextureLod},
@@ -22,6 +23,7 @@ namespace Atlas::Mesh {
             {"allowedShadowCascades", p.allowedShadowCascades},
             {"distanceCulling", p.distanceCulling},
             {"shadowDistanceCulling", p.shadowDistanceCulling},
+            {"rayTraceDistanceCulling", p.rayTraceDistanceCulling},
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
             {"invertUVs", p.invertUVs},
@@ -50,6 +52,9 @@ namespace Atlas::Mesh {
         j.at("impostorShadowDistance").get_to(p.impostorShadowDistance);
         j.at("invertUVs").get_to(p.invertUVs);
         j.at("data").get_to(p.data);
+
+        try_get_json(j, "rayTrace", p.rayTrace);
+        try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
 
         p.mobility = static_cast<MeshMobility>(mobility);
         p.usage = static_cast<MeshUsage>(usage);

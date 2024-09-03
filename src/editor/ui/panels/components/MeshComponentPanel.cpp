@@ -26,9 +26,9 @@ namespace Atlas::Editor::UI {
             ImGui::Combo("Mobility", &mobilityItem, mobilityItems, IM_ARRAYSIZE(mobilityItems));
             mesh->mobility = static_cast<Mesh::MeshMobility>(mobilityItem);
 
-
             ImGui::Checkbox("Invert UVs", &mesh->invertUVs);
             ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
+            ImGui::Checkbox("Ray trace", &mesh->rayTrace);
             ImGui::Checkbox("Is vegetation", &mesh->vegetation);
 
             ImGui::Checkbox("Cast shadow", &mesh->castShadow);
@@ -38,6 +38,7 @@ namespace Atlas::Editor::UI {
             ImGui::Text("Culling settings");            
             ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);
             ImGui::DragFloat("Shadow distance culling", &mesh->shadowDistanceCulling, 1.0f);
+            ImGui::DragFloat("Ray trace distance culling", &mesh->rayTraceDistanceCulling, 1.0f);
             
             ImGui::Separator();
             ImGui::Text("Wind settings");

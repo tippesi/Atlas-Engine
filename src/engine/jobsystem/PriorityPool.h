@@ -15,11 +15,22 @@ namespace Atlas {
 
         void Shutdown();
 
-        void Work(int32_t workerId);
-
         Worker& GetNextWorker();
 
         std::vector<Worker>& GetAllWorkers();
+
+        inline void Work(int32_t workerId) {
+
+            auto& worker = workers[workerId];
+            worker.Work();
+
+            for (int32_t i = 1; i < workerCount; i++) {
+                auto stealIdx = (-i + workerId + workerCount) % workerCount;
+                auto& stealFrom = workers[stealIdx];
+                stealFrom.Work();
+            }
+
+        }        
 
         JobPriority priority;
         int32_t workerCount;

@@ -320,7 +320,7 @@ namespace Atlas {
             }
 
 #if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
-            output.append("\nStack trace:\n" + std::stacktrace::current());
+            output.append("\nStack trace:\n" + std::to_string(std::stacktrace::current()));
 #endif
 
 #ifndef AE_BUILDTYPE_RELEASE

@@ -53,6 +53,8 @@ namespace Atlas {
                 int32_t offset = 0;
                 int32_t materialOffset = 0;
 
+                float cullingDistanceSqr = 0.0f;
+
                 int32_t idx = 0;
 
                 std::vector<GPULight> triangleLights;
