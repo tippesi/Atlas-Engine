@@ -199,32 +199,6 @@ namespace Atlas::Editor {
         }
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
-
-        graphicsDevice->WaitForPreviousFrameSubmission();
-
-
-#ifdef AE_BINDLESS
-        // This crashes when we start with path tracing and do the bvh build async
-        // Launch BVH builds asynchronously
-        auto buildRTStructure = [&](JobData) {
-            auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
-
-            for (const auto& mesh : sceneMeshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-                if (mesh->IsBVHBuilt())
-                    continue;
-                JobSystem::Execute(bvhBuilderGroup, [mesh](JobData&) {
-                    mesh->BuildBVH(false);
-                });
-            }
-            };
-
-        if (bvhBuilderGroup.HasFinished()) {
-            JobSystem::Execute(bvhBuilderGroup, buildRTStructure);
-            return;
-        }
-#endif
         
     }
 

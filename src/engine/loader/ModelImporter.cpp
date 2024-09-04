@@ -699,8 +699,10 @@ namespace Atlas {
                     image->ExpandToChannelCount(4, 255);
 
                     images.Add(MaterialImageType::BaseColor, path, image);
-                    if (!images.Contains(MaterialImageType::Opacity, path) && opacityImage != nullptr)
-                        images.Add(MaterialImageType::Opacity, path, opacityImage);
+                    if (!images.Contains(MaterialImageType::Opacity, path) && opacityImage != nullptr) {
+                        if (IsImageValid(opacityImage))
+                            images.Add(MaterialImageType::Opacity, path, opacityImage);
+                    }
                 }
             }
             if (material->GetTextureCount(aiTextureType_OPACITY) > 0) {
@@ -709,7 +711,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Opacity, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Opacity, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Opacity, path, image);
                 }
             }
             if ((material->GetTextureCount(aiTextureType_NORMALS) > 0 ||
@@ -734,7 +737,8 @@ namespace Atlas {
                     }
                     image->ExpandToChannelCount(4, 255);
 
-                    images.Add(MaterialImageType::Normal, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Normal, path, image);
                     if (!images.Contains(MaterialImageType::Displacement, path) && displacementImage != nullptr)
                         images.Add(MaterialImageType::Displacement, path, displacementImage);
                 }
@@ -754,9 +758,11 @@ namespace Atlas {
                         image = image->GetChannelImage(1, 1);
                     }
 
-                    images.Add(MaterialImageType::Roughness, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Roughness, path, image);
                     if (!images.Contains(MaterialImageType::Metallic, path) && metallicImage != nullptr)
-                        images.Add(MaterialImageType::Metallic, path, metallicImage);
+                        if (IsImageValid(metallicImage))
+                            images.Add(MaterialImageType::Metallic, path, metallicImage);
                 }
             }
             if (material->GetTextureCount(aiTextureType_METALNESS) > 0) {
@@ -765,7 +771,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Metallic, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Metallic, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Metallic, path, image);
                 }
             }
             if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
@@ -774,7 +781,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Metallic, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Metallic, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Metallic, path, image);
                 }
             }
             if (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && !state.isObj && hasTangents) {
@@ -876,6 +884,22 @@ namespace Atlas {
 
             return state.paths.texturePath + fileNameWithoutExtension + "_" + typeName + "." + extension;
 
+        }
+
+        bool ModelImporter::IsImageValid(Ref<Common::Image<uint8_t>>& image) {
+
+            auto& data = image->GetData();
+
+            if (data.empty())
+                return false;
+
+            bool invalidImage = true;
+            for (int32_t i = image->channels; i < data.size(); i += image->channels) {
+                for (int32_t j = 0; j < image->channels; j++)
+                    invalidImage &= data[(i - image->channels) + j] == data[i + j];
+            }
+
+            return !invalidImage;
         }
 
     }

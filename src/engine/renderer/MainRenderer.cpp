@@ -496,6 +496,9 @@ namespace Atlas {
 
             device->SubmitCommandList(commandList);
 
+            renderState->WaitForAsyncWorkCompletion();
+            renderState->renderList.Clear();
+
         }
 
         void MainRenderer::RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,

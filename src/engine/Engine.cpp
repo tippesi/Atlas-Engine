@@ -9,6 +9,7 @@
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
 #include "events/EventManager.h"
+#include "raytracing/RayTracingManager.h"
 #include "jobsystem/JobSystem.h"
 
 #include "graphics/ShaderCompiler.h"
@@ -121,6 +122,7 @@ namespace Atlas {
         PipelineManager::Update();
         Audio::AudioManager::Update();
         Physics::ShapesManager::Update();
+        RayTracing::RayTracingManager::Update();
 
     }
 

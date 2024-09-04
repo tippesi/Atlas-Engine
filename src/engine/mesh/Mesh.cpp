@@ -148,6 +148,7 @@ namespace Atlas {
 
         void Mesh::ClearBVH() {
 
+            // This whole operation can only be done when no ray tracing jobs or bindless updates are running
             isBvhBuilt = false;
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -159,7 +160,7 @@ namespace Atlas {
             if (data.indexCount == 0 || !bindless) return;
 
             data.gpuTriangles.clear();
-            data.gpuBvhNodes.shrink_to_fit();
+            data.gpuTriangles.shrink_to_fit();
 
             triangleBuffer.Reset();
             if (!hardwareRayTracing) {

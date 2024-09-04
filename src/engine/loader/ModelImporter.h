@@ -139,6 +139,8 @@ namespace Atlas {
 
             static std::string GetMaterialImageImportPath(const ImporterState& state, MaterialImageType type, const std::string& filename);
 
+            static bool IsImageValid(Ref<Common::Image<uint8_t>>& image);
+
             template<typename T>
             static Ref<Common::Image<T>> ApplySobelFilter(const Ref<Common::Image<T>>& image, const float strength = 1.0f) {
 

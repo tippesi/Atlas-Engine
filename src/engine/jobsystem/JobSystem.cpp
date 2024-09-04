@@ -118,11 +118,11 @@ namespace Atlas {
 
     }
 
-    void JobSystem::Wait(JobSemaphore& semaphore, JobPriority priority) {
+    void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
 
         auto& priorityPool = priorityPools[static_cast<int>(priority)];        
 
-        while (!semaphore.TryAquire()) {
+        while (!signal.TryAquire()) {
             auto& worker = priorityPool.GetNextWorker();
             priorityPool.Work(worker.workerId);
         }

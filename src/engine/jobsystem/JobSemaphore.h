@@ -4,7 +4,7 @@
 
 namespace Atlas {
 
-	class JobSemaphore {
+	class JobSignal {
 
 	public:
 		inline void Reset() { counter.store(0); }

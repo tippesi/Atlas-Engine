@@ -15,9 +15,9 @@ namespace Atlas::Scripting::Bindings {
             "channels", &Texture::Texture2D::channels,
             "IsValid", &Texture::Texture2D::IsValid,
             "Reset", &Texture::Texture2D::Reset,
-            "GetData", &Texture::Texture2D::GetData<uint8_t>,
-            "GetData", &Texture::Texture2D::GetData<float16>,
-            "GetData", &Texture::Texture2D::GetData<float>
+            "GetDataUInt8", &Texture::Texture2D::GetData<uint8_t>,
+            "GetDataFloat16", &Texture::Texture2D::GetData<float16>,
+            "GetDataFloat32", &Texture::Texture2D::GetData<float>
         );
 
         ns->new_usertype<Texture::Texture2DArray>("Texture2DArray",
@@ -27,9 +27,9 @@ namespace Atlas::Scripting::Bindings {
             "channels", &Texture::Texture2DArray::channels,
             "IsValid", &Texture::Texture2D::IsValid,
             "Reset", &Texture::Texture2D::Reset,
-            "GetData", &Texture::Texture2D::GetData<uint8_t>,
-            "GetData", &Texture::Texture2D::GetData<float16>,
-            "GetData", &Texture::Texture2D::GetData<float>
+            "GetDataUInt8", &Texture::Texture2D::GetData<uint8_t>,
+            "GetDataFloat16", &Texture::Texture2D::GetData<float16>,
+            "GetDataFloat32", &Texture::Texture2D::GetData<float>
         );
 
         ns->new_usertype<Texture::Texture3D>("Texture3D",
@@ -39,8 +39,8 @@ namespace Atlas::Scripting::Bindings {
             "channels", &Texture::Texture3D::channels,
             "IsValid", &Texture::Texture2D::IsValid,
             "Reset", &Texture::Texture2D::Reset,
-            "GetData", &Texture::Texture2D::GetData<uint8_t>,
-            "GetData", &Texture::Texture2D::GetData<float16>,
+            "GetDataUInt8", &Texture::Texture2D::GetData<uint8_t>,
+            "GetDataFloat16", &Texture::Texture2D::GetData<float16>,
             "GetData", &Texture::Texture2D::GetData<float>
         );
 
@@ -50,9 +50,9 @@ namespace Atlas::Scripting::Bindings {
             "channels", &Texture::Cubemap::channels,
             "IsValid", &Texture::Texture2D::IsValid,
             "Reset", &Texture::Texture2D::Reset,
-            "GetData", &Texture::Texture2D::GetData<uint8_t>,
-            "GetData", &Texture::Texture2D::GetData<float16>,
-            "GetData", &Texture::Texture2D::GetData<float>
+            "GetDataUInt8", &Texture::Texture2D::GetData<uint8_t>,
+            "GetDataFloat16", &Texture::Texture2D::GetData<float16>,
+            "GetDataFloat32", &Texture::Texture2D::GetData<float>
         );
 
     }

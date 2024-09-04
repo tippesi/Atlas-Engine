@@ -36,6 +36,7 @@ namespace Atlas {
 
             pipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             pipelineConfig.ManageMacro("DDGI", ddgiEnabled);
+            pipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
             pipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             pipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
             pipelineConfig.ManageMacro("AO", aoEnabled);

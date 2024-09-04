@@ -904,6 +904,7 @@ bool App::LoadScene() {
     else if (sceneSelection == FOREST) {
         auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
+        otherScene->Update();
 
         CopyActors(otherScene);
 
@@ -921,6 +922,7 @@ bool App::LoadScene() {
     else if (sceneSelection == EMERALDSQUARE) {
         auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
         otherScene->Timestep(1.0f);
+        otherScene->Update();
 
         CopyActors(otherScene);
 
@@ -1081,22 +1083,6 @@ void App::CheckLoadScene() {
     }
 
     graphicsDevice->WaitForPreviousFrameSubmission();
-
-    static Atlas::JobGroup buildBvhGroup;
-
-    auto buildRTStructure = [&](Atlas::JobData) {
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (const auto& mesh : sceneMeshes) {
-
-            if (mesh->IsBVHBuilt()) continue;
-
-            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
-            
-        }
-        };
-
-    Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);   
 
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));

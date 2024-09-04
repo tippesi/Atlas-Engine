@@ -34,7 +34,7 @@ namespace Atlas {
         static void ExecuteMultiple(JobGroup& group, int32_t count, 
             std::function<void(JobData&)> func, void* userData = nullptr);
 
-        static void Wait(JobSemaphore& semaphore, JobPriority priority);
+        static void Wait(JobSignal& signal, JobPriority priority);
 
         static void Wait(JobGroup& group);
 
