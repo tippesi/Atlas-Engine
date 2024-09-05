@@ -225,7 +225,7 @@ jobs:
         # Add additional scripting steps here
         run: |
           sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev
+          sudo apt-get install libgl1-mesa-dev autoconf automake libtool pkg-config
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
