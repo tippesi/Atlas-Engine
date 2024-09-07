@@ -422,7 +422,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
-          cp AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.app
+          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
