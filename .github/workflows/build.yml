@@ -303,6 +303,7 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 0
 
   macos-build:
     runs-on: macos-latest
@@ -411,11 +412,8 @@ jobs:
             </dict>
             </plist>" >engine.entitlements
           codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
-          cd AtlasEngineEditor.app/Contents/MacOS
-          chmod +x AtlasEngineEditor
-          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
-          chmod +xrw AtlasEngineEditor.app
-          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}
+          tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
 
       - name: Build ${{ matrix.build-type }} test configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -453,7 +451,7 @@ jobs:
             LICENSE.md
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor.app
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
             ${{ github.workspace }}/bin/**/*.dylib*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
