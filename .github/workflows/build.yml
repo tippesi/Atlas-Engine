@@ -400,7 +400,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_EDITOR=OFF -DATLAS_HEADLESS=ON -G Ninja
+            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_EDITOR=OFF -DATLAS_BUNDLE=ON -DATLAS_HEADLESS=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -422,7 +422,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
-          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.app
+          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
