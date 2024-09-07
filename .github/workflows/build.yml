@@ -225,7 +225,6 @@ jobs:
         # Add additional scripting steps here
         run: |
           sudo apt update
-          sudo apt upgrade
           sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config libltdl-dev g++-14 gcc-14 -y
           sudo update-alternatives --config g++
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++14 14
