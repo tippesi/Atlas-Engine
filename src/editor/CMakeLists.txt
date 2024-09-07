@@ -75,7 +75,7 @@ install(
     DESTINATION "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks"
 )
 install(
-    FILES "${CMAKE_BINARY_DIR}/../data/icon.png"
+    FILES "${CMAKE_SOURCE_DIR}/data/icon.png"
     DESTINATION "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources"
 )
 install(TARGETS ${PROJECT_NAME}
