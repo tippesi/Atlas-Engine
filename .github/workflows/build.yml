@@ -387,7 +387,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -DATLAS_BUNDLE=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -417,6 +417,13 @@ jobs:
           DYLD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
           VK_LOADER_LAYERS_ENABLE: '*validation'
 
+      - name: Build bundle
+        shell: bash
+        run: |
+          cd ${{ github.workspace }}/build
+          cmake --install . --config ${{ matrix.build-type }}
+          cp AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.app
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -427,7 +434,7 @@ jobs:
             LICENSE.md
             THIRDPARTY.md
             ${{ github.workspace }}/bin/**/AtlasEngineDemo
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor.app
             ${{ github.workspace }}/bin/**/*.dylib*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles

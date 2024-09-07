@@ -68,7 +68,7 @@ if(APPLE)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt fsr2
-            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
+            GPUOpen::VulkanMemoryAllocator ${Vulkan_LIBRARIES} Vulkan::Headers
             unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 

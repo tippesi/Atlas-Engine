@@ -11,7 +11,11 @@
 #include <thread>
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
+#ifdef AE_BUNDLE
+    .assetDirectory = "../../../../../data",
+#else
     .assetDirectory = "../../data",
+#endif
     .shaderDirectory = "shader"
 };
 
