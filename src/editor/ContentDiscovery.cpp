@@ -5,6 +5,7 @@
 #include "Log.h"
 
 #include <filesystem>
+#include <algorithm>
 
 namespace Atlas::Editor {
 
