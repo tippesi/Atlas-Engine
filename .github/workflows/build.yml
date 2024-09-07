@@ -396,6 +396,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
+          codesign --force --deep -s - AtlasEngineEditor.app
           cd AtlasEngineEditor.app/Contents/MacOS
           chmod +x AtlasEngineEditor
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
