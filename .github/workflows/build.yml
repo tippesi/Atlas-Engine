@@ -391,6 +391,13 @@ jobs:
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
+      - name: Build bundle
+        shell: bash
+        run: |
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          cmake --install . --config ${{ matrix.build-type }}
+          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}
+
       - name: Build ${{ matrix.build-type }} test configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
         if: ${{ env.RUN_TESTS }} == true
@@ -416,13 +423,6 @@ jobs:
           VK_ADD_LAYER_PATH: ${{ github.workspace }}/VULKAN_SDK/share/vulkan/explicit_layer.d/
           DYLD_LIBRARY_PATH: ${{ github.workspace }}/VULKAN_SDK/lib/
           VK_LOADER_LAYERS_ENABLE: '*validation'
-
-      - name: Build bundle
-        shell: bash
-        run: |
-          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
-          cmake --install . --config ${{ matrix.build-type }}
-          cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
