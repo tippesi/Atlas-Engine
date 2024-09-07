@@ -305,7 +305,7 @@ jobs:
             !**/CMakeFiles
 
   macos-build:
-    runs-on: macos-13
+    runs-on: macos-latest
     name: Build on MacOS
     # Run both builds in parallel and don't cancel if one fails
     strategy:
