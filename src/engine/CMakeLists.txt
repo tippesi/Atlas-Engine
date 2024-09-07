@@ -84,16 +84,20 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
     
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-    set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-
-    set(CMAKE_SKIP_BUILD_RPATH FALSE)
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    set(CMAKE_INSTALL_RPATH "./")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
             unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+
+    if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
+        message("USe gcc14!")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++exp)
+    elseif(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 12.0)
+        message("USe gcc12!")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --enable-libstdcxx-backtrace=yes")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++_libbacktrace)
+    endif()
 endif()
 
 # Due to lua bindings we need more addressable functions (but not for clang)

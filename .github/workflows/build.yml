@@ -175,7 +175,7 @@ jobs:
             !**/CMakeFiles
 
   linux-build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -225,8 +225,7 @@ jobs:
         # Add additional scripting steps here
         run: |
           sudo apt update
-          sudo apt upgrade
-          sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config
+          sudo apt install libgl1-mesa-dev gcc-14 g++-14 -y
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
