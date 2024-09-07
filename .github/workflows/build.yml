@@ -396,6 +396,10 @@ jobs:
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
+          cd AtlasEngineEditor.app/Contents/MacOS
+          chmod +x AtlasEngineEditor
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          chmod +xrw AtlasEngineEditor.app
           cp -R AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}
 
       - name: Build ${{ matrix.build-type }} test configuration with CMake
