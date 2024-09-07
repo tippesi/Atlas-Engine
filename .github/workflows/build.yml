@@ -226,13 +226,11 @@ jobs:
         run: |
           sudo apt update
           sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config libltdl-dev g++-14 gcc-14 -y
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14
-          gcc -v
-          g++ -v
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14
 
       - name: Build swiftshader
         uses: ashutoshvarma/action-cmake-build@master
