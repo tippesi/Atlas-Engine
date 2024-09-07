@@ -356,7 +356,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
-          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=arm64-osx
           rm -r vcpkg_installed
 
       - name: Build swiftshader
