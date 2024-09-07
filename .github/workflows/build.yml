@@ -226,7 +226,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt upgrade
-          sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config libltdl-dev -y
+          sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config libltdl-dev g++-14 gcc-14 -y
+          gcc -v
+          g++ -v
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
