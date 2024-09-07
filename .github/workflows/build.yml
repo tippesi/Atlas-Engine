@@ -420,7 +420,7 @@ jobs:
       - name: Build bundle
         shell: bash
         run: |
-          cd ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
           cp AtlasEngineEditor.app ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.app
 
