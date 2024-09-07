@@ -303,6 +303,7 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 0
 
   macos-build:
     runs-on: macos-latest
