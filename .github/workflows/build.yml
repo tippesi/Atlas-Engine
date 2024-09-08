@@ -160,7 +160,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Windows ${{ matrix.build-type }}
           path: |
@@ -173,6 +173,7 @@ jobs:
             ${{ github.workspace }}/bin/**/*.dll
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 9
 
   linux-build:
     runs-on: ubuntu-latest
@@ -290,7 +291,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Linux ${{ matrix.build-type }}
           path: |
@@ -303,9 +304,10 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 9
 
   macos-build:
-    runs-on: macos-13
+    runs-on: macos-latest
     name: Build on MacOS
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -356,7 +358,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
-          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=arm64-osx
           rm -r vcpkg_installed
 
       - name: Build swiftshader
@@ -387,9 +389,34 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -DATLAS_BUNDLE=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
+
+      - name: Build bundle
+        shell: bash
+        if: ${{ matrix.build-type == 'Release' }}
+        run: |
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          cmake --install . --config ${{ matrix.build-type }}
+          {
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>com.apple.security.files.downloads.read-write</key>
+              <true/>
+              <key>com.apple.security.files.documents.read-write</key>
+              <true/>
+            </dict>
+            </plist>' 
+          } >engine.entitlements
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
+          tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
+          tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/AtlasEngineDemo.tar
 
       - name: Build ${{ matrix.build-type }} test configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -400,7 +427,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_EDITOR=OFF -DATLAS_HEADLESS=ON -G Ninja
+            -DATLAS_TESTS=ON -DATLAS_BINDLESS=OFF -DATLAS_EDITOR=OFF -DATLAS_BUNDLE=ON -DATLAS_HEADLESS=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
@@ -418,17 +445,14 @@ jobs:
           VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
+        uses: actions/upload-artifact@v4
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
         with:
           name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
-            data
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor
-            ${{ github.workspace }}/bin/**/*.dylib*
-            !${{ github.workspace }}/bin/tests
-            !**/CMakeFiles
+            ${{ github.workspace }}/AtlasEngineDemo.tar
+            ${{ github.workspace }}/AtlasEngineEditor.tar
+          compression-level: 9

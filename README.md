@@ -57,6 +57,7 @@ initialize the engine yourself
 - **ATLAS_HEADLESS** Enables the headless support, which means no window needs to be created. Is disabled by default.
 - **ATLAS_BINDLESS** Enables support for bindless resources. Might be problematic on MacOS. Enabled by default.
 - **ATLAS_TESTS** Generates the testing project and allows to target it.
+- **ATLAS_BUNDLE** Allows the applications to be bundled and installed on MacOS. Disabled by default
 ## Documentation
 If you want more information have a look into the [Documentation](https://tippesi.github.io/Atlas-Engine-Doc/index.html).
 ## License

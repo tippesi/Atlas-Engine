@@ -30,6 +30,7 @@ option(ATLAS_IMGUI "Activate ImGui integration" OFF)
 option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
 option(ATLAS_BINDLESS "Activate support for running the engine with bindless resources turned on" ON)
+option(ATLAS_BUNDLE "Allows the applications to be bundled and installed on MacOS" OFF)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" ON)

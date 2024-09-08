@@ -25,6 +25,8 @@ namespace Atlas::Editor::UI {
 
         void Render();
 
+        std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+
     private:
         void RenderDirectoryControl();
 
@@ -47,7 +49,6 @@ namespace Atlas::Editor::UI {
 
         int selectedFilter = -1;
 
-        std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
         std::string nextDirectory;
         std::string assetSearch;
 
