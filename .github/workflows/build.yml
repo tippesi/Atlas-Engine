@@ -410,8 +410,11 @@ jobs:
             </plist>' 
           } >engine.entitlements
           codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
+          tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
           cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineDemo.tar
 
       - name: Build ${{ matrix.build-type }} test configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -448,7 +451,7 @@ jobs:
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo.tar
             ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
             ${{ github.workspace }}/bin/**/*.dylib*
             !${{ github.workspace }}/bin/tests

@@ -212,6 +212,30 @@ jobs:
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
+      - name: Build bundle
+        shell: bash
+        run: |
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          cmake --install . --config ${{ matrix.build-type }}
+          {
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>com.apple.security.files.downloads.read-write</key>
+              <true/>
+              <key>com.apple.security.files.documents.read-write</key>
+              <true/>
+            </dict>
+            </plist>' 
+          } >engine.entitlements
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
+          tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
+          tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineDemo.tar
+
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
         uses: actions/upload-artifact@v2
@@ -222,8 +246,8 @@ jobs:
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor
+            ${{ github.workspace }}/bin/**/AtlasEngineDemo.tar
+            ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
             ${{ github.workspace }}/bin/**/*.dylib*
             !**/CMakeFiles
 
