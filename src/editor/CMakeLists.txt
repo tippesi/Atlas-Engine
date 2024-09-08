@@ -33,10 +33,6 @@ endforeach()
 if (UNIX AND NOT APPLE AND NOT ANDROID)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
 endif()
-# Need to reference the vulkan SDK for MacOS to search at runtime
-if (APPLE)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'/usr/local/lib'")
-endif()
 
 # We use the exported main file from the AtlasEngine library to able to use
 # the app class. Alternatively, you can write a main function yourself.
@@ -48,8 +44,6 @@ else()
 add_executable(${PROJECT_NAME} ${EDITOR_SOURCE_FILES} ${ATLAS_ENGINE_MAIN_FILE})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 endif()
-# Required: Add the compile definitions of the library, such that includes work properly
-
 
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
