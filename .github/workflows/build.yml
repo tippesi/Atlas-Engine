@@ -408,8 +408,11 @@ jobs:
             </dict>
             </plist>' 
           } >engine.entitlements
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
           tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
+          tar -cvf ${{ github.workspace }}/data.tar ${{ github.workspace }}/data
           cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
           cp AtlasEngineDemo.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineDemo.tar
 
@@ -444,7 +447,7 @@ jobs:
         with:
           name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
-            data
+            data.tar
             README.md
             LICENSE.md
             THIRDPARTY.md
