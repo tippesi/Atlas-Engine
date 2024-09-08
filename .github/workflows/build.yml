@@ -393,6 +393,7 @@ jobs:
 
       - name: Build bundle
         shell: bash
+        if: ${{ matrix.build-type == 'Release' }}
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
@@ -444,6 +445,7 @@ jobs:
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
+        if: ${{ matrix.build-type == 'Release' }}
         with:
           name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
