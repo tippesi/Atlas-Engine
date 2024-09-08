@@ -303,7 +303,6 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
-          compression-level: 0
 
   macos-build:
     runs-on: macos-latest
@@ -409,8 +408,6 @@ jobs:
             </dict>
             </plist>' 
           } >engine.entitlements
-          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
-          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
           tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
           cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
