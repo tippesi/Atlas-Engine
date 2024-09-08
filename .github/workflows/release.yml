@@ -210,7 +210,7 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -DATLAS_BUNDLE=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 

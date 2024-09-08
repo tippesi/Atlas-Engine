@@ -413,7 +413,9 @@ namespace Atlas::Editor {
                             std::filesystem::copy_options::recursive);
                     }
                     catch (std::exception& e) {
-                        Notifications::Push({"Error copying " + event.file + " to asset directory: " + e.what()});
+                        auto message = "Error copying " + event.file + " to asset directory: " + e.what();
+                        Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
+                        Log::Error(message);
                     }
                 });
                
