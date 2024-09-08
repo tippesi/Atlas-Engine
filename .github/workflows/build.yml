@@ -397,6 +397,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/build/${{ matrix.build-type }}
           cmake --install . --config ${{ matrix.build-type }}
+          {
           echo '<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -410,7 +411,8 @@ jobs:
               <key>com.apple.security.files.user-selected.read-only</key>
               <true/>
             </dict>
-            </plist>' >engine.entitlements
+            </plist>' 
+          } >engine.entitlements
           codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
           cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
