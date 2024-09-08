@@ -87,7 +87,7 @@ namespace Atlas {
             std::string fileType = "";
 
             auto filename = GetFileName(path);
-            auto offset = filename.find('.');
+            auto offset = filename.find_last_of('.');
 
             if (offset != std::string::npos) {
                 fileType = filename.substr(offset + 1,

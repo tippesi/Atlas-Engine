@@ -346,7 +346,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (ImGui::MenuItem("Delete"))
-                std::filesystem::remove(path);
+                std::filesystem::remove_all(path);
 
             ImGui::EndPopup();
         }

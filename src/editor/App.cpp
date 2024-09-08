@@ -402,9 +402,23 @@ namespace Atlas::Editor {
         });
 
         // Also kind of a resource event
-        Events::EventManager::DropEventDelegate.Subscribe([](Events::DropEvent event) {
-            if (!event.file.empty())
-                FileImporter::ImportFile(event.file);
+        Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
+            if (!event.file.empty() && contentBrowserWindow.show) {
+                // Need to create a copy here
+                auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
+                JobSystem::Execute(fileImportGroup, [&, event, destinationDirectory](JobData&) {
+                    try {
+                        std::filesystem::copy(event.file, destinationDirectory, 
+                            std::filesystem::copy_options::overwrite_existing | 
+                            std::filesystem::copy_options::recursive);
+                    }
+                    catch (std::exception& e) {
+                        Notifications::Push({"Error copying " + event.file + " to asset directory: " + e.what()});
+                    }
+                });
+               
+                Notifications::Push({"Copying " + event.file + " to asset directory"});
+            }
         });
 
     }
