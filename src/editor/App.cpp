@@ -12,7 +12,7 @@
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
 #ifdef AE_BUNDLE
-    .assetDirectory = "../../../../../data",
+    .assetDirectory = "../Resources/data",
 #else
     .assetDirectory = "../../data",
 #endif

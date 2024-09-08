@@ -160,7 +160,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Windows ${{ matrix.build-type }}
           path: |
@@ -173,6 +173,7 @@ jobs:
             ${{ github.workspace }}/bin/**/*.dll
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 9
 
   linux-build:
     runs-on: ubuntu-latest
@@ -290,7 +291,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Linux ${{ matrix.build-type }}
           path: |
@@ -303,6 +304,7 @@ jobs:
             ${{ github.workspace }}/bin/**/*.so*
             !${{ github.workspace }}/bin/tests
             !**/CMakeFiles
+          compression-level: 9
 
   macos-build:
     runs-on: macos-latest
@@ -413,9 +415,8 @@ jobs:
           codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
           tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
-          tar -cvf ${{ github.workspace }}/data.tar ${{ github.workspace }}/data
-          cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
-          cp AtlasEngineDemo.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineDemo.tar
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/AtlasEngineDemo.tar
 
       - name: Build ${{ matrix.build-type }} test configuration with CMake
         uses: ashutoshvarma/action-cmake-build@master
@@ -444,17 +445,14 @@ jobs:
           VK_LOADER_LAYERS_ENABLE: '*validation'
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ matrix.build-type == 'Release' }}
         with:
           name: Atlas Engine MacOS ${{ matrix.build-type }}
           path: |
-            data.tar
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo.tar
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
-            ${{ github.workspace }}/bin/**/*.dylib*
-            !${{ github.workspace }}/bin/tests
-            !**/CMakeFiles
+            ${{ github.workspace }}/AtlasEngineDemo.tar
+            ${{ github.workspace }}/AtlasEngineEditor.tar
+          compression-level: 9

@@ -78,6 +78,10 @@ if (APPLE AND ATLAS_BUNDLE)
         FILES "${CMAKE_SOURCE_DIR}/data/icon.png"
         DESTINATION "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources"
     )
+    install(
+        DIRECTORY "${CMAKE_SOURCE_DIR}/data"
+        DESTINATION "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources"
+    )
     install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION ${CMAKE_BINARY_DIR}
     )

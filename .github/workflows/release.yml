@@ -79,7 +79,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Windows
           path: |
@@ -91,6 +91,7 @@ jobs:
             ${{ github.workspace }}/bin/**/AtlasEngineEditor.exe
             ${{ github.workspace }}/bin/**/*.dll
             !**/CMakeFiles
+          compression-level: 9
 
   linux-build:
     runs-on: ubuntu-latest
@@ -146,7 +147,7 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine Linux
           path: |
@@ -158,6 +159,7 @@ jobs:
             ${{ github.workspace }}/bin/**/AtlasEngineEditor
             ${{ github.workspace }}/bin/**/*.so*
             !**/CMakeFiles
+          compression-level: 9
 
   macos-build:
     runs-on: macos-latest
@@ -238,7 +240,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Atlas Engine MacOS
           path: |
@@ -250,6 +252,7 @@ jobs:
             ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
             ${{ github.workspace }}/bin/**/*.dylib*
             !**/CMakeFiles
+          compression-level: 9
 
   release:
     runs-on: ubuntu-latest
