@@ -235,8 +235,8 @@ jobs:
           codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
           tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
           tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
-          cp AtlasEngineEditor.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineEditor.tar
-          cp AtlasEngineDemo.tar ${{ github.workspace }}/bin/${{ matrix.build-type }}/AtlasEngineDemo.tar
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/AtlasEngineDemo.tar
 
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
@@ -244,14 +244,11 @@ jobs:
         with:
           name: Atlas Engine MacOS
           path: |
-            data
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo.tar
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor.tar
-            ${{ github.workspace }}/bin/**/*.dylib*
-            !**/CMakeFiles
+            ${{ github.workspace }}/AtlasEngineDemo.tar
+            ${{ github.workspace }}/AtlasEngineEditor.tar
           compression-level: 9
 
   release:
@@ -262,7 +259,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           path: ${{ github.workspace }}
 
