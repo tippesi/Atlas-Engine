@@ -27,6 +27,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Bias", &reflection->bias, 0.0f, 1.0f);
         ImGui::SliderFloat("Roughness cuttoff", &reflection->roughnessCutoff, 0.0f, 1.0f);
         ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);
+        ImGui::SliderInt("Sample count##Reflection", &reflection->sampleCount, 1, 10);
         ImGui::SliderInt("Light sample count##Reflection", &reflection->lightSampleCount, 0, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &reflection->spatialFilterStrength, 0.0f, 10.0f);

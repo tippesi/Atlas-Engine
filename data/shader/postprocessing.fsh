@@ -162,10 +162,10 @@ void main() {
     color = ((color - 0.5) * max(Uniforms.contrast, 0.0)) + 0.5;
 
 #ifdef VIGNETTE    
-    float vignetteFactor = max(1.0 - max(pow(length(fPosition) - Uniforms.vignetteOffset,
+    float vignetteFactor = max(1.0 - max(pow(length(positionVS) - Uniforms.vignetteOffset,
         Uniforms.vignettePower), 0.0) * Uniforms.vignetteStrength, 0.0);
     
-    color = mix(Uniforms.vignetteColor.rgb, color, Uniforms.vignetteFactor);
+    color = mix(Uniforms.vignetteColor.rgb, color, vignetteFactor);
 #endif
     outColor = vec4(color, 1.0);
     

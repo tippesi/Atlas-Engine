@@ -18,7 +18,6 @@ void App::LoadContent(AppConfiguration config) {
 
     // Use lower resolution, we care only about correctness
     renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
-    pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -233,12 +232,14 @@ void App::Render(float deltaTime) {
         window.Maximize();
     }
 
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+
     if (config.exampleRenderer) {
         exampleRenderer.Render(camera);
     }
     else if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
@@ -385,7 +386,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

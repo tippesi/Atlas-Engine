@@ -2,6 +2,7 @@
 
 #include "System.h"
 #include "texture/Texture2D.h"
+#include "texture/Texture2DArray.h"
 #include "graphics/RenderPass.h"
 #include "graphics/Framebuffer.h"
 
@@ -182,6 +183,10 @@ namespace Atlas::Renderer {
 
         float GetScalingFactor() const;
 
+        void UseForPathTracing(bool use);
+
+        bool IsUsedForPathTracing() const;
+
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
@@ -230,11 +235,19 @@ namespace Atlas::Renderer {
         Texture::Texture2D reflectionMomentsTexture;
         Texture::Texture2D historyReflectionMomentsTexture;
 
+        Texture::Texture2D radianceTexture;
+        Texture::Texture2D historyRadianceTexture;
+        Texture::Texture2DArray frameAccumTexture;
+
         Texture::Texture2D lightingTexture;
         Texture::Texture2D reactiveMaskTexture;
         Texture::Texture2D hdrTexture;
 
+        int32_t sampleCount = 0;
+
     private:
+        void CreateRenderPasses();
+
         void CreateFrameBuffers();
 
         Texture::Texture2D historyTexture;
@@ -260,6 +273,7 @@ namespace Atlas::Renderer {
 
         bool swap = false;
         bool hasHistory = false;
+        bool useForPathTracing = false;
 
     };
 

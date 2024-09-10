@@ -48,7 +48,7 @@ namespace Atlas {
             void RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
                 Ref<PrimitiveBatch> primitiveBatch = nullptr, Texture::Texture2D* texture = nullptr);
 
-            void PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+            void PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
                 Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
 
             void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,

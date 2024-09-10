@@ -841,7 +841,7 @@ namespace Atlas::Renderer {
 		dispatchParameters.color = GetResource(colorImage, L"FSR2_InputColor", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.depth = GetResource(depthImage, L"FSR2_InputDepth", FFX_RESOURCE_STATE_COMPUTE_READ);
 		dispatchParameters.motionVectors = GetResource(velocityImage, L"FSR2_InputMotionVectors", FFX_RESOURCE_STATE_COMPUTE_READ);
-		dispatchParameters.reactive = GetResource(reactiveMaskImage, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
+		//dispatchParameters.reactive = GetResource(reactiveMaskImage, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.exposure = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_InputExposure", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.reactive = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyInputReactiveMap", FFX_RESOURCE_STATE_COMPUTE_READ);
 		//dispatchParameters.transparencyAndComposition = GetTextureResource(&context, nullptr, nullptr, 1, 1, VK_FORMAT_UNDEFINED, L"FSR2_EmptyTransparencyAndCompositionMap", FFX_RESOURCE_STATE_COMPUTE_READ);

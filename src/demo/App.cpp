@@ -17,7 +17,6 @@ using namespace Atlas::ImguiExtension;
 void App::LoadContent() {
 
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
-    pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -264,7 +263,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = false;
+    static bool pathTrace = true;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
@@ -298,9 +297,10 @@ void App::Render(float deltaTime) {
     if (animateLight) directionalLight.properties.directional.direction
         = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+
     if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
@@ -1214,7 +1214,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

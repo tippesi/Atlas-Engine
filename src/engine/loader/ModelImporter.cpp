@@ -399,6 +399,12 @@ namespace Atlas {
 
             auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
 
+            std::map<std::string, aiLight*> lightMap;
+            for (uint32_t i = 0; i < state.scene->mNumLights; i++) {
+                auto light = state.scene->mLights[i];
+                lightMap[light->mName.C_Str()] = light;
+            }
+
             auto rootEntity = scene->CreateEntity();
             rootEntity.AddComponent<NameComponent>("Root");
             auto& rootHierarchy = rootEntity.AddComponent<HierarchyComponent>();
@@ -421,6 +427,20 @@ namespace Atlas {
                     entity.AddComponent<NameComponent>(name);
                     
                     parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
+                }
+
+                if (lightMap.contains(node->mName.C_Str())) {
+                    auto light = lightMap[node->mName.C_Str()];
+
+                    if (light->mType == aiLightSource_POINT) {
+                        auto& lightComp = parentEntity.AddComponent<LightComponent>(LightType::PointLight, LightMobility::StationaryLight);
+                        lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b));
+                        lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
+                        lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+                        lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.point.radius = glm::sqrt(100.0f * light->mAttenuationQuadratic);
+                        lightComp.AddPointShadow(3.0f, 1024);
+                    }
                 }
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
@@ -486,10 +506,12 @@ namespace Atlas {
 
             auto imagesToSave = ImagesToTextures(state);
 
-            JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
-                ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
-                });
-            JobSystem::Wait(group);
+            if (saveToDisk) {
+                JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
+                    ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
+                    });
+                JobSystem::Wait(group);
+            }
 
             std::vector<ResourceHandle<Material>> materials;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {

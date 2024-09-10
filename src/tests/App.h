@@ -59,7 +59,6 @@ private:
 
     void SetResolution(int32_t width, int32_t height);
 
-    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 

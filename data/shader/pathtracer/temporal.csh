@@ -11,7 +11,7 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (set = 3, binding = 0, rgba8) writeonly uniform image2D resolveImage;
+layout (set = 3, binding = 0, rgba16f)  writeonly uniform image2D outputImage;
 layout (set = 3, binding = 1, r32ui) readonly uniform uimage2DArray frameAccumImage;
 layout (set = 3, binding = 2) uniform sampler2D inAccumImage;
 layout (set = 3, binding = 3, rgba32f) writeonly uniform image2D outAccumImage;
@@ -34,8 +34,8 @@ layout(push_constant) uniform constants {
     float maxRadiance;
 } pushConstants;
 
-vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
-vec2 resolution = vec2(imageSize(resolveImage));
+vec2 invResolution = 1.0 / vec2(imageSize(outAccumImage));
+vec2 resolution = vec2(imageSize(outAccumImage));
 
 const int kernelRadius = 5;
 
@@ -106,7 +106,7 @@ void LoadGroupSharedData() {
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         sharedRadianceDepth[i].rgb = FetchTexel(texel);
-        sharedRadianceDepth[i].a = texelFetch(depthTexture, texel, 0).r;
+        sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
     }
 
     barrier();
@@ -140,7 +140,7 @@ ivec2 FindNearest3x3(ivec2 pixel) {
     for (int i = 0; i < 9; i++) {
         ivec2 offsetPixel = clamp(pixel + offsets[i], ivec2(0), ivec2(resolution) - ivec2(1));
 
-        float currDepth = texelFetch(depthTexture, offsetPixel, 0).r;
+        float currDepth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, offsetPixel, 0).r);
         if (currDepth < depth) {
             depth = currDepth;
             offset = offsets[i];
@@ -182,7 +182,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
     float depthPhi = 16.0 / abs(linearDepth);
-    float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
+    float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
     float historyLinearDepth = historyDepth;
     confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
@@ -203,7 +203,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, vec2 velocity, out vec4 histo
 
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
-    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float depth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, pixel, 0).r);
 
     float linearDepth = depth;
     float depthPhi = 16.0 / abs(linearDepth);
@@ -258,7 +258,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, vec2 velocity, out vec4 histo
 
 vec4 GetCatmullRomSample(ivec2 pixel, inout float weight, float linearDepth, uint materialIdx, vec3 normal) {
 
-    pixel = clamp(pixel, ivec2(0), ivec2(imageSize(resolveImage) - 1));
+    pixel = clamp(pixel, ivec2(0), ivec2(imageSize(outAccumImage) - 1));
 
     weight *= IsHistoryPixelValid(pixel, linearDepth, materialIdx, normal);
 
@@ -275,7 +275,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
-    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float depth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, pixel, 0).r);
 
     vec2 position = uv * resolution;
 
@@ -333,7 +333,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     const int radius = kernelRadius;
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
-    float depth = texelFetch(depthTexture, pixel, 0).r;
+    float depth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, pixel, 0).r);
     float linearDepth = depth;
 
     float totalWeight = 0.0;
@@ -364,11 +364,11 @@ void main() {
     LoadGroupSharedData();
 
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    if (pixel.x > imageSize(resolveImage).x ||
-        pixel.y > imageSize(resolveImage).y)
+    if (pixel.x > imageSize(outAccumImage).x ||
+        pixel.y > imageSize(outAccumImage).y)
         return;
 
-        uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     ivec2 offset = FindNearest3x3(pixel);
 
@@ -427,6 +427,7 @@ void main() {
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 
     imageStore(outAccumImage, pixel, vec4(resolve, historyLength + 1.0));
+    imageStore(outputImage, pixel, vec4(resolve, 1.0));
     //imageStore(outAccumImage, pixel, vec4(vec3(valid ? 1.0 : 0.0), historyLength + 1.0));
     //imageStore(outAccumImage, pixel, vec4(vec3(historyLength / 10.0), historyLength + 1.0));
 

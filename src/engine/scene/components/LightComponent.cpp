@@ -68,9 +68,26 @@ namespace Atlas {
 
 				AE_ASSERT(type == LightType::PointLight && "Component must be of type point light");
 
-                shadow = CreateRef<Lighting::Shadow>(0.0f, bias, resolution, 0.0f, true);
+                shadow = CreateRef<Lighting::Shadow>(transformedProperties.point.radius, bias, resolution, 0.005f, true);
 
 			}
+
+            bool LightComponent::IsVisible(const Volume::Frustum& frustum) const {
+
+                if (type == LightType::DirectionalLight)
+                    return true;
+
+                Volume::AABB aabb;
+
+                if (type == LightType::PointLight) {
+                    auto min = transformedProperties.point.position - vec3(transformedProperties.point.radius);
+                    auto max = transformedProperties.point.position + vec3(transformedProperties.point.radius);
+                    aabb = Volume::AABB(min, max);
+                }
+
+                return frustum.Intersects(aabb);
+
+            }
 
             void LightComponent::Update(const TransformComponent* transform) {
 

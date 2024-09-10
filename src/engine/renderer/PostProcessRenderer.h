@@ -2,7 +2,6 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -16,9 +15,6 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
-
-            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
 
         private:

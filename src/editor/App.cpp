@@ -50,7 +50,6 @@ namespace Atlas::Editor {
         Singletons::icons = CreateRef<Icons>();
         Singletons::blockingOperation = CreateRef<BlockingOperation>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
-        Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);

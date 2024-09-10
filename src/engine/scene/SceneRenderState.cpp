@@ -369,6 +369,8 @@ namespace Atlas::Scene {
             auto lightSubset = scene->GetSubset<LightComponent>();
             for (auto& lightEntity : lightSubset) {
                 auto& light = lightEntity.GetComponent<LightComponent>();
+                if (!light.IsVisible(camera.frustum))
+                    continue;
                 lightEntities.emplace_back(LightEntity{ lightEntity, light, -1 });
             }
 

@@ -102,7 +102,7 @@ void main() {
 
             vec4 viewSpacePos = globalData.vMatrix * vec4(position, 1.0);
             vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData.pvMatrixLast * vec4(lastPos, 1.0);
+            vec4 projPositionLast = globalData.pMatrix * globalData.vMatrixLast * vec4(lastPos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
@@ -110,7 +110,7 @@ void main() {
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
-            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? viewSpacePos.z : INF, 0.0, 0.0, 0.0));
+            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
             imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
         }

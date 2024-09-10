@@ -29,6 +29,8 @@ namespace Atlas {
 
                 mat4 GetLastJitteredMatrix() const;
 
+                mat4 GetLastViewMatrix() const;
+
                 vec3 GetLocation() const;
 
                 vec3 GetLastLocation() const;

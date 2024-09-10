@@ -59,7 +59,6 @@ private:
 
     SceneSelection sceneSelection = SPONZA;
 
-    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 

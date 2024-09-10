@@ -4,6 +4,7 @@ layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
 
 layout(push_constant) uniform constants {
+    int additive;
     int mipLevel;
     float filterSize;
 } pushConstants;
@@ -25,7 +26,9 @@ void main() {
         // Lower mip tex coord 
         vec2 texCoord = (coord + 0.5) / size;
         // Upper mip texel size
-        vec2 texelSize = vec2(pushConstants.filterSize);
+        vec2 texelSize = 1.0 / textureSize(textureIn, pushConstants.mipLevel);
+        vec2 filterSize = vec2(pushConstants.filterSize);
+        texelSize = max(filterSize, filterSize);
 
         // We always sample at pixel border, not centers
         vec3 filter00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
@@ -47,7 +50,12 @@ void main() {
         filtered += 1.0 * (filter00 + filter20 + filter02 + filter22);
         filtered /= 16.0;
         
-        imageStore(textureOut, coord, vec4(filtered + filter11, 1.0));
+        if (pushConstants.additive > 0) {
+            imageStore(textureOut, coord, vec4(filtered + filter11, 1.0));
+        }
+        else {
+            imageStore(textureOut, coord, vec4(filtered, 1.0));
+        }
         
     }
 

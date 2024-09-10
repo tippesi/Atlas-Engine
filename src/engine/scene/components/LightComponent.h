@@ -34,7 +34,7 @@ namespace Atlas {
 			struct PointLightProperties {
 				vec3 position = vec3(0.0f);
 				float radius = 10.0f;
-				float attenuation = 1.0f;
+				float attenuation = 2.0f;
 			};
 
 			struct TypeProperties {
@@ -68,6 +68,8 @@ namespace Atlas {
                     float edgeSoftness, vec3 shadowCenter, vec4 orthoSize);
 
                 void AddPointShadow(float bias, int32_t resolution);
+
+				bool IsVisible(const Volume::Frustum& frustum) const;
 
 				LightType type = LightType::DirectionalLight;
 				LightMobility mobility = LightMobility::MovableLight;

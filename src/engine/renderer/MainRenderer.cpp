@@ -72,6 +72,9 @@ namespace Atlas {
             if (!device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
+            if (target->IsUsedForPathTracing())
+                target->UseForPathTracing(false);
+
             auto& camera = scene->GetMainCamera();
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
@@ -366,20 +369,18 @@ namespace Atlas {
             if (primitiveBatch)
                 RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
-            {
-                if (scene->postProcessing.fsr2) {
-                    gBufferRenderer.GenerateReactiveMask(target, commandList);
+            if (scene->postProcessing.fsr2) {
+                gBufferRenderer.GenerateReactiveMask(target, commandList);
 
-                    fsr2Renderer.Render(target, scene, commandList);
-                }
-                else {
-                    taaRenderer.Render(target, scene, commandList);
-                }
-
-                target->Swap();
-
-                postProcessRenderer.Render(target, scene, commandList, texture);
+                fsr2Renderer.Render(target, scene, commandList);
             }
+            else {
+                taaRenderer.Render(target, scene, commandList);
+            }
+
+            target->Swap();
+
+            postProcessRenderer.Render(target, scene, commandList, texture);
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
@@ -391,25 +392,40 @@ namespace Atlas {
 
         }
 
-        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
             Ref<Scene::Scene> scene, Texture::Texture2D *texture) {
 
             if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
-            auto renderState = &scene->renderState;
+            if (!target->IsUsedForPathTracing())
+                target->UseForPathTracing(true);
 
-            static vec2 lastJitter = vec2(0.0f);
+            auto renderState = &scene->renderState;
 
             auto& camera = scene->GetMainCamera();
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
-            auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-            jitter.x /= (float)target->GetWidth();
-            jitter.y /= (float)target->GetHeight();
+            auto& taa = scene->postProcessing.taa;
+            if (taa.enable || scene->postProcessing.fsr2) {
+                vec2 jitter = vec2(0.0f);
+                if (scene->postProcessing.fsr2) {
+                    jitter = fsr2Renderer.GetJitter(target, frameCount);
+                }
+                else {
+                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                    jitter.x /= (float)target->GetScaledWidth() * 0.75f;
+                    jitter.y /= (float)target->GetScaledHeight() * 0.75f;
+                }
 
-            camera.Jitter(jitter * 0.0f);
+                camera.Jitter(jitter * taa.jitterRange);
+            }
+            else {
+                // Even if there is no TAA we need to update the jitter for other techniques
+                // E.g. the reflections and ambient occlusion use reprojection
+                camera.Jitter(vec2(0.0f));
+            }
 
             commandList->BeginCommands();
 
@@ -423,8 +439,9 @@ namespace Atlas {
                  .ipMatrix = camera.invProjectionMatrix,
                  .pvMatrixLast = camera.GetLastJitteredMatrix(),
                  .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
-                 .jitterLast = lastJitter,
-                 .jitterCurrent = jitter,
+                 .vMatrixLast = camera.GetLastViewMatrix(),
+                 .jitterLast = camera.GetJitter(),
+                 .jitterCurrent = camera.GetLastJitter(),
                  .cameraLocation = vec4(camera.GetLocation(), 0.0f),
                  .cameraDirection = vec4(camera.direction, 0.0f),
                  .cameraUp = vec4(camera.up, 0.0f),
@@ -435,8 +452,6 @@ namespace Atlas {
                  .deltaTime = Clock::GetDelta(),
                  .frameCount = frameCount
             };
-
-            lastJitter = jitter;
 
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
@@ -460,7 +475,6 @@ namespace Atlas {
                 commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
             }
 
-
             Graphics::Profiler::EndQuery();
 
             // No probe filtering required
@@ -471,7 +485,16 @@ namespace Atlas {
             pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
             if (pathTracingRenderer.realTime) {
-                taaRenderer.Render(target, scene, commandList);
+                if (scene->postProcessing.fsr2) {
+                    gBufferRenderer.GenerateReactiveMask(target, commandList);
+
+                    fsr2Renderer.Render(target, scene, commandList);
+                }
+                else {
+                    taaRenderer.Render(target, scene, commandList);
+                }
+
+                target->Swap();
 
                 postProcessRenderer.Render(target, scene, commandList, texture);
             }
@@ -481,7 +504,7 @@ namespace Atlas {
                 if (device->swapChain->isComplete) {
                     commandList->BeginRenderPass(device->swapChain, true);
 
-                    textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
+                    textureRenderer.RenderTexture2D(commandList, viewport, &target->outputTexture,
                         0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
                     commandList->EndRenderPass();
@@ -561,7 +584,6 @@ namespace Atlas {
                 commandList->Draw(batch->GetTriangleCount() * 3);
 
             }
-
 
             commandList->EndRenderPass();
 
@@ -944,6 +966,7 @@ namespace Atlas {
                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
                 .ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
                 .ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
+                .vMatrixLast = camera.GetLastViewMatrix(),
                 .jitterLast = camera.GetLastJitter(),
                 .jitterCurrent = camera.GetJitter(),
                 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
@@ -969,8 +992,6 @@ namespace Atlas {
                 auto volume = scene->irradianceVolume;
 
                 if (volume->scroll) {
-                    //auto pos = vec3(0.4f, 12.7f, -43.0f);
-                    //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
                     auto pos = camera.GetLocation();
 
                     auto volumeSize = volume->aabb.GetSize();

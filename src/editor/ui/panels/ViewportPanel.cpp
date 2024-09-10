@@ -91,25 +91,17 @@ namespace Atlas::Editor::UI {
 
         if (scene != nullptr && validSize && isActive && !Singletons::blockingOperation->block) {
             auto& config = Singletons::config;
+            auto& renderTarget = Singletons::renderTarget;
 
-            if (config->pathTrace) {
-                auto& pathTraceRenderTarget = Singletons::pathTraceRenderTarget;
-
-                if (pathTraceRenderTarget->GetWidth() != viewportTexture.width ||
-                    pathTraceRenderTarget->GetHeight() != viewportTexture.height) {
-                    pathTraceRenderTarget->Resize(viewportTexture.width, viewportTexture.height);
-                }
-
-                Singletons::mainRenderer->PathTraceScene(viewport, pathTraceRenderTarget, scene, &viewportTexture);
+            if (renderTarget->GetWidth() != viewportTexture.width ||
+                renderTarget->GetHeight() != viewportTexture.height) {
+                renderTarget->Resize(viewportTexture.width, viewportTexture.height);
             }
-            else {
-                auto& renderTarget = Singletons::renderTarget;
 
-                if (renderTarget->GetWidth() != viewportTexture.width ||
-                    renderTarget->GetHeight() != viewportTexture.height) {
-                    renderTarget->Resize(viewportTexture.width, viewportTexture.height);
-                }
-
+            if (config->pathTrace) {               
+                Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture);
+            }
+            else {              
                 Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
                     primitiveBatchWrapper.primitiveBatch, &viewportTexture);
 

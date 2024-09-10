@@ -180,116 +180,6 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
-            Graphics::CommandList* commandList, Texture::Texture2D* texture) {
-
-            Graphics::Profiler::BeginQuery("Postprocessing");
-
-            auto& postProcessing = scene->postProcessing;
-
-            auto& camera = scene->GetMainCamera();
-            const auto& chromaticAberration = postProcessing.chromaticAberration;
-            const auto& vignette = postProcessing.vignette;
-            const auto& taa = postProcessing.taa;
-            auto& sharpen = postProcessing.sharpen;
-            auto& bloom = postProcessing.bloom;
-
-            ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
-
-            if (sharpen.enable && !postProcessing.fsr2) {
-                Graphics::Profiler::BeginQuery("Sharpen");
-
-                auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);
-
-                commandList->BindPipeline(pipeline);
-
-                ivec2 groupCount = resolution / 8;
-                groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
-
-                const auto& image = target->historyPostProcessTexture.image;
-
-                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-                commandList->BindImage(image, 3, 0);
-
-                if (taa.enable) {
-                    target->postProcessTexture.Bind(commandList, 3, 1);
-                }
-                else {
-                    target->radianceTexture.Bind(commandList, 3, 1);
-                }
-
-                // Reduce the sharpening to bring it more in line with FSR2 sharpening
-                float sharpenFactor = sharpen.factor * 0.5f;
-                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
-
-                commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-                Graphics::Profiler::EndQuery();
-            }
-
-            {
-                Graphics::Profiler::BeginQuery("Main");
-
-                // We can't return here because of the queries
-                if (device->swapChain->isComplete) {
-                    PipelineConfig pipelineConfig;
-
-                    if (!texture) {
-                        commandList->BeginRenderPass(device->swapChain, true);
-                        pipelineConfig = GetMainPipelineConfig();
-                    }
-                    else {
-                        commandList->BeginRenderPass(target->outputRenderPass,
-                            target->outputFrameBuffer, true);
-                        pipelineConfig = GetMainPipelineConfig(target->outputFrameBuffer);
-                    }
-
-                    pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
-                    pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
-                    pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
-                    pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
-
-                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-                    commandList->BindPipeline(pipeline);
-
-                    SetUniforms(camera, scene);
-
-                    if (sharpen.enable) {
-                        target->historyPostProcessTexture.Bind(commandList, 3, 0);
-                    }
-                    else {
-                        if (taa.enable) {
-                            target->postProcessTexture.Bind(commandList, 3, 0);
-                        }
-                        else {
-                            target->radianceTexture.Bind(commandList, 3, 0);
-                        }
-                    }
-                    commandList->BindBuffer(uniformBuffer, 3, 4);
-
-                    commandList->Draw(6, 1, 0, 0);
-
-                    commandList->EndRenderPass();
-
-                    if (texture) {
-                        CopyToTexture(&target->outputTexture, texture, commandList);
-                    }
-                }
-
-                Graphics::Profiler::EndQuery();
-            }
-
-            Graphics::Profiler::EndQuery();
-
-        }
-
         void PostProcessRenderer::GenerateBloom(PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
             Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
             
@@ -359,6 +249,7 @@ namespace Atlas {
                 Graphics::Profiler::EndAndBeginQuery("Upsample");
 
                 struct PushConstants {
+                    int additive;
                     int mipLevel;
                     float filterSize = 2.0f;
                 };
@@ -383,6 +274,7 @@ namespace Atlas {
                     groupCount.y += ((groupCount.y * 8 == resolutions[i].y) ? 0 : 1);
 
                     PushConstants constants {
+                        .additive = i != mipLevels - 2 ? 1 : 0,
                         .mipLevel = i + 1,
                         .filterSize = bloom.filterSize,
                     };

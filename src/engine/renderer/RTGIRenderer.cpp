@@ -135,6 +135,7 @@ namespace Atlas {
                         uniforms.radianceLimit = rtgi->radianceLimit / glm::max(mainCamera.exposure, 0.00001f);
                         uniforms.bias = rtgi->bias;
                         uniforms.frameSeed = frameCount++;
+                        uniforms.sampleCount = rtgi->sampleCount;
                         uniforms.lightSampleCount = rtgi->lightSampleCount;
                         uniforms.textureLevel = rtgi->textureLevel;
                         uniforms.halfRes = target->GetGIResolution() == HALF_RES ? 1 : 0;

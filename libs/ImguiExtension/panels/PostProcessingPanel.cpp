@@ -28,9 +28,18 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Enable##Chromatic aberration", &postProcessing.chromaticAberration.enable);
         ImGui::Checkbox("Colors reversed", &postProcessing.chromaticAberration.colorsReversed);
         ImGui::SliderFloat("Strength##Chromatic abberation", &postProcessing.chromaticAberration.strength, 0.0f, 4.0f);
+        ImGui::Separator();
         ImGui::Text("Film grain");
         ImGui::Checkbox("Enable##Film grain", &postProcessing.filmGrain.enable);
         ImGui::SliderFloat("Strength##Film grain", &postProcessing.filmGrain.strength, 0.0f, 1.0f);
+        ImGui::Separator();
+        ImGui::Text("Vignette");
+        ImGui::Checkbox("Enable##Vignette", &postProcessing.vignette.enable);
+        ImGui::ColorEdit3("Color##Vignette", glm::value_ptr(postProcessing.vignette.color));
+        ImGui::SliderFloat("Strength##Vignette", &postProcessing.vignette.strength, 0.0f, 1.0f);
+        ImGui::SliderFloat("Power##Vignette", &postProcessing.vignette.power, 0.0f, 10.0f);
+        ImGui::SliderFloat("Offset##Vignette", &postProcessing.vignette.offset, -1.0f, 1.0f);
+        ImGui::Separator();
         ImGui::Text("Bloom");
         ImGui::Checkbox("Enable##Bloom", &postProcessing.bloom.enable);
         ImGui::DragFloat("Strength##Bloom", &postProcessing.bloom.strength, 0.001f, 0.0f, 1.0f);

@@ -110,6 +110,12 @@ namespace Atlas {
 
             }
 
+            mat4 CameraComponent::GetLastViewMatrix() const {
+
+                return lastViewMatrix;
+
+            }
+
             vec3 CameraComponent::GetLocation() const {
 
                 return vec3(invViewMatrix[3]);

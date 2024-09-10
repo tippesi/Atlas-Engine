@@ -99,7 +99,7 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
         vec3 pointToLight = light.location.xyz - surface.P;
         float sqrDistance = dot(pointToLight, pointToLight);
         float dist = sqrt(sqrDistance);
-        lightMultiplier = pow(max(light.radius - dist, 0.0001) / light.radius, light.attenuation);
+        lightMultiplier = saturate(1.0 - pow(dist / light.radius, 4.0)) / sqrDistance;
 
         surface.L = pointToLight / dist;
     }

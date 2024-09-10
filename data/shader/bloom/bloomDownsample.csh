@@ -81,8 +81,8 @@ vec3 Sample(vec2 texCoord) {
     vec2 pixel = texCoord * textureSize(textureIn, pushConstants.mipLevel);
     pixel -= 0.5;
 
-    float x    = fract(pixel.x);
-    float y    = fract(pixel.y);
+    float x = fract(pixel.x);
+    float y = fract(pixel.y);
 
     float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
@@ -99,24 +99,6 @@ vec3 Sample(vec2 texCoord) {
 
 }
 
-vec3 SampleShared(ivec2 texel) {
-
-    // This is offcenter
-    bool invalidIdx = false;
-
-    const ivec2 localOffset = 2 * ivec2(gl_LocalInvocationID);
-    vec3 color = vec3(0.0);
-    for (int i = 0; i < 4; i++) {
-        ivec2 offsetPixel = localOffset + texel + pixelOffsets[i];
-        int sharedMemoryIdx = Flatten2D(offsetPixel, unflattenedSharedDataSize);
-        if (sharedMemoryIdx < 0 || sharedMemoryIdx >= sharedDataSize)
-            invalidIdx = true;
-        color += 0.25 * sharedMemory[sharedMemoryIdx];
-    }
-    return invalidIdx ? vec3(10000.0, 0.0, 0.0) : color;
-
-}
-
 void main() {
 
     LoadGroupSharedData();
@@ -126,7 +108,6 @@ void main() {
     
     if (coord.x < size.x && coord.y < size.y) {
 
-#if 1
         // Lower mip tex coord 
         vec2 texCoord = (coord + 0.5) / size;
         // Upper mip texel size
@@ -149,34 +130,29 @@ void main() {
         vec3 inner10 = Sample(texCoord + vec2(texelSize.x, -texelSize.y));
         vec3 inner01 = Sample(texCoord + vec2(-texelSize.x, texelSize.y));
         vec3 inner11 = Sample(texCoord + vec2(texelSize.x, texelSize.y));
-#else
-        // We always sample at pixel border, not centers
-        vec3 outer00 = SampleShared(ivec2(0, 0));
-        vec3 outer10 = SampleShared(ivec2(2, 0));
-        vec3 outer20 = SampleShared(ivec2(4, 0));
 
-        vec3 outer01 = SampleShared(ivec2(0, 2));
-        vec3 outer11 = SampleShared(ivec2(2, 2));
-        vec3 outer21 = SampleShared(ivec2(4, 2));
+        vec3 outerGroup0 = 0.125 * (outer00 + outer10 + outer01 + outer11) * 0.25;
+        vec3 outerGroup1 = 0.125 * (outer10 + outer20 + outer11 + outer21) * 0.25;
+        vec3 outerGroup2 = 0.125 * (outer01 + outer11 + outer02 + outer12) * 0.25;
+        vec3 outerGroup3 = 0.125 * (outer11 + outer21 + outer12 + outer22) * 0.25;
+        vec3 innerGroup = 0.5 * (inner00 + inner10 + inner01 + inner11) * 0.25;
 
-        vec3 outer02 = SampleShared(ivec2(0, 4));
-        vec3 outer12 = SampleShared(ivec2(2, 4));
-        vec3 outer22 = SampleShared(ivec2(4, 4));
+        if (pushConstants.mipLevel == 0) {
+            float outerGroup0Weight = (1.0 / (1.0 + Luma(outerGroup0)));
+            float outerGroup1Weight = (1.0 / (1.0 + Luma(outerGroup1)));
+            float outerGroup2Weight = (1.0 / (1.0 + Luma(outerGroup2)));
+            float outerGroup3Weight = (1.0 / (1.0 + Luma(outerGroup3)));
+            float innerGroupWeight = (1.0 / (1.0 + Luma(innerGroup)));
+            
+            outerGroup0 *= outerGroup0Weight;
+            outerGroup1 *= outerGroup1Weight;
+            outerGroup2 *= outerGroup2Weight;
+            outerGroup3 *= outerGroup3Weight;
+            innerGroup *= innerGroupWeight;
+        }
 
-        vec3 inner00 = SampleShared(ivec2(1, 1));
-        vec3 inner10 = SampleShared(ivec2(3, 1));
-        vec3 inner01 = SampleShared(ivec2(1, 3));
-        vec3 inner11 = SampleShared(ivec2(3, 3));
-#endif
+        vec3 filtered = outerGroup0 + outerGroup1 + outerGroup2 + outerGroup3 + innerGroup;
 
-        vec3 filtered = vec3(0.0);
-
-        filtered += 0.125 * (outer00 + outer10 + outer01 + outer11) * 0.25;
-        filtered += 0.125 * (outer10 + outer20 + outer11 + outer21) * 0.25;
-        filtered += 0.125 * (outer01 + outer11 + outer02 + outer12) * 0.25;
-        filtered += 0.125 * (outer11 + outer21 + outer12 + outer22) * 0.25;
-        filtered += 0.5 * (inner00 + inner10 + inner01 + inner11) * 0.25;
-        
         imageStore(textureOut, coord, vec4(filtered, 1.0));
         
     }

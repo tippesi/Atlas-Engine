@@ -27,7 +27,8 @@ namespace Atlas::ImguiExtension {
         }
         ImGui::SliderFloat("Bias", &rtgi->bias, 0.0f, 1.0f);
         ImGui::SliderInt("Texture level##RTGI", &rtgi->textureLevel, 0, 10);
-        ImGui::SliderInt("Light sample count##RTGI", &rtgi->lightSampleCount, 0, 10);
+        ImGui::SliderInt("Sample count##RTGI", &rtgi->sampleCount, 1, 10);
+        ImGui::SliderInt("Light sample count##RTGI", &rtgi->lightSampleCount, 1, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &rtgi->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &rtgi->temporalWeight, 0.0f, 1.0f);

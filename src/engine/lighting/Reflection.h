@@ -13,6 +13,7 @@ namespace Atlas {
             Reflection() = default;
 
             int32_t textureLevel = 3;
+            int32_t sampleCount = 1;
             int32_t lightSampleCount = 2;
 
             float radianceLimit = 10.0f;
