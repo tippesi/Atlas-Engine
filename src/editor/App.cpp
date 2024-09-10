@@ -11,7 +11,11 @@
 #include <thread>
 
 const Atlas::EngineConfig Atlas::EngineInstance::engineConfig = {
+#ifdef AE_BUNDLE
+    .assetDirectory = "../Resources/data",
+#else
     .assetDirectory = "../../data",
+#endif
     .shaderDirectory = "shader"
 };
 
@@ -434,9 +438,25 @@ namespace Atlas::Editor {
         });
 
         // Also kind of a resource event
-        Events::EventManager::DropEventDelegate.Subscribe([](Events::DropEvent event) {
-            if (!event.file.empty())
-                FileImporter::ImportFile(event.file);
+        Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
+            if (!event.file.empty() && contentBrowserWindow.show) {
+                // Need to create a copy here
+                auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
+                JobSystem::Execute(fileImportGroup, [&, event, destinationDirectory](JobData&) {
+                    try {
+                        std::filesystem::copy(event.file, destinationDirectory, 
+                            std::filesystem::copy_options::overwrite_existing | 
+                            std::filesystem::copy_options::recursive);
+                    }
+                    catch (std::exception& e) {
+                        auto message = "Error copying " + event.file + " to asset directory: " + e.what();
+                        Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
+                        Log::Error(message);
+                    }
+                });
+               
+                Notifications::Push({"Copying " + event.file + " to asset directory"});
+            }
         });
 
     }

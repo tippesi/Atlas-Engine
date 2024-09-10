@@ -79,9 +79,9 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: Atlas Engine Demo Windows
+          name: Atlas Engine Windows
           path: |
             data
             README.md
@@ -91,6 +91,7 @@ jobs:
             ${{ github.workspace }}/bin/**/AtlasEngineEditor.exe
             ${{ github.workspace }}/bin/**/*.dll
             !**/CMakeFiles
+          compression-level: 9
 
   linux-build:
     runs-on: ubuntu-latest
@@ -146,9 +147,9 @@ jobs:
           build-type: ${{ matrix.build-type }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: Atlas Engine Demo Linux
+          name: Atlas Engine Linux
           path: |
             data
             README.md
@@ -158,9 +159,10 @@ jobs:
             ${{ github.workspace }}/bin/**/AtlasEngineEditor
             ${{ github.workspace }}/bin/**/*.so*
             !**/CMakeFiles
+          compression-level: 9
 
   macos-build:
-    runs-on: macos-13
+    runs-on: macos-latest
     name: Build on MacOS
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -197,7 +199,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           brew install pkg-config
-          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-osx
+          ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=arm64-osx
           rm -r vcpkg_installed
 
       # https://github.com/marketplace/actions/setup-ninja
@@ -209,24 +211,46 @@ jobs:
           cc: "clang"
           cxx: "clang++"
           configure-options: -DCMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -G Ninja
+            -DATLAS_DEMO=ON -DATLAS_TESTS=OFF -DATLAS_EDITOR=ON -DATLAS_BUNDLE=ON -G Ninja
           parallel: 16
           build-type: ${{ matrix.build-type }}
 
+      - name: Build bundle
+        shell: bash
+        run: |
+          cd ${{ github.workspace }}/build/${{ matrix.build-type }}
+          cmake --install . --config ${{ matrix.build-type }}
+          {
+          echo '<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>com.apple.security.files.downloads.read-write</key>
+              <true/>
+              <key>com.apple.security.files.documents.read-write</key>
+              <true/>
+            </dict>
+            </plist>' 
+          } >engine.entitlements
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineEditor.app
+          codesign --force --deep -s - --entitlements engine.entitlements AtlasEngineDemo.app
+          tar -cvf AtlasEngineEditor.tar AtlasEngineEditor.app
+          tar -cvf AtlasEngineDemo.tar AtlasEngineDemo.app
+          cp AtlasEngineEditor.tar ${{ github.workspace }}/AtlasEngineEditor.tar
+          cp AtlasEngineDemo.tar ${{ github.workspace }}/AtlasEngineDemo.tar
+
       - name: Upload artifact
         if: ${{ matrix.build-type == 'Release' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: Atlas Engine MacOS ${{ matrix.build-type }}
+          name: Atlas Engine MacOS
           path: |
-            data
             README.md
             LICENSE.md
             THIRDPARTY.md
-            ${{ github.workspace }}/bin/**/AtlasEngineDemo
-            ${{ github.workspace }}/bin/**/AtlasEngineEditor
-            ${{ github.workspace }}/bin/**/*.dylib*
-            !**/CMakeFiles
+            ${{ github.workspace }}/AtlasEngineDemo.tar
+            ${{ github.workspace }}/AtlasEngineEditor.tar
+          compression-level: 9
 
   release:
     runs-on: ubuntu-latest
@@ -236,7 +260,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           path: ${{ github.workspace }}
 
@@ -244,11 +268,15 @@ jobs:
         uses: montudor/action-zip@v1
 
       - name: Zip Windows artifact
-        run: zip -r "Atlas Engine Demo Windows.zip" "Atlas Engine Demo Windows"
+        run: zip -r "Atlas Engine Windows.zip" "Atlas Engine Windows"
         working-directory: ${{ github.workspace }}
 
       - name: Zip Linux artifact
-        run: zip -r "Atlas Engine Demo Linux.zip" "Atlas Engine Demo Linux"
+        run: zip -r "Atlas Engine Linux.zip" "Atlas Engine Linux"
+        working-directory: ${{ github.workspace }}
+
+      - name: Zip Linux artifact
+        run: zip -r "Atlas Engine MacOS.zip" "Atlas Engine MacOS"
         working-directory: ${{ github.workspace }}
         
       - name: Create tag
@@ -293,8 +321,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "${{ github.workspace }}/Atlas Engine Demo Windows.zip"
-          asset_name: "AtlasEngineDemoWindows.zip"
+          asset_path: "${{ github.workspace }}/Atlas Engine Windows.zip"
+          asset_name: "AtlasEngineWindows.zip"
           asset_content_type: application/zip
 
       - name: Upload Linux Asset
@@ -303,6 +331,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "${{ github.workspace }}/Atlas Engine Demo Linux.zip"
-          asset_name: "AtlasEngineDemoLinux.zip"
+          asset_path: "${{ github.workspace }}/Atlas Engine Linux.zip"
+          asset_name: "AtlasEngineLinux.zip"
+          asset_content_type: application/zip
+
+      - name: Upload MacOS Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: "${{ github.workspace }}/Atlas Engine MacOS.zip"
+          asset_name: "AtlasEngineMacOS.zip"
           asset_content_type: application/zip
