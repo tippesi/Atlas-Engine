@@ -9,6 +9,7 @@
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
 #define POINT_LIGHT 2
+#define SPOT_LIGHT 3
 
 namespace Atlas {
 
@@ -448,11 +449,12 @@ namespace Atlas {
                     vec3 P = vec3(0.0f);
                     vec3 N = vec3(0.0f);
                     float weight = 0.0f;
-                    float area = 0.0f;
-                    float specific = 0.0f;
+                    float specific0 = 0.0f;
+                    float specific1 = 0.0f;
 
                     uint32_t data = 0;
 
+                    auto& prop = light.transformedProperties;
                     // Parse individual light information based on type
                     if (light.type == LightType::DirectionalLight) {
                         data |= (DIRECTIONAL_LIGHT << 28u);
@@ -463,8 +465,21 @@ namespace Atlas {
                         data |= (POINT_LIGHT << 28u);
                         weight = brightness;
                         P = light.transformedProperties.point.position;
-                        area = light.transformedProperties.point.radius;
-                        specific = light.transformedProperties.point.attenuation;
+                        specific0 = light.transformedProperties.point.radius;
+                    }
+                    else if (light.type == LightType::SpotLight) {
+                        data |= (SPOT_LIGHT << 28u);
+                        weight = brightness;
+                        P = light.transformedProperties.spot.position;
+                        N = light.transformedProperties.spot.direction;
+
+                        auto cosOuter = cosf(prop.spot.outerConeAngle);
+                        auto cosInner = cosf(prop.spot.innerConeAngle);
+                        auto lightAngleScale = 1.0f / std::max(0.001f, cosInner - cosOuter);
+                        auto lightAngleOffset = -cosOuter * lightAngleScale;
+
+                        specific0 = lightAngleScale;
+                        specific1 = lightAngleOffset;
                     }
 
                     data |= uint32_t(lights.size());
@@ -474,7 +489,7 @@ namespace Atlas {
                     gpuLight.P = vec4(P, 1.0f);
                     gpuLight.N = vec4(N, 0.0f);
                     gpuLight.color = vec4(radiance, 0.0f);
-                    gpuLight.data = vec4(cd, weight, area, specific);
+                    gpuLight.data = vec4(cd, weight, specific0, specific1);
 
                     lights.push_back(gpuLight);
                 }

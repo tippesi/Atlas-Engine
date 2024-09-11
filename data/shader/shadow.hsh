@@ -119,100 +119,6 @@ float cascadeLookup(Shadow shadow, sampler2DArrayShadow cascadeMaps, float casca
 #ifdef SHADOW_FILTER_1x1
     visibility += offsetLookup(cascadeMaps, shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 #endif
-#ifdef SHADOW_FILTER_3x3
-    float uw0 = (3.0 - 2.0 * s);
-    float uw1 = (1.0 + 2.0 * s);
-
-    float u0 = (2.0 - s) / uw0 - 1.0;
-    float u1 = s / uw1 + 1.0;
-
-    float vw0 = (3.0 - 2.0 * t);
-    float vw1 = (1.0 + 2.0 * t);
-
-    float v0 = (2.0 - t) / vw0 - 1.0;
-    float v1 = t / vw1 + 1.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 16.0;
-#endif
-#ifdef SHADOW_FILTER_5x5
-    float uw0 = (4.0 - 3.0 * s);
-    float uw1 = 7.0;
-    float uw2 = (1.0 + 3.0 * s);
-
-    float u0 = (3.0 - 2.0 * s) / uw0 - 2.0;
-    float u1 = (3.0 + s) / uw1;
-    float u2 = s / uw2 + 2.0;
-
-    float vw0 = (4.0 - 3.0 * t);
-    float vw1 = 7.0;
-    float vw2 = (1.0 + 3.0 * t);
-
-    float v0 = (3.0 - 2.0 * t) / vw0 - 2.0;
-    float v1 = (3.0 + t) / vw1;
-    float v2 = t / vw2 + 2.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw0 * offsetLookup(cascadeMaps, flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw1 * offsetLookup(cascadeMaps, flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw2 * offsetLookup(cascadeMaps, flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw2 * offsetLookup(cascadeMaps, flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw2 * offsetLookup(cascadeMaps, flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 144.0;
-#endif
-#ifdef SHADOW_FILTER_7x7
-    float uw0 = (5.0 * s - 6.0);
-    float uw1 = (11.0 * s - 28.0);
-    float uw2 = -(11.0 * s + 17.0);
-    float uw3 = -(5.0 * s + 1.0);
-
-    float u0 = (4.0 * s - 5.0) / uw0 - 3.0;
-    float u1 = (4.0 * s - 16.0) / uw1 - 1.0;
-    float u2 = -(7.0 * s + 5.0) / uw2 + 1.0;
-    float u3 = -s / uw3 + 3.0;
-
-    float vw0 = (5.0 * t - 6.0);
-    float vw1 = (11.0 * t - 28.0);
-    float vw2 = -(11.0 * t + 17.0);
-    float vw3 = -(5.0 * t + 1.0);
-
-    float v0 = (4.0 * t - 5.0) / vw0 - 3.0;
-    float v1 = (4.0 * t - 16.0) / vw1 - 1.0;
-    float v2 = -(7.0 * t + 5.0) / vw2 + 1.0;
-    float v3 = -t / vw3 + 3.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw0 * offsetLookup(cascadeMaps, flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw0 * offsetLookup(cascadeMaps, flooredUV, u3, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw1 * offsetLookup(cascadeMaps, flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw1 * offsetLookup(cascadeMaps, flooredUV, u3, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw2 * offsetLookup(cascadeMaps, flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw2 * offsetLookup(cascadeMaps, flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw2 * offsetLookup(cascadeMaps, flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw2 * offsetLookup(cascadeMaps, flooredUV, u3, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw3 * offsetLookup(cascadeMaps, flooredUV, u0, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw3 * offsetLookup(cascadeMaps, flooredUV, u1, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw3 * offsetLookup(cascadeMaps, flooredUV, u2, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw3 * offsetLookup(cascadeMaps, flooredUV, u3, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 2704.0;
-#endif
 
 #ifdef SHADOW_FILTER_VOGEL
     vec2 texelSize = vec2(shadow.cascades[int(cascadeIndex)].texelSize);
@@ -470,110 +376,14 @@ float cascadeLookup(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSa
 #ifdef SHADOW_FILTER_1x1
     visibility += offsetLookup(cascadeMaps, shadowSampler, shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 #endif
-#ifdef SHADOW_FILTER_3x3
-    float uw0 = (3.0 - 2.0 * s);
-    float uw1 = (1.0 + 2.0 * s);
-
-    float u0 = (2.0 - s) / uw0 - 1.0;
-    float u1 = s / uw1 + 1.0;
-
-    float vw0 = (3.0 - 2.0 * t);
-    float vw1 = (1.0 + 2.0 * t);
-
-    float v0 = (2.0 - t) / vw0 - 1.0;
-    float v1 = t / vw1 + 1.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 16.0;
-#endif
-#ifdef SHADOW_FILTER_5x5
-    float uw0 = (4.0 - 3.0 * s);
-    float uw1 = 7.0;
-    float uw2 = (1.0 + 3.0 * s);
-
-    float u0 = (3.0 - 2.0 * s) / uw0 - 2.0;
-    float u1 = (3.0 + s) / uw1;
-    float u2 = s / uw2 + 2.0;
-
-    float vw0 = (4.0 - 3.0 * t);
-    float vw1 = 7.0;
-    float vw2 = (1.0 + 3.0 * t);
-
-    float v0 = (3.0 - 2.0 * t) / vw0 - 2.0;
-    float v1 = (3.0 + t) / vw1;
-    float v2 = t / vw2 + 2.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 144.0;
-#endif
-#ifdef SHADOW_FILTER_7x7
-    float uw0 = (5.0 * s - 6.0);
-    float uw1 = (11.0 * s - 28.0);
-    float uw2 = -(11.0 * s + 17.0);
-    float uw3 = -(5.0 * s + 1.0);
-
-    float u0 = (4.0 * s - 5.0) / uw0 - 3.0;
-    float u1 = (4.0 * s - 16.0) / uw1 - 1.0;
-    float u2 = -(7.0 * s + 5.0) / uw2 + 1.0;
-    float u3 = -s / uw3 + 3.0;
-
-    float vw0 = (5.0 * t - 6.0);
-    float vw1 = (11.0 * t - 28.0);
-    float vw2 = -(11.0 * t + 17.0);
-    float vw3 = -(5.0 * t + 1.0);
-
-    float v0 = (4.0 * t - 5.0) / vw0 - 3.0;
-    float v1 = (4.0 * t - 16.0) / vw1 - 1.0;
-    float v2 = -(7.0 * t + 5.0) / vw2 + 1.0;
-    float v3 = -t / vw3 + 3.0;
-
-    visibility += uw0 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw0 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u3, v0, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw1 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u3, v1, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw2 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u3, v2, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility += uw0 * vw3 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u0, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw1 * vw3 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u1, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw2 * vw3 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u2, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-    visibility += uw3 * vw3 * offsetLookup(cascadeMaps, shadowSampler, flooredUV, u3, v3, float(cascadeIndex), resInv, shadowCoords.z, bias);
-
-    visibility /= 2704.0;
-#endif
-
 #ifdef SHADOW_FILTER_VOGEL
     vec2 texelSize = vec2(shadow.cascades[int(cascadeIndex)].texelSize);
     for (int i = 0; i < 16; i++) {
         visibility += offsetLookup(cascadeMaps, shadowSampler, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);
     }
-
-    visibility /= 16.0;
 #endif
 
+    visibility /= 16.0;
     // Fade out shadow in the distance
     return clamp(visibility + fadeout, 0.0, 1.0);
 
@@ -698,7 +508,7 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
     fragmentPosition += bias;
 
     float visibility = cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-        cascadeMatrix, fragmentPosition, position, 0.0, true);
+        cascadeMatrix, fragmentPosition, position, -0.00005, true);
 
 #ifdef SHADOW_CASCADE_BLENDING
     if (cascadeIndex < shadow.cascadeCount - 1) {
@@ -736,7 +546,7 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
             fragmentPosition += bias;
             
             visibility = mix(cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-                cascadeMatrix, fragmentPosition, position, 0.0, true), visibility, blend);    
+                cascadeMatrix, fragmentPosition, position, -0.0001, true), visibility, blend);    
         }
     }
 #endif
@@ -784,5 +594,21 @@ float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSam
     shadowFactor /= float(samples + 1);  
 
     return shadowFactor;
+
+}
+
+float CalculateSpotShadow(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, 
+    vec3 fragmentPosition, vec3 position, vec3 normal, float cosTheta) {
+    
+    float distance = -fragmentPosition.z;
+
+    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    float texelSize = shadow.cascades[0].texelSize;
+    
+    vec3 bias = shadow.bias * (1.0 / 256.0) * normal / max(cosTheta * cosTheta, 0.01);
+    fragmentPosition += bias;
+
+    return cascadeLookup(shadow, cascadeMaps, shadowSampler, 0.0,
+        cascadeMatrix, fragmentPosition, position, -0.0001, false);
 
 }

@@ -52,8 +52,8 @@ namespace Atlas {
 
             float scatteringFactor;
 
-            float radius;
-            float attenuation;
+            float typeSpecific0;
+            float typeSpecific1;
 
             Shadow shadow;
         };

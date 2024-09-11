@@ -11,6 +11,7 @@
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
 #define POINT_LIGHT 2
+#define SPOT_LIGHT 3
 
 #define INSTANCE_MASK_ALL (1 << 7)
 #define INSTANCE_MASK_SHADOW (1 << 6)
@@ -116,7 +117,8 @@ Light UnpackLight(PackedLight compressed) {
     light.pdf = compressed.data.y;
     light.area = compressed.data.z;
     light.radius = compressed.data.z;
-    light.attenuation = compressed.data.w;
+    light.angleScale = compressed.data.z;
+    light.angleOffset = compressed.data.w;
     light.brightness = dot(light.radiance, vec3(0.33333));
 
     return light;

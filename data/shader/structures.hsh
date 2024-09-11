@@ -2,6 +2,7 @@
 
 #define DIRECTIONAL_LIGHT 0
 #define POINT_LIGHT 1
+#define SPOT_LIGHT 2
 
 //Light struct has to be implemented like this
 struct Light {
@@ -15,7 +16,7 @@ struct Light {
     float scatteringFactor;
         
     float radius;
-    float attenuation;
+    float specific;
 
     Shadow shadow;
 

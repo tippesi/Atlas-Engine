@@ -154,13 +154,21 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<PointLightProperties>("PointLightProperties",
             "position", &PointLightProperties::position,
-            "radius", &PointLightProperties::radius,
-            "attenuation", &PointLightProperties::attenuation
+            "radius", &PointLightProperties::radius
+        );
+
+        ns->new_usertype<SpotLightProperties>("SpotLightProperties",
+            "position", &SpotLightProperties::position,
+            "direction", &SpotLightProperties::direction,
+            "radius", &SpotLightProperties::radius,
+            "outerConeAngle", &SpotLightProperties::outerConeAngle,
+            "innerConeAngle", &SpotLightProperties::innerConeAngle
         );
 
         ns->new_usertype<TypeProperties>("TypeProperties",
             "directional", &TypeProperties::directional,
-            "point", &TypeProperties::point
+            "point", &TypeProperties::point,
+            "spot", &TypeProperties::spot
         );
 
         // TODO: Extend this

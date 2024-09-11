@@ -19,7 +19,8 @@ namespace Atlas {
 
 			enum class LightType {
 				DirectionalLight = 0,
-				PointLight = 1
+				PointLight = 1,
+				SpotLight = 2,
 			};
 
 			enum class LightMobility {
@@ -33,8 +34,15 @@ namespace Atlas {
 
 			struct PointLightProperties {
 				vec3 position = vec3(0.0f);
-				float radius = 10.0f;
-				float attenuation = 2.0f;
+				float radius = 20.0f;
+			};
+
+			struct SpotLightProperties {
+				vec3 position = vec3(0.0f);
+				vec3 direction = -vec3(1.0f);
+				float radius = 20.0f;
+				float innerConeAngle = 1.0f;
+				float outerConeAngle = 1.0f;
 			};
 
 			struct TypeProperties {
@@ -46,12 +54,14 @@ namespace Atlas {
 				TypeProperties(LightType type) {
 					switch (type) {
 					case LightType::PointLight: point = PointLightProperties(); break;
+					case LightType::SpotLight: spot = SpotLightProperties(); break;
 					default: directional = DirectionalLightProperties(); break;
 					}
 				}
 
 				DirectionalLightProperties directional;
 				PointLightProperties point;
+				SpotLightProperties spot;
 			};
 
 			class LightComponent {
@@ -68,6 +78,8 @@ namespace Atlas {
                     float edgeSoftness, vec3 shadowCenter, vec4 orthoSize);
 
                 void AddPointShadow(float bias, int32_t resolution);
+
+				void AddSpotShadow(float bias, int32_t resolution);
 
 				bool IsVisible(const Volume::Frustum& frustum) const;
 

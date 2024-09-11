@@ -103,6 +103,17 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
 
         surface.L = pointToLight / dist;
     }
+    else if (lightType == SPOT_LIGHT) {
+        vec3 pointToLight = light.location.xyz - surface.P;
+        float sqrDistance = dot(pointToLight, pointToLight);
+        float dist = sqrt(sqrDistance);
+
+        surface.L = pointToLight / dist;
+
+        float strength = dot(surface.L, normalize(-light.direction.xyz));
+        float attenuation = saturate(strength * light.radius + light.specific);
+        lightMultiplier = sqr(attenuation) / sqrDistance;        
+    }
 
     UpdateSurface(surface);
 
@@ -156,6 +167,11 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
     else if (lightType == POINT_LIGHT) {
         shadowFactor = CalculatePointShadow(light.shadow, cubeMaps[nonuniformEXT(light.shadow.mapIdx)],
             shadowSampler, surface.P);
+    }
+    else if (lightType == SPOT_LIGHT) {
+        shadowFactor = CalculateSpotShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
+            shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
+            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
     }
 
     if (isMain) {

@@ -432,14 +432,29 @@ namespace Atlas {
                 if (lightMap.contains(node->mName.C_Str())) {
                     auto light = lightMap[node->mName.C_Str()];
 
-                    if (light->mType == aiLightSource_POINT) {
-                        auto& lightComp = parentEntity.AddComponent<LightComponent>(LightType::PointLight, LightMobility::StationaryLight);
-                        lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b));
-                        lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
-                        lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+                    auto lightType = LightType::DirectionalLight;
+                    switch (light->mType) {
+                    case aiLightSource_POINT: lightType = LightType::PointLight; break;
+                    case aiLightSource_SPOT: lightType = LightType::SpotLight; break;
+                    default: lightType = LightType::PointLight; break;
+                    }
+
+                    auto& lightComp = parentEntity.AddComponent<LightComponent>(lightType, LightMobility::StationaryLight);
+                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b));
+                    lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
+                    lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+
+                    if (lightType == LightType::PointLight) {                       
                         lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
                         lightComp.properties.point.radius = glm::sqrt(100.0f * light->mAttenuationQuadratic);
                         lightComp.AddPointShadow(3.0f, 1024);
+                    }
+                    if (lightType == LightType::SpotLight) {
+                        lightComp.properties.spot.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.spot.direction = vec3(light->mDirection.x, light->mDirection.y, light->mDirection.z);
+                        lightComp.properties.spot.innerConeAngle = light->mAngleInnerCone;
+                        lightComp.properties.spot.outerConeAngle = light->mAngleOuterCone;
+                        lightComp.AddSpotShadow(3.0f, 1024);
                     }
                 }
 

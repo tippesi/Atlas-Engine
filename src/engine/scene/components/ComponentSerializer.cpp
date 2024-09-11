@@ -110,8 +110,16 @@ namespace Atlas::Scene::Components {
         else if (p.type == LightType::PointLight) {
             typeProperties = json {
                 {"position", p.properties.point.position},
-                {"radius", p.properties.point.radius},
-                {"attenuation", p.properties.point.attenuation},
+                {"radius", p.properties.point.radius}
+            };
+        }
+        else if (p.type == LightType::SpotLight) {
+            typeProperties = json{
+                {"position", p.properties.spot.position},
+                {"direction", p.properties.spot.direction},
+                {"radius", p.properties.spot.radius},
+                {"outerConeAngle", p.properties.spot.outerConeAngle},
+                {"innerConeAngle", p.properties.spot.innerConeAngle},
             };
         }
 
@@ -153,7 +161,13 @@ namespace Atlas::Scene::Components {
         else if (p.type == LightType::PointLight) {
             typeProperties.at("position").get_to(p.properties.point.position);
             typeProperties.at("radius").get_to(p.properties.point.radius);
-            typeProperties.at("attenuation").get_to(p.properties.point.attenuation);
+        }
+        else if (p.type == LightType::SpotLight) {
+            typeProperties.at("position").get_to(p.properties.spot.position);
+            typeProperties.at("direction").get_to(p.properties.spot.direction);
+            typeProperties.at("radius").get_to(p.properties.spot.radius);
+            typeProperties.at("outerConeAngle").get_to(p.properties.spot.outerConeAngle);
+            typeProperties.at("innerConeAngle").get_to(p.properties.spot.innerConeAngle);
         }
 
         if (j.contains("shadow")) {

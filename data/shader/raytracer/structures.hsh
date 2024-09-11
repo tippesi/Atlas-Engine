@@ -157,7 +157,8 @@ struct Light {
     float pdf;
     float area;
     float radius;
-    float attenuation;
+    float angleScale;
+    float angleOffset;
     float brightness;
 };
 

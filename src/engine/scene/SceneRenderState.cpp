@@ -375,6 +375,15 @@ namespace Atlas::Scene {
             }
 
             if (lightEntities.size() > 1) {
+                auto cameraLocation = camera.GetLocation();
+                auto getPositionForLight = [cameraLocation](const LightEntity& light) -> vec3 {
+                    switch (light.comp.type) {
+                    case LightType::PointLight: return light.comp.transformedProperties.point.position;
+                    case LightType::SpotLight: return light.comp.transformedProperties.spot.position;
+                    default: return cameraLocation;
+                    }
+                    };
+
                 std::sort(lightEntities.begin(), lightEntities.end(),
                     [&](const LightEntity& light0, const LightEntity& light1) {
                         if (light0.comp.isMain)
@@ -383,13 +392,8 @@ namespace Atlas::Scene {
                         if (light0.comp.type == LightType::DirectionalLight)
                             return true;
 
-                        if (light0.comp.type == LightType::PointLight &&
-                            light1.comp.type == LightType::PointLight) {
-                            return glm::distance2(light0.comp.transformedProperties.point.position, camera.GetLocation())
-                                < glm::distance2(light1.comp.transformedProperties.point.position, camera.GetLocation());
-                        }
-
-                        return false;
+                        return glm::distance2(getPositionForLight(light0), cameraLocation)
+                            < glm::distance2(getPositionForLight(light1), cameraLocation);
                     });
             }
 
@@ -413,8 +417,19 @@ namespace Atlas::Scene {
                     }
                     else if (light.type == LightType::PointLight) {
                         lightUniform.location = camera.viewMatrix * vec4(prop.point.position, 1.0f);
-                        lightUniform.radius = prop.point.radius;
-                        lightUniform.attenuation = prop.point.attenuation;
+                        lightUniform.typeSpecific0 = prop.point.radius;
+                    }
+                    else if (light.type == LightType::SpotLight) {
+                        lightUniform.location = camera.viewMatrix * vec4(prop.spot.position, 1.0f);
+                        lightUniform.direction = camera.viewMatrix * vec4(prop.spot.direction, 0.0f);
+                        
+                        auto cosOuter = cosf(prop.spot.outerConeAngle);
+                        auto cosInner = cosf(prop.spot.innerConeAngle);
+                        auto angleScale = 1.0f / std::max(0.001f, cosInner - cosOuter);
+                        auto angleOffset = -cosOuter * angleScale;
+
+                        lightUniform.typeSpecific0 = angleScale;
+                        lightUniform.typeSpecific1 = angleOffset;
                     }
 
                     if (light.shadow) {
@@ -446,6 +461,10 @@ namespace Atlas::Scene {
                                         shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix;
                                     else
                                         shadowUniform.cascades[i].cascadeSpace = glm::translate(mat4(1.0f), -prop.point.position) * camera.invViewMatrix;
+                                }
+                                else if (light.type == LightType::SpotLight) {
+                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
+                                        cascade->viewMatrix * camera.invViewMatrix;
                                 }
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             }
