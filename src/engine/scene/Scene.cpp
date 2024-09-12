@@ -97,13 +97,6 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-#ifdef AE_BINDLESS
-            renderState.UpdateMeshBindlessData();
-            renderState.UpdateTextureBindlessData();
-            renderState.UpdateOtherTextureBindlessData();
-#endif
-            renderState.PrepareMaterials();
-
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
                 // Work with a copy here
@@ -116,6 +109,14 @@ namespace Atlas {
                     originalComponent = luaScriptComponent;
                 }
             }
+
+            // Can only update after scripts were run
+#ifdef AE_BINDLESS
+            renderState.UpdateMeshBindlessData();
+            renderState.UpdateTextureBindlessData();
+            renderState.UpdateOtherTextureBindlessData();
+#endif
+            renderState.PrepareMaterials();
 
             TransformComponent rootTransform = {};
 

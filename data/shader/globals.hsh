@@ -36,8 +36,8 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
-layout(set = 0, binding = 4) uniform texture2D bindlessCubemaps[CUBEMAP_COUNT];
-layout(set = 0, binding = 5) uniform texture2D bindlessTextureArrays[TEXTURE_ARRAY_COUNT];
+layout(set = 0, binding = 4) uniform textureCube bindlessCubemaps[CUBEMAP_COUNT];
+layout(set = 0, binding = 5) uniform texture2DArray bindlessTextureArrays[TEXTURE_ARRAY_COUNT];
 
 layout(set = 1, binding = 13) uniform sampler2D dfgTexture;
 

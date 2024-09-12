@@ -141,9 +141,14 @@ namespace Atlas {
             // Wait as long as possible for this to finish
             JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
             JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
+            JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
             commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
-            if (renderState->images.size())
-                commandList->BindSampledImages(renderState->images, 0, 3);
+            if (renderState->textures.size())
+                commandList->BindSampledImages(renderState->textures, 0, 3);
+            if (renderState->cubemaps.size())
+                commandList->BindSampledImages(renderState->cubemaps, 0, 4);
+            if (renderState->textureArrays.size())
+                commandList->BindSampledImages(renderState->textureArrays, 0, 5);
 
             if (device->support.hardwareRayTracing) {
                 commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
@@ -468,8 +473,8 @@ namespace Atlas {
             commandList->BindSampler(globalSampler, 1, 14);
             commandList->BindSampler(globalNearestSampler, 1, 16);
             commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
-            if (renderState->images.size())
-                commandList->BindSampledImages(renderState->images, 0, 3);
+            if (renderState->textures.size())
+                commandList->BindSampledImages(renderState->textures, 0, 3);
 
             if (device->support.hardwareRayTracing) {
                 commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);

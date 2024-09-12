@@ -218,15 +218,13 @@ namespace Atlas::Scene {
         auto bindlessTextureBuffersUpdate = [&](JobData&) {
             JobSystem::Wait(bindlessTextureMapUpdateJob);
 
-            if (images.size() < textureToBindlessIdx.size()) {
-                images.resize(textureToBindlessIdx.size());
+            if (textures.size() < textureToBindlessIdx.size()) {
+                textures.resize(textureToBindlessIdx.size());
             }
 
-            for (const auto& [texture, idx] : textureToBindlessIdx) {
+            for (const auto& [texture, idx] : textureToBindlessIdx)
+                textures[idx] = texture->image;
 
-                images[idx] = texture->image;
-
-            }
             };
 
         auto bindlessTextureMapUpdate = [&, bindlessTextureBuffersUpdate](JobData&) {
@@ -284,7 +282,10 @@ namespace Atlas::Scene {
         auto lightSubset = scene->GetSubset<LightComponent>();
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
-        JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [lightSubset](JobData&) {
+        JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [&, lightSubset](JobData&) {
+
+            uint32_t textureArrayIdx = 0;
+            uint32_t cubemapIdx = 0;
             for (auto entity : lightSubset) {
                 const auto& lightComponent = entity.GetComponent<LightComponent>();
 
@@ -292,12 +293,23 @@ namespace Atlas::Scene {
                     continue;
 
                 if (lightComponent.shadow->useCubemap) {
-
+                    cubemapToBindlessIdx[lightComponent.shadow->cubemap] = cubemapIdx++;
                 }
                 else {
-
+                    textureArrayToBindlessIdx[lightComponent.shadow->maps] = textureArrayIdx++;
                 }
             }
+
+            if (cubemaps.size() < cubemapToBindlessIdx.size())
+                cubemaps.resize(cubemapToBindlessIdx.size());
+            for (const auto& [cubemap, idx] : cubemapToBindlessIdx)
+                cubemaps[idx] = cubemap->image;
+
+            if (textureArrays.size() < textureArrayToBindlessIdx.size())
+                textureArrays.resize(textureArrayToBindlessIdx.size());
+            for (const auto& [textureArray, idx] : textureArrayToBindlessIdx)
+                textureArrays[idx] = textureArray->image;
+
             });
 
     }
@@ -373,7 +385,7 @@ namespace Atlas::Scene {
                 auto& light = lightEntity.GetComponent<LightComponent>();
                 if (!light.IsVisible(camera.frustum))
                     continue;
-                lightEntities.emplace_back(LightEntity{ lightEntity, light, -1 });
+                lightEntities.emplace_back(LightEntity{ lightEntity, light });
             }
 
             if (lightEntities.size() > 1) {
@@ -398,6 +410,8 @@ namespace Atlas::Scene {
                             < glm::distance2(getPositionForLight(light1), cameraLocation);
                     });
             }
+
+            JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
             std::vector<Renderer::Light> lights;
             if (lightEntities.size()) {
@@ -443,7 +457,7 @@ namespace Atlas::Scene {
                         shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                         shadowUniform.cascadeCount = shadow->viewCount;
                         shadowUniform.resolution = vec2(shadow->resolution);
-                        shadowUniform.mapIdx = entity.mapIdx;
+                        shadowUniform.mapIdx = shadow->useCubemap ? cubemapToBindlessIdx[shadow->cubemap] : textureArrayToBindlessIdx[shadow->maps];
 
                         auto componentCount = shadow->viewCount;
                         for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {

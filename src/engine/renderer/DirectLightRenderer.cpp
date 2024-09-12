@@ -40,6 +40,9 @@ namespace Atlas {
             std::vector<Ref<Graphics::Image>> cubeMaps;
 
             PushConstants pushConstants;
+#ifdef AE_BINDLESS
+            pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
+#else
             pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
             for (int32_t i = 0; i < pushConstants.lightCount; i++) {
                 auto& comp = renderState->lightEntities[i].comp;
@@ -59,6 +62,7 @@ namespace Atlas {
 
             commandList->BindSampledImages(cascadeMaps, 3, 6);
             commandList->BindSampledImages(cubeMaps, 3, 14);
+#endif
 
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
             pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);

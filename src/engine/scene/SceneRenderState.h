@@ -20,7 +20,6 @@ namespace Atlas::Scene {
     struct LightEntity {
         Entity entity;
         LightComponent comp;
-        int32_t mapIdx = -1;
     };
 
     class SceneRenderState {
@@ -49,7 +48,9 @@ namespace Atlas::Scene {
 
         Buffer::Buffer materialBuffer;
         Buffer::Buffer lightBuffer;
-        std::vector<Ref<Graphics::Image>> images;
+        std::vector<Ref<Graphics::Image>> textures;
+        std::vector<Ref<Graphics::Image>> textureArrays;
+        std::vector<Ref<Graphics::Image>> cubemaps;
         std::vector<Ref<Graphics::Buffer>> blasBuffers;
         std::vector<Ref<Graphics::Buffer>> triangleBuffers;
         std::vector<Ref<Graphics::Buffer>> bvhTriangleBuffers;

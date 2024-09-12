@@ -63,10 +63,12 @@ void main() {
 
         direct = vec3(.0);
 
-        for (int i = 0; i < pushConstants.lightCount && i < 8; i++) {
+        for (int i = 0; i < pushConstants.lightCount; i++) {
             Light light = lights[i];
 
+#ifndef AE_BINDLESS
             light.shadow.mapIdx = pushConstants.mapIndices[i];
+#endif
             bool isMain = i == 0 ? true : false;
             direct += EvaluateLight(light, surface, geometryNormal, isMain);
         }
@@ -160,18 +162,35 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
             -geometryNormal : geometryNormal : geometryNormal;
 
     if (lightType == DIRECTIONAL_LIGHT) {
+#ifdef AE_BINDLESS
+        shadowFactor = CalculateCascadedShadow(light.shadow, bindlessTextureArrays[nonuniformEXT(light.shadow.mapIdx)], 
+            shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
+            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
+#else
         shadowFactor = CalculateCascadedShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
             shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
+#endif
     }
     else if (lightType == POINT_LIGHT) {
+#ifdef AE_BINDLESS
+        shadowFactor = CalculatePointShadow(light.shadow, bindlessCubemaps[nonuniformEXT(light.shadow.mapIdx)],
+            shadowSampler, surface.P);
+#else
         shadowFactor = CalculatePointShadow(light.shadow, cubeMaps[nonuniformEXT(light.shadow.mapIdx)],
             shadowSampler, surface.P);
+#endif
     }
     else if (lightType == SPOT_LIGHT) {
+#ifdef AE_BINDLESS
+        shadowFactor = CalculateSpotShadow(light.shadow, bindlessTextureArrays[nonuniformEXT(light.shadow.mapIdx)], 
+            shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
+            shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
+#else
         shadowFactor = CalculateSpotShadow(light.shadow, cascadeMaps[nonuniformEXT(light.shadow.mapIdx)], 
             shadowSampler, surface.P, vec3(vec2(pixel) + 0.5, 0.0),
             shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
+#endif
     }
 
     if (isMain) {

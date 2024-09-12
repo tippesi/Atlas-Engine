@@ -576,7 +576,7 @@ vec3 sampleOffsetDirections[20] = vec3[] (
 
 float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position) {
 
-    int samples  = 20;
+    int samples = 20;
     float diskRadius = shadow.edgeSoftness;
     
     vec4 shadowCoords = shadow.cascades[1].cascadeSpace * vec4(position, 1.0);
@@ -597,7 +597,7 @@ float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSam
 
 }
 
-float CalculateSpotShadow(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, 
+float CalculateSpotShadow(Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, 
     vec3 fragmentPosition, vec3 position, vec3 normal, float cosTheta) {
     
     float distance = -fragmentPosition.z;
