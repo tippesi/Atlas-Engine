@@ -52,7 +52,7 @@ namespace Atlas {
             entities.clear();
             destroyed.clear();
 
-            pools.data.clear();
+            pools.Clear();
 
         }
 

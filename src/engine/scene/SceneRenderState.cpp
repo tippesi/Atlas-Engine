@@ -281,12 +281,12 @@ namespace Atlas::Scene {
 
     void SceneRenderState::UpdateOtherTextureBindlessData() {
 
+        auto lightSubset = scene->GetSubset<LightComponent>();
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
-        JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [&](JobData&) {
-            auto lightSubset = scene->entityManager.GetSubset<LightComponent>();
+        JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [lightSubset](JobData&) {
             for (auto entity : lightSubset) {
-                const auto& lightComponent = lightSubset.Get(entity);
+                const auto& lightComponent = entity.GetComponent<LightComponent>();
 
                 if (!lightComponent.shadow)
                     continue;
@@ -308,14 +308,13 @@ namespace Atlas::Scene {
             return;
 
         JobSystem::Wait(fillRenderListJob);
+        
+        auto lightSubset = scene->GetSubset<LightComponent>();
+        auto camera = scene->GetMainCamera();
 
-        JobSystem::Execute(fillRenderListJob, [&](JobData&) {
-            auto& camera = scene->GetMainCamera();
-
+        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera](JobData&) {
             auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
-
-            auto lightSubset = scene->GetSubset<LightComponent>();
 
             JobGroup group;
             for (auto& lightEntity : lightSubset) {

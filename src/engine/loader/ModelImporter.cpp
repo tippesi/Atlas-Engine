@@ -251,6 +251,8 @@ namespace Atlas {
 
             std::vector<MeshInfo> meshes;
             meshes.resize(state.scene->mNumMeshes);
+            
+            std::mutex vertexColorMutex;
 
             JobGroup group;
             JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
@@ -303,7 +305,10 @@ namespace Atlas {
                 tangents.SetElementCount(hasTangents ? vertexCount : 0);
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-                material->vertexColors &= hasVertexColors;
+                {
+                    std::scoped_lock lock(vertexColorMutex);
+                    material->vertexColors &= hasVertexColors;
+                }
                 meshData.materials.push_back(material);
 
                 auto min = vec3(std::numeric_limits<float>::max());
