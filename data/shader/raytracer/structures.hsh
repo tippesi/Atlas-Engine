@@ -134,6 +134,7 @@ struct RaytraceMaterial {
     int roughnessTexture;
     int metalnessTexture;
     int aoTexture;
+    int emissiveTexture;
 
 };
 

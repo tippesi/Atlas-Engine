@@ -46,6 +46,7 @@ namespace Atlas {
                 uint32_t metalnessTextureIdx;
                 uint32_t aoTextureIdx;
                 uint32_t heightTextureIdx;
+                uint32_t emissiveTextureIdx;
             };
 
 

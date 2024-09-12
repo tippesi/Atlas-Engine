@@ -11,6 +11,7 @@ namespace Atlas::ImguiExtension {
         auto widthAfterImage = availableWidth - padding - ImGui::GetTextLineHeight();
 
         auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
+            
             if (texture.IsLoaded()) {
                 UIElements::TexturePreview(wrapper, &texture);
                 ImGui::SameLine();
@@ -21,6 +22,7 @@ namespace Atlas::ImguiExtension {
                     texture = textureSelector.value()(texture);
                     ImGui::PopItemWidth();
                 }
+                ImGui::PushID(texture.GetID());
             }
             else {
                 if (textureSelector.has_value())
@@ -35,8 +37,11 @@ namespace Atlas::ImguiExtension {
         renderWithImagePreview(material->baseColorMap, [&]() {
             ImGui::ColorEdit3("Base color", glm::value_ptr(material->baseColor));
         });
-        ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
-        ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
+        
+        renderWithImagePreview(material->emissiveMap, [&]() {
+            ImGui::ColorEdit3("Emissive color", glm::value_ptr(material->emissiveColor));
+            ImGui::DragFloat("Emissive intensity", &material->emissiveIntensity, 0.1f, 0.0f, 10000.0f, "%.2f");
+            });        
         ImGui::Separator();
 
         ImGui::Text("Opacity");

@@ -107,6 +107,8 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, float(level), texCoord);
     mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, float(level), texCoord);
     mat.ao *= SampleAoBilinear(rayMat.aoTexture, float(level), texCoord);
+    // Need to have the texture level to go to near zero, otherwise we will have light leaks
+    mat.emissiveColor *= SampleEmissiveBilinear(rayMat.emissiveTexture, max(0.0, float(level - 3.0)), texCoord);
 
     // Account for changing texture coord direction
     vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;

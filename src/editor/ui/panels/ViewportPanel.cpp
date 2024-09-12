@@ -136,6 +136,10 @@ namespace Atlas::Editor::UI {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->roughnessMetallicAoTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
         }
+        if (visualization == GBufferEmissive) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->emissiveTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
         if (visualization == GBufferNormals) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->normalTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);

@@ -257,6 +257,10 @@ namespace Atlas {
                         if (material->HasAoMap()) {
                             gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
                         }
+
+                        if (material->HasEmissiveMap()) {
+                            gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
+                        }
                     }
 
                     materials.push_back(gpuMaterial);

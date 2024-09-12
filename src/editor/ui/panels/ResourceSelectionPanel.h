@@ -31,7 +31,7 @@ namespace Atlas::Editor::UI {
 
             resourceChanged = false;
             auto buttonName = resourceHandle.IsValid() ? resourceHandle.GetResource()->GetFileName() :
-                "Drop resource here";
+                "Drop resource here##" + std::to_string(counter++);
 
             ImGui::PushID(resourceHandle.GetID());
 
@@ -80,8 +80,16 @@ namespace Atlas::Editor::UI {
 
 		}
 
+        void Reset() {
+
+            counter = 0;
+
+        }
+
 	private:
 		ResourceSelectionPopup popup;
+
+        int32_t counter = 0;
 
 	};
 

@@ -11,6 +11,7 @@ namespace Atlas::Editor::UI {
         Lit = 0,
         GBufferBaseColor,
         GBufferRoughnessMetalnessAo,
+        GBufferEmissive,
         GBufferNormals,
         GBufferGeometryNormals,
         GBufferMaterialIdx,

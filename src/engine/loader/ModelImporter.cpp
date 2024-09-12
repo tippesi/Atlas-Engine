@@ -684,8 +684,15 @@ namespace Atlas {
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
-                // We don't support this right now
-                material.emissiveIntensity = 0.0f;
+                aiString aiPath;
+                if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0)
+                    assimpMaterial->GetTexture(aiTextureType_EMISSION_COLOR, 0, &aiPath);
+                else
+                    assimpMaterial->GetTexture(aiTextureType_EMISSIVE, 0, &aiPath);
+                auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+                if (images.emissiveTextures.contains(path)) {
+                    material.emissiveMap = images.emissiveTextures[path];
+                }
             }
             
             // Probably foliage
@@ -831,6 +838,19 @@ namespace Atlas {
                     images.Add(MaterialImageType::Displacement, path, image);
                 }
             }
+            if (material->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
+                material->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+                aiString aiPath;
+                if (material->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0)
+                    material->GetTexture(aiTextureType_EMISSION_COLOR, 0, &aiPath);
+                else
+                    material->GetTexture(aiTextureType_EMISSIVE, 0, &aiPath);
+                auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+                if (!images.Contains(MaterialImageType::Emissive, path)) {
+                    auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
+                    images.Add(MaterialImageType::Emissive, path, image);
+                }
+            }
         }
 
         std::vector<Ref<Common::Image<uint8_t>>> ModelImporter::ImagesToTextures(ImporterState& state) {
@@ -874,6 +894,12 @@ namespace Atlas {
                 images.displacementTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
                 imagesToSave.push_back(image);
             }
+            for (const auto& [path, image] : images.emissiveImages) {
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Emissive, path);
+                images.emissiveTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
+            }
 
             return imagesToSave;
 
@@ -912,6 +938,8 @@ namespace Atlas {
                 typeName = "Normal"; break;
             case MaterialImageType::Displacement:
                 typeName = "Displacement"; break;
+            case MaterialImageType::Emissive:
+                typeName = "Emissive"; break;
             default:
                 typeName = "Invalid"; break;
             }

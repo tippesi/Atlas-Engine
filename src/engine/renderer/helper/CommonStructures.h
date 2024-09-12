@@ -15,8 +15,9 @@ namespace Atlas {
             FEATURE_ROUGHNESS_MAP = (1 << 4),
             FEATURE_METALNESS_MAP = (1 << 5),
             FEATURE_AO_MAP = (1 << 6),
-            FEATURE_TRANSMISSION = (1 << 7),
-            FEATURE_VERTEX_COLORS = (1 << 8)
+            FEATURE_EMISSIVE_MAP = (1 << 7),
+            FEATURE_TRANSMISSION = (1 << 8),
+            FEATURE_VERTEX_COLORS = (1 << 9)
         };
 
         struct alignas(16) Cascade {

@@ -53,7 +53,7 @@ layout(location=6) out float normalInversionVS;
 layout(location=7) out mat3 TBN;
 #endif
 
-layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
     uint vegetation;

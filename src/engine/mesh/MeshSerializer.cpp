@@ -211,6 +211,8 @@ namespace Atlas {
             j["aoMapPath"] = p.aoMap.GetResource()->path;
         if (p.displacementMap.IsValid())
             j["displacementMapPath"] = p.displacementMap.GetResource()->path;
+        if (p.emissiveMap.IsValid())
+            j["emissiveMapPath"] = p.emissiveMap.GetResource()->path;
 
     }
 
@@ -252,6 +254,8 @@ namespace Atlas {
             p.aoMap = getTextureHandle(j["aoMapPath"], false);
         if (j.contains("displacementMapPath"))
             p.displacementMap = getTextureHandle(j["displacementMapPath"], false);
+        if (j.contains("emissiveMapPath"))
+            p.emissiveMap = getTextureHandle(j["emissiveMapPath"], false);
 
     }
 

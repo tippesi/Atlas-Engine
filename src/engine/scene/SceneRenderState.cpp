@@ -88,6 +88,7 @@ namespace Atlas::Scene {
                 packed.features |= material->HasRoughnessMap() ? Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP : 0;
                 packed.features |= material->HasMetalnessMap() ? Renderer::MaterialFeatures::FEATURE_METALNESS_MAP : 0;
                 packed.features |= material->HasAoMap() ? Renderer::MaterialFeatures::FEATURE_AO_MAP : 0;
+                packed.features |= material->HasEmissiveMap() ? Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP : 0;
                 packed.features |= glm::length(material->transmissiveColor) > 0.0f ? Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
                 packed.features |= material->vertexColors ? Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
 
@@ -259,6 +260,8 @@ namespace Atlas::Scene {
                     textures.insert(material->aoMap.Get());
                 if (material->HasDisplacementMap())
                     textures.insert(material->displacementMap.Get());
+                if (material->HasEmissiveMap())
+                    textures.insert(material->emissiveMap.Get());
             }
 
             for (const auto& texture : textures) {

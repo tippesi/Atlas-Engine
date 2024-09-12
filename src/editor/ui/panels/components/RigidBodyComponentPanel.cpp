@@ -23,6 +23,8 @@ namespace Atlas::Editor::UI {
         if (scene->physicsWorld->pauseSimulation)
             rigidBodyComponent.creationSettings = CreateRef(creationSettings);
 
+        meshSelectionPanel.Reset();
+
         return false;
 
     }

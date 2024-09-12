@@ -58,7 +58,10 @@ namespace Atlas::Editor::UI {
 
             // Just update materials regardless of any change
             mesh->UpdatePipelines();
-        }        
+        }
+
+        materialSelectionPanel.Reset();
+        textureSelectionPanel.Reset();
 
         return resourceChanged;
 

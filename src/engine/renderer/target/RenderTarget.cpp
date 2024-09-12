@@ -381,6 +381,7 @@ namespace Atlas::Renderer {
                 {.imageFormat = targetData.normalTexture->format},
                 {.imageFormat = targetData.geometryNormalTexture->format},
                 {.imageFormat = targetData.roughnessMetallicAoTexture->format},
+                {.imageFormat = targetData.emissiveTexture->format},
                 {.imageFormat = targetData.materialIdxTexture->format},
                 {.imageFormat = targetData.velocityTexture->format},
                 {.imageFormat = targetData.stencilTexture->format},
@@ -400,8 +401,8 @@ namespace Atlas::Renderer {
             };
 
             auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2],
-                                     colorAttachments[3], colorAttachments[4], colorAttachments[5], colorAttachments[6]},
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
+                                     colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
                 .depthAttachment = depthAttachment
             };
             gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
@@ -486,6 +487,7 @@ namespace Atlas::Renderer {
                    {target->normalTexture->image, 0, true},
                    {target->geometryNormalTexture->image, 0, true},
                    {target->roughnessMetallicAoTexture->image, 0, true},
+                   {target->emissiveTexture->image, 0, true},
                    {target->materialIdxTexture->image, 0, true},
                    {target->velocityTexture->image, 0, true},
                    {target->stencilTexture->image, 0, false},

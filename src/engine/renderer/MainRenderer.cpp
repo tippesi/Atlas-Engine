@@ -108,9 +108,9 @@ namespace Atlas {
             SetUniforms(target, scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
-            commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindSampler(globalNearestSampler, 1, 15);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+            commandList->BindSampler(globalSampler, 1, 14);
+            commandList->BindSampler(globalNearestSampler, 1, 16);
 
             if (scene->clutter)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
@@ -136,7 +136,7 @@ namespace Atlas {
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             JobSystem::WaitSpin(renderState->materialUpdateJob);
-            renderState->materialBuffer.Bind(commandList, 1, 14);
+            renderState->materialBuffer.Bind(commandList, 1, 15);
 
             // Wait as long as possible for this to finish
             JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
@@ -161,9 +161,9 @@ namespace Atlas {
 
             if (scene->sky.GetProbe()) {
                 commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 10);
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
             }
 
             {
@@ -191,7 +191,7 @@ namespace Atlas {
             JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
             JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
-            renderState->lightBuffer.Bind(commandList, 1, 16);
+            renderState->lightBuffer.Bind(commandList, 1, 17);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
@@ -226,8 +226,9 @@ namespace Atlas {
             commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
             commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
             commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 7);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
+            commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
             if (!target->HasHistory()) {
                 auto rtHalfData = target->GetHistoryData(HALF_RES);
@@ -241,6 +242,7 @@ namespace Atlas {
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
                     {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->emissiveTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -250,6 +252,7 @@ namespace Atlas {
                     {rtHalfData->normalTexture->image, layout, access},
                     {rtHalfData->geometryNormalTexture->image, layout, access},
                     {rtHalfData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtHalfData->emissiveTexture->image, layout, access},
                     {rtHalfData->offsetTexture->image, layout, access},
                     {rtHalfData->materialIdxTexture->image, layout, access},
                     {rtHalfData->stencilTexture->image, layout, access},
@@ -271,6 +274,7 @@ namespace Atlas {
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
                     {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->emissiveTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -460,9 +464,9 @@ namespace Atlas {
             JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
-            commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindSampler(globalNearestSampler, 1, 15);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+            commandList->BindSampler(globalSampler, 1, 14);
+            commandList->BindSampler(globalNearestSampler, 1, 16);
             commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
             if (renderState->images.size())
                 commandList->BindSampledImages(renderState->images, 0, 3);

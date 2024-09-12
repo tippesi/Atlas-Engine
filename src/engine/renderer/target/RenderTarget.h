@@ -34,6 +34,8 @@ namespace Atlas::Renderer {
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            emissiveTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
                 Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
@@ -50,6 +52,7 @@ namespace Atlas::Renderer {
             normalTexture->Resize(resolution.x, resolution.y);
             geometryNormalTexture->Resize(resolution.x, resolution.y);
             roughnessMetallicAoTexture->Resize(resolution.x, resolution.y);
+            emissiveTexture->Resize(resolution.x, resolution.y);
             offsetTexture->Resize(resolution.x, resolution.y);
             materialIdxTexture->Resize(resolution.x, resolution.y);
             stencilTexture->Resize(resolution.x, resolution.y);
@@ -61,6 +64,7 @@ namespace Atlas::Renderer {
         Ref<Texture::Texture2D> normalTexture = nullptr;
         Ref<Texture::Texture2D> geometryNormalTexture = nullptr;
         Ref<Texture::Texture2D> roughnessMetallicAoTexture = nullptr;
+        Ref<Texture::Texture2D> emissiveTexture = nullptr;
         Ref<Texture::Texture2D> offsetTexture = nullptr;
         Ref<Texture::Texture2D> materialIdxTexture = nullptr;
         Ref<Texture::Texture2D> stencilTexture = nullptr;

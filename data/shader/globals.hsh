@@ -39,7 +39,7 @@ layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
 layout(set = 0, binding = 4) uniform texture2D bindlessCubemaps[CUBEMAP_COUNT];
 layout(set = 0, binding = 5) uniform texture2D bindlessTextureArrays[TEXTURE_ARRAY_COUNT];
 
-layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
+layout(set = 1, binding = 13) uniform sampler2D dfgTexture;
 
-layout(set = 1, binding = 13) uniform sampler bindlessSampler;
-layout(set = 1, binding = 15) uniform sampler bindlessNearestSampler;
+layout(set = 1, binding = 14) uniform sampler bindlessSampler;
+layout(set = 1, binding = 16) uniform sampler bindlessNearestSampler;

@@ -46,6 +46,8 @@ namespace Atlas {
                 Metallic,
                 Normal,
                 Displacement,
+                Emissive,
+                Count
             };
 
             struct MaterialImages {
@@ -55,6 +57,7 @@ namespace Atlas {
                 std::map<std::string, Ref<Common::Image<uint8_t>>> metallicImages;
                 std::map<std::string, Ref<Common::Image<uint8_t>>> normalImages;
                 std::map<std::string, Ref<Common::Image<uint8_t>>> displacementImages;
+                std::map<std::string, Ref<Common::Image<uint8_t>>> emissiveImages;
 
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> baseColorTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> opacityTextures;
@@ -62,8 +65,9 @@ namespace Atlas {
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> metallicTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> normalTextures;
                 std::map<std::string, ResourceHandle<Texture::Texture2D>> displacementTextures;
+                std::map<std::string, ResourceHandle<Texture::Texture2D>> emissiveTextures;
 
-                std::mutex mutexes[6];
+                std::mutex mutexes[static_cast<int>(MaterialImageType::Count)];
 
                 void Add(MaterialImageType type, const std::string& path, const Ref<Common::Image<uint8_t>>& image) {
                     std::scoped_lock lock(mutexes[static_cast<int>(type)]);
@@ -87,6 +91,9 @@ namespace Atlas {
                     case MaterialImageType::Displacement:
                         displacementImages[path] = image;
                         break;
+                    case MaterialImageType::Emissive:
+                        emissiveImages[path] = image;
+                        break;
                     default:
                         break;
                     }
@@ -108,6 +115,8 @@ namespace Atlas {
                         return normalImages.contains(path);
                     case MaterialImageType::Displacement:
                         return displacementImages.contains(path);
+                    case MaterialImageType::Emissive:
+                        return emissiveImages.contains(path);
                     default:
                         return true;
                     }

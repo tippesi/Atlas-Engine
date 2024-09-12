@@ -6,7 +6,7 @@ layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
 layout(set = 3, binding = 3) uniform sampler3D detailTexture;
 layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
 
-layout(set = 1, binding = 10) uniform samplerCube diffuseProbe;
+layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
 layout(std140, set = 3, binding = 5) uniform CloudUniformBuffer {
     Light light;

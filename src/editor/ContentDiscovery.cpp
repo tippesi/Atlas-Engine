@@ -53,23 +53,23 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
-		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency;
+		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency || content->contentDirectories.empty();
 
 		if (contentDiscoveryJob.HasFinished() && canRediscover) {
-			// Might be that it took longer than the timeout time
-			content = nextContent;
+			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)		
+			std::swap(content, nextContent);
+
 			lastDiscoveryTime = Clock::Get();
 			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
+				// Now release the swapped memory here in the job async
+				nextContent.reset();
+
 				nextContent = PerformContentDiscovery();
 			});
+
+
 			return;
 		}
-			
-		if (!contentDiscoveryJob.HasFinished())
-			return;
-
-		content = nextContent;
-
 	}
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::PerformContentDiscovery() {

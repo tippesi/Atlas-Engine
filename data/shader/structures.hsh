@@ -32,6 +32,6 @@ struct CloudShadow {
 
 };
 
-layout (std430, set = 1, binding = 16) buffer Lights {
+layout (std430, set = 1, binding = 17) buffer Lights {
     Light lights[];
 };

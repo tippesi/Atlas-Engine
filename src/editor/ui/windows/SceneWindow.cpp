@@ -395,6 +395,7 @@ namespace Atlas::Editor::UI {
                 if (ImGui::BeginMenu("GBuffer")) {
                     menuItem("Base color", ViewportVisualization::GBufferBaseColor);
                     menuItem("Roughness/Metalness/Ao", ViewportVisualization::GBufferRoughnessMetalnessAo);
+                    menuItem("Emissive color", ViewportVisualization::GBufferEmissive);
                     menuItem("Depth", ViewportVisualization::GBufferDepth);
                     menuItem("Normals", ViewportVisualization::GBufferNormals);
                     menuItem("Geometry normals", ViewportVisualization::GBufferGeometryNormals);
