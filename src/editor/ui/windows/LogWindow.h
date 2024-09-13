@@ -14,6 +14,9 @@ namespace Atlas::Editor::UI {
     private:
         std::string logSearch;
 
+        size_t logEntryCount = 0;
+        bool scroll = false;
+
     };
 
 }

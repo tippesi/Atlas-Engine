@@ -101,7 +101,11 @@ namespace Atlas::Editor {
 				assetPath.erase(assetPath.begin());
 
 			if (dirEntry.is_directory()) {
+				auto dirname = Common::Path::GetFileName(dirEntry.path());
+				std::transform(dirname.begin(), dirname.end(), dirname.begin(), ::tolower);
+
 				auto childDirectory = CreateRef<ContentDirectory>({
+						.name = dirname,
 						.path = dirEntry.path(),
 						.assetPath = assetPath
 					});
@@ -132,13 +136,13 @@ namespace Atlas::Editor {
 		// Sort for directories to be ordered alphabetically
 		std::sort(directory->directories.begin(), directory->directories.end(),
 			[](const Ref<ContentDirectory>& dir0, const Ref<ContentDirectory>& dir1) {
-				return dir0->path < dir1->path;
+				return dir0->name < dir1->name;
 			});
 
 		// Sort for files to be ordered alphabetically
 		std::sort(directory->files.begin(), directory->files.end(),
 			[](const Content& file0, const Content& file1) {
-				return file0.path < file1.path;
+				return file0.name < file1.name;
 			});
 
 	}

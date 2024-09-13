@@ -368,8 +368,11 @@ namespace Atlas::Editor {
                     }
                 }
 
+                auto target = Singletons::renderTarget;
+
                 ImGui::SetWindowFontScale(1.5f);
                 ImGui::Text("Frame time: %.3fms, GPU time: %.3f", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
+                ImGui::Text("Resolution %dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(), target->GetScaledWidth(), target->GetScaledHeight());
                 ImGui::SetWindowFontScale(1.0f);
             }
 

@@ -32,7 +32,8 @@ namespace Atlas::Editor::UI {
 
         void RenderDirectoryContent();
 
-        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType);
+        void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
+            ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
 
         bool IsValidFileType(const std::string& filename);
 
@@ -60,6 +61,8 @@ namespace Atlas::Editor::UI {
         std::vector<Content> files;
 
         JobGroup searchAndFilterJob{ JobPriority::Medium };
+
+        ImGuiSelectionBasicStorage selectionStorage;
 
         const float padding = 8.0f;
         const float iconSize = 64.f;

@@ -10,6 +10,7 @@
 namespace Atlas::Editor {
 
 	struct ContentDirectory {
+		std::string name;
 		std::filesystem::path path;
 		std::string assetPath;
 

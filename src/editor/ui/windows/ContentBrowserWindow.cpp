@@ -22,7 +22,7 @@ namespace Atlas::Editor::UI {
 
     ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
 
-
+        selectionStorage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) { return uint32_t(idx); };
 
     }
 
@@ -99,7 +99,7 @@ namespace Atlas::Editor::UI {
         ImGui::Begin("ResourceTypeOverview", nullptr);
 
         // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
-        ImGui::BeginChild("ResourceTypeDropChild");
+        ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0));
 
         RenderDirectoryControl();
 
@@ -224,10 +224,15 @@ namespace Atlas::Editor::UI {
     void ContentBrowserWindow::RenderDirectoryContent() {
 
         float totalWidth = ImGui::GetContentRegionAvail().x;
-        auto columnItemCount = int32_t(totalWidth / itemSize);
-        columnItemCount = columnItemCount <= 0 ? 1 : columnItemCount;
+        auto columnCount = int32_t(totalWidth / itemSize);
+        columnCount = columnCount <= 0 ? 1 : columnCount;
 
-        ImGui::Columns(columnItemCount, nullptr, false);
+        float columnSize = totalWidth / float(columnCount);
+
+        auto entryCount = int32_t(directories.size()) + int32_t(files.size());
+        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d | 
+           ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
+        selectionStorage.ApplyRequests(multiSelectionIO);
 
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
@@ -241,13 +246,26 @@ namespace Atlas::Editor::UI {
 
         nextDirectory = std::string();
 
+        ImGui::SetCursorPosX(padding);
+
+        int32_t entryIdx = 0;
+        float columnHeight = 0.0f;
         for (const auto& directory : directories) {
-            RenderContentEntry(directory->path, directory->assetPath, ContentType::None);
+            // Ignore 'invisible' directories
+            if (directory->assetPath.at(0) == '.')
+                continue;
+
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 
+                entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         for (const auto& file : files) {
-            RenderContentEntry(file.path, file.assetPath, file.type);
+            RenderContentEntry(file.path, file.assetPath, file.type, 
+                entryIdx++, columnCount, columnSize, columnHeight);            
         }
+
+        multiSelectionIO = ImGui::EndMultiSelect();
+        selectionStorage.ApplyRequests(multiSelectionIO);
 
         if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
             if (ImGui::BeginMenu("Create")) {
@@ -277,16 +295,15 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, ContentType contentType) {
+    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
+        ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
 
         bool isDirectory = contentType == ContentType::None;
-        // Ignore 'invisible' directories
-        if (isDirectory && assetPath.at(0) == '.')
-            return;
 
         auto filename = Common::Path::GetFileName(assetPath);
 
         ImVec2 buttonSize = ImVec2(iconSize, iconSize);
+        auto cursorPos = ImGui::GetCursorPos();
 
         ImGui::BeginGroup();
 
@@ -310,14 +327,22 @@ namespace Atlas::Editor::UI {
             type = Content::contentTypeMapping.at(fileType);
 
         auto assetRelativePath = Common::Path::Normalize(assetPath);
-        auto buttonFlags = isDirectory || type == ContentType::Scene ? ImGuiButtonFlags_PressedOnDoubleClick : 0;
-        if (ImGui::ImageButtonEx(ImGui::GetID("ImageButton"), set, buttonSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-            ImVec4(0.0f, 0.0f, 0.0f, 0.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), buttonFlags)) {
-            if (isDirectory)
-                nextDirectory = path.string();
-            else if (type == ContentType::Scene)
-                FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+
+        // Add selectable to allow for multi-select
+        bool selected = selectionStorage.Contains((ImGuiID)entryIdx);
+        ImGui::SetNextItemSelectionUserData(entryIdx);
+        if (ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize));
+
+        if (ImGui::IsItemHovered()) {
+            if (ImGui::IsMouseDoubleClicked(0)) {
+                if (isDirectory)
+                    nextDirectory = path.string();
+                else if (type == ContentType::Scene)
+                    FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
+            }
         }
+
+        ImGui::SetItemAllowOverlap();
 
         if (!isDirectory && ImGui::BeginDragDropSource()) {
             // Size doesn't count the termination character, so add +1
@@ -352,7 +377,7 @@ namespace Atlas::Editor::UI {
                 std::filesystem::copy(path, dupFilePath);
             }
 
-            if (ImGui::MenuItem("Rename") && !isDirectory) {
+            if (ImGui::MenuItem("Rename")) {
                 renamePopupVisible = true;
                 auto dirEntryFilename = path.filename();
                 renameString = dirEntryFilename.replace_extension("").string();
@@ -365,23 +390,44 @@ namespace Atlas::Editor::UI {
             ImGui::EndPopup();
         }
 
+        // Just draw the icon if it is actually visible
+        if (ImGui::IsItemVisible()) {
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(cursorPos.x);
+            ImGui::Image(set, buttonSize);
+        }
+
         ImGui::PopStyleColor();
 
         auto offset = 0.0f;
 
         auto textSize = ImGui::CalcTextSize(filename.c_str());
-        if (textSize.x < iconSize + padding)
-            offset = (iconSize + padding - textSize.x) / 2.0f;
+        if (textSize.x < iconSize)
+            offset = (iconSize - textSize.x) / 2.0f;
 
         auto cursorX = ImGui::GetCursorPosX();
         ImGui::SetCursorPosX(cursorX + offset);
-        ImGui::TextWrapped("%s", filename.c_str());
+
+        ImGui::PushTextWrapPos(cursorX + buttonSize.x);
+        ImGui::Text("%s", filename.c_str());
+        ImGui::PopTextWrapPos();
 
         ImGui::PopID();
 
         ImGui::EndGroup();
 
-        ImGui::NextColumn();
+        // Advance to next column
+        columnHeight = std::max(ImGui::GetCursorPosY() - cursorPos.y, columnHeight);
+            
+        ImGui::SetCursorPosX(((entryIdx + 1) % columnCount) * columnSize + padding);
+        if ((entryIdx + 1) % columnCount == 0) {
+            cursorPos.y = cursorPos.y + columnHeight;
+            ImGui::SetCursorPosY(cursorPos.y);
+            columnHeight = 0.0f;
+        }
+        else {
+            ImGui::SetCursorPosY(cursorPos.y);
+        }
 
     }
 
