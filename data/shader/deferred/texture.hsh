@@ -131,7 +131,7 @@ vec3 SampleEmissive(vec2 texCoords, uint textureID, float bias) {
 #ifdef BINDLESS_TEXTURES
     return texture(sampler2D(bindlessTextures[textureID], bindlessSampler), texCoords, bias).rgb;
 #else
-    return texture(emissiveMap, texCoords, bias).r;
+    return texture(emissiveMap, texCoords, bias).rgb;
 #endif
 #else
     return vec3(0.0);
