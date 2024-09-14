@@ -16,6 +16,7 @@
 #include <imgui_stdlib.h>
 
 #ifdef AE_OS_WINDOWS
+#define NOMINMAX
 #include <Windows.h>
 #include <shellapi.h>
 #endif
@@ -380,7 +381,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (singleSelect && ImGui::MenuItem("Duplicate")) {
-                FileSystemHelper::Duplicate(path);
+                FileSystemHelper::Duplicate(path.string());
             }
 
             if (ImGui::MenuItem("Copy")) {
@@ -591,12 +592,12 @@ namespace Atlas::Editor::UI {
                 continue;
 
             if (selectionStorage.Contains(entryIdx++))
-                paths.push_back(directory->path);
+                paths.push_back(directory->path.string());
         }
 
         for (const auto& file : files) {
             if (selectionStorage.Contains(entryIdx++))
-                paths.push_back(file.path);
+                paths.push_back(file.path.string());
         }
 
         return paths;

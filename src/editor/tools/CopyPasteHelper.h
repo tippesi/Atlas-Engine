@@ -78,10 +78,12 @@ namespace Atlas::Editor {
 
             typeInfo = typeid(T);
             data = std::malloc(sizeof(T) * elementCount);
+            std::memset(data, 0, sizeof(T) * elementCount);
 
             T* typeData = static_cast<T*>(data);
-            for (size_t i = 0; i < elementCount; i++)
+            for (size_t i = 0; i < elementCount; i++) {
                 typeData[i] = source[i];
+            }
 
             destructor = [](void* ptr) {
                 static_cast<T*>(ptr)->~T();

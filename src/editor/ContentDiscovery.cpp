@@ -101,7 +101,7 @@ namespace Atlas::Editor {
 				assetPath.erase(assetPath.begin());
 
 			if (dirEntry.is_directory()) {
-				auto dirname = Common::Path::GetFileName(dirEntry.path());
+				auto dirname = Common::Path::GetFileName(dirEntry.path().string());
 				std::transform(dirname.begin(), dirname.end(), dirname.begin(), ::tolower);
 
 				auto childDirectory = CreateRef<ContentDirectory>({

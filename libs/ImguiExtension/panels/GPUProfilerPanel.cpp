@@ -150,7 +150,7 @@ namespace Atlas::ImguiExtension {
 
         maxFrameTime = 0.0f;
         maxGpuTime = 0.0f;
-        for (int32_t i = 0; i < timeWindowSize; i++) {
+        for (int32_t i = 0; i < timeWindowSize && i < int32_t(frameTimes.size()); i++) {
             maxFrameTime = std::max(frameTimes[i], maxFrameTime);
             maxGpuTime = std::max(gpuTimes[i], maxGpuTime);
         }

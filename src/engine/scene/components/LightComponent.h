@@ -68,7 +68,7 @@ namespace Atlas {
 
 			public:
                 LightComponent() = default;
-				LightComponent(const LightComponent& that);
+				LightComponent(Scene* scene, const LightComponent& that);
 				LightComponent(LightType type, LightMobility mobility = LightMobility::MovableLight);
 
 				void AddDirectionalShadow(float distance, float bias, int32_t resolution, float edgeSoftness,

@@ -11,7 +11,7 @@ namespace Atlas {
                 0.0f, 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f, 1.0f);
 
-            LightComponent::LightComponent(const LightComponent& that) {
+            LightComponent::LightComponent(Scene* scene, const LightComponent& that) {
 
                 if (this != &that) {
 
