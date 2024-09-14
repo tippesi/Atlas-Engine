@@ -7,7 +7,14 @@ namespace Atlas::Editor::UI {
     bool RigidBodyComponentPanel::Render(const Ref<Scene::Scene>& scene,
         Scene::Entity entity, RigidBodyComponent &rigidBodyComponent) {
 
+        if (!entity.HasComponent<TransformComponent>())
+            ImGui::Text("Rigid body component needs a transform component to work properly");
+
         auto creationSettings = rigidBodyComponent.GetBodyCreationSettings();
+        if (!creationSettings.shape) {
+            ImGui::Text("Couldn't get body creation settings or shape");
+            return false;
+        }
 
         ImGui::Text("Shape");
 

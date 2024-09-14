@@ -13,7 +13,7 @@ namespace Atlas::Physics {
         Body() = default;
         Body(BodyID bodyId, PhysicsWorld* world) : bodyId(bodyId), world(world) {}
 
-        bool IsValid() const { return world != nullptr; }
+        bool IsValid() const { return world != nullptr && !bodyId.IsInvalid(); }
 
         void SetMatrix(mat4 matrix);
 

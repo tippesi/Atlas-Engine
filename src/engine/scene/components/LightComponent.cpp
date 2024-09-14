@@ -11,6 +11,23 @@ namespace Atlas {
                 0.0f, 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f, 1.0f);
 
+            LightComponent::LightComponent(const LightComponent& that) {
+
+                if (this != &that) {
+
+                    *this = that;
+
+                    // Copy shadow, need to have separate resources
+                    if (that.shadow != nullptr) {
+                        shadow = CreateRef(*that.shadow);
+                        shadow->SetResolution(shadow->resolution);
+                        shadow->update = true;
+                    }
+
+                }
+
+            }
+
 			LightComponent::LightComponent(LightType type, LightMobility mobility) : 
 				type(type), mobility(mobility), properties(type), transformedProperties(type) {
 

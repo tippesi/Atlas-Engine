@@ -31,6 +31,7 @@ namespace Atlas::Editor::UI {
         ImGui::Text("Entity count: %d", int32_t(scene->GetEntityCount()));
         ImGui::Text("Mesh count: %d", int32_t(meshes.size()));
         ImGui::Text("Material count: %d", int32_t(materials.size()));
+        ImGui::Text("Physics body count: %d", scene->physicsWorld->GetBodyCount());
 
     }
 

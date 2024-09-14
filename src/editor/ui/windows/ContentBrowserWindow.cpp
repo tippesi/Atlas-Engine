@@ -3,6 +3,8 @@
 #include "DataCreator.h"
 #include "Notifications.h"
 #include "ui/panels/PopupPanels.h"
+#include "tools/CopyPasteHelper.h"
+#include "tools/FileSystemHelper.h"
 
 #include "mesh/Mesh.h"
 #include "scene/Scene.h"
@@ -229,11 +231,6 @@ namespace Atlas::Editor::UI {
 
         float columnSize = totalWidth / float(columnCount);
 
-        auto entryCount = int32_t(directories.size()) + int32_t(files.size());
-        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d | 
-           ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
-        selectionStorage.ApplyRequests(multiSelectionIO);
-
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
             Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
@@ -245,6 +242,11 @@ namespace Atlas::Editor::UI {
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 
         nextDirectory = std::string();
+
+        auto entryCount = int32_t(directories.size()) + int32_t(files.size());
+        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d | 
+           ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
+        selectionStorage.ApplyRequests(multiSelectionIO);
 
         ImGui::SetCursorPosX(padding);
 
@@ -276,6 +278,12 @@ namespace Atlas::Editor::UI {
 
                 }
                 ImGui::EndMenu();
+            }
+
+            if (CopyPasteHelper::AcceptPaste<ContentCopy>() && ImGui::MenuItem("Paste")) {
+                ContentCopy copy;
+                CopyPasteHelper::Paste(copy);
+                FileSystemHelper::Copy(copy.paths, Common::Path::GetAbsolute(currentDirectory));
             }
 
             ImGui::EndPopup();
@@ -331,7 +339,7 @@ namespace Atlas::Editor::UI {
         // Add selectable to allow for multi-select
         bool selected = selectionStorage.Contains((ImGuiID)entryIdx);
         ImGui::SetNextItemSelectionUserData(entryIdx);
-        if (ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize));
+        ImGui::Selectable("##Selectable", &selected, ImGuiSelectableFlags_None, buttonSize);
 
         if (ImGui::IsItemHovered()) {
             if (ImGui::IsMouseDoubleClicked(0)) {
@@ -353,39 +361,37 @@ namespace Atlas::Editor::UI {
         }
 
         if (ImGui::BeginPopupContextItem()) {
+            auto singleSelect = selectionStorage.Size == 1;
             // Do a direct import here without relying on the file importer
-            if (type == ContentType::MeshSource && ImGui::MenuItem("Import as scene")) {
+            if (type == ContentType::MeshSource && singleSelect && ImGui::MenuItem("Import as scene")) {
                 PopupPanels::filename = assetRelativePath;
                 PopupPanels::isImportScenePopupVisible = true;
             }
 
             // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Open externally"))
+            if (singleSelect && ImGui::MenuItem("Open externally"))
                 OpenExternally(std::filesystem::absolute(path).string(), isDirectory);
 
-            // We shouldn't allow the user to delete the root entity
-            if (ImGui::MenuItem("Duplicate")) {
-                int32_t counter = 0;
-                auto dupFilePath = path;
-                do {
-                    dupFilePath = path;
-                    dupFilePath.replace_extension("");
-                    auto replacement = dupFilePath.filename().string() + "(" + std::to_string(++counter) + ")";
-                    dupFilePath.replace_filename(replacement);
-                    dupFilePath.replace_extension(path.extension());
-                } while (std::filesystem::exists(dupFilePath));
-                std::filesystem::copy(path, dupFilePath);
-            }
-
-            if (ImGui::MenuItem("Rename")) {
+            if (singleSelect && ImGui::MenuItem("Rename")) {
                 renamePopupVisible = true;
                 auto dirEntryFilename = path.filename();
                 renameString = dirEntryFilename.replace_extension("").string();
                 renamePath = path;
             }
 
-            if (ImGui::MenuItem("Delete"))
-                std::filesystem::remove_all(path);
+            if (singleSelect && ImGui::MenuItem("Duplicate")) {
+                FileSystemHelper::Duplicate(path);
+            }
+
+            if (ImGui::MenuItem("Copy")) {
+                ContentCopy copy { GetSelectedPaths() };
+                CopyPasteHelper::Copy(copy);
+            }
+
+            if (ImGui::MenuItem("Delete")) {
+                auto paths = GetSelectedPaths();
+                FileSystemHelper::Delete(paths);
+            }
 
             ImGui::EndPopup();
         }
@@ -571,6 +577,29 @@ namespace Atlas::Editor::UI {
         }
 
         return success;
+
+    }
+
+    std::vector<std::string> ContentBrowserWindow::GetSelectedPaths() {
+
+        std::vector<std::string> paths;
+
+        int32_t entryIdx = 0;
+        for (const auto& directory : directories) {
+            // Ignore 'invisible' directories
+            if (directory->assetPath.at(0) == '.')
+                continue;
+
+            if (selectionStorage.Contains(entryIdx++))
+                paths.push_back(directory->path);
+        }
+
+        for (const auto& file : files) {
+            if (selectionStorage.Contains(entryIdx++))
+                paths.push_back(file.path);
+        }
+
+        return paths;
 
     }
 

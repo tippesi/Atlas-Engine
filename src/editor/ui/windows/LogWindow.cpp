@@ -16,9 +16,9 @@ namespace Atlas::Editor::UI {
         for (auto& entry : entries) {
             
             ImGui::Text("");
-            if (!ImGui::IsItemVisible()) {
+            if (!ImGui::IsItemVisible())
                 continue;
-            }
+                
             ImGui::SameLine();
 
             std::string logText;

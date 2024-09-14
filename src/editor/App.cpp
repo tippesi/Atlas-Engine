@@ -5,7 +5,9 @@
 #include "Notifications.h"
 #include "ContentDiscovery.h"
 #include "ui/panels/PopupPanels.h"
+#include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
+#include <implot.h>
 
 #include <chrono>
 #include <thread>
@@ -26,6 +28,7 @@ namespace Atlas::Editor {
         ContentDiscovery::Update();
 
         ImGui::CreateContext();
+        ImPlot::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -59,16 +62,22 @@ namespace Atlas::Editor {
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        if (Singletons::config->darkMode)
+        if (Singletons::config->darkMode) {
             ImGui::StyleColorsDark();
-        else
+            ImPlot::StyleColorsDark();
+        }
+        else {
             ImGui::StyleColorsLight();
+            ImPlot::StyleColorsLight();
+        }
 
     }
 
     void App::UnloadContent() {
 
         Singletons::imguiWrapper->Unload();
+
+        CopyPasteHelper::Clear();
 
         for (const auto& sceneWindow : sceneWindows) {
             if (sceneWindow->isPlaying)
@@ -80,6 +89,8 @@ namespace Atlas::Editor {
         ContentDiscovery::Shutdown();
 
         Singletons::Destruct();
+
+        ImPlot::DestroyContext();
 
     }
 
@@ -226,6 +237,7 @@ namespace Atlas::Editor {
         ImGuizmo::BeginFrame();
 
         // ImGui::ShowDemoWindow();
+        // ImPlot::ShowDemoWindow();
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
 
@@ -279,10 +291,14 @@ namespace Atlas::Editor {
 
                 if (ImGui::BeginMenu("View")) {
                     if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
-                        if (config->darkMode)
+                        if (config->darkMode) {
                             ImGui::StyleColorsDark();
-                        else
+                            ImPlot::StyleColorsDark();
+                        }
+                        else {
                             ImGui::StyleColorsLight();
+                            ImPlot::StyleColorsLight();
+                        }
                     }
 
                     ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
@@ -443,22 +459,9 @@ namespace Atlas::Editor {
         // Also kind of a resource event
         Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
             if (!event.file.empty() && contentBrowserWindow.show) {
-                // Need to create a copy here
                 auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
-                JobSystem::Execute(fileImportGroup, [&, event, destinationDirectory](JobData&) {
-                    try {
-                        std::filesystem::copy(event.file, destinationDirectory, 
-                            std::filesystem::copy_options::overwrite_existing | 
-                            std::filesystem::copy_options::recursive);
-                    }
-                    catch (std::exception& e) {
-                        auto message = "Error copying " + event.file + " to asset directory: " + e.what();
-                        Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
-                        Log::Error(message);
-                    }
-                });
-               
-                Notifications::Push({"Copying " + event.file + " to asset directory"});
+
+                FileSystemHelper::Copy(event.file, destinationDirectory);
             }
         });
 

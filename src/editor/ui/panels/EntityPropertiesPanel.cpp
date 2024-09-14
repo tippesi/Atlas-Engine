@@ -1,5 +1,7 @@
 #include "EntityPropertiesPanel.h"
 
+#include "Notifications.h"
+
 namespace Atlas::Editor::UI {
 
     void EntityPropertiesPanel::Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties) {
@@ -178,6 +180,27 @@ namespace Atlas::Editor::UI {
 
                 ImGui::EndPopup();
             }
+        }
+
+        // Paste components
+        if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+            if (ImGui::MenuItem("Paste")) {
+                if (HandleComponentPaste<TransformComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<MeshComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<LightComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AudioComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<AudioVolumeComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<CameraComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<TextComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<LuaScriptComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
+                else {
+                    Notifications::Push({"Invalid type to paste as a component."});
+                }
+            }
+
+            ImGui::EndPopup();
         }
 
     }

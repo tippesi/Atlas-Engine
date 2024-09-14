@@ -28,6 +28,10 @@ namespace Atlas::Editor::UI {
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
 
     private:
+        struct ContentCopy {
+            std::vector<std::string> paths;
+        };
+
         void RenderDirectoryControl();
 
         void RenderDirectoryContent();
@@ -47,6 +51,8 @@ namespace Atlas::Editor::UI {
         void OpenExternally(const std::string& path, bool isDirectory);
 
         bool TextInputPopup(const char* name, bool& isVisible, std::string& input);
+
+        std::vector<std::string> GetSelectedPaths();
 
         int selectedFilter = -1;
 

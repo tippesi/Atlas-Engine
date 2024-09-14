@@ -98,7 +98,7 @@ namespace Atlas::Editor::UI {
         std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
-            ImGuiTreeNodeFlags_OpenOnDoubleClick;
+            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
         auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
         auto nameComponent = entity.TryGetComponent<NameComponent>();

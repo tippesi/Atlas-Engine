@@ -162,7 +162,7 @@ namespace Atlas::Scene {
         auto bindlessMeshBuffersUpdate = [&](JobData&) {
             JobSystem::Wait(bindlessMeshMapUpdateJob);
 
-            if (blasBuffers.size() < meshIdToBindlessIdx.size()) {
+            if (blasBuffers.size() != meshIdToBindlessIdx.size()) {
                 blasBuffers.resize(meshIdToBindlessIdx.size());
                 triangleBuffers.resize(meshIdToBindlessIdx.size());
                 bvhTriangleBuffers.resize(meshIdToBindlessIdx.size());
@@ -218,7 +218,7 @@ namespace Atlas::Scene {
         auto bindlessTextureBuffersUpdate = [&](JobData&) {
             JobSystem::Wait(bindlessTextureMapUpdateJob);
 
-            if (textures.size() < textureToBindlessIdx.size()) {
+            if (textures.size() != textureToBindlessIdx.size()) {
                 textures.resize(textureToBindlessIdx.size());
             }
 
@@ -284,6 +284,9 @@ namespace Atlas::Scene {
 
         JobSystem::Execute(bindlessOtherTextureMapUpdateJob, [&, lightSubset](JobData&) {
 
+            cubemapToBindlessIdx.clear();
+            textureArrayToBindlessIdx.clear();
+
             uint32_t textureArrayIdx = 0;
             uint32_t cubemapIdx = 0;
             for (auto entity : lightSubset) {
@@ -300,12 +303,12 @@ namespace Atlas::Scene {
                 }
             }
 
-            if (cubemaps.size() < cubemapToBindlessIdx.size())
+            if (cubemaps.size() != cubemapToBindlessIdx.size())
                 cubemaps.resize(cubemapToBindlessIdx.size());
             for (const auto& [cubemap, idx] : cubemapToBindlessIdx)
                 cubemaps[idx] = cubemap->image;
 
-            if (textureArrays.size() < textureArrayToBindlessIdx.size())
+            if (textureArrays.size() != textureArrayToBindlessIdx.size())
                 textureArrays.resize(textureArrayToBindlessIdx.size());
             for (const auto& [textureArray, idx] : textureArrayToBindlessIdx)
                 textureArrays[idx] = textureArray->image;
