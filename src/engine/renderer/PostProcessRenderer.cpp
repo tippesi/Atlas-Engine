@@ -33,7 +33,7 @@ namespace Atlas {
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
-            auto& bloom = postProcessing.bloom;
+            const auto& bloom = postProcessing.bloom;
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
