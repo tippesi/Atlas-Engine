@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "Singletons.h"
+#include "Notifications.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
 
@@ -38,6 +39,14 @@ namespace Atlas::Editor::UI {
             popup.SetID(resourceHandle.GetID());
             if (ImGui::Button(buttonName.c_str(), { resourceButtonSize, 0 }))
                 popup.Open();
+
+            if (resourceHandle.IsValid() && ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Copy name")) {
+                    ImGui::SetClipboardText(buttonName.c_str());
+                    Notifications::Push({ .message = "Copied file name to clipboard.", .displayTime = 3.0f });
+                }
+                ImGui::EndPopup();
+            }
 
             // Such that drag and drop will work from the content browser
             if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {

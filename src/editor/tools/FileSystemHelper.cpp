@@ -77,11 +77,12 @@ namespace Atlas::Editor {
     void FileSystemHelper::Duplicate(const std::string& path) {
 
         JobSystem::Execute(duplicateGroup, [path](JobData&) {
-            int32_t counter = 0;
-            auto filePath = std::filesystem::path(path);
-            auto dupFilePath = std::filesystem::path(path);
 
             try {
+                int32_t counter = 0;
+                auto filePath = std::filesystem::path(path);
+                auto dupFilePath = std::filesystem::path(path);
+
                 do {
                     dupFilePath = path;
                     dupFilePath.replace_extension("");
@@ -89,6 +90,7 @@ namespace Atlas::Editor {
                     dupFilePath.replace_filename(replacement);
                     dupFilePath.replace_extension(filePath.extension());
                 } while (std::filesystem::exists(dupFilePath) && counter < 20);
+
                 std::filesystem::copy(filePath, dupFilePath);
                 Notifications::Push({ "Successfully duplicated " + path });
                 ContentDiscovery::Execute();

@@ -36,13 +36,13 @@ namespace Atlas {
             auto sss = scene->sss;
             auto clouds = scene->sky.clouds;
 
-            std::vector<Ref<Graphics::Image>> cascadeMaps;
-            std::vector<Ref<Graphics::Image>> cubeMaps;
-
             PushConstants pushConstants;
 #ifdef AE_BINDLESS
             pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
 #else
+            std::vector<Ref<Graphics::Image>> cascadeMaps;
+            std::vector<Ref<Graphics::Image>> cubeMaps;
+
             pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
             for (int32_t i = 0; i < pushConstants.lightCount; i++) {
                 auto& comp = renderState->lightEntities[i].comp;

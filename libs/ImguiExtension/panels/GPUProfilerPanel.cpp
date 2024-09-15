@@ -126,7 +126,6 @@ namespace Atlas::ImguiExtension {
 
         auto gpuProfilerData = Graphics::Profiler::GetQueries(Graphics::Profiler::OrderBy::MAX_TIME);
 
-        int32_t slowestThreadIdx = 0;
         double slowestTime = 0.0;
         for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
             const auto& threadData = gpuProfilerData[i];
@@ -136,7 +135,6 @@ namespace Atlas::ImguiExtension {
             }
             if (threadTime > slowestTime) {
                 slowestTime = threadTime;
-                slowestThreadIdx = i;
             }
         }
 

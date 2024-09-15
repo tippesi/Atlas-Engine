@@ -35,7 +35,7 @@ namespace Atlas {
                 vec4 tintColor;
             };
 
-            void GenerateBloom(PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
+            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
                 Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
 
             void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,

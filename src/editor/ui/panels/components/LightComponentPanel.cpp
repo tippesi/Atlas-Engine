@@ -30,13 +30,13 @@ namespace Atlas::Editor::UI {
         else if (lightComponent.type == LightType::PointLight) {
             auto& point = lightComponent.properties.point;
             ImGui::DragFloat3("Position", glm::value_ptr(point.position), 0.1f, -10000.0f, 10000.0f);
-            ImGui::DragFloat("Radius", &point.radius, 0.1f, 0.01f, 10000.0f);
+            ImGui::DragFloat("Radius", &point.radius, 0.01f, 0.01f, 10000.0f);
         }
         else if (lightComponent.type == LightType::SpotLight) {
             auto& spot = lightComponent.properties.spot;
             ImGui::DragFloat3("Position", glm::value_ptr(spot.position), 0.1f, -10000.0f, 10000.0f);
             ImGui::DragFloat3("Direction", glm::value_ptr(spot.direction), 0.01f, -1.0f, 1.0f);
-            ImGui::DragFloat("Radius", &spot.radius, 0.01f, -1.0f, 1.0f);
+            ImGui::DragFloat("Radius", &spot.radius, 0.01f, 0.01f, 10000.0f);
             ImGui::DragFloat("Inner cone angle", &spot.innerConeAngle, 0.01f, 0.01f, 2.0f);
             ImGui::DragFloat("Outer cone angle", &spot.outerConeAngle, 0.01f, 0.01f, 2.0f);
         }

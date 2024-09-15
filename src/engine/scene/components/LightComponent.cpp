@@ -85,7 +85,7 @@ namespace Atlas {
 
 				AE_ASSERT(type == LightType::PointLight && "Component must be of type point light");
 
-                shadow = CreateRef<Lighting::Shadow>(transformedProperties.point.radius, bias, resolution, 0.005f, true);
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, true);
 
 			}
 
@@ -93,7 +93,7 @@ namespace Atlas {
 
                 AE_ASSERT(type == LightType::SpotLight && "Component must be of type spot light");
 
-                shadow = CreateRef<Lighting::Shadow>(transformedProperties.spot.radius, bias, resolution, 0.005f, false);
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, false);
 
             }
 
@@ -168,7 +168,7 @@ namespace Atlas {
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    mat4 projectionMatrix = clipMatrix * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, shadow->distance);
+                    mat4 projectionMatrix = clipMatrix * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, transformedProperties.point.radius);
                     vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
                               vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f),
                              vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
@@ -187,7 +187,7 @@ namespace Atlas {
                 else if (type == LightType::SpotLight) {
                     auto viewMatrix = glm::lookAt(transformedProperties.spot.position, transformedProperties.spot.position + 
                         transformedProperties.spot.direction, vec3(1e-12f, 1.0f, 1e-12f));
-                    auto projectionMatrix = glm::perspective(2.0f * transformedProperties.spot.outerConeAngle, 1.0f, 0.1f, shadow->distance);
+                    auto projectionMatrix = glm::perspective(2.0f * transformedProperties.spot.outerConeAngle, 1.0f, 0.1f, transformedProperties.spot.radius);
                     shadow->views[0].viewMatrix = viewMatrix;
                     shadow->views[0].projectionMatrix = clipMatrix * projectionMatrix;
                     shadow->views[0].frustumMatrix = clipMatrix * projectionMatrix * viewMatrix;

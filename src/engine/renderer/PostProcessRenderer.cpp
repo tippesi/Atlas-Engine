@@ -180,7 +180,7 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::GenerateBloom(PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
+        void PostProcessRenderer::GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
             Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
             
             const uint32_t maxDownsampleCount = 12;

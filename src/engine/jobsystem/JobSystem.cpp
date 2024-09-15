@@ -169,7 +169,7 @@ namespace Atlas {
 
     int32_t JobSystem::GetWorkerCount(const JobPriority priority) {
 
-        auto& priorityPool = priorityPools[static_cast<int>(priority)];
+        const auto& priorityPool = priorityPools[static_cast<int>(priority)];
         return priorityPool.workerCount;
 
     }

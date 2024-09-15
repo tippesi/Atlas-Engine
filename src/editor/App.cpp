@@ -320,10 +320,8 @@ namespace Atlas::Editor {
                     newScene = false;
                 }
 
-                if (saveScene) {
-                    auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
-                    if (activeSceneWindow != nullptr)
-                        activeSceneWindow->SaveScene();                      
+                if (saveScene && activeSceneWindow != nullptr) {
+                    activeSceneWindow->SaveScene();
                 }
 
                 if (exitEditor)
@@ -370,7 +368,6 @@ namespace Atlas::Editor {
                 auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
 
                 std::string perfString;
-                int32_t slowestThreadIdx = 0;
                 double slowestTime = 0.0;
                 for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
                     const auto& threadData = gpuProfilerData[i];
@@ -380,7 +377,6 @@ namespace Atlas::Editor {
                     }
                     if (threadTime > slowestTime) {
                         slowestTime = threadTime;
-                        slowestThreadIdx = i;
                     }
                 }
 

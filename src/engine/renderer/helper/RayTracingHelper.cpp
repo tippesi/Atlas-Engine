@@ -454,7 +454,7 @@ namespace Atlas {
 
                     uint32_t data = 0;
 
-                    auto& prop = light.transformedProperties;
+                    const auto& prop = light.transformedProperties;
                     // Parse individual light information based on type
                     if (light.type == LightType::DirectionalLight) {
                         data |= (DIRECTIONAL_LIGHT << 28u);
