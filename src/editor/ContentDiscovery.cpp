@@ -13,8 +13,15 @@ namespace Atlas::Editor {
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
 	JobGroup ContentDiscovery::contentDiscoveryJob;
 
+	std::atomic_bool ContentDiscovery::execute = false;
 	const float ContentDiscovery::discoverFrequency = 3.0f;
 	float ContentDiscovery::lastDiscoveryTime = -ContentDiscovery::discoverFrequency;
+
+	void ContentDiscovery::Execute() {
+
+		execute = true;
+
+	}
 
 	const Ref<ContentDirectory> ContentDiscovery::GetContent() {
 
@@ -53,7 +60,8 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
-		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency || content->contentDirectories.empty();
+		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency 
+			|| content->contentDirectories.empty() || execute;
 
 		if (contentDiscoveryJob.HasFinished() && canRediscover) {
 			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)		

@@ -2,6 +2,7 @@
 #include "Notifications.h"
 #include "Log.h"
 #include "common/Path.h"
+#include "ContentDiscovery.h"
 
 #include <filesystem>
 
@@ -37,6 +38,7 @@ namespace Atlas::Editor {
             }
             if (success) {
                 Notifications::Push({ "Finished copying file(s) to " + Common::Path::GetAbsolute(destination) });
+                ContentDiscovery::Execute();
             }
             });
 
@@ -66,6 +68,7 @@ namespace Atlas::Editor {
             }
             if (success) {
                 Notifications::Push({ "Successfully deleted files(s)" });
+                ContentDiscovery::Execute();
             }
             });
 
@@ -88,6 +91,7 @@ namespace Atlas::Editor {
                 } while (std::filesystem::exists(dupFilePath) && counter < 20);
                 std::filesystem::copy(filePath, dupFilePath);
                 Notifications::Push({ "Successfully duplicated " + path });
+                ContentDiscovery::Execute();
             }
             catch (std::exception& e) {
                 auto message = "Error duplicating " + path + ": " + e.what();

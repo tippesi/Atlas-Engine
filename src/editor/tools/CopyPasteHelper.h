@@ -65,6 +65,7 @@ namespace Atlas::Editor {
 
             data = nullptr;
             elementCount = 0;
+            elementSize = 0;
 
         }
 
@@ -75,6 +76,7 @@ namespace Atlas::Editor {
             Clear();
 
             elementCount = count;
+            elementSize = sizeof(T);
 
             typeInfo = typeid(T);
             data = std::malloc(sizeof(T) * elementCount);
