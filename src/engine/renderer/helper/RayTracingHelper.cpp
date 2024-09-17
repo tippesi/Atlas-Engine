@@ -449,6 +449,7 @@ namespace Atlas {
                     vec3 P = vec3(0.0f);
                     vec3 N = vec3(0.0f);
                     float weight = 0.0f;
+                    float radius = 1.0f;
                     float specific0 = 0.0f;
                     float specific1 = 0.0f;
 
@@ -465,13 +466,14 @@ namespace Atlas {
                         data |= (POINT_LIGHT << 28u);
                         weight = brightness;
                         P = light.transformedProperties.point.position;
-                        specific0 = light.transformedProperties.point.radius;
+                        radius = light.transformedProperties.point.radius;
                     }
                     else if (light.type == LightType::SpotLight) {
                         data |= (SPOT_LIGHT << 28u);
                         weight = brightness;
                         P = light.transformedProperties.spot.position;
                         N = light.transformedProperties.spot.direction;
+                        radius = light.transformedProperties.spot.radius;
 
                         auto cosOuter = cosf(prop.spot.outerConeAngle);
                         auto cosInner = cosf(prop.spot.innerConeAngle);
@@ -487,7 +489,7 @@ namespace Atlas {
 
                     GPULight gpuLight;
                     gpuLight.P = vec4(P, 1.0f);
-                    gpuLight.N = vec4(N, 0.0f);
+                    gpuLight.N = vec4(N, radius);
                     gpuLight.color = vec4(radiance, 0.0f);
                     gpuLight.data = vec4(cd, weight, specific0, specific1);
 

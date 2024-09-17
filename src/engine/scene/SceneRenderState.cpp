@@ -436,11 +436,12 @@ namespace Atlas::Scene {
                     }
                     else if (light.type == LightType::PointLight) {
                         lightUniform.location = camera.viewMatrix * vec4(prop.point.position, 1.0f);
-                        lightUniform.typeSpecific0 = prop.point.radius;
+                        lightUniform.direction.w = prop.point.radius;
                     }
                     else if (light.type == LightType::SpotLight) {
                         lightUniform.location = camera.viewMatrix * vec4(prop.spot.position, 1.0f);
                         lightUniform.direction = camera.viewMatrix * vec4(prop.spot.direction, 0.0f);
+                        lightUniform.direction.w = prop.spot.radius;
                         
                         auto cosOuter = cosf(prop.spot.outerConeAngle);
                         auto cosInner = cosf(prop.spot.innerConeAngle);

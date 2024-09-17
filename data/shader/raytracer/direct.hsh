@@ -96,7 +96,7 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
     else  { // Punctual lights
         solidAngle = 1.0;
         if (light.type == uint(DIRECTIONAL_LIGHT)) {
-            surface.L = normalize(-light.N);
+            surface.L = -light.N;
             UpdateSurface(surface);
             solidAngle = 1.0;
             dist = INF;
@@ -118,7 +118,7 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
             dist = sqrt(sqrDistance);
             surface.L = pointToLight / dist;
 
-            float strength = dot(surface.L, normalize(-light.N));
+            float strength = dot(surface.L, -light.N);
             float attenuation = saturate(strength * light.angleScale + light.angleOffset);
             solidAngle = sqr(attenuation) / sqrDistance;
             

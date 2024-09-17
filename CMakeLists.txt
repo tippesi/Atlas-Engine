@@ -8,9 +8,10 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0074 NEW)
     cmake_policy(SET CMP0011 NEW)
     cmake_policy(SET CMP0042 NEW)
+    cmake_policy(SET CMP0141 NEW)
 endif(COMMAND cmake_policy)
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
 
 project(AtlasEngine VERSION 0.2.1)
 
@@ -31,6 +32,7 @@ option(ATLAS_ASSIMP "Activate Assimp integration" ON)
 option(ATLAS_HEADLESS "Activate support for running the engine in headless mode" OFF)
 option(ATLAS_BINDLESS "Activate support for running the engine with bindless resources turned on" ON)
 option(ATLAS_BUNDLE "Allows the applications to be bundled and installed on MacOS" OFF)
+option(ATLAS_MSVC_HOT_RELOAD "Configures all targets to be hot-reloadable" OFF)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" ON)
@@ -38,6 +40,11 @@ else()
     option(ATLAS_TESTS "Activate support for running the engine with bindless resources turned on" OFF)
 endif()
 
+# Hot reloading in Windows, enabled for all targets
+if ((CMAKE_CXX_COMPILER_ID MATCHES "MSVC") AND ATLAS_MSVC_HOT_RELOAD)
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:YES" )
+endif()
 
 if (ATLAS_DEMO)
     set (ATLAS_IMGUI ON)

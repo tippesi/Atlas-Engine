@@ -17,9 +17,13 @@ namespace Atlas {
                 Graphics::CommandList* commandList);
 
         private:
+            struct alignas(16) CullingPushConstants {
+                int32_t lightCount;
+            };
+
             struct alignas(16) PushConstants {
                 int32_t lightCount;
-                int32_t padding0;
+                int32_t lightBucketCount;
                 int32_t padding1;
                 int32_t padding2;
                 int32_t mapIndices[16];
@@ -27,6 +31,7 @@ namespace Atlas {
 
             PipelineConfig pipelineConfig;
 
+            Buffer::Buffer lightCullingBuffer;
             Buffer::UniformBuffer cloudShadowUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
 

@@ -104,7 +104,7 @@ Light UnpackLight(PackedLight compressed) {
     Light light;
 
     light.P = compressed.P.xyz;
-    light.N = compressed.N.xyz;
+    light.N = normalize(compressed.N.xyz);
 
     light.radiance = compressed.color.rgb;
 
@@ -115,8 +115,8 @@ Light UnpackLight(PackedLight compressed) {
     light.instanceIdx = floatBitsToInt(compressed.data.w);
 
     light.pdf = compressed.data.y;
-    light.area = compressed.data.z;
-    light.radius = compressed.data.z;
+    light.area = compressed.N.w;
+    light.radius = compressed.N.w;
     light.angleScale = compressed.data.z;
     light.angleOffset = compressed.data.w;
     light.brightness = dot(light.radiance, vec3(0.33333));

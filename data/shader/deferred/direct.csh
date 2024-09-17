@@ -4,6 +4,7 @@
 #define SHADOW_CASCADE_BLENDING
 
 #include <deferred.hsh>
+#include <lightCulling.hsh>
 
 #include <../structures.hsh>
 #include <../shadow.hsh>
@@ -15,7 +16,7 @@
 #include <../common/octahedron.hsh>
 #include <../clouds/shadow.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
 
@@ -26,27 +27,44 @@ layout(set = 3, binding = 1) uniform sampler2D sssTexture;
 layout(set = 3, binding = 2) uniform sampler2D cloudMap;
 #endif
 
-layout(std140, set = 3, binding = 4) uniform CloudShadowUniformBuffer {
+layout(std140, set = 3, binding = 5) uniform CloudShadowUniformBuffer {
     CloudShadow cloudShadow;
 } cloudShadowUniforms;
 
-layout(set = 3, binding = 5) uniform sampler shadowSampler;
+layout(set = 3, binding = 4) uniform sampler shadowSampler;
 
-layout(set = 3, binding = 6) uniform texture2DArray cascadeMaps[8];
-layout(set = 3, binding = 14) uniform textureCube cubeMaps[8];
+layout(set = 3, binding = 7) uniform texture2DArray cascadeMaps[8];
+layout(set = 3, binding = 15) uniform textureCube cubeMaps[8];
 
 layout(push_constant) uniform constants {
     int lightCount;
-    int padding0;
+    int lightBucketCount;
     int padding1;
     int padding2;
     int mapIndices[16];
 } pushConstants;
 
+shared int sharedLightBuckets[lightBucketCount];
+
 vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMain);
 float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometryNormal, bool isMain);
 
+void LoadGroupSharedData() {
+
+    int lightBucketOffset = GetLightBucketsGroupOffset();
+
+    int localOffset = int(gl_LocalInvocationIndex);
+    for (int i = localOffset; i < pushConstants.lightBucketCount; i++) {
+        sharedLightBuckets[i] = lightBuckets[lightBucketOffset + i];
+    }
+
+    barrier();
+
+}
+
 void main() {
+
+    LoadGroupSharedData();
 
     ivec2 resolution = imageSize(image);
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -63,20 +81,33 @@ void main() {
 
         direct = vec3(.0);
 
-        for (int i = 0; i < pushConstants.lightCount; i++) {
-            Light light = lights[i];
+        int visibleCount = 0;
+
+        for (int i = 0; i < pushConstants.lightBucketCount; i++) {
+            int lightBucket = sharedLightBuckets[i];
+
+            for (int j = 0; j < 32; j++) {
+
+                bool lightVisible = (lightBucket & (1 << j)) > 0;
+                if (!lightVisible) continue;
+
+                visibleCount += 1;
+                Light light = lights[i + j];
 
 #ifndef AE_BINDLESS
-            light.shadow.mapIdx = pushConstants.mapIndices[i];
+                light.shadow.mapIdx = pushConstants.mapIndices[i + j];
 #endif
-            bool isMain = i == 0 ? true : false;
-            direct += EvaluateLight(light, surface, geometryNormal, isMain);
+                bool isMain = i == 0 ? true : false;
+                direct += EvaluateLight(light, surface, geometryNormal, isMain);
+            }
         }
+
 
         if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.01) {    
             direct += surface.material.emissiveColor;
         }
     }
+
 
     imageStore(image, pixel, vec4(direct, 1.0));
 
@@ -93,6 +124,7 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
     uint lightType = GetLightType(light);
 
     float lightMultiplier = 1.0;
+    float radius = light.direction.w;
 
     if (lightType == DIRECTIONAL_LIGHT) {
         surface.L = normalize(-light.direction.xyz);
@@ -101,7 +133,7 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
         vec3 pointToLight = light.location.xyz - surface.P;
         float sqrDistance = dot(pointToLight, pointToLight);
         float dist = sqrt(sqrDistance);
-        lightMultiplier = saturate(1.0 - pow(dist / light.radius, 4.0)) / sqrDistance;
+        lightMultiplier = saturate(1.0 - pow(dist / radius, 4.0)) / sqrDistance;
 
         surface.L = pointToLight / dist;
     }
@@ -113,7 +145,7 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
         surface.L = pointToLight / dist;
 
         float strength = dot(surface.L, normalize(-light.direction.xyz));
-        float attenuation = saturate(strength * light.radius + light.specific);
+        float attenuation = saturate(strength * light.specific0 + light.specific1);
         lightMultiplier = sqr(attenuation) / sqrDistance;        
     }
 

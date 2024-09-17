@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.7)
-project(AtlasEngineEditor VERSION 0.2.0)
+cmake_minimum_required(VERSION 3.25)
+project(AtlasEngineEditor VERSION 0.2.1)
 
 # Note: For this project, the root CMakeLists.txt turns
 # the ATLAS_IMGUI and ATLAS_EXPORT_MAIN options on.

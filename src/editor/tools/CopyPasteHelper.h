@@ -57,8 +57,8 @@ namespace Atlas::Editor {
             if (data != nullptr) {
                 auto ptr = static_cast<char*>(data);
                 for (int32_t i = 0; i < elementCount; i++) {
-                    ptr += elementSize;
                     destructor(static_cast<void*>(ptr));
+                    ptr += elementSize;
                 }
                 std::free(data);
             }

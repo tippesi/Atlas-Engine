@@ -1,0 +1,12 @@
+const int lightBucketCount = 128;
+
+layout(std430, set = 3, binding = 6) buffer LightBucketsBuffer {
+    int lightBuckets[];
+};
+
+int GetLightBucketsGroupOffset() {
+
+    int groupOffset = int(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x);
+    return groupOffset * lightBucketCount;
+
+}

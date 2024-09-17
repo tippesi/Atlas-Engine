@@ -15,8 +15,8 @@ struct Light {
     
     float scatteringFactor;
         
-    float radius;
-    float specific;
+    float specific0;
+    float specific1;
 
     Shadow shadow;
 
