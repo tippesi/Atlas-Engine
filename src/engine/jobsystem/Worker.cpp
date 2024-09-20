@@ -31,9 +31,14 @@ namespace Atlas {
         HANDLE threadHandle = static_cast<HANDLE>(thread.native_handle());
         switch (priority) {
             case JobPriority::High: success &= SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST); break;
-            case JobPriority::Low: success &= SetThreadPriority(threadHandle, THREAD_PRIORITY_LOWEST); break;
-            default: break;
-        }       
+            case JobPriority::Low: success &= SetThreadPriority(threadHandle, THREAD_BASE_PRIORITY_IDLE); break;
+            default: success &= SetThreadPriority(threadHandle, THREAD_BASE_PRIORITY_IDLE); break; 
+        }
+        std::wstring threadName = L"Atlas worker " + std::to_wstring(workerId) + L" priority " + std::to_wstring(static_cast<int>(priority));
+        SetThreadDescription(
+            threadHandle,
+            threadName.c_str()
+        );
 #endif
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto minPriority = sched_get_priority_min(SCHED_RR);

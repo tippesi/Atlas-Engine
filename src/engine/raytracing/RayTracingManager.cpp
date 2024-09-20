@@ -21,7 +21,11 @@ namespace Atlas::RayTracing {
                     continue;
                 if (mesh->IsBVHBuilt() || !mesh->rayTrace)
                     continue;
+                if (mesh->data.GetIndexCount() == 0 ||
+                    mesh->data.GetVertexCount() == 0)
+                    continue;
                 JobSystem::Execute(bvhUpdateGroup, [mesh](JobData&) {
+                    
                     mesh->BuildBVH(false);
                     });
             }

@@ -192,7 +192,11 @@ namespace Atlas {
         size_t maxImpostorCount = 0;
 
         for (auto& [meshId, batch] : meshToEntityMap) {
-            auto mesh = meshIdToMeshMap.at(meshId);
+            auto item = meshIdToMeshMap.find(meshId);
+            // This happens when meshes are loaded async
+            if (item == meshIdToMeshMap.end())
+                continue;
+            auto mesh = item->second;
             if (!mesh->castShadow && type == RenderPassType::Shadow)
                 continue;
 
@@ -202,7 +206,11 @@ namespace Atlas {
         }
 
         for (auto& [meshId, batch] : meshToEntityMap) {
-            auto mesh = meshIdToMeshMap.at(meshId);
+            auto item = meshIdToMeshMap.find(meshId);
+            // This happens when meshes are loaded async
+            if (item == meshIdToMeshMap.end())
+                continue;
+            auto mesh = item->second;
             if (!batch.count) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 

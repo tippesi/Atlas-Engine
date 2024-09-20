@@ -148,7 +148,21 @@ namespace Atlas {
     public:
         ResourceHandle() = default;
 
-        ResourceHandle(Ref<Resource<T>>& resource) : resource(resource) {}
+        ResourceHandle(const Ref<T>& data) : isGenerated(true) {
+            
+            Hash hash;
+            HashCombine(hash, static_cast<void*>(data.get()));
+            
+            auto path = "generated/" + std::to_string(hash);
+            resource = CreateRef<Resource<T>>(path, ResourceOrigin::User, data);
+
+        }
+
+        ResourceHandle(const Ref<Resource<T>>& resource) : resource(resource) {}
+
+        inline bool IsGenerated() const {
+            return isGenerated;
+        }
 
         inline bool IsValid() const {
             return resource != nullptr;
@@ -205,6 +219,7 @@ namespace Atlas {
 
     private:
         Ref<Resource<T>> resource = nullptr;
+        bool isGenerated = false;
 
     };
 

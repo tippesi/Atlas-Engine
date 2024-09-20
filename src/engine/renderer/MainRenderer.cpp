@@ -136,7 +136,8 @@ namespace Atlas {
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
             JobSystem::WaitSpin(renderState->materialUpdateJob);
-            renderState->materialBuffer.Bind(commandList, 1, 15);
+            if (renderState->materialBuffer.GetElementCount())
+                renderState->materialBuffer.Bind(commandList, 1, 15);
 
             // Wait as long as possible for this to finish
             JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
