@@ -26,7 +26,7 @@ namespace Atlas::ImguiExtension {
             }
             else {
                 if (textureSelector.has_value())
-                    textureSelector.value()(texture);
+                    texture = textureSelector.value()(texture);
             }
             element();
             if (texture.IsLoaded() && !textureSelector.has_value())

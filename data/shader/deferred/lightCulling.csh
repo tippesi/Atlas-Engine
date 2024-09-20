@@ -20,6 +20,63 @@ const int groupSize = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 shared int sharedLightBuckets[lightBucketCount];
 shared uint sharedDepthMin;
 shared uint sharedDepthMax;
+shared int depthMask;
+
+struct AABB {
+    vec3 center;
+    vec3 extent;
+};
+
+struct Sphere {
+    vec3 center;
+    float radius;
+};
+
+void GetFrustumCorners(out vec3 frustumCorners[8]) {
+
+    ivec2 resolution = textureSize(depthTexture, 0);
+
+    ivec2 basePixel = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
+    vec2 baseTexCoord = vec2(basePixel) / vec2(resolution);
+    vec2 texCoordSpan = vec2(basePixel + ivec2(gl_WorkGroupSize)) / vec2(resolution) - baseTexCoord;
+
+    float depthMin = uintBitsToFloat(sharedDepthMin);
+    float depthMax = uintBitsToFloat(sharedDepthMax);
+
+    frustumCorners[0] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(0.0, 0.0));
+    frustumCorners[1] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(texCoordSpan.x, 0.0));
+    frustumCorners[2] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(0.0, texCoordSpan.y));
+    frustumCorners[3] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(texCoordSpan.x, texCoordSpan.y));
+    frustumCorners[4] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(0.0, 0.0));
+    frustumCorners[5] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(texCoordSpan.x, 0.0));
+    frustumCorners[6] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(0.0, texCoordSpan.y));
+    frustumCorners[7] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(texCoordSpan.x, texCoordSpan.y));
+
+}
+
+AABB CalculateAABB(vec3 corners[8]) {
+
+    vec3 aabbMin = corners[0];
+    vec3 aabbMax = corners[0];
+
+    for (int i = 1; i < 8; i++) {
+        aabbMin = min(corners[i], aabbMin);
+        aabbMax = max(corners[i], aabbMax);
+    }
+
+    AABB aabb;
+    aabb.center = (aabbMax + aabbMin) * 0.5;
+    aabb.extent = aabbMax - aabb.center;
+    return aabb;
+
+}
+
+bool SphereAABBIntersection(Sphere sphere, AABB aabb) {
+
+    vec3 diff = max(vec3(0.0), abs(aabb.center - sphere.center) - aabb.extent);
+    return dot(diff, diff) <= sphere.radius * sphere.radius;
+
+}
 
 void main() {
 
@@ -32,8 +89,9 @@ void main() {
     float viewDepth = ConvertDepthToViewSpaceDepth(depth);
 
     if (gl_LocalInvocationIndex == 0u) {
-        sharedDepthMin = floatBitsToUint(viewDepth);
-        sharedDepthMax = floatBitsToUint(viewDepth);
+        sharedDepthMin = floatBitsToUint(depth);
+        sharedDepthMax = floatBitsToUint(depth);
+        depthMask = 0;
     }
 
     int localOffset = int(gl_LocalInvocationIndex);
@@ -43,19 +101,31 @@ void main() {
 
     barrier();
 
-    atomicMin(sharedDepthMin, floatBitsToUint(viewDepth));
-    atomicMax(sharedDepthMax, floatBitsToUint(viewDepth));
+    atomicMin(sharedDepthMin, floatBitsToUint(depth));
+    atomicMax(sharedDepthMax, floatBitsToUint(depth));
 
     barrier();
 
-    float depthMin = uintBitsToFloat(sharedDepthMin);
-    float depthMax = uintBitsToFloat(sharedDepthMax);
+    float depthMin = ConvertDepthToViewSpaceDepth(uintBitsToFloat(sharedDepthMin));
+    float depthMax = ConvertDepthToViewSpaceDepth(uintBitsToFloat(sharedDepthMax));
+
+    float depthRange = depthMax - depthMin;
+    float invBinSize = 32.0 / depthRange;
+    int depthBin = clamp(int((viewDepth - depthMin) * invBinSize), 0, 31);
+    atomicOr(depthMask, 1 << depthBin);
+
+    barrier();
+
+    vec3 frustumCorners[8];
+    GetFrustumCorners(frustumCorners);
+
+    AABB frustumAABB = CalculateAABB(frustumCorners);
 
     vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
     
     for (int i = localOffset; i < pushConstants.lightCount; i += groupSize) {
-        int lightBucketIdx = i / lightBucketCount;
-        int lightBuckedBit = i % lightBucketCount;
+        int lightBucketIdx = i / 32;
+        int lightBuckedBit = i % 32;
 
         bool visible = true;
 
@@ -64,38 +134,36 @@ void main() {
 
         uint lightType = floatBitsToUint(light.color.a);
 
+        int startBin = 0;
+        int endBin = 31;
+
         // Remember: Forward is in -z direction
         if (lightType == POINT_LIGHT) {
-            /*
-            vec3 pointToLight = light.location.xyz - viewPos;
-            float sqrDistance = dot(pointToLight, pointToLight);
-            float dist = sqrt(sqrDistance);
-            lightMultiplier = saturate(1.0 - pow(dist / radius, 4.0)) / sqrDistance;
+            Sphere sphere;
+            sphere.center = light.location.xyz;
+            sphere.radius = radius;
 
-            surface.L = pointToLight / dist;
-            */
-            visible = depthMin > light.location.z - radius &&
-                depthMax < light.location.z + radius;
+            visible = SphereAABBIntersection(sphere, frustumAABB);
+            
+            startBin = clamp(int((light.location.z + radius - depthMin) * invBinSize), 0, 31);
+            endBin = clamp(int((light.location.z - radius - depthMin) * invBinSize), 0, 31);            
         }
         else if (lightType == SPOT_LIGHT) {
-            /*
-            vec3 pointToLight = light.location.xyz - surface.P;
-            float sqrDistance = dot(pointToLight, pointToLight);
-            float dist = sqrt(sqrDistance);
+            Sphere sphere;
+            sphere.center = light.location.xyz;
+            sphere.radius = radius;
 
-            surface.L = pointToLight / dist;
+            visible = SphereAABBIntersection(sphere, frustumAABB);
 
-            float strength = dot(surface.L, normalize(-light.direction.xyz));
-            float attenuation = saturate(strength * light.specific0 + light.specific1);
-            lightMultiplier = sqr(attenuation) / sqrDistance;
-            */
-            visible = depthMin > light.location.z - radius &&
-                depthMax < light.location.z + radius;
+            startBin = clamp(int((light.location.z + radius - depthMin) * invBinSize), 0, 31);
+            endBin = clamp(int((light.location.z - radius - depthMin) * invBinSize), 0, 31);
         }
 
-        
+        int shiftCount = 31 - endBin + startBin;
+        int downShift = (0xFFFFFFFF >> shiftCount);
+        int lightMask = downShift << startBin;
 
-        if (visible) {
+        if (visible && (lightMask & depthMask) != 0) {
             atomicOr(sharedLightBuckets[lightBucketIdx], 1 << lightBuckedBit);
         }
     }

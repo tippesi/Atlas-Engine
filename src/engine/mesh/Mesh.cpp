@@ -82,6 +82,19 @@ namespace Atlas {
 
         }
 
+        void Mesh::InvertNormals() {
+
+            if (!data.normals.ContainsData())
+                return;
+
+            for (auto& normal : data.normals)
+                normal = vec4(-vec3(normal.x, normal.y, normal.z), normal.w);
+
+            UpdateData();
+            isBvhBuilt = false;
+
+        }
+
         void Mesh::BuildBVH(bool parallelBuild) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;

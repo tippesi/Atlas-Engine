@@ -510,7 +510,7 @@ namespace Atlas {
             else {
                 Graphics::Profiler::BeginQuery("Post processing");
 
-                if (device->swapChain->isComplete) {
+                if (device->swapChain->isComplete && !texture) {
                     commandList->BeginRenderPass(device->swapChain, true);
 
                     textureRenderer.RenderTexture2D(commandList, viewport, &target->outputTexture,
@@ -518,6 +518,11 @@ namespace Atlas {
 
                     commandList->EndRenderPass();
                 }
+                else if (texture) {
+                    postProcessRenderer.CopyToTexture(&target->outputTexture, texture, commandList);
+                }
+
+                target->Swap();
 
                 Graphics::Profiler::EndQuery();
             }

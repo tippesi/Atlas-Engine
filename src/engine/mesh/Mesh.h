@@ -59,6 +59,8 @@ namespace Atlas {
              */
             void UpdateVertexArray();
 
+            void InvertNormals();
+
             /**
              * Builds up BVH and fills raytracing related buffers
              */

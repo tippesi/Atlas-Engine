@@ -574,10 +574,14 @@ vec3 sampleOffsetDirections[20] = vec3[] (
 );
 
 
-float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position) {
+float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position,
+    vec3 normal, float cosTheta) {
 
     int samples = 20;
     float diskRadius = shadow.edgeSoftness;
+
+    vec3 bias = shadow.bias * (1.0 / 2048.0) * normal / max(cosTheta * cosTheta, 0.01);
+    position += bias;
     
     vec4 shadowCoords = shadow.cascades[1].cascadeSpace * vec4(position, 1.0);
     shadowCoords.y *= -1.0;
@@ -589,7 +593,7 @@ float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSam
     float shadowFactor = 0.0;
     for(int i = 0; i < samples; i++) {
         shadowFactor += clamp(texture(samplerCubeShadow(cubeMap, shadowSampler), 
-            vec4(shadowCoords.xyz + sampleOffsetDirections[i] * diskRadius, depth - shadow.bias * 0.001)), 0.0, 1.0); 
+            vec4(shadowCoords.xyz + sampleOffsetDirections[i] * diskRadius, depth - 0.0001)), 0.0, 1.0); 
     }
     shadowFactor /= float(samples + 1);  
 

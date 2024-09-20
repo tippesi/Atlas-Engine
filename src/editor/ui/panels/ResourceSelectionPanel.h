@@ -34,9 +34,9 @@ namespace Atlas::Editor::UI {
             auto buttonName = resourceHandle.IsValid() ? resourceHandle.GetResource()->GetFileName() :
                 "Drop resource here##" + std::to_string(counter++);
 
-            ImGui::PushID(resourceHandle.GetID());
+            ImGui::PushID(resourceHandle.IsValid() ? resourceHandle.GetID() : counter);
 
-            popup.SetID(resourceHandle.GetID());
+            popup.SetID(resourceHandle.IsValid() ? resourceHandle.GetID() : counter);
             if (ImGui::Button(buttonName.c_str(), { resourceButtonSize, 0 }))
                 popup.Open();
 

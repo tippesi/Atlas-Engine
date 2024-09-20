@@ -331,7 +331,7 @@ namespace Atlas::Scene {
             auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
 
-            JobGroup group;
+            JobGroup group{ JobPriority::High };
             for (auto& lightEntity : lightSubset) {
 
                 auto& light = lightEntity.GetComponent<LightComponent>();
@@ -352,9 +352,9 @@ namespace Atlas::Scene {
                         if (shadowPass == nullptr)
                             shadowPass = renderList.NewShadowPass(lightEntity, data.idx);
 
-                        shadowPass->NewFrame(scene, meshes);
+                        shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
                         scene->GetRenderList(frustum, shadowPass);
-                        shadowPass->Update(camera.GetLocation());
+                        shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
                         shadowPass->FillBuffers();
                         renderList.FinishPass(shadowPass);
                     });
@@ -366,9 +366,9 @@ namespace Atlas::Scene {
             if (mainPass == nullptr)
                 mainPass = renderList.NewMainPass();
 
-            mainPass->NewFrame(scene, meshes);
+            mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             scene->GetRenderList(camera.frustum, mainPass);
-            mainPass->Update(camera.GetLocation());
+            mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass);
 

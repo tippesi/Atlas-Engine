@@ -79,25 +79,26 @@ void main() {
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
         Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-        direct = vec3(.0);
+        direct = vec3(0.0);
 
         int visibleCount = 0;
 
         for (int i = 0; i < pushConstants.lightBucketCount; i++) {
             int lightBucket = sharedLightBuckets[i];
+            if (lightBucket == 0) continue;
 
             for (int j = 0; j < 32; j++) {
 
-                bool lightVisible = (lightBucket & (1 << j)) > 0;
+                bool lightVisible = (lightBucket & (1 << j)) != 0;
                 if (!lightVisible) continue;
 
                 visibleCount += 1;
-                Light light = lights[i + j];
+                Light light = lights[i * 32 + j];
 
 #ifndef AE_BINDLESS
-                light.shadow.mapIdx = pushConstants.mapIndices[i + j];
+                light.shadow.mapIdx = pushConstants.mapIndices[i * 32 + j];
 #endif
-                bool isMain = i == 0 ? true : false;
+                bool isMain = i + j == 0 ? true : false;
                 direct += EvaluateLight(light, surface, geometryNormal, isMain);
             }
         }
@@ -145,8 +146,9 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
         surface.L = pointToLight / dist;
 
         float strength = dot(surface.L, normalize(-light.direction.xyz));
-        float attenuation = saturate(strength * light.specific0 + light.specific1);
-        lightMultiplier = sqr(attenuation) / sqrDistance;        
+        float angleAttenuation = saturate(strength * light.specific0 + light.specific1);
+        float distAttenuation = saturate(1.0 - pow(dist / radius, 4.0)) / sqrDistance;
+        lightMultiplier = distAttenuation * sqr(angleAttenuation);        
     }
 
     UpdateSurface(surface);
@@ -207,10 +209,10 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
     else if (lightType == POINT_LIGHT) {
 #ifdef AE_BINDLESS
         shadowFactor = CalculatePointShadow(light.shadow, bindlessCubemaps[nonuniformEXT(light.shadow.mapIdx)],
-            shadowSampler, surface.P);
+            shadowSampler, surface.P, shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
 #else
         shadowFactor = CalculatePointShadow(light.shadow, cubeMaps[nonuniformEXT(light.shadow.mapIdx)],
-            shadowSampler, surface.P);
+            shadowSampler, surface.P, shadowNormal, saturate(dot(-light.direction.xyz, shadowNormal)));
 #endif
     }
     else if (lightType == SPOT_LIGHT) {

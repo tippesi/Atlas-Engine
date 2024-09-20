@@ -17,6 +17,9 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
 
+            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
+                Graphics::CommandList* commandList);
+
         private:
             struct alignas(16) Uniforms {
                 float exposure;
@@ -37,9 +40,6 @@ namespace Atlas {
 
             void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
                 Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
-
-            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
-                Graphics::CommandList* commandList);
 
             void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);
 

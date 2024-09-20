@@ -29,7 +29,7 @@ namespace Atlas {
                     continue;
                 }
 
-                ProcessPass(target, scene, commandList, shadowPass);
+                ProcessPass(target, scene, commandList, renderList, shadowPass);
 
                 shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             }
@@ -38,7 +38,7 @@ namespace Atlas {
             // another push to the queue has been happening. So check again here
             shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
             if (shadowPass != nullptr) {
-                ProcessPass(target, scene, commandList, shadowPass);
+                ProcessPass(target, scene, commandList, renderList, shadowPass);
             }
 
             // Need to also keep track of non processed layer (e.g. long range layers)
@@ -60,7 +60,10 @@ namespace Atlas {
 
         }
 
-        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass) {
+        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+            RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
+
+            Graphics::Profiler::BeginQuery("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
             auto lightEntity = shadowPass->lightEntity;
             auto& light = lightEntity.GetComponent<LightComponent>();
@@ -111,7 +114,7 @@ namespace Atlas {
             for (auto& [meshId, instances] : shadowPass->meshToInstancesMap) {
                 if (!instances.count) continue;
 
-                auto& mesh = shadowPass->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
                     if (!subData.material.IsLoaded())
                         continue;
@@ -187,10 +190,12 @@ namespace Atlas {
 
             }
 
-            impostorRenderer.Render(frameBuffer, commandList,
+            impostorRenderer.Render(frameBuffer, commandList, renderList,
                 shadowPass.get(), component->viewMatrix, component->projectionMatrix, lightLocation);
 
             commandList->EndRenderPass();
+
+            Graphics::Profiler::EndQuery();
 
         }
 

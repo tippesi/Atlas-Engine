@@ -171,12 +171,28 @@ namespace Atlas::Scripting::Bindings {
             "spot", &TypeProperties::spot
         );
 
-        // TODO: Extend this
+        ns->new_enum<LightType>("LightType", {
+           { "DirectionalLight", LightType::DirectionalLight },
+           { "PointLight", LightType::PointLight },
+           { "SpotLight", LightType::SpotLight }
+           });
+
+        ns->new_enum<LightMobility>("LightMobility", {
+          { "StationaryLight", LightMobility::StationaryLight },
+          { "MovableLight", LightMobility::MovableLight }
+          });
+
         ns->new_usertype<LightComponent>("LightComponent",
+            "AddPointShadow", &LightComponent::AddPointShadow,
+            "AddSpotShadow", &LightComponent::AddSpotShadow,
+            "IsVisible", &LightComponent::IsVisible,
+            "type", &LightComponent::type,
+            "mobility", &LightComponent::mobility,
             "color", &LightComponent::color,
             "intensity", &LightComponent::intensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
+            "shadow", &LightComponent::shadow,
             "isMain", &LightComponent::isMain,
             "volumetric", &LightComponent::volumetric
         );

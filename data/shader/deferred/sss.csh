@@ -8,8 +8,6 @@
 #include <../common/utility.hsh>
 #include <../common/normalencode.hsh>
 
-#define TRACE_WORLD_SPACE
-
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, r16f) uniform image2D image;
@@ -20,6 +18,7 @@ layout(push_constant) uniform constants {
     vec4 lightDirection;
     int sampleCount;
     float maxLength;
+    float minLengthWorldSpace;
     float thickness;
 } pushConstants;
 
@@ -63,23 +62,28 @@ void main() {
     
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
-    vec3 rayPos = ConvertDepthToViewSpace(depth, texCoord);
+    vec3 rayPos = ConvertDepthToViewSpace(depth, texCoord) + normal * 0.01;
     float startDepth = -rayPos.z;
     vec3 rayDir = normalize(-pushConstants.lightDirection.xyz);
 
     float stepLength = pushConstants.maxLength / (float(pushConstants.sampleCount));
 
 #ifdef TRACE_WORLD_SPACE
-    float depthThickness = pushConstants.thickness;
-    vec3 rayEndPos = rayPos + pushConstants.maxLength * rayDir;
+    stepLength *= 100.0;
+    float depthThickness = pushConstants.thickness * 100.0;
+    vec3 rayEndPos = rayPos + pushConstants.maxLength * 100.0 * rayDir;
 #else
     float depthThickness = pushConstants.thickness;
     vec2 stepPos = PosToUV(rayPos + rayDir);
     float stepPosLength = length(stepPos - texCoord);
-    vec3 rayEndPos = rayPos + (pushConstants.maxLength / max(0.01, stepPosLength)) * rayDir;
-    depthThickness *= stepPosLength;
-    depthThickness = max(abs(rayPos.z), abs(rayPos.z - rayEndPos.z)) * pushConstants.thickness;
-    vec2 uvDir = normalize(stepPos - texCoord);
+    float worldSpaceRayLength = (pushConstants.maxLength / max(0.000001, stepPosLength));
+
+    float worldSpaceCorrection = clamp(pushConstants.minLengthWorldSpace / worldSpaceRayLength, 1.0, 1000.0);
+
+    vec3 rayEndPos = rayPos + worldSpaceRayLength * worldSpaceCorrection * rayDir;
+    stepLength *= worldSpaceCorrection;
+
+    depthThickness = max(abs(rayPos.z), abs(rayPos.z - rayEndPos.z)) * pushConstants.thickness * worldSpaceCorrection;
 #endif
 
     float resultDelta = 0.0;
@@ -90,15 +94,12 @@ void main() {
 
     float rayLength = distance(rayPos, rayEndPos);
 
-    //depthThickness = abs(rayPos.z - rayEndPos.z) * stepLength;
-
     vec2 uvPos = texCoord;
     float noiseOffset = GetInterleavedGradientNoise(texCoord * vec2(resolution));
 
 #ifdef TRACE_WORLD_SPACE
     rayPos += noiseOffset * stepLength * rayDir;
 #else
-    uvPos += noiseOffset * stepLength * uvDir;
     rayPos += noiseOffset * stepLength * rayDir / stepPosLength;
 #endif
 
@@ -113,8 +114,11 @@ void main() {
         offset.xyz /= offset.w;
         uvPos = offset.xy * 0.5 + 0.5;
 #else
-        uvPos += uvDir * stepLength;
         rayPos += rayDir * stepLength / stepPosLength;
+
+        vec4 offset = globalData.pMatrix * vec4(rayPos, 1.0);
+        offset.xyz /= offset.w;
+        uvPos = offset.xy * 0.5 + 0.5;
 #endif
         if (uvPos.x < 0.0 || uvPos.x > 1.0 || uvPos.y < 0.0 || uvPos.y > 1.0)
             continue;
@@ -133,7 +137,7 @@ void main() {
 
         // Check if the camera can't "see" the ray (ray depth must be larger than the camera depth, so positive depth_delta)
         if (depthDelta > 0.0 && depthDelta < depthThickness &&
-            depthDelta < 0.5 * rayLength && depthDelta > 0.2 * depthThickness) {
+            depthDelta < 0.5 * rayLength) {
             // Mark as occluded
             occlusion = 1.0;
             resultDelta = depthDelta;

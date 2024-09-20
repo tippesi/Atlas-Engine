@@ -30,6 +30,15 @@ namespace Atlas {
 
         JobSystem::Wait(clearJob);
 
+        auto meshes = scene->GetMeshes();
+        meshIdToMeshMap.reserve(meshes.size());
+
+        // Fill in missing meshes since they are cleared at the end of each frame
+        for (const auto& mesh : meshes) {
+            auto id = mesh.GetID();
+            meshIdToMeshMap[id] = mesh;
+        }
+
     }
 
     Ref<RenderList::Pass> RenderList::NewMainPass() {
@@ -128,13 +137,15 @@ namespace Atlas {
         JobSystem::Execute(clearJob, 
             [&](JobData&) {
             std::erase_if(passes, [](const auto& item) { return item->wasUsed != true; });
+            meshIdToMeshMap.clear();
             for (auto& pass : passes)
                 pass->Reset();
             });
 
     }
 
-    void RenderList::Pass::NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {
+    void RenderList::Pass::NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
+        const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
 
         this->scene = scene;
 
@@ -149,14 +160,6 @@ namespace Atlas {
         lastSize = impostorMatrices.size();
         impostorMatrices.clear();
         if (lastSize) impostorMatrices.reserve(lastSize);
-
-        meshIdToMeshMap.reserve(meshes.size());
-
-        // Fill in missing meshes since they are cleared at the end of each frame
-        for (const auto& mesh : meshes) {
-            auto id = mesh.GetID();
-            meshIdToMeshMap[id] = mesh;
-        }
 
         std::erase_if(meshToEntityMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
         std::erase_if(meshToInstancesMap, [&](const auto& item) { return !meshIdToMeshMap.contains(item.first); });
@@ -179,18 +182,17 @@ namespace Atlas {
             batch.Add(entity);
 
             meshToEntityMap[id] = batch;
-            meshIdToMeshMap[id] = meshComponent.mesh;
         }
 
     }
 
-    void RenderList::Pass::Update(vec3 cameraLocation) {
+    void RenderList::Pass::Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
 
         size_t maxActorCount = 0;
         size_t maxImpostorCount = 0;
 
         for (auto& [meshId, batch] : meshToEntityMap) {
-            auto mesh = meshIdToMeshMap[meshId];
+            auto mesh = meshIdToMeshMap.at(meshId);
             if (!mesh->castShadow && type == RenderPassType::Shadow)
                 continue;
 
@@ -200,7 +202,7 @@ namespace Atlas {
         }
 
         for (auto& [meshId, batch] : meshToEntityMap) {
-            auto mesh = meshIdToMeshMap[meshId];
+            auto mesh = meshIdToMeshMap.at(meshId);
             if (!batch.count) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
@@ -314,7 +316,6 @@ namespace Atlas {
         }
 
         // Need to clear this to free the references
-        meshIdToMeshMap.clear();
         meshToInstancesMap.clear();
 
         wasUsed = false;

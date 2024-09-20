@@ -3,6 +3,8 @@
 #include "Log.h"
 #include "../../Singletons.h"
 
+#include <algorithm>
+
 namespace Atlas::Editor::UI {
 
     void LogWindow::Render() {
@@ -15,11 +17,13 @@ namespace Atlas::Editor::UI {
         auto entries = Atlas::Log::GetLatestEntries(10000);
         for (auto& entry : entries) {
             
-            ImGui::Text("");
-            if (!ImGui::IsItemVisible())
-                continue;
-                
-            ImGui::SameLine();
+            bool hasNewLine = entry.message.find_first_of('\n') != std::string::npos;
+            if (!hasNewLine) {
+                ImGui::TextUnformatted("");
+                if (!ImGui::IsItemVisible())
+                    continue;
+                ImGui::SameLine();
+            }
 
             std::string logText;
             logText.append("[" + std::to_string(entry.time) + "] ");

@@ -40,6 +40,8 @@ namespace Atlas {
                 auto lightDirection = glm::normalize(vec3(camera.viewMatrix * vec4(
                     light.transformedProperties.directional.direction, 0.0f)));
 
+                pipelineConfig.ManageMacro("TRACE_WORLD_SPACE", sss->traceWorldSpace);
+
                 auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
 
@@ -54,6 +56,7 @@ namespace Atlas {
                     .lightDirection = vec4(lightDirection, 0.0),
                     .sampleCount = sss->sampleCount,
                     .maxLength = sss->maxLength,
+                    .minLengthWorldSpace = sss->minLengthWorldSpace,
                     .thickness = sss->thickness
                 };
                 commandList->PushConstants("constants", &constants);

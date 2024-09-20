@@ -130,7 +130,7 @@ void main() {
 
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
                     float viewOffset = max(1.0, length(viewPos));
-                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset * 0.01 + worldNorm * EPSILON * 0.01 * viewOffset;
+                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
 
                     ray.hitID = -1;
                     ray.hitDistance = 0.0;

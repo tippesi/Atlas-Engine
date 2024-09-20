@@ -55,10 +55,10 @@ namespace Atlas::Editor::UI {
                 lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 0.05f, 3, 0.95f, true, 2048.0f);
             }
             if (lightComponent.type == LightType::PointLight) {
-                lightComponent.AddPointShadow(0.1f, 1024);
+                lightComponent.AddPointShadow(0.25f, 1024);
             }
             if (lightComponent.type == LightType::SpotLight) {
-                lightComponent.AddSpotShadow(0.1f, 1024);
+                lightComponent.AddSpotShadow(2.0f, 1024);
             }
         }
         else if (lightComponent.shadow && !castShadow) {

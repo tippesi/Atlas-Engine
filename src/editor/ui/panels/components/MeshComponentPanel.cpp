@@ -34,6 +34,10 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("Cast shadow", &mesh->castShadow);
             ImGui::SliderInt("Shadow cascades", &mesh->allowedShadowCascades, 1, 6);
 
+            auto region = ImGui::GetContentRegionAvail();
+            if (ImGui::Button("Invert normals", { region.x, 0.0 }))
+                mesh->InvertNormals();
+
             ImGui::Separator();
             ImGui::Text("Culling settings");            
             ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);

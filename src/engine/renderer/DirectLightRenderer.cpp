@@ -74,7 +74,7 @@ namespace Atlas {
             PushConstants pushConstants;
 #ifdef AE_BINDLESS
             pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
-            pushConstants.lightBucketCount = 1;
+            pushConstants.lightBucketCount = int32_t(std::ceil(float(pushConstants.lightCount) / 32.0f));
 #else
             std::vector<Ref<Graphics::Image>> cascadeMaps;
             std::vector<Ref<Graphics::Image>> cubeMaps;

@@ -38,7 +38,7 @@ namespace Atlas {
             for (const auto& [meshId, instances] : mainPass->meshToInstancesMap) {
                 if (!instances.count) continue;
 
-                auto& mesh = mainPass->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
                 for (auto& subData : mesh->data.subData) {
                     if (!subData.material.IsLoaded())
                         continue;
