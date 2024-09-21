@@ -103,7 +103,7 @@ namespace Atlas {
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless) return;
+            if (data.indexCount == 0 || !bindless || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
             data.BuildBVH(parallelBuild);
 

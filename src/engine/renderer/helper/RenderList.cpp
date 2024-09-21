@@ -29,6 +29,7 @@ namespace Atlas {
         processedPasses.clear();
 
         JobSystem::Wait(clearJob);
+        wasCleared = false;
 
         auto meshes = scene->GetMeshes();
         meshIdToMeshMap.reserve(meshes.size());
@@ -132,6 +133,7 @@ namespace Atlas {
     void RenderList::Clear() {
 
         // We can reset the scene now and delete the reference
+        wasCleared = true;
         scene = nullptr;
 
         JobSystem::Execute(clearJob, 

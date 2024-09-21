@@ -28,7 +28,7 @@ namespace Atlas {
         // Need to set our own main thread priority, otherwise we will loose when in contention with other threads
 #ifdef AE_OS_WINDOWS
         auto threadHandle = GetCurrentThread();
-        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0;
+        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_TIME_CRITICAL) > 0;
 #endif
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto maxPriority = sched_get_priority_max(SCHED_RR);

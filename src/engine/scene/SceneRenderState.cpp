@@ -327,7 +327,8 @@ namespace Atlas::Scene {
         auto lightSubset = scene->GetSubset<LightComponent>();
         auto camera = scene->GetMainCamera();
 
-        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera](JobData&) {
+        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera](JobData&) {           
+
             auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
 
@@ -371,7 +372,6 @@ namespace Atlas::Scene {
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass);
-
             });
     }
 
@@ -535,6 +535,9 @@ namespace Atlas::Scene {
         JobSystem::Wait(prepareBindlessTexturesJob);
         JobSystem::Wait(fillRenderListJob);
         JobSystem::Wait(cullAndSortLightsJob);
+
+        if (!renderList.wasCleared)
+            renderList.Clear();
 
     }
 

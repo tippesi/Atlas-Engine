@@ -109,6 +109,7 @@ namespace Atlas {
 
         std::mutex mutex;
         std::atomic_bool doneProcessingShadows;
+        std::atomic_bool wasCleared = false;
 
         std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
