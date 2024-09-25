@@ -419,6 +419,8 @@ namespace Atlas {
             traverseNodeTree = [&](aiNode* node, Scene::Entity parentEntity) {
                 auto nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
 
+                auto& parentNameComp = parentEntity.GetComponent<NameComponent>();
+
                 for (uint32_t i = 0; i < node->mNumMeshes; i++) {
                     auto meshId = node->mMeshes[i];
                     auto& meshInfo = meshes[meshId];
@@ -434,7 +436,7 @@ namespace Atlas {
                     parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
                 }
 
-                if (lightMap.contains(node->mName.C_Str())) {
+                if (lightMap.contains(node->mName.C_Str()) && node->mNumChildren == 0) {
                     auto light = lightMap[node->mName.C_Str()];
 
                     auto lightType = LightType::DirectionalLight;
@@ -445,13 +447,16 @@ namespace Atlas {
                     }
 
                     auto& lightComp = parentEntity.AddComponent<LightComponent>(lightType, LightMobility::StationaryLight);
-                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b));
+                    lightComp.color = vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
                     lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
                     lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(lightComp.color);
+
+                    float intensityRadius = glm::sqrt(lightComp.intensity / 0.15f);
 
                     if (lightType == LightType::PointLight) {                       
                         lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
-                        lightComp.properties.point.radius = glm::sqrt(100.0f * light->mAttenuationQuadratic);
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
                         lightComp.AddPointShadow(3.0f, 1024);
                     }
                     if (lightType == LightType::SpotLight) {
@@ -459,9 +464,10 @@ namespace Atlas {
                         lightComp.properties.spot.direction = vec3(light->mDirection.x, light->mDirection.y, light->mDirection.z);
                         lightComp.properties.spot.innerConeAngle = light->mAngleInnerCone;
                         lightComp.properties.spot.outerConeAngle = light->mAngleOuterCone;
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
                         lightComp.AddSpotShadow(3.0f, 1024);
                     }
-                }
+                }                
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
                     auto nodeEntity = scene->CreatePrefab<Scene::Prefabs::Node>(node->mChildren[i]->mName.C_Str(), nodeTransform);

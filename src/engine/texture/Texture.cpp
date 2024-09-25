@@ -104,7 +104,7 @@ namespace Atlas {
 
             bool generateMipMaps = filtering == Filtering::MipMapLinear ||
                 filtering == Filtering::MipMapNearest || filtering == Filtering::Anisotropic;
-            bool depthFormat = format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D16_UNORM ||
+            bool depthFormat = format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D16_UNORM || 
                 format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 
             VkImageUsageFlags additionalUsageFlags = {};

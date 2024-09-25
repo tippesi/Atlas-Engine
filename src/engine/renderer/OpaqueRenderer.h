@@ -39,6 +39,9 @@ namespace Atlas {
                 float windTextureLod;
                 float windBendScale;
                 float windWiggleScale;
+                float uvAnimationX;
+                float uvAnimationY;
+                float uvTiling;
                 uint32_t baseColorTextureIdx;
                 uint32_t opacityTextureIdx;
                 uint32_t normalTextureIdx;

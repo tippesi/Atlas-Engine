@@ -24,7 +24,7 @@ layout(location=4) in vec3 ndcLastVS;
 layout(location=5) in vec4 vertexColorsVS;
 #endif
 
-layout(location=6) in float normalInversionVS;
+// layout(location=6) in float normalInversionVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) in mat3 TBN;
@@ -41,6 +41,9 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
     uint baseColorTextureIdx;
     uint opacityTextureIdx;
     uint normalTextureIdx;

@@ -19,7 +19,7 @@ namespace Atlas {
 
             RayTracingHelper::RayTracingHelper() {
 
-                const size_t lightCount = 128;
+                const size_t lightCount = 256;
 
                 indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     3 * sizeof(uint32_t), 0);

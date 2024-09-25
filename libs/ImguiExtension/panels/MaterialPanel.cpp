@@ -78,7 +78,12 @@ namespace Atlas::ImguiExtension {
 
         ImGui::ColorEdit3("Transmissive color", glm::value_ptr(material->transmissiveColor));
 
+        ImGui::DragFloat2("UV animation", glm::value_ptr(material->uvAnimation), 0.01f, -1.0f, 1.0f);
+        ImGui::DragFloat("UV tiling", &material->tiling, 0.01f, 0.01f, 100.0f);
+
         ImGui::Checkbox("Two sided", &material->twoSided);
+
+        
 
         ImGui::PopID();
 

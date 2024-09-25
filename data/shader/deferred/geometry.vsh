@@ -46,7 +46,7 @@ layout(location=4) out vec3 ndcLastVS;
 layout(location=5) out vec4 vertexColorsVS;
 #endif
 
-layout(location=6) out float normalInversionVS;
+// layout(location=6) out float normalInversionVS;
 
 // Matrix is several locations
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
@@ -66,6 +66,9 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
     uint baseColorTextureIdx;
     uint opacityTextureIdx;
     uint normalTextureIdx;
@@ -73,6 +76,7 @@ layout(push_constant) uniform constants {
     uint metalnessTextureIdx;
     uint aoTextureIdx;
     uint heightTextureIdx;
+    uint emissiveTextureIdx;
 } PushConstants;
 
 // Functions
@@ -81,10 +85,12 @@ void main() {
     mat4 mMatrix = mat4(transpose(currentMatrices[gl_InstanceIndex]));
     mat4 mMatrixLast = PushConstants.staticMesh > 0 ? mMatrix : mat4(transpose(lastMatrices[gl_InstanceIndex]));
 
-    normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
+    // normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
 
 #ifdef TEX_COORDS
-    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
+    texCoordVS += vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY) * globalData.time;
+    texCoordVS *= PushConstants.uvTiling;
 #endif
     
     mat4 mvMatrix = globalData.vMatrix * mMatrix;

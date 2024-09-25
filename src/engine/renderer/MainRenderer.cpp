@@ -496,8 +496,6 @@ namespace Atlas {
 
             if (pathTracingRenderer.realTime) {
                 if (scene->postProcessing.fsr2) {
-                    gBufferRenderer.GenerateReactiveMask(target, commandList);
-
                     fsr2Renderer.Render(target, scene, commandList);
                 }
                 else {
@@ -535,7 +533,6 @@ namespace Atlas {
             device->SubmitCommandList(commandList);
 
             renderState->WaitForAsyncWorkCompletion();
-            renderState->renderList.Clear();
 
         }
 

@@ -105,7 +105,7 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        sharedRadianceDepth[i].rgb = RGBToYCoCg(FetchTexel(texel));
         sharedRadianceDepth[i].a = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
     }
 
@@ -334,6 +334,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, pixel, 0).r);
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
     float linearDepth = depth;
 
     float totalWeight = 0.0;
@@ -342,11 +343,15 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
         for (int j = -radius; j <= radius; j++) {
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
 
-            float depthPhi = max(1.0, abs(0.025 * linearDepth));
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) / depthPhi));
+            uint sampleMaterialIdx = texelFetch(materialIdxTexture, pixel + ivec2(i, j), 0).r;
+
+            float depthPhi = 16.0 / abs(linearDepth);
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) * depthPhi));
+
+            weight = sampleMaterialIdx != materialIdx ? 0.0 : weight;
         
             m1 += sampleRadiance * weight;
             m2 += sampleRadiance * sampleRadiance * weight;
@@ -423,6 +428,17 @@ void main() {
     }
     
     factor = min(factor, historyLength / (historyLength + 1.0));
+
+    /*
+    const vec3 luma = vec3(0.299, 0.587, 0.114);
+    float weightHistory = factor / (1.0 + dot(historyRadiance.rgb, luma));
+    float weightCurrent =  (1.0 - factor) / (1.0 + dot(currentRadiance.rgb, luma));
+
+    vec3 resolve = historyRadiance.rgb * weightHistory + 
+        currentRadiance.rgb * weightCurrent;
+
+    resolve /= (weightHistory + weightCurrent);
+    */
 
     vec3 resolve = mix(currentRadiance, historyRadiance, factor);
 

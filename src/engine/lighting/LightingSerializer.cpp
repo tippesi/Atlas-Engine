@@ -306,8 +306,10 @@ namespace Atlas::Lighting {
         j = json {
             {"sampleCount", p.sampleCount},
             {"maxLength", p.maxLength},
+            {"minLengthWorldSpace", p.minLengthWorldSpace},
             {"thickness", p.thickness},
             {"enable", p.enable},
+            {"traceWorldSpace", p.traceWorldSpace},
         };
     }
 
@@ -316,6 +318,9 @@ namespace Atlas::Lighting {
         j.at("maxLength").get_to(p.maxLength);
         j.at("thickness").get_to(p.thickness);
         j.at("enable").get_to(p.enable);
+
+        try_get_json(j, "minLengthWorldSpace", p.minLengthWorldSpace);
+        try_get_json(j, "traceWorldSpace", p.traceWorldSpace);
     }
 
     void to_json(json& j, const VolumetricClouds::Scattering& p) {

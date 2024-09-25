@@ -331,7 +331,9 @@ namespace Atlas::Renderer {
 
     void RenderTarget::UseForPathTracing(bool use) {
 
-        if (use) {
+        useForPathTracing = use;
+
+        if (useForPathTracing) {
             ivec2 res = GetRelativeResolution(FULL_RES);
             targetData = RenderTargetData(res, false);
             targetDataSwap = RenderTargetData(res, false);
@@ -359,9 +361,10 @@ namespace Atlas::Renderer {
             frameAccumTexture.Reset();
         }
 
+        // Pathtracing is kind of tricky with the depth buffer being in a SFLOAT format,
+        // so we can't attach this one to render passes or frame buffers
+        CreateRenderPasses();
         CreateFrameBuffers();
-
-        useForPathTracing = use;
 
     }
 
@@ -403,7 +406,7 @@ namespace Atlas::Renderer {
             auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
                 .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
                                      colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
-                .depthAttachment = depthAttachment
+                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
             };
             gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
         }
@@ -429,7 +432,7 @@ namespace Atlas::Renderer {
 
             auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
                 .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
-                .depthAttachment = depthAttachment
+                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
             };
             afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
         }
@@ -492,7 +495,7 @@ namespace Atlas::Renderer {
                    {target->velocityTexture->image, 0, true},
                    {target->stencilTexture->image, 0, false},
                },
-               .depthAttachment = {target->depthTexture->image, 0, true},
+               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing },
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
@@ -504,7 +507,7 @@ namespace Atlas::Renderer {
                    {target->velocityTexture->image, 0, true},
                    {target->stencilTexture->image, 0, false}
                },
-               .depthAttachment = {target->depthTexture->image, 0, true},
+               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
@@ -516,7 +519,7 @@ namespace Atlas::Renderer {
                 {target->velocityTexture->image, 0, true},
                 {target->stencilTexture->image, 0, true}
             },
-            .depthAttachment = {target->depthTexture->image, 0, true},
+            .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);

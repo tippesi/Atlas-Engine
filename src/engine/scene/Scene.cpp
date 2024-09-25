@@ -100,7 +100,7 @@ namespace Atlas {
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
                 // Work with a copy here
-                auto luaScriptComponents = entityManager.GetComponents<LuaScriptComponent>();
+                auto luaScriptComponents = entityManager.GetAll<LuaScriptComponent>();
                 for (auto& luaScriptComponent : luaScriptComponents) {
                     luaScriptComponent.Update(luaScriptManager, deltaTime);
 

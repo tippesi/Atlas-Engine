@@ -195,6 +195,7 @@ vec3 EvaluateHit(inout Ray ray) {
     // Evaluate direct light
     for (int i = 0; i < uniforms.lightSampleCount; i++) {
         radiance += EvaluateDirectLight(surface, curSeed);
+        curSeed += 1.0 / float(uniforms.lightSampleCount);
     }
 
     radiance /= float(uniforms.lightSampleCount);

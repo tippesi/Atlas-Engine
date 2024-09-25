@@ -87,6 +87,9 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            template<typename Comp>
+            size_t GetComponentCount();
+
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
             void Timestep(float deltaTime);
@@ -213,6 +216,13 @@ namespace Atlas {
         Subset<Comp...> Scene::GetSubset() {
 
             return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
+
+        }
+
+        template<typename Comp>
+        size_t Scene::GetComponentCount() {
+
+            return entityManager.GetCount<Comp>();
 
         }
 

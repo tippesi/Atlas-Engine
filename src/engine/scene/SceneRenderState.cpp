@@ -303,13 +303,13 @@ namespace Atlas::Scene {
                 }
             }
 
-            if (cubemaps.size() != cubemapToBindlessIdx.size())
-                cubemaps.resize(cubemapToBindlessIdx.size());
+            if (cubemaps.size() != cubemapIdx)
+                cubemaps.resize(cubemapIdx);
             for (const auto& [cubemap, idx] : cubemapToBindlessIdx)
                 cubemaps[idx] = cubemap->image;
 
-            if (textureArrays.size() != textureArrayToBindlessIdx.size())
-                textureArrays.resize(textureArrayToBindlessIdx.size());
+            if (textureArrays.size() != textureArrayIdx)
+                textureArrays.resize(textureArrayIdx);
             for (const auto& [textureArray, idx] : textureArrayToBindlessIdx)
                 textureArrays[idx] = textureArray->image;
 

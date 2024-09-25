@@ -195,6 +195,7 @@ namespace Atlas {
             {"twoSided", p.twoSided},
             {"vertexColors", p.vertexColors},
             {"uvChannel", p.uvChannel},
+            {"uvAnimation", p.uvAnimation},
         };
 
         if (p.baseColorMap.IsValid())
@@ -231,9 +232,12 @@ namespace Atlas {
         j.at("normalScale").get_to(p.normalScale);
         j.at("displacementScale").get_to(p.displacementScale);
         j.at("tiling").get_to(p.tiling);
+        j.at("tiling").get_to(p.tiling);
         j.at("twoSided").get_to(p.twoSided);
         j.at("vertexColors").get_to(p.vertexColors);
         j.at("uvChannel").get_to(p.uvChannel);
+
+        try_get_json(j, "uvAnimation", p.uvAnimation);
 
         auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion) -> auto {
             return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,

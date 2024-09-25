@@ -59,6 +59,8 @@ namespace Atlas {
         bool twoSided = false;
         bool vertexColors = false;
 
+        vec2 uvAnimation = vec2(0.0f);
+
         uint32_t uvChannel = 0;
 
     };
