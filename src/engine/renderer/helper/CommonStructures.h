@@ -25,7 +25,7 @@ namespace Atlas {
             float texelSize;
             float aligment0;
             float aligment1;
-            mat4 cascadeSpace;
+            mat3x4 cascadeSpace;
         };
 
         struct alignas(16) Shadow {
@@ -57,6 +57,19 @@ namespace Atlas {
             float typeSpecific1;
 
             Shadow shadow;
+        };
+
+        struct alignas(16) VolumetricLight {
+            vec4 location;
+            vec4 direction;
+
+            vec4 color;
+            float intensity;
+
+            float typeSpecific0;
+            float typeSpecific1;
+
+            int32_t shadowIdx;
         };
 
         struct alignas(16) CloudShadow {

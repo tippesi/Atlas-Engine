@@ -150,8 +150,8 @@ namespace Atlas {
                                 auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
                                     abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                                 shadowUniform.cascades[i].distance = cascade->farDistance;
-                                shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                    cascade->viewMatrix;
+                                shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
+                                    cascade->viewMatrix);
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             } else {
                                 auto cascade = &shadow->views[componentCount - 1];

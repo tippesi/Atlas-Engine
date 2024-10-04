@@ -133,7 +133,8 @@ namespace Atlas::Scene::Components {
             {"intensity", p.intensity},
             {"properties", typeProperties},
             {"isMain", p.isMain},
-            {"volumetric", p.volumetric}
+            {"volumetric", p.volumetric},
+            {"volumetricIntensity", p.volumetricIntensity}
         };
 
         if (p.shadow)
@@ -151,6 +152,8 @@ namespace Atlas::Scene::Components {
         j.at("properties").get_to(typeProperties);
         j.at("isMain").get_to(p.isMain);
         j.at("volumetric").get_to(p.volumetric);
+
+        try_get_json(j, "volumetricIntensity", p.volumetricIntensity);
 
         p.type = static_cast<LightType>(type);
         p.mobility = static_cast<LightMobility>(mobility);
@@ -341,8 +344,20 @@ namespace Atlas::Scene::Components {
                 j["scriptProperties"][name]["type"] = "string";
                 j["scriptProperties"][name]["value"] = prop.stringValue;
                 break;
+            case LuaScriptComponent::PropertyType::Vec2:
+                j["scriptProperties"][name]["type"] = "vec2";
+                j["scriptProperties"][name]["value"] = prop.vec2Value;
+                break;
+            case LuaScriptComponent::PropertyType::Vec3:
+                j["scriptProperties"][name]["type"] = "vec3";
+                j["scriptProperties"][name]["value"] = prop.vec3Value;
+                break;
+            case LuaScriptComponent::PropertyType::Vec4:
+                j["scriptProperties"][name]["type"] = "vec4";
+                j["scriptProperties"][name]["value"] = prop.vec4Value;
+                break;
             default:
-                AE_ASSERT(false);
+                break;
             }
         }
     }
@@ -380,6 +395,18 @@ namespace Atlas::Scene::Components {
                 else if (propertyTypeAsString == "string")
                 {
                     p.SetPropertyValue(v.key(), value["value"].get<std::string>());
+                }
+                else if (propertyTypeAsString == "vec2")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec2>());
+                }
+                else if (propertyTypeAsString == "vec3")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec3>());
+                }
+                else if (propertyTypeAsString == "vec4")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec4>());
                 }
             }
         }

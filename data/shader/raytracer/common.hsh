@@ -108,11 +108,15 @@ Light UnpackLight(PackedLight compressed) {
 
     light.radiance = compressed.color.rgb;
 
-    uint data = floatBitsToUint(compressed.data.x);
-    light.type = ((data & 0xF0000000u) >> 28u);
+    uint data0 = floatBitsToUint(compressed.data.x);
+    uint data1 = floatBitsToUint(compressed.P.w);
 
-    light.triangleIdx = int(data & 0x0FFFFFFFu);
+    light.type = ((data0 & 0xF0000000u) >> 28u);
+
+    light.triangleIdx = int(data0 & 0x0FFFFFFFu);
     light.instanceIdx = floatBitsToInt(compressed.data.w);
+
+    light.castShadow = data1 > 0u;
 
     light.pdf = compressed.data.y;
     light.area = compressed.N.w;

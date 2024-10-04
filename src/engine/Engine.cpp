@@ -118,6 +118,8 @@ namespace Atlas {
 
         Clock::Update();
         Graphics::Profiler::BeginFrame();
+        // First reset keyboard state before new events
+        Input::KeyboardMap::Update();
         Events::EventManager::Update();
         PipelineManager::Update();
         Audio::AudioManager::Update();

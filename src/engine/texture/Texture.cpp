@@ -14,10 +14,11 @@ namespace Atlas {
         std::unordered_map<size_t, Ref<Graphics::Sampler>> Texture::samplerMap;
 
         Texture::Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
-            Wrapping wrapping, Filtering filtering) : width(width), height(height), depth(depth),
+            Wrapping wrapping, Filtering filtering, bool dedicatedMemory) 
+            : width(width), height(height), depth(depth),
             wrapping(wrapping), filtering(filtering), format(format) {
 
-            Reallocate(Graphics::ImageType::Image2D, width, height, depth, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, width, height, depth, filtering, wrapping, dedicatedMemory);
             RecreateSampler(filtering, wrapping);
 
         }
@@ -93,13 +94,16 @@ namespace Atlas {
         }
 
         void Texture::Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height, int32_t depth,
-            Filtering filtering, Wrapping wrapping, bool dedicatedMemory) {
+            Filtering filtering, Wrapping wrapping, bool dedicatedMemory, bool usedForRenderTarget) {
 
             auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
             this->width = width;
             this->height = height;
             this->depth = depth;
+            this->dedicatedMemory = dedicatedMemory;
+            this->usedForRenderTarget = usedForRenderTarget;
+
             channels = int32_t(Graphics::GetFormatChannels(format));
 
             bool generateMipMaps = filtering == Filtering::MipMapLinear ||
@@ -123,6 +127,14 @@ namespace Atlas {
 
             VkImageAspectFlags aspectFlag = depthFormat ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
+            VmaPool* vmaPool = nullptr;
+            if (usedForRenderTarget) {
+                vmaPool = &graphicsDevice->memoryManager->highPriorityRenderTargetPool;
+            }
+            else if (dedicatedMemory) {
+                vmaPool = &graphicsDevice->memoryManager->highPriorityMemoryPool;
+            }
+
             auto imageDesc = Graphics::ImageDesc {
                 .usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT | additionalUsageFlags,
@@ -134,7 +146,7 @@ namespace Atlas {
                 .layers = arrayType ? uint32_t(depth) : 1,
                 .format = format,
                 .mipMapping = generateMipMaps,
-                .dedicatedMemory = true
+                .dedicatedMemoryPool = vmaPool
             };
             image = graphicsDevice->CreateImage(imageDesc);
 

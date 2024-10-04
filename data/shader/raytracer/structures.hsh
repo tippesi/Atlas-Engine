@@ -155,6 +155,8 @@ struct Light {
     int triangleIdx;
     int instanceIdx;
 
+    bool castShadow;
+
     float pdf;
     float area;
     float radius;

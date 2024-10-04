@@ -218,6 +218,18 @@ void App::Update(float deltaTime) {
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
 
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
+
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
         }
@@ -250,6 +262,18 @@ void App::Update(float deltaTime) {
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);
 
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
+
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
         }
@@ -267,7 +291,7 @@ void App::Render(float deltaTime) {
 
     static bool firstFrame = true;
     static bool animateLight = false;
-    static bool pathTrace = true;
+    static bool pathTrace = false;
     static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
@@ -588,6 +612,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
                 ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
                 ImGui::SliderFloat("Sphere restitution##PhysicsBody", &sphereRestitution, 0.0f, 1.0f);
+                ImGui::Checkbox("Attach lights ##PhysicsBody", &attachLightToSphers);
                 ImGui::Text("Sphere emitter");
                 ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);

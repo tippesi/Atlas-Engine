@@ -116,6 +116,7 @@ void main() {
                 Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
                 Ray ray;
+                ray.ID = i;
                 blueNoiseVec.y *= (1.0 - uniforms.bias);
 
                 float pdf = 1.0;
@@ -191,7 +192,7 @@ vec3 EvaluateHit(inout Ray ray) {
     
     radiance += surface.material.emissiveColor;
 
-    float curSeed = float(uniforms.frameSeed) / 255.0;
+    float curSeed = float(uniforms.frameSeed) / 255.0 + float(ray.ID) * float(uniforms.sampleCount);
     // Evaluate direct light
     for (int i = 0; i < uniforms.lightSampleCount; i++) {
         radiance += EvaluateDirectLight(surface, curSeed);
@@ -239,7 +240,8 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
         surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;

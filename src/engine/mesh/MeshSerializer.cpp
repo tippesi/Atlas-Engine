@@ -239,15 +239,15 @@ namespace Atlas {
 
         try_get_json(j, "uvAnimation", p.uvAnimation);
 
-        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion) -> auto {
+        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion, bool priority = false) -> auto {
             return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0, false, priority);
             };
 
         if (j.contains("baseColorMapPath"))
             p.baseColorMap = getTextureHandle(j["baseColorMapPath"], false);
         if (j.contains("opacityMapPath"))
-            p.opacityMap = getTextureHandle(j["opacityMapPath"], false);
+            p.opacityMap = getTextureHandle(j["opacityMapPath"], false, true);
         if (j.contains("normalMapPath"))
             p.normalMap = getTextureHandle(j["normalMapPath"], false);
         if (j.contains("roughnessMapPath"))

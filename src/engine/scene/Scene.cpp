@@ -120,18 +120,25 @@ namespace Atlas {
 
             TransformComponent rootTransform = {};
 
-            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             // Update hierarchy and their entities
-            for (auto entity : hierarchyTransformSubset) {
-                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
+            for (auto entity : hierarchySubset) {
+                auto& hierarchyComponent = hierarchySubset.Get(entity);
 
                 if (hierarchyComponent.root) {
-                    auto parentChanged = transformComponent.changed;
-                    transformComponent.Update(rootTransform, false);
-                    hierarchyComponent.Update(transformComponent, parentChanged);
+                    auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+                    if (transformComponent) {
+                        auto parentChanged = transformComponent->changed;
+                        transformComponent->Update(rootTransform, false);
+                        hierarchyComponent.Update(*transformComponent, parentChanged);
+                    }
+                    else {
+                        hierarchyComponent.Update(rootTransform, false);
+                    }
                 }
             }
 
+            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
             // Update hierarchy components which are not part of a root hierarchy that also has a transform component
             // This might be the case if there is an entity that has just a hierarchy without a tranform for, e.g. grouping entities
             for (auto entity : hierarchyTransformSubset) {
@@ -177,6 +184,11 @@ namespace Atlas {
                     }
 
                     playerComponent.Update(deltaTime);
+
+                    auto hierarchyComponent = entityManager.TryGet<HierarchyComponent>(entity);
+                    if (hierarchyComponent) {
+                        hierarchyComponent->Update(transformComponent, true);
+                    }
                 }
 
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
@@ -190,34 +202,13 @@ namespace Atlas {
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {
+                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {                        
                         rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
                     }
                 }
 
                 // This part only needs to be executed if the simulation is running
                 if (!physicsWorld->pauseSimulation) {
-                    // Player update needs to be performed after normal rigid bodies, such that
-                    // player can override rigid body behaviour
-                    for (auto entity : playerSubset) {
-                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
-
-                        if (!playerComponent.IsValid())
-                            continue;
-
-                        // This happens if no change was triggered by the user, then we still need
-                        // to update the last global matrix, since it might have changed due to physics simulation
-                        if (!transformComponent.changed)
-                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
-
-                        // Need to set changed to true such that the space partitioning is updated
-                        transformComponent.changed = true;
-                        transformComponent.updated = true;
-
-                        // Physics are updated in global space, so we don't need the parent transform
-                        transformComponent.globalMatrix = playerComponent.GetMatrix();
-                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
-                    }
 
                     physicsWorld->Update(deltaTime);
 
@@ -240,6 +231,62 @@ namespace Atlas {
                         // Physics are updated in global space, so we don't need the parent transform
                         transformComponent.globalMatrix = rigidBodyComponent.GetMatrix();
                         transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
+
+                    // Player update needs to be performed after normal rigid bodies, such that
+                    // player can override rigid body behaviour
+                    for (auto entity : playerSubset) {
+                        const auto& [playerComponent, transformComponent] = playerSubset.Get(entity);
+
+                        if (!playerComponent.IsValid())
+                            continue;
+
+                        // This happens if no change was triggered by the user, then we still need
+                        // to update the last global matrix, since it might have changed due to physics simulation
+                        if (!transformComponent.changed)
+                            transformComponent.lastGlobalMatrix = transformComponent.globalMatrix;
+
+                        // Need to set changed to true such that the space partitioning is updated
+                        transformComponent.changed = true;
+                        transformComponent.updated = true;
+
+                        // Physics are updated in global space, so we don't need the parent transform
+                        transformComponent.globalMatrix = playerComponent.GetMatrix();
+                        transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
+
+                    // Now we need to update all the hiearchies
+                    auto rigidBodyHierarchySubset = entityManager.GetSubset<RigidBodyComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        const auto& [rigidBodyComponent, hierarchyComponent, transformComponent] = rigidBodyHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged);
+                        }
+                    }
+
+                    // Now we need to update all the hiearchies
+                    auto playerHierarchySubset = entityManager.GetSubset<PlayerComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : playerHierarchySubset) {
+                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : playerHierarchySubset) {
+                        const auto& [playerComponent, hierarchyComponent, transformComponent] = playerHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged);
+                        }
                     }
                 }
             }
@@ -303,7 +350,6 @@ namespace Atlas {
 #endif
 
             // We also need to reset the hierarchy components as well
-            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
                 auto& hierarchyComponent = hierarchySubset.Get(entity);
 

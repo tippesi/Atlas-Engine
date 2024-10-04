@@ -26,7 +26,6 @@ namespace Atlas {
                 int32_t lightBucketCount;
                 int32_t padding1;
                 int32_t padding2;
-                int32_t mapIndices[16];
             };
 
             PipelineConfig pipelineConfig;

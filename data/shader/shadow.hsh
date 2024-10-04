@@ -15,7 +15,7 @@ struct Cascade {
     float aligment0;
     float aligment1;
 
-    mat4 cascadeSpace;
+    mat3x4 cascadeSpace;
 
 };
 
@@ -152,7 +152,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
     cascadeIndex = distance >= shadow.cascades[4].distance ? 5 : cascadeIndex;
     cascadeIndex = min(shadow.cascadeCount - 1, cascadeIndex);
 
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
@@ -170,7 +170,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
     fragmentPosition += bias;
 
     float visibility = cascadeLookup(shadow, cascadeMaps, float(cascadeIndex),
-        cascadeMatrix, fragmentPosition, fragmentPosition, 0.0, true);
+        mat4(transpose(cascadeMatrix)), fragmentPosition, fragmentPosition, 0.0, true);
 
 #ifdef SHADOW_CASCADE_BLENDING
     if (cascadeIndex < shadow.cascadeCount - 1) {
@@ -190,14 +190,14 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
             cascadeIndex += 1;
             fragmentPosition -= bias;
             
-            mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+            cascadeMatrix = shadow.cascades[0].cascadeSpace;
             cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 3 ? shadow.cascades[4].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 4 ? shadow.cascades[5].cascadeSpace : cascadeMatrix;
 
-            float texelSize = shadow.cascades[0].texelSize;
+            texelSize = shadow.cascades[0].texelSize;
             texelSize = cascadeIndex > 0 ? shadow.cascades[1].texelSize : texelSize;
             texelSize = cascadeIndex > 1 ? shadow.cascades[2].texelSize : texelSize;
             texelSize = cascadeIndex > 2 ? shadow.cascades[3].texelSize : texelSize;
@@ -208,7 +208,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
             fragmentPosition += bias;
             
             visibility = mix(cascadeLookup(shadow, cascadeMaps, float(cascadeIndex),
-                cascadeMatrix, fragmentPosition, fragmentPosition, 0.0, true), visibility, blend);    
+                mat4(transpose(cascadeMatrix)), fragmentPosition, fragmentPosition, 0.0, true), visibility, blend);    
         }
     }
 #endif
@@ -234,7 +234,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
     cascadeIndex = distance >= shadow.cascades[4].distance ? 5 : cascadeIndex;
     cascadeIndex = min(shadow.cascadeCount - 1, cascadeIndex);
 
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
@@ -252,7 +252,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
     fragmentPosition += bias;
 
     float visibility = cascadeLookup(shadow, cascadeMaps, float(cascadeIndex),
-        cascadeMatrix, fragmentPosition, position, 0.0, true);
+        mat4(transpose(cascadeMatrix)), fragmentPosition, position, 0.0, true);
 
 #ifdef SHADOW_CASCADE_BLENDING
     if (cascadeIndex < shadow.cascadeCount - 1) {
@@ -272,14 +272,14 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
             cascadeIndex += 1;
             fragmentPosition -= bias;
             
-            mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+            cascadeMatrix = shadow.cascades[0].cascadeSpace;
             cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 3 ? shadow.cascades[4].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 4 ? shadow.cascades[5].cascadeSpace : cascadeMatrix;
 
-            float texelSize = shadow.cascades[0].texelSize;
+            texelSize = shadow.cascades[0].texelSize;
             texelSize = cascadeIndex > 0 ? shadow.cascades[1].texelSize : texelSize;
             texelSize = cascadeIndex > 1 ? shadow.cascades[2].texelSize : texelSize;
             texelSize = cascadeIndex > 2 ? shadow.cascades[3].texelSize : texelSize;
@@ -290,7 +290,7 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
             fragmentPosition += bias;
             
             visibility = mix(cascadeLookup(shadow, cascadeMaps, float(cascadeIndex),
-                cascadeMatrix, fragmentPosition, position, 0.0, true), visibility, blend);    
+                mat4(transpose(cascadeMatrix)), fragmentPosition, position, 0.0, true), visibility, blend);    
         }
     }
 #endif
@@ -299,14 +299,14 @@ float CalculateCascadedShadow(Shadow shadow, sampler2DArrayShadow cascadeMaps, v
 }
 
 float CalculateShadowWorldSpace(Shadow shadow, sampler2DArrayShadow cascadeMaps, vec3 position, vec3 normal, float cosTheta) {
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     float texelSize = shadow.cascades[0].texelSize;
 
     vec3 bias = shadow.bias * texelSize * normal / max(cosTheta, 0.5);
     position += bias;
 
     return cascadeLookup(shadow, cascadeMaps, 0.0,
-        cascadeMatrix, position, position, 0.0, false);
+        mat4(transpose(cascadeMatrix)), position, position, 0.0, false);
 }
 
 float offsetLookup(texture2DArray cascadeMaps, sampler shadowSampler, vec2 flooredUV, float u, float v, float cascadeIndex,
@@ -346,8 +346,8 @@ float offsetLookup(texture2DArray cascadeMaps, sampler shadowSampler, vec2 uv, f
 }
 
 
-float cascadeLookup(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, float cascadeIndex, mat4 cascadeTransform, 
-    vec3 fragmentPosition, vec3 position, float bias, bool fade) {
+float cascadeLookup(inout Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, float cascadeIndex, mat4 cascadeTransform, 
+    vec3 fragmentPosition, vec3 position, vec2 texelSize, float bias, bool fade) {
 
     vec4 shadowCoords = cascadeTransform * vec4(fragmentPosition, 1.0);
     shadowCoords.xyz /= shadowCoords.w;
@@ -377,7 +377,6 @@ float cascadeLookup(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSa
     visibility += offsetLookup(cascadeMaps, shadowSampler, shadowCoords.xy, 0.0, 0.0, float(cascadeIndex), resInv, shadowCoords.z, bias);
 #endif
 #ifdef SHADOW_FILTER_VOGEL
-    vec2 texelSize = vec2(shadow.cascades[int(cascadeIndex)].texelSize);
     for (int i = 0; i < 16; i++) {
         visibility += offsetLookup(cascadeMaps, shadowSampler, uv, float(cascadeIndex), shadow.edgeSoftness, texelSize, resInv, position, i, shadowCoords.z, bias);
     }
@@ -389,7 +388,7 @@ float cascadeLookup(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSa
 
 }
 
-float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, vec3 fragmentPosition, vec3 normal, float cosTheta) {
+float CalculateCascadedShadow(inout Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, vec3 fragmentPosition, vec3 normal, float cosTheta) {
     
     // Note: The code below is actually the fastest code on every platform tested
     // Some platforms have problems directly indexing the cascade array.
@@ -407,7 +406,7 @@ float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler
     cascadeIndex = distance >= shadow.cascades[4].distance ? 5 : cascadeIndex;
     cascadeIndex = min(shadow.cascadeCount - 1, cascadeIndex);
 
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
@@ -425,7 +424,7 @@ float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler
     fragmentPosition += bias;
 
     float visibility = cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-        cascadeMatrix, fragmentPosition, fragmentPosition, 0.0, true);
+        mat4(transpose(cascadeMatrix)), fragmentPosition, fragmentPosition, vec2(texelSize), 0.0, true);
 
 #ifdef SHADOW_CASCADE_BLENDING
     if (cascadeIndex < shadow.cascadeCount - 1) {
@@ -445,14 +444,14 @@ float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler
             cascadeIndex += 1;
             fragmentPosition -= bias;
             
-            mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+            cascadeMatrix = shadow.cascades[0].cascadeSpace;
             cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 3 ? shadow.cascades[4].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 4 ? shadow.cascades[5].cascadeSpace : cascadeMatrix;
 
-            float texelSize = shadow.cascades[0].texelSize;
+            texelSize = shadow.cascades[0].texelSize;
             texelSize = cascadeIndex > 0 ? shadow.cascades[1].texelSize : texelSize;
             texelSize = cascadeIndex > 1 ? shadow.cascades[2].texelSize : texelSize;
             texelSize = cascadeIndex > 2 ? shadow.cascades[3].texelSize : texelSize;
@@ -463,7 +462,7 @@ float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler
             fragmentPosition += bias;
             
             visibility = mix(cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-                cascadeMatrix, fragmentPosition, fragmentPosition, 0.0, true), visibility, blend);    
+                mat4(transpose(cascadeMatrix)), fragmentPosition, fragmentPosition, vec2(texelSize), 0.0, true), visibility, blend);    
         }
     }
 #endif
@@ -471,7 +470,7 @@ float CalculateCascadedShadow(Shadow shadow, texture2DArray cascadeMaps, sampler
     return visibility;
 }
 
-float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, 
+float CalculateCascadedShadow(inout Shadow shadow,  texture2DArray cascadeMaps, sampler shadowSampler, 
     vec3 fragmentPosition, vec3 position, vec3 normal, float cosTheta) {
     
     // Note: The code below is actually the fastest code on every platform tested
@@ -490,7 +489,7 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
     cascadeIndex = distance >= shadow.cascades[4].distance ? 5 : cascadeIndex;
     cascadeIndex = min(shadow.cascadeCount - 1, cascadeIndex);
 
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
     cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
@@ -508,7 +507,7 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
     fragmentPosition += bias;
 
     float visibility = cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-        cascadeMatrix, fragmentPosition, position, -0.00005, true);
+        mat4(transpose(cascadeMatrix)), fragmentPosition, position, vec2(texelSize), -0.00005, true);
 
 #ifdef SHADOW_CASCADE_BLENDING
     if (cascadeIndex < shadow.cascadeCount - 1) {
@@ -528,14 +527,14 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
             cascadeIndex += 1;
             fragmentPosition -= bias;
             
-            mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+            cascadeMatrix = shadow.cascades[0].cascadeSpace;
             cascadeMatrix = cascadeIndex > 0 ? shadow.cascades[1].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 1 ? shadow.cascades[2].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 2 ? shadow.cascades[3].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 3 ? shadow.cascades[4].cascadeSpace : cascadeMatrix;
             cascadeMatrix = cascadeIndex > 4 ? shadow.cascades[5].cascadeSpace : cascadeMatrix;
 
-            float texelSize = shadow.cascades[0].texelSize;
+            texelSize = shadow.cascades[0].texelSize;
             texelSize = cascadeIndex > 0 ? shadow.cascades[1].texelSize : texelSize;
             texelSize = cascadeIndex > 1 ? shadow.cascades[2].texelSize : texelSize;
             texelSize = cascadeIndex > 2 ? shadow.cascades[3].texelSize : texelSize;
@@ -546,7 +545,7 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
             fragmentPosition += bias;
             
             visibility = mix(cascadeLookup(shadow, cascadeMaps, shadowSampler, float(cascadeIndex),
-                cascadeMatrix, fragmentPosition, position, -0.0001, true), visibility, blend);    
+                mat4(transpose(cascadeMatrix)), fragmentPosition, position, vec2(texelSize), -0.0001, true), visibility, blend);    
         }
     }
 #endif
@@ -554,15 +553,15 @@ float CalculateCascadedShadow(Shadow shadow,  texture2DArray cascadeMaps, sample
     return visibility;
 }
 
-float CalculateShadowWorldSpace(Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, vec3 position, vec3 normal, float cosTheta) {
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+float CalculateShadowWorldSpace(inout Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, vec3 position, vec3 normal, float cosTheta) {
+    mat3x4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
     float texelSize = shadow.cascades[0].texelSize;
 
     vec3 bias = shadow.bias * texelSize * normal / max(cosTheta, 0.5);
     position += bias;
 
     return cascadeLookup(shadow, cascadeMaps, shadowSampler, 0.0,
-        cascadeMatrix, position, position, 0.0, false);
+        mat4(transpose(cascadeMatrix)), position, position, vec2(texelSize), 0.0, false);
 }
 
 vec3 sampleOffsetDirections[20] = vec3[] (
@@ -574,7 +573,7 @@ vec3 sampleOffsetDirections[20] = vec3[] (
 );
 
 
-float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position,
+float CalculatePointShadow(inout Shadow shadow, textureCube cubeMap, sampler shadowSampler, vec3 position,
     vec3 normal, float cosTheta) {
 
     int samples = 20;
@@ -582,12 +581,18 @@ float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSam
 
     vec3 bias = shadow.bias * (1.0 / 2048.0) * normal / max(cosTheta * cosTheta, 0.01);
     position += bias;
+
+    mat4 projectionMatrix;
+    projectionMatrix[0] = shadow.cascades[1].cascadeSpace[0];
+    projectionMatrix[1] = shadow.cascades[1].cascadeSpace[1];
+    projectionMatrix[2] = shadow.cascades[1].cascadeSpace[2];
+    projectionMatrix[3] = shadow.cascades[2].cascadeSpace[0];
     
-    vec4 shadowCoords = shadow.cascades[1].cascadeSpace * vec4(position, 1.0);
+    vec4 shadowCoords = mat4(transpose(shadow.cascades[0].cascadeSpace)) * vec4(position, 1.0);
     shadowCoords.y *= -1.0;
     vec4 absPosition = abs(shadowCoords);
     float depth = -max(absPosition.x, max(absPosition.y, absPosition.z));
-    vec4 clip = shadow.cascades[0].cascadeSpace * vec4(0.0, 0.0, depth, 1.0);    
+    vec4 clip = projectionMatrix * vec4(0.0, 0.0, depth, 1.0);    
     depth = clip.z / clip.w;
 
     float shadowFactor = 0.0;
@@ -601,18 +606,23 @@ float CalculatePointShadow(Shadow shadow, textureCube cubeMap, sampler shadowSam
 
 }
 
-float CalculateSpotShadow(Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, 
+float CalculateSpotShadow(inout Shadow shadow, texture2DArray cascadeMaps, sampler shadowSampler, 
     vec3 fragmentPosition, vec3 position, vec3 normal, float cosTheta) {
     
     float distance = -fragmentPosition.z;
 
-    mat4 cascadeMatrix = shadow.cascades[0].cascadeSpace;
+    mat4 shadowMatrix;
+    shadowMatrix[0] = shadow.cascades[0].cascadeSpace[0];
+    shadowMatrix[1] = shadow.cascades[0].cascadeSpace[1];
+    shadowMatrix[2] = shadow.cascades[0].cascadeSpace[2];
+    shadowMatrix[3] = shadow.cascades[1].cascadeSpace[0];
+
     float texelSize = shadow.cascades[0].texelSize;
     
     vec3 bias = shadow.bias * (1.0 / 256.0) * normal / max(cosTheta * cosTheta, 0.01);
     fragmentPosition += bias;
 
     return cascadeLookup(shadow, cascadeMaps, shadowSampler, 0.0,
-        cascadeMatrix, fragmentPosition, position, -0.0001, false);
+        shadowMatrix, fragmentPosition, position, vec2(texelSize), -0.0001, false);
 
 }

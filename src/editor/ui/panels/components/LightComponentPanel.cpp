@@ -49,6 +49,7 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Shadow", &castShadow);
         ImGui::ColorEdit3("Color", &lightComponent.color[0]);
         ImGui::DragFloat("Intensity", &lightComponent.intensity, 0.1f, 0.0f, 1000.0f);
+        ImGui::DragFloat("Volumetric intensity", &lightComponent.volumetricIntensity, 0.1f, 0.0f, 10.0f);
 
         if (!lightComponent.shadow && castShadow) {
             if (lightComponent.type == LightType::DirectionalLight) {

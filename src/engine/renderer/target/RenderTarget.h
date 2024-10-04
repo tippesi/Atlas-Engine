@@ -22,28 +22,28 @@ namespace Atlas::Renderer {
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             if (useDepthFormat) {
                 depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
-                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             }
             else {
                 depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R32_SFLOAT,
-                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             }
             normalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             geometryNormalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             emissiveTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
 
         void Resize(ivec2 resolution) {

@@ -22,6 +22,19 @@ struct Light {
 
 };
 
+struct VolumetricLight {
+    vec4 location;
+    vec4 direction;
+    
+    vec4 color;
+    float intensity;
+        
+    float specific0;
+    float specific1;
+
+    int shadowIdx;
+};
+
 struct CloudShadow {
 
     mat4 vMatrix;

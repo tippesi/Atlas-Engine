@@ -28,7 +28,7 @@ namespace Atlas {
             }
 
             if (desc.priority == 1.0f)
-                allocationCreateInfo.pool = memoryManager->hightPriorityBufferPool;
+                allocationCreateInfo.pool = memoryManager->highPriorityMemoryPool;
 
             if (desc.dedicatedMemory)
                 allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;

@@ -88,6 +88,7 @@ namespace Atlas {
 
 				vec3 color = vec3(1.0f);
 				float intensity = 1.0f;
+				float volumetricIntensity = 1.0f;
 
 				TypeProperties properties;
 				TypeProperties transformedProperties;

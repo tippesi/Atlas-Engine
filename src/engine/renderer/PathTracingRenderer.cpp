@@ -18,6 +18,8 @@ namespace Atlas {
 
             this->device = device;
 
+            // helper.stochasticLightSelection = true;
+
             rayGenPipelineConfig = PipelineConfig("pathtracer/rayGen.csh");
             rayHitPipelineConfig = PipelineConfig("pathtracer/rayHit.csh");
 

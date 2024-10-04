@@ -1,12 +1,134 @@
+#include <../structures.hsh>
+#include <../common/convert.hsh>
+#include <../common/utility.hsh>
+
 const int lightBucketCount = 128;
 
-layout(std430, set = 3, binding = 6) buffer LightBucketsBuffer {
-    int lightBuckets[];
+struct AABB {
+    vec3 center;
+    vec3 extent;
+};
+
+struct Sphere {
+    vec3 center;
+    float radius;
+};
+
+struct Plane {
+    vec3 normal;
+    float dist;
 };
 
 int GetLightBucketsGroupOffset() {
 
     int groupOffset = int(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x);
     return groupOffset * lightBucketCount;
+
+}
+
+void GetFrustumCorners(out vec3 frustumCorners[8], ivec2 resolution, float depthMin, float depthMax) {
+
+    ivec2 basePixel = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
+    vec2 baseTexCoord = vec2(basePixel) / vec2(resolution);
+    vec2 texCoordSpan = vec2(basePixel + ivec2(gl_WorkGroupSize)) / vec2(resolution) - baseTexCoord;
+
+    frustumCorners[0] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(0.0, 0.0));
+    frustumCorners[1] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(texCoordSpan.x, 0.0));
+    frustumCorners[2] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(0.0, texCoordSpan.y));
+    frustumCorners[3] = ConvertDepthToViewSpace(depthMin, baseTexCoord + vec2(texCoordSpan.x, texCoordSpan.y));
+    frustumCorners[4] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(0.0, 0.0));
+    frustumCorners[5] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(texCoordSpan.x, 0.0));
+    frustumCorners[6] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(0.0, texCoordSpan.y));
+    frustumCorners[7] = ConvertDepthToViewSpace(depthMax, baseTexCoord + vec2(texCoordSpan.x, texCoordSpan.y));
+
+}
+
+Plane CalculatePlane(vec3 v0, vec3 v1, vec3 v2) {
+
+    Plane plane;
+
+    v0 = v0 - v1;
+    v2 = v2 - v1;
+
+    plane.normal = normalize(cross(v2, v0));
+    plane.dist = -dot(plane.normal, v1);
+
+    return plane;
+
+}
+
+void GetFrustumPlanes(out Plane planes[4], vec3 frustumCorners[8]) {
+
+    planes[0] = CalculatePlane(frustumCorners[7], frustumCorners[6], frustumCorners[2]);
+    planes[1] = CalculatePlane(frustumCorners[4], frustumCorners[5], frustumCorners[1]);
+    planes[2] = CalculatePlane(frustumCorners[5], frustumCorners[7], frustumCorners[1]);
+    planes[3] = CalculatePlane(frustumCorners[6], frustumCorners[4], frustumCorners[0]);
+
+}
+
+AABB CalculateAABB(vec3 corners[8]) {
+
+    vec3 aabbMin = corners[0];
+    vec3 aabbMax = corners[0];
+
+    for (int i = 1; i < 8; i++) {
+        aabbMin = min(corners[i], aabbMin);
+        aabbMax = max(corners[i], aabbMax);
+    }
+
+    AABB aabb;
+    aabb.center = (aabbMax + aabbMin) * 0.5;
+    aabb.extent = aabbMax - aabb.center;
+    return aabb;
+
+}
+
+#define COS_PI_QUATER 0.7071067811865475244008443621048490392848359376884740365883398689
+
+Sphere CalculateSphereFromSpotLight(vec4 lightLocation, vec4 lightDirection, float radius) {
+
+    Sphere sphere;
+    
+    vec2 coneTrig = unpackHalf2x16(floatBitsToUint(lightLocation.w));
+    float coneCos = coneTrig.x;
+    float coneTan = coneTrig.y;
+
+    if (coneCos > COS_PI_QUATER) {
+        sphere.radius = radius * coneTan;
+    }
+    else {
+        sphere.radius = radius * 0.5 / sqr(coneCos);
+    }
+
+    sphere.center = lightLocation.xyz + lightDirection.xyz * sphere.radius;
+
+    return sphere;
+
+}
+
+
+bool SphereAABBIntersection(Sphere sphere, AABB aabb) {
+
+    vec3 diff = max(vec3(0.0), abs(aabb.center - sphere.center) - aabb.extent);
+    return dot(diff, diff) <= sphere.radius * sphere.radius;
+
+}
+
+bool SphereBehindPlane(Sphere sphere, Plane plane) {
+
+    return plane.dist + dot(plane.normal, sphere.center) > -sphere.radius;
+
+}
+
+bool SphereFrustumIntersection(Sphere sphere, Plane planes[4]) {
+
+    bool intersect = true;
+
+    intersect = intersect && SphereBehindPlane(sphere, planes[0]);
+    intersect = intersect && SphereBehindPlane(sphere, planes[1]);
+    intersect = intersect && SphereBehindPlane(sphere, planes[2]);
+    intersect = intersect && SphereBehindPlane(sphere, planes[3]);
+
+    return intersect;
 
 }

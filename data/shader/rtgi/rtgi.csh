@@ -129,7 +129,7 @@ void main() {
                 if (isRayValid) {               
 
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                    float viewOffset = max(1.0, length(viewPos));
+                    float viewOffset = max(1.0, 4.0 * length(viewPos));
                     ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
 
                     ray.hitID = -1;
@@ -226,7 +226,8 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
         surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;

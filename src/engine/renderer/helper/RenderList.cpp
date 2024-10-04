@@ -39,7 +39,6 @@ namespace Atlas {
             auto id = mesh.GetID();
             meshIdToMeshMap[id] = mesh;
         }
-
     }
 
     Ref<RenderList::Pass> RenderList::NewMainPass() {

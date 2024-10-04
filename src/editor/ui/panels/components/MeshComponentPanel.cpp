@@ -64,6 +64,7 @@ namespace Atlas::Editor::UI {
             mesh->UpdatePipelines();
         }
 
+        meshSelectionPanel.Reset();
         materialSelectionPanel.Reset();
         textureSelectionPanel.Reset();
 

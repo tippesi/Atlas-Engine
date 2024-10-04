@@ -316,7 +316,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::BeginGroup();
 
-        ImGui::PushID(path.c_str());
+        ImGui::PushID(entryIdx);
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 

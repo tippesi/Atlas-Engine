@@ -214,7 +214,6 @@ namespace Atlas::Scripting::Bindings {
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
-            //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
         );

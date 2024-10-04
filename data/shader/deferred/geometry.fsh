@@ -24,7 +24,7 @@ layout(location=4) in vec3 ndcLastVS;
 layout(location=5) in vec4 vertexColorsVS;
 #endif
 
-// layout(location=6) in float normalInversionVS;
+layout(location=6) in float normalInversionVS;
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
 layout(location=7) in mat3 TBN;
@@ -148,7 +148,7 @@ void main() {
     // We want the normal always to face the camera for two sided materials
     geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
     normal *= dot(geometryNormal, normal) < 0.0 ? -1.0 : 1.0;
-    //normal *= normalInversionVS;
+    normal *= normalInversionVS;
 
     normalFS = EncodeNormal(normal);
 #else
@@ -156,7 +156,7 @@ void main() {
     geometryNormal *= PushConstants.twoSided > 0 ? gl_FrontFacing ? 1.0 : -1.0 : 1.0;
 #endif
 
-    //geometryNormal *= normalInversionVS;
+    geometryNormal *= normalInversionVS;
     
     geometryNormalFS = EncodeNormal(geometryNormal);
 

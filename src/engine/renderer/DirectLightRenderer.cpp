@@ -76,21 +76,20 @@ namespace Atlas {
             pushConstants.lightCount = std::min(4096, int32_t(renderState->lightEntities.size()));
             pushConstants.lightBucketCount = int32_t(std::ceil(float(pushConstants.lightCount) / 32.0f));
 #else
+            pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
+            pushConstants.lightBucketCount = 1;
+
             std::vector<Ref<Graphics::Image>> cascadeMaps;
             std::vector<Ref<Graphics::Image>> cubeMaps;
-
-            pushConstants.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
             for (int32_t i = 0; i < pushConstants.lightCount; i++) {
                 auto& comp = renderState->lightEntities[i].comp;
 
                 if (comp.shadow) {
                     auto& shadow = comp.shadow;
                     if (shadow->useCubemap) {
-                        pushConstants.mapIndices[i] = int32_t(cubeMaps.size());
                         cubeMaps.push_back(shadow->cubemap->image);
                     }
                     else {
-                        pushConstants.mapIndices[i] = int32_t(cascadeMaps.size());
                         cascadeMaps.push_back(shadow->maps->image);
                     }
                 }

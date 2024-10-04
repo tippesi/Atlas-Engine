@@ -39,7 +39,9 @@ namespace Atlas {
                 VMA_MEMORY_USAGE_AUTO;
             // Seems to be faster to just use that pool everywhere for all images. 
             // My guess is it is actually faster since the memory doesn't change constantly (not many new allocations)
-            allocationCreateInfo.pool = memoryManager->hightPriorityBufferPool;
+            
+            if (desc.dedicatedMemoryPool != nullptr)
+                allocationCreateInfo.pool = *desc.dedicatedMemoryPool;
 
             VK_CHECK(vmaCreateImage(memoryManager->allocator, &imageInfo,
                 &allocationCreateInfo, &image, &allocation, nullptr))

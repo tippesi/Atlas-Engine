@@ -104,6 +104,7 @@ namespace Atlas {
 
             }
 
+            auto radius = 0.0f;
             auto min = vec3(std::numeric_limits<float>::max());
             auto max = vec3(-std::numeric_limits<float>::max());
 
@@ -159,6 +160,7 @@ namespace Atlas {
 
                         max = glm::max(vertex, max);
                         min = glm::min(vertex, min);
+                        radius = glm::dot(vertex, vertex);
 
                         vec3 normal = vec3(matrix * vec4(mesh->mNormals[j].x, mesh->mNormals[j].y,
                             mesh->mNormals[j].z, 0.0f));
@@ -218,7 +220,8 @@ namespace Atlas {
             state.importer.FreeScene();
 
             meshData.aabb = Volume::AABB(min, max);
-            meshData.radius = glm::length(max - min) * 0.5;
+            meshData.radius = glm::sqrt(radius);
+            
 
             meshData.name = Common::Path::GetFileNameWithoutExtension(filename);
 
@@ -311,6 +314,7 @@ namespace Atlas {
                 }
                 meshData.materials.push_back(material);
 
+                auto radius = 0.0f;
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
@@ -324,6 +328,7 @@ namespace Atlas {
 
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
+                    radius = glm::dot(vertex, vertex);
 
                     vec3 normal = vec3(assimpMesh->mNormals[j].x,
                         assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
@@ -374,7 +379,7 @@ namespace Atlas {
                 }
 
                 meshData.aabb = Volume::AABB(min, max);
-                meshData.radius = glm::length(max - min) * 0.5;
+                meshData.radius = glm::sqrt(radius);
 
                 meshData.subData.push_back({
                     .indicesOffset = 0,

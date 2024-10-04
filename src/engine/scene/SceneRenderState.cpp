@@ -416,9 +416,11 @@ namespace Atlas::Scene {
 
             JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
 
-            std::vector<Renderer::Light> lights;
             if (lightEntities.size()) {
-                lights.reserve(lightEntities.size());
+                lights.clear();
+                volumetricLights.clear();
+                volumetricShadows.clear();
+
                 for (const auto& entity : lightEntities) {
                     auto& light = entity.comp;
 
@@ -443,6 +445,7 @@ namespace Atlas::Scene {
                         lightUniform.direction = camera.viewMatrix * vec4(prop.spot.direction, 0.0f);
                         lightUniform.direction.w = prop.spot.radius;
                         
+                        auto tanOuter = tanf(prop.spot.outerConeAngle);
                         auto cosOuter = cosf(prop.spot.outerConeAngle);
                         auto cosInner = cosf(prop.spot.innerConeAngle);
                         auto angleScale = 1.0f / std::max(0.001f, cosInner - cosOuter);
@@ -450,6 +453,9 @@ namespace Atlas::Scene {
 
                         lightUniform.typeSpecific0 = angleScale;
                         lightUniform.typeSpecific1 = angleOffset;
+
+                        uint32_t coneTrig = glm::packHalf2x16(vec2(cosOuter, tanOuter));
+                        lightUniform.location.w = reinterpret_cast<float&>(coneTrig);
                     }
 
                     if (light.shadow) {
@@ -473,18 +479,8 @@ namespace Atlas::Scene {
                                     abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                                 shadowUniform.cascades[i].distance = cascade->farDistance;
                                 if (light.type == LightType::DirectionalLight) {
-                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                        cascade->viewMatrix * camera.invViewMatrix;
-                                }
-                                else if (light.type == LightType::PointLight) {
-                                    if (i == 0)
-                                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix;
-                                    else
-                                        shadowUniform.cascades[i].cascadeSpace = glm::translate(mat4(1.0f), -prop.point.position) * camera.invViewMatrix;
-                                }
-                                else if (light.type == LightType::SpotLight) {
-                                    shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                        cascade->viewMatrix * camera.invViewMatrix;
+                                    shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
+                                        cascade->viewMatrix * camera.invViewMatrix);
                                 }
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             }
@@ -493,16 +489,51 @@ namespace Atlas::Scene {
                                 shadowUniform.cascades[i].distance = cascade->farDistance;
                             }
                         }
+
+                        if (light.type == LightType::PointLight) {
+                            auto projectionMatrix = shadow->views[0].projectionMatrix;
+                            shadowUniform.cascades[0].cascadeSpace = glm::transpose(glm::translate(mat4(1.0f), -prop.point.position) * camera.invViewMatrix);
+                            shadowUniform.cascades[1].cascadeSpace[0] = projectionMatrix[0];
+                            shadowUniform.cascades[1].cascadeSpace[1] = projectionMatrix[1];
+                            shadowUniform.cascades[1].cascadeSpace[2] = projectionMatrix[2];
+                            shadowUniform.cascades[2].cascadeSpace[0] = projectionMatrix[3];
+                        }
+                        else if (light.type == LightType::SpotLight) {
+                            auto cascadeMatrix = shadow->views[0].projectionMatrix *
+                                shadow->views[0].viewMatrix * camera.invViewMatrix;
+                            shadowUniform.cascades[0].cascadeSpace[0] = cascadeMatrix[0];
+                            shadowUniform.cascades[0].cascadeSpace[1] = cascadeMatrix[1];
+                            shadowUniform.cascades[0].cascadeSpace[2] = cascadeMatrix[2];
+                            shadowUniform.cascades[1].cascadeSpace[0] = cascadeMatrix[3];
+                        }
+                    }
+                    else {
+                        lightUniform.shadow.mapIdx = -1;
                     }
 
-                    lights.emplace_back(lightUniform);
+                    lights.push_back(lightUniform);
+
+                    if (light.volumetricIntensity > 0.0f) {
+                        Renderer::VolumetricLight volumetricLightUniform{
+                            .location = lightUniform.location,
+                            .direction = lightUniform.direction,
+                            .color = lightUniform.color,
+                            .intensity = light.volumetricIntensity * light.intensity,
+                            .typeSpecific0 = lightUniform.typeSpecific0,
+                            .typeSpecific1 = lightUniform.typeSpecific1,
+                            .shadowIdx = light.shadow ? int32_t(volumetricShadows.size()) : -1
+                        };
+
+                        volumetricLights.push_back(volumetricLightUniform);
+                        volumetricShadows.push_back(lightUniform.shadow);
+                    }
                 }
             }
             else {
                 // We need to have at least a fake light
                 auto type = 0;
                 auto packedType = reinterpret_cast<float&>(type);
-                lights.emplace_back(Renderer::Light {
+                lights.push_back(Renderer::Light {
                         .direction = vec4(0.0f, -1.0f, 0.0f, 0.0f),
                         .color = vec4(vec3(0.0f), packedType),
                         .intensity = 0.0f,
@@ -515,6 +546,22 @@ namespace Atlas::Scene {
             }
             else {
                 lightBuffer.SetData(lights.data(), 0, lights.size());
+            }
+
+            if (volumetricLightBuffer.GetElementCount() < volumetricLights.size()) {
+                volumetricLightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit
+                    | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Renderer::VolumetricLight), volumetricLights.size(), volumetricLights.data());
+            }
+            else {
+                volumetricLightBuffer.SetData(volumetricLights.data(), 0, volumetricLights.size());
+            }
+
+            if (volumetricShadowBuffer.GetElementCount() < volumetricShadows.size()) {
+                volumetricShadowBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit
+                    | Buffer::BufferUsageBits::StorageBufferBit, sizeof(Renderer::Shadow), volumetricShadows.size(), volumetricShadows.data());
+            }
+            else {
+                volumetricShadowBuffer.SetData(volumetricShadows.data(), 0, volumetricShadows.size());
             }
 
             });

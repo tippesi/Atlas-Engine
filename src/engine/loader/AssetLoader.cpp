@@ -171,14 +171,15 @@ namespace Atlas {
 
             const int32_t tryCount = 2;
 
+            auto fileTime = defaultTime;
             for (int32_t i = 0; i < tryCount; i++) {
                 try {
-                    return std::filesystem::last_write_time(GetFullPath(path));
+                    fileTime = std::filesystem::last_write_time(GetFullPath(path));
                 }
                 catch (...) {}
             }
 
-            return defaultTime;
+            return fileTime;
 
         }
 

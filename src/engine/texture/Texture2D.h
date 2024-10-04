@@ -27,7 +27,7 @@ namespace Atlas {
              * @param filtering The filtering of the texture.
              */
             Texture2D(int32_t width, int32_t height, VkFormat format, Wrapping wrapping = Wrapping::Repeat,
-                Filtering filtering = Filtering::Nearest);
+                Filtering filtering = Filtering::Nearest, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
             * Constructs a Texture2D object from an image file.
@@ -39,7 +39,7 @@ namespace Atlas {
             */
             explicit Texture2D(const std::string& filename, bool colorSpaceConversion = true,
                 Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Anisotropic,
-                int32_t forceChannels = 0);
+                int32_t forceChannels = 0, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
              * Constructs a Texture2D object from an image object.
@@ -79,7 +79,7 @@ namespace Atlas {
         private:
             template<typename T>
             void InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping,
-                Filtering filtering);
+                Filtering filtering, bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
         };
 
@@ -126,7 +126,8 @@ namespace Atlas {
         }
 
         template<typename T>
-        void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering) {
+        void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering,
+            bool dedicatedMemory, bool usedForRenderTarget) {
 
             // RGB images are mostly not supported
             if (image->channels == 3) {
@@ -155,7 +156,7 @@ namespace Atlas {
                 }
             }
 
-            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2D, image->width, image->height, 1, filtering, wrapping, dedicatedMemory, usedForRenderTarget);
             RecreateSampler(filtering, wrapping);
 
             SetData(image->GetData());

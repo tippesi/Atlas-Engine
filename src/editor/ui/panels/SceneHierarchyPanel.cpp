@@ -61,12 +61,15 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
+            std::string prevEntitySearch = entitySearch;
             ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
+
+            bool searchChanged = entitySearch != prevEntitySearch;
             if (ImGui::IsItemClicked()) selectionChanged = true;
 
             JobSystem::Wait(searchJob);
 
-            TraverseHierarchy(scene, root, matchSet, inFocus, &selectionChanged);
+            TraverseHierarchy(scene, root, matchSet, inFocus, searchChanged, &selectionChanged);
 
             RenderExtendedHierarchy(scene, &selectionChanged);
 
@@ -79,7 +82,7 @@ namespace Atlas::Editor::UI {
 #endif
             if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_D, false))
                 DuplicateSelectedEntity(scene);
-            if (inFocus && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+            if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntity(scene);
 
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
@@ -95,7 +98,7 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneHierarchyPanel::TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
-        std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool* selectionChanged) {
+        std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool searchChanged, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow |
             ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -117,6 +120,11 @@ namespace Atlas::Editor::UI {
         // If we have a search term and the name doesn't match, return
         if (!rootNode && !validSearch)
             return;
+
+        if (matchSet.contains(entity) && !entitySearch.empty() && searchChanged)
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        else if (entitySearch.empty() && searchChanged || !matchSet.contains(entity) && searchChanged)
+            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
 
         auto nodeFlags = baseFlags;
         nodeFlags |= entity == selectedEntity ? ImGuiTreeNodeFlags_Selected : 0;
@@ -171,7 +179,7 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                TraverseHierarchy(scene, childEntity, matchSet, inFocus, selectionChanged);
+                TraverseHierarchy(scene, childEntity, matchSet, inFocus, searchChanged, selectionChanged);
 
             }
 

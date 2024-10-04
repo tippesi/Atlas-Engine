@@ -48,6 +48,9 @@ namespace Atlas::Scene {
 
         Buffer::Buffer materialBuffer;
         Buffer::Buffer lightBuffer;
+        Buffer::Buffer volumetricLightBuffer;
+        Buffer::Buffer volumetricShadowBuffer;
+
         std::vector<Ref<Graphics::Image>> textures;
         std::vector<Ref<Graphics::Image>> textureArrays;
         std::vector<Ref<Graphics::Image>> cubemaps;
@@ -62,7 +65,11 @@ namespace Atlas::Scene {
         std::unordered_map<Ref<Texture::Texture2DArray>, uint32_t> textureArrayToBindlessIdx;
         std::unordered_map<Ref<Texture::Cubemap>, uint32_t> cubemapToBindlessIdx;
         std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+
         std::vector<LightEntity> lightEntities;
+        std::vector<Renderer::Light> lights;
+        std::vector<Renderer::VolumetricLight> volumetricLights;
+        std::vector<Renderer::Shadow> volumetricShadows;
 
         JobSignal mainCameraSignal;
 

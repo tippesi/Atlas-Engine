@@ -177,10 +177,14 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
     surface = GetSurfaceParameters(instance, tri, ray, true, 0);
 
     // If we hit an emissive surface we need to terminate the ray
+#ifndef REALTIME
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
         Uniforms.bounceCount == 0) {
         payload.radiance += surface.material.emissiveColor;
     }
+#else
+    payload.radiance += payload.throughput * surface.material.emissiveColor;
+#endif
 
     // Evaluate direct and indirect light
     vec3 radiance = payload.throughput * surface.material.opacity
@@ -228,7 +232,8 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     // Check for visibilty. This is important to get an
     // estimate of the solid angle of the light from point P
     // on the surface.
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
     
     return reflectance * radiance * surface.NdotL / lightPdf;
 

@@ -5,6 +5,7 @@
 #include "../../volume/BVH.h"
 #include "../../graphics/Profiler.h"
 #include "../../pipeline/PipelineManager.h"
+#include <glm/gtx/norm.hpp>
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
@@ -19,7 +20,7 @@ namespace Atlas {
 
             RayTracingHelper::RayTracingHelper() {
 
-                const size_t lightCount = 256;
+                const size_t lightCount = 128;
 
                 indirectDispatchBuffer = Buffer::Buffer(Buffer::BufferUsageBits::IndirectBufferBit | Buffer::BufferUsageBits::HighPriorityMemoryBit,
                     3 * sizeof(uint32_t), 0);
@@ -76,7 +77,7 @@ namespace Atlas {
                     auto lightCount = lightBuffer.GetElementCount();
                     selectedLights.clear();
                     // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount) {
+                    if (lights.size() > lightCount && stochasticLightSelection) {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
@@ -97,8 +98,24 @@ namespace Atlas {
                             light.data.y *= float(selectedLights.size());
                         }
                     }
+                    else if (lights.size() > lightCount && !stochasticLightSelection) {
+                        auto& camera = scene->GetMainCamera();
+                        auto cameraLocation = camera.GetLocation();
+
+                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {  
+                            return glm::distance2(vec3(light0.P), cameraLocation)
+                               < glm::distance2(vec3(light1.P), cameraLocation);
+                        });
+
+                        for (size_t i = 0; i < lightCount; i++) {
+                            auto& light = lights[i];
+
+                            light.data.y = 1.0f;
+                            selectedLights.push_back(light);
+                        }
+                    }
                     else {
-                        for (auto light : lights) {
+                        for (auto& light : lights) {
                             light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
@@ -161,7 +178,7 @@ namespace Atlas {
                     auto lightCount = lightBuffer.GetElementCount();
                     selectedLights.clear();
                     // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount) {
+                    if (lights.size() > lightCount && stochasticLightSelection) {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
@@ -182,8 +199,24 @@ namespace Atlas {
                             light.data.y *= float(selectedLights.size());
                         }
                     }
+                    else if (lights.size() > lightCount && !stochasticLightSelection) {
+                        auto& camera = scene->GetMainCamera();
+                        auto cameraLocation = camera.GetLocation();
+
+                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
+                            return glm::distance2(vec3(light0.P), cameraLocation)
+                                < glm::distance2(vec3(light1.P), cameraLocation);
+                            });
+
+                        for (size_t i = 0; i < lightCount; i++) {
+                            auto& light = lights[i];
+
+                            light.data.y = 1.0f;
+                            selectedLights.push_back(light);
+                        }
+                    }
                     else {
-                        for (auto light : lights) {
+                        for (auto& light : lights) {
                             light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
@@ -439,6 +472,9 @@ namespace Atlas {
 
                 lights.clear();
 
+                auto& camera = scene->GetMainCamera();
+                auto cameraLocation = camera.GetLocation();
+
                 auto lightSubset = scene->GetSubset<LightComponent>();
                 for (auto& lightEntity : lightSubset) {
                     auto& light = lightEntity.GetComponent<LightComponent>();
@@ -453,23 +489,24 @@ namespace Atlas {
                     float specific0 = 0.0f;
                     float specific1 = 0.0f;
 
-                    uint32_t data = 0;
+                    uint32_t data0 = 0, data1 = 0;
 
                     const auto& prop = light.transformedProperties;
                     // Parse individual light information based on type
                     if (light.type == LightType::DirectionalLight) {
-                        data |= (DIRECTIONAL_LIGHT << 28u);
+                        data0 |= (DIRECTIONAL_LIGHT << 28u);
                         weight = brightness;
+                        P = cameraLocation;
                         N = light.transformedProperties.directional.direction;
                     }
                     else if (light.type == LightType::PointLight) {
-                        data |= (POINT_LIGHT << 28u);
+                        data0 |= (POINT_LIGHT << 28u);
                         weight = brightness;
                         P = light.transformedProperties.point.position;
                         radius = light.transformedProperties.point.radius;
                     }
                     else if (light.type == LightType::SpotLight) {
-                        data |= (SPOT_LIGHT << 28u);
+                        data0 |= (SPOT_LIGHT << 28u);
                         weight = brightness;
                         P = light.transformedProperties.spot.position;
                         N = light.transformedProperties.spot.direction;
@@ -484,14 +521,19 @@ namespace Atlas {
                         specific1 = lightAngleOffset;
                     }
 
-                    data |= uint32_t(lights.size());
-                    auto cd = reinterpret_cast<float&>(data);
+                    if (light.shadow) {
+                        data1 |= 1u;
+                    }
+
+                    data0 |= uint32_t(lights.size());
+                    auto castData0 = reinterpret_cast<float&>(data0);
+                    auto castData1 = reinterpret_cast<float&>(data1);
 
                     GPULight gpuLight;
-                    gpuLight.P = vec4(P, 1.0f);
+                    gpuLight.P = vec4(P, castData1);
                     gpuLight.N = vec4(N, radius);
                     gpuLight.color = vec4(radiance, 0.0f);
-                    gpuLight.data = vec4(cd, weight, specific0, specific1);
+                    gpuLight.data = vec4(castData0, weight, specific0, specific1);
 
                     lights.push_back(gpuLight);
                 }
@@ -500,25 +542,27 @@ namespace Atlas {
                     const auto& rtData = scene->rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
-                    
-                // Find the maximum weight
-                auto maxWeight = 0.0f;
-                for (auto& light : lights) {
-                    maxWeight = glm::max(maxWeight, light.data.y);
-                }
+                
+                if (stochasticLightSelection) {
+                    // Find the maximum weight
+                    auto maxWeight = 0.0f;
+                    for (auto& light : lights) {
+                        maxWeight = glm::max(maxWeight, light.data.y);
+                    }
 
-                // Calculate min weight and adjust lights based on it
-                auto minWeight = 0.005f * maxWeight;
-                // Also calculate the total weight
-                auto totalWeight = 0.0f;
+                    // Calculate min weight and adjust lights based on it
+                    auto minWeight = 0.005f * maxWeight;
+                    // Also calculate the total weight
+                    auto totalWeight = 0.0f;
 
-                for (auto& light : lights) {
-                    light.data.y = glm::max(light.data.y, minWeight);
-                    totalWeight += light.data.y;
-                }
+                    for (auto& light : lights) {
+                        light.data.y = glm::max(light.data.y, minWeight);
+                        totalWeight += light.data.y;
+                    }
 
-                for (auto& light : lights) {
-                    light.data.y /= totalWeight;
+                    for (auto& light : lights) {
+                        light.data.y /= totalWeight;
+                    }
                 }
             }
             

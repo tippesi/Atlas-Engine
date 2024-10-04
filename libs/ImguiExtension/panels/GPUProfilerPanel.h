@@ -15,7 +15,6 @@ namespace Atlas::ImguiExtension {
 
         void Render();
 
-    private:
         void RenderTable();
 
         void RenderGraph();

@@ -84,6 +84,7 @@ namespace Atlas::Editor {
 
             T* typeData = static_cast<T*>(data);
             for (size_t i = 0; i < elementCount; i++) {
+                new (&typeData[i])T();
                 typeData[i] = source[i];
             }
 
