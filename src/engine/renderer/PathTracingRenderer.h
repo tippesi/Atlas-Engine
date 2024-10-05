@@ -84,6 +84,8 @@ namespace Atlas {
 
             size_t frameCount = 0;
 
+            std::vector<Graphics::ImageBarrier> imageBarriers;
+
         };
 
     }

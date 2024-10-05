@@ -188,14 +188,11 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &constants);
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {h0K.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT}
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(hTD.image, 3, 0);
                 commandList->BindImage(h0K.image, 3, 1);
@@ -232,29 +229,26 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 for (int32_t i = 0; i < log2n; i++) {
 
                     if (!pingpong) {
-                        imageBarriers = {
+                        Graphics::ImageBarrier imageBarriers[] = {
                             {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
                             {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                         };
                         commandList->BindImage(hTD.image, 3, 1);
                         commandList->BindImage(hTDPingpong.image, 3, 2);
+                        commandList->PipelineBarrier(imageBarriers, {});
                     }
                     else {
-                        imageBarriers = {
+                        Graphics::ImageBarrier imageBarriers[] = {
                             {hTD.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                             {hTDPingpong.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT}
                         };
                         commandList->BindImage(hTDPingpong.image, 3, 1);
                         commandList->BindImage(hTD.image, 3, 2);
-                    }
-
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                        commandList->PipelineBarrier(imageBarriers, {});
+                    }                   
 
                     auto preTwiddle = (float)N / powf(2.0f, (float)i + 1.0f);
 
@@ -288,14 +282,11 @@ namespace Atlas {
                     image = hTDPingpong.image;
                 }
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {displacementMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(displacementMap.image, 3, 0);
                 commandList->BindImage(image, 3, 1);
@@ -342,14 +333,11 @@ namespace Atlas {
                 };
                 commandList->PushConstants("constants", &constants);
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {displacementMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT},
                     {normalMap.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(displacementMap.image, 3, 0);
                 commandList->BindImage(normalMap.image, 3, 1);

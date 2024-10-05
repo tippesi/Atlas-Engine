@@ -64,11 +64,13 @@ namespace Atlas {
             Texture::Texture2D sobolSequenceTexture;
 
             Buffer::Buffer lightCullingBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
             Buffer::UniformBuffer volumetricUniformBuffer;
-            Buffer::UniformBuffer blurWeightsUniformBuffer;
             Buffer::UniformBuffer resolveUniformBuffer;
             
             Ref<Graphics::Sampler> shadowSampler;
+
+            const int32_t filterSize = 4;
 
         };
 

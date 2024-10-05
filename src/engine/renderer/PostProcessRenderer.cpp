@@ -215,12 +215,11 @@ namespace Atlas {
                 resolution /= 2;
                 
                 for (int32_t i = 1; i < mipLevels; i++) {
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    Graphics::ImageBarrier imageBarriers[] = {
                         {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(imageBarriers, {});
 
                     ivec2 groupCount = resolution / 16;
                     groupCount.x += ((groupCount.x * 16 == resolution.x) ? 0 : 1);
@@ -261,13 +260,11 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
                 
                 for (int32_t i = mipLevels - 2; i >= 0; i--) {
-                    
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    Graphics::ImageBarrier imageBarriers[] = {
                         {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(imageBarriers, {});
 
                     ivec2 groupCount = resolutions[i] / 8;
                     groupCount.x += ((groupCount.x * 8 == resolutions[i].x) ? 0 : 1);
@@ -292,6 +289,12 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
+            Graphics::ImageBarrier imageBarriers[] = {
+                {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {textureOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT}
+            };
+            commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+
         }
 
         void PostProcessRenderer::CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D *texture,
@@ -300,23 +303,20 @@ namespace Atlas {
             auto& srcImage = sourceTexture->image;
             auto& dstImage = texture->image;
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-            imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                 {dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(preImageBarriers, {},
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->BlitImage(srcImage, dstImage);
 
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {srcImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {dstImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(postImageBarriers, {},
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         }

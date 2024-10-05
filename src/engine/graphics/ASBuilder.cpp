@@ -82,6 +82,7 @@ namespace Atlas {
             size_t batchSizeLimit = 256000000;
 
             std::vector<uint32_t> batchIndices;
+            batchIndices.reserve(blases.size());
             for (size_t i = 0; i < blases.size(); i++) {
 
                 batchIndices.push_back(uint32_t(i));

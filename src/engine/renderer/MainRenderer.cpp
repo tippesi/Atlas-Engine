@@ -176,10 +176,8 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
                 auto lightSubset = scene->GetSubset<LightComponent>();
+                shadowImageBarriers.clear();
 
                 for (auto& lightEntity : lightSubset) {
                     auto& light = lightEntity.GetComponent<LightComponent>();
@@ -187,11 +185,11 @@ namespace Atlas {
                         continue;
 
                     auto shadow = light.shadow;
-                    imageBarriers.push_back({ shadow->useCubemap ?
+                    shadowImageBarriers.push_back({ shadow->useCubemap ?
                         shadow->cubemap->image : shadow->maps->image, layout, access });
                 }
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
             JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
@@ -241,8 +239,7 @@ namespace Atlas {
                 auto rtData = target->GetHistoryData(FULL_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {rtData->baseColorTexture->image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
@@ -264,7 +261,7 @@ namespace Atlas {
                     {rtHalfData->stencilTexture->image, layout, access},
                     {rtHalfData->velocityTexture->image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
             {
@@ -273,8 +270,7 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {rtData->baseColorTexture->image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
@@ -289,7 +285,7 @@ namespace Atlas {
                     {target->oceanDepthTexture.image, layout, access}
                 };
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
             {
@@ -356,16 +352,14 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->lightingTexture.image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                 };
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-            
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);            
             }
 
             {
@@ -554,14 +548,12 @@ namespace Atlas {
             VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {target->lightingTexture.image, layout, access},
                 {rtData->depthTexture->image, layout, access},
                 {rtData->velocityTexture->image, layout, access},
             };
-
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
@@ -599,13 +591,13 @@ namespace Atlas {
 
             commandList->EndRenderPass();
 
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {target->lightingTexture.image, layout, access},
                 {rtData->depthTexture->image, layout, access},
                 {rtData->velocityTexture->image, layout, access},
                 {rtData->stencilTexture->image, layout, access},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+            commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             if (localCommandList) {

@@ -122,6 +122,8 @@ namespace Atlas {
             size_t haltonIndex = 0;
             uint32_t frameCount = 0;
 
+            std::vector<Graphics::ImageBarrier> shadowImageBarriers;
+
         };
 
     }

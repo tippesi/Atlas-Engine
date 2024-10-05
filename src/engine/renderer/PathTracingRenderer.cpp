@@ -99,9 +99,7 @@ namespace Atlas {
                 rayHitUniformBuffer.SetData(&uniforms, i);
             }            
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-
+            imageBarriers.clear();
             imageBarriers.push_back({ renderTarget->outputTexture.image,
                 VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT });
             imageBarriers.push_back({ renderTarget->radianceTexture.image,
@@ -157,7 +155,7 @@ namespace Atlas {
                 commandList->BindImage(baseColorTexture->image, 3, 9);
             }
 
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            commandList->PipelineBarrier(imageBarriers, {});
 
             auto tileResolution = resolution / imageSubdivisions;
             auto groupCount = tileResolution / 8;
@@ -232,7 +230,7 @@ namespace Atlas {
                 imageBarriers.push_back({ historyMaterialIdxTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT });
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 velocityTexture->Bind(commandList, 3, 4);
                 depthTexture->Bind(commandList, 3, 5);

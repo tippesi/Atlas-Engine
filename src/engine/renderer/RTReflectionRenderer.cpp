@@ -60,12 +60,11 @@ namespace Atlas {
                 target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
             }
 
             Graphics::Profiler::BeginQuery("Trace rays");
@@ -178,9 +177,6 @@ namespace Atlas {
             if (reflection->upsampleBeforeFiltering) {
                 Graphics::Profiler::EndAndBeginQuery("Upscaling");
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
@@ -188,11 +184,11 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(upsamplePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(swapReflectionTexture->image, 3, 0);
 
@@ -226,9 +222,6 @@ namespace Atlas {
             Graphics::Profiler::EndAndBeginQuery("Temporal filter");
 
             {
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
@@ -245,12 +238,12 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &constants);
 
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(swapReflectionTexture->image, 3, 0);
                 commandList->BindImage(target->reflectionMomentsTexture.image, 3, 1);
@@ -271,30 +264,27 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-
             // Need barriers for all four images
-            imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {swapReflectionTexture->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                 {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                 {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(preImageBarriers, {},
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->CopyImage(swapReflectionTexture->image, target->historyReflectionTexture.image);
             commandList->CopyImage(target->reflectionMomentsTexture.image, target->historyReflectionMomentsTexture.image);
 
             // Need barriers for all four images
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->reflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->historyReflectionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->historyReflectionMomentsTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(postImageBarriers, {},
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             Graphics::Profiler::EndAndBeginQuery("Spatial filter");
@@ -324,22 +314,23 @@ namespace Atlas {
                     commandList->PushConstants("constants", &constants);
 
                     if (pingpong) {
-                        imageBarriers = {
+                        Graphics::ImageBarrier imageBarriers[] = {
                             {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(swapReflectionTexture->image, 3, 0);
                         commandList->BindImage(reflectionTexture->image, reflectionTexture->sampler, 3, 1);
+                        commandList->PipelineBarrier(imageBarriers, {});
                     }
                     else {
-                        imageBarriers = {
+                        Graphics::ImageBarrier imageBarriers[] = {
                             {swapReflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                             {reflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                         };
                         commandList->BindImage(reflectionTexture->image, 3, 0);
                         commandList->BindImage(swapReflectionTexture->image, swapReflectionTexture->sampler, 3, 1);
+                        commandList->PipelineBarrier(imageBarriers, {});
                     }
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
 
                     pingpong = !pingpong;
 

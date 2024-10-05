@@ -9,8 +9,15 @@ namespace Atlas {
 
             this->device = device;
 
-            const int32_t filterSize = 4;
             blurFilter.CalculateBoxFilter(filterSize);
+
+            std::vector<float> blurKernelWeights;
+            std::vector<float> blurKernelOffsets;
+            blurFilter.GetLinearized(&blurKernelWeights, &blurKernelOffsets, false);
+
+            auto mean = (blurKernelWeights.size() - 1) / 2;
+            blurKernelWeights = std::vector<float>(blurKernelWeights.begin() + mean, blurKernelWeights.end());
+            blurKernelOffsets = std::vector<float>(blurKernelOffsets.begin() + mean, blurKernelOffsets.end());
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
@@ -35,7 +42,9 @@ namespace Atlas {
 
             volumetricUniformBuffer = Buffer::UniformBuffer(sizeof(VolumetricUniforms));
             resolveUniformBuffer = Buffer::UniformBuffer(sizeof(ResolveUniforms));
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
+            
+            blurWeightsUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBufferBit,
+                sizeof(float) * (size_t(filterSize) + 1), 1, blurKernelWeights.data());
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -213,29 +222,15 @@ namespace Atlas {
 
             Graphics::Profiler::EndQuery();
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-
             if (fog && fog->enable && fog->rayMarching) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
                 const int32_t groupSize = 256;
 
-                std::vector<float> kernelWeights;
-                std::vector<float> kernelOffsets;
-
-                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
-
-                auto mean = (kernelWeights.size() - 1) / 2;
-                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
-                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
-
-                auto kernelSize = int32_t(kernelWeights.size() - 1);
+                auto kernelSize = int32_t(filterSize);
 
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
-
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(lowResDepthTexture->image, lowResDepthTexture->sampler, 3, 2);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
@@ -243,11 +238,11 @@ namespace Atlas {
                 for (int32_t j = 0; j < 3; j++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-                    imageBarriers = {
+                    Graphics::ImageBarrier preImageBarriers[] = {
                         {target->volumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(preImageBarriers, {});
 
                     commandList->BindPipeline(horizontalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
@@ -260,11 +255,11 @@ namespace Atlas {
                     groupCount = ivec2(res.x, res.y / groupSize);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier postImageBarriers[] = {
                         {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->volumetricTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(postImageBarriers, {});
 
                     commandList->BindPipeline(verticalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
@@ -278,11 +273,11 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
-            imageBarriers = {
+            Graphics::ImageBarrier imageBarriers[] = {
                 {target->volumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            commandList->PipelineBarrier(imageBarriers, {});
 
             {
                 Graphics::Profiler::BeginQuery("Resolve");

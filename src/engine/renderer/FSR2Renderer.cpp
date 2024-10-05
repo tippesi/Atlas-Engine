@@ -831,10 +831,8 @@ namespace Atlas::Renderer {
 
 		auto& taa = scene->postProcessing.taa;
 
-		std::vector<Graphics::BufferBarrier> bufferBarriers;
-		std::vector<Graphics::ImageBarrier> imageBarriers;
-		imageBarriers.push_back({ outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT });
-		commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+		Graphics::ImageBarrier imageBarriers[] = {{outputImage,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT}};
+		commandList->PipelineBarrier(imageBarriers, {});
 
 		FfxFsr2DispatchDescription dispatchParameters = {};
 		dispatchParameters.commandList = commandList;

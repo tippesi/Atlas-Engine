@@ -43,12 +43,12 @@ namespace Atlas {
             const auto depth = targetData->depthTexture;
             const auto stencil = targetData->stencilTexture;
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            imageBarriers.push_back({lastHistory->image,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT});
-            imageBarriers.push_back({history->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT});
-            imageBarriers.push_back({lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT});
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            Graphics::ImageBarrier imageBarriers[] = {
+                {lastHistory->image,VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_SHADER_WRITE_BIT},
+                {history->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT},
+                {lastVelocity->image,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_SHADER_READ_BIT}
+            };
+            commandList->PipelineBarrier(imageBarriers, {});
 
             commandList->BindImage(lastHistory->image, 3, 0);
 

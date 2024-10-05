@@ -177,28 +177,25 @@ namespace Atlas {
                         depthImage->format);
                 }
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier preImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(colorImage, refractionTexture.image);
                 commandList->CopyImage(depthImage, depthTexture.image);
 
-                imageBarriers = {
+                Graphics::ImageBarrier postImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
             
@@ -344,15 +341,14 @@ namespace Atlas {
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    Graphics::ImageBarrier imageBarriers[] = {
                         {target->lightingTexture.image, layout, access},
                         {rtData->depthTexture->image, layout, access},
                         {rtData->stencilTexture->image, layout, access},
                         {rtData->velocityTexture->image, layout, access},
                     };
 
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                    commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
                 }
 
                 if (ocean->underwaterShader) {
@@ -360,23 +356,20 @@ namespace Atlas {
 
                     auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
 
-                    std::vector<Graphics::ImageBarrier> imageBarriers;
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                    imageBarriers = {
+                    Graphics::ImageBarrier preImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(preImageBarriers, {},
                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                     commandList->CopyImage(colorImage, refractionTexture.image);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier postImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(postImageBarriers, {},
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                     const int32_t groupSize = 8;
