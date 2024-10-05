@@ -131,6 +131,7 @@ namespace Atlas::Editor {
         scene->postProcessing.fsr2 = true;
 
         scene->Timestep(1.0f);
+        scene->Update();
 
         min = glm::vec3(std::numeric_limits<float>::max());
         max = glm::vec3(-std::numeric_limits<float>::max());

@@ -147,8 +147,8 @@ namespace Atlas {
             */
 
             Graphics::RenderPassDepthAttachment attachment = {
-                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
-                                   shadow->maps.format,
+                    .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
+                                   shadow->maps->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                     .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -160,7 +160,7 @@ namespace Atlas {
 
             Graphics::FrameBufferDesc frameBufferDesc = {
                 .renderPass = renderPass,
-                .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
                 .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
             };
             return device->CreateFrameBuffer(frameBufferDesc);

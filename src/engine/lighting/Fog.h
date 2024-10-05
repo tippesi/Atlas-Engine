@@ -27,6 +27,7 @@ namespace Atlas {
             float ambientFactor = 0.01f;
 
             bool rayMarching = true;
+            bool localLights = false;
             int32_t rayMarchStepCount = 10;
 
             float volumetricIntensity = 1.0f;

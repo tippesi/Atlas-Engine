@@ -59,11 +59,14 @@ namespace Atlas {
              */
             void UpdateVertexArray();
 
+            void InvertNormals();
+
             /**
              * Builds up BVH and fills raytracing related buffers
              */
             void BuildBVH(bool parallelBuild = true);
 
+            void ClearBVH();
 
             bool IsBVHBuilt() const;
 
@@ -93,6 +96,7 @@ namespace Atlas {
 
             bool cullBackFaces = true;
             bool depthTest = true;
+            bool rayTrace = true;
 
             bool castShadow = true;
 
@@ -105,6 +109,7 @@ namespace Atlas {
 
             float distanceCulling = 10000.0f;
             float shadowDistanceCulling = 10000.0f;
+            float rayTraceDistanceCulling = 10000.0f;
             float impostorDistance = 300.0f;
             float impostorShadowDistance = 100.0f;
 

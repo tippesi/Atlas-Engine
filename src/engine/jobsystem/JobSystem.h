@@ -10,6 +10,7 @@
 
 #include "Job.h"
 #include "JobGroup.h"
+#include "JobSemaphore.h"
 #include "PriorityPool.h"
 
 namespace Atlas {
@@ -33,11 +34,15 @@ namespace Atlas {
         static void ExecuteMultiple(JobGroup& group, int32_t count, 
             std::function<void(JobData&)> func, void* userData = nullptr);
 
+        static void Wait(JobSignal& signal, JobPriority priority);
+
         static void Wait(JobGroup& group);
 
         static void WaitSpin(JobGroup& group);
 
         static void WaitAll();
+
+        static int32_t GetWorkerCount(const JobPriority priority);
     
     private:
         static PriorityPool priorityPools[static_cast<int>(JobPriority::Count)];

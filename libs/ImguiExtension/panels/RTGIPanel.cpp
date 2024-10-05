@@ -26,7 +26,9 @@ namespace Atlas::ImguiExtension {
             ImGui::SetTooltip("Limits the amount of incoming radiance. Is internally scale by the camera exposure.");
         }
         ImGui::SliderFloat("Bias", &rtgi->bias, 0.0f, 1.0f);
-        ImGui::SliderInt("Texture level##Reflection", &rtgi->textureLevel, 0, 10);
+        ImGui::SliderInt("Texture level##RTGI", &rtgi->textureLevel, 0, 10);
+        ImGui::SliderInt("Sample count##RTGI", &rtgi->sampleCount, 1, 10);
+        ImGui::SliderInt("Light sample count##RTGI", &rtgi->lightSampleCount, 1, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &rtgi->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &rtgi->temporalWeight, 0.0f, 1.0f);

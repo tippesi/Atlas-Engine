@@ -75,6 +75,7 @@ namespace Atlas {
         int32_t roughnessTexture = -1;
         int32_t metalnessTexture = -1;
         int32_t aoTexture = -1;
+        int32_t emissiveTexture = -1;
     };
 
     struct GPUAABB {

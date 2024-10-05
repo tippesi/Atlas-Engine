@@ -24,6 +24,8 @@ struct AppConfiguration {
     bool reflection = true;
     bool volumetric = true;
     bool ocean = true;
+    bool light = true;
+    bool fsr = true;
     bool resize = false;
     bool recreateSwapchain = false;
     bool minimizeWindow = false;
@@ -57,7 +59,6 @@ private:
 
     void SetResolution(int32_t width, int32_t height);
 
-    Ref<Atlas::Renderer::PathTracerRenderTarget> pathTraceTarget;
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
@@ -68,7 +69,6 @@ private:
     std::vector<Atlas::ResourceHandle<Atlas::Mesh::Mesh>> meshes;
 
     Atlas::Scene::Entity cameraEntity;
-    Atlas::Scene::Entity directionalLightEntity;
     std::vector<Atlas::Scene::Entity> entities;
 
     Atlas::Lighting::EnvironmentProbe probe;

@@ -9,6 +9,7 @@
 #include "texture/Texture.h"
 #include "input/KeyboardMap.h"
 #include "events/EventManager.h"
+#include "raytracing/RayTracingManager.h"
 #include "jobsystem/JobSystem.h"
 
 #include "graphics/ShaderCompiler.h"
@@ -117,10 +118,13 @@ namespace Atlas {
 
         Clock::Update();
         Graphics::Profiler::BeginFrame();
+        // First reset keyboard state before new events
+        Input::KeyboardMap::Update();
         Events::EventManager::Update();
         PipelineManager::Update();
         Audio::AudioManager::Update();
         Physics::ShapesManager::Update();
+        RayTracing::RayTracingManager::Update();
 
     }
 

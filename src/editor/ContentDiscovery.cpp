@@ -5,6 +5,7 @@
 #include "Log.h"
 
 #include <filesystem>
+#include <algorithm>
 
 namespace Atlas::Editor {
 
@@ -12,8 +13,15 @@ namespace Atlas::Editor {
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
 	JobGroup ContentDiscovery::contentDiscoveryJob;
 
+	std::atomic_bool ContentDiscovery::execute = false;
 	const float ContentDiscovery::discoverFrequency = 3.0f;
 	float ContentDiscovery::lastDiscoveryTime = -ContentDiscovery::discoverFrequency;
+
+	void ContentDiscovery::Execute() {
+
+		execute = true;
+
+	}
 
 	const Ref<ContentDirectory> ContentDiscovery::GetContent() {
 
@@ -52,23 +60,24 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
-		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency;
+		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency 
+			|| content->contentDirectories.empty() || execute;
 
 		if (contentDiscoveryJob.HasFinished() && canRediscover) {
-			// Might be that it took longer than the timeout time
-			content = nextContent;
+			// Swap here to not immediately release the memory of content (causes stutter due to freeing memory)		
+			std::swap(content, nextContent);
+
 			lastDiscoveryTime = Clock::Get();
 			JobSystem::Execute(contentDiscoveryJob, [&](JobData&) {
+				// Now release the swapped memory here in the job async
+				nextContent.reset();
+
 				nextContent = PerformContentDiscovery();
 			});
+
+
 			return;
 		}
-			
-		if (!contentDiscoveryJob.HasFinished())
-			return;
-
-		content = nextContent;
-
 	}
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::PerformContentDiscovery() {
@@ -100,7 +109,11 @@ namespace Atlas::Editor {
 				assetPath.erase(assetPath.begin());
 
 			if (dirEntry.is_directory()) {
+				auto dirname = Common::Path::GetFileName(dirEntry.path().string());
+				std::transform(dirname.begin(), dirname.end(), dirname.begin(), ::tolower);
+
 				auto childDirectory = CreateRef<ContentDirectory>({
+						.name = dirname,
 						.path = dirEntry.path(),
 						.assetPath = assetPath
 					});
@@ -131,13 +144,13 @@ namespace Atlas::Editor {
 		// Sort for directories to be ordered alphabetically
 		std::sort(directory->directories.begin(), directory->directories.end(),
 			[](const Ref<ContentDirectory>& dir0, const Ref<ContentDirectory>& dir1) {
-				return dir0->path < dir1->path;
+				return dir0->name < dir1->name;
 			});
 
 		// Sort for files to be ordered alphabetically
 		std::sort(directory->files.begin(), directory->files.end(),
 			[](const Content& file0, const Content& file1) {
-				return file0.path < file1.path;
+				return file0.name < file1.name;
 			});
 
 	}

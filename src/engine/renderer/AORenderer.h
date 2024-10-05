@@ -46,7 +46,9 @@ namespace Atlas {
             Buffer::UniformBuffer rtUniformBuffer;
             Buffer::UniformBuffer ssUniformBuffer;
             Buffer::UniformBuffer ssSamplesUniformBuffer;
-            Buffer::UniformBuffer blurWeightsUniformBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
+
+            const int32_t filterSize = 4;
 
         };
 

@@ -6,10 +6,12 @@
 #include <../common/octahedron.hsh>
 
 #define INF 1000000000000.0
-#define EPSILON 0.1
+#define EPSILON 0.001
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
+#define POINT_LIGHT 2
+#define SPOT_LIGHT 3
 
 #define INSTANCE_MASK_ALL (1 << 7)
 #define INSTANCE_MASK_SHADOW (1 << 6)
@@ -102,18 +104,25 @@ Light UnpackLight(PackedLight compressed) {
     Light light;
 
     light.P = compressed.P.xyz;
-    light.N = compressed.N.xyz;
+    light.N = normalize(compressed.N.xyz);
 
     light.radiance = compressed.color.rgb;
 
-    uint data = floatBitsToUint(compressed.data.x);
-    light.type = ((data & 0xF0000000u) >> 28u);
+    uint data0 = floatBitsToUint(compressed.data.x);
+    uint data1 = floatBitsToUint(compressed.P.w);
 
-    light.triangleIdx = int(data & 0x0FFFFFFFu);
+    light.type = ((data0 & 0xF0000000u) >> 28u);
+
+    light.triangleIdx = int(data0 & 0x0FFFFFFFu);
     light.instanceIdx = floatBitsToInt(compressed.data.w);
 
+    light.castShadow = data1 > 0u;
+
     light.pdf = compressed.data.y;
-    light.area = compressed.data.z;
+    light.area = compressed.N.w;
+    light.radius = compressed.N.w;
+    light.angleScale = compressed.data.z;
+    light.angleOffset = compressed.data.w;
     light.brightness = dot(light.radiance, vec3(0.33333));
 
     return light;

@@ -41,6 +41,8 @@ namespace Atlas::Scripting::Bindings {
 
         auto entityType = ns->new_usertype<Scene::Entity>("Entity",
             "IsValid", &Scene::Entity::IsValid,
+            "GetID", &Scene::Entity::GetID,
+            "GetVersion", &Scene::Entity::GetVersion,
             // Add components
             "AddAudioComponent", &Scene::Entity::AddComponent<AudioComponent, ResourceHandle<Audio::AudioData>&, float, bool>,
             "AddAudioVolumeComponent", &Scene::Entity::AddComponent<AudioVolumeComponent, ResourceHandle<Audio::AudioData>&, Volume::AABB&, float>,
@@ -152,21 +154,45 @@ namespace Atlas::Scripting::Bindings {
 
         ns->new_usertype<PointLightProperties>("PointLightProperties",
             "position", &PointLightProperties::position,
-            "radius", &PointLightProperties::radius,
-            "attenuation", &PointLightProperties::attenuation
+            "radius", &PointLightProperties::radius
+        );
+
+        ns->new_usertype<SpotLightProperties>("SpotLightProperties",
+            "position", &SpotLightProperties::position,
+            "direction", &SpotLightProperties::direction,
+            "radius", &SpotLightProperties::radius,
+            "outerConeAngle", &SpotLightProperties::outerConeAngle,
+            "innerConeAngle", &SpotLightProperties::innerConeAngle
         );
 
         ns->new_usertype<TypeProperties>("TypeProperties",
             "directional", &TypeProperties::directional,
-            "point", &TypeProperties::point
+            "point", &TypeProperties::point,
+            "spot", &TypeProperties::spot
         );
 
-        // TODO: Extend this
+        ns->new_enum<LightType>("LightType", {
+           { "DirectionalLight", LightType::DirectionalLight },
+           { "PointLight", LightType::PointLight },
+           { "SpotLight", LightType::SpotLight }
+           });
+
+        ns->new_enum<LightMobility>("LightMobility", {
+          { "StationaryLight", LightMobility::StationaryLight },
+          { "MovableLight", LightMobility::MovableLight }
+          });
+
         ns->new_usertype<LightComponent>("LightComponent",
+            "AddPointShadow", &LightComponent::AddPointShadow,
+            "AddSpotShadow", &LightComponent::AddSpotShadow,
+            "IsVisible", &LightComponent::IsVisible,
+            "type", &LightComponent::type,
+            "mobility", &LightComponent::mobility,
             "color", &LightComponent::color,
             "intensity", &LightComponent::intensity,
             "properties", &LightComponent::properties,
             "transformedProperties", &LightComponent::transformedProperties,
+            "shadow", &LightComponent::shadow,
             "isMain", &LightComponent::isMain,
             "volumetric", &LightComponent::volumetric
         );
@@ -188,7 +214,6 @@ namespace Atlas::Scripting::Bindings {
             "Decompose", &TransformComponent::Decompose,
             "DecomposeGlobal", &TransformComponent::DecomposeGlobal,
             "ReconstructLocalMatrix", &TransformComponent::ReconstructLocalMatrix,
-            //"Compose", &TransformComponent::Compose,
             "matrix", &TransformComponent::matrix,
             "globalMatrix", &TransformComponent::globalMatrix
         );

@@ -134,6 +134,7 @@ struct RaytraceMaterial {
     int roughnessTexture;
     int metalnessTexture;
     int aoTexture;
+    int emissiveTexture;
 
 };
 
@@ -154,8 +155,13 @@ struct Light {
     int triangleIdx;
     int instanceIdx;
 
+    bool castShadow;
+
     float pdf;
     float area;
+    float radius;
+    float angleScale;
+    float angleOffset;
     float brightness;
 };
 

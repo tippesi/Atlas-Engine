@@ -1,6 +1,7 @@
 #include "Clock.h"
 
 #include <numeric>
+#include <algorithm>
 
 #include <SDL.h>
 

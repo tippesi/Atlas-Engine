@@ -102,6 +102,8 @@ auto testingValues = testing::Values(
 #endif
     AppConfiguration { .volumetric = false },
     AppConfiguration { .sharpen = false },
+    AppConfiguration { .light = false },
+    AppConfiguration { .fsr = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },
     AppConfiguration { .exampleRenderer = true },

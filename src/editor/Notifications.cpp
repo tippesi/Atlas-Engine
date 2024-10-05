@@ -22,8 +22,8 @@ namespace Atlas::Editor {
 
 	void Notifications::Display() {
 
-		const auto notificationWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing |
-			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
+		const auto notificationWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | 
+			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing;
 
 		auto viewport = ImGui::GetMainViewport();
 		auto viewportSize = viewport->Size;

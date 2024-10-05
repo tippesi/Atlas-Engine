@@ -235,8 +235,13 @@ void main() {
 #else
 #ifdef DDGI
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
+#ifdef DDGI_SCROLL
         vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
             GetLocalIrradianceInterpolated(worldPosition, worldView, worldNormal, geometryWorldNormal, prefilteredDiffuse) : vec4(0.0, 0.0, 0.0, 1.0);
+#else
+        vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+            GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
+#endif
         prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
         prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;

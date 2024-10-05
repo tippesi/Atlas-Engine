@@ -38,6 +38,8 @@ namespace Atlas::Editor {
 
         void SubscribeToResourceEvents();
 
+        void SetDefaultWindowResolution();
+
         Input::MouseHandler mouseHandler;
         Input::KeyboardHandler keyboardHandler;
 
@@ -52,7 +54,6 @@ namespace Atlas::Editor {
         size_t activeSceneIdx = 0;
 
         JobGroup bvhBuilderGroup;
-        JobGroup fileImportGroup;
 
         ImGuiID upperDockNodeID;
 

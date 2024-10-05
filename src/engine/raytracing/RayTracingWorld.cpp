@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <set>
 
+#include <glm/gtx/norm.hpp>
+
 namespace Atlas {
 
     namespace RayTracing {
@@ -36,16 +38,18 @@ namespace Atlas {
             if (!device->swapChain->isComplete) return;
             if (!subset.Any()) return;
 
+            auto renderState = &scene->renderState;
+
             blases.clear();
 
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
 
-            JobSystem::Wait(scene->bindlessMeshMapUpdateJob);
+            JobSystem::Wait(renderState->bindlessMeshMapUpdateJob);
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!scene->meshIdToBindlessIdx.contains(mesh.GetID()))
+                if (!renderState->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
                 if (!meshInfos.contains(mesh.GetID())) {
@@ -54,7 +58,8 @@ namespace Atlas {
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.offset = int32_t(scene->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.offset = int32_t(renderState->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
@@ -84,19 +89,33 @@ namespace Atlas {
             actorAABBs.clear();
             lastMatrices.clear();
 
-            JobSystem::Wait(scene->bindlessTextureMapUpdateJob);
+            JobSystem::Wait(renderState->bindlessTextureMapUpdateJob);
 
             UpdateMaterials();
+
+            JobSystem::Wait(renderState->mainCameraSignal, JobPriority::High);
+
+            vec3 cameraLocation;
+            auto hasCamera = scene->HasMainCamera();
+            if (hasCamera) {
+                auto& camera = scene->GetMainCamera();
+                cameraLocation = camera.GetLocation();
+            }
 
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!scene->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                if (!renderState->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                    continue;
+
+                auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
+                auto distSqd = glm::distance2(
+                    vec3(transformComponent.globalMatrix[3]),
+                    cameraLocation);
+                if (hasCamera && distSqd > meshInfo.cullingDistanceSqr)
                     continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
-                auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
-
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
 
                 uint32_t mask = InstanceCullMasks::MaskAll;
@@ -172,6 +191,8 @@ namespace Atlas {
 
             std::lock_guard lock(mutex);
 
+            auto sceneState = &scene->renderState;
+
             auto meshes = scene->GetMeshes();
             materials.clear();
 
@@ -214,27 +235,31 @@ namespace Atlas {
                         gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
 
                         if (material->HasBaseColorMap()) {
-                            gpuMaterial.baseColorTexture = scene->textureToBindlessIdx[material->baseColorMap.Get()];
+                            gpuMaterial.baseColorTexture = sceneState->textureToBindlessIdx[material->baseColorMap.Get()];
                         }
 
                         if (material->HasOpacityMap()) {
-                            gpuMaterial.opacityTexture = scene->textureToBindlessIdx[material->opacityMap.Get()];
+                            gpuMaterial.opacityTexture = sceneState->textureToBindlessIdx[material->opacityMap.Get()];
                         }
 
                         if (material->HasNormalMap()) {
-                            gpuMaterial.normalTexture = scene->textureToBindlessIdx[material->normalMap.Get()];
+                            gpuMaterial.normalTexture = sceneState->textureToBindlessIdx[material->normalMap.Get()];
                         }
 
                         if (material->HasRoughnessMap()) {
-                            gpuMaterial.roughnessTexture = scene->textureToBindlessIdx[material->roughnessMap.Get()];
+                            gpuMaterial.roughnessTexture = sceneState->textureToBindlessIdx[material->roughnessMap.Get()];
                         }
 
                         if (material->HasMetalnessMap()) {
-                            gpuMaterial.metalnessTexture = scene->textureToBindlessIdx[material->metalnessMap.Get()];
+                            gpuMaterial.metalnessTexture = sceneState->textureToBindlessIdx[material->metalnessMap.Get()];
                         }
 
                         if (material->HasAoMap()) {
-                            gpuMaterial.aoTexture = scene->textureToBindlessIdx[material->aoMap.Get()];
+                            gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
+                        }
+
+                        if (material->HasEmissiveMap()) {
+                            gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
                         }
                     }
 
@@ -365,9 +390,9 @@ namespace Atlas {
 
                     GPULight light;
                     light.P = vec4(P, 1.0f);
-                    light.N = vec4(N, 0.0f);
+                    light.N = vec4(N, area);
                     light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(radiance) * material->emissiveIntensity, 0.0f);
-                    light.data = vec4(cd, weight, area, 0.0f);
+                    light.data = vec4(cd, weight, 0.0, 0.0f);
 
                     meshInfo.triangleLights.push_back(light);
                 }

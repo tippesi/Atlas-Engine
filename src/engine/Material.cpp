@@ -50,4 +50,10 @@ namespace Atlas {
 
     }
 
+    bool Material::HasEmissiveMap() const {
+
+        return emissiveMap.IsValid();
+
+    }
+
 }

@@ -16,11 +16,11 @@ namespace Atlas {
 
             bool enable = false;
 
-            float offset;
-            float power;
-            float strength;
+            float offset = 0.1f;
+            float power = 1.0f;
+            float strength = 0.1f;
 
-            vec3 color;
+            vec3 color = vec3(0.0f);
 
         };
 

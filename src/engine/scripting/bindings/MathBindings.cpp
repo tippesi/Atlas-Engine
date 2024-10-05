@@ -72,6 +72,28 @@ namespace Atlas::Scripting::Bindings {
             [](const glm::quat& quat0, const glm::quat& quat1, const float factor) { return glm::mix(quat0, quat1, factor); }
         ));
 
+        ns->set_function("Clamp", sol::overload(
+            [](const float float0, const float float1, const float float2) { return glm::clamp(float0, float1, float2); },
+            [](const int32_t int0, const int32_t int1, const int32_t int2) { return glm::clamp(int0, int1, int2); },
+            [](const glm::vec2& vec0, const glm::vec2& vec1, const glm::vec2& vec2) { return glm::clamp(vec0, vec1, vec2); },
+            [](const glm::vec3& vec0, const glm::vec3& vec1, const glm::vec3& vec2) { return glm::clamp(vec0, vec1, vec2); },
+            [](const glm::vec4& vec0, const glm::vec4& vec1, const glm::vec4& vec2) { return glm::clamp(vec0, vec1, vec2); }
+        ));
+
+        ns->set_function("Max", sol::overload(
+            [](const float float0, const float float1) { return glm::max(float0, float1); },
+            [](const glm::vec2& vec0, const glm::vec2& vec1) { return glm::max(vec0, vec1); },
+            [](const glm::vec3& vec0, const glm::vec3& vec1) { return glm::max(vec0, vec1); },
+            [](const glm::vec4& vec0, const glm::vec4& vec1) { return glm::max(vec0, vec1); }
+        ));
+
+        ns->set_function("Min", sol::overload(
+            [](const float float0, const float float1) { return glm::min(float0, float1); },
+            [](const glm::vec2& vec0, const glm::vec2& vec1) { return glm::min(vec0, vec1); },
+            [](const glm::vec3& vec0, const glm::vec3& vec1) { return glm::min(vec0, vec1); },
+            [](const glm::vec4& vec0, const glm::vec4& vec1) { return glm::min(vec0, vec1); }
+        ));
+
         ns->set_function("LookAt",  [](const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up) 
             { return glm::lookAt(eye, center, up); }
             );

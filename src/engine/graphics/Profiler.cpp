@@ -207,7 +207,7 @@ namespace Atlas {
                 ThreadData data;
                 data.name = name;
 
-                auto idx = threadHistory.historyIdx > 0 ? threadHistory.historyIdx - 1 : 64;
+                auto idx = threadHistory.historyIdx > 0 ? threadHistory.historyIdx - 1 : 63;
                 data.queries = threadHistory.history[idx];
 
                 if (order != OrderBy::CHRONO)

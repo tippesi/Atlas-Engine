@@ -161,6 +161,19 @@ namespace Atlas {
 
         }
 
+        void Buffer::Reset() {
+
+            sizeInBytes = 0;
+
+            if (multiBuffered) {
+                multiBuffer.reset();
+            }
+            else {
+                buffer.reset();
+            }
+
+        }
+
         void Buffer::Reallocate(void *data) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;

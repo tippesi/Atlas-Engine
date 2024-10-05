@@ -18,7 +18,6 @@ void App::LoadContent(AppConfiguration config) {
 
     // Use lower resolution, we care only about correctness
     renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
-    pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -56,14 +55,18 @@ void App::LoadContent(AppConfiguration config) {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLightEntity = scene->CreateEntity();
-    auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+    scene->postProcessing.fsr2 = config.fsr;
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
-    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
-        glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
-    directionalLight.isMain = true;
+    if (config.light) {
+        auto directionalLightEntity = scene->CreateEntity();
+        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
+            glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.isMain = true;
+    }
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
 
@@ -152,6 +155,7 @@ void App::Update(float deltaTime) {
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -209,6 +213,7 @@ void App::Render(float deltaTime) {
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 
@@ -227,12 +232,14 @@ void App::Render(float deltaTime) {
         window.Maximize();
     }
 
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+
     if (config.exampleRenderer) {
         exampleRenderer.Render(camera);
     }
     else if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
@@ -356,28 +363,6 @@ void App::CheckLoadScene() {
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
 
-    static Atlas::JobGroup buildBvhGroup;
-    static bool groupStarted = false;
-
-    auto buildRTStructure = [&](Atlas::JobData) {
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (const auto& mesh : sceneMeshes) {
-
-            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
-
-        }
-        };
-
-    if (!groupStarted) {
-        Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);
-        groupStarted = true;
-        return;
-    }
-
-    if (!buildBvhGroup.HasFinished())
-        return;
-
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
@@ -401,7 +386,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

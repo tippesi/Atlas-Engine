@@ -6,15 +6,6 @@
 #include "../tools/PerformanceCounter.h"
 #include "../Clock.h"
 
-#define FEATURE_BASE_COLOR_MAP (1 << 1)
-#define FEATURE_OPACITY_MAP (1 << 2)
-#define FEATURE_NORMAL_MAP (1 << 3)
-#define FEATURE_ROUGHNESS_MAP (1 << 4)
-#define FEATURE_METALNESS_MAP (1 << 5)
-#define FEATURE_AO_MAP (1 << 6)
-#define FEATURE_TRANSMISSION (1 << 7)
-#define FEATURE_VERTEX_COLORS (1 << 8)
-
 namespace Atlas {
 
     namespace Renderer {
@@ -81,6 +72,9 @@ namespace Atlas {
             if (!device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
+            if (target->IsUsedForPathTracing())
+                target->UseForPathTracing(false);
+
             auto& camera = scene->GetMainCamera();
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
@@ -106,46 +100,17 @@ namespace Atlas {
                 camera.Jitter(vec2(0.0f));
             }
 
+            auto renderState = &scene->renderState;
+
             Graphics::Profiler::BeginThread("Main renderer", commandList);
             Graphics::Profiler::BeginQuery("Render scene");
-
-            JobGroup fillRenderListGroup { JobPriority::High };
-            JobSystem::Execute(fillRenderListGroup, [&](JobData&) { FillRenderList(scene, camera); });
-
-            Ref<Graphics::Buffer> materialBuffer;
-            std::vector<PackedMaterial> materials;
-            std::unordered_map<void*, uint16_t> materialMap;
-
-            JobGroup prepareMaterialsGroup { JobPriority::High };
-            JobSystem::Execute(prepareMaterialsGroup, [&](JobData&) { 
-                PrepareMaterials(scene, materials, materialMap); 
-                auto materialBufferDesc = Graphics::BufferDesc {
-                    .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                    .domain = Graphics::BufferDomain::Host,
-                    .hostAccess = Graphics::BufferHostAccess::Sequential,
-                    .data = materials.data(),
-                    .size = sizeof(PackedMaterial) * glm::max(materials.size(), size_t(1)),
-                };
-                materialBuffer = device->CreateBuffer(materialBufferDesc);
-                });
-
-            std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-
-            JobGroup prepareBindlessGroup { JobPriority::High };
-            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
-                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
-                });
 
             SetUniforms(target, scene, camera);
 
             commandList->BindBuffer(globalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
-            commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindSampler(globalNearestSampler, 1, 15);
-
-            JobSystem::WaitSpin(prepareMaterialsGroup);
-            commandList->BindBuffer(materialBuffer, 1, 14);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+            commandList->BindSampler(globalSampler, 1, 14);
+            commandList->BindSampler(globalNearestSampler, 1, 16);
 
             if (scene->clutter)
                 vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
@@ -170,41 +135,49 @@ namespace Atlas {
 
             volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
+            JobSystem::WaitSpin(renderState->materialUpdateJob);
+            if (renderState->materialBuffer.GetElementCount())
+                renderState->materialBuffer.Bind(commandList, 1, 15);
+
             // Wait as long as possible for this to finish
-            JobSystem::WaitSpin(prepareBindlessGroup);
-            commandList->BindBuffers(triangleBuffers, 0, 1);
-            if (images.size())
-                commandList->BindSampledImages(images, 0, 3);
+            JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+            JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
+            JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
+            commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
+            if (renderState->textures.size())
+                commandList->BindSampledImages(renderState->textures, 0, 3);
+            if (renderState->cubemaps.size())
+                commandList->BindSampledImages(renderState->cubemaps, 0, 4);
+            if (renderState->textureArrays.size())
+                commandList->BindSampledImages(renderState->textureArrays, 0, 5);
 
             if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+                commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
             }
             else {
-                commandList->BindBuffers(blasBuffers, 0, 0);
-                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+                commandList->BindBuffers(renderState->blasBuffers, 0, 0);
+                commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
             }
 
             {
-                shadowRenderer.Render(target, scene, commandList, &renderList);
+                shadowRenderer.Render(target, scene, commandList, &renderState->renderList);
 
                 terrainShadowRenderer.Render(target, scene, commandList);
             }
 
             if (scene->sky.GetProbe()) {
                 commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 10);
+                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
                 commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 11);
+                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
             }
 
             {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
                 auto lightSubset = scene->GetSubset<LightComponent>();
+                shadowImageBarriers.clear();
 
                 for (auto& lightEntity : lightSubset) {
                     auto& light = lightEntity.GetComponent<LightComponent>();
@@ -212,34 +185,37 @@ namespace Atlas {
                         continue;
 
                     auto shadow = light.shadow;
-                    imageBarriers.push_back({ shadow->useCubemap ?
-                        shadow->cubemap.image : shadow->maps.image, layout, access });
+                    shadowImageBarriers.push_back({ shadow->useCubemap ?
+                        shadow->cubemap->image : shadow->maps->image, layout, access });
                 }
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
+            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+
+            JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
+            renderState->lightBuffer.Bind(commandList, 1, 17);
 
             ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
             // Only here does the main pass need to be ready
-            JobSystem::Wait(fillRenderListGroup);
+            JobSystem::Wait(renderState->fillRenderListJob);
 
             {
                 Graphics::Profiler::BeginQuery("Main render pass");
 
                 commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
 
-                opaqueRenderer.Render(target, scene, commandList, &renderList, materialMap);
+                opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
-                ddgiRenderer.DebugProbes(target, scene, commandList, materialMap);
+                ddgiRenderer.DebugProbes(target, scene, commandList, renderState->materialMap);
 
-                vegetationRenderer.Render(target, scene, commandList, materialMap);
+                vegetationRenderer.Render(target, scene, commandList, renderState->materialMap);
 
-                terrainRenderer.Render(target, scene, commandList, materialMap);
+                terrainRenderer.Render(target, scene, commandList, renderState->materialMap);
 
-                impostorRenderer.Render(target, scene, commandList, &renderList, materialMap);
+                impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
 
                 commandList->EndRenderPass();
 
@@ -254,21 +230,22 @@ namespace Atlas {
             commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
             commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
             commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 7);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 8);
+            commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
+            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
+            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
 
             if (!target->HasHistory()) {
                 auto rtHalfData = target->GetHistoryData(HALF_RES);
                 auto rtData = target->GetHistoryData(FULL_RES);
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {rtData->baseColorTexture->image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
                     {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->emissiveTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -278,12 +255,13 @@ namespace Atlas {
                     {rtHalfData->normalTexture->image, layout, access},
                     {rtHalfData->geometryNormalTexture->image, layout, access},
                     {rtHalfData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtHalfData->emissiveTexture->image, layout, access},
                     {rtHalfData->offsetTexture->image, layout, access},
                     {rtHalfData->materialIdxTexture->image, layout, access},
                     {rtHalfData->stencilTexture->image, layout, access},
                     {rtHalfData->velocityTexture->image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
             {
@@ -292,13 +270,13 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {rtData->baseColorTexture->image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->normalTexture->image, layout, access},
                     {rtData->geometryNormalTexture->image, layout, access},
                     {rtData->roughnessMetallicAoTexture->image, layout, access},
+                    {rtData->emissiveTexture->image, layout, access},
                     {rtData->offsetTexture->image, layout, access},
                     {rtData->materialIdxTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
@@ -307,7 +285,7 @@ namespace Atlas {
                     {target->oceanDepthTexture.image, layout, access}
                 };
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
 
             {
@@ -374,16 +352,14 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->lightingTexture.image, layout, access},
                     {rtData->depthTexture->image, layout, access},
                     {rtData->velocityTexture->image, layout, access},
                     {rtData->stencilTexture->image, layout, access},
                 };
 
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-            
+                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);            
             }
 
             {
@@ -397,20 +373,18 @@ namespace Atlas {
             if (primitiveBatch)
                 RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
-            {
-                if (scene->postProcessing.fsr2) {
-                    gBufferRenderer.GenerateReactiveMask(target, commandList);
+            if (scene->postProcessing.fsr2) {
+                gBufferRenderer.GenerateReactiveMask(target, commandList);
 
-                    fsr2Renderer.Render(target, scene, commandList);
-                }
-                else {
-                    taaRenderer.Render(target, scene, commandList);
-                }
-
-                target->Swap();
-
-                postProcessRenderer.Render(target, scene, commandList, texture);
+                fsr2Renderer.Render(target, scene, commandList);
             }
+            else {
+                taaRenderer.Render(target, scene, commandList);
+            }
+
+            target->Swap();
+
+            postProcessRenderer.Render(target, scene, commandList, texture);
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndThread();
@@ -418,27 +392,44 @@ namespace Atlas {
             commandList->EndCommands();
             device->SubmitCommandList(commandList);
 
-            renderList.Clear();
+            renderState->renderList.Clear();
 
         }
 
-        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
             Ref<Scene::Scene> scene, Texture::Texture2D *texture) {
 
             if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
                 return;
 
-            static vec2 lastJitter = vec2(0.0f);
+            if (!target->IsUsedForPathTracing())
+                target->UseForPathTracing(true);
+
+            auto renderState = &scene->renderState;
 
             auto& camera = scene->GetMainCamera();
 
             auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
 
-            auto jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-            jitter.x /= (float)target->GetWidth();
-            jitter.y /= (float)target->GetHeight();
+            auto& taa = scene->postProcessing.taa;
+            if (taa.enable || scene->postProcessing.fsr2) {
+                vec2 jitter = vec2(0.0f);
+                if (scene->postProcessing.fsr2) {
+                    jitter = fsr2Renderer.GetJitter(target, frameCount);
+                }
+                else {
+                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+                    jitter.x /= (float)target->GetScaledWidth() * 0.75f;
+                    jitter.y /= (float)target->GetScaledHeight() * 0.75f;
+                }
 
-            camera.Jitter(jitter * 0.0f);
+                camera.Jitter(jitter * taa.jitterRange);
+            }
+            else {
+                // Even if there is no TAA we need to update the jitter for other techniques
+                // E.g. the reflections and ambient occlusion use reprojection
+                camera.Jitter(vec2(0.0f));
+            }
 
             commandList->BeginCommands();
 
@@ -452,8 +443,9 @@ namespace Atlas {
                  .ipMatrix = camera.invProjectionMatrix,
                  .pvMatrixLast = camera.GetLastJitteredMatrix(),
                  .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
-                 .jitterLast = lastJitter,
-                 .jitterCurrent = jitter,
+                 .vMatrixLast = camera.GetLastViewMatrix(),
+                 .jitterLast = camera.GetJitter(),
+                 .jitterCurrent = camera.GetLastJitter(),
                  .cameraLocation = vec4(camera.GetLocation(), 0.0f),
                  .cameraDirection = vec4(camera.direction, 0.0f),
                  .cameraUp = vec4(camera.up, 0.0f),
@@ -465,34 +457,26 @@ namespace Atlas {
                  .frameCount = frameCount
             };
 
-            lastJitter = jitter;
-
             pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-            std::vector<Ref<Graphics::Image>> images;
-            std::vector<Ref<Graphics::Buffer>> blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers;
-            JobGroup prepareBindlessGroup { JobPriority::High };
-            JobSystem::Execute(prepareBindlessGroup, [&](JobData&) { 
-                PrepareBindlessData(scene, images, blasBuffers, triangleBuffers, bvhTriangleBuffers, triangleOffsetBuffers);
-                });
-
-
-            JobSystem::WaitSpin(scene->rayTracingWorldUpdateJob);
-            JobSystem::WaitSpin(prepareBindlessGroup);
+            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+            JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+            JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 12);
-            commandList->BindSampler(globalSampler, 1, 13);
-            commandList->BindSampler(globalNearestSampler, 1, 15);
-            commandList->BindBuffers(triangleBuffers, 0, 1);
-            commandList->BindSampledImages(images, 0, 3);
+            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+            commandList->BindSampler(globalSampler, 1, 14);
+            commandList->BindSampler(globalNearestSampler, 1, 16);
+            commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
+            if (renderState->textures.size())
+                commandList->BindSampledImages(renderState->textures, 0, 3);
 
             if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(triangleOffsetBuffers, 0, 2);
+                commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
             }
             else {
-                commandList->BindBuffers(blasBuffers, 0, 0);
-                commandList->BindBuffers(bvhTriangleBuffers, 0, 2);
+                commandList->BindBuffers(renderState->blasBuffers, 0, 0);
+                commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
             }
 
             Graphics::Profiler::EndQuery();
@@ -505,21 +489,33 @@ namespace Atlas {
             pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
             if (pathTracingRenderer.realTime) {
-                taaRenderer.Render(target, scene, commandList);
+                if (scene->postProcessing.fsr2) {
+                    fsr2Renderer.Render(target, scene, commandList);
+                }
+                else {
+                    taaRenderer.Render(target, scene, commandList);
+                }
+
+                target->Swap();
 
                 postProcessRenderer.Render(target, scene, commandList, texture);
             }
             else {
                 Graphics::Profiler::BeginQuery("Post processing");
 
-                if (device->swapChain->isComplete) {
+                if (device->swapChain->isComplete && !texture) {
                     commandList->BeginRenderPass(device->swapChain, true);
 
-                    textureRenderer.RenderTexture2D(commandList, viewport, &target->texture,
+                    textureRenderer.RenderTexture2D(commandList, viewport, &target->outputTexture,
                         0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
                     commandList->EndRenderPass();
                 }
+                else if (texture) {
+                    postProcessRenderer.CopyToTexture(&target->outputTexture, texture, commandList);
+                }
+
+                target->Swap();
 
                 Graphics::Profiler::EndQuery();
             }
@@ -529,6 +525,8 @@ namespace Atlas {
             commandList->EndCommands();
 
             device->SubmitCommandList(commandList);
+
+            renderState->WaitForAsyncWorkCompletion();
 
         }
 
@@ -550,14 +548,12 @@ namespace Atlas {
             VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {target->lightingTexture.image, layout, access},
                 {rtData->depthTexture->image, layout, access},
                 {rtData->velocityTexture->image, layout, access},
             };
-
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
@@ -593,16 +589,15 @@ namespace Atlas {
 
             }
 
-
             commandList->EndRenderPass();
 
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {target->lightingTexture.image, layout, access},
                 {rtData->depthTexture->image, layout, access},
                 {rtData->velocityTexture->image, layout, access},
                 {rtData->stencilTexture->image, layout, access},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+            commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             if (localCommandList) {
@@ -975,6 +970,7 @@ namespace Atlas {
                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
                 .ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
                 .ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
+                .vMatrixLast = camera.GetLastViewMatrix(),
                 .jitterLast = camera.GetLastJitter(),
                 .jitterCurrent = camera.GetJitter(),
                 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
@@ -1000,8 +996,6 @@ namespace Atlas {
                 auto volume = scene->irradianceVolume;
 
                 if (volume->scroll) {
-                    //auto pos = vec3(0.4f, 12.7f, -43.0f);
-                    //auto pos = glm::vec3(30.0f, 25.0f, 0.0f);
                     auto pos = camera.GetLocation();
 
                     auto volumeSize = volume->aabb.GetSize();
@@ -1070,213 +1064,6 @@ namespace Atlas {
 
                 impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
             }
-
-        } 
-
-        void MainRenderer::PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
-            std::unordered_map<void*, uint16_t>& materialMap) {
-
-            auto sceneMaterials = scene->GetMaterials();
-
-            // For debugging purpose
-            if (scene->irradianceVolume && scene->irradianceVolume->debug) {
-                sceneMaterials.push_back(ddgiRenderer.probeDebugMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugActiveMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugInactiveMaterial);
-                sceneMaterials.push_back(ddgiRenderer.probeDebugOffsetMaterial);
-            }
-
-            uint16_t idx = 0;
-
-            for (auto material : sceneMaterials) {
-                // Might happen due to the scene giving back materials on a mesh basis
-                if (materialMap.contains(material.get()))
-                    continue;
-
-                PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor), 0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->transmissiveColor), 0.0f));
-
-                packed.emissiveIntensityTiling = glm::packHalf2x16(vec2(material->emissiveIntensity, material->tiling));
-
-                vec4 data0, data1, data2;
-
-                data0.x = material->opacity;
-                data0.y = material->roughness;
-                data0.z = material->metalness;
-
-                data1.x = material->ao;
-                data1.y = material->HasNormalMap() ? material->normalScale : 0.0f;
-                data1.z = material->HasDisplacementMap() ? material->displacementScale : 0.0f;
-
-                data2.x = material->reflectance;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= material->HasBaseColorMap() ? FEATURE_BASE_COLOR_MAP : 0;
-                packed.features |= material->HasOpacityMap() ? FEATURE_OPACITY_MAP : 0;
-                packed.features |= material->HasNormalMap() ? FEATURE_NORMAL_MAP : 0;
-                packed.features |= material->HasRoughnessMap() ? FEATURE_ROUGHNESS_MAP : 0;
-                packed.features |= material->HasMetalnessMap() ? FEATURE_METALNESS_MAP : 0;
-                packed.features |= material->HasAoMap() ? FEATURE_AO_MAP : 0;
-                packed.features |= glm::length(material->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
-                packed.features |= material->vertexColors ? FEATURE_VERTEX_COLORS : 0;
-
-                materials.push_back(packed);
-
-                materialMap[material.get()] = idx++;
-            }
-            
-            auto meshes = scene->GetMeshes();
-
-            for (auto mesh : meshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-
-                auto impostor = mesh->impostor;
-
-                if (!impostor)
-                    continue;
-
-                PackedMaterial packed;
-
-                packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
-                packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->transmissiveColor), 1.0f));
-
-                vec4 data0, data1, data2;
-
-                data0.x = 1.0f;
-                data0.y = 1.0f;
-                data0.z = 1.0f;
-
-                data1.x = 1.0f;
-                data1.y = 0.0f;
-                data1.z = 0.0f;
-
-                data2.x = 0.5f;
-                // Note used
-                data2.y = 0.0f;
-                data2.z = 0.0f;
-
-                packed.data0 = Common::Packing::PackUnsignedVector3x10_1x2(data0);
-                packed.data1 = Common::Packing::PackUnsignedVector3x10_1x2(data1);
-                packed.data2 = Common::Packing::PackUnsignedVector3x10_1x2(data2);
-
-                packed.features = 0;
-
-                packed.features |= FEATURE_BASE_COLOR_MAP | 
-                    FEATURE_ROUGHNESS_MAP | FEATURE_METALNESS_MAP | FEATURE_AO_MAP;
-                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ? FEATURE_TRANSMISSION : 0;
-
-                materials.push_back(packed);
-
-                materialMap[impostor.get()] =  idx++;
-            }
-
-
-        }
-
-        void MainRenderer::PrepareBindlessData(Ref<Scene::Scene> scene, std::vector<Ref<Graphics::Image>>& images,
-            std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
-            std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers) {
-
-            if (!device->support.bindless)
-                return;
-
-            JobSystem::WaitSpin(scene->bindlessMeshMapUpdateJob);
-
-            blasBuffers.resize(scene->meshIdToBindlessIdx.size());
-            triangleBuffers.resize(scene->meshIdToBindlessIdx.size());
-            bvhTriangleBuffers.resize(scene->meshIdToBindlessIdx.size());
-            triangleOffsetBuffers.resize(scene->meshIdToBindlessIdx.size());
-
-            for (const auto& [meshId, idx] : scene->meshIdToBindlessIdx) {
-                if (!scene->registeredMeshes.contains(meshId)) continue;
-
-                const auto& mesh = scene->registeredMeshes[meshId].resource;
-
-                auto blasBuffer = mesh->blasNodeBuffer.Get();
-                auto triangleBuffer = mesh->triangleBuffer.Get();
-                auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
-                auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
-
-                AE_ASSERT(triangleBuffer != nullptr);
-
-                blasBuffers[idx] = blasBuffer;
-                triangleBuffers[idx] = triangleBuffer;
-                bvhTriangleBuffers[idx] = bvhTriangleBuffer;
-                triangleOffsetBuffers[idx] = triangleOffsetBuffer;
-            }
-
-            JobSystem::WaitSpin(scene->bindlessTextureMapUpdateJob);
-
-            images.resize(scene->textureToBindlessIdx.size());
-
-            for (const auto& [texture, idx] : scene->textureToBindlessIdx) {
-
-                images[idx] = texture->image;
-
-            }
-
-        }
-
-        void MainRenderer::FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera) {
-
-            auto meshes = scene->GetMeshes();
-            renderList.NewFrame(scene);
-
-            auto lightSubset = scene->GetSubset<LightComponent>();
-
-            JobGroup group;
-            for (auto& lightEntity : lightSubset) {
-
-                auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || !light.shadow->update)
-                    continue;
-
-                auto& shadow = light.shadow;
-
-                auto componentCount = shadow->longRange ?
-                    shadow->viewCount - 1 : shadow->viewCount;
-
-                JobSystem::ExecuteMultiple(group, componentCount, 
-                    [&, shadow=shadow, lightEntity=lightEntity](JobData& data) {
-                    auto component = &shadow->views[data.idx];
-                    auto frustum = Volume::Frustum(component->frustumMatrix);
-
-                    auto shadowPass = renderList.GetShadowPass(lightEntity, data.idx);
-                    if (shadowPass == nullptr)
-                        shadowPass = renderList.NewShadowPass(lightEntity, data.idx);
-
-                    shadowPass->NewFrame(scene, meshes);
-                    scene->GetRenderList(frustum, shadowPass);
-                    shadowPass->Update(camera.GetLocation());
-                    shadowPass->FillBuffers();
-                    renderList.FinishPass(shadowPass);
-                    });
-            }
-
-            JobSystem::Wait(group);
-
-            auto mainPass = renderList.GetMainPass();
-            if (mainPass == nullptr)
-                mainPass = renderList.NewMainPass();
-
-            mainPass->NewFrame(scene, meshes);
-            scene->GetRenderList(camera.frustum, mainPass);
-            mainPass->Update(camera.GetLocation());
-            mainPass->FillBuffers();
-            renderList.FinishPass(mainPass);
 
         }
 

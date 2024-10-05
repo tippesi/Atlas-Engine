@@ -35,7 +35,7 @@ namespace Atlas::Editor::UI {
 
     private:
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
-            std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool* selectionChanged);
+            std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool searchChanged, bool* selectionChanged);
 
         void RenderExtendedHierarchy(const Ref<Scene::Scene>& scene, bool* selectionChanged);
 

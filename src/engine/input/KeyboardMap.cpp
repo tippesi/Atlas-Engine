@@ -16,6 +16,13 @@ namespace Atlas::Input {
 
     }
 
+    void KeyboardMap::Update() {
+
+        for (auto& [keyCode, state] : keyMap)
+            state.repeat = true;
+
+    }
+
     uint8_t KeyboardMap::GetKeyState(Keycode code) {
 
         if (keyMap.contains(code)) {

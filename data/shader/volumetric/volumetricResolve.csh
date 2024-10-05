@@ -70,6 +70,13 @@ const ivec2 offsets[9] = ivec2[9](
     ivec2(1, 1)
 );
 
+const ivec2 pixelOffsets[4] = ivec2[4](
+    ivec2(0, 0),
+    ivec2(1, 0),
+    ivec2(0, 1),
+    ivec2(1, 1)
+);
+
 int NearestDepth(float referenceDepth, float[9] depthVec) {
 
     int idx = 4;
@@ -88,14 +95,41 @@ int NearestDepth(float referenceDepth, float[9] depthVec) {
 void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out vec4 volumetricClouds) {
 
     ivec2 pixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+    vec2 highResPixel = texCoord * vec2(imageSize(resolveImage));
 
-    float invocationDepths[9];
+    highResPixel /= 2.0;
 
-    float minWeight = 1.0;
+    float x = fract(highResPixel.x);
+    float y = fract(highResPixel.y);
+
+    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
 
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
     float depthPhi = 128.0 / max(1.0, abs(referenceDepth));
 
+    volumetric = vec4(0.0);
+
+    float totalWeight = 0.0;
+    for (uint i = 0; i < 4; i++) {
+        int sharedMemoryOffset = Flatten2D(pixel + pixelOffsets[i], unflattenedDepthDataSize);
+
+        float depth = ConvertDepthToViewSpaceDepth(depths[sharedMemoryOffset]);
+
+        float depthDiff = abs(referenceDepth - depth);
+        float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
+        
+        float edgeWeight = depthWeight;
+        float weight = edgeWeight * weights[i];
+
+        volumetric += volumetrics[sharedMemoryOffset] * weight;
+        totalWeight += weight;
+    }
+
+    volumetric /= totalWeight;
+
+    float invocationDepths[9];
+
+    float minWeight = 1.0;
     for (uint i = 0; i < 9; i++) {
         int sharedMemoryOffset = Flatten2D(pixel + offsets[i], unflattenedDepthDataSize);
 
@@ -112,7 +146,9 @@ void Upsample2x(float referenceDepth, vec2 texCoord, out vec4 volumetric, out ve
     int idx = NearestDepth(referenceDepth, invocationDepths);
     int offset = Flatten2D(pixel + offsets[idx], unflattenedDepthDataSize);
 
-    volumetric = volumetrics[offset];
+    if (totalWeight < 10e-9) {
+        volumetric = volumetrics[offset];
+    }
 #ifdef CLOUDS
     vec4 bilinearCloudScattering = texture(lowResVolumetricCloudsTexture, texCoord);
     volumetricClouds = mix(clouds[offset], bilinearCloudScattering, minWeight);
