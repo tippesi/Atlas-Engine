@@ -128,9 +128,9 @@ namespace Atlas {
 
             }
 
-            std::vector<vec3> CameraComponent::GetFrustumCorners(float nearPlane, float farPlane) const {
+            std::array<vec3, 8> CameraComponent::GetFrustumCorners(float nearPlane, float farPlane) const {
 
-                std::vector<vec3> corners;
+                std::array<vec3, 8> corners;
 
                 float radians = glm::radians(fieldOfView) / 2.0f;
                 float tang = tanf(radians);
@@ -144,15 +144,15 @@ namespace Atlas {
                 vec3 farPoint = cameraLocation + globalDirection * farPlane;
                 vec3 nearPoint = cameraLocation + globalDirection * nearPlane;
 
-                corners.push_back(farPoint + farHeight * globalUp - farWidth * globalRight);
-                corners.push_back(farPoint + farHeight * globalUp + farWidth * globalRight);
-                corners.push_back(farPoint - farHeight * globalUp - farWidth * globalRight);
-                corners.push_back(farPoint - farHeight * globalUp + farWidth * globalRight);
+                corners[0] = farPoint + farHeight * globalUp - farWidth * globalRight;
+                corners[1] = farPoint + farHeight * globalUp + farWidth * globalRight;
+                corners[2] = farPoint - farHeight * globalUp - farWidth * globalRight;
+                corners[3] = farPoint - farHeight * globalUp + farWidth * globalRight;
 
-                corners.push_back(nearPoint + nearHeight * globalUp - nearWidth * globalRight);
-                corners.push_back(nearPoint + nearHeight * globalUp + nearWidth * globalRight);
-                corners.push_back(nearPoint - nearHeight * globalUp - nearWidth * globalRight);
-                corners.push_back(nearPoint - nearHeight * globalUp + nearWidth * globalRight);
+                corners[4] = nearPoint + nearHeight * globalUp - nearWidth * globalRight;
+                corners[5] = nearPoint + nearHeight * globalUp + nearWidth * globalRight;
+                corners[6] = nearPoint - nearHeight * globalUp - nearWidth * globalRight;
+                corners[7] = nearPoint - nearHeight * globalUp + nearWidth * globalRight;
 
                 return corners;
 

@@ -5,6 +5,8 @@
 #include "AABB.h"
 
 #include <vector>
+#include <array>
+#include <span>
 
 namespace Atlas {
 
@@ -26,7 +28,7 @@ namespace Atlas {
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
              */
-            explicit Frustum(const std::vector<vec3>& corners);
+            explicit Frustum(const std::array<vec3, 8>& corners);
 
             /**
              * Constructs a Frustum object.
@@ -42,7 +44,7 @@ namespace Atlas {
              * Far plane: Upper left, upper right, bottom left, bottom right
              * Near plane: Upper left, upper right, bottom left, bottom right
              */
-            void Resize(const std::vector<vec3>& corners);
+            void Resize(const std::array<vec3, 8>& corners);
 
             /**
              * Resizes the frustum.
@@ -80,7 +82,7 @@ namespace Atlas {
             * Far plane: Upper left, upper right, bottom left, bottom right
             * Near plane: Upper left, upper right, bottom left, bottom right
             */
-            std::vector<vec3> GetCorners() const;
+            std::array<vec3, 8> GetCorners() const;
 
         private:
             void CalculateCorners(const mat4& matrix);
@@ -104,7 +106,7 @@ namespace Atlas {
                 float distance = 0.0f;
             };
 
-            std::vector<vec3> corners;
+            std::array<vec3, 8> corners;
             Plane planes[6];
 
         };

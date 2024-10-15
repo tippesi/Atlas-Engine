@@ -10,11 +10,11 @@ struct ViewPlane {
     vec4 up;
 };
 
-layout(std430, set = 1, binding = 3) buffer Matrices {
+layout(std430, set = 1, binding = 3) readonly buffer Matrices {
 	mat3x4 matrices[];
 };
 
-layout (std430, set = 3, binding = 4) buffer ViewPlanes {
+layout (std430, set = 3, binding = 4) readonly buffer ViewPlanes {
 	ViewPlane viewPlanes[];
 };
 

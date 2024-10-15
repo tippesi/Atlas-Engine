@@ -40,7 +40,7 @@ namespace Atlas {
             vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
             viewMatrix = lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-            std::vector<vec3> corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
+            auto corners = camera.GetFrustumCorners(camera.nearPlane, camera.farPlane);
 
             vec3 maxProj = vec3(viewMatrix * vec4(corners.at(0), 1.0f));
             vec3 minProj = maxProj;

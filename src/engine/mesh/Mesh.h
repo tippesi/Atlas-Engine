@@ -115,11 +115,13 @@ namespace Atlas {
 
             bool invertUVs = false;
 
+            std::atomic_bool needsBvhRefresh = false;
+
         private:
             bool isLoaded = false;
 
             std::atomic_bool isBvhBuilt = false;
-            std::atomic_bool needsBvhRefresh = false;
+            
 
         };
 

@@ -463,6 +463,7 @@ namespace Atlas {
 
             if (terrain) {
                 auto terrainMaterials = terrain->storage.GetMaterials();
+                materials.reserve(terrainMaterials.size());
 
                 for (const auto& material : terrainMaterials) {
                     if (!material)
@@ -472,12 +473,14 @@ namespace Atlas {
                 }
 
             }
-
+           
             auto meshes = GetMeshes();
             if (clutter) {
                 auto vegMeshes = clutter->GetMeshes();
                 meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
+            
+            materials.reserve(materials.size() + meshes.size());
 
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())

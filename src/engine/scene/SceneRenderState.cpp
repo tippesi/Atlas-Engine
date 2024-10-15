@@ -197,8 +197,8 @@ namespace Atlas::Scene {
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                // Not all meshes might have a bvh
-                if (!mesh->IsBVHBuilt())
+                // Not all meshes might have a bvh and not all blases will be built in frame, so skip them if they are not ready
+                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && !mesh->blas->isDynamic && !mesh->blas->isBuilt)
                     continue;
 
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
@@ -215,24 +215,13 @@ namespace Atlas::Scene {
 
     void SceneRenderState::UpdateTextureBindlessData() {
 
-        auto bindlessTextureBuffersUpdate = [&](JobData&) {
-            JobSystem::Wait(bindlessTextureMapUpdateJob);
-
-            if (textures.size() != textureToBindlessIdx.size()) {
-                textures.resize(textureToBindlessIdx.size());
-            }
-
-            for (const auto& [texture, idx] : textureToBindlessIdx)
-                textures[idx] = texture->image;
-
-            };
-
-        auto bindlessTextureMapUpdate = [&, bindlessTextureBuffersUpdate](JobData&) {
+        auto bindlessTextureMapUpdate = [&](JobData&) {
             auto meshes = scene->GetMeshes();
             textureToBindlessIdx.clear();
+            textures.clear();
 
-            std::set<Ref<Material>> materials;
-            std::set<Ref<Texture::Texture2D>> textures;
+            std::set<Ref<Material>> materialSet;
+            std::set<Ref<Texture::Texture2D>> textureSet;
 
             uint32_t textureIdx = 0;
             for (const auto& mesh : meshes) {
@@ -240,40 +229,39 @@ namespace Atlas::Scene {
 
                 for (auto& material : mesh->data.materials)
                     if (material.IsLoaded())
-                        materials.insert(material.Get());
+                        materialSet.insert(material.Get());
             }
 
-            for (const auto& material : materials) {
+            for (const auto& material : materialSet) {
                 if (material->HasBaseColorMap())
-                    textures.insert(material->baseColorMap.Get());
+                    textureSet.insert(material->baseColorMap.Get());
                 if (material->HasOpacityMap())
-                    textures.insert(material->opacityMap.Get());
+                    textureSet.insert(material->opacityMap.Get());
                 if (material->HasNormalMap())
-                    textures.insert(material->normalMap.Get());
+                    textureSet.insert(material->normalMap.Get());
                 if (material->HasRoughnessMap())
-                    textures.insert(material->roughnessMap.Get());
+                    textureSet.insert(material->roughnessMap.Get());
                 if (material->HasMetalnessMap())
-                    textures.insert(material->metalnessMap.Get());
+                    textureSet.insert(material->metalnessMap.Get());
                 if (material->HasAoMap())
-                    textures.insert(material->aoMap.Get());
+                    textureSet.insert(material->aoMap.Get());
                 if (material->HasDisplacementMap())
-                    textures.insert(material->displacementMap.Get());
+                    textureSet.insert(material->displacementMap.Get());
                 if (material->HasEmissiveMap())
-                    textures.insert(material->emissiveMap.Get());
+                    textureSet.insert(material->emissiveMap.Get());
             }
 
-            for (const auto& texture : textures) {
+            for (const auto& texture : textureSet) {
 
                 textureToBindlessIdx[texture] = textureIdx++;
+                textures.push_back(texture->image);
 
             }
             };
 
         JobSystem::Wait(bindlessTextureMapUpdateJob);
-        JobSystem::Wait(prepareBindlessTexturesJob);
 
         JobSystem::Execute(bindlessTextureMapUpdateJob, bindlessTextureMapUpdate);
-        JobSystem::Execute(prepareBindlessTexturesJob, bindlessTextureBuffersUpdate);
 
     }
 
@@ -287,6 +275,9 @@ namespace Atlas::Scene {
             cubemapToBindlessIdx.clear();
             textureArrayToBindlessIdx.clear();
 
+            cubemaps.clear();
+            textureArrays.clear();
+
             uint32_t textureArrayIdx = 0;
             uint32_t cubemapIdx = 0;
             for (auto entity : lightSubset) {
@@ -297,22 +288,13 @@ namespace Atlas::Scene {
 
                 if (lightComponent.shadow->useCubemap) {
                     cubemapToBindlessIdx[lightComponent.shadow->cubemap] = cubemapIdx++;
+                    cubemaps.push_back(lightComponent.shadow->cubemap->image);
                 }
                 else {
                     textureArrayToBindlessIdx[lightComponent.shadow->maps] = textureArrayIdx++;
+                    textureArrays.push_back(lightComponent.shadow->maps->image);
                 }
             }
-
-            if (cubemaps.size() != cubemapIdx)
-                cubemaps.resize(cubemapIdx);
-            for (const auto& [cubemap, idx] : cubemapToBindlessIdx)
-                cubemaps[idx] = cubemap->image;
-
-            if (textureArrays.size() != textureArrayIdx)
-                textureArrays.resize(textureArrayIdx);
-            for (const auto& [textureArray, idx] : textureArrayToBindlessIdx)
-                textureArrays[idx] = textureArray->image;
-
             });
 
     }
@@ -383,6 +365,7 @@ namespace Atlas::Scene {
             auto& camera = scene->GetMainCamera();
 
             lightEntities.clear();
+            lightEntities.reserve(scene->GetComponentCount<LightComponent>());
             auto lightSubset = scene->GetSubset<LightComponent>();
             for (auto& lightEntity : lightSubset) {
                 auto& light = lightEntity.GetComponent<LightComponent>();
@@ -479,8 +462,13 @@ namespace Atlas::Scene {
                                     abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                                 shadowUniform.cascades[i].distance = cascade->farDistance;
                                 if (light.type == LightType::DirectionalLight) {
-                                    shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
-                                        cascade->viewMatrix * camera.invViewMatrix);
+                                    auto matrix = cascade->projectionMatrix *
+                                        cascade->viewMatrix * camera.invViewMatrix;
+                                    shadowUniform.cascades[i].cascadeSpace = glm::transpose(matrix);
+
+                                    mat4 reTransposed = mat4(glm::transpose(shadowUniform.cascades[i].cascadeSpace));
+
+                                    AE_ASSERT(reTransposed == matrix);
                                 }
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             }
@@ -579,7 +567,6 @@ namespace Atlas::Scene {
         JobSystem::Wait(materialUpdateJob);
         JobSystem::Wait(rayTracingWorldUpdateJob);
         JobSystem::Wait(prepareBindlessMeshesJob);
-        JobSystem::Wait(prepareBindlessTexturesJob);
         JobSystem::Wait(fillRenderListJob);
         JobSystem::Wait(cullAndSortLightsJob);
 

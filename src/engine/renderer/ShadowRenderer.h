@@ -43,11 +43,13 @@ namespace Atlas {
                 uint32_t textureID;
             };
 
+            LightMap prevLightMap;
             LightMap lightMap;
 
             ImpostorShadowRenderer impostorRenderer;
 
             std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+
 
         };
 

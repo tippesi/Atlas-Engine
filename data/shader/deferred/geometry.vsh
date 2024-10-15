@@ -25,11 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
-layout(std430, set = 1, binding = 1) buffer CurrentMatrices {
+layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
 
-layout(std430, set = 1, binding = 2) buffer LastMatrices {
+layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 

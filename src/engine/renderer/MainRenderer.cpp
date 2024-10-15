@@ -141,7 +141,7 @@ namespace Atlas {
 
             // Wait as long as possible for this to finish
             JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
-            JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
+            JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
             JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
             commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
             if (renderState->textures.size())
@@ -461,7 +461,7 @@ namespace Atlas {
 
             JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
             JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
-            JobSystem::WaitSpin(renderState->prepareBindlessTexturesJob);
+            JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 
             commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
             commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);

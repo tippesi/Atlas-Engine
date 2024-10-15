@@ -15,10 +15,11 @@
 
 namespace Atlas {
 
+    // Idea: Keep 8 threads to the high priority pool and main thread, split the rest in two
     struct JobSystemConfig {
         int32_t highPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 1;
-        int32_t mediumPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 3;
-        int32_t lowPriorityThreadCount = int32_t(std::thread::hardware_concurrency()) - 4;
+        int32_t mediumPriorityThreadCount = std::max(1, std::max(int32_t(std::thread::hardware_concurrency()) - 8, int32_t(std::thread::hardware_concurrency()) / 2) / 2);
+        int32_t lowPriorityThreadCount = std::max(1, std::max(int32_t(std::thread::hardware_concurrency()) - 8, int32_t(std::thread::hardware_concurrency()) / 2) / 2);
     };
     
     class JobSystem {

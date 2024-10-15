@@ -30,7 +30,7 @@ namespace Atlas {
             auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
             auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && rtDataValid;
-            auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid);
+            auto aoEnabled = ao && ao->enable && (!ao->rt  || rtDataValid) && !rtgiEnabled;
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;            
 

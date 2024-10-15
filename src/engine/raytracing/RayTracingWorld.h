@@ -92,6 +92,9 @@ namespace Atlas {
             std::vector<GPULight> triangleLights;
 
             std::unordered_map<size_t, MeshInfo> meshInfos;
+            std::unordered_map<size_t, MeshInfo> prevMeshInfos;
+
+            std::vector<GPUMaterial> materials;
 
             bool hardwareRayTracing = false;
 

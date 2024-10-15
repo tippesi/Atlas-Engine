@@ -35,7 +35,7 @@ namespace Atlas {
 
                 vec3 GetLastLocation() const;
 
-                std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane) const;
+                std::array<vec3, 8> GetFrustumCorners(float nearPlane, float farPlane) const;
 
                 void UpdateFrustum();
 

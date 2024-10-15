@@ -176,7 +176,7 @@ namespace Atlas {
             rpInfo.renderArea.extent = frameBuffer->extent;
             rpInfo.framebuffer = frameBuffer->frameBuffer;
 
-            std::vector<VkClearValue> clearValues;
+            clearValues.clear();
             for (auto& attachment : renderPass->colorAttachments) {
                 if (!attachment.isValid) continue;
                 if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -350,7 +350,7 @@ namespace Atlas {
 
         void CommandList::ClearAttachments() {
 
-            std::vector<VkClearAttachment> clearAttachments;
+            clearAttachments.clear();
             VkClearRect clearRect = {};
             if (swapChainInUse) {
                 VkClearAttachment colorClear = {}, depthClear = {};

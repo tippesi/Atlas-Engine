@@ -412,6 +412,9 @@ namespace Atlas {
                 refs[refs.size() - 1].endOfNode = true;
             }
             else {
+                if (!leftChild || !rightChild)
+                    return;
+
                 const auto nodeIdx = nodes.size();
                 nodes.push_back(BVHNode());
 

@@ -47,14 +47,20 @@ namespace Atlas {
 
             JobSystem::Wait(renderState->bindlessMeshMapUpdateJob);
 
+            std::swap(prevMeshInfos, meshInfos);
+            meshInfos.clear();
+
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
                 if (!renderState->meshIdToBindlessIdx.contains(mesh.GetID()))
                     continue;
 
-                if (!meshInfos.contains(mesh.GetID())) {
+                if (!prevMeshInfos.contains(mesh.GetID())) {
                     meshInfos[mesh.GetID()] = {};
                     BuildTriangleLightsForMesh(mesh);
+                }
+                else {
+                    meshInfos[mesh.GetID()] = prevMeshInfos[mesh.GetID()];
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
@@ -63,7 +69,7 @@ namespace Atlas {
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
-                    if (mesh->needsBvhRefresh) {
+                    if (mesh->needsBvhRefresh && mesh->blas->isDynamic) {
                         blases.push_back(mesh->blas);
                         mesh->needsBvhRefresh = false;
                     }
@@ -73,10 +79,15 @@ namespace Atlas {
                 }
             }
 
-            if (hardwareRayTracing) {
+            if (hardwareRayTracing) {              
                 Graphics::ASBuilder asBuilder;
-                if (!blases.empty())
-                    asBuilder.BuildBLAS(blases);
+                if (!blases.empty()) {
+                    auto commandList = device->GetCommandList();
+                    commandList->BeginCommands();
+                    asBuilder.BuildBLAS(blases, commandList);
+                    commandList->EndCommands();
+                    device->SubmitCommandList(commandList);
+                }
             }
 
             for (auto& [_, meshInfo] : meshInfos) {
@@ -114,6 +125,8 @@ namespace Atlas {
                     cameraLocation);
                 if (hasCamera && distSqd > meshInfo.cullingDistanceSqr)
                     continue;
+                if (hardwareRayTracing && !meshComponent.mesh->blas->isBuilt || meshComponent.mesh->needsBvhRefresh)
+                    continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
                 auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
@@ -126,7 +139,7 @@ namespace Atlas {
                     .meshOffset = meshInfo.offset,
                     .materialOffset = meshInfo.materialOffset,
                     .mask = mask
-                };
+                };                
 
                 meshInfo.matrices.emplace_back(transformComponent.globalMatrix);
                 meshInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
@@ -145,7 +158,7 @@ namespace Atlas {
 
                     inst.transform = transform;
                     inst.instanceCustomIndex = meshInfo.offset;
-                    inst.accelerationStructureReference = meshInfo.blas->bufferDeviceAddress;
+                    inst.accelerationStructureReference = meshComponent.mesh->blas->bufferDeviceAddress;
                     inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                     inst.mask = mask;
                     inst.instanceShaderBindingTableRecordOffset = 0;
@@ -153,8 +166,11 @@ namespace Atlas {
                 }
             }
 
-            if (gpuBvhInstances.empty())
+            if (gpuBvhInstances.empty()) {
+                // Need to reset the TLAS in this case, since it might contain invalid memory addresses
+                tlas = nullptr;
                 return;
+            }                
 
             if (hardwareRayTracing) {
                 UpdateForHardwareRayTracing(subset, gpuBvhInstances.size());
@@ -181,8 +197,7 @@ namespace Atlas {
         }
 
         void RayTracingWorld::UpdateMaterials() {
-
-            std::vector<GPUMaterial> materials;
+            
             UpdateMaterials(materials);
 
         }
@@ -270,8 +285,12 @@ namespace Atlas {
             if (materials.empty())
                 return;
 
-            materialBuffer.SetSize(materials.size());
-            materialBuffer.SetData(materials.data(), 0, materials.size());
+            if (materialBuffer.GetElementCount() < materials.size()) {
+                materialBuffer.SetSize(materials.size(), materials.data());
+            }
+            else {
+                materialBuffer.SetData(materials.data(), 0, materials.size());
+            }
 
         }
 

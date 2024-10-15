@@ -9,19 +9,19 @@
 
 Instance GetInstance(Ray ray) {
 
-    return bvhInstances[ray.hitInstanceID];
+    return bvhInstances[nonuniformEXT(ray.hitInstanceID)];
 
 }
 
 Triangle GetTriangle(Ray ray, Instance instance) {
 
-    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[ray.hitID]);
+    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[nonuniformEXT(ray.hitID)]);
 
 }
 
 Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMaterial rayMat) {
     Material mat;
-    rayMat = materials[tri.materialIndex + materialOffset];
+    rayMat = materials[nonuniformEXT(tri.materialIndex + materialOffset)];
 
     mat.ID = rayMat.ID;
 

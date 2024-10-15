@@ -328,6 +328,10 @@ namespace Atlas {
 
             std::vector<Semaphore> semaphores;
 
+            // Resources that are used each frame where we don't want allocate memory each time
+            std::vector<VkClearValue> clearValues;
+            std::vector<VkClearAttachment> clearAttachments;
+
         };
 
     }

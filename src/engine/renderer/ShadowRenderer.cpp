@@ -18,6 +18,7 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Shadows");
 
+            std::swap(prevLightMap, lightMap);
             lightMap.clear();
 
             Ref<RenderList::Pass> shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
@@ -204,15 +205,13 @@ namespace Atlas {
             auto& light = entity.GetComponent<LightComponent>();
             auto& shadow = light.shadow;
             
-            /*
-            if (lightMap.contains(entity)) {
-                auto frameBuffer = lightMap[entity];
+            if (prevLightMap.contains(entity)) {
+                auto frameBuffer = prevLightMap[entity];
                 if (frameBuffer->extent.width == shadow->resolution ||
                     frameBuffer->extent.height == shadow->resolution) {
                     return frameBuffer;
                 }
             }
-            */
 
             Graphics::RenderPassDepthAttachment attachment = {
                 .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
@@ -231,6 +230,7 @@ namespace Atlas {
                 .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
                 .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
             };
+
             return device->CreateFrameBuffer(frameBufferDesc);
 
         }

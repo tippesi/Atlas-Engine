@@ -79,7 +79,6 @@ namespace Atlas::Scene {
         JobGroup bindlessTextureMapUpdateJob{ JobPriority::High };
         JobGroup bindlessOtherTextureMapUpdateJob{ JobPriority::High };
         JobGroup prepareBindlessMeshesJob{ JobPriority::High };
-        JobGroup prepareBindlessTexturesJob{ JobPriority::High };
         JobGroup fillRenderListJob{ JobPriority::High };
         JobGroup cullAndSortLightsJob{ JobPriority::High };
 

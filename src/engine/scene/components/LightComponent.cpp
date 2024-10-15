@@ -214,7 +214,7 @@ namespace Atlas {
                 vec3 up = vec3(1e-12f, 1.0f, 1e-12f);
                 cascade.viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-                std::vector<vec3> corners = camera.GetFrustumCorners(cascade.nearDistance,
+                auto corners = camera.GetFrustumCorners(cascade.nearDistance,
                     cascade.farDistance + shadow->cascadeBlendDistance);
 
                 vec3 maxProj = vec3(cascade.viewMatrix * vec4(corners.at(0), 1.0f));

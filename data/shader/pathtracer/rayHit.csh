@@ -112,10 +112,10 @@ void main() {
 
             imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
-            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
+            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));            
         }
 #endif
-        
+
         if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
 #ifndef REALTIME
             if (Uniforms.sampleCount > 0)
