@@ -415,6 +415,12 @@ namespace Atlas {
                 lightMap[light->mName.C_Str()] = light;
             }
 
+            std::map<std::string, aiCamera*> cameraMap;
+            for (uint32_t i = 0; i < state.scene->mNumCameras; i++) {
+                auto camera = state.scene->mCameras[i];
+                cameraMap[camera->mName.C_Str()] = camera;
+            }
+
             auto rootEntity = scene->CreateEntity();
             rootEntity.AddComponent<NameComponent>("Root");
             auto& rootHierarchy = rootEntity.AddComponent<HierarchyComponent>();
@@ -472,7 +478,17 @@ namespace Atlas {
                         lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
                         lightComp.AddSpotShadow(3.0f, 1024);
                     }
-                }                
+                }
+
+                if (cameraMap.contains(node->mName.C_Str())) {
+                    auto camera = cameraMap[node->mName.C_Str()];
+
+                    float verticalFOV = glm::degrees(camera->mHorizontalFOV) / camera->mAspect;
+                    vec3 position = vec3(camera->mPosition.x, camera->mPosition.y, camera->mPosition.z);
+                    vec2 rotation = vec2(0.0f);
+                    parentEntity.AddComponent<CameraComponent>(verticalFOV, camera->mAspect, camera->mClipPlaneNear,
+                        camera->mClipPlaneFar, position, rotation);
+                }
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
                     auto nodeEntity = scene->CreatePrefab<Scene::Prefabs::Node>(node->mChildren[i]->mName.C_Str(), nodeTransform);

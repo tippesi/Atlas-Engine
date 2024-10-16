@@ -42,7 +42,7 @@ namespace Atlas {
                     &allocationCreateInfo, alignment, &buffer, &allocation, nullptr))
             }
 
-            if (desc.data) SetData(desc.data, 0, desc.size);
+            if (desc.data) SetData(desc.data, 0, desc.dataSize > 0 ? desc.dataSize : desc.size);
 
         }
 

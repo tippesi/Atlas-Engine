@@ -79,13 +79,16 @@ namespace Atlas {
             auto mainLightEntity = GetMainLightEntity(scene);
 
             VolumetricUniforms uniforms;
-            uniforms.sampleCount = fog->rayMarchStepCount;
-            uniforms.intensity = fog->volumetricIntensity;
+            uniforms.sampleCount = fog ? fog->rayMarchStepCount : 1;
+            uniforms.intensity = fog ? fog->volumetricIntensity : 0.0f;
             uniforms.lightCount = std::min(128, int32_t(renderState->volumetricLights.size()));
             uniforms.directionalLightCount = 0;
            
-            for (const auto& lightEntity : renderState->lightEntities) {
-                if (lightEntity.comp.type != LightType::DirectionalLight)
+            for (auto& light : renderState->volumetricLights) {
+                auto packedType = reinterpret_cast<uint32_t&>(light.color.a);
+                auto type = static_cast<LightType>(packedType);
+               
+                if (type != LightType::DirectionalLight)
                     break;
 
                 uniforms.directionalLightCount++;
@@ -213,7 +216,7 @@ namespace Atlas {
             volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
             volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
             volumetricPipelineConfig.ManageMacro("OCEAN", oceanEnabled);
-            volumetricPipelineConfig.ManageMacro("LOCAL_LIGHTS", fog->localLights);
+            volumetricPipelineConfig.ManageMacro("LOCAL_LIGHTS", fogEnabled && fog->localLights);
             auto volumetricPipeline = PipelineManager::GetPipeline(volumetricPipelineConfig);
 
             commandList->BindPipeline(volumetricPipeline);

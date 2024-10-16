@@ -244,6 +244,8 @@ namespace Atlas {
 
                         gpuMaterial.normalScale = material->normalScale;
 
+                        gpuMaterial.tiling = material->tiling;
+
                         gpuMaterial.invertUVs = mesh->invertUVs ? 1 : 0;
                         gpuMaterial.twoSided = material->twoSided ? 1 : 0;
                         gpuMaterial.cullBackFaces = mesh->cullBackFaces ? 1 : 0;

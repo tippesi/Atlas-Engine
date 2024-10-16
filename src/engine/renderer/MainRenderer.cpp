@@ -62,8 +62,6 @@ namespace Atlas {
             textRenderer.Init(device);
             textureRenderer.Init(device);
 
-            font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
-
         }
 
         void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,

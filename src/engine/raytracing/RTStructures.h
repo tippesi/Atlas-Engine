@@ -48,7 +48,7 @@ namespace Atlas {
         int32_t valid = -1;
     };
 
-    struct GPUMaterial {
+    struct alignas(16) GPUMaterial {
         int32_t ID = 0;
 
         vec3 baseColor = vec3(1.0f);
@@ -63,6 +63,8 @@ namespace Atlas {
         float reflectance = 0.5f;
 
         float normalScale = 1.0f;
+
+        float tiling = 1.0f;
 
         int32_t invertUVs = 0;
         int32_t twoSided = 0;

@@ -521,7 +521,7 @@ namespace Atlas::Scene {
                 // We need to have at least a fake light
                 auto type = 0;
                 auto packedType = reinterpret_cast<float&>(type);
-                lights.push_back(Renderer::Light {
+                lights.emplace_back(Renderer::Light {
                         .direction = vec4(0.0f, -1.0f, 0.0f, 0.0f),
                         .color = vec4(vec3(0.0f), packedType),
                         .intensity = 0.0f,
@@ -535,6 +535,14 @@ namespace Atlas::Scene {
             else {
                 lightBuffer.SetData(lights.data(), 0, lights.size());
             }
+
+            if (volumetricLights.empty()) {
+                volumetricLights.emplace_back(Renderer::VolumetricLight {
+                    .intensity = 0.0f,
+                    .shadowIdx = -1,
+                    });
+                volumetricShadows.emplace_back(Renderer::Shadow {});
+            }                
 
             if (volumetricLightBuffer.GetElementCount() < volumetricLights.size()) {
                 volumetricLightBuffer = Buffer::Buffer(Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit

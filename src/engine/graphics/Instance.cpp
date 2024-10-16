@@ -96,8 +96,9 @@ namespace Atlas {
 
 #ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-                validationFeatures.enabledValidationFeatureCount = std::size(enables);
-                validationFeatures.pEnabledValidationFeatures = enables;
+                // This doesn't seem to work anymore with newer VulkanSDKs on Nvidia hardware
+                //validationFeatures.enabledValidationFeatureCount = std::size(enables);
+                //validationFeatures.pEnabledValidationFeatures = enables;
 
                 structureChainBuilder.Append(validationFeatures);                
 #endif

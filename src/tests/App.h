@@ -6,6 +6,7 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 #include <loader/ModelImporter.h>
+#include <resource/ResourceManager.h>
 #include <ImguiExtension/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>
@@ -62,7 +63,7 @@ private:
     Ref<Atlas::Renderer::RenderTarget> renderTarget;
     Ref<Atlas::Viewport> viewport;
 
-    Ref<Atlas::Font> font;
+    Atlas::ResourceHandle<Atlas::Font> font;
 
     Ref<Atlas::Scene::Scene> scene;
 
@@ -76,7 +77,7 @@ private:
     Atlas::Input::MouseHandler mouseHandler;
     Atlas::Input::KeyboardHandler keyboardHandler;
 
-    Ref<Atlas::Texture::Texture2D> loadingTexture;
+    Atlas::ResourceHandle<Atlas::Texture::Texture2D> loadingTexture;
 
     Atlas::Renderer::ExampleRenderer exampleRenderer;
 

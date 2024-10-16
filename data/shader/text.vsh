@@ -12,11 +12,11 @@ struct GlyphInfo {
     vec2 size;
 };
 
-layout (set = 3, binding = 1, std430) buffer GlyphBuffer {
+layout (set = 3, binding = 1, std430) readonly buffer GlyphBuffer {
     GlyphInfo glyphs[];
 };
 
-layout (set = 3, binding = 2, std430) buffer InstancesBuffer {
+layout (set = 3, binding = 2, std430) readonly buffer InstancesBuffer {
     vec4 instances[];
 };
 

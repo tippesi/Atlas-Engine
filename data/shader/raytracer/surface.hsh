@@ -88,6 +88,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
 
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    texCoord *= rayMat.tiling;
 
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
@@ -157,6 +158,6 @@ float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textur
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
-    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord)
+    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord * rayMat.tiling)
         * rayMat.opacity;
 }

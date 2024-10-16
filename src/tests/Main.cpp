@@ -29,8 +29,6 @@ protected:
     void TearDown() override {
         delete engineInstance;
 
-        Atlas::PipelineManager::Clear();
-
         graphicsDevice->ForceMemoryCleanup();
     }
 
@@ -107,7 +105,7 @@ auto testingValues = testing::Values(
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },
     AppConfiguration { .exampleRenderer = true },
-    AppConfiguration{ .minimizeWindow = true }
+    AppConfiguration { .minimizeWindow = true }
     );
 
 INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);

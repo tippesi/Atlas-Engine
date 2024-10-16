@@ -21,12 +21,12 @@ void App::LoadContent(AppConfiguration config) {
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
-    auto icon = Atlas::Texture::Texture2D("icon.png");
+    auto icon = Atlas::ResourceManager<Atlas::Texture::Texture2D>::GetOrLoadResource("icon.png");
     window.SetIcon(&icon);
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
+    font = Atlas::ResourceManager<Atlas::Font>::GetOrLoadResource("font/roboto.ttf", 22.0f, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("testscene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
@@ -126,7 +126,7 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.ocean) {
         scene->ocean = Atlas::CreateRef<Atlas::Ocean::Ocean>(9, 4096.0f,
-            glm::vec3(0.0f, 5.0f, 0.0f), 512, 86);
+            glm::vec3(0.0f, 5.0f, 0.0f), 128, 86);
     }
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
@@ -274,7 +274,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
     rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
 
     mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
-        loadingTexture.get(), x, y, width, height, rotation);
+        loadingTexture.Get().get(), x, y, width, height, rotation);
 
     float textWidth, textHeight;
     font->ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
@@ -283,7 +283,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
     y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
     viewport->Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer->textRenderer.Render(commandList, viewport, font,
+    mainRenderer->textRenderer.Render(commandList, viewport, font.Get(),
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
