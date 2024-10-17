@@ -8,1119 +8,1124 @@
 
 namespace Atlas {
 
-    namespace Renderer {
-
-        void MainRenderer::Init(Graphics::GraphicsDevice *device) {
-
-            this->device = device;
-
-            CreateGlobalDescriptorSetLayout();
-
-            Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
-            Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
-
-            haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
-
-            PreintegrateBRDF();
-
-            auto uniformBufferDesc = Graphics::BufferDesc {
-                .usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                .domain = Graphics::BufferDomain::Host,
-                .hostAccess = Graphics::BufferHostAccess::Sequential,
-                .size = sizeof(GlobalUniforms),
-            };
-            globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
-            pathTraceGlobalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
-
-            uniformBufferDesc.size = sizeof(DDGIUniforms);
-            ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
-
-            opaqueRenderer.Init(device);
-            impostorRenderer.Init(device);
-            terrainRenderer.Init(device);
-            shadowRenderer.Init(device);
-            impostorShadowRenderer.Init(device);
-            terrainShadowRenderer.Init(device);
-            gBufferRenderer.Init(device);
-            ddgiRenderer.Init(device);
-            rtgiRenderer.Init(device);
-            ssgiRenderer.Init(device);
-            aoRenderer.Init(device);
-            rtrRenderer.Init(device);
-            sssRenderer.Init(device);
-            directLightRenderer.Init(device);
-            indirectLightRenderer.Init(device);
-            skyboxRenderer.Init(device);
-            atmosphereRenderer.Init(device);
-            oceanRenderer.Init(device);
-            volumetricCloudRenderer.Init(device);
-            volumetricRenderer.Init(device);
-            taaRenderer.Init(device);
-            postProcessRenderer.Init(device);
-            pathTracingRenderer.Init(device);
-            fsr2Renderer.Init(device);
-            textRenderer.Init(device);
-            textureRenderer.Init(device);
-
-        }
-
-        void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-            Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
-
-            if (!device->swapChain->isComplete || !scene->HasMainCamera())
-                return;
-
-            if (target->IsUsedForPathTracing())
-                target->UseForPathTracing(false);
-
-            auto& camera = scene->GetMainCamera();
-            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
-
-            commandList->BeginCommands();
-
-            auto& taa = scene->postProcessing.taa;
-            if (taa.enable || scene->postProcessing.fsr2) {
-                vec2 jitter = vec2(0.0f);
-                if (scene->postProcessing.fsr2) {
-                    jitter = fsr2Renderer.GetJitter(target, frameCount);
-                }
-                else {
-                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-                    jitter.x /= (float)target->GetScaledWidth();
-                    jitter.y /= (float)target->GetScaledHeight();
-                }
-
-                camera.Jitter(jitter * taa.jitterRange);
-            }
-            else {
-                // Even if there is no TAA we need to update the jitter for other techniques
-                // E.g. the reflections and ambient occlusion use reprojection
-                camera.Jitter(vec2(0.0f));
-            }
-
-            auto renderState = &scene->renderState;
-
-            Graphics::Profiler::BeginThread("Main renderer", commandList);
-            Graphics::Profiler::BeginQuery("Render scene");
-
-            SetUniforms(target, scene, camera);
-
-            commandList->BindBuffer(globalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
-            commandList->BindSampler(globalSampler, 1, 14);
-            commandList->BindSampler(globalNearestSampler, 1, 16);
-
-            if (scene->clutter)
-                vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
+	namespace Renderer {
+
+		void MainRenderer::Init(Graphics::GraphicsDevice* device) {
+
+			this->device = device;
+
+			CreateGlobalDescriptorSetLayout();
+
+			Helper::GeometryHelper::GenerateRectangleVertexArray(vertexArray);
+			Helper::GeometryHelper::GenerateCubeVertexArray(cubeVertexArray);
+
+			haltonSequence = Helper::HaltonSequence::Generate(2, 3, 16 + 1);
+
+			PreintegrateBRDF();
+
+			auto uniformBufferDesc = Graphics::BufferDesc{
+				.usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				.domain = Graphics::BufferDomain::Host,
+				.hostAccess = Graphics::BufferHostAccess::Sequential,
+				.size = sizeof(GlobalUniforms),
+			};
+			globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+			pathTraceGlobalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+
+			uniformBufferDesc.size = sizeof(DDGIUniforms);
+			ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+
+			opaqueRenderer.Init(device);
+			impostorRenderer.Init(device);
+			terrainRenderer.Init(device);
+			shadowRenderer.Init(device);
+			impostorShadowRenderer.Init(device);
+			terrainShadowRenderer.Init(device);
+			gBufferRenderer.Init(device);
+			ddgiRenderer.Init(device);
+			rtgiRenderer.Init(device);
+			ssgiRenderer.Init(device);
+			aoRenderer.Init(device);
+			rtrRenderer.Init(device);
+			sssRenderer.Init(device);
+			directLightRenderer.Init(device);
+			indirectLightRenderer.Init(device);
+			skyboxRenderer.Init(device);
+			atmosphereRenderer.Init(device);
+			oceanRenderer.Init(device);
+			volumetricCloudRenderer.Init(device);
+			volumetricRenderer.Init(device);
+			taaRenderer.Init(device);
+			postProcessRenderer.Init(device);
+			pathTracingRenderer.Init(device);
+			fsr2Renderer.Init(device);
+			textRenderer.Init(device);
+			textureRenderer.Init(device);
+
+		}
+
+		void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+			Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
+
+			if (!device->swapChain->isComplete || !scene->HasMainCamera())
+				return;
+
+			if (target->IsUsedForPathTracing())
+				target->UseForPathTracing(false);
+
+			auto& camera = scene->GetMainCamera();
+			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
+
+			commandList->BeginCommands();
+
+			auto& taa = scene->postProcessing.taa;
+			if (taa.enable || scene->postProcessing.fsr2) {
+				vec2 jitter = vec2(0.0f);
+				if (scene->postProcessing.fsr2) {
+					jitter = fsr2Renderer.GetJitter(target, frameCount);
+				}
+				else {
+					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+					jitter.x /= (float)target->GetScaledWidth();
+					jitter.y /= (float)target->GetScaledHeight();
+				}
+
+				camera.Jitter(jitter * taa.jitterRange);
+			}
+			else {
+				// Even if there is no TAA we need to update the jitter for other techniques
+				// E.g. the reflections and ambient occlusion use reprojection
+				camera.Jitter(vec2(0.0f));
+			}
+
+			auto renderState = &scene->renderState;
+
+			Graphics::Profiler::BeginThread("Main renderer", commandList);
+			Graphics::Profiler::BeginQuery("Render scene");
+
+			SetUniforms(target, scene, camera);
+
+			commandList->BindBuffer(globalUniformBuffer, 1, 31);
+			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+			commandList->BindSampler(globalSampler, 1, 14);
+			commandList->BindSampler(globalNearestSampler, 1, 16);
+
+			if (scene->clutter)
+				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
 
-            if (scene->ocean && scene->ocean->enable)
-                scene->ocean->simulation.Compute(commandList);
+			if (scene->ocean && scene->ocean->enable)
+				scene->ocean->simulation.Compute(commandList);
 
-            if (scene->sky.probe) {
-                if (scene->sky.probe->update) {
-                    FilterProbe(scene->sky.probe, commandList);
-                    //scene->sky.probe->update = false;
-                }
-            }
-            else if (scene->sky.atmosphere) {
-                atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
-                FilterProbe(scene->sky.atmosphere->probe, commandList);
-            }
+			if (scene->sky.probe) {
+				if (scene->sky.probe->update) {
+					FilterProbe(scene->sky.probe, commandList);
+					//scene->sky.probe->update = false;
+				}
+			}
+			else if (scene->sky.atmosphere) {
+				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
+				FilterProbe(scene->sky.atmosphere->probe, commandList);
+			}
 
-            if (scene->irradianceVolume) {
-                commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
-            }
+			if (scene->irradianceVolume) {
+				commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
+			}
 
-            volumetricCloudRenderer.RenderShadow(target, scene, commandList);
+			volumetricCloudRenderer.RenderShadow(target, scene, commandList);
 
-            JobSystem::WaitSpin(renderState->materialUpdateJob);
-            if (renderState->materialBuffer.GetElementCount())
-                renderState->materialBuffer.Bind(commandList, 1, 15);
+			JobSystem::WaitSpin(renderState->materialUpdateJob);
+			if (renderState->materialBuffer.GetElementCount())
+				renderState->materialBuffer.Bind(commandList, 1, 15);
 
-            // Wait as long as possible for this to finish
-            JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
-            JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
-            JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
-            commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
-            if (renderState->textures.size())
-                commandList->BindSampledImages(renderState->textures, 0, 3);
-            if (renderState->cubemaps.size())
-                commandList->BindSampledImages(renderState->cubemaps, 0, 4);
-            if (renderState->textureArrays.size())
-                commandList->BindSampledImages(renderState->textureArrays, 0, 5);
-
-            if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
-            }
-            else {
-                commandList->BindBuffers(renderState->blasBuffers, 0, 0);
-                commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
-            }
-
-            {
-                shadowRenderer.Render(target, scene, commandList, &renderState->renderList);
-
-                terrainShadowRenderer.Render(target, scene, commandList);
-            }
-
-            if (scene->sky.GetProbe()) {
-                commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
-                    scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
-                commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
-                    scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
-            }
-
-            {
-                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-
-                auto lightSubset = scene->GetSubset<LightComponent>();
-                shadowImageBarriers.clear();
-
-                for (auto& lightEntity : lightSubset) {
-                    auto& light = lightEntity.GetComponent<LightComponent>();
-                    if (!light.shadow || !light.shadow->update)
-                        continue;
-
-                    auto shadow = light.shadow;
-                    shadowImageBarriers.push_back({ shadow->useCubemap ?
-                        shadow->cubemap->image : shadow->maps->image, layout, access });
-                }
-
-                commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-            }
-
-            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
-
-            JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
-            renderState->lightBuffer.Bind(commandList, 1, 17);
-
-            ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
-
-            // Only here does the main pass need to be ready
-            JobSystem::Wait(renderState->fillRenderListJob);
-
-            {
-                Graphics::Profiler::BeginQuery("Main render pass");
-
-                commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
-
-                opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
-
-                ddgiRenderer.DebugProbes(target, scene, commandList, renderState->materialMap);
-
-                vegetationRenderer.Render(target, scene, commandList, renderState->materialMap);
-
-                terrainRenderer.Render(target, scene, commandList, renderState->materialMap);
-
-                impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
-
-                commandList->EndRenderPass();
-
-                Graphics::Profiler::EndQuery();
-            }
-
-            oceanRenderer.RenderDepthOnly(target, scene, commandList);
-
-            auto targetData = target->GetData(FULL_RES);
-
-            commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
-            commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
-            commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
-            commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
-            commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
-            commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
-            commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
-
-            if (!target->HasHistory()) {
-                auto rtHalfData = target->GetHistoryData(HALF_RES);
-                auto rtData = target->GetHistoryData(FULL_RES);
-                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                Graphics::ImageBarrier imageBarriers[] = {
-                    {rtData->baseColorTexture->image, layout, access},
-                    {rtData->depthTexture->image, layout, access},
-                    {rtData->normalTexture->image, layout, access},
-                    {rtData->geometryNormalTexture->image, layout, access},
-                    {rtData->roughnessMetallicAoTexture->image, layout, access},
-                    {rtData->emissiveTexture->image, layout, access},
-                    {rtData->offsetTexture->image, layout, access},
-                    {rtData->materialIdxTexture->image, layout, access},
-                    {rtData->stencilTexture->image, layout, access},
-                    {rtData->velocityTexture->image, layout, access},
-                    {rtHalfData->baseColorTexture->image, layout, access},
-                    {rtHalfData->depthTexture->image, layout, access},
-                    {rtHalfData->normalTexture->image, layout, access},
-                    {rtHalfData->geometryNormalTexture->image, layout, access},
-                    {rtHalfData->roughnessMetallicAoTexture->image, layout, access},
-                    {rtHalfData->emissiveTexture->image, layout, access},
-                    {rtHalfData->offsetTexture->image, layout, access},
-                    {rtHalfData->materialIdxTexture->image, layout, access},
-                    {rtHalfData->stencilTexture->image, layout, access},
-                    {rtHalfData->velocityTexture->image, layout, access},
-                };
-                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-            }
-
-            {
-                auto rtData = target->GetData(FULL_RES);
-
-                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-
-                Graphics::ImageBarrier imageBarriers[] = {
-                    {rtData->baseColorTexture->image, layout, access},
-                    {rtData->depthTexture->image, layout, access},
-                    {rtData->normalTexture->image, layout, access},
-                    {rtData->geometryNormalTexture->image, layout, access},
-                    {rtData->roughnessMetallicAoTexture->image, layout, access},
-                    {rtData->emissiveTexture->image, layout, access},
-                    {rtData->offsetTexture->image, layout, access},
-                    {rtData->materialIdxTexture->image, layout, access},
-                    {rtData->stencilTexture->image, layout, access},
-                    {rtData->velocityTexture->image, layout, access},
-                    {target->oceanStencilTexture.image, layout, access},
-                    {target->oceanDepthTexture.image, layout, access}
-                };
-
-                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-            }
-
-            {
-                if (scene->sky.probe) {
-                    skyboxRenderer.Render(target, scene, commandList);
-                }
-                else if (scene->sky.atmosphere) {
-                    atmosphereRenderer.Render(target, scene, commandList);
-                }
-            }
+			// Wait as long as possible for this to finish
+			JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
+			JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
+			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
+			if (renderState->textures.size())
+				commandList->BindSampledImages(renderState->textures, 0, 3);
+			if (renderState->cubemaps.size())
+				commandList->BindSampledImages(renderState->cubemaps, 0, 4);
+			if (renderState->textureArrays.size())
+				commandList->BindSampledImages(renderState->textureArrays, 0, 5);
+
+			if (device->support.hardwareRayTracing) {
+				commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
+			}
+			else {
+				commandList->BindBuffers(renderState->blasBuffers, 0, 0);
+				commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
+			}
+
+			{
+				shadowRenderer.Render(target, scene, commandList, &renderState->renderList);
+
+				terrainShadowRenderer.Render(target, scene, commandList);
+			}
+
+			if (scene->sky.GetProbe()) {
+				commandList->BindImage(scene->sky.GetProbe()->filteredSpecular.image,
+					scene->sky.GetProbe()->filteredSpecular.sampler, 1, 11);
+				commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
+					scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
+			}
+
+			{
+				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+				auto lightSubset = scene->GetSubset<LightComponent>();
+				shadowImageBarriers.clear();
+
+				for (auto& lightEntity : lightSubset) {
+					auto& light = lightEntity.GetComponent<LightComponent>();
+					if (!light.shadow || !light.shadow->update)
+						continue;
+
+					auto shadow = light.shadow;
+					shadowImageBarriers.push_back({ shadow->useCubemap ?
+						shadow->cubemap->image : shadow->maps->image, layout, access });
+				}
+
+				commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+			}
+
+			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+
+			JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
+			renderState->lightBuffer.Bind(commandList, 1, 17);
+
+			ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
+
+			// Only here does the main pass need to be ready
+			JobSystem::Wait(renderState->fillRenderListJob);
+
+			{
+				Graphics::Profiler::BeginQuery("Main render pass");
+
+				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
+
+				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
+
+				ddgiRenderer.DebugProbes(target, scene, commandList, renderState->materialMap);
+
+				vegetationRenderer.Render(target, scene, commandList, renderState->materialMap);
+
+				terrainRenderer.Render(target, scene, commandList, renderState->materialMap);
+
+				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
+
+				commandList->EndRenderPass();
+
+				Graphics::Profiler::EndQuery();
+			}
+
+			oceanRenderer.RenderDepthOnly(target, scene, commandList);
+
+			auto targetData = target->GetData(FULL_RES);
+
+			commandList->BindImage(targetData->baseColorTexture->image, targetData->baseColorTexture->sampler, 1, 3);
+			commandList->BindImage(targetData->normalTexture->image, targetData->normalTexture->sampler, 1, 4);
+			commandList->BindImage(targetData->geometryNormalTexture->image, targetData->geometryNormalTexture->sampler, 1, 5);
+			commandList->BindImage(targetData->roughnessMetallicAoTexture->image, targetData->roughnessMetallicAoTexture->sampler, 1, 6);
+			commandList->BindImage(targetData->emissiveTexture->image, targetData->emissiveTexture->sampler, 1, 7);
+			commandList->BindImage(targetData->materialIdxTexture->image, targetData->materialIdxTexture->sampler, 1, 8);
+			commandList->BindImage(targetData->depthTexture->image, targetData->depthTexture->sampler, 1, 9);
+
+			if (!target->HasHistory()) {
+				auto rtHalfData = target->GetHistoryData(HALF_RES);
+				auto rtData = target->GetHistoryData(FULL_RES);
+				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+				Graphics::ImageBarrier imageBarriers[] = {
+					{rtData->baseColorTexture->image, layout, access},
+					{rtData->depthTexture->image, layout, access},
+					{rtData->normalTexture->image, layout, access},
+					{rtData->geometryNormalTexture->image, layout, access},
+					{rtData->roughnessMetallicAoTexture->image, layout, access},
+					{rtData->emissiveTexture->image, layout, access},
+					{rtData->offsetTexture->image, layout, access},
+					{rtData->materialIdxTexture->image, layout, access},
+					{rtData->stencilTexture->image, layout, access},
+					{rtData->velocityTexture->image, layout, access},
+					{rtHalfData->baseColorTexture->image, layout, access},
+					{rtHalfData->depthTexture->image, layout, access},
+					{rtHalfData->normalTexture->image, layout, access},
+					{rtHalfData->geometryNormalTexture->image, layout, access},
+					{rtHalfData->roughnessMetallicAoTexture->image, layout, access},
+					{rtHalfData->emissiveTexture->image, layout, access},
+					{rtHalfData->offsetTexture->image, layout, access},
+					{rtHalfData->materialIdxTexture->image, layout, access},
+					{rtHalfData->stencilTexture->image, layout, access},
+					{rtHalfData->velocityTexture->image, layout, access},
+				};
+				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+			}
+
+			{
+				auto rtData = target->GetData(FULL_RES);
+
+				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+				Graphics::ImageBarrier imageBarriers[] = {
+					{rtData->baseColorTexture->image, layout, access},
+					{rtData->depthTexture->image, layout, access},
+					{rtData->normalTexture->image, layout, access},
+					{rtData->geometryNormalTexture->image, layout, access},
+					{rtData->roughnessMetallicAoTexture->image, layout, access},
+					{rtData->emissiveTexture->image, layout, access},
+					{rtData->offsetTexture->image, layout, access},
+					{rtData->materialIdxTexture->image, layout, access},
+					{rtData->stencilTexture->image, layout, access},
+					{rtData->velocityTexture->image, layout, access},
+					{target->oceanStencilTexture.image, layout, access},
+					{target->oceanDepthTexture.image, layout, access}
+				};
+
+				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+			}
 
-            gBufferRenderer.FillNormalTexture(target, commandList);
+			{
+				if (scene->sky.probe) {
+					skyboxRenderer.Render(target, scene, commandList);
+				}
+				else if (scene->sky.atmosphere) {
+					atmosphereRenderer.Render(target, scene, commandList);
+				}
+			}
 
-            gBufferRenderer.Downscale(target, commandList);
+			gBufferRenderer.FillNormalTexture(target, commandList);
 
-            aoRenderer.Render(target, scene, commandList);
+			gBufferRenderer.Downscale(target, commandList);
 
-            rtgiRenderer.Render(target, scene, commandList);
+			aoRenderer.Render(target, scene, commandList);
 
-            rtrRenderer.Render(target, scene, commandList);
+			rtgiRenderer.Render(target, scene, commandList);
 
-            sssRenderer.Render(target, scene, commandList);
+				rtrRenderer.Render(target, scene, commandList);
 
-            {
-                Graphics::Profiler::BeginQuery("Lighting pass");
+			sssRenderer.Render(target, scene, commandList);
 
-                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+			{
+				Graphics::Profiler::BeginQuery("Lighting pass");
 
-                directLightRenderer.Render(target, scene, commandList);
+				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
-                    commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+				directLightRenderer.Render(target, scene, commandList);
 
-                    ssgiRenderer.Render(target, scene, commandList);
-                }
+				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+				if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {				
+					ssgiRenderer.Render(target, scene, commandList);
+				}
+				
 
-                indirectLightRenderer.Render(target, scene, commandList);
+				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-                Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-                commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				indirectLightRenderer.Render(target, scene, commandList);
 
-                Graphics::Profiler::EndQuery();
-            }
+				Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
+					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+				commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            // This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
-            // downscaleRenderer.Downscale(target, commandList);
+				Graphics::Profiler::EndQuery();
+			}
 
-            {
-                commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+			// This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
+			// downscaleRenderer.Downscale(target, commandList);
 
-                textRenderer.Render(target, scene, commandList);
-                
-                commandList->EndRenderPass();
-
-                auto rtData = target->GetData(FULL_RES);
-
-                VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-
-                Graphics::ImageBarrier imageBarriers[] = {
-                    {target->lightingTexture.image, layout, access},
-                    {rtData->depthTexture->image, layout, access},
-                    {rtData->velocityTexture->image, layout, access},
-                    {rtData->stencilTexture->image, layout, access},
-                };
-
-                commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);            
-            }
-
-            {
-                volumetricCloudRenderer.Render(target, scene, commandList);
-
-                volumetricRenderer.Render(target, scene, commandList);
-            }
-
-            oceanRenderer.Render(target, scene, commandList);
-
-            if (primitiveBatch)
-                RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
-
-            if (scene->postProcessing.fsr2) {
-                gBufferRenderer.GenerateReactiveMask(target, commandList);
-
-                fsr2Renderer.Render(target, scene, commandList);
-            }
-            else {
-                taaRenderer.Render(target, scene, commandList);
-            }
-
-            target->Swap();
-
-            postProcessRenderer.Render(target, scene, commandList, texture);
-
-            Graphics::Profiler::EndQuery();
-            Graphics::Profiler::EndThread();
-
-            commandList->EndCommands();
-            device->SubmitCommandList(commandList);
-
-            renderState->renderList.Clear();
-
-        }
-
-        void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
-            Ref<Scene::Scene> scene, Texture::Texture2D *texture) {
-
-            if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
-                return;
-
-            if (!target->IsUsedForPathTracing())
-                target->UseForPathTracing(true);
-
-            auto renderState = &scene->renderState;
-
-            auto& camera = scene->GetMainCamera();
-
-            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
-
-            auto& taa = scene->postProcessing.taa;
-            if (taa.enable || scene->postProcessing.fsr2) {
-                vec2 jitter = vec2(0.0f);
-                if (scene->postProcessing.fsr2) {
-                    jitter = fsr2Renderer.GetJitter(target, frameCount);
-                }
-                else {
-                    jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
-                    jitter.x /= (float)target->GetScaledWidth() * 0.75f;
-                    jitter.y /= (float)target->GetScaledHeight() * 0.75f;
-                }
-
-                camera.Jitter(jitter * taa.jitterRange);
-            }
-            else {
-                // Even if there is no TAA we need to update the jitter for other techniques
-                // E.g. the reflections and ambient occlusion use reprojection
-                camera.Jitter(vec2(0.0f));
-            }
-
-            commandList->BeginCommands();
-
-            Graphics::Profiler::BeginThread("Path tracing", commandList);
-            Graphics::Profiler::BeginQuery("Buffer operations");
-
-            auto globalUniforms = GlobalUniforms{
-                 .vMatrix = camera.viewMatrix,
-                 .pMatrix = camera.projectionMatrix,
-                 .ivMatrix = camera.invViewMatrix,
-                 .ipMatrix = camera.invProjectionMatrix,
-                 .pvMatrixLast = camera.GetLastJitteredMatrix(),
-                 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
-                 .vMatrixLast = camera.GetLastViewMatrix(),
-                 .jitterLast = camera.GetJitter(),
-                 .jitterCurrent = camera.GetLastJitter(),
-                 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
-                 .cameraDirection = vec4(camera.direction, 0.0f),
-                 .cameraUp = vec4(camera.up, 0.0f),
-                 .cameraRight = vec4(camera.right, 0.0f),
-                 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-                 .planetRadius = scene->sky.planetRadius,
-                 .time = Clock::Get(),
-                 .deltaTime = Clock::GetDelta(),
-                 .frameCount = frameCount
-            };
+			{
+				commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
-            pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+				textRenderer.Render(target, scene, commandList);
 
-            JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
-            JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
-            JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
+				commandList->EndRenderPass();
+
+				auto rtData = target->GetData(FULL_RES);
+
+				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+				Graphics::ImageBarrier imageBarriers[] = {
+					{target->lightingTexture.image, layout, access},
+					{rtData->depthTexture->image, layout, access},
+					{rtData->velocityTexture->image, layout, access},
+					{rtData->stencilTexture->image, layout, access},
+				};
+
+				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+			}
+
+			{
+				volumetricCloudRenderer.Render(target, scene, commandList);
+
+				volumetricRenderer.Render(target, scene, commandList);
+			}
+
+			oceanRenderer.Render(target, scene, commandList);
+
+			if (primitiveBatch)
+				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
+
+			if (scene->postProcessing.fsr2) {
+				gBufferRenderer.GenerateReactiveMask(target, commandList);
+
+				fsr2Renderer.Render(target, scene, commandList);
+			}
+			else {
+				taaRenderer.Render(target, scene, commandList);
+			}
+
+			target->Swap();
+
+			postProcessRenderer.Render(target, scene, commandList, texture);
+
+			Graphics::Profiler::EndQuery();
+			Graphics::Profiler::EndThread();
+
+			commandList->EndCommands();
+			device->SubmitCommandList(commandList);
+
+			renderState->renderList.Clear();
+
+		}
+
+		void MainRenderer::PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
+			Ref<Scene::Scene> scene, Texture::Texture2D* texture) {
+
+			if (!scene->IsRtDataValid() || !device->swapChain->isComplete || !scene->HasMainCamera())
+				return;
+
+			if (!target->IsUsedForPathTracing())
+				target->UseForPathTracing(true);
+
+			auto renderState = &scene->renderState;
+
+			auto& camera = scene->GetMainCamera();
+
+			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue);
+
+			auto& taa = scene->postProcessing.taa;
+			if (taa.enable || scene->postProcessing.fsr2) {
+				vec2 jitter = vec2(0.0f);
+				if (scene->postProcessing.fsr2) {
+					jitter = fsr2Renderer.GetJitter(target, frameCount);
+				}
+				else {
+					jitter = 2.0f * haltonSequence[haltonIndex] - 1.0f;
+					jitter.x /= (float)target->GetScaledWidth() * 0.75f;
+					jitter.y /= (float)target->GetScaledHeight() * 0.75f;
+				}
+
+				camera.Jitter(jitter * taa.jitterRange);
+			}
+			else {
+				// Even if there is no TAA we need to update the jitter for other techniques
+				// E.g. the reflections and ambient occlusion use reprojection
+				camera.Jitter(vec2(0.0f));
+			}
+
+			commandList->BeginCommands();
+
+			Graphics::Profiler::BeginThread("Path tracing", commandList);
+			Graphics::Profiler::BeginQuery("Buffer operations");
+
+			auto globalUniforms = GlobalUniforms{
+				 .vMatrix = camera.viewMatrix,
+				 .pMatrix = camera.projectionMatrix,
+				 .ivMatrix = camera.invViewMatrix,
+				 .ipMatrix = camera.invProjectionMatrix,
+				 .pvMatrixLast = camera.GetLastJitteredMatrix(),
+				 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
+				 .vMatrixLast = camera.GetLastViewMatrix(),
+				 .jitterLast = camera.GetJitter(),
+				 .jitterCurrent = camera.GetLastJitter(),
+				 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
+				 .cameraDirection = vec4(camera.direction, 0.0f),
+				 .cameraUp = vec4(camera.up, 0.0f),
+				 .cameraRight = vec4(camera.right, 0.0f),
+				 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+				 .planetRadius = scene->sky.planetRadius,
+				 .time = Clock::Get(),
+				 .deltaTime = Clock::GetDelta(),
+				 .frameCount = frameCount,
+				.cameraNearPlane = camera.nearPlane,
+				.cameraFarPlane = camera.farPlane,
+			};
 
-            commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
-            commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
-            commandList->BindSampler(globalSampler, 1, 14);
-            commandList->BindSampler(globalNearestSampler, 1, 16);
-            commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
-            if (renderState->textures.size())
-                commandList->BindSampledImages(renderState->textures, 0, 3);
+			pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-            if (device->support.hardwareRayTracing) {
-                commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
-            }
-            else {
-                commandList->BindBuffers(renderState->blasBuffers, 0, 0);
-                commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
-            }
+			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
+			JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 
-            Graphics::Profiler::EndQuery();
+			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);
+			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
+			commandList->BindSampler(globalSampler, 1, 14);
+			commandList->BindSampler(globalNearestSampler, 1, 16);
+			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
+			if (renderState->textures.size())
+				commandList->BindSampledImages(renderState->textures, 0, 3);
 
-            // No probe filtering required
-            if (scene->sky.atmosphere) {
-                atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
-            }
+			if (device->support.hardwareRayTracing) {
+				commandList->BindBuffers(renderState->triangleOffsetBuffers, 0, 2);
+			}
+			else {
+				commandList->BindBuffers(renderState->blasBuffers, 0, 0);
+				commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
+			}
 
-            pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
+			Graphics::Profiler::EndQuery();
 
-            if (pathTracingRenderer.realTime) {
-                if (scene->postProcessing.fsr2) {
-                    fsr2Renderer.Render(target, scene, commandList);
-                }
-                else {
-                    taaRenderer.Render(target, scene, commandList);
-                }
+			// No probe filtering required
+			if (scene->sky.atmosphere) {
+				atmosphereRenderer.Render(scene->sky.atmosphere->probe, scene, commandList);
+			}
 
-                target->Swap();
+			pathTracingRenderer.Render(target, scene, ivec2(1, 1), commandList);
 
-                postProcessRenderer.Render(target, scene, commandList, texture);
-            }
-            else {
-                Graphics::Profiler::BeginQuery("Post processing");
+			if (pathTracingRenderer.realTime) {
+				if (scene->postProcessing.fsr2) {
+					fsr2Renderer.Render(target, scene, commandList);
+				}
+				else {
+					taaRenderer.Render(target, scene, commandList);
+				}
 
-                if (device->swapChain->isComplete && !texture) {
-                    commandList->BeginRenderPass(device->swapChain, true);
+				target->Swap();
 
-                    textureRenderer.RenderTexture2D(commandList, viewport, &target->outputTexture,
-                        0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
+				postProcessRenderer.Render(target, scene, commandList, texture);
+			}
+			else {
+				Graphics::Profiler::BeginQuery("Post processing");
 
-                    commandList->EndRenderPass();
-                }
-                else if (texture) {
-                    postProcessRenderer.CopyToTexture(&target->outputTexture, texture, commandList);
-                }
+				if (device->swapChain->isComplete && !texture) {
+					commandList->BeginRenderPass(device->swapChain, true);
 
-                target->Swap();
+					textureRenderer.RenderTexture2D(commandList, viewport, &target->outputTexture,
+						0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0f, 1.0f, false, true);
 
-                Graphics::Profiler::EndQuery();
-            }
+					commandList->EndRenderPass();
+				}
+				else if (texture) {
+					postProcessRenderer.CopyToTexture(&target->outputTexture, texture, commandList);
+				}
 
-            Graphics::Profiler::EndThread();
+				target->Swap();
 
-            commandList->EndCommands();
+				Graphics::Profiler::EndQuery();
+			}
 
-            device->SubmitCommandList(commandList);
+			Graphics::Profiler::EndThread();
 
-            renderState->WaitForAsyncWorkCompletion();
+			commandList->EndCommands();
 
-        }
+			device->SubmitCommandList(commandList);
 
-        void MainRenderer::RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
-            Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList) {
+			renderState->WaitForAsyncWorkCompletion();
 
-            bool localCommandList = !commandList;
+		}
 
-            if (localCommandList) {
-                commandList = device->GetCommandList(Graphics::GraphicsQueue);
+		void MainRenderer::RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
+			Ref<PrimitiveBatch> batch, const CameraComponent& camera, Graphics::CommandList* commandList) {
 
-                commandList->BeginCommands();
-            }
+			bool localCommandList = !commandList;
 
-            batch->TransferData();
+			if (localCommandList) {
+				commandList = device->GetCommandList(Graphics::GraphicsQueue);
 
-            auto rtData = target->GetData(FULL_RES);
+				commandList->BeginCommands();
+			}
 
-            VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+			batch->TransferData();
 
-            Graphics::ImageBarrier preImageBarriers[] = {
-                {target->lightingTexture.image, layout, access},
-                {rtData->depthTexture->image, layout, access},
-                {rtData->velocityTexture->image, layout, access},
-            };
-            commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+			auto rtData = target->GetData(FULL_RES);
 
-            commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+			VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-            if (batch->GetLineCount()) {
+			Graphics::ImageBarrier preImageBarriers[] = {
+				{target->lightingTexture.image, layout, access},
+				{rtData->depthTexture->image, layout, access},
+				{rtData->velocityTexture->image, layout, access},
+			};
+			commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-                auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
-                    batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, batch->testDepth);
+			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
 
-                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+			if (batch->GetLineCount()) {
 
-                commandList->BindPipeline(pipeline);
-                batch->lineVertexArray.Bind(commandList);
+				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, batch->testDepth);
 
-                commandList->SetLineWidth(batch->GetLineWidth());
+				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-                commandList->Draw(batch->GetLineCount() * 2);
+				commandList->BindPipeline(pipeline);
+				batch->lineVertexArray.Bind(commandList);
 
-            }
+				commandList->SetLineWidth(batch->GetLineWidth());
 
+				commandList->Draw(batch->GetLineCount() * 2);
 
-            if (batch->GetTriangleCount()) {
+			}
 
-                auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
-                    batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, batch->testDepth);
 
-                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+			if (batch->GetTriangleCount()) {
 
-                commandList->BindPipeline(pipeline);
-                batch->triangleVertexArray.Bind(commandList);
+				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, batch->testDepth);
 
-                commandList->Draw(batch->GetTriangleCount() * 3);
+				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            }
+				commandList->BindPipeline(pipeline);
+				batch->triangleVertexArray.Bind(commandList);
 
-            commandList->EndRenderPass();
+				commandList->Draw(batch->GetTriangleCount() * 3);
 
-            Graphics::ImageBarrier postImageBarriers[] = {
-                {target->lightingTexture.image, layout, access},
-                {rtData->depthTexture->image, layout, access},
-                {rtData->velocityTexture->image, layout, access},
-                {rtData->stencilTexture->image, layout, access},
-            };
-            commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			}
 
-            if (localCommandList) {
-                commandList->EndCommands();
+			commandList->EndRenderPass();
 
-                device->SubmitCommandList(commandList);
-            }
+			Graphics::ImageBarrier postImageBarriers[] = {
+				{target->lightingTexture.image, layout, access},
+				{rtData->depthTexture->image, layout, access},
+				{rtData->velocityTexture->image, layout, access},
+				{rtData->stencilTexture->image, layout, access},
+			};
+			commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-        }
+			if (localCommandList) {
+				commandList->EndCommands();
 
-        void MainRenderer::RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene) {
+				device->SubmitCommandList(commandList);
+			}
 
-            /*
-            if (probe->resolution != target->GetWidth() ||
-                probe->resolution != target->GetHeight())
-                return;
+		}
 
-            std::vector<PackedMaterial> materials;
-            std::unordered_map<void*, uint16_t> materialMap;
-            Viewport viewport(0, 0, probe->resolution, probe->resolution);
+		void MainRenderer::RenderProbe(Ref<Lighting::EnvironmentProbe> probe, Ref<RenderTarget> target, Ref<Scene::Scene> scene) {
 
-            PrepareMaterials(scene, materials, materialMap);
+			/*
+			if (probe->resolution != target->GetWidth() ||
+				probe->resolution != target->GetHeight())
+				return;
 
-            auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
-                materials.size(), materials.data());            
+			std::vector<PackedMaterial> materials;
+			std::unordered_map<void*, uint16_t> materialMap;
+			Viewport viewport(0, 0, probe->resolution, probe->resolution);
 
-            Lighting::EnvironmentProbe* skyProbe = nullptr;
+			PrepareMaterials(scene, materials, materialMap);
 
-            if (scene->sky.probe) {
-                skyProbe = scene->sky.probe;
-                scene->sky.probe = nullptr;
-            }
+			auto materialBuffer = Buffer::Buffer(AE_SHADER_STORAGE_BUFFER, sizeof(PackedMaterial), 0,
+				materials.size(), materials.data());
 
-            vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                             vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+			Lighting::EnvironmentProbe* skyProbe = nullptr;
 
-            vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                           vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-                           vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+			if (scene->sky.probe) {
+				skyProbe = scene->sky.probe;
+				scene->sky.probe = nullptr;
+			}
 
-            Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
-            camera.UpdateProjection();
+			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-            glEnable(GL_DEPTH_TEST);
-            glDepthMask(GL_TRUE);
+			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-            for (uint8_t i = 0; i < 6; i++) {
+			Camera camera(90.0f, 1.0f, 0.5f, 1000.0f);
+			camera.UpdateProjection();
 
-                vec3 dir = faces[i];
-                vec3 up = ups[i];
-                vec3 right = normalize(cross(up, dir));
-                up = normalize(cross(dir, right));
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
 
-                camera.viewMatrix = glm::lookAt(probe->GetPosition(), probe->GetPosition() + dir, up);
-                camera.invViewMatrix = glm::inverse(camera.viewMatrix);
-                camera.location = probe->GetPosition();
-                camera.direction = dir;
-                camera.right = right;
-                camera.up = up;
+			for (uint8_t i = 0; i < 6; i++) {
 
-                camera.frustum = Volume::Frustum(camera.projectionMatrix * camera.viewMatrix);
+				vec3 dir = faces[i];
+				vec3 up = ups[i];
+				vec3 right = normalize(cross(up, dir));
+				up = normalize(cross(dir, right));
 
-                scene->Update(&camera, 0.0f);
+				camera.viewMatrix = glm::lookAt(probe->GetPosition(), probe->GetPosition() + dir, up);
+				camera.invViewMatrix = glm::inverse(camera.viewMatrix);
+				camera.location = probe->GetPosition();
+				camera.direction = dir;
+				camera.right = right;
+				camera.up = up;
 
-                // Clear the lights depth maps
-                depthFramebuffer.Bind();
+				camera.frustum = Volume::Frustum(camera.projectionMatrix * camera.viewMatrix);
 
-                auto lights = scene->GetLights();
+				scene->Update(&camera, 0.0f);
 
-                if (scene->sky.sun) {
-                    lights.push_back(scene->sky.sun);
-                }
+				// Clear the lights depth maps
+				depthFramebuffer.Bind();
 
-                for (auto light : lights) {
+				auto lights = scene->GetLights();
 
-                    if (!light->GetShadow())
-                        continue;
-                    if (!light->GetShadow()->update)
-                        continue;
+				if (scene->sky.sun) {
+					lights.push_back(scene->sky.sun);
+				}
 
-                    for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
-                        if (light->GetShadow()->useCubemap) {
-                            depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
-                                &light->GetShadow()->cubemap, j);
-                        }
-                        else {
-                            depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
-                                &light->GetShadow()->maps, j);
-                        }
+				for (auto light : lights) {
 
-                        glClear(GL_DEPTH_BUFFER_BIT);
-                    }
-                }
+					if (!light->GetShadow())
+						continue;
+					if (!light->GetShadow()->update)
+						continue;
 
-                shadowRenderer.Render(&viewport, target, &camera, scene);
+					for (int32_t j = 0; j < light->GetShadow()->componentCount; j++) {
+						if (light->GetShadow()->useCubemap) {
+							depthFramebuffer.AddComponentCubemap(GL_DEPTH_ATTACHMENT,
+								&light->GetShadow()->cubemap, j);
+						}
+						else {
+							depthFramebuffer.AddComponentTextureArray(GL_DEPTH_ATTACHMENT,
+								&light->GetShadow()->maps, j);
+						}
 
-                glEnable(GL_CULL_FACE);
+						glClear(GL_DEPTH_BUFFER_BIT);
+					}
+				}
 
-                glCullFace(GL_FRONT);
+				shadowRenderer.Render(&viewport, target, &camera, scene);
 
-                terrainShadowRenderer.Render(&viewport, target, &camera, scene);
+				glEnable(GL_CULL_FACE);
 
-                glCullFace(GL_BACK);
+				glCullFace(GL_FRONT);
 
-                // Shadows have been updated
-                for (auto light : lights) {
-                    if (!light->GetShadow())
-                        continue;
-                    light->GetShadow()->update = false;
-                }
+				terrainShadowRenderer.Render(&viewport, target, &camera, scene);
 
-                materialBuffer.BindBase(0);
+				glCullFace(GL_BACK);
 
-                target->geometryFramebuffer.Bind(true);
-                target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-                    GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
-                    GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
+				// Shadows have been updated
+				for (auto light : lights) {
+					if (!light->GetShadow())
+						continue;
+					light->GetShadow()->update = false;
+				}
 
-                glEnable(GL_CULL_FACE);
+				materialBuffer.BindBase(0);
 
-                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+				target->geometryFramebuffer.Bind(true);
+				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+					GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 });
 
-                opaqueRenderer.Render(&viewport, target, &camera, scene, materialMap);
+				glEnable(GL_CULL_FACE);
 
-                terrainRenderer.Render(&viewport, target, &camera, scene, materialMap);
+				glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-                glEnable(GL_CULL_FACE);
-                glDepthMask(GL_FALSE);
-                glDisable(GL_DEPTH_TEST);
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				opaqueRenderer.Render(&viewport, target, &camera, scene, materialMap);
 
-                target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-                    GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
+				terrainRenderer.Render(&viewport, target, &camera, scene, materialMap);
 
-                decalRenderer.Render(&viewport, target, &camera, scene);
+				glEnable(GL_CULL_FACE);
+				glDepthMask(GL_FALSE);
+				glDisable(GL_DEPTH_TEST);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-                glDisable(GL_BLEND);
+				target->geometryFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+					GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 
-                vertexArray.Bind();
+				decalRenderer.Render(&viewport, target, &camera, scene);
 
-                target->lightingFramebuffer.Bind(true);
-                target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
+				glDisable(GL_BLEND);
 
-                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
+				vertexArray.Bind();
 
-                directionalLightRenderer.Render(&viewport, target, &camera, scene);
+				target->lightingFramebuffer.Bind(true);
+				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0 });
 
-                glEnable(GL_DEPTH_TEST);
+				glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
 
-                target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
-                    GL_COLOR_ATTACHMENT1 });
+				directionalLightRenderer.Render(&viewport, target, &camera, scene);
 
-                glDepthMask(GL_TRUE);
+				glEnable(GL_DEPTH_TEST);
 
-                oceanRenderer.Render(&viewport, target, &camera, scene);
+				target->lightingFramebuffer.SetDrawBuffers({ GL_COLOR_ATTACHMENT0,
+					GL_COLOR_ATTACHMENT1 });
 
-                glDisable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glDepthMask(GL_FALSE);
-                glDisable(GL_DEPTH_TEST);
+				glDepthMask(GL_TRUE);
 
-                vertexArray.Bind();
+				oceanRenderer.Render(&viewport, target, &camera, scene);
 
-                volumetricRenderer.Render(&viewport, target, &camera, scene);
+				glDisable(GL_CULL_FACE);
+				glCullFace(GL_BACK);
+				glDepthMask(GL_FALSE);
+				glDisable(GL_DEPTH_TEST);
 
-                createProbeFaceShader.Bind();
+				vertexArray.Bind();
 
-                createProbeFaceShader.GetUniform("faceIndex")->SetValue((int32_t)i);
-                createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
+				volumetricRenderer.Render(&viewport, target, &camera, scene);
 
-                int32_t groupCount = probe->resolution / 8;
-                groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
+				createProbeFaceShader.Bind();
 
-                probe->cubemap.Bind(GL_WRITE_ONLY, 0);
-                probe->depth.Bind(GL_WRITE_ONLY, 1);
+				createProbeFaceShader.GetUniform("faceIndex")->SetValue((int32_t)i);
+				createProbeFaceShader.GetUniform("ipMatrix")->SetValue(camera.invProjectionMatrix);
 
-                target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
-                target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
+				int32_t groupCount = probe->resolution / 8;
+				groupCount += ((groupCount * 8 == probe->resolution) ? 0 : 1);
 
-                glDispatchCompute(groupCount, groupCount, 1);
+				probe->cubemap.Bind(GL_WRITE_ONLY, 0);
+				probe->depth.Bind(GL_WRITE_ONLY, 1);
 
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				target->lightingFramebuffer.GetComponentTexture(GL_COLOR_ATTACHMENT0)->Bind(0);
+				target->lightingFramebuffer.GetComponentTexture(GL_DEPTH_ATTACHMENT)->Bind(1);
 
-            }
+				glDispatchCompute(groupCount, groupCount, 1);
 
-            if (skyProbe) {
-                scene->sky.probe = skyProbe;
-            }
-            */
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        }
+			}
 
-        void MainRenderer::FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList) {
+			if (skyProbe) {
+				scene->sky.probe = skyProbe;
+			}
+			*/
 
-            Graphics::Profiler::BeginQuery("Filter probe");
+		}
 
-            mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-            vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                             vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+		void MainRenderer::FilterProbe(Ref<Lighting::EnvironmentProbe> probe, Graphics::CommandList* commandList) {
 
-            vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                           vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-                           vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
+			Graphics::Profiler::BeginQuery("Filter probe");
 
-            Graphics::Profiler::BeginQuery("Filter diffuse probe");
+			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-            auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
-            auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
-            commandList->BindPipeline(pipeline);
+			Graphics::Profiler::BeginQuery("Filter diffuse probe");
 
-            //auto constantRange = pipeline->shader->GetPushConstantRange("constants");
-            //commandList->PushConstants()
+			auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
+			auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            // It's only accessed in compute shaders
-            commandList->ImageMemoryBarrier(probe->filteredDiffuse.image, VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-            
-            auto& cubemap = probe->GetCubemap();
-            if (cubemap.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                commandList->ImageMemoryBarrier(cubemap.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-            }
+			commandList->BindPipeline(pipeline);
 
-            commandList->BindImage(probe->filteredDiffuse.image, 3, 0);
-            commandList->BindImage(cubemap.image, cubemap.sampler, 3, 1);
+			//auto constantRange = pipeline->shader->GetPushConstantRange("constants");
+			//commandList->PushConstants()
 
-            ivec2 res = ivec2(probe->filteredDiffuse.width, probe->filteredDiffuse.height);
-            ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
-            groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-            groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+			// It's only accessed in compute shaders
+			commandList->ImageMemoryBarrier(probe->filteredDiffuse.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-            commandList->Dispatch(groupCount.x, groupCount.y, 6);
+			auto& cubemap = probe->GetCubemap();
+			if (cubemap.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+				commandList->ImageMemoryBarrier(cubemap.image, VK_IMAGE_LAYOUT_GENERAL,
+					VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+			}
 
-            commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+			commandList->BindImage(probe->filteredDiffuse.image, 3, 0);
+			commandList->BindImage(cubemap.image, cubemap.sampler, 3, 1);
 
-            Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
+			ivec2 res = ivec2(probe->filteredDiffuse.width, probe->filteredDiffuse.height);
+			ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+			groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+			groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-            pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
-            pipeline = PipelineManager::GetPipeline(pipelineConfig);
+			commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-            struct alignas(16) PushConstants {
-                int cubeMapMipLevels;
-                float roughness;
-                uint32_t mipLevel;
-            };
+			commandList->ImageMemoryBarrier(probe->filteredDiffuse.image,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-            commandList->BindPipeline(pipeline);
+			Graphics::Profiler::EndAndBeginQuery("Filter specular probe");
 
-            commandList->ImageMemoryBarrier(probe->filteredSpecular.image, VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_SPECULAR" });
+			pipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            int32_t width = int32_t(probe->filteredSpecular.width);
-            int32_t height = int32_t(probe->filteredSpecular.height);
+			struct alignas(16) PushConstants {
+				int cubeMapMipLevels;
+				float roughness;
+				uint32_t mipLevel;
+			};
 
-            for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
-                Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
+			commandList->BindPipeline(pipeline);
 
-                ivec2 res = ivec2(width, height);
+			commandList->ImageMemoryBarrier(probe->filteredSpecular.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-                commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
+			int32_t width = int32_t(probe->filteredSpecular.width);
+			int32_t height = int32_t(probe->filteredSpecular.height);
 
-                PushConstants pushConstants = {
-                    .cubeMapMipLevels = int32_t(probe->GetCubemap().image->mipLevels),
-                    .roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
-                    .mipLevel = i
-                };
-                commandList->PushConstants("constants", &pushConstants);
-               
-                ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
-                groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+			for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
+				Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
 
-                commandList->Dispatch(groupCount.x, groupCount.y, 6);
+				ivec2 res = ivec2(width, height);
 
-                width /= 2;
-                height /= 2;
+				commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
 
-                Graphics::Profiler::EndQuery();
+				PushConstants pushConstants = {
+					.cubeMapMipLevels = int32_t(probe->GetCubemap().image->mipLevels),
+					.roughness = float(i) / float(probe->filteredSpecular.image->mipLevels - 1),
+					.mipLevel = i
+				};
+				commandList->PushConstants("constants", &pushConstants);
 
-            }
+				ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
+				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+				groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
-            commandList->ImageMemoryBarrier(probe->filteredSpecular.image,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+				commandList->Dispatch(groupCount.x, groupCount.y, 6);
 
-            Graphics::Profiler::EndQuery();
+				width /= 2;
+				height /= 2;
 
-            Graphics::Profiler::EndQuery();
+				Graphics::Profiler::EndQuery();
 
-        }
+			}
 
-        void MainRenderer::Update() {
+			commandList->ImageMemoryBarrier(probe->filteredSpecular.image,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-            textRenderer.Update();
+			Graphics::Profiler::EndQuery();
 
-            haltonIndex = (haltonIndex + 1) % haltonSequence.size();
-            frameCount++;
+			Graphics::Profiler::EndQuery();
 
-        }
+		}
 
-        void MainRenderer::CreateGlobalDescriptorSetLayout() {
+		void MainRenderer::Update() {
 
-            if (!device->support.bindless)
-                return;
+			textRenderer.Update();
 
-            auto samplerDesc = Graphics::SamplerDesc {
-                .filter = VK_FILTER_LINEAR,
-                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                .maxLod = 12,
-                .anisotropicFiltering = true
-            };
-            globalSampler = device->CreateSampler(samplerDesc);
+			haltonIndex = (haltonIndex + 1) % haltonSequence.size();
+			frameCount++;
 
-            samplerDesc = Graphics::SamplerDesc{
-                .filter = VK_FILTER_NEAREST,
-                .mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-                .maxLod = 12,
-                .anisotropicFiltering = false
-            };
-            globalNearestSampler = device->CreateSampler(samplerDesc);
+		}
 
-            auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
-                .bindings = {
-                    {
-                        .bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .descriptorCount = 8192, .bindless = true
-                    },
-                    {
-                        .bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                        .descriptorCount = 16384, .bindless = true
-                    }
-                },
-                .bindingCount = 4
-            };
-            globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
+		void MainRenderer::CreateGlobalDescriptorSetLayout() {
 
-            PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);
+			if (!device->support.bindless)
+				return;
 
-        }
+			auto samplerDesc = Graphics::SamplerDesc{
+				.filter = VK_FILTER_LINEAR,
+				.mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+				.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+				.maxLod = 12,
+				.anisotropicFiltering = true
+			};
+			globalSampler = device->CreateSampler(samplerDesc);
 
-        void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
+			samplerDesc = Graphics::SamplerDesc{
+				.filter = VK_FILTER_NEAREST,
+				.mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+				.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+				.maxLod = 12,
+				.anisotropicFiltering = false
+			};
+			globalNearestSampler = device->CreateSampler(samplerDesc);
 
-            auto globalUniforms = GlobalUniforms {
-                .vMatrix = camera.viewMatrix,
-                .pMatrix = camera.projectionMatrix,
-                .ivMatrix = camera.invViewMatrix,
-                .ipMatrix = camera.invProjectionMatrix,
-                .pvMatrixLast = camera.GetLastJitteredMatrix(),
-                .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
-                .ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
-                .ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
-                .vMatrixLast = camera.GetLastViewMatrix(),
-                .jitterLast = camera.GetLastJitter(),
-                .jitterCurrent = camera.GetJitter(),
-                .cameraLocation = vec4(camera.GetLocation(), 0.0f),
-                .cameraDirection = vec4(camera.direction, 0.0f),
-                .cameraUp = vec4(camera.up, 0.0f),
-                .cameraRight = vec4(camera.right, 0.0f),
-                .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-                .windDir = glm::normalize(scene->wind.direction),
-                .windSpeed = scene->wind.speed,
-                .planetRadius = scene->sky.planetRadius,
-                .time = Clock::Get(),
-                .deltaTime = Clock::GetDelta(),
-                .frameCount = frameCount,
-                .mipLodBias = -1.0f / target->GetScalingFactor()
-            };
+			auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
+				.bindings = {
+					{
+						.bindingIdx = 0, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+						.descriptorCount = 8192, .bindless = true
+					},
+					{
+						.bindingIdx = 1, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+						.descriptorCount = 8192, .bindless = true
+					},
+					{
+						.bindingIdx = 2, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+						.descriptorCount = 8192, .bindless = true
+					},
+					{
+						.bindingIdx = 3, .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+						.descriptorCount = 16384, .bindless = true
+					}
+				},
+				.bindingCount = 4
+			};
+			globalDescriptorSetLayout = device->CreateDescriptorSetLayout(layoutDesc);
 
-            auto frustumPlanes = camera.frustum.GetPlanes();
-            std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
+			PipelineManager::OverrideDescriptorSetLayout(globalDescriptorSetLayout, 0);
 
-            globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
+		}
 
-            if (scene->irradianceVolume) {
-                auto volume = scene->irradianceVolume;
+		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
-                if (volume->scroll) {
-                    auto pos = camera.GetLocation();
+			auto globalUniforms = GlobalUniforms{
+				.vMatrix = camera.viewMatrix,
+				.pMatrix = camera.projectionMatrix,
+				.ivMatrix = camera.invViewMatrix,
+				.ipMatrix = camera.invProjectionMatrix,
+				.pvMatrixLast = camera.GetLastJitteredMatrix(),
+				.pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
+				.ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
+				.ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
+				.vMatrixLast = camera.GetLastViewMatrix(),
+				.jitterLast = camera.GetLastJitter(),
+				.jitterCurrent = camera.GetJitter(),
+				.cameraLocation = vec4(camera.GetLocation(), 0.0f),
+				.cameraDirection = vec4(camera.direction, 0.0f),
+				.cameraUp = vec4(camera.up, 0.0f),
+				.cameraRight = vec4(camera.right, 0.0f),
+				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->wind.direction),
+				.windSpeed = scene->wind.speed,
+				.planetRadius = scene->sky.planetRadius,
+				.time = Clock::Get(),
+				.deltaTime = Clock::GetDelta(),
+				.frameCount = frameCount,
+				.mipLodBias = -1.0f / target->GetScalingFactor(),
+				.cameraNearPlane = camera.nearPlane,
+				.cameraFarPlane = camera.farPlane,
+			};
 
-                    auto volumeSize = volume->aabb.GetSize();
-                    auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
-                    volume->SetAABB(volumeAABB);
-                }
+			auto frustumPlanes = camera.frustum.GetPlanes();
+			std::copy(frustumPlanes.begin(), frustumPlanes.end(), &globalUniforms.frustumPlanes[0]);
 
-                auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y * 
-                    volume->probeCount.z;
-                auto ddgiUniforms = DDGIUniforms {
-                    .volumeCenter = vec4(camera.GetLocation(), 1.0f),
-                    .volumeProbeCount = ivec4(volume->probeCount, probeCountPerCascade),
-                    .cascadeCount = volume->cascadeCount,
-                    .volumeBias = volume->bias,
-                    .volumeIrradianceRes = volume->irrRes,
-                    .volumeMomentsRes = volume->momRes,
-                    .rayCount = volume->rayCount,
-                    .inactiveRayCount = volume->rayCountInactive,
-                    .hysteresis = volume->hysteresis,
-                    .volumeGamma = volume->gamma,
-                    .volumeStrength = volume->strength,
-                    .depthSharpness = volume->sharpness,
-                    .optimizeProbes = volume->optimizeProbes ? 1 : 0,
-                    .volumeEnabled = volume->enable ? 1 : 0
-                };
+			globalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
-                for (int32_t i = 0; i < volume->cascadeCount; i++) {
-                    ddgiUniforms.cascades[i] = DDGICascade{
-                        .volumeMin = vec4(volume->cascades[i].aabb.min, 1.0f),
-                        .volumeMax = vec4(volume->cascades[i].aabb.max, 1.0f),
-                        .cellSize = vec4(volume->cascades[i].cellSize, glm::length(volume->cascades[i].cellSize)),
-                        .offsetDifference = ivec4(volume->cascades[i].offsetDifferences, 0),
-                    };
-                }
+			if (scene->irradianceVolume) {
+				auto volume = scene->irradianceVolume;
 
-                ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
-            }
-            else {
-                auto ddgiUniforms = DDGIUniforms {
-                    .volumeEnabled = 0
-                };
+				if (volume->scroll) {
+					auto pos = camera.GetLocation();
 
-                for (int32_t i = 0; i < MAX_IRRADIANCE_VOLUME_CASCADES; i++) {
-                    ddgiUniforms.cascades[i] = DDGICascade {
-                        .volumeMin = vec4(0.0f),
-                        .volumeMax = vec4(0.0f),
-                        .cellSize = vec4(0.0f),
-                    };
-                }
+					auto volumeSize = volume->aabb.GetSize();
+					auto volumeAABB = Volume::AABB(-volumeSize / 2.0f + pos, volumeSize / 2.0f + pos);
+					volume->SetAABB(volumeAABB);
+				}
 
-                ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
-            }
+				auto probeCountPerCascade = volume->probeCount.x * volume->probeCount.y *
+					volume->probeCount.z;
+				auto ddgiUniforms = DDGIUniforms{
+					.volumeCenter = vec4(camera.GetLocation(), 1.0f),
+					.volumeProbeCount = ivec4(volume->probeCount, probeCountPerCascade),
+					.cascadeCount = volume->cascadeCount,
+					.volumeBias = volume->bias,
+					.volumeIrradianceRes = volume->irrRes,
+					.volumeMomentsRes = volume->momRes,
+					.rayCount = volume->rayCount,
+					.inactiveRayCount = volume->rayCountInactive,
+					.hysteresis = volume->hysteresis,
+					.volumeGamma = volume->gamma,
+					.volumeStrength = volume->strength,
+					.depthSharpness = volume->sharpness,
+					.optimizeProbes = volume->optimizeProbes ? 1 : 0,
+					.volumeEnabled = volume->enable ? 1 : 0
+				};
 
-            auto meshes = scene->GetMeshes();
-            for (auto& mesh : meshes) {
-                if (!mesh.IsLoaded() || !mesh->impostor) continue;
+				for (int32_t i = 0; i < volume->cascadeCount; i++) {
+					ddgiUniforms.cascades[i] = DDGICascade{
+						.volumeMin = vec4(volume->cascades[i].aabb.min, 1.0f),
+						.volumeMax = vec4(volume->cascades[i].aabb.max, 1.0f),
+						.cellSize = vec4(volume->cascades[i].cellSize, glm::length(volume->cascades[i].cellSize)),
+						.offsetDifference = ivec4(volume->cascades[i].offsetDifferences, 0),
+					};
+				}
 
-                auto impostor = mesh->impostor;
-                Mesh::Impostor::ImpostorInfo impostorInfo = {
-                    .center = vec4(impostor->center, 1.0f),
-                    .radius = impostor->radius,
-                    .views = impostor->views,
-                    .cutoff = impostor->cutoff,
-                    .mipBias = impostor->mipBias
-                };
+				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+			}
+			else {
+				auto ddgiUniforms = DDGIUniforms{
+					.volumeEnabled = 0
+				};
 
-                impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
-            }
+				for (int32_t i = 0; i < MAX_IRRADIANCE_VOLUME_CASCADES; i++) {
+					ddgiUniforms.cascades[i] = DDGICascade{
+						.volumeMin = vec4(0.0f),
+						.volumeMax = vec4(0.0f),
+						.cellSize = vec4(0.0f),
+					};
+				}
 
-        }
+				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+			}
 
-        void MainRenderer::PreintegrateBRDF() {
+			auto meshes = scene->GetMeshes();
+			for (auto& mesh : meshes) {
+				if (!mesh.IsLoaded() || !mesh->impostor) continue;
 
-            auto pipelineConfig = PipelineConfig("brdf/preintegrateDFG.csh");
-            auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
+				auto impostor = mesh->impostor;
+				Mesh::Impostor::ImpostorInfo impostorInfo = {
+					.center = vec4(impostor->center, 1.0f),
+					.radius = impostor->radius,
+					.views = impostor->views,
+					.cutoff = impostor->cutoff,
+					.mipBias = impostor->mipBias
+				};
 
-            const int32_t res = 256;
-            dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+				impostor->impostorInfoBuffer.SetData(&impostorInfo, 0);
+			}
 
-            auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
+		}
 
-            commandList->BeginCommands();
-            commandList->BindPipeline(computePipeline);
+		void MainRenderer::PreintegrateBRDF() {
 
-            auto barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-            commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
-                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			auto pipelineConfig = PipelineConfig("brdf/preintegrateDFG.csh");
+			auto computePipeline = PipelineManager::GetPipeline(pipelineConfig);
 
-            uint32_t groupCount = res / 8;
+			const int32_t res = 256;
+			dfgPreintegrationTexture = Texture::Texture2D(res, res, VK_FORMAT_R16G16B16A16_SFLOAT,
+				Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-            commandList->BindImage(dfgPreintegrationTexture.image, 3, 0);
-            commandList->Dispatch(groupCount, groupCount, 1);
+			auto commandList = device->GetCommandList(Graphics::QueueType::GraphicsQueue, true);
 
-            barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_ACCESS_SHADER_READ_BIT);
-            commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+			commandList->BeginCommands();
+			commandList->BindPipeline(computePipeline);
 
-            commandList->EndCommands();
-            device->FlushCommandList(commandList);
+			auto barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+			commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-        }
+			uint32_t groupCount = res / 8;
 
-        PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer> &frameBuffer,
-            Buffer::VertexArray &vertexArray, VkPrimitiveTopology topology, bool testDepth) {
+			commandList->BindImage(dfgPreintegrationTexture.image, 3, 0);
+			commandList->Dispatch(groupCount, groupCount, 1);
 
-            const auto shaderConfig = ShaderConfig {
-                { "primitive.vsh", VK_SHADER_STAGE_VERTEX_BIT},
-                { "primitive.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
-            };
+			barrier = Graphics::ImageBarrier(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VK_ACCESS_SHADER_READ_BIT);
+			commandList->ImageMemoryBarrier(barrier.Update(dfgPreintegrationTexture.image),
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-            auto pipelineDesc = Graphics::GraphicsPipelineDesc {
-                .frameBuffer = frameBuffer,
-                .vertexInputInfo = vertexArray.GetVertexInputState(),
-            };
+			commandList->EndCommands();
+			device->FlushCommandList(commandList);
 
-            pipelineDesc.assemblyInputInfo.topology = topology;
-            pipelineDesc.depthStencilInputInfo.depthTestEnable = testDepth;
-            pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
-            pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		}
 
-            return PipelineConfig(shaderConfig, pipelineDesc);
+		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer>& frameBuffer,
+			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth) {
 
-        }
+			const auto shaderConfig = ShaderConfig{
+				{ "primitive.vsh", VK_SHADER_STAGE_VERTEX_BIT},
+				{ "primitive.fsh", VK_SHADER_STAGE_FRAGMENT_BIT},
+			};
 
-    }
+			auto pipelineDesc = Graphics::GraphicsPipelineDesc{
+				.frameBuffer = frameBuffer,
+				.vertexInputInfo = vertexArray.GetVertexInputState(),
+			};
+
+			pipelineDesc.assemblyInputInfo.topology = topology;
+			pipelineDesc.depthStencilInputInfo.depthTestEnable = testDepth;
+			pipelineDesc.rasterizer.cullMode = VK_CULL_MODE_NONE;
+			pipelineDesc.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+
+			return PipelineConfig(shaderConfig, pipelineDesc);
+
+		}
+
+	}
 
 }

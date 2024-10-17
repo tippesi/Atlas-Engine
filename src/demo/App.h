@@ -113,10 +113,10 @@ private:
     float sphereDensity = 1.0f;
     float sphereRestitution = 0.2f;
 
-    bool emitSpheresEnabled = true;
+    bool emitSpheresEnabled = false;
     float emitSpawnRate = 0.01f;
 
-    bool attachLightToSphers = true;
+    bool attachLightToSphers = false;
 
     bool shootSpheresEnabled = false;
     bool shootSphere = false;

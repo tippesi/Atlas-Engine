@@ -132,6 +132,8 @@ namespace Atlas {
             float deltaTime;
             uint32_t frameCount;
             float mipLodBias;
+            float cameraNearPlane;
+            float cameraFarPlane;
         };
 
         struct alignas(16) DDGICascade {

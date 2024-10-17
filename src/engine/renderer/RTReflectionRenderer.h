@@ -51,6 +51,7 @@ namespace Atlas {
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
+            PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;

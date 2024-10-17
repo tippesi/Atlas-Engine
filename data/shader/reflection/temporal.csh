@@ -409,7 +409,7 @@ void main() {
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
     float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
-    float factor = clamp(32.0 * log(roughness + 1.0), 0.5, temporalWeight);
+    float factor = clamp(32.0 * log(roughness + 1.0), 0.75, temporalWeight);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
