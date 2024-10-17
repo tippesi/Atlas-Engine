@@ -69,6 +69,8 @@ namespace Atlas {
                 std::map<Mesh::Mesh*, int32_t> meshToIdxMap;
                 std::vector<MeshSubdataInformation> meshSubdataInformation;
 
+                std::vector<Graphics::BufferBarrier> meshBufferBarriers;
+
             };
 
         }

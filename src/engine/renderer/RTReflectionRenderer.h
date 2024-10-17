@@ -23,10 +23,14 @@ namespace Atlas {
                 float radianceLimit;
                 uint32_t frameSeed;
                 float bias;
+                int32_t sampleCount;
+                int32_t lightSampleCount;
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t halfRes;
-                ivec2 resolution;                
+                int32_t padding0;
+                int32_t padding1;
+                ivec2 resolution;
                 Shadow shadow;
             };
 
@@ -47,6 +51,7 @@ namespace Atlas {
             Texture::Texture2D scramblingRankingTexture;
             Texture::Texture2D sobolSequenceTexture;
 
+            PipelineConfig ssrPipelineConfig;
             PipelineConfig rtrPipelineConfig;
             PipelineConfig upsamplePipelineConfig;
             PipelineConfig temporalPipelineConfig;

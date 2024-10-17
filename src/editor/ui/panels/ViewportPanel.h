@@ -11,10 +11,14 @@ namespace Atlas::Editor::UI {
         Lit = 0,
         GBufferBaseColor,
         GBufferRoughnessMetalnessAo,
+        GBufferEmissive,
         GBufferNormals,
         GBufferGeometryNormals,
+        GBufferMaterialIdx,
+        GBufferStencil,
         GBufferDepth,
         GBufferVelocity,
+        Volumetrics,
         Clouds,
         Reflections,
         SSS,
@@ -31,6 +35,8 @@ namespace Atlas::Editor::UI {
         void DrawOverlay(std::function<void()> func);
 
         void Render(Ref<Scene::Scene>& scene, bool isActiveWindow);
+
+        void RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive);
 
         Ref<Viewport> viewport;
         Texture::Texture2D viewportTexture;

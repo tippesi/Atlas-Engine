@@ -42,6 +42,8 @@ namespace Atlas {
 
             void DestroyBody(Body body);
 
+            bool ContainsBody(Body body) const;
+
             void SetBodyMatrix(BodyID bodyId, const mat4& matrix);
 
             mat4 GetBodyMatrix(BodyID bodyId);
@@ -75,6 +77,8 @@ namespace Atlas {
             void SetGravity(vec3 gravity);
 
             vec3 GetGravity();
+
+            uint32_t GetBodyCount() const;
 
             Volume::RayResult<Body> CastRay(Volume::Ray& ray);
 

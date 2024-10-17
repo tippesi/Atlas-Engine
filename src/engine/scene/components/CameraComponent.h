@@ -29,11 +29,13 @@ namespace Atlas {
 
                 mat4 GetLastJitteredMatrix() const;
 
+                mat4 GetLastViewMatrix() const;
+
                 vec3 GetLocation() const;
 
                 vec3 GetLastLocation() const;
 
-                std::vector<vec3> GetFrustumCorners(float nearPlane, float farPlane) const;
+                std::array<vec3, 8> GetFrustumCorners(float nearPlane, float farPlane) const;
 
                 void UpdateFrustum();
 

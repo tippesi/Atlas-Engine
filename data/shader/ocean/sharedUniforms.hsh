@@ -1,5 +1,5 @@
 #include <../globals.hsh>
-#include <../structures>
+#include <../structures.hsh>
 #include <../volumetric/fog.hsh>
 
 layout (set = 3, binding = 11, std140) uniform UniformBuffer {

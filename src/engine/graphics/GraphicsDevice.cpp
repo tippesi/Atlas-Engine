@@ -434,7 +434,7 @@ namespace Atlas {
             VK_CHECK(vkQueueSubmit(queue.queue, 1, &submit, cmd->fence))
             queue.Unlock();
 
-            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 9999999999));
+            VK_CHECK(vkWaitForFences(device, 1, &cmd->fence, true, 30000000000));
             VK_CHECK(vkResetFences(device, 1, &cmd->fence));
 
             // Is submitted now and must be unlocked

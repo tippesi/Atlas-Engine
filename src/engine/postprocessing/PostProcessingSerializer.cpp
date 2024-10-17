@@ -1,5 +1,7 @@
 #include "PostProcessingSerializer.h"
 
+#include "resource/ResourceManager.h"
+
 namespace Atlas::PostProcessing {
 
     void to_json(json& j, const ChromaticAberration& p) {
@@ -70,6 +72,32 @@ namespace Atlas::PostProcessing {
         j.at("color").get_to(p.color);
     }
 
+    void to_json(json& j, const Bloom& p) {
+        j = json {
+            {"enable", p.enable},
+            {"filterSize", p.filterSize},
+            {"mipLevels", p.mipLevels},
+            {"strength", p.strength},
+            {"threshold", p.threshold},
+        };
+
+        if (p.dirtMap.IsValid())
+            j["dirtMap"] = p.dirtMap.GetResource()->path;
+            
+    }
+
+    void from_json(const json& j, Bloom& p) {
+        j.at("enable").get_to(p.enable);
+        j.at("filterSize").get_to(p.filterSize);
+        j.at("mipLevels").get_to(p.mipLevels);
+        j.at("strength").get_to(p.strength);
+        j.at("threshold").get_to(p.threshold);
+
+        if (j.contains("dirtMap"))
+            p.dirtMap = ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,
+                Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0);
+    }
+
     void to_json(json& j, const PostProcessing& p) {
         j = json {
             {"tint", p.tint},
@@ -84,6 +112,7 @@ namespace Atlas::PostProcessing {
             {"chromaticAberration", p.chromaticAberration},
             {"filmGrain", p.filmGrain},
             {"sharpen", p.sharpen},
+            {"bloom", p.bloom},
         };
     }
 
@@ -100,6 +129,7 @@ namespace Atlas::PostProcessing {
         j.at("chromaticAberration").get_to(p.chromaticAberration);
         j.at("filmGrain").get_to(p.filmGrain);
         j.at("sharpen").get_to(p.sharpen);
+        try_get_json(j, "bloom", p.bloom);
     }
 
 }

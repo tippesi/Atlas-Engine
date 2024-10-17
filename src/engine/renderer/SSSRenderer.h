@@ -20,6 +20,7 @@ namespace Atlas {
                 vec4 lightDirection;
                 int sampleCount;
                 float maxLength;
+                float minLengthWorldSpace;
                 float thickness;
             };
 

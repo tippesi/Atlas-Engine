@@ -81,6 +81,18 @@ namespace Atlas {
 
             }
 
+            inline uint64_t GetID() const {
+
+                return uint64_t(entity);
+
+            }
+
+            inline uint32_t GetVersion() const {
+
+                return entityManager->Version(entity);
+
+            }
+
             inline Scene* GetScene() const {
 
                 return static_cast<Scene*>(entityManager->userData);

@@ -8,7 +8,7 @@
 #include <../common/normalreconstruction.hsh>
 #include <../clouds/shadow.hsh>
 #include <../volumetric/volumetric.hsh>
-#include <../structures>
+#include <../structures.hsh>
 
 #include <shoreInteraction.hsh>
 

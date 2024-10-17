@@ -1,4 +1,4 @@
-#include <../structures>
+#include <../structures.hsh>
 #include <../globals.hsh>
 #include <../common/convert.hsh>
 

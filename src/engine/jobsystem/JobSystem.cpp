@@ -28,7 +28,7 @@ namespace Atlas {
         // Need to set our own main thread priority, otherwise we will loose when in contention with other threads
 #ifdef AE_OS_WINDOWS
         auto threadHandle = GetCurrentThread();
-        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_HIGHEST) > 0;
+        success = SetThreadPriority(threadHandle, THREAD_PRIORITY_TIME_CRITICAL) > 0;
 #endif
 #if defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
         auto maxPriority = sched_get_priority_max(SCHED_RR);
@@ -59,13 +59,13 @@ namespace Atlas {
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = func,
+            .function = std::move(func),
             .userData = userData
         };
 
         auto& worker = priorityPool.GetNextWorker();
         worker.queue.Push(job);
-        worker.semaphore.release();
+        worker.signal.Notify();
 
     }
 
@@ -87,7 +87,7 @@ namespace Atlas {
 
                 job.idx = i;
                 worker.queue.Push(job);
-                worker.semaphore.release();
+                worker.signal.Notify();
             }
             return;
         }
@@ -110,10 +110,21 @@ namespace Atlas {
 
             auto& worker = priorityPool.GetNextWorker();
             worker.queue.PushMultiple(jobs);
-            worker.semaphore.release();
+            worker.signal.Notify();
             jobs.clear();
 
             remainingJobs -= jobsToPush;
+        }
+
+    }
+
+    void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
+
+        auto& priorityPool = priorityPools[static_cast<int>(priority)];        
+
+        while (!signal.TryAquire()) {
+            auto& worker = priorityPool.GetNextWorker();
+            priorityPool.Work(worker.workerId);
         }
 
     }
@@ -153,6 +164,13 @@ namespace Atlas {
     void JobSystem::WaitAll() {
 
 
+
+    }
+
+    int32_t JobSystem::GetWorkerCount(const JobPriority priority) {
+
+        const auto& priorityPool = priorityPools[static_cast<int>(priority)];
+        return priorityPool.workerCount;
 
     }
 

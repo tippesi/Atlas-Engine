@@ -14,6 +14,7 @@ namespace Atlas::Mesh {
             {"mobility", mobility},
             {"usage", usage},
             {"cullBackFaces", p.cullBackFaces},
+            {"rayTrace", p.rayTrace},
             {"castShadow", p.castShadow},
             {"vegetation", p.vegetation},
             {"windNoiseTextureLod", p.windNoiseTextureLod},
@@ -22,6 +23,7 @@ namespace Atlas::Mesh {
             {"allowedShadowCascades", p.allowedShadowCascades},
             {"distanceCulling", p.distanceCulling},
             {"shadowDistanceCulling", p.shadowDistanceCulling},
+            {"rayTraceDistanceCulling", p.rayTraceDistanceCulling},
             {"impostorDistance", p.impostorDistance},
             {"impostorShadowDistance", p.impostorShadowDistance},
             {"invertUVs", p.invertUVs},
@@ -50,6 +52,9 @@ namespace Atlas::Mesh {
         j.at("impostorShadowDistance").get_to(p.impostorShadowDistance);
         j.at("invertUVs").get_to(p.invertUVs);
         j.at("data").get_to(p.data);
+
+        try_get_json(j, "rayTrace", p.rayTrace);
+        try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
 
         p.mobility = static_cast<MeshMobility>(mobility);
         p.usage = static_cast<MeshUsage>(usage);
@@ -190,6 +195,7 @@ namespace Atlas {
             {"twoSided", p.twoSided},
             {"vertexColors", p.vertexColors},
             {"uvChannel", p.uvChannel},
+            {"uvAnimation", p.uvAnimation},
         };
 
         if (p.baseColorMap.IsValid())
@@ -206,6 +212,8 @@ namespace Atlas {
             j["aoMapPath"] = p.aoMap.GetResource()->path;
         if (p.displacementMap.IsValid())
             j["displacementMapPath"] = p.displacementMap.GetResource()->path;
+        if (p.emissiveMap.IsValid())
+            j["emissiveMapPath"] = p.emissiveMap.GetResource()->path;
 
     }
 
@@ -224,19 +232,22 @@ namespace Atlas {
         j.at("normalScale").get_to(p.normalScale);
         j.at("displacementScale").get_to(p.displacementScale);
         j.at("tiling").get_to(p.tiling);
+        j.at("tiling").get_to(p.tiling);
         j.at("twoSided").get_to(p.twoSided);
         j.at("vertexColors").get_to(p.vertexColors);
         j.at("uvChannel").get_to(p.uvChannel);
 
-        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion) -> auto {
+        try_get_json(j, "uvAnimation", p.uvAnimation);
+
+        auto getTextureHandle = [](const std::string& path, bool colorSpaceConversion, bool priority = false) -> auto {
             return ResourceManager<Texture::Texture2D>::GetOrLoadResource(path, colorSpaceConversion,
-                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0);
+                Texture::Wrapping::Repeat, Texture::Filtering::Anisotropic, 0, false, priority);
             };
 
         if (j.contains("baseColorMapPath"))
             p.baseColorMap = getTextureHandle(j["baseColorMapPath"], false);
         if (j.contains("opacityMapPath"))
-            p.opacityMap = getTextureHandle(j["opacityMapPath"], false);
+            p.opacityMap = getTextureHandle(j["opacityMapPath"], false, true);
         if (j.contains("normalMapPath"))
             p.normalMap = getTextureHandle(j["normalMapPath"], false);
         if (j.contains("roughnessMapPath"))
@@ -247,6 +258,8 @@ namespace Atlas {
             p.aoMap = getTextureHandle(j["aoMapPath"], false);
         if (j.contains("displacementMapPath"))
             p.displacementMap = getTextureHandle(j["displacementMapPath"], false);
+        if (j.contains("emissiveMapPath"))
+            p.emissiveMap = getTextureHandle(j["emissiveMapPath"], false);
 
     }
 

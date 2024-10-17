@@ -54,11 +54,10 @@ namespace Atlas {
             Scene::Entity lightEntity;
             uint32_t layer;
 
-            Ref<Scene::Scene> scene = nullptr;
+            Scene::Scene* scene = nullptr;
 
             std::unordered_map<size_t, EntityBatch> meshToEntityMap;
             std::unordered_map<size_t, MeshInstances> meshToInstancesMap;
-            std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
             bool wasUsed = false;
 
@@ -70,11 +69,12 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
-            void NewFrame(const Ref<Scene::Scene>& scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes);
+            void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
+                const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
 
             void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
 
-            void Update(vec3 cameraLocation);
+            void Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
 
             void FillBuffers();
 
@@ -85,7 +85,7 @@ namespace Atlas {
 
         ~RenderList();
 
-        void NewFrame(const Ref<Scene::Scene>& scene);
+        void NewFrame(Scene::Scene* scene);
 
         // Note: The expected behaviour is to first create and process all shadow passes and then finally do the main pass last
         Ref<Pass> NewMainPass();
@@ -102,13 +102,16 @@ namespace Atlas {
 
         void Clear();
 
-        Ref<Scene::Scene> scene = nullptr;
+        Scene::Scene* scene = nullptr;
 
         std::vector<Ref<Pass>> passes;
         std::deque<Ref<Pass>> processedPasses;
 
         std::mutex mutex;
         std::atomic_bool doneProcessingShadows;
+        std::atomic_bool wasCleared = false;
+
+        std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
         JobGroup clearJob { JobPriority::High };
     };

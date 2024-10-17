@@ -13,6 +13,8 @@ namespace Atlas::Input {
 
         static void Shutdown();
 
+        static void Update();
+
         static uint8_t GetKeyState(Keycode keyCode);
 
         static bool IsKeyPressed(Keycode keyCode, bool repeat = true);

@@ -8,6 +8,10 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_macos.h>
 
+#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+#include <stacktrace>
+#endif
+
 namespace Atlas {
 
     namespace Graphics {
@@ -92,8 +96,9 @@ namespace Atlas {
 
 #ifdef AE_BUILDTYPE_DEBUG                
                 validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-                validationFeatures.enabledValidationFeatureCount = std::size(enables);
-                validationFeatures.pEnabledValidationFeatures = enables;
+                // This doesn't seem to work anymore with newer VulkanSDKs on Nvidia hardware
+                //validationFeatures.enabledValidationFeatureCount = std::size(enables);
+                //validationFeatures.pEnabledValidationFeatures = enables;
 
                 structureChainBuilder.Append(validationFeatures);                
 #endif
@@ -259,6 +264,7 @@ namespace Atlas {
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));
             return createInfo;
@@ -314,6 +320,10 @@ namespace Atlas {
                 case Log::Type::TYPE_WARNING: Log::Warning(pCallbackData->pMessage, logSeverity); break;
                 case Log::Type::TYPE_ERROR: Log::Error(pCallbackData->pMessage, logSeverity); break;
             }
+
+#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+            output.append("\nStack trace:\n" + std::to_string(std::stacktrace::current()));
+#endif
 
 #ifndef AE_BUILDTYPE_RELEASE
             if (logSeverity == Log::Severity::SEVERITY_HIGH)

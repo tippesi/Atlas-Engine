@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "Singletons.h"
+#include "Notifications.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
 
@@ -31,11 +32,21 @@ namespace Atlas::Editor::UI {
 
             resourceChanged = false;
             auto buttonName = resourceHandle.IsValid() ? resourceHandle.GetResource()->GetFileName() :
-                "Drop resource here";
+                "Drop resource here##" + std::to_string(counter++);
 
-            popup.SetID(resourceHandle.GetID());
+            ImGui::PushID(resourceHandle.IsValid() ? int32_t(resourceHandle.GetID()) : counter);
+
+            popup.SetID(resourceHandle.IsValid() ? resourceHandle.GetID() : counter);
             if (ImGui::Button(buttonName.c_str(), { resourceButtonSize, 0 }))
                 popup.Open();
+
+            if (resourceHandle.IsValid() && ImGui::BeginPopupContextItem()) {
+                if (ImGui::MenuItem("Copy name")) {
+                    ImGui::SetClipboardText(buttonName.c_str());
+                    Notifications::Push({ .message = "Copied file name to clipboard.", .displayTime = 3.0f });
+                }
+                ImGui::EndPopup();
+            }
 
             // Such that drag and drop will work from the content browser
             if (ImGui::IsDragDropActive() && ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly)) {
@@ -67,6 +78,8 @@ namespace Atlas::Editor::UI {
             auto resources = ResourceManager<T>::GetResources();
             handle = popup.Render(resources);
 
+            ImGui::PopID();
+
             if (handle.IsValid()) {
                 resourceHandle = handle;
                 resourceChanged = true;
@@ -76,8 +89,16 @@ namespace Atlas::Editor::UI {
 
 		}
 
+        void Reset() {
+
+            counter = 0;
+
+        }
+
 	private:
 		ResourceSelectionPopup popup;
+
+        int32_t counter = 0;
 
 	};
 

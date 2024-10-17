@@ -28,6 +28,7 @@ namespace Atlas::Editor {
                 }                
 
                 if (compatible && ImGui::AcceptDragDropPayload("ContentBrowserResource")) {
+                    Log::Warning("Valid file");
                     handle = FileImporter::ImportFile<T>(resourcePath);
                 }
 

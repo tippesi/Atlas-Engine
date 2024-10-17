@@ -2,7 +2,6 @@
 
 #include "../System.h"
 #include "target/RenderTarget.h"
-#include "target/PathTraceRenderTarget.h"
 #include "../scene/Scene.h"
 #include "../Viewport.h"
 #include "../pipeline/PipelineManager.h"

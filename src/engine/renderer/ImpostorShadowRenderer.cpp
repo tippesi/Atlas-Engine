@@ -15,7 +15,7 @@ namespace Atlas {
         }
 
         void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer,
-            Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+            Graphics::CommandList* commandList, RenderList* renderList, RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
             struct alignas(16) PushConstants {
@@ -34,7 +34,7 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = renderPass->meshIdToMeshMap[meshId];
+                auto mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)

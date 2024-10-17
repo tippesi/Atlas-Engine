@@ -9,7 +9,7 @@ namespace Atlas::Editor::UI {
     bool LightComponentPanel::Render(Ref<Scene::Scene>& scene,
         Scene::Entity entity, LightComponent &lightComponent) {
 
-        const char* typeItems[] = { "Directional" };
+        const char* typeItems[] = { "Directional", "Point", "Spot"};
         int typeItem = static_cast<int>(lightComponent.type);
         ImGui::Combo("Light type", &typeItem, typeItems, IM_ARRAYSIZE(typeItems));
         lightComponent.type = static_cast<LightType>(typeItem);
@@ -25,10 +25,20 @@ namespace Atlas::Editor::UI {
         if (lightComponent.type == LightType::DirectionalLight) {
             ImGui::Checkbox("Main", &lightComponent.isMain);
             auto& directional = lightComponent.properties.directional;
-            ImGui::DragFloat3("Direction", &directional.direction[0], 0.005f, -1.0f, 1.0f);
+            ImGui::DragFloat3("Direction", glm::value_ptr(directional.direction), 0.005f, -1.0f, 1.0f);
         }
         else if (lightComponent.type == LightType::PointLight) {
-
+            auto& point = lightComponent.properties.point;
+            ImGui::DragFloat3("Position", glm::value_ptr(point.position), 0.1f, -10000.0f, 10000.0f);
+            ImGui::DragFloat("Radius", &point.radius, 0.01f, 0.01f, 10000.0f);
+        }
+        else if (lightComponent.type == LightType::SpotLight) {
+            auto& spot = lightComponent.properties.spot;
+            ImGui::DragFloat3("Position", glm::value_ptr(spot.position), 0.1f, -10000.0f, 10000.0f);
+            ImGui::DragFloat3("Direction", glm::value_ptr(spot.direction), 0.01f, -1.0f, 1.0f);
+            ImGui::DragFloat("Radius", &spot.radius, 0.01f, 0.01f, 10000.0f);
+            ImGui::DragFloat("Inner cone angle", &spot.innerConeAngle, 0.01f, 0.01f, 2.0f);
+            ImGui::DragFloat("Outer cone angle", &spot.outerConeAngle, 0.01f, 0.01f, 2.0f);
         }
 
         ImGui::Separator();
@@ -39,10 +49,17 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Shadow", &castShadow);
         ImGui::ColorEdit3("Color", &lightComponent.color[0]);
         ImGui::DragFloat("Intensity", &lightComponent.intensity, 0.1f, 0.0f, 1000.0f);
+        ImGui::DragFloat("Volumetric intensity", &lightComponent.volumetricIntensity, 0.1f, 0.0f, 10.0f);
 
         if (!lightComponent.shadow && castShadow) {
             if (lightComponent.type == LightType::DirectionalLight) {
                 lightComponent.AddDirectionalShadow(300.0f, 3.0f, 1024, 0.05f, 3, 0.95f, true, 2048.0f);
+            }
+            if (lightComponent.type == LightType::PointLight) {
+                lightComponent.AddPointShadow(0.25f, 1024);
+            }
+            if (lightComponent.type == LightType::SpotLight) {
+                lightComponent.AddSpotShadow(2.0f, 1024);
             }
         }
         else if (lightComponent.shadow && !castShadow) {

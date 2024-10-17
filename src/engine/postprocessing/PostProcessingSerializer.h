@@ -26,6 +26,10 @@ namespace Atlas::PostProcessing {
 
     void from_json(const json& j, Vignette& p);
 
+    void to_json(json& j, const Bloom& p);
+
+    void from_json(const json& j, Bloom& p);
+
     void to_json(json& j, const PostProcessing& p);
 
     void from_json(const json& j, PostProcessing& p);

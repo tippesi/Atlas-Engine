@@ -24,7 +24,8 @@ namespace Atlas {
               * @param filtering The filtering of the texture.
               */
             Texture3D(int32_t width, int32_t height, int32_t depth, VkFormat format,
-                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest,
+                bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
              * Resizes the texture

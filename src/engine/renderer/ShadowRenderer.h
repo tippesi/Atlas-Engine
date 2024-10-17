@@ -23,7 +23,8 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, RenderList* renderList);
 
         private:
-            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, Ref<RenderList::Pass> shadowPass);
+            void ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+                RenderList* renderList, Ref<RenderList::Pass> shadowPass);
 
             Ref<Graphics::FrameBuffer> GetOrCreateFrameBuffer(Scene::Entity entity);
 
@@ -42,11 +43,13 @@ namespace Atlas {
                 uint32_t textureID;
             };
 
+            LightMap prevLightMap;
             LightMap lightMap;
 
             ImpostorShadowRenderer impostorRenderer;
 
             std::vector<std::tuple<Mesh::MeshSubData*, Hash, Mesh::Mesh*>> subDatas;
+
 
         };
 

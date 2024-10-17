@@ -1,7 +1,11 @@
 #ifdef AE_BINDLESS
 #define TEXTURE_COUNT 16384
+#define CUBEMAP_COUNT 1024
+#define TEXTURE_ARRAY_COUNT 128
 #else
 #define TEXTURE_COUNT 1
+#define CUBEMAP_COUNT 1
+#define TEXTURE_ARRAY_COUNT 1
 #endif
 
 layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
@@ -14,6 +18,7 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     mat4 pvMatrixCurrent;
     mat4 ipvMatrixLast;
     mat4 ipvMatrixCurrent;
+    mat4 vMatrixLast;
     vec2 jitterLast;
     vec2 jitterCurrent;
     vec4 cameraLocation;
@@ -28,11 +33,15 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     float deltaTime;
     uint frameCount;
     float mipLodBias;
+    float cameraNearPlane;
+    float cameraFarPlane;
 } globalData;
 
 layout(set = 0, binding = 3) uniform texture2D bindlessTextures[TEXTURE_COUNT];
+layout(set = 0, binding = 4) uniform textureCube bindlessCubemaps[CUBEMAP_COUNT];
+layout(set = 0, binding = 5) uniform texture2DArray bindlessTextureArrays[TEXTURE_ARRAY_COUNT];
 
-layout(set = 1, binding = 12) uniform sampler2D dfgTexture;
+layout(set = 1, binding = 13) uniform sampler2D dfgTexture;
 
-layout(set = 1, binding = 13) uniform sampler bindlessSampler;
-layout(set = 1, binding = 15) uniform sampler bindlessNearestSampler;
+layout(set = 1, binding = 14) uniform sampler bindlessSampler;
+layout(set = 1, binding = 16) uniform sampler bindlessNearestSampler;

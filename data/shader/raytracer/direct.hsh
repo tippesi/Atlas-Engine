@@ -24,7 +24,7 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
             float sqrDistance = dot(pointToLight, pointToLight);
             float lightDistance = sqrt(sqrDistance);
 
-            vec3 L = normalize(pointToLight);
+            vec3 L = pointToLight / lightDistance;
             float NdotL = max(dot(light.N, -L), 0.0);
 
             weight = light.brightness * light.area * NdotL / sqrDistance;
@@ -32,7 +32,25 @@ Light GetLight(Surface surface, float seed0, float seed1, out float lightPdf) {
         else if (light.type == uint(DIRECTIONAL_LIGHT)) {
             weight = light.brightness;
         }
-        weight = clamp(weight, 0.0000001, 1.0);
+        else if (light.type == uint(POINT_LIGHT)) {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            float lightDistance = sqrt(sqrDistance);
+
+            weight = light.brightness * light.radius / sqrDistance;
+        }
+        else if (light.type == uint(SPOT_LIGHT)) {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            float lightDistance = sqrt(sqrDistance);
+
+            vec3 L = pointToLight / lightDistance;
+            float NdotL = max(dot(light.N, -L), 0.0);
+
+            weight = light.brightness * NdotL / sqrDistance;
+        }
+
+        weight = clamp(weight, 0.0000001, 1000000000000.0);
         totalWeight += weight;
 
         float rnd = random(seed0, seed1);
@@ -78,9 +96,33 @@ void SampleLight(Light light, inout Surface surface, float seed0, float seed1,
     else  { // Punctual lights
         solidAngle = 1.0;
         if (light.type == uint(DIRECTIONAL_LIGHT)) {
-            surface.L = normalize(-light.N);
+            surface.L = -light.N;
             UpdateSurface(surface);
+            solidAngle = 1.0;
             dist = INF;
+        }
+        else if (light.type == uint(POINT_LIGHT)) {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            dist = sqrt(sqrDistance);
+
+            float attenuation = saturate(1.0 - pow(dist / light.radius, 4.0));
+            solidAngle = attenuation / sqrDistance;
+
+            surface.L = pointToLight / dist;
+            UpdateSurface(surface);
+        }
+        else if (light.type == uint(SPOT_LIGHT)) {
+            vec3 pointToLight = light.P - surface.P;
+            float sqrDistance = dot(pointToLight, pointToLight);
+            dist = sqrt(sqrDistance);
+            surface.L = pointToLight / dist;
+
+            float strength = dot(surface.L, -light.N);
+            float attenuation = saturate(strength * light.angleScale + light.angleOffset);
+            solidAngle = sqr(attenuation) / sqrDistance;
+            
+            UpdateSurface(surface);
         }
     }
 }

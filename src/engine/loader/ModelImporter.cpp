@@ -104,6 +104,7 @@ namespace Atlas {
 
             }
 
+            auto radius = 0.0f;
             auto min = vec3(std::numeric_limits<float>::max());
             auto max = vec3(-std::numeric_limits<float>::max());
 
@@ -159,6 +160,7 @@ namespace Atlas {
 
                         max = glm::max(vertex, max);
                         min = glm::min(vertex, min);
+                        radius = glm::dot(vertex, vertex);
 
                         vec3 normal = vec3(matrix * vec4(mesh->mNormals[j].x, mesh->mNormals[j].y,
                             mesh->mNormals[j].z, 0.0f));
@@ -218,7 +220,8 @@ namespace Atlas {
             state.importer.FreeScene();
 
             meshData.aabb = Volume::AABB(min, max);
-            meshData.radius = glm::length(max - min) * 0.5;
+            meshData.radius = glm::sqrt(radius);
+            
 
             meshData.name = Common::Path::GetFileNameWithoutExtension(filename);
 
@@ -251,6 +254,8 @@ namespace Atlas {
 
             std::vector<MeshInfo> meshes;
             meshes.resize(state.scene->mNumMeshes);
+            
+            std::mutex vertexColorMutex;
 
             JobGroup group;
             JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
@@ -303,9 +308,13 @@ namespace Atlas {
                 tangents.SetElementCount(hasTangents ? vertexCount : 0);
                 colors.SetElementCount(hasVertexColors ? vertexCount : 0);
 
-                material->vertexColors &= hasVertexColors;
+                {
+                    std::scoped_lock lock(vertexColorMutex);
+                    material->vertexColors &= hasVertexColors;
+                }
                 meshData.materials.push_back(material);
 
+                auto radius = 0.0f;
                 auto min = vec3(std::numeric_limits<float>::max());
                 auto max = vec3(-std::numeric_limits<float>::max());
 
@@ -319,6 +328,7 @@ namespace Atlas {
 
                     max = glm::max(vertex, max);
                     min = glm::min(vertex, min);
+                    radius = glm::dot(vertex, vertex);
 
                     vec3 normal = vec3(assimpMesh->mNormals[j].x,
                         assimpMesh->mNormals[j].y, assimpMesh->mNormals[j].z);
@@ -369,7 +379,7 @@ namespace Atlas {
                 }
 
                 meshData.aabb = Volume::AABB(min, max);
-                meshData.radius = glm::length(max - min) * 0.5;
+                meshData.radius = glm::sqrt(radius);
 
                 meshData.subData.push_back({
                     .indicesOffset = 0,
@@ -399,6 +409,18 @@ namespace Atlas {
 
             auto scene = CreateRef<Scene::Scene>(filename, min, max, depth);
 
+            std::map<std::string, aiLight*> lightMap;
+            for (uint32_t i = 0; i < state.scene->mNumLights; i++) {
+                auto light = state.scene->mLights[i];
+                lightMap[light->mName.C_Str()] = light;
+            }
+
+            std::map<std::string, aiCamera*> cameraMap;
+            for (uint32_t i = 0; i < state.scene->mNumCameras; i++) {
+                auto camera = state.scene->mCameras[i];
+                cameraMap[camera->mName.C_Str()] = camera;
+            }
+
             auto rootEntity = scene->CreateEntity();
             rootEntity.AddComponent<NameComponent>("Root");
             auto& rootHierarchy = rootEntity.AddComponent<HierarchyComponent>();
@@ -407,6 +429,8 @@ namespace Atlas {
             std::function<void(aiNode*, Scene::Entity)> traverseNodeTree;
             traverseNodeTree = [&](aiNode* node, Scene::Entity parentEntity) {
                 auto nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+
+                auto& parentNameComp = parentEntity.GetComponent<NameComponent>();
 
                 for (uint32_t i = 0; i < node->mNumMeshes; i++) {
                     auto meshId = node->mMeshes[i];
@@ -421,6 +445,49 @@ namespace Atlas {
                     entity.AddComponent<NameComponent>(name);
                     
                     parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
+                }
+
+                if (lightMap.contains(node->mName.C_Str()) && node->mNumChildren == 0) {
+                    auto light = lightMap[node->mName.C_Str()];
+
+                    auto lightType = LightType::DirectionalLight;
+                    switch (light->mType) {
+                    case aiLightSource_POINT: lightType = LightType::PointLight; break;
+                    case aiLightSource_SPOT: lightType = LightType::SpotLight; break;
+                    default: lightType = LightType::PointLight; break;
+                    }
+
+                    auto& lightComp = parentEntity.AddComponent<LightComponent>(lightType, LightMobility::StationaryLight);
+                    lightComp.color = vec3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
+                    lightComp.intensity = std::max(lightComp.color.r, std::max(lightComp.color.g, lightComp.color.b));
+                    lightComp.color /= std::max(lightComp.intensity, 1e-9f);
+                    lightComp.color = Common::ColorConverter::ConvertLinearToSRGB(lightComp.color);
+
+                    float intensityRadius = glm::sqrt(lightComp.intensity / 0.15f);
+
+                    if (lightType == LightType::PointLight) {                       
+                        lightComp.properties.point.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
+                        lightComp.AddPointShadow(3.0f, 1024);
+                    }
+                    if (lightType == LightType::SpotLight) {
+                        lightComp.properties.spot.position = vec3(light->mPosition.x, light->mPosition.y, light->mPosition.z);
+                        lightComp.properties.spot.direction = vec3(light->mDirection.x, light->mDirection.y, light->mDirection.z);
+                        lightComp.properties.spot.innerConeAngle = light->mAngleInnerCone;
+                        lightComp.properties.spot.outerConeAngle = light->mAngleOuterCone;
+                        lightComp.properties.point.radius = std::max(glm::sqrt(100.0f * light->mAttenuationQuadratic), intensityRadius);
+                        lightComp.AddSpotShadow(3.0f, 1024);
+                    }
+                }
+
+                if (cameraMap.contains(node->mName.C_Str())) {
+                    auto camera = cameraMap[node->mName.C_Str()];
+
+                    float verticalFOV = glm::degrees(camera->mHorizontalFOV) / camera->mAspect;
+                    vec3 position = vec3(camera->mPosition.x, camera->mPosition.y, camera->mPosition.z);
+                    vec2 rotation = vec2(0.0f);
+                    parentEntity.AddComponent<CameraComponent>(verticalFOV, camera->mAspect, camera->mClipPlaneNear,
+                        camera->mClipPlaneFar, position, rotation);
                 }
 
                 for (uint32_t i = 0; i < node->mNumChildren; i++) {
@@ -486,10 +553,12 @@ namespace Atlas {
 
             auto imagesToSave = ImagesToTextures(state);
 
-            JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
-                ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
-                });
-            JobSystem::Wait(group);
+            if (saveToDisk) {
+                JobSystem::ExecuteMultiple(group, int32_t(imagesToSave.size()), [&](const JobData& data) {
+                    ImageLoader::SaveImage(imagesToSave[data.idx], imagesToSave[data.idx]->fileName);
+                    });
+                JobSystem::Wait(group);
+            }
 
             std::vector<ResourceHandle<Material>> materials;
             for (uint32_t i = 0; i < state.scene->mNumMaterials; i++) {
@@ -647,8 +716,15 @@ namespace Atlas {
             }
             if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
                 assimpMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
-                // We don't support this right now
-                material.emissiveIntensity = 0.0f;
+                aiString aiPath;
+                if (assimpMaterial->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0)
+                    assimpMaterial->GetTexture(aiTextureType_EMISSION_COLOR, 0, &aiPath);
+                else
+                    assimpMaterial->GetTexture(aiTextureType_EMISSIVE, 0, &aiPath);
+                auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+                if (images.emissiveTextures.contains(path)) {
+                    material.emissiveMap = images.emissiveTextures[path];
+                }
             }
             
             // Probably foliage
@@ -699,8 +775,10 @@ namespace Atlas {
                     image->ExpandToChannelCount(4, 255);
 
                     images.Add(MaterialImageType::BaseColor, path, image);
-                    if (!images.Contains(MaterialImageType::Opacity, path) && opacityImage != nullptr)
-                        images.Add(MaterialImageType::Opacity, path, opacityImage);
+                    if (!images.Contains(MaterialImageType::Opacity, path) && opacityImage != nullptr) {
+                        if (IsImageValid(opacityImage))
+                            images.Add(MaterialImageType::Opacity, path, opacityImage);
+                    }
                 }
             }
             if (material->GetTextureCount(aiTextureType_OPACITY) > 0) {
@@ -709,7 +787,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Opacity, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Opacity, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Opacity, path, image);
                 }
             }
             if ((material->GetTextureCount(aiTextureType_NORMALS) > 0 ||
@@ -734,7 +813,8 @@ namespace Atlas {
                     }
                     image->ExpandToChannelCount(4, 255);
 
-                    images.Add(MaterialImageType::Normal, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Normal, path, image);
                     if (!images.Contains(MaterialImageType::Displacement, path) && displacementImage != nullptr)
                         images.Add(MaterialImageType::Displacement, path, displacementImage);
                 }
@@ -754,9 +834,11 @@ namespace Atlas {
                         image = image->GetChannelImage(1, 1);
                     }
 
-                    images.Add(MaterialImageType::Roughness, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Roughness, path, image);
                     if (!images.Contains(MaterialImageType::Metallic, path) && metallicImage != nullptr)
-                        images.Add(MaterialImageType::Metallic, path, metallicImage);
+                        if (IsImageValid(metallicImage))
+                            images.Add(MaterialImageType::Metallic, path, metallicImage);
                 }
             }
             if (material->GetTextureCount(aiTextureType_METALNESS) > 0) {
@@ -765,7 +847,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Metallic, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Metallic, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Metallic, path, image);
                 }
             }
             if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
@@ -774,7 +857,8 @@ namespace Atlas {
                 auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
                 if (!images.Contains(MaterialImageType::Metallic, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
-                    images.Add(MaterialImageType::Metallic, path, image);
+                    if (IsImageValid(image))
+                        images.Add(MaterialImageType::Metallic, path, image);
                 }
             }
             if (material->GetTextureCount(aiTextureType_HEIGHT) > 0 && !state.isObj && hasTangents) {
@@ -784,6 +868,19 @@ namespace Atlas {
                 if (!images.Contains(MaterialImageType::Displacement, path)) {
                     auto image = ImageLoader::LoadImage<uint8_t>(path, false, 1, maxTextureResolution);
                     images.Add(MaterialImageType::Displacement, path, image);
+                }
+            }
+            if (material->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0 ||
+                material->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+                aiString aiPath;
+                if (material->GetTextureCount(aiTextureType_EMISSION_COLOR) > 0)
+                    material->GetTexture(aiTextureType_EMISSION_COLOR, 0, &aiPath);
+                else
+                    material->GetTexture(aiTextureType_EMISSIVE, 0, &aiPath);
+                auto path = Common::Path::Normalize(directory + std::string(aiPath.C_Str()));
+                if (!images.Contains(MaterialImageType::Emissive, path)) {
+                    auto image = ImageLoader::LoadImage<uint8_t>(path, false, 0, maxTextureResolution);
+                    images.Add(MaterialImageType::Emissive, path, image);
                 }
             }
         }
@@ -829,6 +926,12 @@ namespace Atlas {
                 images.displacementTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
                 imagesToSave.push_back(image);
             }
+            for (const auto& [path, image] : images.emissiveImages) {
+                auto texture = std::make_shared<Texture::Texture2D>(image);
+                image->fileName = GetMaterialImageImportPath(state, MaterialImageType::Emissive, path);
+                images.emissiveTextures[path] = ResourceManager<Texture::Texture2D>::AddResource(image->fileName, texture);
+                imagesToSave.push_back(image);
+            }
 
             return imagesToSave;
 
@@ -867,6 +970,8 @@ namespace Atlas {
                 typeName = "Normal"; break;
             case MaterialImageType::Displacement:
                 typeName = "Displacement"; break;
+            case MaterialImageType::Emissive:
+                typeName = "Emissive"; break;
             default:
                 typeName = "Invalid"; break;
             }
@@ -876,6 +981,22 @@ namespace Atlas {
 
             return state.paths.texturePath + fileNameWithoutExtension + "_" + typeName + "." + extension;
 
+        }
+
+        bool ModelImporter::IsImageValid(Ref<Common::Image<uint8_t>>& image) {
+
+            auto& data = image->GetData();
+
+            if (data.empty())
+                return false;
+
+            bool invalidImage = true;
+            for (int32_t i = image->channels; i < data.size(); i += image->channels) {
+                for (int32_t j = 0; j < image->channels; j++)
+                    invalidImage &= data[(i - image->channels) + j] == data[i + j];
+            }
+
+            return !invalidImage;
         }
 
     }

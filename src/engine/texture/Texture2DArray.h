@@ -25,7 +25,8 @@ namespace Atlas {
               * @param filtering The filtering of the texture.
               */
             Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
-                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest,
+                bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             /**
              * Sets the data of the texture object.

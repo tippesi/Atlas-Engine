@@ -29,6 +29,8 @@ namespace Atlas {
             BufferHostAccess hostAccess = BufferHostAccess::Sequential;
 
             void* data = nullptr;
+            size_t dataSize = 0;
+
             size_t size;
             size_t alignment = 0;
 

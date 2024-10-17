@@ -9,3 +9,12 @@ float GetInterleavedGradientNoise(vec2 screenPos) {
     vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
     return fract(magic.z * fract(dot(vec2(x, y), magic.xy)));
 }
+
+float GetInterleavedGradientNoise(vec2 screenPos, uint frameCount) {
+    uint frame = globalData.frameCount % frameCount;
+    float x = float(screenPos.x) + 5.588238 * float(frame);
+    float y = float(screenPos.y) + 5.588238 * float(frame);
+
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(vec2(x, y), magic.xy)));
+}
