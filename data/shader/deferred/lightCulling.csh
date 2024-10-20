@@ -103,11 +103,6 @@ void main() {
         else if (lightType == SPOT_LIGHT) {
             sphere = CalculateSphereFromSpotLight(light.location, light.direction, radius);
 
-            vec3 lightToPoint = viewPos - light.location.xyz;
-            bool inFront = dot(lightToPoint, light.direction.xyz) > 0.0;
-
-            visible = inFront;
-
             startBin = clamp(int((light.location.z + radius - depthMin) * invBinSize), 0, 31);
             endBin = clamp(int((light.location.z - radius - depthMin) * invBinSize), 0, 31);
         }

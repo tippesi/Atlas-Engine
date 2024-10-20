@@ -14,6 +14,7 @@ namespace Atlas::PostProcessing {
 
         bool enable = true;
         float strength = 0.01f;
+        float dirtStrength = 2.0f;
         float threshold = 1.0f;
 
         float filterSize = 0.02f;

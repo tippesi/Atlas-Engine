@@ -151,12 +151,15 @@ namespace Atlas {
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
                     pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
                     pipelineConfig.ManageMacro("BLOOM", postProcessing.bloom.enable);
+                    pipelineConfig.ManageMacro("BLOOM_DIRT", postProcessing.bloom.enable && postProcessing.bloom.dirtMap.IsLoaded());
 
                     auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                     commandList->BindPipeline(pipeline);
 
                     if (bloom.enable) {
                         target->bloomTexture.Bind(commandList, 3, 1);
+                        if (bloom.dirtMap.IsLoaded())
+                            bloom.dirtMap->Bind(commandList, 3, 2);
                     }
 
                     SetUniforms(camera, scene);
@@ -360,6 +363,7 @@ namespace Atlas {
 
             if (bloom.enable) {
                 uniforms.bloomStrength = bloom.strength;
+                uniforms.bloomDirtStrength = bloom.dirtStrength;
             }
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));

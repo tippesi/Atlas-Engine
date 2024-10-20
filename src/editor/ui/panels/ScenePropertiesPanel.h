@@ -75,12 +75,18 @@ namespace Atlas::Editor::UI {
             }
             else if constexpr (std::is_same_v<T, PostProcessing::PostProcessing>) {
                 RenderHeading("Post processing");
-                postProcessingPanel.Render(t);
+                postProcessingPanel.Render(t, 
+                    [&](ResourceHandle<Texture::Texture2D> handle) {
+                        return textureSelectionPanel.Render(handle);
+                    });
             }
             else if constexpr (std::is_same_v<T, Ref<Scene::Scene>>) {
                 RenderHeading("Scene statistics");
                 sceneStatisticsPanel.Render(t);
             }
+
+            cubemapSelectionPanel.Reset();
+            textureSelectionPanel.Reset();
 
             ImGui::End();
 
@@ -103,6 +109,7 @@ namespace Atlas::Editor::UI {
         SceneStatisticsPanel sceneStatisticsPanel;
 
         ResourceSelectionPanel<Texture::Cubemap> cubemapSelectionPanel;
+        ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
 
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;

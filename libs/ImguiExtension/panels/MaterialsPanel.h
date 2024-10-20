@@ -11,7 +11,7 @@ namespace Atlas::ImguiExtension {
 
     class MaterialsPanel : public Panel {
 
-         using MaterialSelector = std::optional<std::function<ResourceHandle<Material>(ResourceHandle<Material>)>>;
+        using MaterialSelector = std::optional<std::function<ResourceHandle<Material>(ResourceHandle<Material>)>>;
 
     public:
         MaterialsPanel() : Panel("Materials properties") {}

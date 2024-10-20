@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Panel.h"
-
-#include "lighting/IrradianceVolume.h"
+#include "PerformanceGraphPanel.h"
 
 #include <deque>
 
@@ -17,19 +16,9 @@ namespace Atlas::ImguiExtension {
 
         void RenderTable();
 
-        void RenderGraph();
-
-        void UpdateGraphData();
-
         bool showGraph = false;
 
-        int32_t timeWindowSize = 1024;
-
-        float maxFrameTime = 0.0f;
-        float maxGpuTime = 0.0f;
-
-        std::deque<float> frameTimes;
-        std::deque<float> gpuTimes;
+        PerformanceGraphPanel perfGraphPanel;
 
     };
 

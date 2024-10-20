@@ -9,6 +9,10 @@ layout (location = 0) in vec2 positionVS;
 layout(set = 3, binding = 0) uniform sampler2D hdrTexture;
 layout(set = 3, binding = 1) uniform sampler2D bloomTexture;
 
+#ifdef BLOOM_DIRT
+layout(set = 3, binding = 2) uniform sampler2D bloomDirtTexture;
+#endif
+
 layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
     float paperWhiteLuminance;
@@ -17,11 +21,15 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float contrast;
     float filmGrainStrength;
     float bloomStrength;
+    float bloomDirtStrength;
     float aberrationStrength;
     float aberrationReversed;
     float vignetteOffset;
     float vignettePower;
     float vignetteStrength;
+    float padding0;
+    float padding1;
+    float padding2;
     vec4 vignetteColor;
     vec4 tintColor;
 } Uniforms;
@@ -87,28 +95,37 @@ void main() {
     vec2 texCoord = 0.5 * positionVS + 0.5;
     vec3 color = vec3(0.0);
     
+    vec3 bloom = vec3(0.0);
+
 #ifdef CHROMATIC_ABERRATION
     vec2 uvRedChannel = (positionVS - positionVS * 0.005 * Uniforms.aberrationStrength
         * Uniforms.aberrationReversed) * 0.5 + 0.5;
     vec2 uvGreenChannel = (positionVS - positionVS * 0.0025 * Uniforms.aberrationStrength) * 0.5 + 0.5;
     vec2 uvBlueChannel =  (positionVS - positionVS * 0.005 * Uniforms.aberrationStrength
-        * (1.0f - Uniforms.aberrationReversed)) * 0.5 + 0.5;
+        * (1.0 - Uniforms.aberrationReversed)) * 0.5 + 0.5;
     
     color.r = textureLod(hdrTexture, uvRedChannel, 0.0).r;
     color.g = textureLod(hdrTexture, uvGreenChannel, 0.0).g;
     color.b = textureLod(hdrTexture, uvBlueChannel, 0.0).b;
     
+    
 #ifdef BLOOM
-    color.r += Uniforms.bloomStrength * textureLod(bloomTexture, uvRedChannel, 0.0).r;
-    color.g += Uniforms.bloomStrength * textureLod(bloomTexture, uvGreenChannel, 0.0).g;
-    color.b += Uniforms.bloomStrength * textureLod(bloomTexture, uvBlueChannel, 0.0).b;
+    bloom.r += Uniforms.bloomStrength * textureLod(bloomTexture, uvRedChannel, 0.0).r;
+    bloom.g += Uniforms.bloomStrength * textureLod(bloomTexture, uvGreenChannel, 0.0).g;
+    bloom.b += Uniforms.bloomStrength * textureLod(bloomTexture, uvBlueChannel, 0.0).b;
 #endif
 #else
     color = textureLod(hdrTexture, texCoord, 0.0).rgb;
 #ifdef BLOOM
-    color += Uniforms.bloomStrength * textureLod(bloomTexture, texCoord, 0.0).rgb;
+    bloom += Uniforms.bloomStrength * textureLod(bloomTexture, texCoord, 0.0).rgb;
 #endif
 #endif
+
+#ifdef BLOOM_DIRT
+    bloom = Uniforms.bloomDirtStrength * textureLod(bloomDirtTexture, texCoord, 0.0).r * bloom + bloom;
+#endif
+
+    color += bloom;
 
     color *= Uniforms.exposure;
 

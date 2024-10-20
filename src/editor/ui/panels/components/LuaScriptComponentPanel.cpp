@@ -59,6 +59,7 @@ namespace Atlas::Editor::UI
                 ImGui::DragFloat3(name.c_str(), glm::value_ptr(property.vec3Value));
                 break;
             case LuaScriptComponent::PropertyType::Undefined:
+            default:
                 break;
             }
         }

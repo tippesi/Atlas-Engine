@@ -185,7 +185,7 @@ namespace Atlas::Scene::Components {
             {"dontCull", p.dontCull}
         };
 
-        if (p.mesh.IsValid())
+        if (p.mesh.IsValid() && !p.mesh.IsGenerated())
             j["resourcePath"] = p.mesh.GetResource()->path;
     }
 
@@ -243,7 +243,7 @@ namespace Atlas::Scene::Components {
             {"textScale", p.textScale},
         };
 
-        if (p.font.IsValid())
+        if (p.font.IsValid() && !p.font.IsGenerated())
             j["resourcePath"] = p.font.GetResource()->path;
     }
 
@@ -321,7 +321,7 @@ namespace Atlas::Scene::Components {
     void to_json(json &j, const LuaScriptComponent &p) {
         j = json{};
 
-        if (p.script.IsValid())
+        if (p.script.IsValid() && !p.script.IsGenerated())
             j["resourcePath"] = p.script.GetResource()->path;
 
         j["permanentExecution"] = p.permanentExecution;

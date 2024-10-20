@@ -22,8 +22,10 @@ struct AppConfiguration {
     bool sharpen = false;
     bool ssgi = true;
     bool ddgi = true;
+    bool rtgi = true;
     bool reflection = true;
     bool volumetric = true;
+    bool localVolumetric = true;
     bool ocean = true;
     bool light = true;
     bool fsr = true;

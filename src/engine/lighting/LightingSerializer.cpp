@@ -31,7 +31,7 @@ namespace Atlas::Lighting {
             {"position", p.GetPosition()}
         };
 
-        if (p.cubemap.IsValid()) {
+        if (p.cubemap.IsValid() && !p.cubemap.IsGenerated()) {
             j["cubemapPath"] = p.cubemap.GetResource()->path;
         }
     }

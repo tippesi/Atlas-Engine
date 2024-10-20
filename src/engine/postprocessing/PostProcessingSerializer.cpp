@@ -78,10 +78,11 @@ namespace Atlas::PostProcessing {
             {"filterSize", p.filterSize},
             {"mipLevels", p.mipLevels},
             {"strength", p.strength},
+            {"dirtStrength", p.dirtStrength},
             {"threshold", p.threshold},
         };
 
-        if (p.dirtMap.IsValid())
+        if (p.dirtMap.IsValid() && !p.dirtMap.IsGenerated())
             j["dirtMap"] = p.dirtMap.GetResource()->path;
             
     }
@@ -92,6 +93,8 @@ namespace Atlas::PostProcessing {
         j.at("mipLevels").get_to(p.mipLevels);
         j.at("strength").get_to(p.strength);
         j.at("threshold").get_to(p.threshold);
+
+        try_get_json(j, "dirtStrength", p.dirtStrength);
 
         if (j.contains("dirtMap"))
             p.dirtMap = ResourceManager<Texture::Texture2D>::GetOrLoadResource(j["dirtMap"], false,

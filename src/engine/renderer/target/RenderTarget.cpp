@@ -24,7 +24,7 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapHistoryTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+        lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_A2B10G10R10_UNORM_PACK32,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledWidth, VK_FORMAT_R8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);

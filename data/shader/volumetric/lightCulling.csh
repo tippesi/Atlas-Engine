@@ -94,9 +94,6 @@ void main() {
         }
         else if (lightType == SPOT_LIGHT) {
             sphere = CalculateSphereFromSpotLight(light.location, light.direction, radius);
-
-            vec3 lightToPoint = viewPos - light.location.xyz;
-            visible = dot(lightToPoint, light.direction.xyz) > 0.0;
         }
 
         visible = visible && SphereAABBIntersection(sphere, frustumAABB);

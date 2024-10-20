@@ -198,7 +198,7 @@ namespace Atlas::Scene {
                 if (!mesh.IsLoaded()) continue;
 
                 // Not all meshes might have a bvh and not all blases will be built in frame, so skip them if they are not ready
-                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && !mesh->blas->isDynamic && !mesh->blas->isBuilt)
+                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && mesh->blas && !mesh->blas->isDynamic && !mesh->blas->isBuilt)
                     continue;
 
                 meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;

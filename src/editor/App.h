@@ -34,6 +34,8 @@ namespace Atlas::Editor {
         virtual void Render(float deltaTime) final;
 
     private:
+        void RenderSceneMaximized();
+        
         void SetupMainDockspace(ImGuiID dsID);
 
         void SubscribeToResourceEvents();
@@ -47,6 +49,8 @@ namespace Atlas::Editor {
         UI::ContentBrowserWindow contentBrowserWindow = UI::ContentBrowserWindow(true);
         UI::ProfilerWindow profilerWindow = UI::ProfilerWindow(false);
         UI::GeometryBrushWindow geometryBrushWindow = UI::GeometryBrushWindow(false);
+
+        ImguiExtension::PerformanceGraphPanel performanceGraphPanel;
 
         std::vector<ResourceHandle<Scene::Scene>> waitToLoadScenes;
         std::vector<Ref<UI::SceneWindow>> sceneWindows;

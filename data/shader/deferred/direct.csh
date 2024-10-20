@@ -55,9 +55,10 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
 void LoadGroupSharedData() {
 
     int lightBucketOffset = GetLightBucketsGroupOffset();
+    int groupSize = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
     int localOffset = int(gl_LocalInvocationIndex);
-    for (int i = localOffset; i < pushConstants.lightBucketCount; i++) {
+    for (int i = localOffset; i < pushConstants.lightBucketCount; i += groupSize) {
         sharedLightBuckets[i] = uint(lightBuckets[lightBucketOffset + i]);
     }
 
@@ -79,6 +80,7 @@ void main() {
     int lightCount = 0;
 
     vec3 direct = imageLoad(image, pixel).rgb;
+
     if (depth < 1.0) {
         vec3 geometryNormal;
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder

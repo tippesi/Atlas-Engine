@@ -29,11 +29,15 @@ namespace Atlas {
                 float contrast;
                 float filmGrainStrength;
                 float bloomStrength;
+                float bloomDirtStrength;
                 float aberrationStrength;
                 float aberrationReversed;
                 float vignetteOffset;
                 float vignettePower;
                 float vignetteStrength;
+                float padding0;
+                float padding1;
+                float padding2;
                 vec4 vignetteColor;
                 vec4 tintColor;
             };

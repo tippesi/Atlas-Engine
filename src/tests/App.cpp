@@ -17,7 +17,7 @@ void App::LoadContent(AppConfiguration config) {
     this->config = config;
 
     // Use lower resolution, we care only about correctness
-    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
+    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(240, 160);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -82,6 +82,10 @@ void App::LoadContent(AppConfiguration config) {
         scene->irradianceVolume->strength = 1.5f;
     }
 
+    if (config.rtgi) {
+        scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
+    }
+
     if (config.ssgi) {
         scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     }
@@ -92,6 +96,9 @@ void App::LoadContent(AppConfiguration config) {
         scene->fog->density = 0.0068f;
         scene->fog->heightFalloff = 0.0284f;
         scene->fog->height = 0.0f;
+
+        scene->fog->rayMarching = config.volumetric;
+        scene->fog->localLights = config.localVolumetric;
     }
 
     if (config.clouds) {
@@ -114,14 +121,6 @@ void App::LoadContent(AppConfiguration config) {
 
     if (config.sss) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
-    }
-
-    if (config.fog) {
-        if (config.volumetric) {
-            scene->fog->rayMarching = true;
-        } else {
-            scene->fog->rayMarching = false;
-        }
     }
 
     if (config.ocean) {

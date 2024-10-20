@@ -96,9 +96,11 @@ auto testingValues = testing::Values(
     AppConfiguration { .ocean = false },
 #ifdef AE_BINDLESS
     AppConfiguration { .ddgi = false },
+    AppConfiguration { .rtgi = false },
     AppConfiguration { .reflection = false },
 #endif
     AppConfiguration { .volumetric = false },
+    AppConfiguration { .localVolumetric = false },
     AppConfiguration { .sharpen = false },
     AppConfiguration { .light = false },
     AppConfiguration { .fsr = false },

@@ -13,7 +13,7 @@ namespace Atlas::Physics {
             {"scale", p.scale},
         };
 
-        if (p.mesh.IsValid()) {
+        if (p.mesh.IsValid() && !p.mesh.IsGenerated()) {
             j["resourcePath"] = p.mesh.GetResource()->path;
         }
     }

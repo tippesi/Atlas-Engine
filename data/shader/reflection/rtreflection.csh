@@ -72,6 +72,8 @@ void main() {
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+        vec4 reflection = imageLoad(rtrImage, pixel);
+
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
         ivec2 offset = offsets[offsetIdx];
@@ -93,9 +95,7 @@ void main() {
         Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;
-
-        vec4 reflection = imageLoad(rtrImage, pixel);
+        material.roughness *= material.roughnessMap ? roughness : 1.0;        
 
         if (material.roughness <= 1.0 && depth < 1.0 && reflection.a == 0.0) {
 

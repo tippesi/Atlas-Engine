@@ -2,7 +2,7 @@
 
 namespace Atlas::ImguiExtension {
 
-    void PostProcessingPanel::Render(PostProcessing::PostProcessing &postProcessing) {
+    void PostProcessingPanel::Render(PostProcessing::PostProcessing &postProcessing, TextureSelector textureSelector) {
 
         ImGui::PushID(GetNameID());
 
@@ -42,7 +42,10 @@ namespace Atlas::ImguiExtension {
         ImGui::Separator();
         ImGui::Text("Bloom");
         ImGui::Checkbox("Enable##Bloom", &postProcessing.bloom.enable);
+        if (textureSelector.has_value())
+            postProcessing.bloom.dirtMap = textureSelector.value()(postProcessing.bloom.dirtMap);
         ImGui::DragFloat("Strength##Bloom", &postProcessing.bloom.strength, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Dirt strength##Bloom", &postProcessing.bloom.dirtStrength, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Threshold##Bloom", &postProcessing.bloom.threshold, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Filter size##Bloom", &postProcessing.bloom.filterSize, 0.001f, 0.0f, 1.0f);
         auto mipLevels = int32_t(postProcessing.bloom.mipLevels);

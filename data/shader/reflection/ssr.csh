@@ -104,10 +104,9 @@ void main() {
 
             for (int i = 0; i < sampleCount; i++) {
                 int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
-                vec3 blueNoiseVec = vec3(
+                vec2 blueNoiseVec = vec2(
                     SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-                    SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
-                    SampleBlueNoise(pixel, i, 2, scramblingRankingTexture, sobolSequenceTexture)
+                    SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
                     );
 
                 float alpha = sqr(material.roughness);

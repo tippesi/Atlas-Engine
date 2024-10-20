@@ -29,8 +29,8 @@ namespace Atlas::Editor {
 
         ImGui::CreateContext();
         ImPlot::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
-        (void) io;
+        ImGuiIO& io = ImGui::GetIO();
+        (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         SetDefaultWindowResolution();
@@ -96,7 +96,7 @@ namespace Atlas::Editor {
 
     void App::Update(float deltaTime) {
 
-        const ImGuiIO &io = ImGui::GetIO();
+        const ImGuiIO& io = ImGui::GetIO();
 
         ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
@@ -206,14 +206,14 @@ namespace Atlas::Editor {
                 sceneWindow->isActiveWindow = true;
             else
                 sceneWindow->isActiveWindow = false;
-            
+
             // Need to reset this each frame in order to reenable selection
             sceneWindow->lockSelection = false;
             sceneWindow->Update(deltaTime);
         }
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
-        
+
     }
 
     void App::Render(float deltaTime) {
@@ -239,7 +239,7 @@ namespace Atlas::Editor {
         // ImGui::ShowDemoWindow();
         // ImPlot::ShowDemoWindow();
 
-        ImGuiViewport *viewport = ImGui::GetMainViewport();
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
 
         bool playingMaximized = false;
         auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
@@ -345,60 +345,70 @@ namespace Atlas::Editor {
             ImGui::End();
         }
         else {
-            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                ImGuiWindowFlags_NoMove;
-
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::Begin("RenderWindow", nullptr, window_flags);
-
-            auto renderArea = ImGui::GetContentRegionAvail();
-            activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(), 
-                ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)), true);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&activeSceneWindow->viewportPanel.viewportTexture);
-            ImGui::Image(set, renderArea);
-
-            if (activeSceneWindow->perfOverlayMaximized) {
-                ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
-                auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
-
-                std::string perfString;
-                double slowestTime = 0.0;
-                for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
-                    const auto& threadData = gpuProfilerData[i];
-                    double threadTime = 0.0;
-                    for (const auto& query : threadData.queries) {
-                        threadTime += query.timer.elapsedTime;
-                    }
-                    if (threadTime > slowestTime) {
-                        slowestTime = threadTime;
-                    }
-                }
-
-                auto target = Singletons::renderTarget;
-
-                ImGui::SetWindowFontScale(1.5f);
-                ImGui::Text("Frame time: %.3fms, GPU time: %.3f", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
-                ImGui::Text("Resolution %dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(), target->GetScaledWidth(), target->GetScaledHeight());
-                ImGui::SetWindowFontScale(1.0f);
-            }
-
-            ImGui::PopStyleVar();
-            ImGui::PopStyleVar();
-            ImGui::PopStyleVar();
-
-            ImGui::End();
+            RenderSceneMaximized();
         }
 
         Notifications::Display();
 
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);
+
+    }
+
+    void App::RenderSceneMaximized() {
+
+        auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus |
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        ImGui::Begin("RenderWindow", nullptr, window_flags);
+
+        auto renderArea = ImGui::GetContentRegionAvail();
+        activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(),
+            ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)), true);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&activeSceneWindow->viewportPanel.viewportTexture);
+        ImGui::Image(set, renderArea);
+
+        if (activeSceneWindow->perfOverlayMaximized) {
+            ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+            auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
+
+            std::string perfString;
+            double slowestTime = 0.0;
+            for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
+                const auto& threadData = gpuProfilerData[i];
+                double threadTime = 0.0;
+                for (const auto& query : threadData.queries) {
+                    threadTime += query.timer.elapsedTime;
+                }
+                if (threadTime > slowestTime) {
+                    slowestTime = threadTime;
+                }
+            }
+
+            auto target = Singletons::renderTarget;
+
+            ImGui::SetWindowFontScale(1.5f);
+            ImGui::Text("Frame time: %.3fms, GPU time: %.3fms", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
+            ImGui::Text("Resolution %dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(), target->GetScaledWidth(), target->GetScaledHeight());
+            ImGui::SetWindowFontScale(1.0f);
+
+            performanceGraphPanel.Render(ivec2(400, 300), 0.05f);
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+
+        ImGui::End();
 
     }
 
@@ -448,9 +458,9 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
-            Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
-        });
+                waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+                Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+            });
 
         // Also kind of a resource event
         Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
@@ -459,7 +469,7 @@ namespace Atlas::Editor {
 
                 FileSystemHelper::Copy(event.file, destinationDirectory);
             }
-        });
+            });
 
     }
 

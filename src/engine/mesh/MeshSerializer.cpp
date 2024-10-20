@@ -198,21 +198,21 @@ namespace Atlas {
             {"uvAnimation", p.uvAnimation},
         };
 
-        if (p.baseColorMap.IsValid())
+        if (p.baseColorMap.IsValid() && !p.baseColorMap.IsGenerated())
             j["baseColorMapPath"] = p.baseColorMap.GetResource()->path;
-        if (p.opacityMap.IsValid())
+        if (p.opacityMap.IsValid() && !p.opacityMap.IsGenerated())
             j["opacityMapPath"] = p.opacityMap.GetResource()->path;
-        if (p.normalMap.IsValid())
+        if (p.normalMap.IsValid() && !p.normalMap.IsGenerated())
             j["normalMapPath"] = p.normalMap.GetResource()->path;
-        if (p.roughnessMap.IsValid())
+        if (p.roughnessMap.IsValid() && !p.roughnessMap.IsGenerated())
             j["roughnessMapPath"] = p.roughnessMap.GetResource()->path;
-        if (p.metalnessMap.IsValid())
+        if (p.metalnessMap.IsValid() && !p.metalnessMap.IsGenerated())
             j["metalnessMapPath"] = p.metalnessMap.GetResource()->path;
-        if (p.aoMap.IsValid())
+        if (p.aoMap.IsValid() && !p.aoMap.IsGenerated())
             j["aoMapPath"] = p.aoMap.GetResource()->path;
-        if (p.displacementMap.IsValid())
+        if (p.displacementMap.IsValid() && !p.displacementMap.IsGenerated())
             j["displacementMapPath"] = p.displacementMap.GetResource()->path;
-        if (p.emissiveMap.IsValid())
+        if (p.emissiveMap.IsValid() && !p.emissiveMap.IsGenerated())
             j["emissiveMapPath"] = p.emissiveMap.GetResource()->path;
 
     }
