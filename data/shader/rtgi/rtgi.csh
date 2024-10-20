@@ -46,15 +46,19 @@ layout(std140, set = 3, binding = 9) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
+    int sampleCount;
+    int lightSampleCount;
     int textureLevel;
     float roughnessCutoff;
     int halfRes;
+    int padding0;
+    int padding1;
     ivec2 resolution;
     Shadow shadow;
 } uniforms;
 
 vec3 EvaluateHit(inout Ray ray);
-vec3 EvaluateDirectLight(inout Surface surface);
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
 
 void main() {
@@ -85,12 +89,6 @@ void main() {
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
 
-        int sampleIdx = int(uniforms.frameSeed);
-        vec2 blueNoiseVec = vec2(
-            SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-            SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
-            );
-
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
 
@@ -101,48 +99,58 @@ void main() {
 
         if (depth < 1.0) {
 
-            float alpha = sqr(material.roughness);
+            const int sampleCount = uniforms.sampleCount;
 
-            vec3 V = normalize(-viewVec);
-            vec3 N = worldNorm;
+            for (int i = 0; i < sampleCount; i++) {
+                int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
+                vec2 blueNoiseVec = vec2(
+                    SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+                    SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+                    );
 
-            Surface surface = CreateSurface(V, N, vec3(1.0), material);
+                vec3 V = normalize(-viewVec);
+                vec3 N = worldNorm;
 
-            blueNoiseVec.x *= (1.0 - uniforms.bias);
+                Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
-            Ray ray;
+                blueNoiseVec.x *= (1.0 - uniforms.bias);
 
-            float pdf = 1.0;
-            BRDFSample brdfSample;
-            float NdotL;
-            ImportanceSampleCosDir(N, blueNoiseVec, 
-                ray.direction, NdotL, pdf);
+                Ray ray;
 
-            bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
-                !isnan(ray.direction.z) || dot(N, ray.direction) > 0.0;
+                float pdf = 1.0;
+                BRDFSample brdfSample;
+                float NdotL;
+                ImportanceSampleCosDir(N, blueNoiseVec, 
+                    ray.direction, NdotL, pdf);
 
-            if (isRayValid) {               
+                bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
+                    !isnan(ray.direction.z) || dot(N, ray.direction) > 0.0;
 
-                // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                float viewOffset = max(1.0, length(viewPos));
-                ray.origin = worldPos + ray.direction * EPSILON * viewOffset * 0.01 + worldNorm * EPSILON * 0.01 * viewOffset;
+                if (isRayValid) {               
 
-                ray.hitID = -1;
-                ray.hitDistance = 0.0;
+                    // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
+                    float viewOffset = max(1.0, 4.0 * length(viewPos));
+                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
 
-                vec3 radiance = vec3(0.0);
+                    ray.hitID = -1;
+                    ray.hitDistance = 0.0;
+
+                    vec3 radiance = vec3(0.0);
 #ifdef OPACITY_CHECK
-                HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
+                    HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #else
-                HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
+                    HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #endif
 
-                radiance = EvaluateHit(ray);
+                    radiance = EvaluateHit(ray);
 
-                float radianceMax = max(max(max(radiance.r, 
-                        max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
-                reflection = radiance * (uniforms.radianceLimit / radianceMax);
+                    float radianceMax = max(max(max(radiance.r, 
+                            max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
+                    reflection += radiance * (uniforms.radianceLimit / radianceMax);
+                }
             }
+
+            reflection /= float(sampleCount);
 
         }
 
@@ -170,8 +178,14 @@ vec3 EvaluateHit(inout Ray ray) {
     
     radiance += surface.material.emissiveColor;
 
+    float curSeed = float(uniforms.frameSeed) / 255.0;
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);
+    for (int i = 0; i < uniforms.lightSampleCount; i++) {
+        radiance += EvaluateDirectLight(surface, curSeed);
+        curSeed += 1.0 / float(uniforms.lightSampleCount);
+    }
+
+    radiance /= float(uniforms.lightSampleCount);
 
     // Evaluate indirect lighting
 #ifdef DDGI
@@ -187,19 +201,18 @@ vec3 EvaluateHit(inout Ray ray) {
 
 }
 
-vec3 EvaluateDirectLight(inout Surface surface) {
+vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
 
     if (GetLightCount() == 0)
         return vec3(0.0);
 
-    float curSeed = float(uniforms.frameSeed) / 255.0;
-    float raySeed = float(gl_GlobalInvocationID.x);
+    float raySeed = float(gl_GlobalInvocationID.x * uniforms.resolution.y + gl_GlobalInvocationID.y);
 
     float lightPdf;
-    Light light = GetLight(surface, raySeed, curSeed, lightPdf);
+    Light light = GetLight(surface, raySeed, seed, lightPdf);
 
     float solidAngle, lightDistance;
-    SampleLight(light, surface, raySeed, curSeed, solidAngle, lightDistance);
+    SampleLight(light, surface, raySeed, seed, solidAngle, lightDistance);
 
     // Evaluate the BRDF
     vec3 reflectance = EvaluateDiffuseBRDF(surface) + EvaluateSpecularBRDF(surface);
@@ -213,7 +226,8 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     radiance *= CalculateShadowWorldSpace(uniforms.shadow, cascadeMaps, surface.P,
         surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
 #else
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;

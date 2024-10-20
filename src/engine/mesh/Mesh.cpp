@@ -82,6 +82,19 @@ namespace Atlas {
 
         }
 
+        void Mesh::InvertNormals() {
+
+            if (!data.normals.ContainsData())
+                return;
+
+            for (auto& normal : data.normals)
+                normal = vec4(-vec3(normal.x, normal.y, normal.z), normal.w);
+
+            UpdateData();
+            isBvhBuilt = false;
+
+        }
+
         void Mesh::BuildBVH(bool parallelBuild) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
@@ -90,7 +103,7 @@ namespace Atlas {
 
             AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
 
-            if (data.indexCount == 0 || !bindless) return;
+            if (data.indexCount == 0 || !bindless || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
             data.BuildBVH(parallelBuild);
 
@@ -143,6 +156,33 @@ namespace Atlas {
             data.gpuBvhTriangles.shrink_to_fit();
 
             isBvhBuilt = true;
+
+        }
+
+        void Mesh::ClearBVH() {
+
+            // This whole operation can only be done when no ray tracing jobs or bindless updates are running
+            isBvhBuilt = false;
+
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            bool hardwareRayTracing = device->support.hardwareRayTracing;
+            bool bindless = device->support.bindless;
+
+            AE_ASSERT(data.indexCount > 0 && "There is no data in this mesh");
+
+            if (data.indexCount == 0 || !bindless) return;
+
+            data.gpuTriangles.clear();
+            data.gpuTriangles.shrink_to_fit();
+
+            triangleBuffer.Reset();
+            if (!hardwareRayTracing) {
+                blasNodeBuffer.Reset();
+                bvhTriangleBuffer.Reset();
+            }
+            else {
+                triangleOffsetBuffer.Reset();
+            }
 
         }
 

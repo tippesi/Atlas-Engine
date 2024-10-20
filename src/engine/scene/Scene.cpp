@@ -97,14 +97,10 @@ namespace Atlas {
             // Do cleanup first such that we work with valid data
             CleanupUnusedResources();
 
-#ifdef AE_BINDLESS
-            UpdateBindlessIndexMaps();
-#endif
-
             // Update scripting components (but only after the first timestep when everything else is settled)
             if (!firstTimestep) {
                 // Work with a copy here
-                auto luaScriptComponents = entityManager.GetComponents<LuaScriptComponent>();
+                auto luaScriptComponents = entityManager.GetAll<LuaScriptComponent>();
                 for (auto& luaScriptComponent : luaScriptComponents) {
                     luaScriptComponent.Update(luaScriptManager, deltaTime);
 
@@ -114,20 +110,35 @@ namespace Atlas {
                 }
             }
 
+            // Can only update after scripts were run
+#ifdef AE_BINDLESS
+            renderState.UpdateMeshBindlessData();
+            renderState.UpdateTextureBindlessData();
+            renderState.UpdateOtherTextureBindlessData();
+#endif
+            renderState.PrepareMaterials();
+
             TransformComponent rootTransform = {};
 
-            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
+            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             // Update hierarchy and their entities
-            for (auto entity : hierarchyTransformSubset) {
-                const auto& [hierarchyComponent, transformComponent] = hierarchyTransformSubset.Get(entity);
+            for (auto entity : hierarchySubset) {
+                auto& hierarchyComponent = hierarchySubset.Get(entity);
 
                 if (hierarchyComponent.root) {
-                    auto parentChanged = transformComponent.changed;
-                    transformComponent.Update(rootTransform, false);
-                    hierarchyComponent.Update(transformComponent, parentChanged);
+                    auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+                    if (transformComponent) {
+                        auto parentChanged = transformComponent->changed;
+                        transformComponent->Update(rootTransform, false);
+                        hierarchyComponent.Update(*transformComponent, parentChanged);
+                    }
+                    else {
+                        hierarchyComponent.Update(rootTransform, false);
+                    }
                 }
             }
 
+            auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
             // Update hierarchy components which are not part of a root hierarchy that also has a transform component
             // This might be the case if there is an entity that has just a hierarchy without a tranform for, e.g. grouping entities
             for (auto entity : hierarchyTransformSubset) {
@@ -173,6 +184,11 @@ namespace Atlas {
                     }
 
                     playerComponent.Update(deltaTime);
+
+                    auto hierarchyComponent = entityManager.TryGet<HierarchyComponent>(entity);
+                    if (hierarchyComponent) {
+                        hierarchyComponent->Update(transformComponent, true);
+                    }
                 }
 
                 auto rigidBodySubset = entityManager.GetSubset<RigidBodyComponent, TransformComponent>();
@@ -186,13 +202,14 @@ namespace Atlas {
                     }
 
                     // Apply update here (transform overwrite everything else in physics simulation for now)
-                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {
+                    if (transformComponent.changed && rigidBodyComponent.IsValid()) {                        
                         rigidBodyComponent.SetMatrix(transformComponent.globalMatrix);
                     }
                 }
 
                 // This part only needs to be executed if the simulation is running
                 if (!physicsWorld->pauseSimulation) {
+
                     physicsWorld->Update(deltaTime);
 
                     for (auto entity : rigidBodySubset) {
@@ -236,6 +253,40 @@ namespace Atlas {
                         // Physics are updated in global space, so we don't need the parent transform
                         transformComponent.globalMatrix = playerComponent.GetMatrix();
                         transformComponent.inverseGlobalMatrix = glm::inverse(transformComponent.globalMatrix);
+                    }
+
+                    // Now we need to update all the hiearchies
+                    auto rigidBodyHierarchySubset = entityManager.GetSubset<RigidBodyComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : rigidBodyHierarchySubset) {
+                        const auto& [rigidBodyComponent, hierarchyComponent, transformComponent] = rigidBodyHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged);
+                        }
+                    }
+
+                    // Now we need to update all the hiearchies
+                    auto playerHierarchySubset = entityManager.GetSubset<PlayerComponent, HierarchyComponent, TransformComponent>();
+                    for (auto entity : playerHierarchySubset) {
+                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+
+                        hierarchyComponent.updated = false;
+                    }
+
+                    for (auto entity : playerHierarchySubset) {
+                        const auto& [playerComponent, hierarchyComponent, transformComponent] = playerHierarchySubset.Get(entity);
+
+                        if (!hierarchyComponent.updated) {
+                            auto parentChanged = transformComponent.changed;
+                            hierarchyComponent.Update(transformComponent, parentChanged);
+                        }
                     }
                 }
             }
@@ -282,9 +333,11 @@ namespace Atlas {
                 lightComponent.Update(transformComponent);
             }
 
+            renderState.mainCameraSignal.Reset();
+
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            JobSystem::Execute(rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
+            JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
                 if (rayTracingWorld) {
@@ -297,7 +350,6 @@ namespace Atlas {
 #endif
 
             // We also need to reset the hierarchy components as well
-            auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             for (auto entity : hierarchySubset) {
                 auto& hierarchyComponent = hierarchySubset.Get(entity);
 
@@ -347,6 +399,8 @@ namespace Atlas {
                 }
             }
 
+            renderState.mainCameraSignal.Release();
+
             AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
 
             if (!mainCameraEntity.IsValid())
@@ -375,6 +429,9 @@ namespace Atlas {
 
                 lightComponent.Update(mainCamera);
             }
+
+            renderState.FillRenderList();
+            renderState.CullAndSortLights();
 
             if (terrain) {
                 terrain->Update(mainCamera);
@@ -406,6 +463,7 @@ namespace Atlas {
 
             if (terrain) {
                 auto terrainMaterials = terrain->storage.GetMaterials();
+                materials.reserve(terrainMaterials.size());
 
                 for (const auto& material : terrainMaterials) {
                     if (!material)
@@ -415,12 +473,14 @@ namespace Atlas {
                 }
 
             }
-
+           
             auto meshes = GetMeshes();
             if (clutter) {
                 auto vegMeshes = clutter->GetMeshes();
                 meshes.insert(meshes.end(), vegMeshes.begin(), vegMeshes.end());
             }
+            
+            materials.reserve(materials.size() + meshes.size());
 
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
@@ -549,6 +609,8 @@ namespace Atlas {
         }
 
         void Scene::ClearRTStructures() {
+            
+            WaitForAsyncWorkCompletion();
 
             rtDataValid = false;
             if (rayTracingWorld != nullptr)
@@ -568,9 +630,7 @@ namespace Atlas {
 
         void Scene::WaitForAsyncWorkCompletion() {
 
-            JobSystem::Wait(bindlessMeshMapUpdateJob);
-            JobSystem::Wait(bindlessTextureMapUpdateJob);
-            JobSystem::Wait(rayTracingWorldUpdateJob);
+            renderState.WaitForAsyncWorkCompletion();
 
         }
 
@@ -615,81 +675,6 @@ namespace Atlas {
         SceneIterator Scene::end() {
 
             return { &entityManager, entityManager.end() };
-
-        }
-
-        void Scene::UpdateBindlessIndexMaps() {            
-
-            JobSystem::Execute(bindlessMeshMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                meshIdToBindlessIdx.clear();
-
-                uint32_t bufferIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    // Not all meshes might have a bvh
-                    if (!mesh->IsBVHBuilt())
-                        continue;
-
-                    meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
-                }
-                });
-
-            JobSystem::Execute(bindlessTextureMapUpdateJob, [&](JobData&) {
-                auto meshes = GetMeshes();
-                textureToBindlessIdx.clear();
-
-                std::set<Ref<Material>> materials;
-                std::set<Ref<Texture::Texture2D>> textures;
-
-                uint32_t textureIdx = 0;
-                for (const auto& mesh : meshes) {
-                    if (!mesh.IsLoaded()) continue;
-
-                    for (auto& material : mesh->data.materials)
-                        if (material.IsLoaded())
-                            materials.insert(material.Get());
-                }
-
-                for (const auto& material : materials) {
-                    if (material->HasBaseColorMap())
-                        textures.insert(material->baseColorMap.Get());
-                    if (material->HasOpacityMap())
-                        textures.insert(material->opacityMap.Get());
-                    if (material->HasNormalMap())
-                        textures.insert(material->normalMap.Get());
-                    if (material->HasRoughnessMap())
-                        textures.insert(material->roughnessMap.Get());
-                    if (material->HasMetalnessMap())
-                        textures.insert(material->metalnessMap.Get());
-                    if (material->HasAoMap())
-                        textures.insert(material->aoMap.Get());
-                    if (material->HasDisplacementMap())
-                        textures.insert(material->displacementMap.Get());
-                }
-
-                for (const auto& texture : textures) {
-
-                    textureToBindlessIdx[texture] = textureIdx++;
-
-                }
-                });
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                const auto& lightComponent = lightSubset.Get(entity);
-
-                if (!lightComponent.shadow)
-                    continue;
-
-                if (lightComponent.shadow->useCubemap) {
-
-                }
-                else {
-
-                }
-            }
 
         }
 
@@ -836,8 +821,10 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<LightComponent>();
                 auto& comp = dstEntity.AddComponent<LightComponent>(otherComp);
                 // Need to create a new shadow, since right now the memory is shared between components
-                comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
-                comp.shadow->SetResolution(comp.shadow->resolution);
+                if (otherComp.shadow) {
+                    comp.shadow = CreateRef<Lighting::Shadow>(*otherComp.shadow);
+                    comp.shadow->SetResolution(comp.shadow->resolution);
+                }
                 comp.isMain = false;
             }
             if (srcEntity.HasComponent<RigidBodyComponent>()) {

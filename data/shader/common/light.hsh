@@ -1,0 +1,13 @@
+#include <utility.hsh>
+
+float GetDistanceAttenuation(float dist, float radius) {
+
+    return saturate(1.0 - pow(dist / radius, 4.0)) / (dist * dist);
+
+}
+
+float GetAngleAttenuation() {
+
+
+
+}

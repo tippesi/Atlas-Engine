@@ -7,10 +7,10 @@ namespace Atlas {
     namespace Texture {
 
         Texture2DArray::Texture2DArray(int32_t width, int32_t height, int32_t layers, VkFormat format,
-            Wrapping wrapping, Filtering filtering) {
+            Wrapping wrapping, Filtering filtering, bool dedicatedMemory, bool usedForRenderTarget) {
 
             this->format = format;
-            Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
+            Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping, dedicatedMemory, usedForRenderTarget);
             RecreateSampler(filtering, wrapping);
 
         }
@@ -59,7 +59,8 @@ namespace Atlas {
             if (width != this->width || height != this->height ||
                 layers != this->depth) {
 
-                Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, filtering, wrapping);
+                Reallocate(Graphics::ImageType::Image2DArray, width, height, layers, 
+                    filtering, wrapping, dedicatedMemory, usedForRenderTarget);
 
             }
 

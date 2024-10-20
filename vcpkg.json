@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "atlas-engine",
-  "version-string": "0.2.0",
+  "version-string": "0.2.1",
   "port-version": 0,
-  "builtin-baseline": "821100d967e1737d96414a308e3f7cbe0d1abf18",
+  "builtin-baseline": "a993be073c6baea8674117f3eaed6e2d2486aaae",
   "homepage": "https://github.com/tippesi/Atlas-Engine",
   "description": "Cross platform toy render engine supporting physically based rendering and software ray tracing",
   "dependencies": [
@@ -38,6 +38,7 @@
     "gtest",
     "joltphysics",
     "imguizmo",
+    "implot",
     "lua",
     "sol2"
   ],
@@ -68,7 +69,11 @@
     },
     {
       "name": "imgui",
-      "version": "1.90.7#1"
+      "version": "1.91.0#0"
+    },
+    {
+      "name": "implot",
+      "version": "0.16#0"
     },
     {
       "name": "vulkan-memory-allocator",
@@ -84,7 +89,7 @@
     },
     {
       "name": "joltphysics",
-      "version": "5.0.0#1"
+      "version": "5.1.0#0"
     },
     {
       "name": "lua",

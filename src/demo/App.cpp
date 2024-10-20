@@ -21,7 +21,6 @@ using namespace Atlas::ImguiExtension;
 void App::LoadContent() {
 
     renderTarget = Atlas::CreateRef<Atlas::Renderer::RenderTarget>(1920, 1080);
-    pathTraceTarget = Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(1920, 1080);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
@@ -123,10 +122,13 @@ void App::UnloadContent() {
 }
 
 void App::Update(float deltaTime) {
+    
+    scene->WaitForAsyncWorkCompletion();
 
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -216,6 +218,18 @@ void App::Update(float deltaTime) {
             auto& rigidBodyComponent = entity.AddComponent<RigidBodyComponent>(bodySettings);
             rigidBodyComponent.SetRestitution(sphereRestitution);
 
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
+
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
         }
@@ -247,6 +261,18 @@ void App::Update(float deltaTime) {
                 .shape = shape,
             };
             entity.AddComponent<RigidBodyComponent>(bodySettings);
+
+            if (attachLightToSphers) {
+                auto& lightComponent = entity.AddComponent<LightComponent>(Atlas::LightType::PointLight);
+
+                lightComponent.color.r = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.g = Atlas::Common::Random::SampleUniformFloat();
+                lightComponent.color.b = Atlas::Common::Random::SampleUniformFloat();
+
+                lightComponent.intensity = 30.0f;
+
+                lightComponent.properties.point.radius = 5.0f;
+            }
 
             entities.push_back(entity);
             lastSpawn = Atlas::Clock::Get();
@@ -299,9 +325,10 @@ void App::Render(float deltaTime) {
     if (animateLight) directionalLight.properties.directional.direction
         = glm::vec3(0.0f, -1.0f, sin(Atlas::Clock::Get() / 10.0f));
 
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+
     if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
@@ -585,6 +612,7 @@ void App::Render(float deltaTime) {
                 ImGui::SliderFloat("Sphere scale##PhysicsBody", &sphereScale, 1.0f, 10.0f);
                 ImGui::SliderFloat("Sphere density##PhysicsBody", &sphereDensity, 1.0f, 100.0f);
                 ImGui::SliderFloat("Sphere restitution##PhysicsBody", &sphereRestitution, 0.0f, 1.0f);
+                ImGui::Checkbox("Attach lights ##PhysicsBody", &attachLightToSphers);
                 ImGui::Text("Sphere emitter");
                 ImGui::Checkbox("Enable##PhysicsEmitter", &emitSpheresEnabled);
                 ImGui::SliderFloat("Spawn rate##PhysicsEmitter", &emitSpawnRate, 0.001f, 1.0f);
@@ -640,6 +668,7 @@ void App::Render(float deltaTime) {
         }
 
         recreateSwapchain = false;
+
     }
 
     if (slowMode) { using namespace std::chrono_literals; std::this_thread::sleep_for(60ms); }
@@ -650,6 +679,8 @@ void App::Render(float deltaTime) {
         Atlas::Clock::ResetAverage();
         firstFrame = false;
     }
+    
+    scene->WaitForAsyncWorkCompletion();
 
 }
 
@@ -900,8 +931,9 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.0f;
     }
     else if (sceneSelection == FOREST) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("forest/forest.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5, false, false, false, 2048);
         otherScene->Timestep(1.0f);
+        otherScene->Update();
 
         CopyActors(otherScene);
 
@@ -917,8 +949,9 @@ bool App::LoadScene() {
         scene->fog->volumetricIntensity = 0.08f;
     }
     else if (sceneSelection == EMERALDSQUARE) {
-        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5);
+        auto otherScene = Atlas::Loader::ModelImporter::ImportScene("emeraldsquare/square.gltf", -glm::vec3(2048.0f), glm::vec3(2048.0f), 5, false, false, false, 2048);
         otherScene->Timestep(1.0f);
+        otherScene->Update();
 
         CopyActors(otherScene);
 
@@ -1080,22 +1113,6 @@ void App::CheckLoadScene() {
 
     graphicsDevice->WaitForPreviousFrameSubmission();
 
-    static Atlas::JobGroup buildBvhGroup;
-
-    auto buildRTStructure = [&](Atlas::JobData) {
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (const auto& mesh : sceneMeshes) {
-
-            if (mesh->IsBVHBuilt()) continue;
-
-            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
-            
-        }
-        };
-
-    Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);   
-
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
@@ -1226,7 +1243,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

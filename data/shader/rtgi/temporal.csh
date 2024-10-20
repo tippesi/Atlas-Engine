@@ -197,7 +197,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
         float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
         float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
@@ -223,7 +223,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
-        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 4.0);
+        float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
         float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
         float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
@@ -401,7 +401,7 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
-    vec2 historyPixel = vec2(pixel) + (velocity * resolution) + 0.5;
+    vec2 historyPixel = vec2(pixel) + (velocity * resolution);
 
     bool valid = true;
     vec4 history;
@@ -468,7 +468,7 @@ void main() {
     imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
-    imageStore(resolveImage, pixel, vec4(vec3(success ? 1.0 : 0.0), variance));
+    //imageStore(resolveImage, pixel, vec4(vec3(success ? 1.0 : 0.0), variance));
     //imageStore(resolveImage, pixel, vec4(vec3(materialIdx) / 3000.0, variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 

@@ -60,6 +60,15 @@ float SampleAoBilinear(int textureId, float mip, vec2 texCoord) {
 
 }
 
+vec3 SampleEmissiveBilinear(int textureId, float mip, vec2 texCoord) {
+
+    if (textureId < 0)
+        return vec3(0.0);
+
+    return textureLod(sampler2D(bindlessTextures[nonuniformEXT(textureId)], bindlessSampler), texCoord, mip).rgb;
+
+}
+
 vec4 SampleEnvironmentMap(vec3 v) {
 
     return textureLod(environmentMap, v, 0);

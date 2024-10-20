@@ -48,7 +48,7 @@ namespace Atlas {
             void RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
                 Ref<PrimitiveBatch> primitiveBatch = nullptr, Texture::Texture2D* texture = nullptr);
 
-            void PathTraceScene(Ref<Viewport> viewport, Ref<PathTracerRenderTarget> target,
+            void PathTraceScene(Ref<Viewport> viewport, Ref<RenderTarget> target,
                 Ref<Scene::Scene> scene, Texture::Texture2D* texture = nullptr);
 
             void RenderPrimitiveBatch(Ref<Viewport> viewport, Ref<RenderTarget> target,
@@ -66,97 +66,10 @@ namespace Atlas {
             AtmosphereRenderer atmosphereRenderer;
             PathTracingRenderer pathTracingRenderer;
 
-            Ref<Font> font;
-
         private:
-            struct alignas(16) PackedMaterial {
-
-                int32_t baseColor;
-                int32_t emissiveColor;
-                int32_t transmissionColor;
-
-                uint32_t emissiveIntensityTiling;
-
-                int32_t data0;
-                int32_t data1;
-                int32_t data2;
-
-                int32_t features;
-
-            };
-
-            struct alignas(16) GlobalUniforms {
-                vec4 frustumPlanes[6];
-                mat4 vMatrix;
-                mat4 pMatrix;
-                mat4 ivMatrix;
-                mat4 ipMatrix;
-                mat4 pvMatrixLast;
-                mat4 pvMatrixCurrent;
-                mat4 ipvMatrixLast;
-                mat4 ipvMatrixCurrent;
-                vec2 jitterLast;
-                vec2 jitterCurrent;
-                vec4 cameraLocation;
-                vec4 cameraDirection;
-                vec4 cameraUp;
-                vec4 cameraRight;
-                vec4 planetCenter;
-                vec2 windDir;
-                float windSpeed;
-                float planetRadius;
-                float time;
-                float deltaTime;
-                uint32_t frameCount;
-                float mipLodBias;
-            };
-
-            struct alignas(16) DDGICascade {
-                vec4 volumeMin;
-                vec4 volumeMax;
-                vec4 cellSize;
-                ivec4 offsetDifference;
-            };
-
-            struct alignas(16) DDGIUniforms {
-                
-                DDGICascade cascades[MAX_IRRADIANCE_VOLUME_CASCADES];
-
-                vec4 volumeCenter;
-                ivec4 volumeProbeCount;
-                int32_t cascadeCount;
-
-                float volumeBias;
-
-                int32_t volumeIrradianceRes;
-                int32_t volumeMomentsRes;
-
-                uint32_t rayCount;
-                uint32_t inactiveRayCount;
-
-                float hysteresis;
-
-                float volumeGamma;
-                float volumeStrength;
-
-                float depthSharpness;
-                int optimizeProbes;
-
-                int32_t volumeEnabled;
-            };
-
             void CreateGlobalDescriptorSetLayout();
 
             void SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera);
-
-            void PrepareMaterials(Ref<Scene::Scene> scene, std::vector<PackedMaterial>& materials,
-                std::unordered_map<void*, uint16_t>& materialMap);
-
-            void PrepareBindlessData(Ref<Scene::Scene> scene, std::vector<Ref<Graphics::Image>>& images,
-                std::vector<Ref<Graphics::Buffer>>& blasBuffers, std::vector<Ref<Graphics::Buffer>>& triangleBuffers,
-                std::vector<Ref<Graphics::Buffer>>& bvhTriangleBuffers, std::vector<Ref<Graphics::Buffer>>& triangleOffsetBuffers);
-
-            void FillRenderList(Ref<Scene::Scene> scene, const CameraComponent& camera);
 
             void PreintegrateBRDF();
 
@@ -170,6 +83,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> globalUniformBuffer;
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
+            Ref<Graphics::MultiBuffer> lightUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
             Ref<Graphics::Sampler> globalSampler;
             Ref<Graphics::Sampler> globalNearestSampler;
@@ -202,11 +116,11 @@ namespace Atlas {
             VolumetricCloudRenderer volumetricCloudRenderer;
             FSR2Renderer fsr2Renderer;
 
-            RenderList renderList;
-
             std::vector<vec2> haltonSequence;
             size_t haltonIndex = 0;
             uint32_t frameCount = 0;
+
+            std::vector<Graphics::ImageBarrier> shadowImageBarriers;
 
         };
 

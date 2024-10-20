@@ -29,8 +29,6 @@ protected:
     void TearDown() override {
         delete engineInstance;
 
-        Atlas::PipelineManager::Clear();
-
         graphicsDevice->ForceMemoryCleanup();
     }
 
@@ -98,14 +96,18 @@ auto testingValues = testing::Values(
     AppConfiguration { .ocean = false },
 #ifdef AE_BINDLESS
     AppConfiguration { .ddgi = false },
+    AppConfiguration { .rtgi = false },
     AppConfiguration { .reflection = false },
 #endif
     AppConfiguration { .volumetric = false },
+    AppConfiguration { .localVolumetric = false },
     AppConfiguration { .sharpen = false },
+    AppConfiguration { .light = false },
+    AppConfiguration { .fsr = false },
     AppConfiguration { .recreateSwapchain = true },
     AppConfiguration { .resize = true },
     AppConfiguration { .exampleRenderer = true },
-    AppConfiguration{ .minimizeWindow = true }
+    AppConfiguration { .minimizeWindow = true }
     );
 
 INSTANTIATE_TEST_SUITE_P(DemoTestSuite, EngineEndToEndTest, testingValues);

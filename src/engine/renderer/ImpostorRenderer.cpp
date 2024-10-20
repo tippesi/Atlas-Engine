@@ -32,7 +32,7 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = mainPass->meshIdToMeshMap[meshId];
+                auto mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
@@ -102,19 +102,17 @@ namespace Atlas {
 
             {
                 // Transfer all framebuffer images including all mips into same layout/access as end of render pass
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
 
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {impostor->baseColorTexture.image,            layout, access},
                     {impostor->normalTexture.image,               layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
                     {impostor->depthTexture.image, layout, access},
                     {frameBuffer->GetDepthImage(), layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(imageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 
@@ -175,18 +173,15 @@ namespace Atlas {
             }
 
             {
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-                imageBarriers = {
+                Graphics::ImageBarrier preImageBarriers[] = {
                     {impostor->baseColorTexture.image, layout, access},
                     {impostor->normalTexture.image, layout, access},
                     {impostor->roughnessMetalnessAoTexture.image, layout, access},
                     {impostor->depthTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
                 commandList->GenerateMipMaps(impostor->baseColorTexture.image);
@@ -194,13 +189,13 @@ namespace Atlas {
                 commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture.image);
                 commandList->GenerateMipMaps(impostor->depthTexture.image);
 
-                imageBarriers = {
+                Graphics::ImageBarrier postImageBarriers[] = {
                     {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {impostor->depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
 

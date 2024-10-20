@@ -23,12 +23,6 @@ namespace Atlas {
             void DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
-            // Used for debugging
-            Ref<Material> probeDebugMaterial;
-            Ref<Material> probeDebugActiveMaterial;
-            Ref<Material> probeDebugInactiveMaterial;
-            Ref<Material> probeDebugOffsetMaterial;
-
         private:
             struct alignas(16) RayGenUniforms {
                 mat4 rotationMatrix;

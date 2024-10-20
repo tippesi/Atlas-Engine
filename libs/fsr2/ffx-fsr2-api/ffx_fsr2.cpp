@@ -338,12 +338,12 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t srvIndex = 0; srvIndex < inoutPipeline->srvCount; ++srvIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < std::size(srvResourceBindingTable); ++mapIndex)
+        for (mapIndex = 0; mapIndex < std::ranges::size(srvResourceBindingTable); ++mapIndex)
         {
             if (0 == wcscmp(srvResourceBindingTable[mapIndex].name, inoutPipeline->srvResourceBindings[srvIndex].name))
                 break;
         }
-        if (mapIndex == std::size(srvResourceBindingTable))
+        if (mapIndex == std::ranges::size(srvResourceBindingTable))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->srvResourceBindings[srvIndex].resourceIdentifier = srvResourceBindingTable[mapIndex].index;
@@ -352,12 +352,12 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t uavIndex = 0; uavIndex < inoutPipeline->uavCount; ++uavIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < std::size(uavResourceBindingTable); ++mapIndex)
+        for (mapIndex = 0; mapIndex < std::ranges::size(uavResourceBindingTable); ++mapIndex)
         {
             if (0 == wcscmp(uavResourceBindingTable[mapIndex].name, inoutPipeline->uavResourceBindings[uavIndex].name))
                 break;
         }
-        if (mapIndex == std::size(uavResourceBindingTable))
+        if (mapIndex == std::ranges::size(uavResourceBindingTable))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->uavResourceBindings[uavIndex].resourceIdentifier = uavResourceBindingTable[mapIndex].index;
@@ -366,12 +366,12 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t cbIndex = 0; cbIndex < inoutPipeline->constCount; ++cbIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < std::size(cbResourceBindingTable); ++mapIndex)
+        for (mapIndex = 0; mapIndex < std::ranges::size(cbResourceBindingTable); ++mapIndex)
         {
             if (0 == wcscmp(cbResourceBindingTable[mapIndex].name, inoutPipeline->cbResourceBindings[cbIndex].name))
                 break;
         }
-        if (mapIndex == std::size(cbResourceBindingTable))
+        if (mapIndex == std::ranges::size(cbResourceBindingTable))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->cbResourceBindings[cbIndex].resourceIdentifier = cbResourceBindingTable[mapIndex].index;

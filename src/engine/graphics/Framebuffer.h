@@ -59,6 +59,8 @@ namespace Atlas {
             FrameBufferAttachment colorAttachments[MAX_COLOR_ATTACHMENTS];
             FrameBufferAttachment depthAttachment;
 
+            std::vector<VkImageView> imageViews;
+
             VkExtent2D extent;
             uint32_t layers;
 

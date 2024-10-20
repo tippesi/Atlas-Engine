@@ -110,8 +110,16 @@ namespace Atlas::Scene::Components {
         else if (p.type == LightType::PointLight) {
             typeProperties = json {
                 {"position", p.properties.point.position},
-                {"radius", p.properties.point.radius},
-                {"attenuation", p.properties.point.attenuation},
+                {"radius", p.properties.point.radius}
+            };
+        }
+        else if (p.type == LightType::SpotLight) {
+            typeProperties = json{
+                {"position", p.properties.spot.position},
+                {"direction", p.properties.spot.direction},
+                {"radius", p.properties.spot.radius},
+                {"outerConeAngle", p.properties.spot.outerConeAngle},
+                {"innerConeAngle", p.properties.spot.innerConeAngle},
             };
         }
 
@@ -124,29 +132,31 @@ namespace Atlas::Scene::Components {
             {"color", p.color},
             {"intensity", p.intensity},
             {"properties", typeProperties},
-            {"shadow", *p.shadow},
             {"isMain", p.isMain},
-            {"volumetric", p.volumetric}
+            {"volumetric", p.volumetric},
+            {"volumetricIntensity", p.volumetricIntensity}
         };
+
+        if (p.shadow)
+            j["shadow"] = *p.shadow;
     }
 
     void from_json(const json& j, LightComponent& p) {
         json typeProperties;
-        int type, mobility;
-
-        p.shadow = CreateRef<Lighting::Shadow>();
+        int type, mobility;        
 
         j.at("type").get_to(type);
         j.at("mobility").get_to(mobility);
         j.at("color").get_to(p.color);
         j.at("intensity").get_to(p.intensity);
         j.at("properties").get_to(typeProperties);
-        j.at("shadow").get_to(*p.shadow);
         j.at("isMain").get_to(p.isMain);
         j.at("volumetric").get_to(p.volumetric);
 
+        try_get_json(j, "volumetricIntensity", p.volumetricIntensity);
+
         p.type = static_cast<LightType>(type);
-        p.mobility = static_cast<LightMobility>(type);
+        p.mobility = static_cast<LightMobility>(mobility);
 
         if (p.type == LightType::DirectionalLight) {
             typeProperties.at("direction").get_to(p.properties.directional.direction);
@@ -154,7 +164,18 @@ namespace Atlas::Scene::Components {
         else if (p.type == LightType::PointLight) {
             typeProperties.at("position").get_to(p.properties.point.position);
             typeProperties.at("radius").get_to(p.properties.point.radius);
-            typeProperties.at("attenuation").get_to(p.properties.point.attenuation);
+        }
+        else if (p.type == LightType::SpotLight) {
+            typeProperties.at("position").get_to(p.properties.spot.position);
+            typeProperties.at("direction").get_to(p.properties.spot.direction);
+            typeProperties.at("radius").get_to(p.properties.spot.radius);
+            typeProperties.at("outerConeAngle").get_to(p.properties.spot.outerConeAngle);
+            typeProperties.at("innerConeAngle").get_to(p.properties.spot.innerConeAngle);
+        }
+
+        if (j.contains("shadow")) {
+            p.shadow = CreateRef<Lighting::Shadow>();
+            j.at("shadow").get_to(*p.shadow);
         }
     }
 
@@ -164,7 +185,7 @@ namespace Atlas::Scene::Components {
             {"dontCull", p.dontCull}
         };
 
-        if (p.mesh.IsValid())
+        if (p.mesh.IsValid() && !p.mesh.IsGenerated())
             j["resourcePath"] = p.mesh.GetResource()->path;
     }
 
@@ -222,7 +243,7 @@ namespace Atlas::Scene::Components {
             {"textScale", p.textScale},
         };
 
-        if (p.font.IsValid())
+        if (p.font.IsValid() && !p.font.IsGenerated())
             j["resourcePath"] = p.font.GetResource()->path;
     }
 
@@ -300,7 +321,7 @@ namespace Atlas::Scene::Components {
     void to_json(json &j, const LuaScriptComponent &p) {
         j = json{};
 
-        if (p.script.IsValid())
+        if (p.script.IsValid() && !p.script.IsGenerated())
             j["resourcePath"] = p.script.GetResource()->path;
 
         j["permanentExecution"] = p.permanentExecution;
@@ -323,8 +344,20 @@ namespace Atlas::Scene::Components {
                 j["scriptProperties"][name]["type"] = "string";
                 j["scriptProperties"][name]["value"] = prop.stringValue;
                 break;
+            case LuaScriptComponent::PropertyType::Vec2:
+                j["scriptProperties"][name]["type"] = "vec2";
+                j["scriptProperties"][name]["value"] = prop.vec2Value;
+                break;
+            case LuaScriptComponent::PropertyType::Vec3:
+                j["scriptProperties"][name]["type"] = "vec3";
+                j["scriptProperties"][name]["value"] = prop.vec3Value;
+                break;
+            case LuaScriptComponent::PropertyType::Vec4:
+                j["scriptProperties"][name]["type"] = "vec4";
+                j["scriptProperties"][name]["value"] = prop.vec4Value;
+                break;
             default:
-                AE_ASSERT(false);
+                break;
             }
         }
     }
@@ -362,6 +395,18 @@ namespace Atlas::Scene::Components {
                 else if (propertyTypeAsString == "string")
                 {
                     p.SetPropertyValue(v.key(), value["value"].get<std::string>());
+                }
+                else if (propertyTypeAsString == "vec2")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec2>());
+                }
+                else if (propertyTypeAsString == "vec3")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec3>());
+                }
+                else if (propertyTypeAsString == "vec4")
+                {
+                    p.SetPropertyValue(v.key(), value["value"].get<vec4>());
                 }
             }
         }

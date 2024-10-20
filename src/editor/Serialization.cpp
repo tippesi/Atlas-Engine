@@ -89,6 +89,8 @@ namespace Atlas::Editor {
             { "cameraMovementSpeed", sceneWindow->cameraMovementSpeed },
             { "cameraRotationSpeed", sceneWindow->cameraRotationSpeed },
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
+            { "playMaximized", sceneWindow->playMaximized },
+            { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "camera", camera }
         };
 
@@ -124,6 +126,8 @@ namespace Atlas::Editor {
         try_get_json(j, "cameraMovementSpeed", sceneWindow->cameraMovementSpeed);
         try_get_json(j, "cameraRotationSpeed", sceneWindow->cameraRotationSpeed);
         try_get_json(j, "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes);
+        try_get_json(j, "playMaximized", sceneWindow->playMaximized);
+        try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();

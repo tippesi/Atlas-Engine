@@ -13,16 +13,24 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, 
+                Graphics::CommandList* commandList);
 
         private:
-            struct alignas(16) Uniforms {
-                Light light;
+            struct alignas(16) CullingPushConstants {
+                int32_t lightCount;
+            };
+
+            struct alignas(16) PushConstants {
+                int32_t lightCount;
+                int32_t lightBucketCount;
+                int32_t padding1;
+                int32_t padding2;
             };
 
             PipelineConfig pipelineConfig;
 
-            Buffer::UniformBuffer uniformBuffer;
+            Buffer::Buffer lightCullingBuffer;
             Buffer::UniformBuffer cloudShadowUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
 

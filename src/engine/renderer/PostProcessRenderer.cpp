@@ -33,6 +33,7 @@ namespace Atlas {
             const auto& vignette = postProcessing.vignette;
             const auto& taa = postProcessing.taa;
             auto& sharpen = postProcessing.sharpen;
+            const auto& bloom = postProcessing.bloom;
 
             ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
 
@@ -124,6 +125,10 @@ namespace Atlas {
                 Graphics::Profiler::EndQuery();
             }
 
+            if (bloom.enable) {
+                GenerateBloom(bloom, &target->hdrTexture, &target->bloomTexture, commandList);
+            }
+
             {
                 Graphics::Profiler::BeginQuery("Main");
 
@@ -145,9 +150,17 @@ namespace Atlas {
                     pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
                     pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
                     pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
+                    pipelineConfig.ManageMacro("BLOOM", postProcessing.bloom.enable);
+                    pipelineConfig.ManageMacro("BLOOM_DIRT", postProcessing.bloom.enable && postProcessing.bloom.dirtMap.IsLoaded());
 
                     auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                     commandList->BindPipeline(pipeline);
+
+                    if (bloom.enable) {
+                        target->bloomTexture.Bind(commandList, 3, 1);
+                        if (bloom.dirtMap.IsLoaded())
+                            bloom.dirtMap->Bind(commandList, 3, 2);
+                    }
 
                     SetUniforms(camera, scene);
 
@@ -170,112 +183,120 @@ namespace Atlas {
 
         }
 
-        void PostProcessRenderer::Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
-            Graphics::CommandList* commandList, Texture::Texture2D* texture) {
+        void PostProcessRenderer::GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture, 
+            Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList) {
+            
+            const uint32_t maxDownsampleCount = 12;
+            ivec2 resolutions[maxDownsampleCount];
 
-            Graphics::Profiler::BeginQuery("Postprocessing");
+            Graphics::Profiler::BeginQuery("Bloom");
+            Graphics::Profiler::BeginQuery("Copy texture");
 
-            auto& postProcessing = scene->postProcessing;
+            CopyToTexture(hdrTexture, bloomTexture, commandList);
 
-            auto& camera = scene->GetMainCamera();
-            const auto& chromaticAberration = postProcessing.chromaticAberration;
-            const auto& vignette = postProcessing.vignette;
-            const auto& taa = postProcessing.taa;
-            auto& sharpen = postProcessing.sharpen;
+            auto mipLevels = std::min(bloom.mipLevels, bloomTexture->image->mipLevels);
+            mipLevels = std::min(mipLevels, maxDownsampleCount);
 
-            ivec2 resolution = ivec2(target->GetWidth(), target->GetHeight());
+            auto textureIn = bloomTexture;
+            auto textureOut = hdrTexture;           
 
-            if (sharpen.enable && !postProcessing.fsr2) {
-                Graphics::Profiler::BeginQuery("Sharpen");
+            // Downsample
+            {
+                Graphics::Profiler::EndAndBeginQuery("Downsample");
 
-                auto pipeline = PipelineManager::GetPipeline(sharpenPipelineConfig);
+                struct PushConstants {
+                    int mipLevel;
+                    float threshold;
+                };
 
+                auto pipelineConfig = PipelineConfig("bloom/bloomDownsample.csh");
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-                ivec2 groupCount = resolution / 8;
-                groupCount.x += ((groupCount.x * 8 == resolution.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
+                ivec2 resolution = ivec2(bloomTexture->width, bloomTexture->height);
+                resolutions[0] = resolution;
+                resolution /= 2;
+                
+                for (int32_t i = 1; i < mipLevels; i++) {
+                    Graphics::ImageBarrier imageBarriers[] = {
+                        {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    };
+                    commandList->PipelineBarrier(imageBarriers, {});
 
-                const auto& image = target->historyPostProcessTexture.image;
+                    ivec2 groupCount = resolution / 16;
+                    groupCount.x += ((groupCount.x * 16 == resolution.x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 16 == resolution.y) ? 0 : 1);
 
-                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+                    PushConstants constants {
+                        .mipLevel = i - 1,
+                        .threshold = bloom.threshold
+                    };
+                    commandList->PushConstants("constants", &constants);
 
-                commandList->BindImage(image, 3, 0);
+                    commandList->BindImage(textureOut->image, 3, 0, i);
+                    textureIn->Bind(commandList, 3, 1);
 
-                if (taa.enable) {
-                    target->postProcessTexture.Bind(commandList, 3, 1);
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                    
+                    std::swap(textureIn, textureOut);
+                    
+                    resolutions[i] = resolution;
+                    resolution /= 2;
                 }
-                else {
-                    target->radianceTexture.Bind(commandList, 3, 1);
-                }
-
-                // Reduce the sharpening to bring it more in line with FSR2 sharpening
-                float sharpenFactor = sharpen.factor * 0.5f;
-                commandList->PushConstants("constants", &sharpenFactor, sizeof(float));
-
-                commandList->Dispatch(groupCount.x, groupCount.y, 1);
-
-                commandList->ImageMemoryBarrier(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-                Graphics::Profiler::EndQuery();
             }
 
+            // Upsample
             {
-                Graphics::Profiler::BeginQuery("Main");
+                Graphics::Profiler::EndAndBeginQuery("Upsample");
 
-                // We can't return here because of the queries
-                if (device->swapChain->isComplete) {
-                    PipelineConfig pipelineConfig;
+                struct PushConstants {
+                    int additive;
+                    int mipLevel;
+                    float filterSize = 2.0f;
+                };
 
-                    if (!texture) {
-                        commandList->BeginRenderPass(device->swapChain, true);
-                        pipelineConfig = GetMainPipelineConfig();
-                    }
-                    else {
-                        commandList->BeginRenderPass(target->outputRenderPass,
-                            target->outputFrameBuffer, true);
-                        pipelineConfig = GetMainPipelineConfig(target->outputFrameBuffer);
-                    }
+                auto pipelineConfig = PipelineConfig("bloom/bloomUpsample.csh");
+                pipelineConfig.ManageMacro("DIRT_MAP", bloom.dirtMap.IsLoaded());
+                
+                auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
+                commandList->BindPipeline(pipeline);
+                
+                for (int32_t i = mipLevels - 2; i >= 0; i--) {
+                    Graphics::ImageBarrier imageBarriers[] = {
+                        {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                        {textureOut->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
+                    };
+                    commandList->PipelineBarrier(imageBarriers, {});
 
-                    pipelineConfig.ManageMacro("FILMIC_TONEMAPPING", postProcessing.filmicTonemapping);
-                    pipelineConfig.ManageMacro("VIGNETTE", postProcessing.vignette.enable);
-                    pipelineConfig.ManageMacro("CHROMATIC_ABERRATION", postProcessing.chromaticAberration.enable);
-                    pipelineConfig.ManageMacro("FILM_GRAIN", postProcessing.filmGrain.enable);
+                    ivec2 groupCount = resolutions[i] / 8;
+                    groupCount.x += ((groupCount.x * 8 == resolutions[i].x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 8 == resolutions[i].y) ? 0 : 1);
 
-                    auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
-                    commandList->BindPipeline(pipeline);
+                    PushConstants constants {
+                        .additive = i != mipLevels - 2 ? 1 : 0,
+                        .mipLevel = i + 1,
+                        .filterSize = bloom.filterSize,
+                    };
+                    commandList->PushConstants("constants", &constants);
 
-                    SetUniforms(camera, scene);
+                    commandList->BindImage(textureOut->image, 3, 0, i);
+                    textureIn->Bind(commandList, 3, 1);
 
-                    if (sharpen.enable) {
-                        target->historyPostProcessTexture.Bind(commandList, 3, 0);
-                    }
-                    else {
-                        if (taa.enable) {
-                            target->postProcessTexture.Bind(commandList, 3, 0);
-                        }
-                        else {
-                            target->radianceTexture.Bind(commandList, 3, 0);
-                        }
-                    }
-                    commandList->BindBuffer(uniformBuffer, 3, 4);
-
-                    commandList->Draw(6, 1, 0, 0);
-
-                    commandList->EndRenderPass();
-
-                    if (texture) {
-                        CopyToTexture(&target->outputTexture, texture, commandList);
-                    }
+                    commandList->Dispatch(groupCount.x, groupCount.y, 1);
+                    
+                    std::swap(textureIn, textureOut);
                 }
 
                 Graphics::Profiler::EndQuery();
+                Graphics::Profiler::EndQuery();
             }
 
-            Graphics::Profiler::EndQuery();
+            Graphics::ImageBarrier imageBarriers[] = {
+                {textureIn->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {textureOut->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT}
+            };
+            commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         }
 
@@ -285,23 +306,20 @@ namespace Atlas {
             auto& srcImage = sourceTexture->image;
             auto& dstImage = texture->image;
 
-            std::vector<Graphics::ImageBarrier> imageBarriers;
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-            imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                 {dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(preImageBarriers, {},
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             commandList->BlitImage(srcImage, dstImage);
 
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {srcImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {dstImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+            commandList->PipelineBarrier(postImageBarriers, {},
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         }
@@ -313,6 +331,7 @@ namespace Atlas {
             const auto& chromaticAberration = postProcessing.chromaticAberration;
             const auto& vignette = postProcessing.vignette;
             const auto& filmGrain = postProcessing.filmGrain;
+            const auto& bloom = postProcessing.bloom;
 
             Uniforms uniforms = {
                 .exposure = camera.exposure,
@@ -340,6 +359,11 @@ namespace Atlas {
 
             if (filmGrain.enable) {
                 uniforms.filmGrainStrength = filmGrain.strength;
+            }
+
+            if (bloom.enable) {
+                uniforms.bloomStrength = bloom.strength;
+                uniforms.bloomDirtStrength = bloom.dirtStrength;
             }
 
             uniformBuffer->SetData(&uniforms, 0, sizeof(Uniforms));

@@ -13,6 +13,9 @@ namespace Atlas {
             RTGI() = default;
 
             int32_t textureLevel = 4;
+            int32_t sampleCount = 2;
+            int32_t lightSampleCount = 1;
+
             float radianceLimit = 5.0f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;

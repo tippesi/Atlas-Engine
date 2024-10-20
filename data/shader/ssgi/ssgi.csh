@@ -76,25 +76,22 @@ void main() {
         vec3 viewPos = ConvertDepthToViewSpace(depth, texCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
+        vec3 viewNorm = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(viewNorm, 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
-
-        float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;
 
         vec3 irradiance = vec3(0.0);
         float hits = 0.0;
 
         if (depth < 1.0) {
 
-            float alpha = sqr(material.roughness);
-
             vec3 V = normalize(-viewVec);
             vec3 N = worldNorm;
 
             Surface surface = CreateSurface(V, N, vec3(1.0), material);
+            int totalCount = 0;
 
             for (uint j = 0; j < uniforms.rayCount; j++) {
                 int sampleIdx = int(uniforms.frameSeed *  uniforms.rayCount + j);
@@ -107,7 +104,9 @@ void main() {
                 Ray ray;
 
                 float pdf = 1.0;
-                BRDFSample brdfSample = SampleDiffuseBRDF(surface, blueNoiseVec.xy);
+                float NdotL;
+                ImportanceSampleCosDir(N, blueNoiseVec.xy, 
+                    ray.direction, NdotL, pdf);
 
                 ray.hitID = -1;
                 ray.hitDistance = 0.0;
@@ -117,10 +116,11 @@ void main() {
 
                 float stepSize = rayLength / float(uniforms.sampleCount);
 
-                ray.direction = brdfSample.L;
                 ray.origin = worldPos + surface.N * 0.1 + ray.direction * blueNoiseVec.z * stepSize;
 
-                bool hit = false;
+                vec3 rayIrradiance = vec3(0.0);
+
+                float hit = 0.0;
                 for (uint i = 0; i < uniforms.sampleCount; i++) {
 
                     vec3 rayPos = vec3(globalData.vMatrix * vec4(ray.origin + float(i) * ray.direction * stepSize, 1.0));
@@ -136,33 +136,55 @@ void main() {
                     float stepDepth = texelFetch(depthTexture, stepPixel, 0).r;
 
                     vec3 stepPos = ConvertDepthToViewSpace(stepDepth, uvPos);
-                    float stepLinearDepth = -stepPos.z;
-                    float rayDepth = -rayPos.z;
+                    float stepLinearDepth = abs(stepPos.z);
+                    float rayDepth = abs(rayPos.z);
 
                     float depthDelta = rayDepth - stepLinearDepth;
-                    vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg), 0.0)));
+                    vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, stepPixel, 0).rg));
+                    vec3 stepWorldNorm = normalize(vec3(globalData.ivMatrix * vec4(stepViewNorm, 0.0)));
+
+                    vec3 rayDir = normalize(stepPos - viewPos);
+
+                    /*
+                    if (rayDepth < stepLinearDepth) {
+                        float NdotV = dot(stepViewNorm, -rayDir);
+                        float NdotL = dot(-worldNorm, surface.N);
+                        if (NdotV > 0.0) {
+                            ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
+                            vec3 hitRadiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
+                            rayIrradiance += hitRadiance * max(dot(viewNorm, rayDir), 0.0) / pdf / PI;
+                            totalCount += 1;
+                        }
+                    }
+                    */
 
                     // Check if we are now behind the depth buffer, use that hit as the source of radiance
-                    if (stepLinearDepth < rayDepth && abs(depthDelta) < rayLength) {
-                        float NdotV = dot(worldNorm, -ray.direction) * 0.5 + 0.5;
-                        float NdotL = dot(-worldNorm, surface.N) * 0.5 + 0.5;
-                        if (true) {
+                    if (rayDepth >= stepLinearDepth) {
+                        float NdotV = dot(stepViewNorm, -rayDir);
+                        if (NdotV > 0.0 && abs(depthDelta) < stepSize) {
                             ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
-                            vec3 rayIrradiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
-                            float dist = distance(viewPos, stepPos);
-                            irradiance += rayIrradiance * max(NdotL, 0.0) * NdotV * surface.NdotL / max(0.1, dist);
+                            vec3 hitRadiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
+                            rayIrradiance += hitRadiance * NdotV * max(dot(viewNorm, rayDir), 0.0) / pdf / PI;
+                            totalCount += 1;
+                           
                         }
-                        hit = true;
 
-                        break;
+                        if (abs(depthDelta) < float(i + 1) * stepSize) {
+                            //hit = max(0.0, 1.0 - ((distance(stepPos, rayPos)) / rayLength));
+                            hit = 1.0;
+                            break;
+                        }
+                        //hit = max(0.0, 1.0 - ((distance(stepPos, rayPos)) / rayLength));
                     }
 
                 }
 
-                hits += hit ? 1.0 : 0.0;
+                irradiance += (rayIrradiance / max(1.0, float(totalCount)));
+
+                hits += hit;
             }
 
-            irradiance /= float(uniforms.rayCount);
+            irradiance /= (float(uniforms.rayCount));
 
             float irradianceMax = max(max(max(irradiance.r,
                 max(irradiance.g, irradiance.b)), uniforms.radianceLimit), 0.01);

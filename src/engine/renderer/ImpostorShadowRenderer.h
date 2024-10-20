@@ -15,7 +15,7 @@ namespace Atlas {
             void Init(Graphics::GraphicsDevice* device);
 
             void Render(Ref<Graphics::FrameBuffer>& frameBuffer,
-                Graphics::CommandList* commandList, RenderList::Pass* renderPass,
+                Graphics::CommandList* commandList, RenderList* renderList, RenderList::Pass* renderPass,
                 mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation);
 
         private:

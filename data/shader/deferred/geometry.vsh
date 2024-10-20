@@ -25,11 +25,11 @@ layout(location=3) in vec4 vTangent;
 layout(location=4) in vec4 vVertexColors;
 #endif
 
-layout(std430, set = 1, binding = 1) buffer CurrentMatrices {
+layout(std430, set = 1, binding = 1) readonly buffer CurrentMatrices {
     mat3x4 currentMatrices[];
 };
 
-layout(std430, set = 1, binding = 2) buffer LastMatrices {
+layout(std430, set = 1, binding = 2) readonly buffer LastMatrices {
     mat3x4 lastMatrices[];
 };
 
@@ -53,7 +53,7 @@ layout(location=6) out float normalInversionVS;
 layout(location=7) out mat3 TBN;
 #endif
 
-layout(set = 3, binding = 7) uniform sampler2D windNoiseMap;
+layout(set = 3, binding = 8) uniform sampler2D windNoiseMap;
 
 layout(push_constant) uniform constants {
     uint vegetation;
@@ -66,6 +66,9 @@ layout(push_constant) uniform constants {
     float windTextureLod;
     float windBendScale;
     float windWiggleScale;
+    float uvAnimationX;
+    float uvAnimationY;
+    float uvTiling;
     uint baseColorTextureIdx;
     uint opacityTextureIdx;
     uint normalTextureIdx;
@@ -73,6 +76,7 @@ layout(push_constant) uniform constants {
     uint metalnessTextureIdx;
     uint aoTextureIdx;
     uint heightTextureIdx;
+    uint emissiveTextureIdx;
 } PushConstants;
 
 // Functions
@@ -84,7 +88,9 @@ void main() {
     normalInversionVS = determinant(mMatrix) > 0.0 ? 1.0 : -1.0;
 
 #ifdef TEX_COORDS
-    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord;
+    texCoordVS = PushConstants.invertUVs > 0 ? vec2(vTexCoord.x, 1.0 - vTexCoord.y) : vTexCoord; 
+    texCoordVS += vec2(PushConstants.uvAnimationX, PushConstants.uvAnimationY) * globalData.time;
+    texCoordVS *= PushConstants.uvTiling;
 #endif
     
     mat4 mvMatrix = globalData.vMatrix * mMatrix;
@@ -123,7 +129,7 @@ void main() {
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
     vec3 normal = normalize(normalVS);
-    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? -1.0 : 1.0);
+    float correctionFactor = vTangent.w * (PushConstants.invertUVs > 0 ? 1.0 : -1.0);
     vec3 tangent = normalize(mat3(mvMatrix) * vTangent.xyz);
     
     vec3 bitangent = normalize(correctionFactor * 

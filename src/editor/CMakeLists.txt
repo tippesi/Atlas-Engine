@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.7)
-project(AtlasEngineEditor VERSION 0.2.0)
+cmake_minimum_required(VERSION 3.25)
+project(AtlasEngineEditor VERSION 0.2.1)
 
 # Note: For this project, the root CMakeLists.txt turns
 # the ATLAS_IMGUI and ATLAS_EXPORT_MAIN options on.
@@ -47,7 +47,8 @@ endif()
 
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
-target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension unofficial::imguizmo::imguizmo)
+target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension 
+    unofficial::imguizmo::imguizmo Jolt::Jolt)
 
 if (APPLE AND ATLAS_BUNDLE)
     set(path ${Vulkan_LIBRARY})

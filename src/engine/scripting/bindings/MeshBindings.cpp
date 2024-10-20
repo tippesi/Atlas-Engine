@@ -73,7 +73,14 @@ namespace Atlas::Scripting::Bindings {
             "displacementScale", &Material::displacementScale,
             "tiling", &Material::tiling,
             "twoSided", &Material::twoSided,
-            "vertexColors", &Material::vertexColors
+            "vertexColors", &Material::vertexColors,
+            "baseColorMap", &Material::baseColorMap,
+            "opacityMap", &Material::opacityMap,
+            "normalMap", &Material::normalMap,
+            "roughnessMap", &Material::roughnessMap,
+            "metalnessMap", &Material::metalnessMap,
+            "aoMap", &Material::aoMap,
+            "displacementMap", &Material::displacementMap
             );
 
     }

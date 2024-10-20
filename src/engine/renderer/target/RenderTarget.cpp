@@ -21,119 +21,32 @@ namespace Atlas::Renderer {
         targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
 
         historyTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapHistoryTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        lightingTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         reactiveMaskTexture = Texture::Texture2D(scaledWidth, scaledWidth, VK_FORMAT_R8_UNORM,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         hdrTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
+        bloomTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         oceanDepthTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_D32_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         oceanStencilTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R8_UINT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
 
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = targetData.baseColorTexture->format},
-                {.imageFormat = targetData.normalTexture->format},
-                {.imageFormat = targetData.geometryNormalTexture->format},
-                {.imageFormat = targetData.roughnessMetallicAoTexture->format},
-                {.imageFormat = targetData.materialIdxTexture->format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
+        radianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        historyRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        frameAccumTexture = Texture::Texture2DArray(scaledWidth, scaledHeight, 3, VK_FORMAT_R32_UINT);
 
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2],
-                                     colorAttachments[3], colorAttachments[4], colorAttachments[5], colorAttachments[6]},
-                .depthAttachment = depthAttachment
-            };
-            gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = lightingTexture.format},
-                {.imageFormat = targetData.velocityTexture->format},
-                {.imageFormat = targetData.stencilTexture->format},
-            };
-
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = targetData.depthTexture->format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
-                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
-                .depthAttachment = depthAttachment
-            };
-            afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
-        }
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = oceanStencilTexture.format}
-            };
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-            Graphics::RenderPassDepthAttachment depthAttachment = {
-                .imageFormat = oceanDepthTexture.format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            };
-
-            auto oceanRenderPassDesc = Graphics::RenderPassDesc {
-                .colorAttachments = {colorAttachments[0]},
-                .depthAttachment = depthAttachment
-            };
-            oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
-        }
-
-        {
-            Graphics::RenderPassColorAttachment colorAttachments[] = {
-                {.imageFormat = outputTexture.format}
-            };
-            for (auto &attachment: colorAttachments) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            }
-
-            auto outputPassDesc = Graphics::RenderPassDesc {
-                .colorAttachments = {colorAttachments[0]}
-            };
-            outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
-        }
-
+        CreateRenderPasses();
         CreateFrameBuffers();
 
         SetGIResolution(HALF_RES, false);
@@ -153,10 +66,7 @@ namespace Atlas::Renderer {
 
         // Need to at least have a size of 2x2 pixels
         scaledWidth = glm::max(2, int32_t(scalingFactor * width));
-        scaledHeight = glm::max(2, int32_t(scalingFactor * height));
-
-        targetData.Resize(ivec2(scaledWidth, scaledHeight));
-        targetDataSwap.Resize(ivec2(scaledWidth, scaledHeight));
+        scaledHeight = glm::max(2, int32_t(scalingFactor * height));        
 
         // We have to also resize the other part of the history
         historyTexture.Resize(scaledWidth, scaledHeight);
@@ -164,6 +74,7 @@ namespace Atlas::Renderer {
         lightingTexture.Resize(scaledWidth, scaledHeight);
         reactiveMaskTexture.Resize(scaledWidth, scaledHeight);
         hdrTexture.Resize(width, height);
+        bloomTexture.Resize(width, height);
         outputTexture.Resize(width, height);
         sssTexture.Resize(scaledWidth, scaledHeight);
         oceanDepthTexture.Resize(scaledWidth, scaledHeight);
@@ -174,11 +85,7 @@ namespace Atlas::Renderer {
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
 
-        ivec2 halfRes = GetRelativeResolution(HALF_RES);
-        targetDataDownsampled2x.Resize(halfRes);
-        targetDataSwapDownsampled2x.Resize(halfRes);
-
-        CreateFrameBuffers();
+        UseForPathTracing(useForPathTracing);
 
         hasHistory = false;
 
@@ -213,6 +120,8 @@ namespace Atlas::Renderer {
         hasHistory = true;
         swap = !swap;
 
+        std::swap(historyRadianceTexture, radianceTexture);
+
         CreateFrameBuffers();
 
     }
@@ -236,27 +145,27 @@ namespace Atlas::Renderer {
         giResolution = resolution;
 
         giTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyGiTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         if (createMomentsTexture) {
             giLengthTexture.Reset();
             historyGiLengthTexture.Reset();
             giMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             historyGiMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
         else {
             giMomentsTexture.Reset();
             historyGiMomentsTexture.Reset();
             giLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             historyGiLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
 
         hasHistory = false;
@@ -275,16 +184,16 @@ namespace Atlas::Renderer {
         aoResolution = resolution;
 
         aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         aoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         hasHistory = false;
 
@@ -301,15 +210,17 @@ namespace Atlas::Renderer {
         auto res = GetRelativeResolution(resolution);
         volumetricResolution = resolution;
 
-        volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
-        swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT);
+        volumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+        swapVolumetricTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         volumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyVolumetricCloudsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         hasHistory = false;
 
@@ -327,16 +238,16 @@ namespace Atlas::Renderer {
         reflectionResolution = resolution;
 
         reflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         swapReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyReflectionTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         reflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         historyReflectionMomentsTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16G16B16A16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
 
         hasHistory = false;
     
@@ -420,6 +331,156 @@ namespace Atlas::Renderer {
 
     }
 
+    void RenderTarget::UseForPathTracing(bool use) {
+
+        hasHistory = false;
+        useForPathTracing = use;
+
+        if (useForPathTracing) {
+            ivec2 res = GetRelativeResolution(FULL_RES);
+            targetData = RenderTargetData(res, false);
+            targetDataSwap = RenderTargetData(res, false);
+
+            targetDataDownsampled2x = RenderTargetData();
+            targetDataSwapDownsampled2x = RenderTargetData();
+
+            radianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            historyRadianceTexture = Texture::Texture2D(scaledWidth, scaledHeight, VK_FORMAT_R32G32B32A32_SFLOAT,
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            frameAccumTexture = Texture::Texture2DArray(scaledWidth, scaledHeight, 3, VK_FORMAT_R32_UINT,
+                Texture::Wrapping::Repeat, Texture::Filtering::Nearest, false, true);
+        }
+        else {
+            ivec2 res = GetRelativeResolution(FULL_RES);
+            targetData = RenderTargetData(res, true);
+            targetDataSwap = RenderTargetData(res, true);
+
+            ivec2 halfRes = GetRelativeResolution(HALF_RES);
+            targetDataDownsampled2x = RenderTargetData(halfRes, false);
+            targetDataSwapDownsampled2x = RenderTargetData(halfRes, false);
+
+            radianceTexture.Reset();
+            historyRadianceTexture.Reset();
+            frameAccumTexture.Reset();
+        }
+
+        // Pathtracing is kind of tricky with the depth buffer being in a SFLOAT format,
+        // so we can't attach this one to render passes or frame buffers
+        CreateRenderPasses();
+        CreateFrameBuffers();
+
+    }
+
+    bool RenderTarget::IsUsedForPathTracing() const {
+
+        return useForPathTracing;
+
+    }
+
+    void RenderTarget::CreateRenderPasses() {
+
+        auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
+
+        {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
+                {.imageFormat = targetData.baseColorTexture->format},
+                {.imageFormat = targetData.normalTexture->format},
+                {.imageFormat = targetData.geometryNormalTexture->format},
+                {.imageFormat = targetData.roughnessMetallicAoTexture->format},
+                {.imageFormat = targetData.emissiveTexture->format},
+                {.imageFormat = targetData.materialIdxTexture->format},
+                {.imageFormat = targetData.velocityTexture->format},
+                {.imageFormat = targetData.stencilTexture->format},
+            };
+
+            for (auto& attachment : colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = targetData.depthTexture->format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+
+            auto gBufferRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2], colorAttachments[3],
+                                     colorAttachments[4], colorAttachments[5], colorAttachments[6], colorAttachments[7]},
+                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
+            };
+            gBufferRenderPass = graphicsDevice->CreateRenderPass(gBufferRenderPassDesc);
+        }
+        {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
+                {.imageFormat = lightingTexture.format},
+                {.imageFormat = targetData.velocityTexture->format},
+                {.imageFormat = targetData.stencilTexture->format},
+            };
+
+            for (auto& attachment : colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = targetData.depthTexture->format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+
+            auto afterLightingRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {colorAttachments[0], colorAttachments[1], colorAttachments[2]},
+                .depthAttachment = useForPathTracing ? Graphics::RenderPassDepthAttachment() : depthAttachment
+            };
+            afterLightingRenderPass = graphicsDevice->CreateRenderPass(afterLightingRenderPassDesc);
+        }
+        {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
+                {.imageFormat = oceanStencilTexture.format}
+            };
+            for (auto& attachment : colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            Graphics::RenderPassDepthAttachment depthAttachment = {
+                .imageFormat = oceanDepthTexture.format,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
+
+            auto oceanRenderPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {colorAttachments[0]},
+                .depthAttachment = depthAttachment
+            };
+            oceanRenderPass = graphicsDevice->CreateRenderPass(oceanRenderPassDesc);
+        }
+
+        {
+            Graphics::RenderPassColorAttachment colorAttachments[] = {
+                {.imageFormat = outputTexture.format}
+            };
+            for (auto& attachment : colorAttachments) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            auto outputPassDesc = Graphics::RenderPassDesc{
+                .colorAttachments = {colorAttachments[0]}
+            };
+            outputRenderPass = graphicsDevice->CreateRenderPass(outputPassDesc);
+        }
+
+    }
+
     void RenderTarget::CreateFrameBuffers() {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
@@ -433,11 +494,12 @@ namespace Atlas::Renderer {
                    {target->normalTexture->image, 0, true},
                    {target->geometryNormalTexture->image, 0, true},
                    {target->roughnessMetallicAoTexture->image, 0, true},
+                   {target->emissiveTexture->image, 0, true},
                    {target->materialIdxTexture->image, 0, true},
                    {target->velocityTexture->image, 0, true},
                    {target->stencilTexture->image, 0, false},
                },
-               .depthAttachment = {target->depthTexture->image, 0, true},
+               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing },
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         gBufferFrameBuffer = graphicsDevice->CreateFrameBuffer(gBufferFrameBufferDesc);
@@ -449,7 +511,7 @@ namespace Atlas::Renderer {
                    {target->velocityTexture->image, 0, true},
                    {target->stencilTexture->image, 0, false}
                },
-               .depthAttachment = {target->depthTexture->image, 0, true},
+               .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
                .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBuffer = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);
@@ -461,7 +523,7 @@ namespace Atlas::Renderer {
                 {target->velocityTexture->image, 0, true},
                 {target->stencilTexture->image, 0, true}
             },
-            .depthAttachment = {target->depthTexture->image, 0, true},
+            .depthAttachment = { useForPathTracing ? nullptr : target->depthTexture->image, 0, !useForPathTracing},
             .extent = {uint32_t(scaledWidth), uint32_t(scaledHeight)}
         };
         afterLightingFrameBufferWithStencil = graphicsDevice->CreateFrameBuffer(afterLightingFrameBufferDesc);

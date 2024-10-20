@@ -1,6 +1,7 @@
 #include "GPUProfilerPanel.h"
 
 #include "graphics/Profiler.h"
+#include "Clock.h"
 
 namespace Atlas::ImguiExtension {
 
@@ -10,7 +11,19 @@ namespace Atlas::ImguiExtension {
 
         bool enabled = Graphics::Profiler::enable;
         ImGui::Checkbox("Enable##Profiler", &enabled);
+        ImGui::Checkbox("Show graph##Profiler", &showGraph);
         Graphics::Profiler::enable = enabled;
+
+        if (showGraph)
+            perfGraphPanel.Render();
+        else
+            RenderTable();
+
+        ImGui::PopID();
+
+    }
+
+    void GPUProfilerPanel::RenderTable() {
 
         const char* items[] = { "Chronologically", "Max time", "Min time" };
         static int item = 0;
@@ -48,7 +61,6 @@ namespace Atlas::ImguiExtension {
             ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
 
         if (ImGui::BeginTable("PerfTable", 2, flags)) {
-            // The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
             ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
             ImGui::TableSetupColumn("Elapsed (ms)", ImGuiTableColumnFlags_NoHide);
             ImGui::TableHeadersRow();
@@ -74,8 +86,6 @@ namespace Atlas::ImguiExtension {
 
             ImGui::EndTable();
         }
-
-        ImGui::PopID();
 
     }
 

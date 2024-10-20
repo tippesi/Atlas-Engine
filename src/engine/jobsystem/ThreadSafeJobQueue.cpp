@@ -2,6 +2,13 @@
 
 namespace Atlas {
 
+    bool ThreadSafeJobQueue::Empty() {
+
+        std::scoped_lock lock(mutex);
+        return jobs.empty();
+
+    }
+
     void ThreadSafeJobQueue::Push(const Job& job) {
 
         std::scoped_lock lock(mutex);

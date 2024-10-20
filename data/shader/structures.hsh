@@ -1,0 +1,50 @@
+#include <shadow.hsh>
+
+#define DIRECTIONAL_LIGHT 0
+#define POINT_LIGHT 1
+#define SPOT_LIGHT 2
+
+//Light struct has to be implemented like this
+struct Light {
+
+    vec4 location;
+    vec4 direction;
+    
+    vec4 color;
+    float intensity;
+    
+    float scatteringFactor;
+        
+    float specific0;
+    float specific1;
+
+    Shadow shadow;
+
+};
+
+struct VolumetricLight {
+    vec4 location;
+    vec4 direction;
+    
+    vec4 color;
+    float intensity;
+        
+    float specific0;
+    float specific1;
+
+    int shadowIdx;
+};
+
+struct CloudShadow {
+
+    mat4 vMatrix;
+    mat4 pMatrix;
+
+    mat4 ivMatrix;
+    mat4 ipMatrix;
+
+};
+
+layout (std430, set = 1, binding = 17) buffer Lights {
+    Light lights[];
+};

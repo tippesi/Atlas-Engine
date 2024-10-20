@@ -147,6 +147,13 @@ namespace Atlas {
              */
             size_t GetAlignedOffset(size_t elementIndex);
 
+            /**
+             * Returns the aligned offset for dynamic uniform buffer binding
+             * @param elementIndex The offset in elements
+             * @return The offset in bytes
+             */
+            void Reset();
+
         protected:
             void Reallocate(void* data);
 

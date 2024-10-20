@@ -5,8 +5,9 @@ layout (location = 0) out vec4 baseColorFS;
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
-layout (location = 4) out uint materialIdxFS;
-layout (location = 5) out vec2 velocityFS;
+layout (location = 4) out vec3 emissiveFS;
+layout (location = 5) out uint materialIdxFS;
+layout (location = 6) out vec2 velocityFS;
 
 layout(location=0) in vec3 positionVS;
 layout(location=1) in vec2 texCoordVS;

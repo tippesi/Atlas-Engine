@@ -3,6 +3,8 @@
 #include "Log.h"
 #include "../../Singletons.h"
 
+#include <algorithm>
+
 namespace Atlas::Editor::UI {
 
     void LogWindow::Render() {
@@ -12,10 +14,17 @@ namespace Atlas::Editor::UI {
 
         auto darkMode = Singletons::config->darkMode;
 
-        static size_t entriesCount = 0;
-
         auto entries = Atlas::Log::GetLatestEntries(10000);
         for (auto& entry : entries) {
+            
+            bool hasNewLine = entry.message.find_first_of('\n') != std::string::npos;
+            if (!hasNewLine) {
+                ImGui::TextUnformatted("");
+                if (!ImGui::IsItemVisible())
+                    continue;
+                ImGui::SameLine();
+            }
+
             std::string logText;
             logText.append("[" + std::to_string(entry.time) + "] ");
             logText.append(entry.message);
@@ -40,9 +49,9 @@ namespace Atlas::Editor::UI {
             ImGui::PopStyleColor();
         }
 
-        if (entriesCount != entries.size()) {
+        if (logEntryCount != entries.size()) {
+            logEntryCount = entries.size();
             ImGui::SetScrollHereY(1.0f);
-            entriesCount = entries.size();
         }
 
         End();

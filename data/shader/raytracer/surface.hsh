@@ -9,19 +9,19 @@
 
 Instance GetInstance(Ray ray) {
 
-    return bvhInstances[ray.hitInstanceID];
+    return bvhInstances[nonuniformEXT(ray.hitInstanceID)];
 
 }
 
 Triangle GetTriangle(Ray ray, Instance instance) {
 
-    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[ray.hitID]);
+    return UnpackTriangle(triangles[nonuniformEXT(instance.meshOffset)].data[nonuniformEXT(ray.hitID)]);
 
 }
 
 Material GetTriangleMaterial(Triangle tri, int materialOffset, out RaytraceMaterial rayMat) {
     Material mat;
-    rayMat = materials[tri.materialIndex + materialOffset];
+    rayMat = materials[nonuniformEXT(tri.materialIndex + materialOffset)];
 
     mat.ID = rayMat.ID;
 
@@ -88,6 +88,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
 
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    texCoord *= rayMat.tiling;
 
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
@@ -107,6 +108,8 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     mat.roughness *= SampleRoughnessBilinear(rayMat.roughnessTexture, float(level), texCoord);
     mat.metalness *= SampleMetalnessBilinear(rayMat.metalnessTexture, float(level), texCoord);
     mat.ao *= SampleAoBilinear(rayMat.aoTexture, float(level), texCoord);
+    // Need to have the texture level to go to near zero, otherwise we will have light leaks
+    mat.emissiveColor *= SampleEmissiveBilinear(rayMat.emissiveTexture, max(0.0, float(level - 3.0)), texCoord);
 
     // Account for changing texture coord direction
     vec3 bitangent = rayMat.invertUVs > 0 ? tri.bt : -tri.bt;
@@ -155,6 +158,6 @@ float GetOpacity(Triangle tri, vec2 barrycentric, int materialOffset, int textur
     vec2 texCoord = r * tri.uv0 + s * tri.uv1 + t * tri.uv2;
     texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
 
-    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord)
+    return SampleOpacityBilinear(rayMat.opacityTexture, float(textureLevel), texCoord * rayMat.tiling)
         * rayMat.opacity;
 }

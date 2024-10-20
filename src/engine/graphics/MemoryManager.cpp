@@ -46,8 +46,19 @@ namespace Atlas {
 
             VmaPoolCreateInfo poolCreateInfo = {};
             poolCreateInfo.memoryTypeIndex = memTypeIndex;
+            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &highPriorityMemoryPool));
 
-            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &hightPriorityBufferPool));
+            VkExtent3D imageExtent{ 1, 1, 1 };
+            VkImageCreateInfo imageCreateInfo = Initializers::InitImageCreateInfo(VK_FORMAT_R16_SFLOAT, 0, imageExtent);
+            imageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+            res = vmaFindMemoryTypeIndexForImageInfo(allocator, &imageCreateInfo, 
+                &sampleAllocCreateInfo, &memTypeIndex);
+
+            poolCreateInfo.memoryTypeIndex = memTypeIndex;
+            VK_CHECK(vmaCreatePool(allocator, &poolCreateInfo, &highPriorityRenderTargetPool));
 
             vkGetPhysicalDeviceProperties(device->physicalDevice, &deviceProperties);
 
@@ -61,7 +72,8 @@ namespace Atlas {
 
             DestroyAllImmediate();
 
-            vmaDestroyPool(allocator, hightPriorityBufferPool);
+            vmaDestroyPool(allocator, highPriorityMemoryPool);
+            vmaDestroyPool(allocator, highPriorityRenderTargetPool);
             vmaDestroyAllocator(allocator);
 
         }

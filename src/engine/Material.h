@@ -24,6 +24,7 @@ namespace Atlas {
         bool HasMetalnessMap() const;
         bool HasAoMap() const;
         bool HasDisplacementMap() const;
+        bool HasEmissiveMap() const;
 
         std::string name;
 
@@ -34,6 +35,7 @@ namespace Atlas {
         ResourceHandle<Texture::Texture2D> metalnessMap;
         ResourceHandle<Texture::Texture2D> aoMap;
         ResourceHandle<Texture::Texture2D> displacementMap;
+        ResourceHandle<Texture::Texture2D> emissiveMap;
 
         vec3 baseColor = vec3(1.0f);
         vec3 transmissiveColor = vec3(0.0f);
@@ -56,6 +58,8 @@ namespace Atlas {
 
         bool twoSided = false;
         bool vertexColors = false;
+
+        vec2 uvAnimation = vec2(0.0f);
 
         uint32_t uvChannel = 0;
 

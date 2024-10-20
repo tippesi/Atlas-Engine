@@ -17,6 +17,8 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Third person", &cameraComponent.thirdPerson);
         ImGui::DragFloat("Third person distance", &cameraComponent.thirdPersonDistance, 0.1f, 0.0f, 100.0f);
 
+        ImGui::Checkbox("Main", &cameraComponent.isMain);
+
         ImGui::Text("Lens properties");
 
         ImGui::DragFloat("Field of view", &cameraComponent.fieldOfView, 0.1f, 1.0f, 180.0f);
@@ -25,7 +27,7 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("Near plane", &cameraComponent.nearPlane, 0.01f, 0.01f, 10.0f);
         ImGui::DragFloat("Far plane", &cameraComponent.farPlane, 1.0f, 1.0f, 2000.0f);
 
-        ImGui::Checkbox("Main", &cameraComponent.isMain);
+        ImGui::DragFloat("Exposure", &cameraComponent.exposure, 0.01f, 0.01f, 100.0f),
 
         ImGui::PopID();
 

@@ -153,7 +153,7 @@ namespace Atlas {
                     [&](JobData& data) {
                         auto& mesh = meshes[data.idx];
 
-                        if (!mesh.IsLoaded()) return;
+                        if (!mesh.IsLoaded() || mesh.IsGenerated()) return;
 
                         Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
                     });
@@ -164,7 +164,7 @@ namespace Atlas {
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
-                if (!multithreaded)
+                if (!multithreaded && !mesh.IsGenerated())
                     Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
 
                 for (const auto& material : mesh->data.materials)
@@ -172,7 +172,7 @@ namespace Atlas {
             }
 
             for (const auto& [_, material] : materials) {
-                if (!material.IsLoaded()) continue;
+                if (!material.IsLoaded() || material.IsGenerated()) continue;
 
                 Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
             }

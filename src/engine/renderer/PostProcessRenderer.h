@@ -2,7 +2,6 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -18,8 +17,8 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
                 Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
 
-            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene,
-                Graphics::CommandList* commandList, Texture::Texture2D* texture = nullptr);
+            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
+                Graphics::CommandList* commandList);
 
         private:
             struct alignas(16) Uniforms {
@@ -29,18 +28,22 @@ namespace Atlas {
                 float saturation;
                 float contrast;
                 float filmGrainStrength;
-                int32_t bloomPasses;
+                float bloomStrength;
+                float bloomDirtStrength;
                 float aberrationStrength;
                 float aberrationReversed;
                 float vignetteOffset;
                 float vignettePower;
                 float vignetteStrength;
+                float padding0;
+                float padding1;
+                float padding2;
                 vec4 vignetteColor;
                 vec4 tintColor;
             };
 
-            void CopyToTexture(Texture::Texture2D* sourceTexture, Texture::Texture2D* texture,
-                Graphics::CommandList* commandList);
+            void GenerateBloom(const PostProcessing::Bloom& bloom, Texture::Texture2D* hdrTexture,
+                Texture::Texture2D* bloomTexture, Graphics::CommandList* commandList);
 
             void SetUniforms(const CameraComponent& camera, Ref<Scene::Scene> scene);
 

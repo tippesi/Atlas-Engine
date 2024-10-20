@@ -8,8 +8,9 @@
 #define FEATURE_ROUGHNESS_MAP (1 << 4)
 #define FEATURE_METALNESS_MAP (1 << 5)
 #define FEATURE_AO_MAP (1 << 6)
-#define FEATURE_TRANSMISSION (1 << 7)
-#define FEATURE_VERTEX_COLORS (1 << 8)
+#define FEATURE_EMISSIVE_MAP (1 << 7)
+#define FEATURE_TRANSMISSION (1 << 8)
+#define FEATURE_VERTEX_COLORS (1 << 9)
 
 struct Material {
     uint ID;
@@ -36,6 +37,7 @@ struct Material {
     bool roughnessMap;
     bool metalnessMap;
     bool aoMap;
+    bool emissiveMap;
     bool transmissive;
     bool vertexColors;
 };
@@ -45,7 +47,7 @@ struct PackedMaterial {
     vec4 data1;
 };
 
-layout (std430, set = 1, binding = 14) buffer PackedMaterials {
+layout (std430, set = 1, binding = 15) buffer PackedMaterials {
     PackedMaterial packedMaterials[];
 };
 
@@ -87,6 +89,7 @@ Material UnpackMaterial(uint idx) {
     material.roughnessMap = (features & FEATURE_ROUGHNESS_MAP) > 0;
     material.metalnessMap = (features & FEATURE_METALNESS_MAP) > 0;
     material.aoMap = (features & FEATURE_AO_MAP) > 0;
+    material.emissiveMap = (features & FEATURE_EMISSIVE_MAP) > 0;
     material.transmissive = (features & FEATURE_TRANSMISSION) > 0;
     material.vertexColors = (features & FEATURE_VERTEX_COLORS) > 0;
 

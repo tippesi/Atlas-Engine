@@ -3,7 +3,7 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 project(AtlasEngine)
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
 
 # Validate options ################################################################################
 if (ATLAS_NO_APP AND ATLAS_EXPORT_MAIN)
@@ -53,7 +53,7 @@ if(WIN32)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
-            unofficial::spirv-reflect glslang::SPIRV unofficial::joltphysics::Jolt
+            unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
             ${LUA_LIBRARIES} sol2 fsr2)
 endif()
 
@@ -67,8 +67,8 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
-            volk::volk SPIRV-Tools-opt unofficial::joltphysics::Jolt fsr2
-            GPUOpen::VulkanMemoryAllocator ${Vulkan_LIBRARIES} Vulkan::Headers
+            volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
+            GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
             unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
 endif()
 
@@ -84,16 +84,20 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_LINUX)
     
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-    set (CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-
-    set(CMAKE_SKIP_BUILD_RPATH FALSE)
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-    set(CMAKE_INSTALL_RPATH "./")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
-            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator unofficial::joltphysics::Jolt
+            volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
             unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+
+    if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
+        message("USe gcc14!")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++exp)
+    elseif(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 12.0)
+        message("USe gcc12!")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --enable-libstdcxx-backtrace=yes")
+        set(ATLAS_ENGINE_LIBS ${ATLAS_ENGINE_LIBS} stdc++_libbacktrace)
+    endif()
 endif()
 
 # Due to lua bindings we need more addressable functions (but not for clang)

@@ -26,18 +26,23 @@ namespace Atlas::Editor::UI {
             ImGui::Combo("Mobility", &mobilityItem, mobilityItems, IM_ARRAYSIZE(mobilityItems));
             mesh->mobility = static_cast<Mesh::MeshMobility>(mobilityItem);
 
-
             ImGui::Checkbox("Invert UVs", &mesh->invertUVs);
             ImGui::Checkbox("Cull backfaces", &mesh->cullBackFaces);
+            ImGui::Checkbox("Ray trace", &mesh->rayTrace);
             ImGui::Checkbox("Is vegetation", &mesh->vegetation);
 
             ImGui::Checkbox("Cast shadow", &mesh->castShadow);
             ImGui::SliderInt("Shadow cascades", &mesh->allowedShadowCascades, 1, 6);
 
+            auto region = ImGui::GetContentRegionAvail();
+            if (ImGui::Button("Invert normals", { region.x, 0.0 }))
+                mesh->InvertNormals();
+
             ImGui::Separator();
             ImGui::Text("Culling settings");            
             ImGui::DragFloat("Distance culling", &mesh->distanceCulling, 1.0f);
             ImGui::DragFloat("Shadow distance culling", &mesh->shadowDistanceCulling, 1.0f);
+            ImGui::DragFloat("Ray trace distance culling", &mesh->rayTraceDistanceCulling, 1.0f);
             
             ImGui::Separator();
             ImGui::Text("Wind settings");
@@ -57,7 +62,11 @@ namespace Atlas::Editor::UI {
 
             // Just update materials regardless of any change
             mesh->UpdatePipelines();
-        }        
+        }
+
+        meshSelectionPanel.Reset();
+        materialSelectionPanel.Reset();
+        textureSelectionPanel.Reset();
 
         return resourceChanged;
 
