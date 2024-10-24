@@ -72,12 +72,7 @@ namespace Atlas {
                 return;
 
             auto sceneState = &scene->renderState;
-
-            Ref<Graphics::FrameBuffer> frameBuffer = nullptr;
-            if (lightMap.contains(lightEntity))
-                frameBuffer = lightMap[lightEntity];
-            else
-                frameBuffer = GetOrCreateFrameBuffer(lightEntity);
+            auto frameBuffer = GetOrCreateFrameBuffer(lightEntity);
 
             lightMap[lightEntity] = frameBuffer;
 
@@ -207,9 +202,14 @@ namespace Atlas {
             
             if (prevLightMap.contains(entity)) {
                 auto frameBuffer = prevLightMap[entity];
-                if (frameBuffer->extent.width == shadow->resolution ||
-                    frameBuffer->extent.height == shadow->resolution) {
-                    return frameBuffer;
+                // The image for a light entity might change
+                if (light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->cubemap->image ||
+                    !light.shadow->useCubemap && frameBuffer->GetDepthImage() == light.shadow->maps->image) {
+                    // Also check if the resolution stayed the same
+                    if (frameBuffer->extent.width == shadow->resolution ||
+                        frameBuffer->extent.height == shadow->resolution) {
+                        return frameBuffer;
+                    }
                 }
             }
 

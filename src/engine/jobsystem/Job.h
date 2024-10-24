@@ -30,6 +30,15 @@ namespace Atlas {
         std::function<void(JobData&)> function;
 
         void* userData = nullptr;
+
+        inline JobData GetJobData(int32_t workerIdx = 0) const {
+            return JobData {
+                .idx = idx,
+                .workerIdx = 0,
+                .priority = priority,
+                .userData = userData
+            };
+        }
     };
 
 }

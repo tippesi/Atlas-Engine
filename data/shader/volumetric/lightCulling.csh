@@ -55,9 +55,7 @@ void main() {
 
     barrier();
 
-    if (depth != 1.0) {
-        atomicMax(sharedDepthMax, floatBitsToUint(depth));
-    }
+    atomicMax(sharedDepthMax, floatBitsToUint(depth));
 
     barrier();
 
@@ -89,8 +87,6 @@ void main() {
         if (lightType == POINT_LIGHT) {            
             sphere.center = light.location.xyz;
             sphere.radius = radius;
-
-            visible = SphereAABBIntersection(sphere, frustumAABB);    
         }
         else if (lightType == SPOT_LIGHT) {
             sphere = CalculateSphereFromSpotLight(light.location, light.direction, radius);

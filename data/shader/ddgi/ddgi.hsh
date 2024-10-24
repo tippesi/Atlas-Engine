@@ -10,7 +10,8 @@
 
 #define PROBE_STATE_NEW 0
 #define PROBE_STATE_ACTIVE 1
-#define PROBE_STATE_INACTIVE 2
+#define PROBE_STATE_INVISIBLE 2
+#define PROBE_STATE_INACTIVE 3
 #define VOLUME_CASCADE_COUNT 8
 
 layout(set = 2, binding = 24) uniform sampler2DArray irradianceVolume;
@@ -98,7 +99,7 @@ PackedRayHit PackRayHit(RayHit hit) {
 }
 
 uint GetProbeRayCount(uint state) {
-    return state == PROBE_STATE_INACTIVE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
+    return state == PROBE_STATE_INACTIVE || state == PROBE_STATE_INVISIBLE ? ddgiData.inactiveRayCount : ddgiData.rayCount;
 }
 
 vec3 GetProbePosition(ivec3 probeIdx, int cascadeIndex) {

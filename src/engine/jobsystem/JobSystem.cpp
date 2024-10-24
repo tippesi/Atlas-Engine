@@ -10,6 +10,9 @@
 #include <pthread.h>
 #endif
 
+// Use this macro to make the job system single threaded
+// #define JOBS_SINGLE_THREADED
+
 namespace Atlas {
 
     PriorityPool JobSystem::priorityPools[static_cast<int>(JobPriority::Count)];
@@ -53,15 +56,21 @@ namespace Atlas {
 
     void JobSystem::Execute(JobGroup& group, std::function<void(JobData&)> func, void* userData) {
 
-        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
-        group.counter.fetch_add(1);
-
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
             .function = std::move(func),
             .userData = userData
         };
+
+#ifdef JOBS_SINGLE_THREADED
+        auto jobData = job.GetJobData();
+        job.function(jobData);
+        return;
+#endif
+
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        group.counter.fetch_add(1);
 
         auto& worker = priorityPool.GetNextWorker();
         worker.queue.Push(job);
@@ -71,15 +80,24 @@ namespace Atlas {
 
     void JobSystem::ExecuteMultiple(JobGroup& group, int32_t count, std::function<void(JobData&)> func, void* userData) {
 
-        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
-        group.counter += count;
-
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
             .function = func,
             .userData = userData
         };
+
+#ifdef JOBS_SINGLE_THREADED
+        for (size_t i = 0; i < count; i++) {
+            job.idx = int32_t(i);
+            auto jobData = job.GetJobData();
+            job.function(jobData);
+        }
+        return;
+#endif
+
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        group.counter += count;
 
         if (count <= priorityPool.workerCount) {
             for (int32_t i = 0; i < count; i++) {
@@ -120,6 +138,10 @@ namespace Atlas {
 
     void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
 
+#ifdef JOBS_SINGLE_THREADED
+        return;
+#endif
+
         auto& priorityPool = priorityPools[static_cast<int>(priority)];        
 
         while (!signal.TryAquire()) {
@@ -130,6 +152,10 @@ namespace Atlas {
     }
 
     void JobSystem::Wait(JobGroup& group) {
+
+#ifdef JOBS_SINGLE_THREADED
+        return;
+#endif
 
         if (!group.HasFinished()) {
             auto& priorityPool = priorityPools[static_cast<int>(group.priority)];

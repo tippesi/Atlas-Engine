@@ -43,7 +43,7 @@ namespace Atlas {
         void RTReflectionRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
             
             auto reflection = scene->reflection;
-            if (!reflection || !reflection->enable || !scene->IsRtDataValid()) return;
+            if (!reflection || !reflection->enable) return;
 
             if (reflection->halfResolution && !reflection->upsampleBeforeFiltering && target->GetReflectionResolution() == FULL_RES)
                 target->SetReflectionResolution(HALF_RES);
@@ -66,9 +66,7 @@ namespace Atlas {
                     {target->historyReflectionMomentsTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, {});
-            }
-
-           
+            }           
 
             // Try to get a shadow map
             Ref<Lighting::Shadow> shadow = nullptr;
@@ -149,7 +147,7 @@ namespace Atlas {
             rtrUniformBuffer.SetData(&uniforms, 0);
 
             // Screen space reflections
-            {
+            if (reflection->ssr) {
                 Graphics::Profiler::BeginQuery("SSR");                
 
                 ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 8);
@@ -182,7 +180,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Cast rays and calculate radiance
-            {
+            if (scene->IsRtDataValid()) {
                 ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);

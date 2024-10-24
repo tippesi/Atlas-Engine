@@ -99,7 +99,7 @@ void LoadLightTypeData(uint requestedLightType) {
     barrier();
 
     if (localOffset == 0) {
-        sharedLightIndicesCount = lightCount;
+        sharedLightIndicesCount = min(lightCount, sharedLightIndicesCount);
     }
 
     barrier();
@@ -349,7 +349,7 @@ vec4 ComputeVolumetricPunctualLights(uint lightType, vec3 fragPos, float startDe
             }   
 
             // No shadows for now
-            // shadowValue = 1.0;
+            //shadowValue = 1.0;
 
             float phaseFunction = uniforms.fogEnabled > 0 ?
                 ComputeScattering(uniforms.fog.scatteringAnisotropy, NdotL) : 1.0;

@@ -183,11 +183,8 @@ namespace Atlas {
                 cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
                 cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
             }
-
-            volumetricUniformBuffer.SetData(&uniforms, 0);
+            
             commandList->BindSampler(shadowSampler, 3, 6);
-
-            commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
 #ifndef AE_BINDLESS
             std::vector<Ref<Graphics::Image>> cascadeMaps;
@@ -212,6 +209,9 @@ namespace Atlas {
             commandList->BindSampledImages(cascadeMaps, 3, 11);
             commandList->BindSampledImages(cubeMaps, 3, 19);
 #endif
+
+            volumetricUniformBuffer.SetData(&uniforms, 0);
+            commandList->BindBuffer(volumetricUniformBuffer.Get(), 3, 7);
 
             volumetricPipelineConfig.ManageMacro("CLOUDS", cloudsEnabled);
             volumetricPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowsEnabled);
