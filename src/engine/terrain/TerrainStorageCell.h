@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../Material.h"
 #include "../physics/ShapesManager.h"
+#include "../raytracing/BLAS.h"
 
 #include <vector>
 
@@ -23,6 +24,8 @@ namespace Atlas {
 
             bool IsLoaded();
 
+            void BuildBVH();
+
             int32_t x = 0;
             int32_t y = 0;
             int32_t LoD = 0;
@@ -30,6 +33,7 @@ namespace Atlas {
             vec2 position;
 
             Physics::ShapeRef shape;
+            Ref<RayTracing::BLAS> blas;
 
             std::vector<float> heightData;
 

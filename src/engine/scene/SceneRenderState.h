@@ -31,7 +31,7 @@ namespace Atlas::Scene {
 
         void PrepareMaterials();
 
-        void UpdateMeshBindlessData();
+        void UpdateBlasBindlessData();
 
         void UpdateTextureBindlessData();
 
@@ -64,7 +64,7 @@ namespace Atlas::Scene {
         std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
         std::unordered_map<Ref<Texture::Texture2DArray>, uint32_t> textureArrayToBindlessIdx;
         std::unordered_map<Ref<Texture::Cubemap>, uint32_t> cubemapToBindlessIdx;
-        std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+        std::unordered_map<Ref<RayTracing::BLAS>, uint32_t> blasToBindlessIdx;
 
         std::vector<LightEntity> lightEntities;
         std::vector<Renderer::Light> lights;
@@ -75,10 +75,10 @@ namespace Atlas::Scene {
 
         JobGroup materialUpdateJob{ JobPriority::High };
         JobGroup rayTracingWorldUpdateJob{ JobPriority::High };
-        JobGroup bindlessMeshMapUpdateJob{ JobPriority::High };
+        JobGroup bindlessBlasMapUpdateJob{ JobPriority::High };
         JobGroup bindlessTextureMapUpdateJob{ JobPriority::High };
         JobGroup bindlessOtherTextureMapUpdateJob{ JobPriority::High };
-        JobGroup prepareBindlessMeshesJob{ JobPriority::High };
+        JobGroup prepareBindlessBlasesJob{ JobPriority::High };
         JobGroup fillRenderListJob{ JobPriority::High };
         JobGroup cullAndSortLightsJob{ JobPriority::High };
 

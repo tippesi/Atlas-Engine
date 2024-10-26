@@ -4,6 +4,7 @@
 #include "../Material.h"
 #include "resource/Resource.h"
 #include "../buffer/VertexArray.h"
+#include "../raytracing/BLAS.h"
 
 #include "MeshData.h"
 #include "Impostor.h"
@@ -85,13 +86,7 @@ namespace Atlas {
             Buffer::VertexBuffer tangentBuffer;
             Buffer::VertexBuffer colorBuffer;
 
-            Buffer::Buffer blasNodeBuffer;
-            Buffer::Buffer triangleBuffer;
-            Buffer::Buffer bvhTriangleBuffer;
-            Buffer::Buffer triangleOffsetBuffer;
-
-            Ref<Graphics::BLAS> blas = nullptr;
-
+            Ref<RayTracing::BLAS> blas = nullptr;
             Ref<Impostor> impostor = nullptr;
 
             bool cullBackFaces = true;
@@ -115,12 +110,8 @@ namespace Atlas {
 
             bool invertUVs = false;
 
-            std::atomic_bool needsBvhRefresh = false;
-
         private:
             bool isLoaded = false;
-
-            std::atomic_bool isBvhBuilt = false;
             
 
         };

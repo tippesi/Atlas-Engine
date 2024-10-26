@@ -282,6 +282,8 @@ namespace Atlas {
 
             fileStream.close();
 
+            cell->BuildBVH();
+
         }
 
         int32_t TerrainLoader::ReadInt(const char* ptr, std::string line, size_t& offset) {

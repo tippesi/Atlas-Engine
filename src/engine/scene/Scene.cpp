@@ -112,7 +112,7 @@ namespace Atlas {
 
             // Can only update after scripts were run
 #ifdef AE_BINDLESS
-            renderState.UpdateMeshBindlessData();
+            renderState.UpdateBlasBindlessData();
             renderState.UpdateTextureBindlessData();
             renderState.UpdateOtherTextureBindlessData();
 #endif
@@ -397,7 +397,7 @@ namespace Atlas {
                 if (camera.isMain && !mainCameraEntity.IsValid()) {
                     mainCameraEntity = { entity, &entityManager };
                 }
-            }
+            }             
 
             renderState.mainCameraSignal.Release();
 
@@ -407,6 +407,10 @@ namespace Atlas {
                 return;
 
             auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
+
+            if (terrain) {
+                terrain->Update(mainCamera);
+            }
 
             auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
             for (auto entity : audioSubset) {

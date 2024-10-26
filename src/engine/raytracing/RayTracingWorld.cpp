@@ -45,14 +45,14 @@ namespace Atlas {
             auto meshes = scene->GetMeshes();
             int32_t meshCount = 0;
 
-            JobSystem::Wait(renderState->bindlessMeshMapUpdateJob);
+            JobSystem::Wait(renderState->bindlessBlasMapUpdateJob);
 
             std::swap(prevMeshInfos, meshInfos);
             meshInfos.clear();
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!renderState->meshIdToBindlessIdx.contains(mesh.GetID()))
+                if (!renderState->blasToBindlessIdx.contains(mesh->blas))
                     continue;
 
                 if (!prevMeshInfos.contains(mesh.GetID())) {
@@ -64,17 +64,17 @@ namespace Atlas {
                 }
 
                 auto &meshInfo = meshInfos[mesh.GetID()];
-                meshInfo.offset = int32_t(renderState->meshIdToBindlessIdx[mesh.GetID()]);
+                meshInfo.offset = int32_t(renderState->blasToBindlessIdx[mesh->blas]);
                 meshInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
-                    if (mesh->needsBvhRefresh && mesh->blas->isDynamic) {
-                        blases.push_back(mesh->blas);
-                        mesh->needsBvhRefresh = false;
+                    if (mesh->blas->needsBvhRefresh && mesh->blas->blas->isDynamic) {
+                        blases.push_back(mesh->blas->blas);
+                        mesh->blas->needsBvhRefresh = false;
                     }
 
-                    meshInfo.blas = mesh->blas;
+                    meshInfo.blas = mesh->blas->blas;
                     meshInfo.idx = meshCount++;
                 }
             }
@@ -116,7 +116,7 @@ namespace Atlas {
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!renderState->meshIdToBindlessIdx.contains(meshComponent.mesh.GetID()))
+                if (!renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
                     continue;
 
                 auto &meshInfo = meshInfos[meshComponent.mesh.GetID()];
@@ -125,7 +125,7 @@ namespace Atlas {
                     cameraLocation);
                 if (hasCamera && distSqd > meshInfo.cullingDistanceSqr)
                     continue;
-                if (hardwareRayTracing && !meshComponent.mesh->blas->isBuilt || meshComponent.mesh->needsBvhRefresh)
+                if (hardwareRayTracing && !meshComponent.mesh->blas->blas->isBuilt || meshComponent.mesh->blas->needsBvhRefresh)
                     continue;
 
                 actorAABBs.push_back(meshComponent.aabb);
@@ -158,11 +158,19 @@ namespace Atlas {
 
                     inst.transform = transform;
                     inst.instanceCustomIndex = meshInfo.offset;
-                    inst.accelerationStructureReference = meshComponent.mesh->blas->bufferDeviceAddress;
+                    inst.accelerationStructureReference = meshComponent.mesh->blas->blas->bufferDeviceAddress;
                     inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                     inst.mask = mask;
                     inst.instanceShaderBindingTableRecordOffset = 0;
                     hardwareInstances.push_back(inst);
+                }
+            }
+
+            if (scene->terrain) {
+                for (auto node : scene->terrain->renderList) {
+
+
+
                 }
             }
 
@@ -367,8 +375,8 @@ namespace Atlas {
 
         void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
-            auto& gpuTriangles = mesh->data.gpuTriangles;
-            auto& materials = mesh->data.materials;
+            auto& gpuTriangles = mesh->blas->gpuTriangles;
+            auto& materials = mesh->blas->materials;
 
             auto& meshInfo = meshInfos[mesh.GetID()];
             meshInfo.triangleLights.clear();

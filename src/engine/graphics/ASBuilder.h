@@ -7,6 +7,8 @@
 #include "QueryPool.h"
 #include "CommandList.h"
 
+#include <span>
+
 namespace Atlas {
 
     namespace Graphics {
@@ -24,7 +26,7 @@ namespace Atlas {
             ASBuilder() = default;
 
             BLASDesc GetBLASDescForTriangleGeometry(Ref<Buffer> vertexBuffer, Ref<Buffer> indexBuffer,
-                size_t vertexCount, size_t vertexSize, size_t indexSize, std::vector<ASGeometryRegion> regions);
+                size_t vertexCount, size_t vertexSize, size_t indexSize, std::span<ASGeometryRegion> regions);
 
             int32_t BuildBLAS(std::vector<Ref<BLAS>>& blases, CommandList* commandList = nullptr);
             

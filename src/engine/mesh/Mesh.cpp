@@ -91,7 +91,7 @@ namespace Atlas {
                 normal = vec4(-vec3(normal.x, normal.y, normal.z), normal.w);
 
             UpdateData();
-            isBvhBuilt = false;
+            blas->isBvhBuilt = false;
 
         }
 
@@ -105,25 +105,15 @@ namespace Atlas {
 
             if (data.indexCount == 0 || !bindless || !vertexBuffer.elementCount || !indexBuffer.elementCount) return;
 
-            data.BuildBVH(parallelBuild);
+            std::vector<RayTracing::BLAS::Triangle> triangles;
+            data.BuildBVHData(triangles);
 
-            triangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUTriangle));
-            triangleBuffer.SetSize(data.gpuTriangles.size());
-            triangleBuffer.SetData(data.gpuTriangles.data(), 0, data.gpuTriangles.size());
+            blas = CreateRef<RayTracing::BLAS>();
 
-            if (!hardwareRayTracing) {
-                blasNodeBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHNode));
-                blasNodeBuffer.SetSize(data.gpuBvhNodes.size());
-                blasNodeBuffer.SetData(data.gpuBvhNodes.data(), 0, data.gpuBvhNodes.size());
-               
-                bvhTriangleBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(GPUBVHTriangle));
-                bvhTriangleBuffer.SetSize(data.gpuBvhTriangles.size());
-                bvhTriangleBuffer.SetData(data.gpuBvhTriangles.data(), 0, data.gpuBvhTriangles.size());
-            }
-            else {
-                Graphics::ASBuilder asBuilder;
-
+            if (hardwareRayTracing) {
                 std::vector<Graphics::ASGeometryRegion> geometryRegions;
+                geometryRegions.reserve(data.subData.size());
+
                 for (auto& subData : data.subData) {
                     geometryRegions.emplace_back(Graphics::ASGeometryRegion{
                         .indexCount = subData.indicesCount,
@@ -132,35 +122,17 @@ namespace Atlas {
                         });
                 }
 
-                auto blasDesc = asBuilder.GetBLASDescForTriangleGeometry(vertexBuffer.buffer, indexBuffer.buffer,
-                    vertexBuffer.elementCount, vertexBuffer.elementSize, indexBuffer.elementSize, geometryRegions);
-
-                blas = device->CreateBLAS(blasDesc);
-
-                std::vector<uint32_t> triangleOffsets;
-                for (const auto& subData : data.subData) {
-                    auto triangleOffset = subData.indicesOffset / 3;
-                    triangleOffsets.push_back(triangleOffset);
-                }
-
-                triangleOffsetBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit | Buffer::BufferUsageBits::DedicatedMemoryBit, sizeof(uint32_t));
-                triangleOffsetBuffer.SetSize(triangleOffsets.size(), triangleOffsets.data());
-
-                needsBvhRefresh = true;
+                blas->Build(triangles, data.materials, vertexBuffer, indexBuffer, geometryRegions);
             }
-
-            data.gpuBvhNodes.clear();
-            data.gpuBvhNodes.shrink_to_fit();
-
-            data.gpuBvhTriangles.clear();
-            data.gpuBvhTriangles.shrink_to_fit();
-
-            isBvhBuilt = true;
+            else {
+                blas->Build(triangles, data.materials);
+            }
 
         }
 
         void Mesh::ClearBVH() {
 
+            /*
             // This whole operation can only be done when no ray tracing jobs or bindless updates are running
             isBvhBuilt = false;
 
@@ -183,12 +155,13 @@ namespace Atlas {
             else {
                 triangleOffsetBuffer.Reset();
             }
+            */
 
         }
 
         bool Mesh::IsBVHBuilt() const {
 
-            return isBvhBuilt;
+            return blas && blas->IsBuilt();
 
         }
 

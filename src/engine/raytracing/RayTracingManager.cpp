@@ -55,11 +55,11 @@ namespace Atlas::RayTracing {
             auto& mesh = *it;
 
             // Only want static meshes
-            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || !mesh->needsBvhRefresh || mesh->blas->isDynamic) {
+            if (!mesh.IsLoaded() || !mesh->IsBVHBuilt() || !mesh->blas->needsBvhRefresh || mesh->blas->blas->isDynamic) {
                 it = meshes.erase(it);
             }
             else {
-                blases.push_back(mesh->blas);
+                blases.push_back(mesh->blas->blas);
                 ++it;
             }
         }
@@ -71,8 +71,8 @@ namespace Atlas::RayTracing {
 
         // Copy the non-compacted versions over
         for (size_t i = 0; i < blasBuiltCount; i++) {
-            meshes[i]->blas = blases[i];
-            meshes[i]->needsBvhRefresh = false;
+            meshes[i]->blas->blas = blases[i];
+            meshes[i]->blas->needsBvhRefresh = false;
         }
 
         blases.clear();

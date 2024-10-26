@@ -138,7 +138,7 @@ namespace Atlas {
 				renderState->materialBuffer.Bind(commandList, 1, 15);
 
 			// Wait as long as possible for this to finish
-			JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
 			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 			JobSystem::WaitSpin(renderState->bindlessOtherTextureMapUpdateJob);
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
@@ -436,24 +436,29 @@ namespace Atlas {
 			Graphics::Profiler::BeginQuery("Buffer operations");
 
 			auto globalUniforms = GlobalUniforms{
-				 .vMatrix = camera.viewMatrix,
-				 .pMatrix = camera.projectionMatrix,
-				 .ivMatrix = camera.invViewMatrix,
-				 .ipMatrix = camera.invProjectionMatrix,
-				 .pvMatrixLast = camera.GetLastJitteredMatrix(),
-				 .pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
-				 .vMatrixLast = camera.GetLastViewMatrix(),
-				 .jitterLast = camera.GetJitter(),
-				 .jitterCurrent = camera.GetLastJitter(),
-				 .cameraLocation = vec4(camera.GetLocation(), 0.0f),
-				 .cameraDirection = vec4(camera.direction, 0.0f),
-				 .cameraUp = vec4(camera.up, 0.0f),
-				 .cameraRight = vec4(camera.right, 0.0f),
-				 .planetCenter = vec4(scene->sky.planetCenter, 0.0f),
-				 .planetRadius = scene->sky.planetRadius,
-				 .time = Clock::Get(),
-				 .deltaTime = Clock::GetDelta(),
-				 .frameCount = frameCount,
+				.vMatrix = camera.viewMatrix,
+				.pMatrix = camera.projectionMatrix,
+				.ivMatrix = camera.invViewMatrix,
+				.ipMatrix = camera.invProjectionMatrix,
+				.pvMatrixLast = camera.GetLastJitteredMatrix(),
+				.pvMatrixCurrent = camera.projectionMatrix * camera.viewMatrix,
+				.ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
+				.ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
+				.vMatrixLast = camera.GetLastViewMatrix(),
+				.jitterLast = camera.GetLastJitter(),
+				.jitterCurrent = camera.GetJitter(),
+				.cameraLocation = vec4(camera.GetLocation(), 0.0f),
+				.cameraDirection = vec4(camera.direction, 0.0f),
+				.cameraUp = vec4(camera.up, 0.0f),
+				.cameraRight = vec4(camera.right, 0.0f),
+				.planetCenter = vec4(scene->sky.planetCenter, 0.0f),
+				.windDir = glm::normalize(scene->wind.direction),
+				.windSpeed = scene->wind.speed,
+				.planetRadius = scene->sky.planetRadius,
+				.time = Clock::Get(),
+				.deltaTime = Clock::GetDelta(),
+				.frameCount = frameCount,
+				.mipLodBias = -1.0f / target->GetScalingFactor(),
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};
@@ -461,7 +466,7 @@ namespace Atlas {
 			pathTraceGlobalUniformBuffer->SetData(&globalUniforms, 0, sizeof(GlobalUniforms));
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
-			JobSystem::WaitSpin(renderState->prepareBindlessMeshesJob);
+			JobSystem::WaitSpin(renderState->prepareBindlessBlasesJob);
 			JobSystem::WaitSpin(renderState->bindlessTextureMapUpdateJob);
 
 			commandList->BindBuffer(pathTraceGlobalUniformBuffer, 1, 31);

@@ -157,27 +157,23 @@ namespace Atlas::Scene {
 
     }
 
-    void SceneRenderState::UpdateMeshBindlessData() {
+    void SceneRenderState::UpdateBlasBindlessData() {
 
-        auto bindlessMeshBuffersUpdate = [&](JobData&) {
-            JobSystem::Wait(bindlessMeshMapUpdateJob);
+        auto bindlessBlasBuffersUpdate = [&](JobData&) {
+            JobSystem::Wait(bindlessBlasMapUpdateJob);
 
-            if (blasBuffers.size() != meshIdToBindlessIdx.size()) {
-                blasBuffers.resize(meshIdToBindlessIdx.size());
-                triangleBuffers.resize(meshIdToBindlessIdx.size());
-                bvhTriangleBuffers.resize(meshIdToBindlessIdx.size());
-                triangleOffsetBuffers.resize(meshIdToBindlessIdx.size());
+            if (blasBuffers.size() != blasToBindlessIdx.size()) {
+                blasBuffers.resize(blasToBindlessIdx.size());
+                triangleBuffers.resize(blasToBindlessIdx.size());
+                bvhTriangleBuffers.resize(blasToBindlessIdx.size());
+                triangleOffsetBuffers.resize(blasToBindlessIdx.size());
             }
 
-            for (const auto& [meshId, idx] : meshIdToBindlessIdx) {
-                if (!scene->registeredMeshes.contains(meshId)) continue;
-
-                const auto& mesh = scene->registeredMeshes[meshId].resource;
-
-                auto blasBuffer = mesh->blasNodeBuffer.Get();
-                auto triangleBuffer = mesh->triangleBuffer.Get();
-                auto bvhTriangleBuffer = mesh->bvhTriangleBuffer.Get();
-                auto triangleOffsetBuffer = mesh->triangleOffsetBuffer.Get();
+            for (const auto& [blas, idx] : blasToBindlessIdx) {
+                auto blasBuffer = blas->blasNodeBuffer.Get();
+                auto triangleBuffer = blas->triangleBuffer.Get();
+                auto bvhTriangleBuffer = blas->bvhTriangleBuffer.Get();
+                auto triangleOffsetBuffer = blas->triangleOffsetBuffer.Get();
 
                 AE_ASSERT(triangleBuffer != nullptr);
 
@@ -188,28 +184,29 @@ namespace Atlas::Scene {
             }
             };
 
-        auto bindlessMeshMapUpdate = [&, bindlessMeshBuffersUpdate](JobData&) {
+        auto bindlessBlasMapUpdate = [&, bindlessBlasBuffersUpdate](JobData&) {
             auto meshes = scene->GetMeshes();
 
-            meshIdToBindlessIdx.clear();
+            blasToBindlessIdx.clear();
 
             uint32_t bufferIdx = 0;
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
                 // Not all meshes might have a bvh and not all blases will be built in frame, so skip them if they are not ready
-                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && mesh->blas && !mesh->blas->isDynamic && !mesh->blas->isBuilt)
+                if (!mesh->IsBVHBuilt() || mesh->IsBVHBuilt() && mesh->blas->blas && 
+                    !mesh->blas->blas->isDynamic && !mesh->blas->blas->isBuilt)
                     continue;
 
-                meshIdToBindlessIdx[mesh.GetID()] = bufferIdx++;
+                blasToBindlessIdx[mesh->blas] = bufferIdx++;
             }
             };
 
-        JobSystem::Wait(bindlessMeshMapUpdateJob);
-        JobSystem::Wait(prepareBindlessMeshesJob);
+        JobSystem::Wait(bindlessBlasMapUpdateJob);
+        JobSystem::Wait(prepareBindlessBlasesJob);
 
-        JobSystem::Execute(bindlessMeshMapUpdateJob, bindlessMeshMapUpdate);
-        JobSystem::Execute(prepareBindlessMeshesJob, bindlessMeshBuffersUpdate);
+        JobSystem::Execute(bindlessBlasMapUpdateJob, bindlessBlasMapUpdate);
+        JobSystem::Execute(prepareBindlessBlasesJob, bindlessBlasBuffersUpdate);
 
     }
 
@@ -569,12 +566,12 @@ namespace Atlas::Scene {
         // Assume scene work was done
         mainCameraSignal.Release();
 
-        JobSystem::Wait(bindlessMeshMapUpdateJob);
+        JobSystem::Wait(bindlessBlasMapUpdateJob);
         JobSystem::Wait(bindlessTextureMapUpdateJob);
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
         JobSystem::Wait(materialUpdateJob);
         JobSystem::Wait(rayTracingWorldUpdateJob);
-        JobSystem::Wait(prepareBindlessMeshesJob);
+        JobSystem::Wait(prepareBindlessBlasesJob);
         JobSystem::Wait(fillRenderListJob);
         JobSystem::Wait(cullAndSortLightsJob);
 
