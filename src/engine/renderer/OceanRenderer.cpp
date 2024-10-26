@@ -211,7 +211,7 @@ namespace Atlas {
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
-                if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+                if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -273,7 +273,7 @@ namespace Atlas {
                 depthTexture.Bind(commandList, 3, 5);
                 target->oceanDepthTexture.Bind(commandList, 3, 20);
 
-                if (scene->terrain) {
+                if (scene->terrain.IsLoaded()) {
                     if (scene->terrain->shoreLine.IsValid()) {
                         auto terrain = scene->terrain;
 
@@ -379,7 +379,7 @@ namespace Atlas {
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain && scene->terrain->shoreLine.IsValid());
+                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid());
                     auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
 
                     commandList->BindPipeline(pipeline);
@@ -424,7 +424,7 @@ namespace Atlas {
                 target->oceanDepthOnlyFrameBuffer);
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
-            if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
             auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -475,7 +475,7 @@ namespace Atlas {
             refractionTexture.Bind(commandList, 3, 4);
             depthTexture.Bind(commandList, 3, 5);
 
-            if (scene->terrain) {
+            if (scene->terrain.IsLoaded()) {
                 if (scene->terrain->shoreLine.IsValid()) {
                     auto terrain = scene->terrain;
 

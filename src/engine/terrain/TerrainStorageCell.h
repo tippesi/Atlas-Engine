@@ -25,7 +25,7 @@ namespace Atlas {
 
             bool IsLoaded();
 
-            void BuildBVH();
+            void BuildBVH(float stretchFactor, float heightFactor);
 
             int32_t x = 0;
             int32_t y = 0;

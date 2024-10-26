@@ -435,7 +435,7 @@ namespace Atlas {
 
             JobSystem::WaitSpin(renderState.rayTracingWorldUpdateJob);
 
-            if (terrain) {
+            if (terrain.IsLoaded()) {
                 terrain->Update(mainCamera);
             }
 
@@ -463,7 +463,7 @@ namespace Atlas {
 
             std::vector<Ref<Material>> materials;
 
-            if (terrain) {
+            if (terrain.IsLoaded()) {
                 auto terrainMaterials = terrain->storage.GetMaterials();
                 materials.reserve(terrainMaterials.size());
 

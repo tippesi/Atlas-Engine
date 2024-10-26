@@ -33,8 +33,8 @@ namespace Atlas::RayTracing {
             vec4 color1;
             vec4 color2;
 
-            int32_t materialIdx;
-            float opacity;
+            int32_t materialIdx = 0;
+            float opacity = -1.0f;
         };
 
         BLAS() = default;

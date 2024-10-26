@@ -15,7 +15,7 @@ namespace Atlas {
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
-            if (!scene->terrain)
+            if (!scene->terrain.IsLoaded())
                 return;
 
             Graphics::Profiler::BeginQuery("Terrain");
@@ -105,17 +105,17 @@ namespace Atlas {
 
                 PipelineConfig config;
                 switch (i) {
-                case 0: config = GeneratePipelineConfig(target, terrain, true, true);
+                case 0: config = GeneratePipelineConfig(target, terrain.Get(), true, true);
                     terrain->vertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Detail with displacement");
                     nodes = detailDisplacementNodes;
                     break;
-                case 1: config = GeneratePipelineConfig(target, terrain, false, true);
+                case 1: config = GeneratePipelineConfig(target, terrain.Get(), false, true);
                     terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Detail");
                     nodes = detailNodes;
                     break;
-                case 2: config = GeneratePipelineConfig(target, terrain, false, false);
+                case 2: config = GeneratePipelineConfig(target, terrain.Get(), false, false);
                     terrain->distanceVertexArray.Bind(commandList);
                     Graphics::Profiler::BeginQuery("Distance");
                     nodes = distanceNodes;

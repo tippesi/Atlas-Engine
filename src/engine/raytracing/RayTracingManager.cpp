@@ -4,6 +4,7 @@
 #include "graphics/ASBuilder.h"
 #include "resource/ResourceManager.h"
 #include "mesh/Mesh.h"
+#include "terrain/Terrain.h"
 
 namespace Atlas::RayTracing {
 
@@ -16,10 +17,10 @@ namespace Atlas::RayTracing {
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
         auto buildRTStructure = [&](JobData) {
-            auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
+            auto meshes = ResourceManager<Mesh::Mesh>::GetResources();
 
             JobGroup bvhBuildGroup;
-            for (const auto& mesh : sceneMeshes) {
+            for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;
                 if (mesh->IsBVHBuilt() || !mesh->rayTrace)
@@ -33,11 +34,36 @@ namespace Atlas::RayTracing {
                     });
             }
 
+            auto terrains = ResourceManager<Terrain::Terrain>::GetResources();
+            for (const auto& terrain : terrains) {
+                if (!terrain.IsLoaded())
+                    continue;
+
+                auto& storage = terrain->storage;
+                for (int32_t i = 0; i < storage.cells.size(); i++) {
+                    auto& lodCells = storage.cells[i];
+                    
+                    for (auto& cell : lodCells) {
+                        if (!cell.IsLoaded())
+                            continue;
+                        if (cell.blas && cell.blas->IsBuilt())
+                            continue;
+
+                        float nodeStretch = terrain->resolution * powf(2.0f,
+                            (float)(terrain->LoDCount - cell.LoD) - 1.0f);
+                        float heightStretch = terrain->heightScale;
+                        JobSystem::Execute(bvhBuildGroup, [cell = &cell, nodeStretch, heightStretch](JobData&) {
+                            cell->BuildBVH(nodeStretch, heightStretch);
+                            });
+                    }
+                }
+            }
+
             JobSystem::Wait(bvhBuildGroup);
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             if (device->support.hardwareRayTracing)
-                BuildStaticBLAS(sceneMeshes);
+                BuildStaticBLAS(meshes, terrains);
             };
 
         if (bvhUpdateGroup.HasFinished()) {
@@ -47,7 +73,8 @@ namespace Atlas::RayTracing {
 
 	}
 
-    void RayTracingManager::BuildStaticBLAS(std::vector<ResourceHandle<Mesh::Mesh>>& meshes) {        
+    void RayTracingManager::BuildStaticBLAS(std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
+        std::vector<ResourceHandle<Terrain::Terrain>>& terrains) {        
 
         Graphics::ASBuilder asBuilder;
 

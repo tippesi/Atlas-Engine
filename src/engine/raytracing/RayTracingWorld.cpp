@@ -195,21 +195,11 @@ namespace Atlas {
                 if (hardwareRayTracing && !node->cell->blas->blas->isBuilt || node->cell->blas->needsBvhRefresh)
                     continue;
 
-                float nodeStretch = scene->terrain->resolution * powf(2.0f,
-                    (float)(scene->terrain->LoDCount - node->cell->LoD) - 1.0f);
-                float hideStretch = scene->terrain->heightScale;
-
-                vec3 nodeScale = vec3(nodeStretch, hideStretch, nodeStretch);
-
                 auto nodePosition = vec3(node->location.x, 0.0f, node->location.y);
-                mat4 globalMatrix = glm::scale(glm::translate(nodePosition), nodeScale);
+                mat4 globalMatrix = glm::translate(nodePosition), nodeScale;
                 mat4 inverseGlobalMatrix = glm::inverse(globalMatrix);
 
-                auto aabb = node->cell->aabb.Scale(nodeScale);
-                vec3 halfSize = aabb.GetSize() * 0.5f;
-
-                Volume::AABB testaabb(vec3( - 2000.0f), vec3(2000.0f));
-                instanceAABBs.push_back(testaabb);
+                instanceAABBs.push_back(node->cell->aabb.Translate(nodePosition));
                 auto inverseMatrix = mat3x4(glm::transpose(inverseGlobalMatrix));
 
                 uint32_t mask = InstanceCullMasks::MaskAll;

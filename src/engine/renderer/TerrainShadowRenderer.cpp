@@ -13,7 +13,7 @@ namespace Atlas {
 
         void TerrainShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->terrain)
+            if (!scene->terrain.IsLoaded())
                 return;
 
             Graphics::Profiler::BeginQuery("Terrain shadows");
@@ -54,7 +54,7 @@ namespace Atlas {
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer);
 
-                    auto config = GeneratePipelineConfig(frameBuffer, terrain);
+                    auto config = GeneratePipelineConfig(frameBuffer, terrain.Get());
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);

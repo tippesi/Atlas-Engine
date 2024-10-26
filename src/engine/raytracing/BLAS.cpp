@@ -82,7 +82,7 @@ namespace Atlas::RayTracing {
 		Volume::BVH bvh;
 		if (!hardwareRayTracing) {
 			// Generate BVH
-			bvh = Volume::BVH(aabbs, bvhTriangles);
+			bvh = Volume::BVH(aabbs, bvhTriangles, false);
 
 			bvhTriangles.clear();
 			bvhTriangles.shrink_to_fit();
@@ -99,7 +99,6 @@ namespace Atlas::RayTracing {
         gpuTriangles.reserve(triangleCount);
         if (!hardwareRayTracing)
             gpuBvhTriangles.reserve(triangleCount);
-
 
         for (auto& bvhTriangle : data) {
 

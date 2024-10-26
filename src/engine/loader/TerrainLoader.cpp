@@ -9,7 +9,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, std::string filename) {
+        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, const std::string& filename) {
 
             auto fileStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
@@ -111,7 +111,7 @@ namespace Atlas {
 
         }
 
-        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(std::string filename) {
+        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(const std::string& filename) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
@@ -196,7 +196,7 @@ namespace Atlas {
         }
 
         void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
-                std::string filename, bool initWithHeightData) {
+                const std::string& filename, bool initWithHeightData) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -252,6 +252,8 @@ namespace Atlas {
                 tileSideCount *= 2;
             }
 
+            cell->storage = &terrain->storage;
+
             fileStream.seekg(currPos, std::ios_base::cur);
 
             std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
@@ -282,8 +284,6 @@ namespace Atlas {
             }
 
             fileStream.close();
-
-            cell->BuildBVH();
 
         }
 

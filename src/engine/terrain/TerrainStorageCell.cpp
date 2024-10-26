@@ -23,7 +23,7 @@ namespace Atlas {
 
         }
 
-        void TerrainStorageCell::BuildBVH() {
+        void TerrainStorageCell::BuildBVH(float stretchFactor, float heightFactor) {
 
             if (!IsLoaded()) return;
 
@@ -36,7 +36,7 @@ namespace Atlas {
             for (int32_t y = 0; y < heightFieldSideLength; y++) {
                 for (int32_t x = 0; x < heightFieldSideLength; x++) {
                     auto idx = y * heightFieldSideLength + x;
-                    vertices[idx] = vec3(float(x), heightData[idx], float(y));
+                    vertices[idx] = vec3(float(x) * stretchFactor, heightData[idx] * heightFactor, float(y) * stretchFactor);
 
                     aabb.min = glm::min(aabb.min, vertices[idx]);
                     aabb.max = glm::max(aabb.max, vertices[idx]);
@@ -61,8 +61,8 @@ namespace Atlas {
                 }
             }
 
-            Buffer::IndexBuffer indexBuffer(VK_INDEX_TYPE_UINT32, indices.size(), indices.data());
-            Buffer::VertexBuffer vertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertices.size(), vertices.data());
+            Buffer::IndexBuffer indexBuffer(VK_INDEX_TYPE_UINT32, indices.size(), indices.data(), true);
+            Buffer::VertexBuffer vertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertices.size(), vertices.data(), true);
 
             std::vector<ResourceHandle<Material>> materials;
             for (size_t i = 0; i < storage->materials.size(); i++) {
@@ -73,8 +73,6 @@ namespace Atlas {
                 else {
                     materials.push_back(ResourceHandle<Material>());
                 }
-                
-               
             }
 
             std::vector<RayTracing::BLAS::Triangle> triangles(indices.size() / 3);
@@ -88,6 +86,8 @@ namespace Atlas {
 
                 vec3 normal = -glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
 
+                normal *= normal.y < 0.0f ? -1.0f : 1.0f;
+
                 triangle.n0 = normal;
                 triangle.n1 = normal;
                 triangle.n2 = normal;
@@ -99,7 +99,6 @@ namespace Atlas {
                 triangle.materialIdx = int32_t(materialIdxData[indices[i * 3]]);
 
                 triangles[i] = triangle;
-             
             }
 
             Graphics::ASGeometryRegion geometryRegions[] = {{
@@ -107,7 +106,6 @@ namespace Atlas {
                 .indexOffset = 0,
                 .opaque = true
             }};
-
 
             blas = CreateRef<RayTracing::BLAS>();
             blas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);

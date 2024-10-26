@@ -160,7 +160,7 @@ namespace Atlas::Scene {
     void SceneRenderState::UpdateBlasBindlessData() {
 
         terrainLeafNodes.clear();
-        if (scene->terrain) {
+        if (scene->terrain.IsLoaded()) {
             auto& leafNodes = scene->terrain->leafList;
             terrainLeafNodes.reserve(leafNodes.size());
             std::copy(leafNodes.begin(), leafNodes.end(), std::back_inserter(terrainLeafNodes));

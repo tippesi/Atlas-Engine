@@ -130,12 +130,13 @@ namespace Atlas {
             static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
 
             std::string name;
-
-            Ref<Ocean::Ocean> ocean = nullptr;
-            Ref<Terrain::Terrain> terrain = nullptr;
+            
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;            
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
+
+            Ref<Ocean::Ocean> ocean = nullptr;
+            ResourceHandle<Terrain::Terrain> terrain;       
 
             Wind wind;
             Lighting::Sky sky;

@@ -96,6 +96,7 @@ namespace Atlas {
             Texture::Texture2DArray displacementMaps;
 
             std::vector<Ref<Material>> materials;
+            std::vector<std::vector<TerrainStorageCell>> cells;
 
         private:
             void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
@@ -107,9 +108,7 @@ namespace Atlas {
             int32_t materialResolution;
             int32_t materialCount;
 
-            int32_t* LoDSideLengths;            
-
-            std::vector<std::vector<TerrainStorageCell>> cells;
+            int32_t* LoDSideLengths;
 
             Graphics::CommandList* commandList = nullptr;
 
