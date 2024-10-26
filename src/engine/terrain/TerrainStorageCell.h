@@ -4,6 +4,7 @@
 #include "../Material.h"
 #include "../physics/ShapesManager.h"
 #include "../raytracing/BLAS.h"
+#include "../volume/AABB.h"
 
 #include <vector>
 
@@ -31,6 +32,9 @@ namespace Atlas {
             int32_t LoD = 0;
 
             vec2 position;
+
+            Volume::AABB aabb;
+            mat3x4 inverseMatrix;
 
             Physics::ShapeRef shape;
             Ref<RayTracing::BLAS> blas;

@@ -159,6 +159,13 @@ namespace Atlas::Scene {
 
     void SceneRenderState::UpdateBlasBindlessData() {
 
+        terrainLeafNodes.clear();
+        if (scene->terrain) {
+            auto& leafNodes = scene->terrain->leafList;
+            terrainLeafNodes.reserve(leafNodes.size());
+            std::copy(leafNodes.begin(), leafNodes.end(), std::back_inserter(terrainLeafNodes));
+        }
+
         auto bindlessBlasBuffersUpdate = [&](JobData&) {
             JobSystem::Wait(bindlessBlasMapUpdateJob);
 
@@ -199,6 +206,14 @@ namespace Atlas::Scene {
                     continue;
 
                 blasToBindlessIdx[mesh->blas] = bufferIdx++;
+            }
+
+            for (const auto leafNode : terrainLeafNodes) {
+                auto leafCell = leafNode->cell;
+                if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
+                    continue;
+
+                blasToBindlessIdx[leafCell->blas] = bufferIdx++;
             }
             };
 
@@ -462,10 +477,6 @@ namespace Atlas::Scene {
                                     auto matrix = cascade->projectionMatrix *
                                         cascade->viewMatrix * camera.invViewMatrix;
                                     shadowUniform.cascades[i].cascadeSpace = glm::transpose(matrix);
-
-                                    mat4 reTransposed = mat4(glm::transpose(shadowUniform.cascades[i].cascadeSpace));
-
-                                    AE_ASSERT(reTransposed == matrix);
                                 }
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             }

@@ -21,7 +21,6 @@ namespace Atlas::RayTracing {
 
         BuildBuffers(triangles, materials);
 
-
         if (hardwareRayTracing) {
             Graphics::ASBuilder asBuilder;
 

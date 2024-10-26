@@ -59,6 +59,7 @@ namespace Atlas::Scene {
         std::vector<Ref<Graphics::Buffer>> bvhTriangleBuffers;
         std::vector<Ref<Graphics::Buffer>> triangleOffsetBuffers;
 
+        std::vector<Terrain::TerrainNode*> terrainLeafNodes;
         std::vector<Renderer::PackedMaterial> materials;
         std::unordered_map<void*, uint16_t> materialMap;
         std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
