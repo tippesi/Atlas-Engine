@@ -272,6 +272,7 @@ namespace Atlas {
             cell->splatMap = Texture::Texture2D(tileResolution, tileResolution,
                 VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
             cell->splatMap.SetData(splatMapData);
+            cell->materialIdxData = splatMapData;
             
             if (initWithHeightData) {
                 cell->heightData.resize(tileResolution * tileResolution);

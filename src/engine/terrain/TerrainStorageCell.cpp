@@ -48,7 +48,7 @@ namespace Atlas {
             std::vector<uint32_t> indices(vertexSideCount * vertexSideCount * 6);
             for (int32_t y = 0; y < vertexSideCount; y++) {
                 for (int32_t x = 0; x < vertexSideCount; x++) {
-                    auto idx = y * vertexSideCount + x;
+                    auto idx = y * heightFieldSideLength + x;
                     auto baseIdx = (y * vertexSideCount + x) * 6;
 
                     indices[baseIdx + 0] = idx;
@@ -64,38 +64,62 @@ namespace Atlas {
             Buffer::IndexBuffer indexBuffer(VK_INDEX_TYPE_UINT32, indices.size(), indices.data());
             Buffer::VertexBuffer vertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertices.size(), vertices.data());
 
-            auto material = ResourceHandle<Material>(CreateRef<Material>());
+            std::vector<ResourceHandle<Material>> materials;
+            for (size_t i = 0; i < storage->materials.size(); i++) {
+                if (storage->materials[i] != nullptr) {
+                    materials.push_back(ResourceHandle<Material>(storage->materials[i]));
+                    materials.back()->twoSided = false;
+                }
+                else {
+                    materials.push_back(ResourceHandle<Material>());
+                }
+                
+               
+            }
 
             std::vector<RayTracing::BLAS::Triangle> triangles(indices.size() / 3);
             for (size_t i = 0; i < triangles.size(); i++) {
                 
                 RayTracing::BLAS::Triangle triangle;
 
-                triangle.v0 = vertices[indices[i * 3 + 0]];
+                triangle.v0 = vertices[indices[i * 3 + 2]];
                 triangle.v1 = vertices[indices[i * 3 + 1]];
-                triangle.v2 = vertices[indices[i * 3 + 2]];
+                triangle.v2 = vertices[indices[i * 3 + 0]];
 
-                vec3 normal = glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
+                vec3 normal = -glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
 
                 triangle.n0 = normal;
                 triangle.n1 = normal;
                 triangle.n2 = normal;
 
-                triangle.materialIdx = 0;
+                triangle.uv0 = vec2(triangle.v2.x, triangle.v2.z);
+                triangle.uv1 = vec2(triangle.v1.x, triangle.v1.z);
+                triangle.uv2 = vec2(triangle.v0.x, triangle.v0.z);
+
+                triangle.materialIdx = int32_t(materialIdxData[indices[i * 3]]);
 
                 triangles[i] = triangle;
+             
             }
 
             Graphics::ASGeometryRegion geometryRegions[] = {{
                 .indexCount = indices.size(),
                 .indexOffset = 0,
-                .opaque = false
+                .opaque = true
             }};
 
-            std::vector<ResourceHandle<Material>> materials = { material };
 
             blas = CreateRef<RayTracing::BLAS>();
             blas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);
+
+            if (Graphics::GraphicsDevice::DefaultDevice->support.hardwareRayTracing) {
+                Graphics::ASBuilder asBuilder;
+                std::vector<Ref<Graphics::BLAS>> blases = { blas->blas };
+                asBuilder.BuildBLAS(blases);
+
+                blas->blas = blases.front();
+                blas->needsBvhRefresh = false;
+            }
 
         }
 

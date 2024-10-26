@@ -40,14 +40,13 @@ namespace Atlas {
             Ref<RayTracing::BLAS> blas;
 
             std::vector<float> heightData;
+            std::vector<uint8_t> materialIdxData;
 
             Texture::Texture2D heightField;
             Texture::Texture2D normalMap;
             Texture::Texture2D splatMap;
-            Texture::Texture2D diffuseMap;
 
-        private:
-            TerrainStorage* const storage;
+            TerrainStorage* storage = nullptr;
 
         };
 

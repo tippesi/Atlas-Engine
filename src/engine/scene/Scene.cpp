@@ -408,10 +408,6 @@ namespace Atlas {
 
             auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
-            if (terrain) {
-                terrain->Update(mainCamera);
-            }
-
             auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
             for (auto entity : audioSubset) {
                 const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
@@ -436,6 +432,8 @@ namespace Atlas {
 
             renderState.FillRenderList();
             renderState.CullAndSortLights();
+
+            JobSystem::WaitSpin(renderState.rayTracingWorldUpdateJob);
 
             if (terrain) {
                 terrain->Update(mainCamera);

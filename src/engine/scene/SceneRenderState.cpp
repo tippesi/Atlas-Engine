@@ -244,6 +244,16 @@ namespace Atlas::Scene {
                         materialSet.insert(material.Get());
             }
 
+            for (const auto leafNode : terrainLeafNodes) {
+                auto leafCell = leafNode->cell;
+                if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
+                    continue;
+
+                for (auto& material : leafCell->blas->materials)
+                    if (material.IsLoaded())
+                        materialSet.insert(material.Get());
+            }
+
             for (const auto& material : materialSet) {
                 if (material->HasBaseColorMap())
                     textureSet.insert(material->baseColorMap.Get());

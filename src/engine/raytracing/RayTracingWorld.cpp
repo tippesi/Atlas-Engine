@@ -87,8 +87,7 @@ namespace Atlas {
                     continue;
 
                 if (!prevBlasInfos.contains(node->cell->blas)) {
-                    blasInfos[node->cell->blas] = {};
-                   
+                    blasInfos[node->cell->blas] = {};                   
                 }
                 else {
                     blasInfos[node->cell->blas] = prevBlasInfos[node->cell->blas];
@@ -196,16 +195,21 @@ namespace Atlas {
                 if (hardwareRayTracing && !node->cell->blas->blas->isBuilt || node->cell->blas->needsBvhRefresh)
                     continue;
 
-                float nodeStretch = node->sideLength;
+                float nodeStretch = scene->terrain->resolution * powf(2.0f,
+                    (float)(scene->terrain->LoDCount - node->cell->LoD) - 1.0f);
                 float hideStretch = scene->terrain->heightScale;
 
-                vec3 nodeScale = vec3(nodeStretch / 64.0f, hideStretch, nodeStretch / 64.0f);
+                vec3 nodeScale = vec3(nodeStretch, hideStretch, nodeStretch);
 
                 auto nodePosition = vec3(node->location.x, 0.0f, node->location.y);
-                mat4 globalMatrix = glm::translate(glm::scale(nodeScale), nodePosition);
+                mat4 globalMatrix = glm::scale(glm::translate(nodePosition), nodeScale);
                 mat4 inverseGlobalMatrix = glm::inverse(globalMatrix);
 
-                instanceAABBs.push_back(node->cell->aabb.Transform(globalMatrix));
+                auto aabb = node->cell->aabb.Scale(nodeScale);
+                vec3 halfSize = aabb.GetSize() * 0.5f;
+
+                Volume::AABB testaabb(vec3( - 2000.0f), vec3(2000.0f));
+                instanceAABBs.push_back(testaabb);
                 auto inverseMatrix = mat3x4(glm::transpose(inverseGlobalMatrix));
 
                 uint32_t mask = InstanceCullMasks::MaskAll;
@@ -285,7 +289,6 @@ namespace Atlas {
 
             auto sceneState = &scene->renderState;
 
-            auto meshes = scene->GetMeshes();
             materials.clear();
 
             for (auto& [blas, blasInfo] : blasInfos) {
@@ -358,10 +361,6 @@ namespace Atlas {
 
                     materials.push_back(gpuMaterial);
                 }
-            }
-
-            for (const auto node : sceneState->terrainLeafNodes) {
-
             }
 
             if (materials.empty())
