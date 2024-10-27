@@ -6,6 +6,8 @@
 #include "BLAS.h"
 #include "scene/Subset.h"
 
+
+#include "terrain/TerrainNode.h"
 #include "scene/components/MeshComponent.h"
 #include "scene/components/TransformComponent.h"
 
@@ -50,6 +52,7 @@ namespace Atlas {
         private:
             struct BlasInfo {
                 ResourceHandle<Mesh::Mesh> mesh;
+                Terrain::TerrainNode* node = nullptr;
 
                 int32_t offset = 0;
                 int32_t materialOffset = 0;
@@ -77,9 +80,9 @@ namespace Atlas {
 
             Scene::Scene* scene;
 
+            Graphics::ASBuilder tlasBuilder;
             Ref<Graphics::TLAS> tlas;
 
-            std::vector<Ref<BLAS>> blases;
             std::vector<Ref<Graphics::BLAS>> buildBlases;
 
             Buffer::Buffer materialBuffer;

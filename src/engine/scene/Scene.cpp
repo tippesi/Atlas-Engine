@@ -110,6 +110,18 @@ namespace Atlas {
                 }
             }
 
+            // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
+            if (mainCameraEntity.IsValid()) {
+                auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
+
+                if (terrain.IsLoaded())
+                    terrain->Update(mainCamera);
+
+                if (ocean) {
+                    ocean->Update(mainCamera, deltaTime);
+                }
+            }
+
             // Can only update after scripts were run
 #ifdef AE_BINDLESS
             renderState.UpdateBlasBindlessData();
@@ -432,16 +444,6 @@ namespace Atlas {
 
             renderState.FillRenderList();
             renderState.CullAndSortLights();
-
-            JobSystem::WaitSpin(renderState.rayTracingWorldUpdateJob);
-
-            if (terrain.IsLoaded()) {
-                terrain->Update(mainCamera);
-            }
-
-            if (ocean) {
-                ocean->Update(mainCamera, deltaTime);
-            }
 
         }
 

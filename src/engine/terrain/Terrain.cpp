@@ -157,8 +157,8 @@ namespace Atlas {
             z -= zPosition;
 
             // Cells have overlapping edges (last pixels are on next cell)
-            x *= float(cell->heightField.width - 1);
-            z *= float(cell->heightField.height - 1);
+            x *= float(cell->heightField->width - 1);
+            z *= float(cell->heightField->height - 1);
 
             xPosition = floorf(x);
             zPosition = floorf(z);
@@ -182,14 +182,14 @@ namespace Atlas {
             topLeft is in x direction
             bottomRight is in z direction
             */
-            float heightBottomLeft = cell->heightData[xIndex + cell->heightField.width * zIndex];
+            float heightBottomLeft = cell->heightData[xIndex + cell->heightField->width * zIndex];
             float heightBottomRight = 0.0f;
             float heightTopRight = 0.0f;
             float heightTopLeft = 0.0f;
 
             // Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
-            if (zIndex + 1 == cell->heightField.height &&
-                xIndex + 1 == cell->heightField.width) {
+            if (zIndex + 1 == cell->heightField->height &&
+                xIndex + 1 == cell->heightField->width) {
                 auto neighbourCell = storage.GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
 
                 if (!neighbourCell) {
@@ -199,13 +199,13 @@ namespace Atlas {
                 }
                 else {
                     heightTopLeft = neighbourCell->heightData[1];
-                    heightBottomRight = neighbourCell->heightData[neighbourCell->heightField.width];
-                    heightTopRight = neighbourCell->heightData[neighbourCell->heightField.width + 1];
+                    heightBottomRight = neighbourCell->heightData[neighbourCell->heightField->width];
+                    heightTopRight = neighbourCell->heightData[neighbourCell->heightField->width + 1];
                 }
             }
-            else if (zIndex + 1 == cell->heightField.height) {
+            else if (zIndex + 1 == cell->heightField->height) {
 
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
+                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
 
                 auto neighbourCell = storage.GetCell(xIndex, zIndex + 1, LoDCount - 1);
 
@@ -219,9 +219,9 @@ namespace Atlas {
                 }
 
             }
-            else if (xIndex + 1 == cell->heightField.width) {
+            else if (xIndex + 1 == cell->heightField->width) {
 
-                heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
+                heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
 
                 auto neighbourCell = storage.GetCell(xIndex + 1, zIndex, LoDCount - 1);
 
@@ -230,16 +230,16 @@ namespace Atlas {
                     heightTopRight = heightBottomRight;
                 }
                 else {
-                    heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField.width];
+                    heightTopLeft = neighbourCell->heightData[zIndex * neighbourCell->heightField->width];
                     heightTopRight = neighbourCell->heightData[(zIndex + 1) *
-                        neighbourCell->heightField.width];
+                        neighbourCell->heightField->width];
                 }
 
             }
             else {
-                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField.width * zIndex];
-                heightBottomRight = cell->heightData[xIndex + cell->heightField.width * (zIndex + 1)];
-                heightTopRight = cell->heightData[xIndex + 1 + cell->heightField.width * (zIndex + 1)];
+                heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
+                heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
+                heightTopRight = cell->heightData[xIndex + 1 + cell->heightField->width * (zIndex + 1)];
             }
 
             heightBottomLeft *= heightScale;
@@ -313,7 +313,7 @@ namespace Atlas {
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
 
-                width += cell->heightField.width - 1;
+                width += cell->heightField->width - 1;
             }
 
             for (int32_t y = 0; y < lodCount; y++) {
@@ -322,7 +322,7 @@ namespace Atlas {
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
 
-                height += cell->heightField.height - 1;
+                height += cell->heightField->height - 1;
             }
 
             Common::Image<float> heightImage(width, height, 1);
@@ -336,19 +336,19 @@ namespace Atlas {
                     AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                         be loaded to be converted into height field");
 
-                    for (int32_t y = 0; y < cell->heightField.height - 1; y++) {
-                        for (int32_t x = 0; x < cell->heightField.width - 1; x++) {
-                            auto idx = y * cell->heightField.width + x;
+                    for (int32_t y = 0; y < cell->heightField->height - 1; y++) {
+                        for (int32_t x = 0; x < cell->heightField->width - 1; x++) {
+                            auto idx = y * cell->heightField->width + x;
 
                             heightImage.SetData(width + x, height + y, 0, cell->heightData[idx]);
                         }
                     }
 
-                    width += cell->heightField.width - 1;
+                    width += cell->heightField->width - 1;
                 }
 
                 auto cell = storage.GetCell(0, cellY, LoD);
-                height += cell->heightField.height - 1;
+                height += cell->heightField->height - 1;
             }
 
             return heightImage;

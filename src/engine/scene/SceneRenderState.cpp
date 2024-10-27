@@ -249,6 +249,8 @@ namespace Atlas::Scene {
                 if (!leafCell || !leafCell->IsLoaded() || !leafCell->blas || !leafCell->blas->IsBuilt())
                     continue;
 
+                textureSet.insert(leafCell->normalMap);
+
                 for (auto& material : leafCell->blas->materials)
                     if (material.IsLoaded())
                         materialSet.insert(material.Get());

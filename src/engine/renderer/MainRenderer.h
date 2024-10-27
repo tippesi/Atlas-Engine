@@ -86,6 +86,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> lightUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
             Ref<Graphics::Sampler> globalSampler;
+            Ref<Graphics::Sampler> globalClampToEdgeSampler;
             Ref<Graphics::Sampler> globalNearestSampler;
 
             Buffer::VertexArray vertexArray;

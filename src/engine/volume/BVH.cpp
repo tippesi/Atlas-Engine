@@ -55,13 +55,48 @@ namespace Atlas {
 
         }
 
-        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {
+        BVH::BVH(const std::vector<AABB>& aabbs, bool parallelBuild) {            
 
             refs.resize(aabbs.size());
             for (size_t i = 0; i < refs.size(); i++) {
                 refs[i].idx = uint32_t(i);
                 refs[i].aabb = aabbs[i];
             }
+
+            /*
+            // This can be faster when it is purely used for terrain BLASES
+            for (size_t j = 0; j < 0; j++) {
+                float avgLongestAxis = 0.0f;
+
+                for (size_t i = 0; i < refs.size(); i++) {
+                    auto size = refs[i].aabb.GetSize();
+                    auto maxAxis = size.x > size.y ?
+                        (size.x > size.z ? 0 : 2) :
+                        (size.y > size.z ? 1 : 2);
+
+                    avgLongestAxis +=  size[maxAxis];
+                }
+
+                auto refCount = refs.size();
+                avgLongestAxis /= float(refCount);
+
+                for (size_t i = 0; i < refs.size(); i++) {
+                    auto size = refs[i].aabb.GetSize();
+                    auto maxAxis = size.x > size.y ?
+                        (size.x > size.z ? 0 : 2) :
+                        (size.y > size.z ? 1 : 2);
+
+                    if (size[maxAxis] * 0.01f > avgLongestAxis) {
+                        auto ref = refs[i];
+
+                        refs[i].aabb.max[maxAxis] = refs[i].aabb.min[maxAxis] + size[maxAxis] * 0.5f;
+                        ref.aabb.min[maxAxis] = refs[i].aabb.max[maxAxis];
+
+                        refs.push_back(ref);
+                    }
+                }
+            }
+            */
 
             // Calculate initial aabb of root
             AABB aabb(glm::vec3(std::numeric_limits<float>::max()),

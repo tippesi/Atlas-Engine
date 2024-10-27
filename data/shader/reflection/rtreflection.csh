@@ -108,7 +108,7 @@ void main() {
                     SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
                     );
 
-                float alpha = sqr(material.roughness);
+                float alpha = sqr(max(0.0, material.roughness));
 
                 vec3 V = normalize(-viewVec);
                 vec3 N = worldNorm;
@@ -121,7 +121,7 @@ void main() {
 
                 float pdf = 1.0;
                 BRDFSample brdfSample;
-                if (material.roughness > 0.01) {
+                if (material.roughness >= 0.0) {
                     ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
                         ray.direction, pdf);
                 }

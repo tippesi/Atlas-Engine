@@ -49,7 +49,7 @@ namespace Atlas {
 
         }
 
-        int32_t ASBuilder::BuildBLAS(std::vector<Ref<BLAS>> &blases, CommandList* commandList) {
+        int32_t ASBuilder::BuildBLAS(std::span<Ref<BLAS>> blases, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
@@ -123,8 +123,8 @@ namespace Atlas {
 
         }
 
-        Ref<Buffer> ASBuilder::BuildTLAS(Ref<Atlas::Graphics::TLAS>& tlas,
-            std::vector<VkAccelerationStructureInstanceKHR>& instances, CommandList* commandList) {
+        Buffer* ASBuilder::BuildTLAS(Ref<Atlas::Graphics::TLAS>& tlas,
+            std::span<VkAccelerationStructureInstanceKHR> instances, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 
@@ -142,9 +142,12 @@ namespace Atlas {
                 .data = instances.data(),
                 .size = sizeof(VkAccelerationStructureInstanceKHR) * instances.size(),
             };
-            auto instanceBuffer = device->CreateBuffer(desc);
+            if (!instanceBuffer || instanceBuffer->size < desc.size)
+                instanceBuffer = device->CreateMultiBuffer(desc);
+            else
+                instanceBuffer->SetData(instances.data(), 0, desc.size);
 
-            tlas->Allocate(instanceBuffer->GetDeviceAddress(), uint32_t(instances.size()), false);
+            tlas->Allocate(instanceBuffer->GetCurrent()->GetDeviceAddress(), uint32_t(instances.size()), false);
 
             commandList->MemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
@@ -170,11 +173,11 @@ namespace Atlas {
                 device->SubmitCommandList(commandList);
             }
 
-            return instanceBuffer;
+            return instanceBuffer->GetCurrent();
 
         }
 
-        void ASBuilder::BuildBLASBatch(const std::vector<uint32_t> &batchIndices, std::vector<Ref<BLAS>> &blases, 
+        void ASBuilder::BuildBLASBatch(const std::span<uint32_t> &batchIndices, std::span<Ref<BLAS>> &blases, 
             Ref<Buffer>& scratchBuffer, Ref<QueryPool>& queryPool, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
@@ -220,8 +223,8 @@ namespace Atlas {
 
         }
 
-        void ASBuilder::CompactBLASBatch(const std::vector<uint32_t>& batchIndices,
-            std::vector<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList) {
+        void ASBuilder::CompactBLASBatch(const std::span<uint32_t>& batchIndices,
+            std::span<Ref<BLAS>>& blases, Ref<QueryPool>& queryPool, CommandList* commandList) {
 
             auto device = GraphicsDevice::DefaultDevice;
 

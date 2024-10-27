@@ -87,9 +87,6 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     vec3 normal = normalize(r * tri.n0 + s * tri.n1 + t * tri.n2);
     vec4 vertexColor = r * tri.color0 + s * tri.color1 + t * tri.color2;
 
-    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
-    texCoord *= rayMat.tiling;
-
     // Produces some problems in the bottom left corner of the Sponza scene,
     // but fixes the cube. Should work in theory.
     vec3 triangleNormal = normalize(cross(tri.v0 - tri.v1, tri.v0 - tri.v2));
@@ -98,6 +95,16 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
     triangleNormal *= flipNormal && rayMat.twoSided > 0 ? -1.0 : 1.0;
 
     vec3 geometryNormal = triangleNormal;
+
+    if (rayMat.terrainNormalTexture >= 0) {
+        vec2 terrainTexCoord = texCoord * rayMat.terrainTiling;
+        terrainTexCoord = rayMat.invertUVs > 0 ? vec2(terrainTexCoord.x, 1.0 - terrainTexCoord.y) : terrainTexCoord;
+        geometryNormal = normal;
+        normal = normalize(2.0 * SampleTerrainNormalBilinear(rayMat.terrainNormalTexture, 0.0, terrainTexCoord) - 1.0);
+    }
+
+    texCoord = rayMat.invertUVs > 0 ? vec2(texCoord.x, 1.0 - texCoord.y) : texCoord;
+    texCoord *= rayMat.tiling;
 
     int level = textureLevel;
     //mat.opacity *= vertexColor.a;

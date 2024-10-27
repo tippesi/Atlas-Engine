@@ -124,6 +124,7 @@ struct RaytraceMaterial {
     float normalScale;
 
     float tiling;
+    float terrainTiling;
         
     int invertUVs;
     int twoSided;
@@ -136,11 +137,10 @@ struct RaytraceMaterial {
     int roughnessTexture;
     int metalnessTexture;
     int aoTexture;
-    int emissiveTexture;
+    int emissiveTexture;    
+    int terrainNormalTexture;
 
-    int padding0;
-    int padding1;
-    int padding2;
+    int padding;
 
 };
 

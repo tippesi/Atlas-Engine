@@ -409,7 +409,7 @@ void main() {
     roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
 
     float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
-    float factor = clamp(32.0 * log(roughness + 1.0), 0.75, temporalWeight);
+    float factor = clamp(32.0 * log(roughness + 1.0), 0.5, temporalWeight);
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 
@@ -432,7 +432,7 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    variance = roughness <= 0.1 ? 0.0 : variance;
+    variance = roughness <= 0.1 ? variance * 0.05 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(resolve, variance));

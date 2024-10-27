@@ -128,9 +128,9 @@ namespace Atlas {
 
                 for (auto node : nodes) {
 
-                    node->cell->heightField.Bind(commandList, 3, 0);
-                    node->cell->normalMap.Bind(commandList, 3, 1);
-                    node->cell->splatMap.Bind(commandList, 3, 2);
+                    node->cell->heightField->Bind(commandList, 3, 0);
+                    node->cell->normalMap->Bind(commandList, 3, 1);
+                    node->cell->splatMap->Bind(commandList, 3, 2);
 
                     auto tileScale = terrain->resolution * powf(2.0f,
                         (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
@@ -139,7 +139,7 @@ namespace Atlas {
                         .nodeSideLength = node->sideLength,
                         .tileScale = tileScale,
                         .patchSize = float(terrain->patchSizeFactor),
-                        .normalTexelSize = 1.0f / float(node->cell->normalMap.width),
+                        .normalTexelSize = 1.0f / float(node->cell->normalMap->width),
 
                         .leftLoD = node->leftLoDStitch,
                         .topLoD = node->topLoDStitch,

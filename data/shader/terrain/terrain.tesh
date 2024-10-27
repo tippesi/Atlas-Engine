@@ -51,12 +51,12 @@ float SampleDisplacement(vec2 off, uvec4 indices) {
     if (indices.x == indices.y && 
         indices.x == indices.z &&
         indices.x == indices.w)
-        return texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
+        return texture(displacementMaps, vec3(materialTexCoords, float(indices.x))).r;
     
-    float q00 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.x))).r;
-    float q10 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.y))).r;
-    float q01 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.z))).r;
-    float q11 = texture(displacementMaps, vec3(materialTexCoords / 4.0, float(indices.w))).r;
+    float q00 = texture(displacementMaps, vec3(materialTexCoords, float(indices.x))).r;
+    float q10 = texture(displacementMaps, vec3(materialTexCoords, float(indices.y))).r;
+    float q01 = texture(displacementMaps, vec3(materialTexCoords, float(indices.z))).r;
+    float q11 = texture(displacementMaps, vec3(materialTexCoords, float(indices.w))).r;
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);

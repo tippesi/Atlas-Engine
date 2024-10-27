@@ -109,6 +109,7 @@ namespace Atlas {
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
+			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 
 			if (scene->clutter)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
@@ -183,6 +184,7 @@ namespace Atlas {
 						continue;
 
 					auto shadow = light.shadow;
+					shadow->update = false;
 					shadowImageBarriers.push_back({ shadow->useCubemap ?
 						shadow->cubemap->image : shadow->maps->image, layout, access });
 				}
@@ -473,6 +475,7 @@ namespace Atlas {
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
+			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
 			commandList->BindBuffers(renderState->triangleBuffers, 0, 1);
 			if (renderState->textures.size())
 				commandList->BindSampledImages(renderState->textures, 0, 3);
@@ -498,7 +501,7 @@ namespace Atlas {
 				if (scene->postProcessing.fsr2) {
 					fsr2Renderer.Render(target, scene, commandList);
 				}
-				else {
+				else if (scene->postProcessing.taa.enable) {
 					taaRenderer.Render(target, scene, commandList);
 				}
 
@@ -930,6 +933,15 @@ namespace Atlas {
 			globalSampler = device->CreateSampler(samplerDesc);
 
 			samplerDesc = Graphics::SamplerDesc{
+				.filter = VK_FILTER_LINEAR,
+				.mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+				.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+				.maxLod = 12,
+				.anisotropicFiltering = true
+			};
+			globalClampToEdgeSampler = device->CreateSampler(samplerDesc);
+
+			samplerDesc = Graphics::SamplerDesc{
 				.filter = VK_FILTER_NEAREST,
 				.mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 				.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
@@ -937,6 +949,8 @@ namespace Atlas {
 				.anisotropicFiltering = false
 			};
 			globalNearestSampler = device->CreateSampler(samplerDesc);
+
+			
 
 			auto layoutDesc = Graphics::DescriptorSetLayoutDesc{
 				.bindings = {

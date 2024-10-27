@@ -41,10 +41,11 @@ namespace Atlas {
 
             std::vector<float> heightData;
             std::vector<uint8_t> materialIdxData;
+            std::vector<uint8_t> normalData;
 
-            Texture::Texture2D heightField;
-            Texture::Texture2D normalMap;
-            Texture::Texture2D splatMap;
+            Ref<Texture::Texture2D> heightField = nullptr;
+            Ref<Texture::Texture2D> normalMap = nullptr;
+            Ref<Texture::Texture2D> splatMap = nullptr;
 
             TerrainStorage* storage = nullptr;
 

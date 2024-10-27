@@ -45,3 +45,4 @@ layout(set = 1, binding = 13) uniform sampler2D dfgTexture;
 
 layout(set = 1, binding = 14) uniform sampler bindlessSampler;
 layout(set = 1, binding = 16) uniform sampler bindlessNearestSampler;
+layout(set = 1, binding = 17) uniform sampler bindlessClampToEdgeSampler;

@@ -40,7 +40,6 @@ namespace Atlas {
 
             auto renderState = &scene->renderState;
 
-            blases.clear();
             buildBlases.clear();
 
             auto meshes = scene->GetMeshes();
@@ -61,14 +60,12 @@ namespace Atlas {
                     BuildTriangleLightsForMesh(mesh);
                 }
                 else {
-                    blasInfos[mesh->blas] = prevBlasInfos[mesh->blas];
+                    std::swap(blasInfos[mesh->blas], prevBlasInfos[mesh->blas]);
                 }
 
                 auto &blasInfo = blasInfos[mesh->blas];
                 blasInfo.offset = int32_t(renderState->blasToBindlessIdx[mesh->blas]);
                 blasInfo.cullingDistanceSqr = mesh->rayTraceDistanceCulling * mesh->rayTraceDistanceCulling;
-
-                blases.push_back(mesh->blas);
 
                 // Some extra path for hardware raytracing, don't want to do work twice
                 if (hardwareRayTracing) {
@@ -90,14 +87,14 @@ namespace Atlas {
                     blasInfos[node->cell->blas] = {};                   
                 }
                 else {
-                    blasInfos[node->cell->blas] = prevBlasInfos[node->cell->blas];
+                    std::swap(blasInfos[node->cell->blas], prevBlasInfos[node->cell->blas]);
                 }
 
                 auto &blasInfo = blasInfos[node->cell->blas];
+
+                blasInfo.node = node;
                 blasInfo.offset = int32_t(renderState->blasToBindlessIdx[node->cell->blas]);
                 blasInfo.cullingDistanceSqr = 100000000000.0f;
-
-                blases.push_back(node->cell->blas);
             }
 
             if (hardwareRayTracing) {              
@@ -164,7 +161,7 @@ namespace Atlas {
 
                 blasInfo.matrices.emplace_back(transformComponent.globalMatrix);
                 blasInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
-                gpuBvhInstances.push_back(gpuBvhInstance);
+                gpuBvhInstances.emplace_back(gpuBvhInstance);
 
                 if (includeObjectHistory)
                     lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
@@ -314,6 +311,7 @@ namespace Atlas {
                         gpuMaterial.normalScale = material->normalScale;
 
                         gpuMaterial.tiling = material->tiling;
+                        gpuMaterial.terrainTiling = blasInfo.node ? 1.0f / blasInfo.node->sideLength : 1.0f;
 
                         gpuMaterial.invertUVs = mesh.IsLoaded() ? (mesh->invertUVs ? 1 : 0) : 0;
                         gpuMaterial.twoSided = material->twoSided ? 1 : 0;
@@ -346,6 +344,10 @@ namespace Atlas {
 
                         if (material->HasEmissiveMap()) {
                             gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
+                        }
+
+                        if (blasInfo.node) {
+                            gpuMaterial.terrainNormalTexture = sceneState->textureToBindlessIdx[blasInfo.node->cell->normalMap];
                         }
                     }
 
@@ -425,12 +427,11 @@ namespace Atlas {
             TransformComponent>& entitySubset, size_t instanceCount) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
-
-            Graphics::ASBuilder asBuilder;
+;
             auto tlasDesc = Graphics::TLASDesc();
             tlas = device->CreateTLAS(tlasDesc);
 
-            asBuilder.BuildTLAS(tlas, hardwareInstances);
+            tlasBuilder.BuildTLAS(tlas, hardwareInstances);
 
         }
 

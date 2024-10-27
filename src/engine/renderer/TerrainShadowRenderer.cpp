@@ -72,7 +72,7 @@ namespace Atlas {
 
                     for (auto node : terrain->renderList) {
 
-                        node->cell->heightField.Bind(commandList, 3, 0);
+                        node->cell->heightField->Bind(commandList, 3, 0);
 
                         auto tileScale = terrain->resolution * powf(2.0f,
                             (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);

@@ -13,10 +13,10 @@ namespace Atlas {
 
         bool TerrainStorageCell::IsLoaded() {
 
-            if (!heightField.IsValid())
+            if (!heightField || !heightField->IsValid())
                 return false;
 
-            if (!normalMap.IsValid())
+            if (!normalMap || !normalMap->IsValid())
                 return false;
 
             return true;
@@ -80,9 +80,9 @@ namespace Atlas {
                 
                 RayTracing::BLAS::Triangle triangle;
 
-                triangle.v0 = vertices[indices[i * 3 + 2]];
+                triangle.v0 = vertices[indices[i * 3 + 0]];
                 triangle.v1 = vertices[indices[i * 3 + 1]];
-                triangle.v2 = vertices[indices[i * 3 + 0]];
+                triangle.v2 = vertices[indices[i * 3 + 2]];
 
                 vec3 normal = -glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
 
@@ -92,9 +92,9 @@ namespace Atlas {
                 triangle.n1 = normal;
                 triangle.n2 = normal;
 
-                triangle.uv0 = vec2(triangle.v2.x, triangle.v2.z);
+                triangle.uv0 = vec2(triangle.v0.x, triangle.v0.z);
                 triangle.uv1 = vec2(triangle.v1.x, triangle.v1.z);
-                triangle.uv2 = vec2(triangle.v0.x, triangle.v0.z);
+                triangle.uv2 = vec2(triangle.v2.x, triangle.v2.z);
 
                 triangle.materialIdx = int32_t(materialIdxData[indices[i * 3]]);
 

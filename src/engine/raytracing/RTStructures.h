@@ -65,6 +65,7 @@ namespace Atlas {
         float normalScale = 1.0f;
 
         float tiling = 1.0f;
+        float terrainTiling = 1.0f;
 
         int32_t invertUVs = 0;
         int32_t twoSided = 0;
@@ -78,6 +79,7 @@ namespace Atlas {
         int32_t metalnessTexture = -1;
         int32_t aoTexture = -1;
         int32_t emissiveTexture = -1;
+        int32_t terrainNormalTexture = -1;
     };
 
     struct GPUAABB {

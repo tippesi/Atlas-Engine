@@ -108,6 +108,7 @@ void main() {
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
+            
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
             imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
@@ -170,11 +171,14 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.throughput = vec3(0.0);
         return surface;    
     }
+
+    int lod = int(ray.hitDistance / 30.0);
+    lod = 0;
     
     // Unpack the compressed triangle and extract surface parameters
     Instance instance = GetInstance(ray);
     Triangle tri = GetTriangle(ray, instance);
-    surface = GetSurfaceParameters(instance, tri, ray, true, 0);
+    surface = GetSurfaceParameters(instance, tri, ray, true, lod);
 
     // If we hit an emissive surface we need to terminate the ray
 #ifndef REALTIME
