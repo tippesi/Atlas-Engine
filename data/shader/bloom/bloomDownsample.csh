@@ -3,7 +3,7 @@ layout (local_size_x = 16, local_size_y = 16) in;
 #include <../common/utility.hsh>
 #include <../common/flatten.hsh>
 
-//#define NO_SHARED
+#define NO_SHARED
 
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;

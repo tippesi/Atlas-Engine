@@ -20,9 +20,15 @@ bool intersectsDepthBuffer(float z, float minZ, float maxZ, float thickness, flo
      * artifacts. Driving this value up too high can cause
      * artifacts of its own.
      */
-    float depthScale = min(1.0f, z * strideCutoff);
-    //thickness *= mix(0.0f, 2.0f, depthScale);
+    float depthScale = min(1.0, -z * strideCutoff);
+    thickness *= mix(0.0, 4.0, depthScale);
     return (maxZ >= z - thickness) && (minZ < z);
+}
+
+bool validPixel(vec2 hitPixel, vec2 resolution) {
+
+    return hitPixel.x >= 0 && hitPixel.y >= 0 && hitPixel.x < resolution.x && hitPixel.y < resolution.y;
+
 }
 
 // Returns true if the ray hit something
@@ -62,6 +68,8 @@ bool traceScreenSpace(
  out point3 minPoint,
  
  out point3 maxPoint) {
+    
+    mat4 ipMatrix = globalData.ipMatrix;
 
     // Clip to the near plane    
     float rayLength = ((csOrig.z + csDir.z * maxDistance) > -globalData.cameraNearPlane) ?
@@ -132,12 +140,12 @@ bool traceScreenSpace(
 
     float k = k0, stepCount = 0.0, prevZMaxEstimate = csOrig.z;
     float rayZMin = prevZMaxEstimate, rayZMax = prevZMaxEstimate;
-    float sceneZMax = rayZMax + 100;
+    float sceneZMax = rayZMax + maxDistance;
     point2 P = P0;
     for (; 
          ((P.x * stepDir) <= end) && (stepCount < maxSteps) &&
          !intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, 0.01) &&
-          (sceneZMax != 0); 
+         (sceneZMax != 0); 
          P += dP, Q.z += dQ.z, k += dk, ++stepCount) {
         
         rayZMin = prevZMaxEstimate;
@@ -150,7 +158,7 @@ bool traceScreenSpace(
         hitPixel = permute ? P.yx : P;
         // You may need hitPixel.y = csZBufferSize.y - hitPixel.y; here if your vertical axis
         // is different than ours in screen space
-        sceneZMax = ConvertDepthToViewSpaceDepth(texelFetch(csZBuffer, ivec2(hitPixel), 0).r);
+        sceneZMax = ConvertDepthToViewSpaceDepth(texelFetch(csZBuffer, ivec2(hitPixel), 0).r, ipMatrix);
     }
 
     minPoint = Q0 + dQ * (stepCount - 2.0);
@@ -163,7 +171,8 @@ bool traceScreenSpace(
     Q.xy += dQ.xy * stepCount;
     hitPoint = Q * (1.0 / k);   
     
-    return intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, 0.01);
+    return intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, 0.01)
+        && validPixel(hitPixel, csZBufferSize);
 }
 
 bool traceScreenSpace(
@@ -231,33 +240,37 @@ bool traceScreenSpaceAdvanced(
  // Maximum camera-space distance to trace before returning a miss
  float maxDistance, 
 
+ bool allowFallback,
+
  // Pixel coordinates of the first intersection with the scene
  out point2 hitPixel, 
 
  // Camera space location of the ray hit
  out point3 hitPoint) {
 
+    bool hit = false;
+
     point3 minPoint, maxPoint;
     if(traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, hitPixel, hitPoint, minPoint, maxPoint)) {
-                
+        hit = allowFallback;
     }
 
     maxSteps /= 2.0;
         
-        csOrig = minPoint;
-        csDir = normalize(maxPoint - minPoint);
-        stride = max(1.0, stride / maxSteps);;
-        zThickness /= maxSteps;
-        maxDistance = 20.0 * distance(maxPoint, minPoint);
+    csOrig = minPoint;
+    csDir = normalize(maxPoint - minPoint);
+    stride = max(1.0, 2.0 * stride / maxSteps);;
+    //zThickness /= (2.0 * maxSteps);
+    //maxDistance = min(maxDistance, 20.0 * distance(maxPoint, minPoint));
 
-        vec2 newHitPixel;
-        vec3 newHitPoint;
-        if (traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, newHitPixel, newHitPoint, minPoint, maxPoint)) {
-            hitPixel = newHitPixel;
-            hitPoint = newHitPoint;            
-            return true;
-        }
+    vec2 newHitPixel;
+    vec3 newHitPoint;
+    if (traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, newHitPixel, newHitPoint, minPoint, maxPoint)) {
+        hitPixel = newHitPixel;
+        hitPoint = newHitPoint;            
+        hit = true;
+    }
 
-    return false;
+    return hit;
     
 }

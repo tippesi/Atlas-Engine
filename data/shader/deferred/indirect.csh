@@ -270,7 +270,12 @@ void main() {
 #endif
 
         indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
+#if !defined(SSGI) || defined(RTGI)
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+#else
+        // This is just there if the new SSGI is enabled
+        indirect = (indirectSpecular) * surface.material.ao;
+#endif
 
 #ifdef SSGI
         vec4 ssgi = Uniforms.giDownsampled2x > 0 ? upsampleResult.gi : textureLod(giTexture, texCoord, 0.0);

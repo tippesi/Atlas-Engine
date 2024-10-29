@@ -137,7 +137,7 @@ void main() {
 
                 if (isRayValid) {
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
-                    float viewOffset = max(1.0, length(viewPos));
+                    float viewOffset = max(1.0, 1.0 * length(viewPos));
                     ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
 
                     ray.hitID = -1;
@@ -146,11 +146,12 @@ void main() {
                     vec3 radiance = vec3(0.0);
                     if (material.roughness <= uniforms.roughnessCutoff) {                 
                         vec3 viewRayOrigin = viewPos + 10.0 * viewNormal * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
+                        float rayLength = globalData.cameraFarPlane;
 
                         vec2 hitPixel;
                         vec3 hitPoint;
                         float jitter =  GetInterleavedGradientNoise(vec2(pixel), 4u) / float(sampleCount) + i / float(sampleCount);
-                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, 16.0, jitter, 32.0, 2000.0, hitPixel, hitPoint)) {
+                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 32.0, 1.0, 0.0, 64.0, rayLength, false, hitPixel, hitPoint)) {
                             vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                             radiance = textureLod(lightingTexture, hitTexCoord, 1).rgb;
                             hits += 1.0;

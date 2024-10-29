@@ -1,3 +1,6 @@
+#define DDGI
+#define DDGI_VISIBILITY
+
 #include <../globals.hsh>
 #include <../raytracer/lights.hsh>
 #include <../raytracer/tracing.hsh>
@@ -10,6 +13,7 @@
 #include <../common/normalencode.hsh>
 #include <../common/PI.hsh>
 #include <../common/bluenoise.hsh>
+#include <../common/traceScreenSpace.hsh>
 
 #include <../brdf/brdfEval.hsh>
 #include <../brdf/brdfSample.hsh>
@@ -32,6 +36,8 @@ layout(set = 3, binding = 6) uniform sampler2D directLightTexture;
 
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
+
+layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
 const ivec2 offsets[4] = ivec2[4](
 ivec2(0, 0),
@@ -78,9 +84,19 @@ void main() {
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 viewNorm = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(viewNorm, 0.0)));
+        vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(viewVec, 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
+        
+        vec3 globalProbeFallback = textureLod(diffuseProbe, worldNorm, 0).rgb;
+#ifdef DDGI
+        //rayIrradiance = GetLocalIrradianceInterpolated(worldPos, -V, N, N, globalProbeFallback).rgb * ddgiData.volumeStrength;
+        vec3 probeIrradiance = GetLocalIrradiance(worldPos, -worldView, worldNorm).rgb * ddgiData.volumeStrength;
+        probeIrradiance = IsInsideVolume(worldPos) ? probeIrradiance : globalProbeFallback;
+#else
+        probeIrradiance = globalProbeFallback;
+#endif
 
         vec3 irradiance = vec3(0.0);
         float hits = 0.0;
@@ -117,9 +133,46 @@ void main() {
                 float stepSize = rayLength / float(uniforms.sampleCount);
 
                 ray.origin = worldPos + surface.N * 0.1 + ray.direction * blueNoiseVec.z * stepSize;
-
+                
                 vec3 rayIrradiance = vec3(0.0);
+                
+                vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(ray.direction, 0.0)));
+                float viewOffset = max(1.0, length(viewPos));
+                vec3 viewRayOrigin = viewPos + viewNorm * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
 
+                vec2 hitPixel;
+                vec3 hitPoint;
+                float hit = 0.0;
+                float jitter =  GetInterleavedGradientNoise(vec2(pixel)) / float(uniforms.rayCount) + j / float(uniforms.rayCount);
+                if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 16.0, 1.0, jitter, 64.0, 0.5 * viewOffset, false, hitPixel, hitPoint)) {
+                    vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
+                    vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, ivec2(hitPixel), 0).rg));
+                    float depth = texelFetch(depthTexture, ivec2(hitPixel), 0).r;
+                    hitPoint = ConvertDepthToViewSpace(depth, hitTexCoord);
+
+                    vec3 worldHitNorm = normalize(vec3(globalData.ivMatrix * vec4(stepViewNorm, 0.0)));
+                    vec3 worldHitPoint = vec3(globalData.ivMatrix * vec4(hitPoint, 1.0));
+                        
+                    float NdotV = saturate(dot(-viewDir, stepViewNorm));
+                    NdotL = saturate(dot(viewNorm, hitPoint));
+                    if (NdotV > 0.0) {
+                        // rayIrradiance = mix(probeIrradiance, textureLod(directLightTexture, hitTexCoord, 0).rgb, 1.0);
+                        rayIrradiance = textureLod(directLightTexture, hitTexCoord, 0).rgb * NdotV;
+
+                        vec3 bounceRayIrradiance = GetLocalIrradiance(worldHitPoint, -ray.direction, worldHitNorm).rgb * ddgiData.volumeStrength;
+                        bounceRayIrradiance = IsInsideVolume(worldHitPoint) ? bounceRayIrradiance : vec3(0.0);
+
+                        rayIrradiance += bounceRayIrradiance * NdotV;                                         
+                    }
+                    hit = 1.0;
+                }
+                else {
+                    rayIrradiance = probeIrradiance;
+                }
+                
+                //rayIrradiance = probeIrradiance;
+                
+                /*
                 float hit = 0.0;
                 for (uint i = 0; i < uniforms.sampleCount; i++) {
 
@@ -145,19 +198,6 @@ void main() {
 
                     vec3 rayDir = normalize(stepPos - viewPos);
 
-                    /*
-                    if (rayDepth < stepLinearDepth) {
-                        float NdotV = dot(stepViewNorm, -rayDir);
-                        float NdotL = dot(-worldNorm, surface.N);
-                        if (NdotV > 0.0) {
-                            ivec2 lightPixel = uniforms.downsampled2x > 0 ? stepPixel * 2 + pixelOffset : stepPixel;
-                            vec3 hitRadiance = texelFetch(directLightTexture, lightPixel, 0).rgb;
-                            rayIrradiance += hitRadiance * max(dot(viewNorm, rayDir), 0.0) / pdf / PI;
-                            totalCount += 1;
-                        }
-                    }
-                    */
-
                     // Check if we are now behind the depth buffer, use that hit as the source of radiance
                     if (rayDepth >= stepLinearDepth) {
                         float NdotV = dot(stepViewNorm, -rayDir);
@@ -178,6 +218,7 @@ void main() {
                     }
 
                 }
+                */
 
                 irradiance += (rayIrradiance / max(1.0, float(totalCount)));
 
@@ -193,7 +234,7 @@ void main() {
 
         float ao = max(1.0 - (hits / float(uniforms.rayCount)), 0.0);
 
-        imageStore(giImage, pixel, vec4(irradiance, ao));
+        imageStore(giImage, pixel, vec4(vec3(irradiance), ao));
     }
 
 }

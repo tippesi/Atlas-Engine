@@ -95,6 +95,7 @@ void main() {
 
             // Get most significant bit index
             uint bucketBitCount = findMSB(lightBucket) + 1u;
+            uint offsetIdx = i * 32u;
 
             for (uint j = 0u; j < bucketBitCount; j++) {
 
@@ -103,10 +104,10 @@ void main() {
 
                 lightCount++;
 
-                Light light = lights[i * 32u + j];
+                Light light = lights[offsetIdx + j];
 
 #ifndef AE_BINDLESS
-                light.shadow.mapIdx = int(i * 32u + j);
+                light.shadow.mapIdx = int(offsetIdx + j);
 #endif
                 bool isMain = i + j == 0u ? true : false;
                 direct += EvaluateLight(light, surface, geometryNormal, isMain);

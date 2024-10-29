@@ -143,7 +143,6 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-
             {
                 Graphics::Profiler::EndAndBeginQuery("Temporal filter");
 
