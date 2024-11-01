@@ -84,6 +84,7 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> pathTraceGlobalUniformBuffer;
             Ref<Graphics::MultiBuffer> ddgiUniformBuffer;
             Ref<Graphics::MultiBuffer> lightUniformBuffer;
+            Ref<Graphics::MultiBuffer> cloudShadowUniformBuffer;
             Ref<Graphics::DescriptorSetLayout> globalDescriptorSetLayout;
             Ref<Graphics::Sampler> globalSampler;
             Ref<Graphics::Sampler> globalClampToEdgeSampler;

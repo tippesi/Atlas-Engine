@@ -31,7 +31,6 @@ namespace Atlas {
             PipelineConfig pipelineConfig;
 
             Buffer::Buffer lightCullingBuffer;
-            Buffer::UniformBuffer cloudShadowUniformBuffer;
             Ref<Graphics::Sampler> shadowSampler;
 
         };

@@ -86,7 +86,7 @@ void main() {
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
-        vec3 viewNormal = DecodeNormal(textureLod(normalTexture, texCoord, 0).rg);
+        vec3 viewNormal = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(viewNormal, 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
@@ -122,7 +122,7 @@ void main() {
 
                 float pdf = 1.0;
                 BRDFSample brdfSample;
-                if (material.roughness >= 0.0) {
+                if (material.roughness >= 0.05) {
                     ImportanceSampleGGXVNDF(blueNoiseVec.xy, N, V, alpha,
                         ray.direction, pdf);
                 }
@@ -151,7 +151,7 @@ void main() {
                         vec2 hitPixel;
                         vec3 hitPoint;
                         float jitter =  GetInterleavedGradientNoise(vec2(pixel), 4u) / float(sampleCount) + i / float(sampleCount);
-                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 32.0, 1.0, 0.0, 64.0, rayLength, false, hitPixel, hitPoint)) {
+                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 0.1, 16.0, 0.5, 64.0, rayLength, false, hitPixel, hitPoint)) {
                             vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                             radiance = textureLod(lightingTexture, hitTexCoord, 1).rgb;
                             hits += 1.0;

@@ -310,14 +310,14 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
     return false;
 }
 
-void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
+void ComputeVarianceMinMax(float roughness, out vec3 mean, out vec3 std) {
 
     vec3 m1 = vec3(0.0);
     vec3 m2 = vec3(0.0);
     // This could be varied using the temporal variance estimation
     // By using a wide neighborhood for variance estimation (8x8) we introduce block artifacts
     // These are similiar to video compression artifacts, the spatial filter mostly clears them up
-    const int radius = kernelRadius;
+    const int radius = int(mix(1.0, float(kernelRadius), min(1.0, roughness * 2.0)));
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -357,8 +357,14 @@ void main() {
         pixel.y > imageSize(resolveImage).y)
         return;
 
+    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
+    Material material = UnpackMaterial(materialIdx);
+
+    float roughness = material.roughness;
+    roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
+
     vec3 mean, std;
-    ComputeVarianceMinMax(mean, std);
+    ComputeVarianceMinMax(roughness, mean, std);
 
     ivec2 velocityPixel = pixel;
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
@@ -380,6 +386,7 @@ void main() {
 
     vec3 historyColor = RGBToYCoCg(history.rgb);
     vec3 currentColor = RGBToYCoCg(texelFetch(currentTexture, pixel, 0).rgb);
+    float validPixel = texelFetch(currentTexture, pixel, 0).a;
 
     vec2 currentMoments;
     currentMoments.r = currentColor.r;
@@ -402,16 +409,10 @@ void main() {
     historyColor = YCoCgToRGB(historyColor);
     currentColor = YCoCgToRGB(currentColor);
 
-    uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
-    Material material = UnpackMaterial(materialIdx);
-
-    float roughness = material.roughness;
-    roughness *= material.roughnessMap ? texelFetch(roughnessMetallicAoTexture, pixel, 0).r : 1.0;
-
     float temporalWeight = mix(pushConstants.temporalWeight, 0.5, adjClipBlend);
-    float factor = clamp(32.0 * log(roughness + 1.0), 0.5, temporalWeight);
-    factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
-         || uv.y > 1.0) ? 0.0 : factor;
+    float factor = clamp(32.0 * log(roughness + 1.0), 0.875, temporalWeight);
+    valid = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
+         || uv.y > 1.0) ? false : valid;
 
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
@@ -424,6 +425,10 @@ void main() {
 
     factor = min(factor, historyLength / (historyLength + 1.0));
 
+#ifdef UPSCALE
+    factor = validPixel >= 1.5 ? factor : (valid ? mix(1.0, 0.5, adjClipBlend) : factor);
+#endif
+
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
     vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
 
@@ -432,9 +437,9 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    variance = roughness <= 0.1 ? variance * 0.05 : variance;
+    variance = roughness <= 0.1 ? variance * 0.0 : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(resolve, variance));
+    imageStore(resolveImage, pixel, vec4(vec3(resolve), 0.0));
 
 }

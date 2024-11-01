@@ -35,16 +35,6 @@ struct VolumetricLight {
     int shadowIdx;
 };
 
-struct CloudShadow {
-
-    mat4 vMatrix;
-    mat4 pMatrix;
-
-    mat4 ivMatrix;
-    mat4 ipMatrix;
-
-};
-
-layout (std430, set = 1, binding = 17) buffer Lights {
+layout (std430, set = 1, binding = 18) buffer Lights {
     Light lights[];
 };

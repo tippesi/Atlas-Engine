@@ -29,10 +29,6 @@ layout(set = 3, binding = 2) uniform sampler2D cloudMap;
 
 layout(set = 3, binding = 4) uniform sampler shadowSampler;
 
-layout(std140, set = 3, binding = 5) uniform CloudShadowUniformBuffer {
-    CloudShadow cloudShadow;
-} cloudShadowUniforms;
-
 layout(std430, set = 3, binding = 6) buffer LightBucketsBuffer {
     int lightBuckets[];
 };
@@ -246,7 +242,7 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
 #ifdef CLOUD_SHADOWS
         float cloudShadowFactor = CalculateCloudShadow(surface.P, cloudShadowUniforms.cloudShadow, cloudMap);
 
-        shadowFactor = min(shadowFactor, cloudShadowFactor);
+        shadowFactor *= cloudShadowFactor;
 #endif
         float shadowFactorTransmissive = shadowFactor;
 #ifdef SCREEN_SPACE_SHADOWS

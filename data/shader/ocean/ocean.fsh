@@ -101,7 +101,7 @@ void main() {
 
 #ifdef CLOUD_SHADOWS
     float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudShadowMap);
-    shadowFactor = min(shadowFactor, cloudShadowFactor);
+    shadowFactor *= cloudShadowFactor;
 #endif
 
     shadowFactor = max(shadowFactor, 0.01);

@@ -104,6 +104,10 @@ namespace Atlas {
 
             bool HasMainCamera() const;
 
+            LightComponent& GetMainLight();
+
+            bool HasMainLight() const;
+
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
@@ -176,6 +180,7 @@ namespace Atlas {
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
             Entity mainCameraEntity;
+            Entity mainLightEntity;
             float deltaTime = 1.0f;
 
             bool firstTimestep = true;

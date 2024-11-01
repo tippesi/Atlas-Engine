@@ -21,19 +21,23 @@
 #include <../brdf/surface.hsh>
 
 #include <../shadow.hsh>
-
+#include <../clouds/shadow.hsh>
 #include <ddgi.hsh>
 
 layout (local_size_x = 32) in;
 
 layout(set = 3, binding = 0) uniform sampler2DArrayShadow cascadeMaps;
 
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 1) uniform sampler2D cloudMap;
+#endif
+
 // Instead of write ray array use hits array
-layout(std430, set = 3, binding = 1) buffer RayHits {
+layout(std430, set = 3, binding = 2) buffer RayHits {
     PackedRayHit hits[];
 };
 
-layout(std140, set = 3, binding = 2) uniform UniformBuffer {
+layout(std140, set = 3, binding = 3) uniform UniformBuffer {
     float seed;
     Shadow shadow;
 } Uniforms;
@@ -126,11 +130,20 @@ vec3 EvaluateDirectLight(inout Surface surface) {
             surface.geometryNormal, saturate(dot(surface.L, surface.geometryNormal)));
         radiance *= shadowFactor;
 #else
-        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        if (light.castShadow)
+            radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+
+#ifdef CLOUD_SHADOWS
+        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
+        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
+
+        radiance *= cloudShadowFactor;
+#endif
 #endif
     }
     else {
-        radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
+        if (light.castShadow)
+            radiance *= CheckVisibility(surface, lightDistance) ? 1.0 : 0.0;
     }
     
     return reflectance * radiance * surface.NdotL / lightPdf;

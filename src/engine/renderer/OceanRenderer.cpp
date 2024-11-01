@@ -19,7 +19,6 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
-            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -111,25 +110,9 @@ namespace Atlas {
 
             bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
-
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
-
-            CloudShadow cloudShadowUniform;
-
-            if (cloudShadowsEnabled) {
+            if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
-
-                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
-                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
-
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
-
-                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
-                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
-            }
-
-            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
-            cloudShadowUniformBuffer.Bind(commandList, 3, 14);
 
             {
                 Graphics::Profiler::BeginQuery("Caustics");

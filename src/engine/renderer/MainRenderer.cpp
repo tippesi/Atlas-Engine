@@ -31,9 +31,13 @@ namespace Atlas {
 			};
 			globalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 			pathTraceGlobalUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+			
 
 			uniformBufferDesc.size = sizeof(DDGIUniforms);
 			ddgiUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
+
+			uniformBufferDesc.size = sizeof(CloudShadow);
+			cloudShadowUniformBuffer = device->CreateMultiBuffer(uniformBufferDesc);
 
 			opaqueRenderer.Init(device);
 			impostorRenderer.Init(device);
@@ -109,7 +113,7 @@ namespace Atlas {
 			commandList->BindImage(dfgPreintegrationTexture.image, dfgPreintegrationTexture.sampler, 1, 13);
 			commandList->BindSampler(globalSampler, 1, 14);
 			commandList->BindSampler(globalNearestSampler, 1, 16);
-			commandList->BindSampler(globalClampToEdgeSampler, 1, 17);
+			commandList->BindSampler(globalClampToEdgeSampler, 1, 18);
 
 			if (scene->clutter)
 				vegetationRenderer.helper.PrepareInstanceBuffer(*scene->clutter, camera, commandList);
@@ -195,7 +199,8 @@ namespace Atlas {
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
 			JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
-			renderState->lightBuffer.Bind(commandList, 1, 17);
+			renderState->lightBuffer.Bind(commandList, 1, 18);
+			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
 
@@ -1069,6 +1074,22 @@ namespace Atlas {
 				}
 
 				ddgiUniformBuffer->SetData(&ddgiUniforms, 0, sizeof(DDGIUniforms));
+			}
+
+			auto clouds = scene->sky.clouds;
+			if (clouds && clouds->enable && clouds->castShadow && scene->HasMainLight()) {
+				const auto& light = scene->GetMainLight();
+
+				CloudShadow cloudShadowUniform;
+				clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
+					cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
+
+				cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
+				cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
+
+				cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
+
+				cloudShadowUniformBuffer->SetData(&cloudShadowUniform, 0, sizeof(CloudShadow));
 			}
 
 			auto meshes = scene->GetMeshes();

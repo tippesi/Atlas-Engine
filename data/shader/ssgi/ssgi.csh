@@ -95,7 +95,7 @@ void main() {
         vec3 probeIrradiance = GetLocalIrradiance(worldPos, -worldView, worldNorm).rgb * ddgiData.volumeStrength;
         probeIrradiance = IsInsideVolume(worldPos) ? probeIrradiance : globalProbeFallback;
 #else
-        probeIrradiance = globalProbeFallback;
+        vec3 probeIrradiance = globalProbeFallback;
 #endif
 
         vec3 irradiance = vec3(0.0);
@@ -144,7 +144,7 @@ void main() {
                 vec3 hitPoint;
                 float hit = 0.0;
                 float jitter =  GetInterleavedGradientNoise(vec2(pixel)) / float(uniforms.rayCount) + j / float(uniforms.rayCount);
-                if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 16.0, 1.0, jitter, 64.0, 0.5 * viewOffset, false, hitPixel, hitPoint)) {
+                if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 0.5, 16.0, jitter, 64.0, viewOffset, false, hitPixel, hitPoint)) {
                     vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
                     vec3 stepViewNorm = normalize(DecodeNormal(texelFetch(normalTexture, ivec2(hitPixel), 0).rg));
                     float depth = texelFetch(depthTexture, ivec2(hitPixel), 0).r;
@@ -157,12 +157,14 @@ void main() {
                     NdotL = saturate(dot(viewNorm, hitPoint));
                     if (NdotV > 0.0) {
                         // rayIrradiance = mix(probeIrradiance, textureLod(directLightTexture, hitTexCoord, 0).rgb, 1.0);
-                        rayIrradiance = textureLod(directLightTexture, hitTexCoord, 0).rgb * NdotV;
+                        rayIrradiance = textureLod(directLightTexture, hitTexCoord, 0).rgb;
 
+#ifdef DDGI
                         vec3 bounceRayIrradiance = GetLocalIrradiance(worldHitPoint, -ray.direction, worldHitNorm).rgb * ddgiData.volumeStrength;
                         bounceRayIrradiance = IsInsideVolume(worldHitPoint) ? bounceRayIrradiance : vec3(0.0);
 
-                        rayIrradiance += bounceRayIrradiance * NdotV;                                         
+                        rayIrradiance += bounceRayIrradiance;
+#endif
                     }
                     hit = 1.0;
                 }

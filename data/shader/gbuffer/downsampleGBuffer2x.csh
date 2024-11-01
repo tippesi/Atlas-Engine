@@ -64,7 +64,7 @@ int MaxDepth(vec4 depthVec, out float maxDepth) {
 
 int CheckerboardDepth(vec4 depthVec, ivec2 coord, out float depth) {
 
-    float minmax = 0.0;
+    float minmax = Checkerboard(coord);
 
     float maxDepth;
     int maxIdx = MaxDepth(depthVec, maxDepth);
@@ -90,8 +90,8 @@ void main() {
         float depth11 = texelFetch(depthIn, coord * 2 + ivec2(1, 1), 0).r;
 
         vec4 depthVec = vec4(depth00, depth10, depth01, depth11);        
-        int depthIdx = CheckerboardDepth(depthVec, coord, depthVec.x);
-        //depthIdx = 0;
+        int depthIdx = (CheckerboardDepth(depthVec, coord, depthVec.x) + int(globalData.frameCount)) % 4;
+        //depthIdx = int(globalData.frameCount) % 4;
         float depth = depthVec[depthIdx];
         imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));
 

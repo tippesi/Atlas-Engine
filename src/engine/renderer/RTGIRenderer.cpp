@@ -72,9 +72,8 @@ namespace Atlas {
 
             // Try to get a shadow map
             Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
+            if (scene->HasMainLight())
+                shadow = scene->GetMainLight().shadow;
 
             auto mainCamera = scene->GetMainCamera();
 
@@ -113,13 +112,17 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
 
+                auto clouds = scene->sky.clouds;
+
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+                auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
                 rtPipelineConfig.ManageMacro("USE_SHADOW_MAP", rtgi->useShadowMap && shadow);
                 rtPipelineConfig.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
                 rtPipelineConfig.ManageMacro("DDGI_VISIBILITY", rtgi->ddgi && ddgiVisibility);
                 rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
+                rtPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
 
                 auto pipeline = PipelineManager::GetPipeline(rtPipelineConfig);
 
@@ -170,8 +173,13 @@ namespace Atlas {
                                 }
                             }
                         }
+
+                        if (cloudShadowEnabled && scene->HasMainLight()) {
+                            clouds->shadowTexture.Bind(commandList, 3, 9);
+                        }
+
                         rtUniformBuffer.SetData(&uniforms, 0);
-                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 9);
+                        commandList->BindBuffer(rtUniformBuffer.Get(), 3, 10);
 
                     });
 

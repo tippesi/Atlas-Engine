@@ -312,6 +312,19 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
 
                 ResolveUniforms uniforms;
+                
+                if (scene->HasMainLight()) {
+                    auto& mainLight = scene->GetMainLight();
+                    auto& lightDirection = mainLight.transformedProperties.directional.direction;
+                    auto lightColor = Common::ColorConverter::ConvertSRGBToLinear(mainLight.color);
+
+                    uniforms.mainLightColor = vec4(lightColor * mainLight.intensity, 0.0f);
+                    uniforms.mainLightDirection = vec4(lightDirection, 0.0f);
+                }
+                else {
+                    uniforms.mainLightColor = vec4(0.0f);
+                }
+
                 uniforms.cloudsEnabled = cloudsEnabled ? 1 : 0;
                 uniforms.fogEnabled = fogEnabled ? 1 : 0;
                 uniforms.downsampled2x = target->GetVolumetricResolution() == RenderResolution::HALF_RES ? 1 : 0;

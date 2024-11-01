@@ -1,6 +1,19 @@
-#include <../structures.hsh>
 #include <../globals.hsh>
 #include <../common/convert.hsh>
+
+struct CloudShadow {
+
+    mat4 vMatrix;
+    mat4 pMatrix;
+
+    mat4 ivMatrix;
+    mat4 ipMatrix;
+
+};
+
+layout(std140, set = 1, binding = 19) uniform CloudShadowUniformBuffer {
+    CloudShadow cloudShadow;
+} cloudShadowUniforms;
 
 float CalculateCloudShadow(vec3 P, CloudShadow cloudShadow, sampler2D shadowMap) {
 

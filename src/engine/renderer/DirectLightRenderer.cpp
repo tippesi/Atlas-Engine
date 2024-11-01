@@ -9,7 +9,6 @@ namespace Atlas {
             this->device = device;
 
             lightCullingBuffer = Buffer::Buffer(Buffer::BufferUsageBits::StorageBufferBit, sizeof(uint32_t));
-            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             pipelineConfig = PipelineConfig("deferred/direct.csh");
 
@@ -30,9 +29,7 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 
-            auto mainLightEntity = GetMainLightEntity(scene);
             auto& camera = scene->GetMainCamera();
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
             auto sss = scene->sss;
             auto clouds = scene->sky.clouds;
 
@@ -100,7 +97,7 @@ namespace Atlas {
 #endif
 
             pipelineConfig.ManageMacro("SCREEN_SPACE_SHADOWS", sss && sss->enable);
-            pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow);
+            pipelineConfig.ManageMacro("CLOUD_SHADOWS", clouds && clouds->enable && clouds->castShadow && scene->HasMainLight());
             pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
@@ -112,21 +109,9 @@ namespace Atlas {
 
             commandList->BindSampler(shadowSampler, 3, 4);
 
-            CloudShadow cloudShadowUniform;
-            if (clouds && clouds->enable && clouds->castShadow) {
+            if (clouds && clouds->enable && clouds->castShadow && scene->HasMainLight()) {
                 clouds->shadowTexture.Bind(commandList, 3, 2);
-
-                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
-                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
-
-                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
-                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
-
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
             }
-
-            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
-            cloudShadowUniformBuffer.Bind(commandList, 3, 5);            
 
             commandList->PushConstants("constants", &pushConstants);
 

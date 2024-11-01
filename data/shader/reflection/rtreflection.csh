@@ -20,6 +20,7 @@
 
 #include <../ddgi/ddgi.hsh>
 #include <../shadow.hsh>
+#include <../clouds/shadow.hsh>
 
 layout (local_size_x = 8, local_size_y = 4) in;
 
@@ -35,6 +36,10 @@ layout(set = 3, binding = 6) uniform sampler2DArrayShadow cascadeMaps;
 layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
 layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 
+#ifdef CLOUD_SHADOWS
+layout(set = 3, binding = 9) uniform sampler2D cloudMap;
+#endif
+
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
     ivec2(1, 0),
@@ -42,7 +47,7 @@ const ivec2 offsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-layout(std140, set = 3, binding = 9) uniform UniformBuffer {
+layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     float radianceLimit;
     uint frameSeed;
     float bias;
@@ -166,9 +171,11 @@ void main() {
 
             reflection.rgb /= float(sampleCount);
 
+            //reflection.rgb = vec3(0.0);
+
         }
 
-        imageStore(rtrImage, pixel, reflection);
+        imageStore(rtrImage, pixel, vec4(reflection.rgb, 0.0));
     }
 
 }
@@ -242,6 +249,15 @@ vec3 EvaluateDirectLight(inout Surface surface, inout float seed) {
 #else
     if (light.castShadow)
         radiance *= CheckVisibility(surface, lightDistance);
+#endif
+
+#ifdef CLOUD_SHADOWS
+    if (light.type == uint(DIRECTIONAL_LIGHT)) {
+        vec3 P = vec3(globalData.vMatrix * vec4(surface.P, 1.0));
+        float cloudShadowFactor = CalculateCloudShadow(P, cloudShadowUniforms.cloudShadow, cloudMap);
+
+        radiance *= cloudShadowFactor;
+    }
 #endif
     
     return reflectance * radiance * surface.NdotL / lightPdf;

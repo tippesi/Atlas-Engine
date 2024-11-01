@@ -52,11 +52,13 @@ namespace Atlas {
 
             for (auto& mesh : meshes) {
                 // Only need to check for this, since that means that the BVH was built and the mesh is loaded
-                if (!renderState->blasToBindlessIdx.contains(mesh->blas))
+                if (!mesh.IsLoaded() || !renderState->blasToBindlessIdx.contains(mesh->blas))
                     continue;
 
                 if (!prevBlasInfos.contains(mesh->blas)) {
-                    blasInfos[mesh->blas] = {};
+                    blasInfos[mesh->blas] = BlasInfo{
+                        .mesh = mesh,
+                    };
                     BuildTriangleLightsForMesh(mesh);
                 }
                 else {

@@ -20,6 +20,8 @@ layout(set = 3, binding = 3) uniform sampler2D lowResVolumetricCloudsTexture;
 layout(set = 3, binding = 5) uniform  UniformBuffer {
     Fog fog;
     vec4 planetCenter;
+    vec4 mainLightColor;
+    vec4 mainLightDirection;
     int downsampled2x;
     int cloudsEnabled;
     int fogEnabled;
@@ -187,10 +189,24 @@ void main() {
     vec3 resolve = imageLoad(resolveImage, pixel).rgb;
 
 #ifndef RAYMARCHED_FOG
+    float LdotV = dot(worldDirection, normalize(uniforms.mainLightDirection.xyz));
+    float phaseFunction = ComputeScattering(uniforms.fog.scatteringAnisotropy, LdotV);
+
     vec3 worldPosition = vec3(globalData.ivMatrix * vec4(viewPosition, 1.0));
     volumetricFog.a = ComputeVolumetricFog(uniforms.fog, globalData.cameraLocation.xyz, worldPosition);
 
-    volumetricFog.rgb = uniforms.fog.extinctionCoefficients.rgb * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
+    vec3 lightPosition = worldPosition - 10000.0 * normalize(uniforms.mainLightDirection.xyz);
+    lightPosition = vec3(globalData.ivMatrix * vec4(lightPosition, 1.0));
+    float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
+
+    vec3 scatteringCoefficient = uniforms.fog.scatteringFactor *
+            uniforms.fog.extinctionCoefficients.rgb;
+
+    vec3 lightScattering = phaseFunction * uniforms.mainLightColor.rgb;
+
+    vec3 scattering = scatteringCoefficient * (lightScattering + vec3(uniforms.fog.ambientFactor));
+
+    volumetricFog.rgb = scattering * clamp(1.0 - volumetricFog.a, 0.0, 1.0);
 #endif
 
     resolve = ApplyVolumetrics(uniforms.fog, resolve, volumetricFog, volumetricClouds,

@@ -43,6 +43,8 @@ namespace Atlas {
             struct alignas(16) ResolveUniforms {
                 Fog fog;
                 vec4 planetCenter;
+                vec4 mainLightColor;
+                vec4 mainLightDirection;
                 int downsampled2x;
                 int cloudsEnabled;
                 int fogEnabled;

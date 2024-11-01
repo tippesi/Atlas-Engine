@@ -45,10 +45,13 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("DDGI");
 
             Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-                
+            if (scene->HasMainLight())
+                shadow = scene->GetMainLight().shadow;
+               
+            auto clouds = scene->sky.clouds;
+            auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
             rayHitPipelineConfig.ManageMacro("DDGI_VISIBILITY", volume->visibility);
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             
@@ -159,11 +162,16 @@ namespace Atlas {
                             }
                         }
                     }
+
+                    if (cloudShadowEnabled && scene->HasMainLight()) {
+                        clouds->shadowTexture.Bind(commandList, 3, 1);
+                    }
+
                     rayHitUniformBuffer.SetData(&uniforms, 0);
 
                     // Use this buffer instead of the default writeRays buffer of the helper
-                    commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(rayHitBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 3);
                 }
             );
 

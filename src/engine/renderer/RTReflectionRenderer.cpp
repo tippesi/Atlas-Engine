@@ -185,13 +185,17 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
 
+                auto clouds = scene->sky.clouds;
+
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+                auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
                 rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
-                rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+                rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             
+                rtrPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
 
@@ -201,14 +205,19 @@ namespace Atlas {
                 helper.DispatchAndHit(scene, commandList, pipeline, ivec3(groupCount, 1),
                     [=]() {
                         commandList->BindImage(reflectionTexture->image, 3, 0);
-                        commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 9);
+
+                        if (cloudShadowEnabled && scene->HasMainLight()) {
+                            clouds->shadowTexture.Bind(commandList, 3, 9);
+                        }
+
+                        commandList->BindBuffer(rtrUniformBuffer.Get(), 3, 10);
                     });
 
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
 
-            if (reflection->upsampleBeforeFiltering) {
+            if (reflection->upsampleBeforeFiltering && reflection->halfResolution) {
                 Graphics::Profiler::EndAndBeginQuery("Upscaling");
 
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 8);
@@ -259,6 +268,8 @@ namespace Atlas {
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
+
+                temporalPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering && reflection->halfResolution);
 
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);

@@ -48,7 +48,7 @@ layout(location=5) in vec4 vertexColorsVS;
 #endif
 
 #if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
-layout(location=6) in mat3 TBN;
+layout(location=7) in mat3 TBN;
 #endif
 
 layout(push_constant) uniform constants {
@@ -85,7 +85,7 @@ void main() {
     baseColorFS *= textureColor.rgb;
 #endif
 #ifdef VERTEX_COLORS
-    baseColorFS.rgb *= vertexColorsVS.rgb;
+    //baseColorFS.rgb *= vertexColorsVS.rgb;
 #endif
 
     vec3 geometryNormal = normalize(normalVS);

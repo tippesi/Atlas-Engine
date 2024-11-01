@@ -255,7 +255,7 @@ bool traceScreenSpaceAdvanced(
         hit = allowFallback;
     }
 
-    maxSteps /= 2.0;
+    // maxSteps /= 2.0;
         
     csOrig = minPoint;
     csDir = normalize(maxPoint - minPoint);

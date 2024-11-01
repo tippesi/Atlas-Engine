@@ -340,6 +340,9 @@ namespace Atlas {
             for (auto entity : lightSubset) {
                 auto& lightComponent = lightSubset.Get(entity);
 
+                if (lightComponent.isMain && lightComponent.type == LightType::DirectionalLight)
+                    mainLightEntity = Entity(entity, &entityManager);
+
                 auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
 
                 lightComponent.Update(transformComponent);
@@ -510,6 +513,18 @@ namespace Atlas {
         bool Scene::HasMainCamera() const {
 
             return mainCameraEntity.IsValid() && mainCameraEntity.HasComponent<CameraComponent>();
+
+        }
+
+        LightComponent& Scene::GetMainLight() {
+
+            return mainLightEntity.GetComponent<LightComponent>();
+
+        }
+
+        bool Scene::HasMainLight() const {
+
+            return mainLightEntity.IsValid() && mainLightEntity.HasComponent<LightComponent>();
 
         }
 
