@@ -77,7 +77,11 @@ void main() {
         
         vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
+#ifdef SSR
         vec4 reflection = imageLoad(rtrImage, pixel);
+#else
+        vec4 reflection = vec4(0.0);
+#endif
 
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
@@ -89,7 +93,7 @@ void main() {
         if (uniforms.halfRes > 0)
             recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
         else
-            recontructTexCoord = (vec2(pixel) + 0.5) / (vec2(resolution));
+            recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
             
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
@@ -196,27 +200,27 @@ vec3 EvaluateHit(inout Ray ray) {
 
     bool backfaceHit;
     Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
-    
-    radiance += surface.material.emissiveColor;
-
-    float curSeed = float(uniforms.frameSeed) / 255.0 + float(ray.ID) * float(uniforms.sampleCount);
-    // Evaluate direct light
-    for (int i = 0; i < uniforms.lightSampleCount; i++) {
-        radiance += EvaluateDirectLight(surface, curSeed);
-        curSeed += 1.0 / float(uniforms.lightSampleCount);
-    }
-
-    radiance /= float(uniforms.lightSampleCount);
 
     // Evaluate indirect lighting
 #ifdef DDGI
     vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
     // Approximate indirect specular for ray by using the irradiance grid
     // This enables metallic materials to have some kind of secondary reflection
+    
+    surface.NdotV = saturate(dot(surface.N, surface.V));
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
         EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
 #endif
+    
+    radiance += surface.material.emissiveColor;
+
+    float curSeed = float(uniforms.frameSeed) / 255.0 + float(ray.ID) * float(uniforms.sampleCount);
+    // Evaluate direct light
+    for (int i = 0; i < uniforms.lightSampleCount; i++) {
+        radiance += (EvaluateDirectLight(surface, curSeed) / float(uniforms.lightSampleCount));
+        curSeed += 1.0 / float(uniforms.lightSampleCount);
+    }
 
     return radiance;
 

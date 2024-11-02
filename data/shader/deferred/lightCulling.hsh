@@ -77,8 +77,8 @@ AABB CalculateAABB(vec3 corners[8]) {
     }
 
     AABB aabb;
-    aabb.center = (aabbMax + aabbMin) * 0.5;
-    aabb.extent = aabbMax - aabb.center;
+    aabb.extent = (aabbMax - aabbMin) * 0.5;
+    aabb.center = aabbMin + aabb.extent;
     return aabb;
 
 }

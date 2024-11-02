@@ -58,12 +58,14 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Render RT Reflections");
 
             if (target->historyReflectionTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED || 
-                target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                target->historyReflectionMomentsTexture.image->layout == VK_IMAGE_LAYOUT_UNDEFINED ||
+                target->lightingTexture.image->layers == VK_IMAGE_LAYOUT_UNDEFINED) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyReflectionTexture.image, layout, access},
                     {target->historyReflectionMomentsTexture.image, layout, access},
+                    {target->lightingTexture.image, layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, {});
             }           
@@ -180,7 +182,7 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Cast rays and calculate radiance
-            if (scene->IsRtDataValid()) {
+            if (scene->IsRtDataValid() && reflection->rt) {
                 ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
@@ -192,6 +194,7 @@ namespace Atlas {
                 auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
+                rtrPipelineConfig.ManageMacro("SSR", reflection->ssr);
                 rtrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
                 rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             

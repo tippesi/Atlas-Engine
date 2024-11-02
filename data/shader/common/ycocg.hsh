@@ -1,5 +1,10 @@
+#include <types.hsh>
+
 const mat3 RGBToYCoCgMatrix = mat3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
 const mat3 YCoCgToRGBMatrix = mat3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
+
+const AeF16x3x3 F16RGBToYCoCgMatrix = AeF16x3x3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
+const AeF16x3x3 F16YCoCgToRGBMatrix = AeF16x3x3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
 
 vec3 RGBToYCoCg(vec3 RGB) {
 
@@ -12,3 +17,16 @@ vec3 YCoCgToRGB(vec3 YCoCg) {
     return YCoCgToRGBMatrix * YCoCg;
 
 }
+
+AeF16x3 RGBToYCoCg(AeF16x3 RGB) {
+
+    return F16RGBToYCoCgMatrix * RGB;
+
+}
+
+AeF16x3 YCoCgToRGB(AeF16x3 YCoCg) {
+
+    return F16YCoCgToRGBMatrix * YCoCg;
+
+}
+

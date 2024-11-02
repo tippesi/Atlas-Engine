@@ -145,6 +145,24 @@ bool IsInsideCascade(vec3 position, int cascadeIndex) {
 
 }
 
+vec3 GetCellSize(vec3 position) {
+
+    int cascadeIndex = 0;
+    while (cascadeIndex < ddgiData.cascadeCount) {
+
+        bool isInside = IsInsideCascade(position, cascadeIndex);
+        if (!isInside)
+            break;
+
+        cascadeIndex++;
+    }
+
+    cascadeIndex = max(cascadeIndex - 1, 0);
+
+    return ddgiData.cascades[cascadeIndex].cellSize.xyz;
+
+}
+
 void GetProbeHistoryInfo(ivec3 probeIndex, int cascadeIndex, out ivec3 historyProbeCoord, out bool reset) {
 
     ivec3 cascadeProbeOffset = ivec3(0, cascadeIndex * ddgiData.volumeProbeCount.y, 0);

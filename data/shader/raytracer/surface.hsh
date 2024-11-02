@@ -141,8 +141,7 @@ Surface GetSurfaceParameters(Instance instance, Triangle tri, Ray ray,
 
     surface.geometryNormal = geometryNormal;
 
-    surface.F0 = mix(vec3(0.04), surface.material.baseColor,
-    surface.material.metalness);
+    surface.F0 = mix(vec3(0.04), surface.material.baseColor, surface.material.metalness);
     surface.F90 = 1.0;
 
     return surface;

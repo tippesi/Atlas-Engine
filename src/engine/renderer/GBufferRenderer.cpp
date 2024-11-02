@@ -11,7 +11,7 @@ namespace Atlas {
             downscalePipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh");
             downscaleDepthOnlyPipelineConfig = PipelineConfig("gbuffer/downsampleGBuffer2x.csh", {"DEPTH_ONLY"});
 
-            patchNormalPipelineConfig = PipelineConfig("gbuffer/patchGBufferNormals.csh");
+            patchNormalPipelineConfig = PipelineConfig("gbuffer/patchGBuffer.csh");
             generateReactiveMaskPipelineConfig = PipelineConfig("gbuffer/generateReactiveMask.csh");
 
         }
@@ -48,9 +48,9 @@ namespace Atlas {
 
         }
 
-        void GBufferRenderer::FillNormalTexture(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
+        void GBufferRenderer::Patch(const Ref<RenderTarget>& target, Graphics::CommandList* commandList) {
 
-            Graphics::Profiler::BeginQuery("Patch GBuffer normals");
+            Graphics::Profiler::BeginQuery("Patch GBuffer");
 
             auto pipeline = PipelineManager::GetPipeline(patchNormalPipelineConfig);
             commandList->BindPipeline(pipeline);
@@ -59,6 +59,7 @@ namespace Atlas {
             
             auto normal = rt->normalTexture;
             auto geometryNormal = rt->geometryNormalTexture;
+            auto roughnessMetallicAo = rt->roughnessMetallicAoTexture;
             auto materialIdx = rt->materialIdxTexture;
             
             ivec2 res = ivec2(normal->width, normal->height);
@@ -68,10 +69,12 @@ namespace Atlas {
             groupCount.y += ((res.y % 8 == 0) ? 0 : 1);
 
             commandList->BindImage(normal->image, 3, 0);
-            commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 1);
-            commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 2);
+            commandList->BindImage(roughnessMetallicAo->image, 3, 1);
+            commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 2);            
+            commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 3);
 
-            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(roughnessMetallicAo->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
@@ -92,6 +95,7 @@ namespace Atlas {
 
             auto reactiveMaskTexture = target->reactiveMaskTexture;
             auto stencilTexture = rt->stencilTexture;
+            auto roughnessMetallicAo = rt->roughnessMetallicAoTexture;
 
             ivec2 res = ivec2(reactiveMaskTexture.width, reactiveMaskTexture.height);
 
@@ -101,6 +105,7 @@ namespace Atlas {
 
             commandList->BindImage(reactiveMaskTexture.image, 3, 0);
             commandList->BindImage(stencilTexture->image, stencilTexture->sampler, 3, 1);
+            commandList->BindImage(roughnessMetallicAo->image, roughnessMetallicAo->sampler, 3, 2);
 
             commandList->ImageMemoryBarrier(reactiveMaskTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT);
 

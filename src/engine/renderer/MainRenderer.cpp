@@ -302,7 +302,7 @@ namespace Atlas {
 				}
 			}
 
-			gBufferRenderer.FillNormalTexture(target, commandList);
+			gBufferRenderer.Patch(target, commandList);
 
 			gBufferRenderer.Downscale(target, commandList);
 
@@ -310,7 +310,7 @@ namespace Atlas {
 
 			rtgiRenderer.Render(target, scene, commandList);
 
-				rtrRenderer.Render(target, scene, commandList);
+			rtrRenderer.Render(target, scene, commandList);
 
 			sssRenderer.Render(target, scene, commandList);
 

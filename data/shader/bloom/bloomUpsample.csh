@@ -1,3 +1,5 @@
+#include <../common/types.hsh>
+
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
@@ -9,9 +11,9 @@ layout(push_constant) uniform constants {
     float filterSize;
 } pushConstants;
 
-vec3 Sample(vec2 texCoord) {
+AeF16x3 Sample(vec2 texCoord) {
 
-    return textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb;
+    return AeF16x3(textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb);
 
 }
 
@@ -31,24 +33,24 @@ void main() {
         texelSize = max(filterSize, filterSize);
 
         // We always sample at pixel border, not centers
-        vec3 filter00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
-        vec3 filter10 = Sample(texCoord + vec2(0.0, -texelSize.y));
-        vec3 filter20 = Sample(texCoord + vec2(texelSize.x, -texelSize.y));
+        AeF16x3 filter00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
+        AeF16x3 filter10 = Sample(texCoord + vec2(0.0, -texelSize.y));
+        AeF16x3 filter20 = Sample(texCoord + vec2(texelSize.x, -texelSize.y));
 
-        vec3 filter01 = Sample(texCoord + vec2(-texelSize.x, 0.0));
-        vec3 filter11 = Sample(texCoord + vec2(0.0, 0.0));
-        vec3 filter21 = Sample(texCoord + vec2(texelSize.x, 0.0));
+        AeF16x3 filter01 = Sample(texCoord + vec2(-texelSize.x, 0.0));
+        AeF16x3 filter11 = Sample(texCoord + vec2(0.0, 0.0));
+        AeF16x3 filter21 = Sample(texCoord + vec2(texelSize.x, 0.0));
 
-        vec3 filter02 = Sample(texCoord + vec2(-texelSize.x, texelSize.y));
-        vec3 filter12 = Sample(texCoord + vec2(0.0, texelSize.y));
-        vec3 filter22 = Sample(texCoord + vec2(texelSize.x, texelSize.y));
+        AeF16x3 filter02 = Sample(texCoord + vec2(-texelSize.x, texelSize.y));
+        AeF16x3 filter12 = Sample(texCoord + vec2(0.0, texelSize.y));
+        AeF16x3 filter22 = Sample(texCoord + vec2(texelSize.x, texelSize.y));
 
-        vec3 filtered = vec3(0.0);
+        AeF16x3 filtered = AeF16x3(0.0);
 
-        filtered += 4.0 * filter11;
-        filtered += 2.0 * (filter10 + filter01 + filter21 + filter12);
-        filtered += 1.0 * (filter00 + filter20 + filter02 + filter22);
-        filtered /= 16.0;
+        filtered += AeF16(4.0) * filter11;
+        filtered += AeF16(2.0) * (filter10 + filter01 + filter21 + filter12);
+        filtered += AeF16(1.0) * (filter00 + filter20 + filter02 + filter22);
+        filtered /= AeF16(16.0);
         
         if (pushConstants.additive > 0) {
             imageStore(textureOut, coord, vec4(filtered + filter11, 1.0));

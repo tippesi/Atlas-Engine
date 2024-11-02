@@ -7,6 +7,8 @@ namespace Atlas::ImguiExtension {
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &reflection->enable);
+        ImGui::Checkbox("Enable RT", &reflection->rt);
+        ImGui::Checkbox("Enable SSR", &reflection->ssr);
         ImGui::Checkbox("Half resolution", &reflection->halfResolution);
         ImGui::Checkbox("Upsample before filtering", &reflection->upsampleBeforeFiltering);
 

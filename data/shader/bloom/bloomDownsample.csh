@@ -1,9 +1,8 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 #include <../common/utility.hsh>
+#include <../common/types.hsh>
 #include <../common/flatten.hsh>
-
-#define NO_SHARED
 
 layout (set = 3, binding = 0, rgba16f) writeonly uniform image2D textureOut;
 layout (set = 3, binding = 1) uniform sampler2D textureIn;
@@ -26,82 +25,35 @@ const ivec2 pixelOffsets[4] = ivec2[4](
     ivec2(1, 1)
 );
 
-float Luma(vec3 color) {
+AeF16 Luma(AeF16x3 color) {
 
-    const vec3 luma = vec3(0.299, 0.587, 0.114);
+    const AeF16x3 luma = AeF16x3(0.299, 0.587, 0.114);
     return dot(color, luma);
 
 }
 
-vec3 Prefilter(vec3 color) {
+AeF16x3 Prefilter(AeF16x3 color) {
 
-    float brightness = Luma(color);
-	float contribution = max(0.0, brightness - pushConstants.threshold);
-    contribution /= max(brightness, 0.00001);
+    AeF16 brightness = Luma(color);
+	AeF16 contribution = max(AeF16(0.0), brightness - AeF16(pushConstants.threshold));
+    contribution /= max(brightness, AeF16(0.001));
     return color * contribution;
 
 }
 
-void LoadGroupSharedData() {
 
-    ivec2 resolution = textureSize(textureIn, pushConstants.mipLevel);
-    ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
+AeF16x3 Sample(vec2 texCoord) {
 
-    uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-    for(uint i = gl_LocalInvocationIndex; i < sharedDataSize; i += workGroupSize) {
-        ivec2 localOffset = Unflatten2D(int(i), unflattenedSharedDataSize);
-        ivec2 texel = localOffset + 2 * workGroupOffset - ivec2(supportSize);
-
-        texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
-
-        vec3 color = texelFetch(textureIn, texel, pushConstants.mipLevel).rgb;
-        if (pushConstants.mipLevel == 0) {
-            color = Prefilter(color);
-        }
-
-        sharedMemory[i] = color;
-    }
-
-    barrier();
-
-} 
-
-vec3 Sample(vec2 texCoord) {
-
-#ifdef NO_SHARED
     if (pushConstants.mipLevel == 0) {
-        return Prefilter(textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb);
+        return Prefilter(AeF16x3(textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb));
     }
     else {
-        return textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb;
+        return AeF16x3(textureLod(textureIn, texCoord, float(pushConstants.mipLevel)).rgb);
     }
-#else
-    const ivec2 groupOffset = 2 * (ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize)) - ivec2(supportSize);
-
-    vec2 pixel = texCoord * textureSize(textureIn, pushConstants.mipLevel);
-    pixel -= 0.5;
-
-    float x = fract(pixel.x);
-    float y = fract(pixel.y);
-
-    float weights[4] = { (1 - x) * (1 - y), x * (1 - y), (1 - x) * y, x * y };
-
-    vec3 color = vec3(0.0);
-    for (int i = 0; i < 4; i++) {
-        ivec2 offsetPixel = ivec2(pixel) + pixelOffsets[i];
-        offsetPixel -= groupOffset;
-        offsetPixel = clamp(offsetPixel, ivec2(0), unflattenedSharedDataSize - ivec2(1));
-        int sharedMemoryIdx = Flatten2D(offsetPixel, unflattenedSharedDataSize);
-        color += weights[i] * sharedMemory[sharedMemoryIdx];
-    }
-    return color;
-#endif
 
 }
 
 void main() {
-
-    LoadGroupSharedData();
 
     ivec2 size = imageSize(textureOut);
     ivec2 coord = ivec2(gl_GlobalInvocationID);
@@ -114,35 +66,35 @@ void main() {
         vec2 texelSize = 1.0 / vec2(textureSize(textureIn, pushConstants.mipLevel));
 
         // We always sample at pixel border, not centers
-        vec3 outer00 = Sample(texCoord + vec2(-2.0 * texelSize.x, -2.0 * texelSize.y));
-        vec3 outer10 = Sample(texCoord + vec2(0.0, -2.0 * texelSize.y));
-        vec3 outer20 = Sample(texCoord + vec2(2.0 * texelSize.x, -2.0 * texelSize.y));
+        AeF16x3 outer00 = Sample(texCoord + vec2(-2.0 * texelSize.x, -2.0 * texelSize.y));
+        AeF16x3 outer10 = Sample(texCoord + vec2(0.0, -2.0 * texelSize.y));
+        AeF16x3 outer20 = Sample(texCoord + vec2(2.0 * texelSize.x, -2.0 * texelSize.y));
 
-        vec3 outer01 = Sample(texCoord + vec2(-2.0 * texelSize.x, 0.0));
-        vec3 outer11 = Sample(texCoord + vec2(0.0, 0.0));
-        vec3 outer21 = Sample(texCoord + vec2(2.0 * texelSize.x, 0.0));
+        AeF16x3 outer01 = Sample(texCoord + vec2(-2.0 * texelSize.x, 0.0));
+        AeF16x3 outer11 = Sample(texCoord + vec2(0.0, 0.0));
+        AeF16x3 outer21 = Sample(texCoord + vec2(2.0 * texelSize.x, 0.0));
 
-        vec3 outer02 = Sample(texCoord + vec2(-2.0 * texelSize.x, 2.0 * texelSize.y));
-        vec3 outer12 = Sample(texCoord + vec2(0.0, 2.0 * texelSize.y));
-        vec3 outer22 = Sample(texCoord + vec2(2.0 * texelSize.x, 2.0 * texelSize.y));
+        AeF16x3 outer02 = Sample(texCoord + vec2(-2.0 * texelSize.x, 2.0 * texelSize.y));
+        AeF16x3 outer12 = Sample(texCoord + vec2(0.0, 2.0 * texelSize.y));
+        AeF16x3 outer22 = Sample(texCoord + vec2(2.0 * texelSize.x, 2.0 * texelSize.y));
 
-        vec3 inner00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
-        vec3 inner10 = Sample(texCoord + vec2(texelSize.x, -texelSize.y));
-        vec3 inner01 = Sample(texCoord + vec2(-texelSize.x, texelSize.y));
-        vec3 inner11 = Sample(texCoord + vec2(texelSize.x, texelSize.y));
+        AeF16x3 inner00 = Sample(texCoord + vec2(-texelSize.x, -texelSize.y));
+        AeF16x3 inner10 = Sample(texCoord + vec2(texelSize.x, -texelSize.y));
+        AeF16x3 inner01 = Sample(texCoord + vec2(-texelSize.x, texelSize.y));
+        AeF16x3 inner11 = Sample(texCoord + vec2(texelSize.x, texelSize.y));
 
-        vec3 outerGroup0 = 0.125 * (outer00 + outer10 + outer01 + outer11) * 0.25;
-        vec3 outerGroup1 = 0.125 * (outer10 + outer20 + outer11 + outer21) * 0.25;
-        vec3 outerGroup2 = 0.125 * (outer01 + outer11 + outer02 + outer12) * 0.25;
-        vec3 outerGroup3 = 0.125 * (outer11 + outer21 + outer12 + outer22) * 0.25;
-        vec3 innerGroup = 0.5 * (inner00 + inner10 + inner01 + inner11) * 0.25;
+        AeF16x3 outerGroup0 = AeF16(0.125 * 0.25) * (outer00 + outer10 + outer01 + outer11);
+        AeF16x3 outerGroup1 = AeF16(0.125 * 0.25) * (outer10 + outer20 + outer11 + outer21);
+        AeF16x3 outerGroup2 = AeF16(0.125 * 0.25) * (outer01 + outer11 + outer02 + outer12);
+        AeF16x3 outerGroup3 = AeF16(0.125 * 0.25) * (outer11 + outer21 + outer12 + outer22);
+        AeF16x3 innerGroup = AeF16(0.5 * 0.25) * (inner00 + inner10 + inner01 + inner11);
 
         if (pushConstants.mipLevel == 0) {
-            float outerGroup0Weight = (1.0 / (1.0 + Luma(outerGroup0)));
-            float outerGroup1Weight = (1.0 / (1.0 + Luma(outerGroup1)));
-            float outerGroup2Weight = (1.0 / (1.0 + Luma(outerGroup2)));
-            float outerGroup3Weight = (1.0 / (1.0 + Luma(outerGroup3)));
-            float innerGroupWeight = (1.0 / (1.0 + Luma(innerGroup)));
+            AeF16 outerGroup0Weight = (AeF16(1.0) / (AeF16(1.0) + Luma(outerGroup0)));
+            AeF16 outerGroup1Weight = (AeF16(1.0) / (AeF16(1.0) + Luma(outerGroup1)));
+            AeF16 outerGroup2Weight = (AeF16(1.0) / (AeF16(1.0) + Luma(outerGroup2)));
+            AeF16 outerGroup3Weight = (AeF16(1.0) / (AeF16(1.0) + Luma(outerGroup3)));
+            AeF16 innerGroupWeight = (AeF16(1.0) / (AeF16(1.0) + Luma(innerGroup)));
             
             outerGroup0 *= outerGroup0Weight;
             outerGroup1 *= outerGroup1Weight;

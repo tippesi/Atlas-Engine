@@ -92,6 +92,9 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
         float weight = depthWeight * normalWeight * weights[i];
+        result += vec4(data[sharedMemoryOffset], 1.0) * weight;
+
+        totalWeight += weight;
         if (weight > maxWeight) {
             maxWeight = weight;
             closestMemoryOffset = sharedMemoryOffset;
@@ -99,9 +102,9 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     }
 
-    result = vec4(data[closestMemoryOffset], 1.0);
+    //result = vec4(data[closestMemoryOffset], 1.0);
 
-    return result;
+    return vec4(result.rgb, 1.0);
 
 }
 
@@ -134,8 +137,9 @@ void main() {
 
     //upsampleResult.rgb = vec3(offsetIdx);
     if (downSamplePixel * 2 + offset == pixel) {
-        int sharedMemoryOffset = Flatten2D(downSamplePixel, unflattenedDepthDataSize);
-        //upsampleResult.rgb = data[sharedMemoryOffset];
+        ivec2 samplePixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+        int sharedMemoryOffset = Flatten2D(samplePixel, unflattenedDepthDataSize);
+        upsampleResult.rgb = data[sharedMemoryOffset];
     }
 
     imageStore(image, pixel, upsampleResult);

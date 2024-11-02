@@ -1,5 +1,6 @@
 // Contains useful functions
 #include <PI.hsh>
+#include <types.hsh>
 
 float saturate(float value) {
 
@@ -22,6 +23,30 @@ vec3 saturate(vec3 value) {
 vec4 saturate(vec4 value) {
 
     return clamp(value, vec4(0.0), vec4(1.0));
+
+}
+
+AeF16 saturate(AeF16 value) {
+
+    return clamp(value, AeF16(0.0), AeF16(1.0));
+
+}
+
+AeF16x2 saturate(AeF16x2 value) {
+
+    return clamp(value, AeF16x2(0.0), AeF16x2(1.0));
+
+}
+
+AeF16x3 saturate(AeF16x3 value) {
+
+    return clamp(value, AeF16x3(0.0), AeF16x3(1.0));
+
+}
+
+AeF16x4 saturate(AeF16x4 value) {
+
+    return clamp(value, AeF16x4(0.0), AeF16x4(1.0));
 
 }
 

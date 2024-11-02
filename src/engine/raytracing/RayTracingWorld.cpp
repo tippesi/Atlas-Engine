@@ -136,7 +136,7 @@ namespace Atlas {
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
+                if (!meshComponent.mesh.IsLoaded() || !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
                     continue;
 
                 auto &blasInfo = blasInfos[meshComponent.mesh->blas];

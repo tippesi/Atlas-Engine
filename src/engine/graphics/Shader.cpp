@@ -69,6 +69,10 @@ namespace Atlas {
                 macros.push_back("AE_BINDLESS");
             }
 
+            if (device->support.shaderFloat16) {
+                macros.push_back("AE_HALF_FLOAT");
+            }
+
 #ifdef AE_OS_MACOS
             macros.push_back("AE_OS_MACOS");
 #endif

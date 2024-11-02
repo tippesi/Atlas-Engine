@@ -74,7 +74,7 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     int lightCount = 0;
-
+    // Load to get the atmosphere which was rendered before
     vec3 direct = imageLoad(image, pixel).rgb;
 
     if (depth < 1.0) {
@@ -82,8 +82,7 @@ void main() {
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
         Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-        direct = vec3(0.0);
-        
+        direct = vec3(0.0);        
 
         for (uint i = 0u; i < pushConstants.lightBucketCount; i++) {
             uint lightBucket = sharedLightBuckets[i];
@@ -162,6 +161,8 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
     if (attenuation == 0.0)
         return vec3(0.0);
 
+    float shadowFactor = GetShadowFactor(light, surface, lightType, geometryNormal, isMain);
+
     UpdateSurface(surface);
 
     // Direct diffuse + specular BRDF
@@ -169,8 +170,6 @@ vec3 EvaluateLight(Light light, Surface surface, vec3 geometryNormal, bool isMai
     vec3 directSpecular = EvaluateSpecularBRDF(surface);
 
     vec3 direct = directDiffuse + directSpecular;
-
-    float shadowFactor = GetShadowFactor(light, surface, lightType, geometryNormal, isMain);
 
     vec3 radiance = light.color.rgb * light.intensity * attenuation;
     direct = direct * radiance * surface.NdotL * shadowFactor;

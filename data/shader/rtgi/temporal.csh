@@ -93,7 +93,7 @@ void LoadGroupSharedData() {
 
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
-        sharedRadianceDepth[i].rgb = FetchTexel(texel);
+        sharedRadianceDepth[i].rgb = RGBToYCoCg(FetchTexel(texel));
         sharedRadianceDepth[i].a = texelFetch(depthTexture, texel, 0).r;
         sharedMaterialIdx[i].r = texelFetch(materialIdxTexture, texel, 0).r;
     }
@@ -361,7 +361,7 @@ void ComputeVarianceMinMax(out vec3 mean, out vec3 std) {
 
             int sharedMemoryIdx = GetSharedMemoryIndex(ivec2(i, j));
 
-            vec3 sampleRadiance = RGBToYCoCg(FetchCurrentRadiance(sharedMemoryIdx));
+            vec3 sampleRadiance = FetchCurrentRadiance(sharedMemoryIdx);
             float sampleDepth = FetchDepth(sharedMemoryIdx);
             uint sampleMaterialIdx = FetchMaterialIdx(sharedMemoryIdx);
 
