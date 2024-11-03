@@ -18,6 +18,7 @@ vec3 YCoCgToRGB(vec3 YCoCg) {
 
 }
 
+#ifdef AE_HALF_FLOAT
 AeF16x3 RGBToYCoCg(AeF16x3 RGB) {
 
     return F16RGBToYCoCgMatrix * RGB;
@@ -29,4 +30,4 @@ AeF16x3 YCoCgToRGB(AeF16x3 YCoCg) {
     return F16YCoCgToRGBMatrix * YCoCg;
 
 }
-
+#endif

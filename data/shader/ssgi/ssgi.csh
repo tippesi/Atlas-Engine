@@ -140,6 +140,7 @@ void main() {
                 float viewOffset = max(1.0, length(viewPos));
                 vec3 viewRayOrigin = viewPos + viewNorm * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
 
+                /*
                 vec2 hitPixel;
                 vec3 hitPoint;
                 float hit = 0.0;
@@ -173,8 +174,9 @@ void main() {
                 }
                 
                 //rayIrradiance = probeIrradiance;
+                */
                 
-                /*
+                
                 float hit = 0.0;
                 for (uint i = 0; i < uniforms.sampleCount; i++) {
 
@@ -220,7 +222,7 @@ void main() {
                     }
 
                 }
-                */
+                
 
                 irradiance += (rayIrradiance / max(1.0, float(totalCount)));
 

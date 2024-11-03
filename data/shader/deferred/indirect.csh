@@ -274,7 +274,8 @@ void main() {
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 #else
         // This is just there if the new SSGI is enabled
-        indirect = (indirectSpecular) * surface.material.ao;
+        // indirect = (indirectSpecular) * surface.material.ao;
+        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
 #endif
 
 #ifdef SSGI

@@ -26,6 +26,7 @@ vec4 saturate(vec4 value) {
 
 }
 
+#ifdef AE_HALF_FLOAT
 AeF16 saturate(AeF16 value) {
 
     return clamp(value, AeF16(0.0), AeF16(1.0));
@@ -49,6 +50,7 @@ AeF16x4 saturate(AeF16x4 value) {
     return clamp(value, AeF16x4(0.0), AeF16x4(1.0));
 
 }
+#endif
 
 float sqr(float value) {
 
