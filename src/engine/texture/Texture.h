@@ -45,7 +45,8 @@ namespace Atlas {
               * @param filtering The filtering of the texture.
               */
             Texture(int32_t width, int32_t height, int32_t depth, VkFormat format,
-                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest);
+                Wrapping wrapping = Wrapping::Repeat, Filtering filtering = Filtering::Nearest,
+                bool dedicatedMemory = false);
 
             /**
              * Binds the image and sampler of the texture to the specified binding point
@@ -124,6 +125,9 @@ namespace Atlas {
             Wrapping wrapping = Wrapping::Repeat;
             Filtering filtering = Filtering::Nearest;
 
+            bool dedicatedMemory = false;
+            bool usedForRenderTarget = false;
+
             VkFormat format = {};
 
         protected:
@@ -131,7 +135,8 @@ namespace Atlas {
                 int32_t width, int32_t height, int32_t depth);
 
             void Reallocate(Graphics::ImageType imageType, int32_t width, int32_t height,
-                int32_t depth, Filtering filtering, Wrapping wrapping, bool dedicatedMemory = false);
+                int32_t depth, Filtering filtering, Wrapping wrapping,
+                bool dedicatedMemory = false, bool usedForRenderTarget = false);
 
             void RecreateSampler(Filtering filtering, Wrapping wrapping);
 

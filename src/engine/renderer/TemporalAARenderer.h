@@ -2,7 +2,6 @@
 
 #include "../System.h"
 #include "Renderer.h"
-#include "PathTracingRenderer.h"
 
 namespace Atlas {
 
@@ -17,8 +16,6 @@ namespace Atlas {
 
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
-            void Render(Ref<PathTracerRenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
-
         private:
             struct alignas(16) PushConstants {
                 vec2 resolution;
@@ -26,10 +23,6 @@ namespace Atlas {
                 vec2 jitter;
                 int32_t resetHistory;
             };
-
-            void Render(const Texture::Texture2D* outputTexture, const Texture::Texture2D* currentTexture, const Texture::Texture2D* historyTexture,
-                const Texture::Texture2D* velocityTexture, const Texture::Texture2D* historyVelocityTexture, const Texture::Texture2D* depthTexture,
-                const Texture::Texture2D* stencilTexture, PushConstants& constants, Graphics::CommandList* commandList);
 
             PipelineConfig pipelineConfig;
 

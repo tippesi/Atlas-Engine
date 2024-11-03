@@ -4,7 +4,7 @@ namespace Atlas {
 
     namespace Volume {
 
-        Frustum::Frustum(const std::vector<vec3>& corners) {
+        Frustum::Frustum(const std::array<vec3, 8>& corners) {
 
             Resize(corners);
 
@@ -16,7 +16,7 @@ namespace Atlas {
 
         }
 
-        void Frustum::Resize(const std::vector<vec3>& corners) {
+        void Frustum::Resize(const std::array<vec3, 8>& corners) {
 
             this->corners = corners;
             planes[NEAR_PLANE] = Plane(corners[4], corners[5], corners[7]);
@@ -80,6 +80,7 @@ namespace Atlas {
         std::vector<vec4> Frustum::GetPlanes() const {
 
             std::vector<vec4> planes;
+            planes.reserve(6);
 
             for (uint8_t i = 0; i < 6; i++) {
                 planes.push_back(vec4(this->planes[i].normal,
@@ -90,7 +91,7 @@ namespace Atlas {
 
         }
 
-        std::vector<vec3> Frustum::GetCorners() const {
+        std::array<vec3, 8> Frustum::GetCorners() const {
 
             return corners;
 
@@ -110,12 +111,11 @@ namespace Atlas {
                 vec3(1.0f, -1.0f, 1.0f)
             };
 
-            corners.clear();
             auto inverseMatrix = glm::inverse(matrix);
 
             for (uint8_t i = 0; i < 8; i++) {
                 auto homogenous = inverseMatrix * vec4(vectors[i], 1.0f);
-                corners.push_back(vec3(homogenous) / homogenous.w);
+                corners[i] = vec3(homogenous) / homogenous.w;
             }
 
         }

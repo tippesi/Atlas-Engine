@@ -11,6 +11,8 @@ namespace Atlas::ImguiExtension {
 
     void ImguiWrapper::Load(Atlas::Window *window) {
 
+        ImPlot::CreateContext();
+
         // Setup back-end capabilities flags
         ImGuiIO &io = ImGui::GetIO();
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
@@ -64,6 +66,8 @@ namespace Atlas::ImguiExtension {
 
         // Unsubscribe from all events
         ImGui_ImplVulkan_Shutdown();
+
+        ImPlot::DestroyContext();
 
         pool.reset();
 

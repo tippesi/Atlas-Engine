@@ -4,6 +4,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+// Implot
+#include <implot.h>
+
 // Atlas engine includes
 #include <Window.h>
 #include <graphics/DescriptorPool.h>

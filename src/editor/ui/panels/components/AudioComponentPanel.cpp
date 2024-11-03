@@ -30,6 +30,8 @@ namespace Atlas::Editor::UI {
             ImGui::Checkbox("Loop stream", &audioComponent.stream->loop);
         }
 
+        audioSelectionPanel.Reset();
+
         return resourceChanged;
 
     }

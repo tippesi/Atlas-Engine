@@ -2,6 +2,7 @@
 
 #include "System.h"
 #include "texture/Texture2D.h"
+#include "texture/Texture2DArray.h"
 #include "graphics/RenderPass.h"
 #include "graphics/Framebuffer.h"
 
@@ -21,26 +22,28 @@ namespace Atlas::Renderer {
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
             if (useDepthFormat) {
                 depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_D32_SFLOAT,
-                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             }
             else {
                 depthTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R32_SFLOAT,
-                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                    Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             }
             normalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             geometryNormalTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             roughnessMetallicAoTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
+            emissiveTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
+                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
             offsetTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_SINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             materialIdxTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R16_UINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             stencilTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y, VK_FORMAT_R8_UINT,
-                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
             velocityTexture = std::make_shared<Texture::Texture2D>(resolution.x, resolution.y,
-                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
         }
 
         void Resize(ivec2 resolution) {
@@ -49,6 +52,7 @@ namespace Atlas::Renderer {
             normalTexture->Resize(resolution.x, resolution.y);
             geometryNormalTexture->Resize(resolution.x, resolution.y);
             roughnessMetallicAoTexture->Resize(resolution.x, resolution.y);
+            emissiveTexture->Resize(resolution.x, resolution.y);
             offsetTexture->Resize(resolution.x, resolution.y);
             materialIdxTexture->Resize(resolution.x, resolution.y);
             stencilTexture->Resize(resolution.x, resolution.y);
@@ -60,6 +64,7 @@ namespace Atlas::Renderer {
         Ref<Texture::Texture2D> normalTexture = nullptr;
         Ref<Texture::Texture2D> geometryNormalTexture = nullptr;
         Ref<Texture::Texture2D> roughnessMetallicAoTexture = nullptr;
+        Ref<Texture::Texture2D> emissiveTexture = nullptr;
         Ref<Texture::Texture2D> offsetTexture = nullptr;
         Ref<Texture::Texture2D> materialIdxTexture = nullptr;
         Ref<Texture::Texture2D> stencilTexture = nullptr;
@@ -182,6 +187,10 @@ namespace Atlas::Renderer {
 
         float GetScalingFactor() const;
 
+        void UseForPathTracing(bool use);
+
+        bool IsUsedForPathTracing() const;
+
         Ref<Graphics::RenderPass> gBufferRenderPass;
         Ref<Graphics::FrameBuffer> gBufferFrameBuffer;
 
@@ -196,6 +205,7 @@ namespace Atlas::Renderer {
         Ref<Graphics::FrameBuffer> outputFrameBuffer;
 
         Texture::Texture2D outputTexture;
+        Texture::Texture2D bloomTexture;
 
         Texture::Texture2D giTexture;
         Texture::Texture2D swapGiTexture;
@@ -229,11 +239,19 @@ namespace Atlas::Renderer {
         Texture::Texture2D reflectionMomentsTexture;
         Texture::Texture2D historyReflectionMomentsTexture;
 
+        Texture::Texture2D radianceTexture;
+        Texture::Texture2D historyRadianceTexture;
+        Texture::Texture2DArray frameAccumTexture;
+
         Texture::Texture2D lightingTexture;
         Texture::Texture2D reactiveMaskTexture;
         Texture::Texture2D hdrTexture;
 
+        int32_t sampleCount = 0;
+
     private:
+        void CreateRenderPasses();
+
         void CreateFrameBuffers();
 
         Texture::Texture2D historyTexture;
@@ -259,6 +277,7 @@ namespace Atlas::Renderer {
 
         bool swap = false;
         bool hasHistory = false;
+        bool useForPathTracing = false;
 
     };
 

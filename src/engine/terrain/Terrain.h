@@ -171,6 +171,7 @@ namespace Atlas {
             Buffer::VertexArray vertexArray;
             Buffer::VertexArray distanceVertexArray;
             std::vector<TerrainNode*> renderList;
+            std::vector<TerrainNode*> leafList;
 
             Common::Image<uint8_t> LoDImage;
 
@@ -194,7 +195,6 @@ namespace Atlas {
 
             std::vector<float> LoDDistances;
             std::vector<TerrainNode> rootNodes;
-            std::vector<TerrainNode*> leafList;
 
         };
 

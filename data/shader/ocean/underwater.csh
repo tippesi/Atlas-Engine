@@ -1,11 +1,11 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
-#define SHADOW_FILTER_3x3
+#define SHADOW_FILTER_VOGEL
 
 #include <common.hsh>
 #include <sharedUniforms.hsh>
 
-#include <../structures>
+#include <../structures.hsh>
 #include <../shadow.hsh>
 #include <../globals.hsh>
 #include <../common/convert.hsh>

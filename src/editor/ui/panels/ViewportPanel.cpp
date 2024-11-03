@@ -52,47 +52,9 @@ namespace Atlas::Editor::UI {
         auto region = ImGui::GetContentRegionAvail();
         auto windowPos = ImGui::GetWindowPos();
 
-        bool validRegion = region.x > 0.0f && region.y > 0.0f;
-
-        if ((viewportTexture.width != int32_t(region.x) ||
-            viewportTexture.height != int32_t(region.y)) && validRegion) {
-            viewport->Set(int32_t(windowPos.x), int32_t(windowPos.y), int32_t(region.x), int32_t(region.y));
-            viewportTexture.Resize(int32_t(region.x), int32_t(region.y));
-            CreateRenderPass();
-        }
-
-        if (scene != nullptr && validRegion && isActiveWindow && !isBlocked) {
-            auto& config = Singletons::config;
-
-            if (config->pathTrace) {
-                auto& pathTraceRenderTarget = Singletons::pathTraceRenderTarget;
-
-                if (pathTraceRenderTarget->GetWidth() != viewportTexture.width ||
-                    pathTraceRenderTarget->GetHeight() != viewportTexture.height) {
-                    pathTraceRenderTarget->Resize(viewportTexture.width, viewportTexture.height);
-                }
-
-                Singletons::mainRenderer->PathTraceScene(viewport, pathTraceRenderTarget, scene, &viewportTexture);
-            }
-            else {
-                auto& renderTarget = Singletons::renderTarget;
-
-                if (renderTarget->GetWidth() != viewportTexture.width ||
-                    renderTarget->GetHeight() != viewportTexture.height) {
-                    renderTarget->Resize(viewportTexture.width, viewportTexture.height);
-                }
-
-                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
-                    primitiveBatchWrapper.primitiveBatch, &viewportTexture);
-
-                if (visualization != Lit) {
-                    RenderVisualization();
-                }
-            }
-
-            primitiveBatchWrapper.primitiveBatch->Clear();
-
-        }
+        auto pos = ivec2(int32_t(windowPos.x), int32_t(windowPos.y));
+        auto size = ivec2(int32_t(region.x), int32_t(region.y));
+        RenderScene(scene, pos, size, isActiveWindow);
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&viewportTexture);
@@ -113,6 +75,43 @@ namespace Atlas::Editor::UI {
         ImGui::EndChild();
 
         ImGui::End();
+
+    }
+
+    void ViewportPanel::RenderScene(Ref<Scene::Scene>& scene, ivec2 pos, ivec2 size, bool isActive) { 
+
+        bool validSize = size.x > 0 && size.y > 0;
+
+        if ((viewportTexture.width != size.x ||
+            viewportTexture.height != size.y) && validSize) {
+            viewport->Set(pos.x, pos.y, size.x, size.y);
+            viewportTexture.Resize(size.x, size.y);
+            CreateRenderPass();
+        }
+
+        if (scene != nullptr && validSize && isActive && !Singletons::blockingOperation->block) {
+            auto& config = Singletons::config;
+            auto& renderTarget = Singletons::renderTarget;
+
+            if (renderTarget->GetWidth() != viewportTexture.width ||
+                renderTarget->GetHeight() != viewportTexture.height) {
+                renderTarget->Resize(viewportTexture.width, viewportTexture.height);
+            }
+
+            if (config->pathTrace) {               
+                Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture);
+            }
+            else {              
+                Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
+                    primitiveBatchWrapper.primitiveBatch, &viewportTexture);
+
+                if (visualization != Lit) {
+                    RenderVisualization();
+                }
+            }
+
+            primitiveBatchWrapper.primitiveBatch->Clear();
+        }
 
     }
 
@@ -137,6 +136,10 @@ namespace Atlas::Editor::UI {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->roughnessMetallicAoTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
         }
+        if (visualization == GBufferEmissive) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->emissiveTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
         if (visualization == GBufferNormals) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->normalTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
@@ -144,6 +147,14 @@ namespace Atlas::Editor::UI {
         if (visualization == GBufferGeometryNormals) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->geometryNormalTexture.get(),
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        if (visualization == GBufferMaterialIdx) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->materialIdxTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 10000.0f, false, true);
+        }
+        if (visualization == GBufferStencil) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->stencilTexture.get(),
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f / 255.0f, false, true);
         }
         if (visualization == GBufferDepth) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, rtData->depthTexture.get(),
@@ -155,6 +166,10 @@ namespace Atlas::Editor::UI {
         }
         else if (visualization == Reflections) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+        }
+        else if (visualization == Volumetrics) {
+            mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricTexture,
                 0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
         }
         else if (visualization == Clouds) {

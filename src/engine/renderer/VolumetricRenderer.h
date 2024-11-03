@@ -18,14 +18,21 @@ namespace Atlas {
             void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
 
         private:
+            struct alignas(16) CullingPushConstants {
+                int32_t lightCount;
+            };
+
             struct alignas(16) VolumetricUniforms {
                 int sampleCount;
                 float intensity;
                 int fogEnabled;
                 float oceanHeight;
+                int lightCount;
+                int offsetX;
+                int offsetY;
+                int directionalLightCount;
                 vec4 planetCenterAndRadius;
                 Fog fog;
-                Light light;
                 CloudShadow cloudShadow;
             };
 
@@ -36,6 +43,8 @@ namespace Atlas {
             struct alignas(16) ResolveUniforms {
                 Fog fog;
                 vec4 planetCenter;
+                vec4 mainLightColor;
+                vec4 mainLightDirection;
                 int downsampled2x;
                 int cloudsEnabled;
                 int fogEnabled;
@@ -53,11 +62,17 @@ namespace Atlas {
 
             PipelineConfig resolvePipelineConfig;
 
-            Buffer::UniformBuffer volumetricUniformBuffer;
-            Buffer::UniformBuffer blurWeightsUniformBuffer;
-            Buffer::UniformBuffer resolveUniformBuffer;
+            Texture::Texture2D scramblingRankingTexture;
+            Texture::Texture2D sobolSequenceTexture;
 
+            Buffer::Buffer lightCullingBuffer;
+            Buffer::Buffer blurWeightsUniformBuffer;
+            Buffer::UniformBuffer volumetricUniformBuffer;
+            Buffer::UniformBuffer resolveUniformBuffer;
+            
             Ref<Graphics::Sampler> shadowSampler;
+
+            const int32_t filterSize = 4;
 
         };
 

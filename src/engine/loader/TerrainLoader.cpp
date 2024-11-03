@@ -9,7 +9,7 @@ namespace Atlas {
 
     namespace Loader {
 
-        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, std::string filename) {
+        void TerrainLoader::SaveTerrain(Ref<Terrain::Terrain> terrain, const std::string& filename) {
 
             auto fileStream = AssetLoader::WriteFile(filename, std::ios::out | std::ios::binary);
 
@@ -90,15 +90,15 @@ namespace Atlas {
                         }
 
                         // Here we assume that all cells are present
-                        auto heightData = cell->heightField.GetData<uint16_t>();
+                        auto heightData = cell->heightField->GetData<uint16_t>();
 
                         fileStream.write(reinterpret_cast<char*>(heightData.data()), heightData.size() * 2);
 
-                        auto data = cell->normalMap.GetData<uint8_t>();
+                        auto data = cell->normalMap->GetData<uint8_t>();
 
                         fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
-                        data = cell->splatMap.GetData<uint8_t>();
+                        data = cell->splatMap->GetData<uint8_t>();
 
                         fileStream.write(reinterpret_cast<char*>(data.data()), data.size());
 
@@ -111,7 +111,7 @@ namespace Atlas {
 
         }
 
-        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(std::string filename) {
+        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(const std::string& filename) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
@@ -196,7 +196,7 @@ namespace Atlas {
         }
 
         void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
-                std::string filename, bool initWithHeightData) {
+                const std::string& filename, bool initWithHeightData) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -252,26 +252,31 @@ namespace Atlas {
                 tileSideCount *= 2;
             }
 
+            cell->storage = &terrain->storage;
+
             fileStream.seekg(currPos, std::ios_base::cur);
 
             std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
             fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
-            cell->heightField = Texture::Texture2D(tileResolution, tileResolution,
+            cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                 VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->heightField.SetData(heightFieldData);
+            cell->heightField->SetData(heightFieldData);
 
             Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 3);
             fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
+            cell->normalData = image.GetData();
+
             image.ExpandToChannelCount(4, 255);
-            cell->normalMap = Texture::Texture2D(normalDataResolution, normalDataResolution,
+            cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
                 VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            cell->normalMap.SetData(image.GetData());
+            cell->normalMap->SetData(image.GetData());            
 
             std::vector<uint8_t> splatMapData(heightFieldData.size());
             fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
-            cell->splatMap = Texture::Texture2D(tileResolution, tileResolution,
+            cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                 VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->splatMap.SetData(splatMapData);
+            cell->splatMap->SetData(splatMapData);
+            cell->materialIdxData = splatMapData;
             
             if (initWithHeightData) {
                 cell->heightData.resize(tileResolution * tileResolution);

@@ -43,7 +43,7 @@ namespace Atlas {
 
             void* data = nullptr;
 
-            bool dedicatedMemory = false;
+            VmaPool* dedicatedMemoryPool = nullptr;
         };
 
         struct ImageAllocation {

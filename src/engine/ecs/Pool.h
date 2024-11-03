@@ -28,6 +28,8 @@ namespace Atlas {
 
             std::vector<Comp>& GetAll();
 
+            size_t GetCount() const;
+
             size_t Subscribe(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
         private:
@@ -103,6 +105,13 @@ namespace Atlas {
         std::vector<Comp>& Pool<Comp>::GetAll() {
 
             return components;
+
+        }
+
+        template<typename Comp>
+        size_t Pool<Comp>::GetCount() const {
+
+            return components.size();
 
         }
 

@@ -55,6 +55,12 @@ namespace Atlas {
             Buffer::Buffer probeStateBuffer;
             Buffer::Buffer historyProbeStateBuffer;
 
+            // Used for debugging
+            Ref<Material> probeDebugMaterial;
+            Ref<Material> probeDebugActiveMaterial;
+            Ref<Material> probeDebugInactiveMaterial;
+            Ref<Material> probeDebugOffsetMaterial;
+
         private:
             void FillRayBuffers();
 

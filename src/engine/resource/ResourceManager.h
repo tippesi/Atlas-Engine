@@ -26,7 +26,7 @@ namespace Atlas {
         static ResourceHandle<T> GetResource(const std::string& path) {
 
             CheckInitialization();
-            
+
             auto relativePath = GetAssetDirectoryPath(path);
             std::lock_guard lock(mutex);
             if (resources.contains(relativePath)) {
@@ -50,7 +50,7 @@ namespace Atlas {
         static ResourceHandle<T> GetOrLoadResource(const std::string& path, ResourceOrigin origin, Args&&... args) {
 
             static_assert(std::is_constructible<T, const std::string&, Args...>() ||
-                          std::is_constructible<T, Args...>(),
+                std::is_constructible<T, Args...>(),
                 "Resource class needs to implement constructor with provided argument type");
 
             CheckInitialization();
@@ -72,7 +72,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoader(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -80,7 +80,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoader(const std::string& path, ResourceOrigin origin,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoader(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -137,7 +137,7 @@ namespace Atlas {
                 auto resource = GetResourceInternal(relativePath);
                 JobSystem::Execute(resource->jobGroup, [resource, args...](JobData&) {
                     resource->Load(args...);
-                });
+                    });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
@@ -148,7 +148,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoaderAsync(path, System, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -156,7 +156,7 @@ namespace Atlas {
 
         template<class ...Args>
         static ResourceHandle<T> GetOrLoadResourceWithLoaderAsync(const std::string& path, ResourceOrigin origin,
-            Ref<T> (*loaderFunction)(const std::string&, Args...), Args... args) {
+            Ref<T>(*loaderFunction)(const std::string&, Args...), Args... args) {
 
             return GetOrLoadResourceWithLoaderAsync(path, origin, std::function(loaderFunction), std::forward<Args>(args)...);
 
@@ -182,7 +182,7 @@ namespace Atlas {
                 auto resource = GetResourceInternal(relativePath);
                 JobSystem::Execute(resource->jobGroup, [resource, loaderFunction, args...](JobData&) {
                     resource->LoadWithExternalLoader(loaderFunction, args...);
-                });
+                    });
                 NotifyAllSubscribers(ResourceTopic::ResourceCreate, resource);
                 handle = ResourceHandle<T>(resource);
             }
@@ -206,7 +206,7 @@ namespace Atlas {
             {
                 std::lock_guard lock(mutex);
                 if (resources.contains(relativePath)) {
-                    auto &resource = resources[relativePath];
+                    auto& resource = resources[relativePath];
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                     alreadyExisted = true;
                     return ResourceHandle<T>(resource);
@@ -284,7 +284,7 @@ namespace Atlas {
 
             subscribers->emplace_back(ResourceSubscriber<T>{
                 .ID = subscriberCount,
-                .function = function
+                    .function = function
             });
 
             return subscriberCount++;
@@ -300,7 +300,7 @@ namespace Atlas {
             auto item = std::find_if(subscribers->begin(), subscribers->end(),
                 [&](ResourceSubscriber<T> subscriber) {
                     return subscriber.ID == subscriptionID;
-            });
+                });
 
             if (item != subscribers->end()) {
                 subscribers->erase(item);
@@ -320,6 +320,8 @@ namespace Atlas {
         static std::vector<ResourceSubscriber<T>> destroySubscribers;
 
         static std::atomic_int subscriberCount;
+
+        static JobGroup deallocationJobs;
 
         static inline void CheckInitialization() {
 
@@ -363,8 +365,9 @@ namespace Atlas {
 
             std::lock_guard lock(mutex);
 
-            for (auto it = resources.begin(); it != resources.end();) {
-                auto& resource = it->second;
+            // First loop to count and update the resources
+            size_t resourceUnloadCount = 0;
+            for (auto& [_, resource] : resources) {
                 // Just one reference (the resource manager), so start countdown for future deletion
                 // If resource is accessed in certain time frame we reset the counter
                 if (resource.use_count() == 1 && !resource->permanent) {
@@ -374,22 +377,43 @@ namespace Atlas {
                     resource->framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
                 }
 
+                if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
+                    resourceUnloadCount++;
+                }
+            }
+
+            std::vector<Ref<Resource<T>>> resourcesToUnload;
+            resourcesToUnload.reserve(resourceUnloadCount);
+
+            // Second loop for actual removal
+            for (auto it = resources.begin(); it != resources.end();) {
+                auto& resource = it->second;                
+
                 // Delete if all conditions are met
                 if (resource.use_count() == 1 && resource->framesToDeletion == 0) {
                     NotifyAllSubscribers(ResourceTopic::ResourceDestroy, resource);
                     AE_ASSERT(resource.use_count() == 1 &&
                         "Subscribers shouldn't claim ownership of to be deleted resources");
-                    resource->Unload();
+                    resourcesToUnload.push_back(resource);
                     it = resources.erase(it);
                 }
                 else {
                     ++it;
                 }
             }
+
+            // This is kind of fucked up, but we can avoid unwanted spikes when a bunch of data is suddenly needed anymore
+            // Also we shouldn't unload them multi-threaded, so not one job per resource.
+            if (!resourcesToUnload.empty()) {
+                JobSystem::Execute(deallocationJobs, [resourcesToUnload = std::move(resourcesToUnload)](JobData&) {
+                    for (auto& resource : resourcesToUnload)
+                        resource->Unload();
+                    });
+            }
         }
 
         static void ShutdownHandler() {
-         
+
             for (const auto& [_, resource] : resources) {
                 if (!resource->future.valid())
                     continue;
@@ -448,5 +472,8 @@ namespace Atlas {
 
     template<typename T>
     std::atomic_int ResourceManager<T>::subscriberCount = 0;
+
+    template<typename T>
+    JobGroup ResourceManager<T>::deallocationJobs{ JobPriority::Low };
 
 }

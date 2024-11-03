@@ -4,6 +4,7 @@
 #include <../raytracer/buffers.hsh>
 #include <../raytracer/tracing.hsh>
 #include <../common/random.hsh>
+#include <../common/convert.hsh>
 #include <../common/flatten.hsh>
 
 layout (local_size_x = 8, local_size_y = 8) in;
@@ -28,6 +29,11 @@ void main() {
         int(gl_GlobalInvocationID.y) < Uniforms.tileSize.y) {
 
         ivec2 pixel = ivec2(gl_GlobalInvocationID.xy) + Uniforms.pixelOffset;
+
+        Ray ray;
+        
+        ray.ID = Flatten2D(pixel, Uniforms.resolution) * int(gl_NumWorkGroups.z) + int(gl_WorkGroupID.z);
+        ray.hitID = 0;
         
         // Apply a subpixel jitter to get supersampling
         float jitterX = random(vec2(float(Uniforms.sampleCount), 0.0));
@@ -35,20 +41,17 @@ void main() {
 #ifndef REALTIME
         vec2 coord = (vec2(pixel) + vec2(jitterX, jitterY)) / 
             vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
-#else
-        vec2 coord = globalData.jitterCurrent * 0.25 + (vec2(pixel) + vec2(0.5)) /
-            vec2(float(Uniforms.resolution.x), float(Uniforms.resolution.y));
-#endif
-        
-        Ray ray;
-        
-        ray.ID = Flatten2D(pixel, Uniforms.resolution) * int(gl_NumWorkGroups.z) + int(gl_WorkGroupID.z);
-        
         ray.direction = normalize(Uniforms.origin.xyz + Uniforms.right.xyz * coord.x 
             + Uniforms.bottom.xyz * coord.y - globalData.cameraLocation.xyz);
         ray.origin = globalData.cameraLocation.xyz;
+#else
+        vec2 texCoord = (vec2(pixel) + 0.5) / vec2(Uniforms.resolution);
+        vec3 nearPosition = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(0.0, texCoord), 1.0));
+        vec3 farPosition = vec3(globalData.ivMatrix * vec4(ConvertDepthToViewSpace(1.0, texCoord), 1.0));
 
-        ray.hitID = 0;
+        ray.origin = nearPosition;
+        ray.direction = normalize(farPosition - nearPosition);
+#endif      
 
         // Calculate number of potential overlapping pixels at the borders of a tile
         ivec2 overlappingPixels = Uniforms.tileSize % ivec2(gl_WorkGroupSize);

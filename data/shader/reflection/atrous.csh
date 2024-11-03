@@ -1,3 +1,5 @@
+#include <../common/types.hsh>
+
 #include <../common/utility.hsh>
 #include <../common/convert.hsh>
 #include <../common/flatten.hsh>
@@ -36,7 +38,8 @@ struct PixelData {
 
 struct PackedPixelData {
     // Contains 16 bit color, variance, normal and roughness
-    uvec4 data;
+    f16vec4 color;
+    f16vec4 data;
     float depth;
 };
 
@@ -52,10 +55,9 @@ const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
 PackedPixelData PackPixelData(PixelData data) {
     PackedPixelData compressed;
 
-    compressed.data.x = packHalf2x16(data.color.rg);
-    compressed.data.y = packHalf2x16(data.color.ba);
-    compressed.data.z = packHalf2x16(data.normal.xy);
-    compressed.data.w = packHalf2x16(vec2(data.normal.z, data.roughness));
+    compressed.color.rgba = f16vec4(data.color);
+    compressed.data.xyz = f16vec3(data.normal);
+    compressed.data.w = float16_t(data.roughness);
     compressed.depth = data.depth;
 
     return compressed;
@@ -64,12 +66,9 @@ PackedPixelData PackPixelData(PixelData data) {
 PixelData UnpackPixelData(PackedPixelData compressed) {
     PixelData data;
 
-    data.color.rg = unpackHalf2x16(compressed.data.x);
-    data.color.ba = unpackHalf2x16(compressed.data.y);
-    data.normal.xy = unpackHalf2x16(compressed.data.z);
-    vec2 temp = unpackHalf2x16(compressed.data.w);
-    data.normal.z = temp.x;
-    data.roughness = temp.y;
+    data.color.rgba = compressed.color.rgba;
+    data.normal.xyz = compressed.data.rgb;
+    data.roughness = compressed.data.a;
     data.depth = compressed.depth;
 
     return data;
@@ -92,12 +91,7 @@ void LoadGroupSharedData() {
         data.color = texelFetch(inputTexture, texel, 0);
 
         data.depth = texelFetch(depthTexture, texel, 0).r;
-
-        uint materialIdx = texelFetch(materialIdxTexture, texel, 0).r;
-        Material material = UnpackMaterial(materialIdx);
-
-        data.roughness = material.roughness;
-        data.roughness *= material.roughnessMap ? texelFetch(roughnessTexture, texel, 0).r : 1.0;
+        data.roughness =  texelFetch(roughnessTexture, texel, 0).r;
 
         data.normal = DecodeNormal(texelFetch(normalTexture, texel, 0).rg);
 
@@ -243,6 +237,7 @@ void main() {
 
     outputColor = outputColor / vec4(vec3(totalWeight), totalWeight * totalWeight);
 
+    imageStore(outputImage, pixel, vec4(centerColor.a));
     imageStore(outputImage, pixel, outputColor);
 
 }

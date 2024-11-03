@@ -10,8 +10,15 @@ namespace Atlas {
 
             this->device = device;
 
-            const int32_t filterSize = 4;
             blurFilter.CalculateGaussianFilter(float(filterSize) / 3.0f, filterSize);
+
+            std::vector<float> blurKernelWeights;
+            std::vector<float> blurKernelOffsets;
+            blurFilter.GetLinearized(&blurKernelWeights, &blurKernelOffsets, false);
+
+            auto mean = (blurKernelWeights.size() - 1) / 2;
+            blurKernelWeights = std::vector<float>(blurKernelWeights.begin() + mean, blurKernelWeights.end());
+            blurKernelOffsets = std::vector<float>(blurKernelOffsets.begin() + mean, blurKernelOffsets.end());
 
             auto noiseImage = Loader::ImageLoader::LoadImage<uint8_t>("scrambling_ranking.png", false, 4);
             scramblingRankingTexture = Texture::Texture2D(noiseImage->width, noiseImage->height,
@@ -36,7 +43,8 @@ namespace Atlas {
             ssUniformBuffer = Buffer::UniformBuffer(sizeof(SSUniforms));
             // If we don't set the element size to the whole thing, otherwise uniform buffer element alignment kicks in
             ssSamplesUniformBuffer = Buffer::UniformBuffer(sizeof(vec4) * 64);
-            blurWeightsUniformBuffer = Buffer::UniformBuffer(sizeof(float) * (size_t(filterSize) + 1));
+            blurWeightsUniformBuffer = Buffer::Buffer(Buffer::BufferUsageBits::UniformBufferBit,
+                sizeof(float) * (size_t(filterSize) + 1), 1, blurKernelWeights.data());
 
         }
 
@@ -56,12 +64,12 @@ namespace Atlas {
             if (!target->HasHistory()) {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers = {
+
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->historyAoTexture.image, layout, access},
                     {target->historyAoLengthTexture.image, layout, access},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
             }
 
             auto downsampledRT = target->GetData(target->GetAOResolution());
@@ -158,9 +166,6 @@ namespace Atlas {
             if (ao->rt) {
                 Graphics::Profiler::EndAndBeginQuery("Temporal filter");
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 ivec2 groupCount = ivec2(res.x / 16, res.y / 16);
                 groupCount.x += ((groupCount.x * 16 == res.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 16 == res.y) ? 0 : 1);
@@ -168,11 +173,11 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
 
-                imageBarriers = {
+                Graphics::ImageBarrier imageBarriers[] = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT}
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier(imageBarriers, {});
 
                 commandList->BindImage(target->aoTexture.image, 3, 0);
                 commandList->BindImage(target->aoLengthTexture.image, 3, 1);
@@ -196,26 +201,26 @@ namespace Atlas {
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
                 // Need barriers for all four images
-                imageBarriers = {
+                Graphics::ImageBarrier preCopyImageBarriers[] = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preCopyImageBarriers, {},
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(target->aoTexture.image, target->historyAoTexture.image);
                 commandList->CopyImage(target->aoLengthTexture.image, target->historyAoLengthTexture.image);
 
                 // Need barriers for all four images
-                imageBarriers = {
+                Graphics::ImageBarrier postCopyImageBarriers[] = {
                     {target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->aoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->historyAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {target->historyAoLengthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postCopyImageBarriers, {},
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
             }
 
@@ -224,37 +229,24 @@ namespace Atlas {
 
                 const int32_t groupSize = 256;
 
-                std::vector<float> kernelWeights;
-                std::vector<float> kernelOffsets;
-
-                blurFilter.GetLinearized(&kernelWeights, &kernelOffsets, false);
-
-                auto mean = (kernelWeights.size() - 1) / 2;
-                kernelWeights = std::vector<float>(kernelWeights.begin() + mean, kernelWeights.end());
-                kernelOffsets = std::vector<float>(kernelOffsets.begin() + mean, kernelOffsets.end());
-
-                auto kernelSize = int32_t(kernelWeights.size() - 1);
+                auto kernelSize = int32_t(filterSize);
 
                 auto horizontalBlurPipeline = PipelineManager::GetPipeline(horizontalBlurPipelineConfig);
                 auto verticalBlurPipeline = PipelineManager::GetPipeline(verticalBlurPipelineConfig);
-
-                blurWeightsUniformBuffer.SetData(kernelWeights.data(), 0);
 
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
                 for (int32_t i = 0; i < 3; i++) {
                     ivec2 groupCount = ivec2(res.x / groupSize, res.y);
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
-                    imageBarriers = {
+
+                    Graphics::ImageBarrier horizImageBarriers[] = {
                        {target->aoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                        {target->swapAoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(horizImageBarriers, {});
 
                     commandList->BindPipeline(horizontalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));
@@ -267,11 +259,11 @@ namespace Atlas {
                     groupCount = ivec2(res.x, res.y / groupSize);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier vertImageBarriers[] = {
                         {target->swapAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->aoTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    commandList->PipelineBarrier(vertImageBarriers, {});
 
                     commandList->BindPipeline(verticalBlurPipeline);
                     commandList->PushConstants("constants", &kernelSize, sizeof(int32_t));

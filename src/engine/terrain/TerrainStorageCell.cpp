@@ -13,13 +13,111 @@ namespace Atlas {
 
         bool TerrainStorageCell::IsLoaded() {
 
-            if (!heightField.IsValid())
+            if (!heightField || !heightField->IsValid())
                 return false;
 
-            if (!normalMap.IsValid())
+            if (!normalMap || !normalMap->IsValid())
                 return false;
 
             return true;
+
+        }
+
+        void TerrainStorageCell::BuildBVH(float stretchFactor, float heightFactor) {
+
+            if (!IsLoaded()) return;
+
+            int32_t heightFieldSideLength = int32_t(sqrtf(float(heightData.size())));
+
+            aabb.min = glm::vec3(std::numeric_limits<float>::max());
+            aabb.max = glm::vec3(-std::numeric_limits<float>::max());
+
+            std::vector<vec3> vertices(heightData.size());
+            for (int32_t y = 0; y < heightFieldSideLength; y++) {
+                for (int32_t x = 0; x < heightFieldSideLength; x++) {
+                    auto idx = y * heightFieldSideLength + x;
+                    vertices[idx] = vec3(float(x) * stretchFactor, heightData[idx] * heightFactor, float(y) * stretchFactor);
+
+                    aabb.min = glm::min(aabb.min, vertices[idx]);
+                    aabb.max = glm::max(aabb.max, vertices[idx]);
+                }
+            }
+
+            auto vertexSideCount = heightFieldSideLength - 1;
+
+            std::vector<uint32_t> indices(vertexSideCount * vertexSideCount * 6);
+            for (int32_t y = 0; y < vertexSideCount; y++) {
+                for (int32_t x = 0; x < vertexSideCount; x++) {
+                    auto idx = y * heightFieldSideLength + x;
+                    auto baseIdx = (y * vertexSideCount + x) * 6;
+
+                    indices[baseIdx + 0] = idx;
+                    indices[baseIdx + 1] = idx + 1;
+                    indices[baseIdx + 2] = idx + heightFieldSideLength;
+
+                    indices[baseIdx + 3] = idx + 1;
+                    indices[baseIdx + 4] = idx + heightFieldSideLength + 1;
+                    indices[baseIdx + 5] = idx + heightFieldSideLength;
+                }
+            }
+
+            Buffer::IndexBuffer indexBuffer(VK_INDEX_TYPE_UINT32, indices.size(), indices.data(), true);
+            Buffer::VertexBuffer vertexBuffer(VK_FORMAT_R32G32B32_SFLOAT, vertices.size(), vertices.data(), true);
+
+            std::vector<ResourceHandle<Material>> materials;
+            for (size_t i = 0; i < storage->materials.size(); i++) {
+                if (storage->materials[i] != nullptr) {
+                    materials.push_back(ResourceHandle<Material>(storage->materials[i]));
+                    materials.back()->twoSided = false;
+                }
+                else {
+                    materials.push_back(ResourceHandle<Material>());
+                }
+            }
+
+            std::vector<RayTracing::BLAS::Triangle> triangles(indices.size() / 3);
+            for (size_t i = 0; i < triangles.size(); i++) {
+                
+                RayTracing::BLAS::Triangle triangle;
+
+                triangle.v0 = vertices[indices[i * 3 + 0]];
+                triangle.v1 = vertices[indices[i * 3 + 1]];
+                triangle.v2 = vertices[indices[i * 3 + 2]];
+
+                vec3 normal = -glm::normalize(glm::cross(triangle.v0 - triangle.v1, triangle.v0 - triangle.v2));
+
+                normal *= normal.y < 0.0f ? -1.0f : 1.0f;
+
+                triangle.n0 = normal;
+                triangle.n1 = normal;
+                triangle.n2 = normal;
+
+                triangle.uv0 = vec2(triangle.v0.x, triangle.v0.z);
+                triangle.uv1 = vec2(triangle.v1.x, triangle.v1.z);
+                triangle.uv2 = vec2(triangle.v2.x, triangle.v2.z);
+
+                triangle.materialIdx = int32_t(materialIdxData[indices[i * 3]]);
+
+                triangles[i] = triangle;
+            }
+
+            Graphics::ASGeometryRegion geometryRegions[] = {{
+                .indexCount = indices.size(),
+                .indexOffset = 0,
+                .opaque = true
+            }};
+
+            blas = CreateRef<RayTracing::BLAS>();
+            blas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);
+
+            if (Graphics::GraphicsDevice::DefaultDevice->support.hardwareRayTracing) {
+                Graphics::ASBuilder asBuilder;
+                std::vector<Ref<Graphics::BLAS>> blases = { blas->blas };
+                asBuilder.BuildBLAS(blases);
+
+                blas->blas = blases.front();
+                blas->needsBvhRefresh = false;
+            }
 
         }
 

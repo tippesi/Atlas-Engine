@@ -102,20 +102,21 @@ void main() {
 
             vec4 viewSpacePos = globalData.vMatrix * vec4(position, 1.0);
             vec4 projPositionCurrent = globalData.pMatrix * viewSpacePos;
-            vec4 projPositionLast = globalData.pvMatrixLast * vec4(lastPos, 1.0);
+            vec4 projPositionLast = globalData.pMatrix * globalData.vMatrixLast * vec4(lastPos, 1.0);
 
             vec2 ndcCurrent = projPositionCurrent.xy / projPositionCurrent.w;
             vec2 ndcLast = projPositionLast.xy / projPositionLast.w;
 
             vec2 velocity = (ndcLast - ndcCurrent) * 0.5;
+            
             imageStore(velocityImage, pixel, vec4(velocity, 0.0, 0.0));
 
-            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? viewSpacePos.z : INF, 0.0, 0.0, 0.0));
+            imageStore(depthImage, pixel, vec4(ray.hitID >= 0 ? projPositionCurrent.z / projPositionCurrent.w : INF, 0.0, 0.0, 0.0));
             imageStore(materialIdxImage, pixel, uvec4(materialId, 0.0, 0.0, 0.0));
-            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));
+            imageStore(normalImage, pixel, vec4(EncodeNormal(geometryNormal), 0.0, 0.0));            
         }
 #endif
-        
+
         if (energy == 0 || Uniforms.bounceCount == Uniforms.maxBounces) {
 #ifndef REALTIME
             if (Uniforms.sampleCount > 0)
@@ -170,17 +171,24 @@ Surface EvaluateBounce(inout Ray ray, inout RayPayload payload) {
         payload.throughput = vec3(0.0);
         return surface;    
     }
+
+    int lod = int(ray.hitDistance / 30.0);
+    lod = 0;
     
     // Unpack the compressed triangle and extract surface parameters
     Instance instance = GetInstance(ray);
     Triangle tri = GetTriangle(ray, instance);
-    surface = GetSurfaceParameters(instance, tri, ray, true, 0);
+    surface = GetSurfaceParameters(instance, tri, ray, true, lod);
 
     // If we hit an emissive surface we need to terminate the ray
+#ifndef REALTIME
     if (dot(surface.material.emissiveColor, vec3(1.0)) > 0.0 &&
         Uniforms.bounceCount == 0) {
         payload.radiance += surface.material.emissiveColor;
     }
+#else
+    payload.radiance += payload.throughput * surface.material.emissiveColor;
+#endif
 
     // Evaluate direct and indirect light
     vec3 radiance = payload.throughput * surface.material.opacity
@@ -228,7 +236,8 @@ vec3 EvaluateDirectLight(inout Surface surface) {
     // Check for visibilty. This is important to get an
     // estimate of the solid angle of the light from point P
     // on the surface.
-    radiance *= CheckVisibility(surface, lightDistance);
+    if (light.castShadow)
+        radiance *= CheckVisibility(surface, lightDistance);
     
     return reflectance * radiance * surface.NdotL / lightPdf;
 

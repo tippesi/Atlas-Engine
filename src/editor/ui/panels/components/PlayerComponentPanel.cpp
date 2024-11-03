@@ -9,6 +9,9 @@ namespace Atlas::Editor::UI {
 
 		ImGui::PushID(GetNameID());
 
+		if (!entity.HasComponent<TransformComponent>())
+            ImGui::Text("Player component needs a transform component to work properly");
+
 		ImGui::Text("Shape");
 
 		RenderShapeSettings(entity, playerComponent, *playerComponent.creationSettings);

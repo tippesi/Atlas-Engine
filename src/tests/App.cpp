@@ -17,17 +17,16 @@ void App::LoadContent(AppConfiguration config) {
     this->config = config;
 
     // Use lower resolution, we care only about correctness
-    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(320, 240);
-    pathTraceTarget =  Atlas::CreateRef<Atlas::Renderer::PathTracerRenderTarget>(320, 240);
+    renderTarget =  Atlas::CreateRef<Atlas::Renderer::RenderTarget>(240, 160);
 
     viewport = Atlas::CreateRef<Atlas::Viewport>(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 
-    auto icon = Atlas::Texture::Texture2D("icon.png");
+    auto icon = Atlas::ResourceManager<Atlas::Texture::Texture2D>::GetOrLoadResource("icon.png");
     window.SetIcon(&icon);
 
     loadingTexture = Atlas::CreateRef<Atlas::Texture::Texture2D>("loading.png");
 
-    font = Atlas::CreateRef<Atlas::Font>("font/roboto.ttf", 22.0f, 5);
+    font = Atlas::ResourceManager<Atlas::Font>::GetOrLoadResource("font/roboto.ttf", 22.0f, 5);
 
     scene = Atlas::CreateRef<Atlas::Scene::Scene>("testscene", glm::vec3(-2048.0f), glm::vec3(2048.0f));
 
@@ -56,14 +55,18 @@ void App::LoadContent(AppConfiguration config) {
     
     Atlas::PipelineManager::EnableHotReload();
 
-    directionalLightEntity = scene->CreateEntity();
-    auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+    scene->postProcessing.fsr2 = config.fsr;
 
-    directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
-    directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
-    directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
-        glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
-    directionalLight.isMain = true;
+    if (config.light) {
+        auto directionalLightEntity = scene->CreateEntity();
+        auto& directionalLight = directionalLightEntity.AddComponent<LightComponent>(LightType::DirectionalLight);
+
+        directionalLight.properties.directional.direction = glm::vec3(0.0f, -1.0f, 0.33f);
+        directionalLight.color = glm::vec3(255, 236, 209) / 255.0f;
+        directionalLight.AddDirectionalShadow(200.0f, 3.0f, 4096, 0.025f,
+            glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
+        directionalLight.isMain = true;
+    }
 
     scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
 
@@ -79,6 +82,10 @@ void App::LoadContent(AppConfiguration config) {
         scene->irradianceVolume->strength = 1.5f;
     }
 
+    if (config.rtgi) {
+        scene->rtgi = Atlas::CreateRef<Atlas::Lighting::RTGI>();
+    }
+
     if (config.ssgi) {
         scene->ssgi = Atlas::CreateRef<Atlas::Lighting::SSGI>();
     }
@@ -89,6 +96,9 @@ void App::LoadContent(AppConfiguration config) {
         scene->fog->density = 0.0068f;
         scene->fog->heightFalloff = 0.0284f;
         scene->fog->height = 0.0f;
+
+        scene->fog->rayMarching = config.volumetric;
+        scene->fog->localLights = config.localVolumetric;
     }
 
     if (config.clouds) {
@@ -113,17 +123,9 @@ void App::LoadContent(AppConfiguration config) {
         scene->sss = Atlas::CreateRef<Atlas::Lighting::SSS>();
     }
 
-    if (config.fog) {
-        if (config.volumetric) {
-            scene->fog->rayMarching = true;
-        } else {
-            scene->fog->rayMarching = false;
-        }
-    }
-
     if (config.ocean) {
         scene->ocean = Atlas::CreateRef<Atlas::Ocean::Ocean>(9, 4096.0f,
-            glm::vec3(0.0f, 5.0f, 0.0f), 512, 86);
+            glm::vec3(0.0f, 5.0f, 0.0f), 128, 86);
     }
 
     scene->physicsWorld = Atlas::CreateRef<Atlas::Physics::PhysicsWorld>();
@@ -152,6 +154,7 @@ void App::Update(float deltaTime) {
     if (sceneReload) {
         UnloadScene();
         LoadScene();
+        scene->WaitForAsyncWorkCompletion();
         sceneReload = false;
     }
 
@@ -209,6 +212,7 @@ void App::Render(float deltaTime) {
 
     if (!loadingComplete) {
         DisplayLoadingScreen(deltaTime);
+        scene->WaitForAsyncWorkCompletion();
         return;
     }
 
@@ -227,12 +231,14 @@ void App::Render(float deltaTime) {
         window.Maximize();
     }
 
+    viewport->Set(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+
     if (config.exampleRenderer) {
         exampleRenderer.Render(camera);
     }
     else if (pathTrace) {
-        viewport->Set(0, 0, pathTraceTarget->GetWidth(), pathTraceTarget->GetHeight());
-        mainRenderer->PathTraceScene(viewport, pathTraceTarget, scene);
+        
+        mainRenderer->PathTraceScene(viewport, renderTarget, scene);
     }
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
@@ -267,7 +273,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
     rotation += deltaTime * abs(sin(Atlas::Clock::Get())) * 10.0f;
 
     mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport,
-        loadingTexture.get(), x, y, width, height, rotation);
+        loadingTexture.Get().get(), x, y, width, height, rotation);
 
     float textWidth, textHeight;
     font->ComputeDimensions("Loading...", 2.0f, &textWidth, &textHeight);
@@ -276,7 +282,7 @@ void App::DisplayLoadingScreen(float deltaTime) {
     y = windowSize.y / 2 - textHeight / 2 + float(loadingTexture->height) + 20.0f;
 
     viewport->Set(0, 0, windowSize.x, windowSize.y);
-    mainRenderer->textRenderer.Render(commandList, viewport, font,
+    mainRenderer->textRenderer.Render(commandList, viewport, font.Get(),
         "Loading...", x, y, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), 2.0f);
 
     commandList->EndRenderPass();
@@ -356,28 +362,6 @@ void App::CheckLoadScene() {
     if (!scene->IsFullyLoaded() || loadingComplete)
         return;
 
-    static Atlas::JobGroup buildBvhGroup;
-    static bool groupStarted = false;
-
-    auto buildRTStructure = [&](Atlas::JobData) {
-        auto sceneMeshes = scene->GetMeshes();
-
-        for (const auto& mesh : sceneMeshes) {
-
-            Atlas::JobSystem::Execute(buildBvhGroup, [mesh](Atlas::JobData&) { mesh->BuildBVH(); });
-
-        }
-        };
-
-    if (!groupStarted) {
-        Atlas::JobSystem::Execute(buildBvhGroup, buildRTStructure);
-        groupStarted = true;
-        return;
-    }
-
-    if (!buildBvhGroup.HasFinished())
-        return;
-
     auto sceneAABB = Atlas::Volume::AABB(glm::vec3(std::numeric_limits<float>::max()),
         glm::vec3(-std::numeric_limits<float>::max()));
 
@@ -401,7 +385,6 @@ void App::CheckLoadScene() {
 void App::SetResolution(int32_t width, int32_t height) {
 
     renderTarget->Resize(width, height);
-    pathTraceTarget->Resize(width, height);
 
 }
 

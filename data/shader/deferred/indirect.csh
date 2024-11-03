@@ -235,8 +235,13 @@ void main() {
 #else
 #ifdef DDGI
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
+#ifdef DDGI_SCROLL
         vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
             GetLocalIrradianceInterpolated(worldPosition, worldView, worldNormal, geometryWorldNormal, prefilteredDiffuse) : vec4(0.0, 0.0, 0.0, 1.0);
+#else
+        vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
+            GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);
+#endif
         prefilteredDiffuseLocal = IsInsideVolume(worldPosition) ? prefilteredDiffuseLocal : vec4(0.0, 0.0, 0.0, 1.0);
         prefilteredDiffuse = prefilteredDiffuseLocal.rgb + prefilteredDiffuse * prefilteredDiffuseLocal.a;
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface) * ddgiData.volumeStrength;
@@ -265,7 +270,13 @@ void main() {
 #endif
 
         indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
+#if !defined(SSGI) || defined(RTGI)
         indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+#else
+        // This is just there if the new SSGI is enabled
+        // indirect = (indirectSpecular) * surface.material.ao;
+        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+#endif
 
 #ifdef SSGI
         vec4 ssgi = Uniforms.giDownsampled2x > 0 ? upsampleResult.gi : textureLod(giTexture, texCoord, 0.0);

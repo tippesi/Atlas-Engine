@@ -7,6 +7,7 @@
 
 #include <string>
 #include <sys/stat.h>
+#include <algorithm>
 
 namespace Atlas {
 
@@ -88,8 +89,8 @@ namespace Atlas {
                         }
                     }
 
-                    cell->heightField.SetData(cellHeightData);
-                    cell->splatMap.SetData(cellSplatData);
+                    cell->heightField->SetData(cellHeightData);
+                    cell->splatMap->SetData(cellSplatData);
 
                 }
             }
@@ -184,8 +185,8 @@ namespace Atlas {
                         }
                     }
 
-                    cell->heightField.SetData(cellHeightData);
-                    cell->splatMap.SetData(cellSplatData);
+                    cell->heightField->SetData(cellHeightData);
+                    cell->splatMap->SetData(cellSplatData);
 
                 }
             }
@@ -215,7 +216,7 @@ namespace Atlas {
             for (int32_t i = 0; i < tileSideCount; i++) {
                 for (int32_t j = 0; j < tileSideCount; j++) {
                     auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
-                    auto cellSplatData = cell->splatMap.GetData<uint8_t>();
+                    auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                     // Now copy a tile of the original image
                     // We make sure that every tile has the same size
@@ -378,9 +379,9 @@ namespace Atlas {
                         }
                         */
                         
-                        cell->normalMap.SetData(tileNormalData);
-                        cell->heightField.SetData(tileHeightData);
-                        cell->splatMap.SetData(tileSplatData);
+                        cell->normalMap->SetData(tileNormalData);
+                        cell->heightField->SetData(tileHeightData);
+                        cell->splatMap->SetData(tileSplatData);
 
                     }
                 }
@@ -416,8 +417,8 @@ namespace Atlas {
                                            bottomLeft, bottomMiddle, bottomRight};
 
             // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->heightField.width - 1;
-            int32_t height = middleMiddle->heightField.height - 1;
+            int32_t width = middleMiddle->heightField->width - 1;
+            int32_t height = middleMiddle->heightField->height - 1;
 
             std::vector<float> heights(width * height * 9);
 
@@ -511,7 +512,7 @@ namespace Atlas {
                         cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
                     }
 
-                    cell->heightField.SetData(cellHeightData);
+                    cell->heightField->SetData(cellHeightData);
 
                 }
 
@@ -544,8 +545,8 @@ namespace Atlas {
                                            bottomLeft, bottomMiddle, bottomRight};
 
             // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->heightField.width - 1;
-            int32_t height = middleMiddle->heightField.height - 1;
+            int32_t width = middleMiddle->heightField->width - 1;
+            int32_t height = middleMiddle->heightField->height - 1;
 
             std::vector<float> heights(width * height * 9);
 
@@ -660,7 +661,7 @@ namespace Atlas {
                         cellHeightData[k] = (uint16_t)(cell->heightData[k] * 65535.0f);
                     }
 
-                    cell->heightField.SetData(cellHeightData);
+                    cell->heightField->SetData(cellHeightData);
 
                 }
             }
@@ -693,8 +694,8 @@ namespace Atlas {
             std::vector<uint8_t> cellDatas[9];
 
             // Now bring all height data into one array (we assume that all tiles have the same size)
-            int32_t width = middleMiddle->splatMap.width - 1;
-            int32_t height = middleMiddle->splatMap.height - 1;
+            int32_t width = middleMiddle->splatMap->width - 1;
+            int32_t height = middleMiddle->splatMap->height - 1;
 
             std::vector<uint8_t> combinedSplatMap(width * height * 9);
 
@@ -708,7 +709,7 @@ namespace Atlas {
                     if (cell == nullptr)
                         continue;
 
-                    cellDatas[i * 3 + j] = cell->splatMap.GetData<uint8_t>();
+                    cellDatas[i * 3 + j] = cell->splatMap->GetData<uint8_t>();
                     auto& splatData = cellDatas[i * 3 + j];
 
                     for (int32_t k = 0; k < height + 1; k++) {
@@ -787,7 +788,7 @@ namespace Atlas {
                         }
                     }
 
-                    cell->splatMap.SetData(splatData);
+                    cell->splatMap->SetData(splatData);
 
                 }
 
@@ -812,7 +813,7 @@ namespace Atlas {
             for (int32_t i = 0; i < tileSideCount; i++) {
                 for (int32_t j = 0; j < tileSideCount; j++) {
                     auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
-                    auto cellSplatData = cell->splatMap.GetData<uint8_t>();
+                    auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                     // Now copy a tile of the original image
                     // We make sure that every tile has the same size

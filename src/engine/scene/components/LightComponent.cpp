@@ -11,6 +11,23 @@ namespace Atlas {
                 0.0f, 0.0f, 0.5f, 0.0f,
                 0.0f, 0.0f, 0.5f, 1.0f);
 
+            LightComponent::LightComponent(Scene* scene, const LightComponent& that) {
+
+                if (this != &that) {
+
+                    *this = that;
+
+                    // Copy shadow, need to have separate resources
+                    if (that.shadow != nullptr) {
+                        shadow = CreateRef(*that.shadow);
+                        shadow->SetResolution(shadow->resolution);
+                        shadow->update = true;
+                    }
+
+                }
+
+            }
+
 			LightComponent::LightComponent(LightType type, LightMobility mobility) : 
 				type(type), mobility(mobility), properties(type), transformedProperties(type) {
 
@@ -60,7 +77,7 @@ namespace Atlas {
                 shadow->views[0].frustumMatrix = clipMatrix * orthoProjection;
                 shadow->views[0].terrainFrustumMatrix = clipMatrix * orthoProjection;
                 shadow->views[0].viewMatrix = glm::lookAt(shadowCenter, shadowCenter +
-                                                                        properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
+                    properties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
 
             }
 
@@ -68,9 +85,37 @@ namespace Atlas {
 
 				AE_ASSERT(type == LightType::PointLight && "Component must be of type point light");
 
-                shadow = CreateRef<Lighting::Shadow>(0.0f, bias, resolution, true);
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, true);
 
 			}
+
+            void LightComponent::AddSpotShadow(float bias, int32_t resolution) {
+
+                AE_ASSERT(type == LightType::SpotLight && "Component must be of type spot light");
+
+                shadow = CreateRef<Lighting::Shadow>(200.0f, bias, resolution, 0.005f, false);
+
+            }
+
+            bool LightComponent::IsVisible(const Volume::Frustum& frustum) const {
+
+                if (type == LightType::DirectionalLight)
+                    return true;
+
+                Volume::AABB aabb;
+
+                if (type == LightType::PointLight) {
+                    auto min = transformedProperties.point.position - vec3(transformedProperties.point.radius);
+                    auto max = transformedProperties.point.position + vec3(transformedProperties.point.radius);
+                    aabb = Volume::AABB(min, max);
+                }
+                else if (type == LightType::SpotLight) {
+                    aabb = Volume::AABB(-vec3(2000.0f), vec3(2000.0f));
+                }
+
+                return frustum.Intersects(aabb);
+
+            }
 
             void LightComponent::Update(const TransformComponent* transform) {
 
@@ -82,6 +127,11 @@ namespace Atlas {
                 }
                 else if (type == LightType::PointLight && transform) {
                     transformedProperties.point.position = vec3(transform->globalMatrix * vec4(properties.point.position, 1.0f));
+                }
+                else if (type == LightType::SpotLight && transform) {
+                    transformedProperties.spot.position = vec3(transform->globalMatrix * vec4(properties.spot.position, 1.0f));
+                    transformedProperties.spot.direction = glm::normalize(vec3(transform->globalMatrix *
+                        vec4(properties.spot.direction, 0.0f)));
                 }
 
             }
@@ -113,18 +163,18 @@ namespace Atlas {
                 }
                 else if (!shadow->isCascaded && type == LightType::DirectionalLight) {
                     shadow->views[0].viewMatrix = glm::lookAt(shadow->center,
-                        shadow->center + transformedProperties.directional.direction, vec3(0.0f, 1.0f, 0.0f));
+                        shadow->center + transformedProperties.directional.direction, vec3(1e-12f, 1.0f, 1e-12f));
                 }
                 else if (type == LightType::PointLight) {
                     vec3 position = transformedProperties.point.position;
 
-                    mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, properties.point.radius);
-                    const vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-                                     vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                     vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
+                    mat4 projectionMatrix = clipMatrix * glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, transformedProperties.point.radius);
+                    vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
+                              vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f),
+                             vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
 
-                    const vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-                                   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
+                    vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
+                                   vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 0.0f, 1.0f),
                                    vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
 
                     for (uint8_t i = 0; i < 6; i++) {
@@ -133,6 +183,14 @@ namespace Atlas {
                         shadow->views[i].viewMatrix = viewMatrix;
                         shadow->views[i].frustumMatrix = projectionMatrix * viewMatrix;
                     }
+                }
+                else if (type == LightType::SpotLight) {
+                    auto viewMatrix = glm::lookAt(transformedProperties.spot.position, transformedProperties.spot.position + 
+                        transformedProperties.spot.direction, vec3(1e-12f, 1.0f, 1e-12f));
+                    auto projectionMatrix = glm::perspective(2.0f * transformedProperties.spot.outerConeAngle, 1.0f, 0.1f, transformedProperties.spot.radius);
+                    shadow->views[0].viewMatrix = viewMatrix;
+                    shadow->views[0].projectionMatrix = clipMatrix * projectionMatrix;
+                    shadow->views[0].frustumMatrix = clipMatrix * projectionMatrix * viewMatrix;
                 }
 
                 if (mobility == LightMobility::MovableLight)
@@ -153,10 +211,10 @@ namespace Atlas {
                 // A near enough up vector. This is because if the light location is
                 // (0.0f, 1.0f, 0.0f) the shadows wouldn't render correctly due to the
                 // shadows (or lights) view matrix. This is just a hack
-                vec3 up = glm::vec3(0.0000000000000001f, 1.0f, 0.0000000000000001f);
+                vec3 up = vec3(1e-12f, 1.0f, 1e-12f);
                 cascade.viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-                std::vector<vec3> corners = camera.GetFrustumCorners(cascade.nearDistance,
+                auto corners = camera.GetFrustumCorners(cascade.nearDistance,
                     cascade.farDistance + shadow->cascadeBlendDistance);
 
                 vec3 maxProj = vec3(cascade.viewMatrix * vec4(corners.at(0), 1.0f));

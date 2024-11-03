@@ -7,6 +7,8 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
+#include <algorithm>
+
 namespace Atlas::Editor::UI {
 
     class ResourceSelectionPopup : public Popup {

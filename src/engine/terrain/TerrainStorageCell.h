@@ -3,6 +3,8 @@
 #include "../System.h"
 #include "../Material.h"
 #include "../physics/ShapesManager.h"
+#include "../raytracing/BLAS.h"
+#include "../volume/AABB.h"
 
 #include <vector>
 
@@ -23,23 +25,29 @@ namespace Atlas {
 
             bool IsLoaded();
 
+            void BuildBVH(float stretchFactor, float heightFactor);
+
             int32_t x = 0;
             int32_t y = 0;
             int32_t LoD = 0;
 
             vec2 position;
 
+            Volume::AABB aabb;
+            mat3x4 inverseMatrix;
+
             Physics::ShapeRef shape;
+            Ref<RayTracing::BLAS> blas;
 
             std::vector<float> heightData;
+            std::vector<uint8_t> materialIdxData;
+            std::vector<uint8_t> normalData;
 
-            Texture::Texture2D heightField;
-            Texture::Texture2D normalMap;
-            Texture::Texture2D splatMap;
-            Texture::Texture2D diffuseMap;
+            Ref<Texture::Texture2D> heightField = nullptr;
+            Ref<Texture::Texture2D> normalMap = nullptr;
+            Ref<Texture::Texture2D> splatMap = nullptr;
 
-        private:
-            TerrainStorage* const storage;
+            TerrainStorage* storage = nullptr;
 
         };
 

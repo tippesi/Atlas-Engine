@@ -5,9 +5,12 @@
 #include "../../volume/BVH.h"
 #include "../../graphics/Profiler.h"
 #include "../../pipeline/PipelineManager.h"
+#include <glm/gtx/norm.hpp>
 
 #define DIRECTIONAL_LIGHT 0
 #define TRIANGLE_LIGHT 1
+#define POINT_LIGHT 2
+#define SPOT_LIGHT 3
 
 namespace Atlas {
 
@@ -74,7 +77,7 @@ namespace Atlas {
                     auto lightCount = lightBuffer.GetElementCount();
                     selectedLights.clear();
                     // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount) {
+                    if (lights.size() > lightCount && stochasticLightSelection) {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
@@ -95,8 +98,24 @@ namespace Atlas {
                             light.data.y *= float(selectedLights.size());
                         }
                     }
+                    else if (lights.size() > lightCount && !stochasticLightSelection) {
+                        auto& camera = scene->GetMainCamera();
+                        auto cameraLocation = camera.GetLocation();
+
+                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {  
+                            return glm::distance2(vec3(light0.P), cameraLocation)
+                               < glm::distance2(vec3(light1.P), cameraLocation);
+                        });
+
+                        for (size_t i = 0; i < lightCount; i++) {
+                            auto& light = lights[i];
+
+                            light.data.y = 1.0f;
+                            selectedLights.push_back(light);
+                        }
+                    }
                     else {
-                        for (auto light : lights) {
+                        for (auto& light : lights) {
                             light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
@@ -159,7 +178,7 @@ namespace Atlas {
                     auto lightCount = lightBuffer.GetElementCount();
                     selectedLights.clear();
                     // Randomly select lights (only at image offset 0)
-                    if (lights.size() > lightCount) {
+                    if (lights.size() > lightCount && stochasticLightSelection) {
                         std::vector<float> weights;
                         weights.reserve(lights.size());
                         for (auto& light : lights) {
@@ -180,8 +199,24 @@ namespace Atlas {
                             light.data.y *= float(selectedLights.size());
                         }
                     }
+                    else if (lights.size() > lightCount && !stochasticLightSelection) {
+                        auto& camera = scene->GetMainCamera();
+                        auto cameraLocation = camera.GetLocation();
+
+                        std::sort(lights.begin(), lights.end(), [&](const GPULight& light0, const GPULight& light1) {
+                            return glm::distance2(vec3(light0.P), cameraLocation)
+                                < glm::distance2(vec3(light1.P), cameraLocation);
+                            });
+
+                        for (size_t i = 0; i < lightCount; i++) {
+                            auto& light = lights[i];
+
+                            light.data.y = 1.0f;
+                            selectedLights.push_back(light);
+                        }
+                    }
                     else {
-                        for (auto light : lights) {
+                        for (auto& light : lights) {
                             light.data.y = 1.0f;
                             selectedLights.push_back(light);
                         }
@@ -255,9 +290,6 @@ namespace Atlas {
 
                 commandList->BindBuffer(indirectDispatchBuffer.Get(), 2, 12);
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
                 // Set up command buffer, reset ray count
                 {
                     auto pipeline = PipelineManager::GetPipeline(traceDispatchPipelineConfig);
@@ -268,32 +300,39 @@ namespace Atlas {
                         VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
 
                     if (dispatchCounter % 2 == 0) {
-                        bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT });
-                        bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT });
+                        Graphics::BufferBarrier bufferBarriers[] = {
+                            { counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT },
+                            { counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT }
+                        };
                         commandList->BindBuffer(counterBuffer0.Get(), 2, 13);
                         commandList->BindBuffer(counterBuffer1.Get(), 2, 14);
+
+                        commandList->PipelineBarrier({}, bufferBarriers);
                     }
                     else {
-                        bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT });
-                        bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT });
+                        Graphics::BufferBarrier bufferBarriers[] = {
+                            { counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT },
+                            { counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT }
+                        };
                         commandList->BindBuffer(counterBuffer0.Get(), 2, 14);
                         commandList->BindBuffer(counterBuffer1.Get(), 2, 13);
+
+                        commandList->PipelineBarrier({}, bufferBarriers);
                     }
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                    
 
                     commandList->Dispatch(1, 1, 1);
                 }
-
-                bufferBarriers.clear();
-                imageBarriers.clear();
 
                 // Can't group barriers together because of different access patterns
                 commandList->BufferMemoryBarrier(indirectDispatchBuffer.Get(), VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
 
-                bufferBarriers.push_back({ rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                bufferBarriers.push_back({ rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                Graphics::BufferBarrier bufferBarriers[] = {
+                    { rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                    { rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }
+                };
+                commandList->PipelineBarrier({}, bufferBarriers);
 
                 commandList->BindBuffer(rayBuffer.Get(), 2, 15);
                 commandList->BindBuffer(rayPayloadBuffer.Get(), 2, 16);
@@ -365,19 +404,18 @@ namespace Atlas {
 
                 Graphics::Profiler::EndAndBeginQuery("Execute hit shader");
 
-                bufferBarriers.clear();
-                imageBarriers.clear();
-
-                bufferBarriers.push_back({ rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
-                bufferBarriers.push_back({ rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                Graphics::BufferBarrier preShaderBufferBarriers[3] = {
+                    { rayBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+                    { rayPayloadBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT }
+                };
 
                 if (dispatchCounter % 2 == 0) {
-                    bufferBarriers.push_back({ counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    preShaderBufferBarriers[2] = {counterBuffer1.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT};
                 }
                 else {
-                    bufferBarriers.push_back({ counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT });
+                    preShaderBufferBarriers[2] = {counterBuffer0.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT};
                 }
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+                commandList->PipelineBarrier({}, preShaderBufferBarriers);
                 
                 // Shade rays
                 {
@@ -406,22 +444,22 @@ namespace Atlas {
 
             void RayTracingHelper::InvalidateRayBuffer(Graphics::CommandList* commandList) {
 
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-
-                bufferBarriers.push_back({counterBuffer0.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
-                bufferBarriers.push_back({counterBuffer1.Get(), VK_ACCESS_TRANSFER_WRITE_BIT});
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                Graphics::BufferBarrier preBufferBarriers[] = {
+                    {counterBuffer0.Get(), VK_ACCESS_TRANSFER_WRITE_BIT},
+                    {counterBuffer1.Get(), VK_ACCESS_TRANSFER_WRITE_BIT}
+                };
+                commandList->PipelineBarrier({}, preBufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 uint32_t zero = 0;
                 commandList->FillBuffer(counterBuffer0.Get(), &zero);
                 commandList->FillBuffer(counterBuffer1.Get(), &zero);
 
-                bufferBarriers.clear();
-                bufferBarriers.push_back({counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
-                bufferBarriers.push_back({counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT});
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                Graphics::BufferBarrier postBufferBarriers[] = {
+                   {counterBuffer0.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT},
+                   {counterBuffer1.Get(), VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT}
+                };
+                commandList->PipelineBarrier({}, postBufferBarriers, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
             }
@@ -437,6 +475,9 @@ namespace Atlas {
 
                 lights.clear();
 
+                auto& camera = scene->GetMainCamera();
+                auto cameraLocation = camera.GetLocation();
+
                 auto lightSubset = scene->GetSubset<LightComponent>();
                 for (auto& lightEntity : lightSubset) {
                     auto& light = lightEntity.GetComponent<LightComponent>();
@@ -447,28 +488,55 @@ namespace Atlas {
                     vec3 P = vec3(0.0f);
                     vec3 N = vec3(0.0f);
                     float weight = 0.0f;
-                    float area = 0.0f;
+                    float radius = 1.0f;
+                    float specific0 = 0.0f;
+                    float specific1 = 0.0f;
 
-                    uint32_t data = 0;
+                    uint32_t data0 = 0, data1 = 0;
 
+                    const auto& prop = light.transformedProperties;
                     // Parse individual light information based on type
                     if (light.type == LightType::DirectionalLight) {
-                        data |= (DIRECTIONAL_LIGHT << 28u);
+                        data0 |= (DIRECTIONAL_LIGHT << 28u);
                         weight = brightness;
+                        P = cameraLocation;
                         N = light.transformedProperties.directional.direction;
                     }
                     else if (light.type == LightType::PointLight) {
+                        data0 |= (POINT_LIGHT << 28u);
+                        weight = brightness;
+                        P = light.transformedProperties.point.position;
+                        radius = light.transformedProperties.point.radius;
+                    }
+                    else if (light.type == LightType::SpotLight) {
+                        data0 |= (SPOT_LIGHT << 28u);
+                        weight = brightness;
+                        P = light.transformedProperties.spot.position;
+                        N = light.transformedProperties.spot.direction;
+                        radius = light.transformedProperties.spot.radius;
 
+                        auto cosOuter = cosf(prop.spot.outerConeAngle);
+                        auto cosInner = cosf(prop.spot.innerConeAngle);
+                        auto lightAngleScale = 1.0f / std::max(0.001f, cosInner - cosOuter);
+                        auto lightAngleOffset = -cosOuter * lightAngleScale;
+
+                        specific0 = lightAngleScale;
+                        specific1 = lightAngleOffset;
                     }
 
-                    data |= uint32_t(lights.size());
-                    auto cd = reinterpret_cast<float&>(data);
+                    if (light.shadow) {
+                        data1 |= 1u;
+                    }
+
+                    data0 |= uint32_t(lights.size());
+                    auto castData0 = reinterpret_cast<float&>(data0);
+                    auto castData1 = reinterpret_cast<float&>(data1);
 
                     GPULight gpuLight;
-                    gpuLight.P = vec4(P, 1.0f);
-                    gpuLight.N = vec4(N, 0.0f);
+                    gpuLight.P = vec4(P, castData1);
+                    gpuLight.N = vec4(N, radius);
                     gpuLight.color = vec4(radiance, 0.0f);
-                    gpuLight.data = vec4(cd, weight, area, 0.0f);
+                    gpuLight.data = vec4(castData0, weight, specific0, specific1);
 
                     lights.push_back(gpuLight);
                 }
@@ -477,25 +545,27 @@ namespace Atlas {
                     const auto& rtData = scene->rayTracingWorld;
                     lights.insert(lights.end(), rtData->triangleLights.begin(), rtData->triangleLights.end());
                 }
-                    
-                // Find the maximum weight
-                auto maxWeight = 0.0f;
-                for (auto& light : lights) {
-                    maxWeight = glm::max(maxWeight, light.data.y);
-                }
+                
+                if (stochasticLightSelection) {
+                    // Find the maximum weight
+                    auto maxWeight = 0.0f;
+                    for (auto& light : lights) {
+                        maxWeight = glm::max(maxWeight, light.data.y);
+                    }
 
-                // Calculate min weight and adjust lights based on it
-                auto minWeight = 0.005f * maxWeight;
-                // Also calculate the total weight
-                auto totalWeight = 0.0f;
+                    // Calculate min weight and adjust lights based on it
+                    auto minWeight = 0.005f * maxWeight;
+                    // Also calculate the total weight
+                    auto totalWeight = 0.0f;
 
-                for (auto& light : lights) {
-                    light.data.y = glm::max(light.data.y, minWeight);
-                    totalWeight += light.data.y;
-                }
+                    for (auto& light : lights) {
+                        light.data.y = glm::max(light.data.y, minWeight);
+                        totalWeight += light.data.y;
+                    }
 
-                for (auto& light : lights) {
-                    light.data.y /= totalWeight;
+                    for (auto& light : lights) {
+                        light.data.y /= totalWeight;
+                    }
                 }
             }
             

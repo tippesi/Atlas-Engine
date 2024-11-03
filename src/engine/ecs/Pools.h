@@ -3,7 +3,7 @@
 #include "Pool.h"
 #include "TypeIndex.h"
 
-#include <vector>
+#include <array>
 #include <algorithm>
 #include <memory>
 
@@ -18,14 +18,23 @@ namespace Atlas {
 
             template<typename Comp>
             Pool<Comp>& Get();
+            
+            void Clear() {
+            
+                for (auto& poolData : data) {
+                    poolData.storage.reset();
+                }
+
+            }
 
         private:
             struct PoolData {
-                uint64_t idx;
-                std::shared_ptr<Storage> storage;
+                std::shared_ptr<Storage> storage = nullptr;
             };
+            
+            static constexpr uint64_t dataCount = 1024;
 
-            std::vector<PoolData> data;
+            std::array<PoolData, dataCount> data;
 
             friend class EntityManager;
 
@@ -36,19 +45,21 @@ namespace Atlas {
             Storage* storage = nullptr;
 
             auto idx = TypeIndex::Get<Comp>();
-            auto find = std::find_if(data.begin(), data.end(), [idx](const auto& poolData) { return idx == poolData.idx; });
+            
+            AE_ASSERT(idx < dataCount && "Too many component types stored. Please increase pool capacity");
+            auto& poolData = data[idx];
 
-            if (find != data.end()) {
+            if (poolData.storage != nullptr) {
 
-                storage = find->storage.get();
+                storage = poolData.storage.get();
 
             }
             else {
 
                 // https://stackoverflow.com/questions/15783342/should-i-use-c11-emplace-back-with-pointers-containters
                 // Need shared_ptr here such that destructor of Pool is called, not destructor of Storage
-                data.emplace_back(PoolData{ idx, std::make_shared<Pool<Comp>>() });
-                storage = data.back().storage.get();
+                poolData.storage = std::make_shared<Pool<Comp>>();
+                storage = poolData.storage.get();
 
             }
 

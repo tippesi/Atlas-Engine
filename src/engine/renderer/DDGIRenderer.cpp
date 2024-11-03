@@ -27,11 +27,6 @@ namespace Atlas {
             irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
             momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
-            probeDebugMaterial = CreateRef<Material>();
-            probeDebugActiveMaterial = CreateRef<Material>();
-            probeDebugInactiveMaterial = CreateRef<Material>();
-            probeDebugOffsetMaterial = CreateRef<Material>();
-
             auto samplerDesc = Graphics::SamplerDesc {
                 .filter = VK_FILTER_NEAREST,
                 .mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -50,10 +45,13 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("DDGI");
 
             Ref<Lighting::Shadow> shadow = nullptr;
-            auto mainLightEntity = GetMainLightEntity(scene);
-            if (mainLightEntity.IsValid())
-                shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
-                
+            if (scene->HasMainLight())
+                shadow = scene->GetMainLight().shadow;
+               
+            auto clouds = scene->sky.clouds;
+            auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
+
+            rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
             rayHitPipelineConfig.ManageMacro("DDGI_VISIBILITY", volume->visibility);
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             
@@ -144,7 +142,7 @@ namespace Atlas {
                         shadowUniform.cascadeCount = shadow->viewCount;
                         shadowUniform.resolution = vec2(shadow->resolution);
 
-                        commandList->BindImage(shadow->maps.image, shadowSampler, 3, 0);
+                        commandList->BindImage(shadow->maps->image, shadowSampler, 3, 0);
 
                         auto componentCount = shadow->viewCount;
                         for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
@@ -155,8 +153,8 @@ namespace Atlas {
                                 auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
                                     abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                                 shadowUniform.cascades[i].distance = cascade->farDistance;
-                                shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                    cascade->viewMatrix;
+                                shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
+                                    cascade->viewMatrix);
                                 shadowUniform.cascades[i].texelSize = texelSize;
                             } else {
                                 auto cascade = &shadow->views[componentCount - 1];
@@ -164,11 +162,16 @@ namespace Atlas {
                             }
                         }
                     }
+
+                    if (cloudShadowEnabled && scene->HasMainLight()) {
+                        clouds->shadowTexture.Bind(commandList, 3, 1);
+                    }
+
                     rayHitUniformBuffer.SetData(&uniforms, 0);
 
                     // Use this buffer instead of the default writeRays buffer of the helper
-                    commandList->BindBuffer(rayHitBuffer.Get(), 3, 1);
-                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(rayHitBuffer.Get(), 3, 2);
+                    commandList->BindBuffer(rayHitUniformBuffer.Get(), 3, 3);
                 }
             );
 
@@ -317,17 +320,13 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            probeDebugActiveMaterial->emissiveColor = vec3(0.0f, 1.0f, 0.0f);
-            probeDebugInactiveMaterial->emissiveColor = vec3(1.0f, 0.0f, 0.0f);
-            probeDebugOffsetMaterial->emissiveColor = vec3(0.0f, 0.0f, 1.0f);
-
             sphereArray.Bind(commandList);
 
             ProbeDebugConstants constants = {
-                .probeMaterialIdx = uint32_t(materialMap[probeDebugMaterial.get()]),
-                .probeActiveMaterialIdx = uint32_t(materialMap[probeDebugActiveMaterial.get()]),
-                .probeInactiveMaterialIdx = uint32_t(materialMap[probeDebugInactiveMaterial.get()]),
-                .probeOffsetMaterialIdx = uint32_t(materialMap[probeDebugOffsetMaterial.get()])
+                .probeMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugMaterial.get()]),
+                .probeActiveMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugActiveMaterial.get()]),
+                .probeInactiveMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugInactiveMaterial.get()]),
+                .probeOffsetMaterialIdx = uint32_t(materialMap[internalVolume.probeDebugOffsetMaterial.get()])
             };
             commandList->PushConstants("constants", &constants);
 

@@ -19,7 +19,6 @@ namespace Atlas {
             uniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             depthUniformBuffer = Buffer::UniformBuffer(sizeof(Uniforms));
             lightUniformBuffer = Buffer::UniformBuffer(sizeof(Light));
-            cloudShadowUniformBuffer = Buffer::UniformBuffer(sizeof(CloudShadow));
 
             auto samplerDesc = Graphics::SamplerDesc{
                 .filter = VK_FILTER_NEAREST,
@@ -81,7 +80,7 @@ namespace Atlas {
                 shadowUniform.cascadeBlendDistance = shadow->cascadeBlendDistance;
                 shadowUniform.resolution = vec2(shadow->resolution);
 
-                commandList->BindImage(shadow->maps.image, shadowSampler, 3, 8);
+                commandList->BindImage(shadow->maps->image, shadowSampler, 3, 8);
 
                 auto componentCount = shadow->viewCount;
                 for (int32_t i = 0; i < MAX_SHADOW_VIEW_COUNT + 1; i++) {
@@ -92,8 +91,8 @@ namespace Atlas {
                         auto texelSize = glm::max(abs(corners[0].x - corners[1].x),
                             abs(corners[1].y - corners[3].y)) / (float)shadow->resolution;
                         shadowUniform.cascades[i].distance = cascade->farDistance;
-                        shadowUniform.cascades[i].cascadeSpace = cascade->projectionMatrix *
-                                                                 cascade->viewMatrix * camera.invViewMatrix;
+                        shadowUniform.cascades[i].cascadeSpace = glm::transpose(cascade->projectionMatrix *
+                                                                 cascade->viewMatrix * camera.invViewMatrix);
                         shadowUniform.cascades[i].texelSize = texelSize;
                     }
                     else {
@@ -111,25 +110,9 @@ namespace Atlas {
 
             bool fogEnabled = fog && fog->enable;
             bool cloudsEnabled = clouds && clouds->enable;
-
             bool cloudShadowsEnabled = clouds && clouds->enable && clouds->castShadow;
-
-            CloudShadow cloudShadowUniform;
-
-            if (cloudShadowsEnabled) {
+            if (cloudShadowsEnabled)
                 clouds->shadowTexture.Bind(commandList, 3, 15);
-
-                clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
-                    cloudShadowUniform.vMatrix, cloudShadowUniform.pMatrix);
-
-                cloudShadowUniform.vMatrix = cloudShadowUniform.vMatrix * camera.invViewMatrix;
-
-                cloudShadowUniform.ivMatrix = glm::inverse(cloudShadowUniform.vMatrix);
-                cloudShadowUniform.ipMatrix = glm::inverse(cloudShadowUniform.pMatrix);
-            }
-
-            cloudShadowUniformBuffer.SetData(&cloudShadowUniform, 0);
-            cloudShadowUniformBuffer.Bind(commandList, 3, 14);
 
             {
                 Graphics::Profiler::BeginQuery("Caustics");
@@ -177,28 +160,25 @@ namespace Atlas {
                         depthImage->format);
                 }
 
-                std::vector<Graphics::ImageBarrier> imageBarriers;
-                std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                imageBarriers = {
+                Graphics::ImageBarrier preImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 commandList->CopyImage(colorImage, refractionTexture.image);
                 commandList->CopyImage(depthImage, depthTexture.image);
 
-                imageBarriers = {
+                Graphics::ImageBarrier postImageBarriers[] = {
                     {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
-                commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
             }
             
@@ -214,7 +194,7 @@ namespace Atlas {
                 if (cloudShadowsEnabled) config.AddMacro("CLOUD_SHADOWS");
                 if (ocean->rippleTexture.IsValid()) config.AddMacro("RIPPLE_TEXTURE");
                 if (ocean->foamTexture.IsValid()) config.AddMacro("FOAM_TEXTURE");
-                if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+                if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
                 auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -276,7 +256,7 @@ namespace Atlas {
                 depthTexture.Bind(commandList, 3, 5);
                 target->oceanDepthTexture.Bind(commandList, 3, 20);
 
-                if (scene->terrain) {
+                if (scene->terrain.IsLoaded()) {
                     if (scene->terrain->shoreLine.IsValid()) {
                         auto terrain = scene->terrain;
 
@@ -344,15 +324,14 @@ namespace Atlas {
                     VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
 
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-                    std::vector<Graphics::ImageBarrier> imageBarriers = {
+                    Graphics::ImageBarrier imageBarriers[] = {
                         {target->lightingTexture.image, layout, access},
                         {rtData->depthTexture->image, layout, access},
                         {rtData->stencilTexture->image, layout, access},
                         {rtData->velocityTexture->image, layout, access},
                     };
 
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+                    commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
                 }
 
                 if (ocean->underwaterShader) {
@@ -360,23 +339,20 @@ namespace Atlas {
 
                     auto& colorImage = target->afterLightingFrameBuffer->GetColorImage(0);
 
-                    std::vector<Graphics::ImageBarrier> imageBarriers;
-                    std::vector<Graphics::BufferBarrier> bufferBarriers;
-
-                    imageBarriers = {
+                    Graphics::ImageBarrier preImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(preImageBarriers, {},
                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                     commandList->CopyImage(colorImage, refractionTexture.image);
 
-                    imageBarriers = {
+                    Graphics::ImageBarrier postImageBarriers[] = {
                         {colorImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {refractionTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     };
-                    commandList->PipelineBarrier(imageBarriers, bufferBarriers,
+                    commandList->PipelineBarrier(postImageBarriers, {},
                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
                     const int32_t groupSize = 8;
@@ -386,7 +362,7 @@ namespace Atlas {
                     groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                     groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 
-                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain && scene->terrain->shoreLine.IsValid());
+                    underWaterPipelineConfig.ManageMacro("TERRAIN", scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid());
                     auto pipeline = PipelineManager::GetPipeline(underWaterPipelineConfig);
 
                     commandList->BindPipeline(pipeline);
@@ -431,7 +407,7 @@ namespace Atlas {
                 target->oceanDepthOnlyFrameBuffer);
 
             auto config = GeneratePipelineConfig(target, true, ocean->wireframe);
-            if (scene->terrain && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
+            if (scene->terrain.IsLoaded() && scene->terrain->shoreLine.IsValid()) config.AddMacro("TERRAIN");
 
             auto pipeline = PipelineManager::GetPipeline(config);
 
@@ -482,7 +458,7 @@ namespace Atlas {
             refractionTexture.Bind(commandList, 3, 4);
             depthTexture.Bind(commandList, 3, 5);
 
-            if (scene->terrain) {
+            if (scene->terrain.IsLoaded()) {
                 if (scene->terrain->shoreLine.IsValid()) {
                     auto terrain = scene->terrain;
 

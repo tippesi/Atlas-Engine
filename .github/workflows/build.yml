@@ -62,7 +62,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
+          committish: a993be073c6baea8674117f3eaed6e2d2486aaae
           cache: ${{ env.USE_CACHE }}
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
@@ -176,7 +176,7 @@ jobs:
           compression-level: 9
 
   linux-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Build on Linux
     # Run both builds in parallel and don't cancel if one fails
     strategy:
@@ -206,7 +206,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
+          committish: a993be073c6baea8674117f3eaed6e2d2486aaae
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
@@ -225,8 +225,10 @@ jobs:
         shell: bash
         # Add additional scripting steps here
         run: |
-          sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev
+          sudo apt update
+          sudo apt install libgl1-mesa-dev autoconf automake libtool pkg-config libltdl-dev g++-14 gcc-14 -y
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 14
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 14
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
@@ -337,7 +339,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: 821100d967e1737d96414a308e3f7cbe0d1abf18
+          committish: a993be073c6baea8674117f3eaed6e2d2486aaae
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja

@@ -5,7 +5,9 @@
 #include "Notifications.h"
 #include "ContentDiscovery.h"
 #include "ui/panels/PopupPanels.h"
+#include "tools/FileSystemHelper.h"
 #include <ImGuizmo.h>
+#include <implot.h>
 
 #include <chrono>
 #include <thread>
@@ -25,13 +27,16 @@ namespace Atlas::Editor {
 
         ContentDiscovery::Update();
 
+        ImGui::CreateContext();
+        ImPlot::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        SetDefaultWindowResolution();
+
         auto icon = Atlas::Texture::Texture2D("icon.png");
         window.SetIcon(&icon);
-
-        ImGui::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
-        (void) io;
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         // Add font with enlarged size and scale it down again
         // This means we can use scaled text up to 2x the size
@@ -52,22 +57,27 @@ namespace Atlas::Editor {
         Singletons::icons = CreateRef<Icons>();
         Singletons::blockingOperation = CreateRef<BlockingOperation>();
         Singletons::renderTarget = CreateRef<Renderer::RenderTarget>(1280, 720);
-        Singletons::pathTraceRenderTarget = CreateRef<Renderer::PathTracerRenderTarget>(1280, 720);
         Singletons::mainRenderer = mainRenderer;
 
         mouseHandler = Input::MouseHandler(1.5f, 8.0f);
         keyboardHandler = Input::KeyboardHandler(7.0f, 5.0f);
 
-        if (Singletons::config->darkMode)
+        if (Singletons::config->darkMode) {
             ImGui::StyleColorsDark();
-        else
+            ImPlot::StyleColorsDark();
+        }
+        else {
             ImGui::StyleColorsLight();
+            ImPlot::StyleColorsLight();
+        }
 
     }
 
     void App::UnloadContent() {
 
         Singletons::imguiWrapper->Unload();
+
+        CopyPasteHelper::Clear();
 
         for (const auto& sceneWindow : sceneWindows) {
             if (sceneWindow->isPlaying)
@@ -80,11 +90,13 @@ namespace Atlas::Editor {
 
         Singletons::Destruct();
 
+        ImPlot::DestroyContext();
+
     }
 
     void App::Update(float deltaTime) {
 
-        const ImGuiIO &io = ImGui::GetIO();
+        const ImGuiIO& io = ImGui::GetIO();
 
         ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
@@ -194,7 +206,7 @@ namespace Atlas::Editor {
                 sceneWindow->isActiveWindow = true;
             else
                 sceneWindow->isActiveWindow = false;
-            
+
             // Need to reset this each frame in order to reenable selection
             sceneWindow->lockSelection = false;
             sceneWindow->Update(deltaTime);
@@ -202,32 +214,6 @@ namespace Atlas::Editor {
 
         ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
 
-        graphicsDevice->WaitForPreviousFrameSubmission();
-
-
-#ifdef AE_BINDLESS
-        // This crashes when we start with path tracing and do the bvh build async
-        // Launch BVH builds asynchronously
-        auto buildRTStructure = [&](JobData) {
-            auto sceneMeshes = ResourceManager<Mesh::Mesh>::GetResources();
-
-            for (const auto& mesh : sceneMeshes) {
-                if (!mesh.IsLoaded())
-                    continue;
-                if (mesh->IsBVHBuilt())
-                    continue;
-                JobSystem::Execute(bvhBuilderGroup, [mesh](JobData&) {
-                    mesh->BuildBVH(false);
-                });
-            }
-            };
-
-        if (bvhBuilderGroup.HasFinished()) {
-            JobSystem::Execute(bvhBuilderGroup, buildRTStructure);
-            return;
-        }
-#endif
-        
     }
 
     void App::Render(float deltaTime) {
@@ -251,103 +237,178 @@ namespace Atlas::Editor {
         ImGuizmo::BeginFrame();
 
         // ImGui::ShowDemoWindow();
+        // ImPlot::ShowDemoWindow();
 
-        ImGuiViewport *viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->Pos);
-        ImGui::SetNextWindowSize(viewport->Size);
-        ImGui::SetNextWindowViewport(viewport->ID);
-        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+        bool playingMaximized = false;
+        auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
+        if (activeSceneWindow) {
+            playingMaximized = activeSceneWindow->isPlaying && activeSceneWindow->playMaximized;
+        }
+        if (!playingMaximized) {
+            ImGui::SetNextWindowPos(viewport->Pos);
+            ImGui::SetNextWindowSize(viewport->Size);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::SetNextWindowBgAlpha(0.0f);
+
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            ImGui::Begin("MainDockspace Window", nullptr, window_flags);
+            ImGui::PopStyleVar(3);
+
+            ImGuiID mainDsId = ImGui::GetID("MainDS");
+            if (!ImGui::DockBuilderGetNode(mainDsId) || resetDockspaceLayout) {
+                SetupMainDockspace(mainDsId);
+            }
+
+            ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+            ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+            if (ImGui::BeginMainMenuBar()) {
+                static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
+                bool saveScene = false, exitEditor = false;
+                if (ImGui::BeginMenu("File")) {
+                    /*
+                    ImGui::MenuItem("Open project", nullptr, &openProject);
+                    ImGui::MenuItem("Save project", nullptr, &saveProject);
+                    ImGui::Separator();
+                    */
+                    ImGui::MenuItem("New scene", nullptr, &newScene);
+                    ImGui::MenuItem("Save scene", nullptr, &saveScene);
+                    ImGui::MenuItem("Exit", nullptr, &exitEditor);
+                    /*
+                    ImGui::Separator();
+                    ImGui::MenuItem("Import files", nullptr, &importFiles);
+                    */
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("View")) {
+                    if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
+                        if (config->darkMode) {
+                            ImGui::StyleColorsDark();
+                            ImPlot::StyleColorsDark();
+                        }
+                        else {
+                            ImGui::StyleColorsLight();
+                            ImPlot::StyleColorsLight();
+                        }
+                    }
+
+                    ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
+                    ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
+                    ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
+                    ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
+                    ImGui::MenuItem("Show geometry brush", nullptr, &geometryBrushWindow.show);
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Renderer")) {
+                    ImGui::MenuItem("VSync", nullptr, &config->vsync);
+                    ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
+                    ImGui::EndMenu();
+                }
+
+                if (newScene) {
+                    UI::PopupPanels::isNewScenePopupVisible = true;
+                    newScene = false;
+                }
+
+                if (saveScene && activeSceneWindow != nullptr) {
+                    activeSceneWindow->SaveScene();
+                }
+
+                if (exitEditor)
+                    Exit();
+
+                ImGui::EndMainMenuBar();
+            }
+
+            UI::PopupPanels::Render();
+
+            geometryBrushWindow.Render(activeSceneWindow);
+
+            for (auto& sceneWindow : sceneWindows) {
+                sceneWindow->Render();
+            }
+
+            contentBrowserWindow.Render();
+            logWindow.Render();
+            profilerWindow.Render();
+
+            ImGui::End();
+        }
+        else {
+            RenderSceneMaximized();
+        }
+
+        Notifications::Display();
+
+        ImGui::Render();
+        Singletons::imguiWrapper->Render(true);
+
+    }
+
+    void App::RenderSceneMaximized() {
+
+        auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus |
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+            ImGuiWindowFlags_NoMove;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::Begin("MainDockspace Window", nullptr, window_flags);
-        ImGui::PopStyleVar(3);
 
-        ImGuiID mainDsId = ImGui::GetID("MainDS");
-        if (!ImGui::DockBuilderGetNode(mainDsId) || resetDockspaceLayout) {
-            SetupMainDockspace(mainDsId);
-        }
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        ImGui::Begin("RenderWindow", nullptr, window_flags);
 
-        ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-        ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
+        auto renderArea = ImGui::GetContentRegionAvail();
+        activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(),
+            ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)), true);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&activeSceneWindow->viewportPanel.viewportTexture);
+        ImGui::Image(set, renderArea);
 
-        if (ImGui::BeginMainMenuBar()) {
-            static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
-            bool saveScene = false;
-            if (ImGui::BeginMenu("File")) {
-                /*
-                ImGui::MenuItem("Open project", nullptr, &openProject);
-                ImGui::MenuItem("Save project", nullptr, &saveProject);
-                ImGui::Separator();
-                */
-                ImGui::MenuItem("New scene", nullptr, &newScene);
-                ImGui::MenuItem("Save scene", nullptr, &saveScene);
-                /*
-                ImGui::Separator();
-                ImGui::MenuItem("Import files", nullptr, &importFiles);
-                */
-                ImGui::EndMenu();
-            }
+        if (activeSceneWindow->perfOverlayMaximized) {
+            ImGui::SetCursorPos(ImVec2(0.0f, 0.0f));
+            auto gpuProfilerData = Graphics::Profiler::GetQueriesAverage(32, Graphics::Profiler::OrderBy::MAX_TIME);
 
-            if (ImGui::BeginMenu("View")) {
-                if (ImGui::MenuItem("Dark mode", nullptr, &config->darkMode)) {
-                    if (config->darkMode)
-                        ImGui::StyleColorsDark();
-                    else
-                        ImGui::StyleColorsLight();
+            std::string perfString;
+            double slowestTime = 0.0;
+            for (int32_t i = 0; i < int32_t(gpuProfilerData.size()); i++) {
+                const auto& threadData = gpuProfilerData[i];
+                double threadTime = 0.0;
+                for (const auto& query : threadData.queries) {
+                    threadTime += query.timer.elapsedTime;
                 }
-
-                ImGui::MenuItem("Reset layout", nullptr, &resetDockspaceLayout);
-                ImGui::MenuItem("Show logs", nullptr, &logWindow.show);
-                ImGui::MenuItem("Show content browser", nullptr, &contentBrowserWindow.show);
-                ImGui::MenuItem("Show profiler", nullptr, &profilerWindow.show);
-                ImGui::MenuItem("Show geometry brush", nullptr, &geometryBrushWindow.show);
-                ImGui::EndMenu();
+                if (threadTime > slowestTime) {
+                    slowestTime = threadTime;
+                }
             }
 
-            if (ImGui::BeginMenu("Renderer")) {
-                ImGui::MenuItem("VSync", nullptr, &config->vsync);
-                ImGui::MenuItem("Pathtracer", nullptr, &config->pathTrace);
-                ImGui::EndMenu();
-            }
+            auto target = Singletons::renderTarget;
 
-            if (newScene) {
-                UI::PopupPanels::isNewScenePopupVisible = true;
-                newScene = false;
-            }
+            ImGui::SetWindowFontScale(1.5f);
+            ImGui::Text("Frame time: %.3fms, GPU time: %.3fms", Clock::GetAverage() * 1000.0f, float(slowestTime / 1000000.0));
+            ImGui::Text("Resolution %dx%d upscaled from %dx%d", target->GetWidth(), target->GetHeight(), target->GetScaledWidth(), target->GetScaledHeight());
+            ImGui::SetWindowFontScale(1.0f);
 
-            if (saveScene) {
-                auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
-                if (activeSceneWindow != nullptr)
-                    activeSceneWindow->SaveScene();                      
-            }
-
-            ImGui::EndMainMenuBar();
+            performanceGraphPanel.Render(ivec2(400, 300), 0.05f);
         }
 
-        UI::PopupPanels::Render();
-
-        geometryBrushWindow.Render(sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx]);
-
-        for (auto& sceneWindow : sceneWindows) {
-            sceneWindow->Render();
-        }
-
-        contentBrowserWindow.Render();
-        logWindow.Render();
-        profilerWindow.Render();
-
-        Notifications::Display();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleVar();
 
         ImGui::End();
-
-        ImGui::Render();
-        Singletons::imguiWrapper->Render(true);
 
     }
 
@@ -397,31 +458,27 @@ namespace Atlas::Editor {
 
         ResourceManager<Scene::Scene>::Subscribe(ResourceTopic::ResourceCreate,
             [&](Ref<Resource<Scene::Scene>>& scene) {
-            waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
-            Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
-        });
+                waitToLoadScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+                Singletons::config->openedScenes.push_back(ResourceHandle<Scene::Scene>(scene));
+            });
 
         // Also kind of a resource event
         Events::EventManager::DropEventDelegate.Subscribe([&](Events::DropEvent event) {
             if (!event.file.empty() && contentBrowserWindow.show) {
-                // Need to create a copy here
                 auto destinationDirectory = Common::Path::GetAbsolute(contentBrowserWindow.currentDirectory);
-                JobSystem::Execute(fileImportGroup, [&, event, destinationDirectory](JobData&) {
-                    try {
-                        std::filesystem::copy(event.file, destinationDirectory, 
-                            std::filesystem::copy_options::overwrite_existing | 
-                            std::filesystem::copy_options::recursive);
-                    }
-                    catch (std::exception& e) {
-                        auto message = "Error copying " + event.file + " to asset directory: " + e.what();
-                        Notifications::Push({ message, vec3(1.0f, 0.0f, 0.0f) });
-                        Log::Error(message);
-                    }
-                });
-               
-                Notifications::Push({"Copying " + event.file + " to asset directory"});
+
+                FileSystemHelper::Copy(event.file, destinationDirectory);
             }
-        });
+            });
+
+    }
+
+    void App::SetDefaultWindowResolution() {
+
+        auto resolution = GetScreenSize();
+
+        window.SetSize(resolution.x - 200, resolution.y - 200);
+        window.SetPosition(100, 100);
 
     }
 

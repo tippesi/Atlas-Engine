@@ -2,10 +2,10 @@
 
 #include "../System.h"
 
+#include "Signal.h"
 #include "ThreadSafeJobQueue.h"
 
 #include <thread>
-#include <semaphore>
 
 namespace Atlas {
 
@@ -36,7 +36,9 @@ namespace Atlas {
         JobPriority priority;
 
         std::thread thread;
-        std::binary_semaphore semaphore{0};
+        std::atomic_bool quit = false;
+
+        Signal signal;
         ThreadSafeJobQueue queue;
 
     private:
@@ -44,6 +46,7 @@ namespace Atlas {
 
             JobData data = {
                 .idx = job.idx,
+                .workerIdx = workerId,
                 .userData = job.userData
             };
 

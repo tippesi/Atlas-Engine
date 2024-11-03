@@ -14,6 +14,7 @@ layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D image;
 layout(set = 3, binding = 1) uniform sampler2D lowResTexture;
 layout(set = 3, binding = 2) uniform sampler2D lowResDepthTexture;
 layout(set = 3, binding = 3) uniform sampler2D lowResNormalTexture;
+layout(set = 3, binding = 4) uniform isampler2D offsetTexture;
 
 // (localSize / 2 + 2)^2
 shared float depths[36];
@@ -91,6 +92,9 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
         float weight = depthWeight * normalWeight * weights[i];
+        result += vec4(data[sharedMemoryOffset], 1.0) * weight;
+
+        totalWeight += weight;
         if (weight > maxWeight) {
             maxWeight = weight;
             closestMemoryOffset = sharedMemoryOffset;
@@ -98,9 +102,9 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     }
 
-    result = vec4(data[closestMemoryOffset], 1.0);
+    //result = vec4(data[closestMemoryOffset], 1.0);
 
-    return result;
+    return vec4(result.rgb, 1.0);
 
 }
 
@@ -115,6 +119,10 @@ void main() {
     ivec2 resolution = imageSize(image);
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 
+    ivec2 downSamplePixel = pixel / 2;
+    int offsetIdx = texelFetch(offsetTexture, downSamplePixel, 0).r;
+    ivec2 offset = pixelOffsets[offsetIdx];    
+
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
@@ -124,6 +132,15 @@ void main() {
     Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
     vec4 upsampleResult = Upsample(depth, surface.N, vec2(pixel));
+
+    upsampleResult.a = downSamplePixel * 2 + offset == pixel ? 2.0 : 0.0;
+
+    //upsampleResult.rgb = vec3(offsetIdx);
+    if (downSamplePixel * 2 + offset == pixel) {
+        ivec2 samplePixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
+        int sharedMemoryOffset = Flatten2D(samplePixel, unflattenedDepthDataSize);
+        upsampleResult.rgb = data[sharedMemoryOffset];
+    }
 
     imageStore(image, pixel, upsampleResult);
 

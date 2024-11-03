@@ -7,6 +7,8 @@ namespace Atlas::ImguiExtension {
         ImGui::PushID(GetNameID());
 
         ImGui::Checkbox("Enable", &reflection->enable);
+        ImGui::Checkbox("Enable RT", &reflection->rt);
+        ImGui::Checkbox("Enable SSR", &reflection->ssr);
         ImGui::Checkbox("Half resolution", &reflection->halfResolution);
         ImGui::Checkbox("Upsample before filtering", &reflection->upsampleBeforeFiltering);
 
@@ -27,6 +29,8 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderFloat("Bias", &reflection->bias, 0.0f, 1.0f);
         ImGui::SliderFloat("Roughness cuttoff", &reflection->roughnessCutoff, 0.0f, 1.0f);
         ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);
+        ImGui::SliderInt("Sample count##Reflection", &reflection->sampleCount, 1, 10);
+        ImGui::SliderInt("Light sample count##Reflection", &reflection->lightSampleCount, 1, 10);
         ImGui::Text("Denoiser");
         ImGui::SliderFloat("Spatial filter strength", &reflection->spatialFilterStrength, 0.0f, 10.0f);
         ImGui::SliderFloat("Temporal weight", &reflection->temporalWeight, 0.0f, 1.0f);

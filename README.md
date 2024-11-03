@@ -15,7 +15,7 @@ This is a cross platform toy engine developed in my spare time that is available
 >The current version (0.2.0) contains many API changes and is still an active WIP
 ## Requirements
 - Vulkan SDK
-- C++20 compatible compiler
+- C++23 compatible compiler
 - CMake
 - Vcpkg
 ## Set up

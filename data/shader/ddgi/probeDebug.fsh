@@ -1,12 +1,14 @@
 #include <../globals.hsh>
+#include <../common/normalencode.hsh>
 #include <ddgi.hsh>
 
 layout (location = 0) out vec3 baseColorFS;
-layout (location = 1) out vec3 normalFS;
-layout (location = 2) out vec3 geometryNormalFS;
+layout (location = 1) out vec2 normalFS;
+layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
-layout (location = 4) out uint materialIdxFS;
-layout (location = 5) out vec2 velocityFS;
+layout (location = 4) out vec3 emissiveFS;
+layout (location = 5) out uint materialIdxFS;
+layout (location = 6) out vec2 velocityFS;
 
 layout(location=0) in vec3 normalVS;
 
@@ -42,8 +44,7 @@ void main() {
     baseColorFS = vec3(probeAge / 32.0);
     //baseColorFS = vec3(moments.x) / length(ddgiData.cascades[probeCascadeIndex].cellSize.xyz);
     
-    geometryNormalFS = normalize(normalVS);
-    geometryNormalFS = 0.5 * geometryNormalFS + 0.5;
+    geometryNormalFS = EncodeNormal(normalize(normalVS));
 
     float roughnessFactor = 1.0;
     float metalnessFactor = 1.0;

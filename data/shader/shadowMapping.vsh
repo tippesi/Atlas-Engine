@@ -10,7 +10,7 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=0) out vec2 texCoordVS;
 #endif
 
-layout(std430, set = 1, binding = 1) buffer Matrices {
+layout(std430, set = 1, binding = 1) readonly buffer Matrices {
     mat3x4 matrices[];
 };
 

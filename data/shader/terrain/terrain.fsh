@@ -9,8 +9,9 @@ layout (location = 0) out vec3 baseColorFS;
 layout (location = 1) out vec2 normalFS;
 layout (location = 2) out vec2 geometryNormalFS;
 layout (location = 3) out vec3 roughnessMetalnessAoFS;
-layout (location = 4) out uint materialIdxFS;
-layout (location = 5) out vec2 velocityFS;
+layout (location = 4) out vec3 emissiveFS;
+layout (location = 5) out uint materialIdxFS;
+layout (location = 6) out vec2 velocityFS;
 
 layout (set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform usampler2D splatMap;
@@ -56,10 +57,10 @@ layout(location=3) in vec3 ndcLast;
 
 vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling) {
     
-    vec3 q00 = nonuniformEXT(texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).rgb);
-    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).rgb : q00);
-    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).rgb : q00);
-    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(baseColorMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).rgb : q00);
+    vec3 q00 = nonuniformEXT(texture(baseColorMaps, vec3(materialTexCoords * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).rgb);
+    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(baseColorMaps, vec3(materialTexCoords * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).rgb : q00);
+    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(baseColorMaps, vec3(materialTexCoords * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).rgb : q00);
+    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(baseColorMaps, vec3(materialTexCoords * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).rgb : q00);
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);
@@ -72,10 +73,10 @@ vec3 SampleBaseColor(vec2 off, uvec4 indices, vec4 tiling) {
 
 float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling) {
 
-    float q00 = nonuniformEXT(texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).r);
-    float q10 = nonuniformEXT(indices.y != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).r : q00);
-    float q01 = nonuniformEXT(indices.z != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).r : q00);
-    float q11 = nonuniformEXT(indices.w != indices.x ? texture(roughnessMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).r : q00);
+    float q00 = nonuniformEXT(texture(roughnessMaps, vec3(materialTexCoords* tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).r);
+    float q10 = nonuniformEXT(indices.y != indices.x ? texture(roughnessMaps, vec3(materialTexCoords * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).r : q00);
+    float q01 = nonuniformEXT(indices.z != indices.x ? texture(roughnessMaps, vec3(materialTexCoords * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).r : q00);
+    float q11 = nonuniformEXT(indices.w != indices.x ? texture(roughnessMaps, vec3(materialTexCoords * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).r : q00);
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -88,10 +89,10 @@ float SampleRoughness(vec2 off, uvec4 indices, vec4 tiling) {
 
 float SampleAo(vec2 off, uvec4 indices, vec4 tiling) {
     
-    float q00 = nonuniformEXT(texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).r);
-    float q10 = nonuniformEXT(indices.y != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).r : q00);
-    float q01 = nonuniformEXT(indices.z != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).r : q00);
-    float q11 = nonuniformEXT(indices.w != indices.x ? texture(aoMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).r : q00);
+    float q00 = nonuniformEXT(texture(aoMaps, vec3(materialTexCoords * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).r);
+    float q10 = nonuniformEXT(indices.y != indices.x ? texture(aoMaps, vec3(materialTexCoords * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).r : q00);
+    float q01 = nonuniformEXT(indices.z != indices.x ? texture(aoMaps, vec3(materialTexCoords * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).r : q00);
+    float q11 = nonuniformEXT(indices.w != indices.x ? texture(aoMaps, vec3(materialTexCoords * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).r : q00);
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -104,10 +105,10 @@ float SampleAo(vec2 off, uvec4 indices, vec4 tiling) {
 
 vec3 SampleNormal(vec2 off, uvec4 indices, vec4 tiling) {
 
-    vec3 q00 = nonuniformEXT(texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).rgb);
-    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).rgb : q00);
-    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).rgb : q00);
-    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(normalMaps, vec3(materialTexCoords / 4.0 * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).rgb : q00);
+    vec3 q00 = nonuniformEXT(texture(normalMaps, vec3(materialTexCoords * tiling.x, nonuniformEXT(float(indices.x))), globalData.mipLodBias).rgb);
+    vec3 q10 = nonuniformEXT(indices.y != indices.x ? texture(normalMaps, vec3(materialTexCoords * tiling.y, nonuniformEXT(float(indices.y))), globalData.mipLodBias).rgb : q00);
+    vec3 q01 = nonuniformEXT(indices.z != indices.x ? texture(normalMaps, vec3(materialTexCoords * tiling.z, nonuniformEXT(float(indices.z))), globalData.mipLodBias).rgb : q00);
+    vec3 q11 = nonuniformEXT(indices.w != indices.x ? texture(normalMaps, vec3(materialTexCoords * tiling.w, nonuniformEXT(float(indices.w))), globalData.mipLodBias).rgb : q00);
     
     // Interpolate samples horizontally
     vec3 h0 = mix(q00, q10, off.x);

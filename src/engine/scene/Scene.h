@@ -21,6 +21,7 @@
 #include "../mesh/Mesh.h"
 
 #include "SceneIterator.h"
+#include "SceneRenderState.h"
 #include "SpacePartitioning.h"
 #include "Subset.h"
 #include "Wind.h"
@@ -58,12 +59,13 @@ namespace Atlas {
             };
 
         public:
-            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5) { RegisterSubscribers(); }
+            Scene() : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5), renderState(this)
+                { RegisterSubscribers(); }
             Scene(const Scene& that) = delete;
             explicit Scene(const std::string& name) : SpacePartitioning(this, vec3(-2048.0f), vec3(2048.0f), 5),
-                name(name) { RegisterSubscribers(); }
+                name(name), renderState(this) { RegisterSubscribers(); }
             explicit Scene(const std::string& name, vec3 min, vec3 max, int32_t depth = 5) 
-                : SpacePartitioning(this, min, max, depth), name(name) { RegisterSubscribers(); }
+                : SpacePartitioning(this, min, max, depth), name(name), renderState(this) { RegisterSubscribers(); }
 
             ~Scene();
 
@@ -85,6 +87,9 @@ namespace Atlas {
             template<typename... Comp>
             Subset<Comp...> GetSubset();
 
+            template<typename Comp>
+            size_t GetComponentCount();
+
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
             void Timestep(float deltaTime);
@@ -98,6 +103,10 @@ namespace Atlas {
             CameraComponent& GetMainCamera();
 
             bool HasMainCamera() const;
+
+            LightComponent& GetMainLight();
+
+            bool HasMainLight() const;
 
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
@@ -125,12 +134,13 @@ namespace Atlas {
             static Ref<Scene> Restore(const std::vector<uint8_t>& serialized);
 
             std::string name;
-
-            Ref<Ocean::Ocean> ocean = nullptr;
-            Ref<Terrain::Terrain> terrain = nullptr;
+            
             Ref<Clutter> clutter = nullptr;
             Ref<Physics::PhysicsWorld> physicsWorld = nullptr;
-            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;            
+            Ref<RayTracing::RayTracingWorld> rayTracingWorld = nullptr;
+
+            Ref<Ocean::Ocean> ocean = nullptr;
+            ResourceHandle<Terrain::Terrain> terrain;       
 
             Wind wind;
             Lighting::Sky sky;
@@ -143,12 +153,9 @@ namespace Atlas {
             Ref<Lighting::SSS> sss = nullptr;
             PostProcessing::PostProcessing postProcessing;
 
-            std::unordered_map<Ref<Texture::Texture2D>, uint32_t> textureToBindlessIdx;
-            std::unordered_map<size_t, uint32_t> meshIdToBindlessIdx;
+            SceneRenderState renderState;
 
         private:
-            void UpdateBindlessIndexMaps();
-
             Entity ToSceneEntity(ECS::Entity entity);
 
             void RegisterSubscribers();
@@ -173,6 +180,7 @@ namespace Atlas {
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
 
             Entity mainCameraEntity;
+            Entity mainLightEntity;
             float deltaTime = 1.0f;
 
             bool firstTimestep = true;
@@ -182,12 +190,9 @@ namespace Atlas {
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
-            JobGroup rayTracingWorldUpdateJob { JobPriority::High };
-            JobGroup bindlessMeshMapUpdateJob { JobPriority::High };
-            JobGroup bindlessTextureMapUpdateJob { JobPriority::High };
-
             friend Entity;
             friend SpacePartitioning;
+            friend SceneRenderState;
             friend RayTracing::RayTracingWorld;
             friend HierarchyComponent;
             friend MeshComponent;
@@ -217,6 +222,13 @@ namespace Atlas {
         Subset<Comp...> Scene::GetSubset() {
 
             return Subset<Comp...>(entityManager.GetSubset<Comp...>(), &entityManager);
+
+        }
+
+        template<typename Comp>
+        size_t Scene::GetComponentCount() {
+
+            return entityManager.GetCount<Comp>();
 
         }
 

@@ -93,6 +93,15 @@ namespace Atlas {
 
         }
 
+        bool PhysicsWorld::ContainsBody(Body body) const {
+
+            if (body.bodyId.IsInvalid())
+                return false;
+
+            return bodyToShapeMap.contains(body.bodyId);
+
+        }
+
         void PhysicsWorld::SetBodyMatrix(BodyID bodyId, const mat4& matrix) {
 
             JPH::Vec3 pos;
@@ -240,6 +249,12 @@ namespace Atlas {
         vec3 PhysicsWorld::GetGravity() {
 
             return JPHVecToVec(system->GetGravity());
+
+        }
+
+        uint32_t PhysicsWorld::GetBodyCount() const {
+
+            return system->GetNumBodies();
 
         }
 

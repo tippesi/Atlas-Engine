@@ -6,8 +6,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : device(device), geometries(desc.geometries),
-            buildRanges(desc.buildRanges), flags(desc.flags) {
+        BLAS::BLAS(GraphicsDevice* device, BLASDesc desc) : isDynamic(desc.isDynamic), device(device), 
+            geometries(desc.geometries), buildRanges(desc.buildRanges), flags(desc.flags)    {
 
             buildGeometryInfo = {};
             buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;

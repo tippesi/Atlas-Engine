@@ -13,7 +13,7 @@ namespace Atlas {
 
         void TerrainShadowRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
 
-            if (!scene->terrain)
+            if (!scene->terrain.IsLoaded())
                 return;
 
             Graphics::Profiler::BeginQuery("Terrain shadows");
@@ -54,7 +54,7 @@ namespace Atlas {
 
                     commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer);
 
-                    auto config = GeneratePipelineConfig(frameBuffer, terrain);
+                    auto config = GeneratePipelineConfig(frameBuffer, terrain.Get());
                     auto pipeline = PipelineManager::GetPipeline(config);
 
                     commandList->BindPipeline(pipeline);
@@ -72,7 +72,7 @@ namespace Atlas {
 
                     for (auto node : terrain->renderList) {
 
-                        node->cell->heightField.Bind(commandList, 3, 0);
+                        node->cell->heightField->Bind(commandList, 3, 0);
 
                         auto tileScale = terrain->resolution * powf(2.0f,
                             (float)(terrain->LoDCount - node->cell->LoD) - 1.0f);
@@ -147,8 +147,8 @@ namespace Atlas {
             */
 
             Graphics::RenderPassDepthAttachment attachment = {
-                    .imageFormat = shadow->useCubemap ? shadow->cubemap.format :
-                                   shadow->maps.format,
+                    .imageFormat = shadow->useCubemap ? shadow->cubemap->format :
+                                   shadow->maps->format,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                     .initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .outputLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -160,7 +160,7 @@ namespace Atlas {
 
             Graphics::FrameBufferDesc frameBufferDesc = {
                 .renderPass = renderPass,
-                .depthAttachment = { shadow->useCubemap ? shadow->cubemap.image : shadow->maps.image, 0, true},
+                .depthAttachment = { shadow->useCubemap ? shadow->cubemap->image : shadow->maps->image, 0, true},
                 .extent = { uint32_t(shadow->resolution), uint32_t(shadow->resolution) }
             };
             return device->CreateFrameBuffer(frameBufferDesc);

@@ -55,12 +55,11 @@ namespace Atlas {
             };
             uniformBuffer.SetData(&uniforms, 0);
 
-            std::vector<Graphics::BufferBarrier> bufferBarriers;
-            std::vector<Graphics::ImageBarrier> imageBarriers = {
+            Graphics::ImageBarrier preImageBarriers[] = {
                 {target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
                 {velocityTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers);
+            commandList->PipelineBarrier(preImageBarriers, {});
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
             commandList->BindImage(velocityTexture->image, 3, 1);
@@ -76,11 +75,11 @@ namespace Atlas {
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            imageBarriers = {
+            Graphics::ImageBarrier postImageBarriers[] = {
                 {target->lightingTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 {velocityTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
-            commandList->PipelineBarrier(imageBarriers, bufferBarriers, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            commandList->PipelineBarrier(postImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
             Graphics::Profiler::EndQuery();
