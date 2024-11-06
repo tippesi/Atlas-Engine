@@ -5,6 +5,10 @@ namespace Atlas::Editor::UI {
 
     void TerrainPanel::Render(ResourceHandle<Terrain::Terrain> terrain, Ref<Scene::Scene> scene) {
 
+        terrainSelectionPanel.Reset();
+        materialSelectionPanel.Reset();
+        textureSelectionPanel.Reset();
+
         scene->terrain = terrainSelectionPanel.Render(scene->terrain);
 
         if (ImGui::CollapsingHeader("General")) {

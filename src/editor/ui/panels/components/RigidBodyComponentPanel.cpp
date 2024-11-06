@@ -41,6 +41,11 @@ namespace Atlas::Editor::UI {
 
         auto& shape = creationSettings.shape;
 
+        if (shape->type == Physics::ShapeType::HeightField) {
+            ImGui::Text("Body uses a height field shape");
+            return;
+        }
+
         const char* typeItems[] = { "Mesh", "Sphere", "Bounding box" };
         int currentItem = static_cast<int>(shape->type);
         int previousItem = currentItem;

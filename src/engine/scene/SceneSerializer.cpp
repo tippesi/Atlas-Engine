@@ -5,6 +5,8 @@
 #include "postprocessing/PostProcessingSerializer.h"
 #include "physics/PhysicsSerializer.h"
 
+#include "loader/TerrainLoader.h"
+
 namespace Atlas::Scene {
 
     void EntityToJson(json& j, const Entity& p, Scene* scene,
@@ -180,9 +182,12 @@ namespace Atlas::Scene {
             j["sss"] = *scene->sss;
         if (scene->ssgi)
             j["ssgi"] = *scene->ssgi;
+        if (scene->terrain.IsValid() && !scene->terrain.IsGenerated())
+            j["terrain"] = scene->terrain.GetResource()->path;
 
         if (scene->physicsWorld)
             Physics::SerializePhysicsWorld(j["physicsWorld"], scene->physicsWorld);
+       
 
     }
 
@@ -198,6 +203,10 @@ namespace Atlas::Scene {
         if (j.contains("physicsWorld")) {
             std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
             Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
+        }
+        if (j.contains("terrain")) {
+            scene->terrain = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(
+                j["terrain"], Loader::TerrainLoader::LoadTerrain, true);
         }
 
         std::vector<json> jEntities = j["entities"];

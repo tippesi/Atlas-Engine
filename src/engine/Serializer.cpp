@@ -147,8 +147,8 @@ namespace Atlas {
                 return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
             });
 
-            if (multithreaded) {
-                JobGroup group{ JobPriority::Medium };
+            JobGroup group{ JobPriority::Medium };
+            if (multithreaded) {                
                 JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
                     [&](JobData& data) {
                         auto& mesh = meshes[data.idx];
@@ -157,9 +157,13 @@ namespace Atlas {
 
                         Loader::MeshLoader::SaveMesh(mesh.Get(), mesh.GetResource()->path, true);
                     });
-
-                JobSystem::Wait(group);
             }
+
+            if (scene->terrain.IsLoaded() && !scene->terrain.IsGenerated()) {
+                Loader::TerrainLoader::SaveTerrain(scene->terrain.Get(), scene->terrain.GetResource()->path);
+            }
+
+            JobSystem::Wait(group);
 
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
@@ -176,6 +180,8 @@ namespace Atlas {
 
                 Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
             }
+
+            
 
         }
 
