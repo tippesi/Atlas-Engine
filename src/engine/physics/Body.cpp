@@ -87,6 +87,13 @@ namespace Atlas::Physics {
 
     }
 
+    Ref<Shape> Body::GetShape() const {
+
+        AE_ASSERT(world != nullptr && "Physics world is invalid");
+        return world->bodyToShapeMap[bodyId];
+
+    }
+
     uint64_t Body::GetUserData() const {
 
         AE_ASSERT(world != nullptr && "Physics world is invalid");

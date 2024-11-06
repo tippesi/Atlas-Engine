@@ -98,7 +98,6 @@ namespace Atlas::Editor {
         int32_t loadFromFile = 0;
 
         bool advanced = false;
-        bool visible = false;
         bool successful = false;
 
     };

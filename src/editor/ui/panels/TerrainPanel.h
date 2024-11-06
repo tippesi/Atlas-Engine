@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "scene/Scene.h"
 #include "tools/TerrainGenerator.h"
+#include <ImguiExtension/panels/MaterialsPanel.h>
 
 namespace Atlas::Editor::UI {
 
@@ -19,6 +20,8 @@ namespace Atlas::Editor::UI {
         void RenderMaterialSettings(ResourceHandle<Terrain::Terrain>& terrain);
 
         void RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain);
+
+        void AddTerrainToScene(Ref<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene);
 
         TerrainGenerator terrainGenerator;
 

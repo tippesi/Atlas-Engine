@@ -69,20 +69,7 @@ namespace Atlas::Editor {
             return;
         }
 
-        if (heightMap.IsLoaded() && !heightMapImage) {
-            heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
-
-            for (int32_t y = 0; y < previewHeightImg->height; y++) {
-                for (int32_t x = 0; x < previewHeightImg->width; x++) {
-                    auto fx = float(x) / float(previewBiomeImg->width);
-                    auto fy = float(y) / float(previewBiomeImg->height);
-                    auto height = heightMapImage->SampleBilinear(fx, fy).r;
-                    previewHeightImg->SetData(x, y, 0, height);
-                }
-            }
-
-            previewHeightMap.SetData(previewHeightImg->GetData());
-        }
+        ImGui::PushID("Generator");
 
         auto width = ImGui::GetContentRegionAvail().x;
 
@@ -124,7 +111,12 @@ namespace Atlas::Editor {
 
         }
         else {
-            heightMap = textureSelectionPanel.Render(heightMap);
+            bool resourceChanged = false;
+            heightMap = textureSelectionPanel.Render(heightMap, resourceChanged);
+
+            if (heightMap.IsLoaded() && resourceChanged) {
+                heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
+            }
         }
 
         ImGui::Separator();
@@ -344,23 +336,12 @@ namespace Atlas::Editor {
                 Notifications::Push({"No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f)});
             }
             else {
-                visible = false;
                 successful = true;
             }
 
         }
 
-    }
-
-    void TerrainGenerator::Show() {
-
-        visible = true;
-
-    }
-
-    bool TerrainGenerator::IsVisible() {
-
-        return visible;
+        ImGui::PopID();
 
     }
 
@@ -469,12 +450,26 @@ namespace Atlas::Editor {
             [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
             previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
             moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
-            heightExp = heightExp, this](JobData&) mutable {
+            heightExp = heightExp, heightMapImage = heightMapImage, this](JobData&) mutable {
 
-                Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
-                    (uint32_t)heightSeed, heightExp);
+                if (!heightMapImage) {
+                    Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
+                        (uint32_t)heightSeed, heightExp);
 
-                newPreviewHeightMap.SetData(previewHeightImg.GetData());
+                    newPreviewHeightMap.SetData(previewHeightImg.GetData());
+                }
+                else {
+                    for (int32_t y = 0; y < previewHeightImg.height; y++) {
+                        for (int32_t x = 0; x < previewHeightImg.width; x++) {
+                            auto fx = float(x) / float(previewBiomeImg.width);
+                            auto fy = float(y) / float(previewBiomeImg.height);
+                            auto height = heightMapImage->SampleBilinear(fx, fy).r;
+                            previewHeightImg.SetData(x, y, 0, height);
+                        }
+                    }
+
+                    newPreviewHeightMap.SetData(previewHeightImg.GetData());
+                }
 
                 Common::NoiseGenerator::GeneratePerlinNoise2D(previewMoistureImg, moistureAmplitudes,
                     (uint32_t)moistureSeed);

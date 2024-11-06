@@ -24,10 +24,7 @@ namespace Atlas::Editor::UI {
 
             auto generatedTerrain = terrainGenerator.GetTerrain();
             if (generatedTerrain != nullptr) {
-                scene->terrain = generatedTerrain;
-
-                auto resource = scene->terrain.GetResource();
-                ResourceManager<Terrain::Terrain>::AddResource(resource->path, resource);
+                AddTerrainToScene(generatedTerrain, scene);
             }
         }
 
@@ -127,6 +124,57 @@ namespace Atlas::Editor::UI {
             terrain->SetLoDDistance((int32_t)i, distance);
         }
         */
+
+    }
+
+    void TerrainPanel::AddTerrainToScene(Ref<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene) {
+
+        scene->terrain = terrain;
+
+        auto resource = scene->terrain.GetResource();
+        ResourceManager<Terrain::Terrain>::AddResource(resource->path, resource);
+
+        auto heightImage = scene->terrain->GetHeightField(terrain->LoDCount - 1);
+
+        Atlas::Physics::HeightFieldShapeSettings terrainShapeSettings{
+            .heightData = heightImage.GetData(),
+            .translation = terrain->translation,
+            .scale = glm::vec3(terrain->resolution, terrain->heightScale, terrain->resolution)
+        };
+        auto terrainShape = Atlas::Physics::ShapesManager::CreateShape(terrainShapeSettings);
+
+        Scene::Entity terrainPhysicsEntity;
+        auto rigidBodySubset = scene->GetSubset<RigidBodyComponent>();
+        for (auto entity : rigidBodySubset) {
+            auto& rigidBodyComponent = rigidBodySubset.Get(entity);
+            if (!rigidBodyComponent.IsValid())
+                continue;
+
+            auto shape = rigidBodyComponent.GetShape();
+
+            if (shape->type == Physics::ShapeType::HeightField) {
+                terrainPhysicsEntity = entity; 
+                break;
+            }
+        }
+
+        if (!terrainPhysicsEntity.IsValid()) {
+            terrainPhysicsEntity = scene->CreateEntity();
+            terrainPhysicsEntity.AddComponent<NameComponent>(terrain->filename);
+            
+            auto root = scene->GetEntityByName("Root");
+            if (root.IsValid() && root.HasComponent<HierarchyComponent>())
+                root.GetComponent<HierarchyComponent>().AddChild(terrainPhysicsEntity);
+        }
+        else {
+            terrainPhysicsEntity.RemoveComponent<RigidBodyComponent>();
+            if (terrainPhysicsEntity.HasComponent<TransformComponent>())
+                terrainPhysicsEntity.RemoveComponent<TransformComponent>();
+        }
+
+        auto bodySettings = Atlas::Physics::BodyCreationSettings{ .shape = terrainShape };
+        terrainPhysicsEntity.AddComponent<RigidBodyComponent>(bodySettings);
+        terrainPhysicsEntity.AddComponent<TransformComponent>(glm::mat4(1.0f));
 
     }
 

@@ -111,7 +111,7 @@ namespace Atlas {
             }
 
             // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
-            if (mainCameraEntity.IsValid()) {
+            if (HasMainCamera()) {
                 auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
                 if (terrain.IsLoaded())

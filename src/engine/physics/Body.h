@@ -39,6 +39,8 @@ namespace Atlas::Physics {
 
         float GetFriction();
 
+        Ref<Shape> GetShape() const;
+
         uint64_t GetUserData() const;
 
         virtual BodyCreationSettings GetBodyCreationSettings() const;
