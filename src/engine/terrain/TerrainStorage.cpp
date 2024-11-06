@@ -132,6 +132,46 @@ namespace Atlas {
 
         }
 
+        void TerrainStorage::PushRequestedCellsToQueue() {
+
+            std::lock_guard lock(cellQueueMutex);
+
+            requestedCellQueue.insert(requestedCells.begin(), requestedCells.end());
+            requestedCells.clear();
+
+        }
+
+        std::set<TerrainStorageCell*> TerrainStorage::GetRequestedCellsQueue() {
+
+            std::lock_guard lock(cellQueueMutex);
+
+            auto cells = requestedCellQueue;
+            requestedCellQueue.clear();
+
+            return cells;
+
+        }
+
+        void TerrainStorage::PushRequestedBvhCellsToQueue() {
+
+            std::lock_guard lock(bvhCellQueueMutex);
+
+            requestedBvhCellQueue.insert(requestedBvhCells.begin(), requestedBvhCells.end());
+            requestedBvhCells.clear();
+
+        }
+
+        std::set<TerrainStorageCell*> TerrainStorage::GetRequestedBvhCellsQueue() {
+
+            std::lock_guard lock(bvhCellQueueMutex);
+
+            auto cells = requestedBvhCellQueue;
+            requestedBvhCellQueue.clear();
+
+            return cells;
+
+        }
+
         void TerrainStorage::BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
             Ref<Graphics::Image>& dstImage, int32_t slot) {
 

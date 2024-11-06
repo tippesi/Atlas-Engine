@@ -18,7 +18,7 @@ namespace Atlas {
                 return;
             }
 
-            auto materials = terrain->storage.GetMaterials();
+            auto materials = terrain->storage->GetMaterials();
 
             // There don't have to be all materials
             int32_t count = 0;
@@ -78,14 +78,14 @@ namespace Atlas {
             // Iterate over all LoD level
             for (int32_t i = 0; i < terrain->LoDCount; i++) {
 
-                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage.GetCellCount(i));
+                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(i));
 
                 auto isLeaf = i == terrain->LoDCount - 1;
 
                 for (int32_t x = 0; x < cellSideCount; x++) {
                     for (int32_t y = 0; y < cellSideCount; y++) {
 
-                        auto cell = terrain->storage.GetCell(x, y, i);
+                        auto cell = terrain->storage->GetCell(x, y, i);
 
                         if (isLeaf) {
                             // fileStream.write((char*)cell->materialIndices, sizeof(cell->materialIndices));
@@ -171,7 +171,7 @@ namespace Atlas {
 
             auto terrainDir = Common::Path::GetDirectory(filename);
 
-            terrain->storage.BeginMaterialWrite();
+            terrain->storage->BeginMaterialWrite();
 
             for (int32_t i = 0; i < materialCount; i++) {
                 std::getline(fileStream, line);
@@ -184,10 +184,10 @@ namespace Atlas {
                 auto material = MaterialLoader::LoadMaterial(materialPath);
 
                 if (material)
-                    terrain->storage.WriteMaterial(slot, material);
+                    terrain->storage->WriteMaterial(slot, material);
             }
 
-            terrain->storage.EndMaterialWrite();
+            terrain->storage->EndMaterialWrite();
 
             fileStream.close();
 
@@ -198,12 +198,12 @@ namespace Atlas {
                 return terrain;
 
             for (int32_t depth = 0; depth < terrain->LoDCount; depth++) {
-                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage.GetCellCount(depth));
+                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(depth));
 
                 for (int32_t x = 0; x < cellSideCount; x++) {
                     for (int32_t y = 0; y < cellSideCount; y++) {
 
-                        auto cell = terrain->storage.GetCell(x, y, depth);
+                        auto cell = terrain->storage->GetCell(x, y, depth);
 
                         Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cell, filename, true);
 
@@ -248,7 +248,7 @@ namespace Atlas {
             auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;
 
             auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
-            auto tileSideCount = (int64_t)sqrtf((float)terrain->storage.GetCellCount(0));
+            auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
             auto normalDataResolution = int64_t(0);
 
             auto currPos = int64_t(0);
@@ -272,7 +272,7 @@ namespace Atlas {
                 tileSideCount *= 2;
             }
 
-            cell->storage = &terrain->storage;
+            cell->storage = terrain->storage.get();
 
             fileStream.seekg(currPos, std::ios_base::cur);
 

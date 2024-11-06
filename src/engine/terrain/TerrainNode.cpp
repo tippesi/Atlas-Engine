@@ -7,7 +7,7 @@ namespace Atlas {
     namespace Terrain {
 
         TerrainNode::TerrainNode(vec2 location, float height, float sideLength, int32_t LoD, int32_t LoDCount,
-            int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex, TerrainStorage* storage,
+            int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex, const Ref<TerrainStorage>& storage,
             TerrainStorageCell* cell) : location(location), height(height), sideLength(sideLength), LoD(LoD),
             LoDCount(LoDCount), LoDMultiplier(LoDMultiplier), index(relativeIndex), storage(storage), cell(cell) {
 
@@ -66,6 +66,9 @@ namespace Atlas {
 
             if (children.size()) {
                 if (LoDDistances[LoD] <= minDistance) {
+                    for (auto& child : children) {                        
+                        child.cell->blas = nullptr;
+                    }
                     children.clear();
                 }
             }
@@ -144,6 +147,10 @@ namespace Atlas {
                     childrenCells[i][j] = storage->GetCell((int32_t)childAbsoluteIndex.x, (int32_t)childAbsoluteIndex.y, LoD + 1);
                     if (!childrenCells[i][j]->IsLoaded()) {
                         storage->requestedCells.push_back(childrenCells[i][j]);
+                        creatable = false;
+                    }
+                    if (childrenCells[i][j]->IsLoaded() && (!childrenCells[i][j]->blas || !childrenCells[i][j]->blas->IsBuilt())) {
+                        storage->requestedBvhCells.push_back(childrenCells[i][j]);
                         creatable = false;
                     }
                 }

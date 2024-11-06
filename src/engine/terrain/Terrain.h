@@ -140,7 +140,7 @@ namespace Atlas {
              */
             Common::Image<float> GetHeightField(int32_t LoD);
 
-            TerrainStorage storage;
+            Ref<TerrainStorage> storage = nullptr;
 
             Texture::Texture2D shoreLine;
 

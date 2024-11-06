@@ -31,7 +31,7 @@ namespace Atlas {
                          patchSizeFactor * 8.0f;
             float ratio = sideLength / (float)rootNodeSideCount;
 
-            storage = TerrainStorage(rootNodeCount, LoDCount, sideLength, 1024, 32);
+            storage = CreateRef<TerrainStorage>(rootNodeCount, LoDCount, sideLength, 1024, 32);
             LoDDistances = std::vector<float>(LoDCount);
             LoDImage = Common::Image<uint8_t>(leafNodesSideCount, leafNodesSideCount, 1);
 
@@ -44,10 +44,10 @@ namespace Atlas {
 
             for (int32_t i = 0; i < rootNodeSideCount; i++) {
                 for (int32_t j = 0; j < rootNodeSideCount; j++) {
-                    TerrainStorageCell *cell = storage.GetCell(i, j, 0);
-                    storage.requestedCells.push_back(cell);
+                    TerrainStorageCell *cell = storage->GetCell(i, j, 0);
+                    storage->requestedCells.push_back(cell);
                     rootNodes.push_back(TerrainNode(vec2((float) i * ratio, (float) j * ratio), heightScale,
-                        ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), &storage, cell));
+                        ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), storage, cell));
                 }
             }
 
@@ -68,8 +68,11 @@ namespace Atlas {
                 node.Update(camera, LoDDistances,
                     leafList, LoDImage);
 
-            for (auto& cell : storage.unusedCells)
-                cell->blas = nullptr;
+            storage->PushRequestedCellsToQueue();
+            storage->PushRequestedBvhCellsToQueue();
+
+            //for (auto& cell : storage->unusedCells)
+                //cell->blas = nullptr;
 
         }
 
@@ -151,7 +154,7 @@ namespace Atlas {
             float xPosition = floorf(x);
             float zPosition = floorf(z);
 
-            auto cell = storage.GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
+            auto cell = storage->GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
 
             if (!cell)
                 return 0.0f;
@@ -193,7 +196,7 @@ namespace Atlas {
             // Check if we must sample from a neighbour node (allows for errors while retrieving the height information at the edge of the terrain)
             if (zIndex + 1 == cell->heightField->height &&
                 xIndex + 1 == cell->heightField->width) {
-                auto neighbourCell = storage.GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
+                auto neighbourCell = storage->GetCell(xIndex + 1, zIndex + 1, LoDCount - 1);
 
                 if (!neighbourCell) {
                     heightTopLeft = heightBottomLeft;
@@ -210,7 +213,7 @@ namespace Atlas {
 
                 heightTopLeft = cell->heightData[xIndex + 1 + cell->heightField->width * zIndex];
 
-                auto neighbourCell = storage.GetCell(xIndex, zIndex + 1, LoDCount - 1);
+                auto neighbourCell = storage->GetCell(xIndex, zIndex + 1, LoDCount - 1);
 
                 if (neighbourCell == nullptr) {
                     heightBottomRight = heightBottomLeft;
@@ -226,7 +229,7 @@ namespace Atlas {
 
                 heightBottomRight = cell->heightData[xIndex + cell->heightField->width * (zIndex + 1)];
 
-                auto neighbourCell = storage.GetCell(xIndex + 1, zIndex, LoDCount - 1);
+                auto neighbourCell = storage->GetCell(xIndex + 1, zIndex, LoDCount - 1);
 
                 if (neighbourCell == nullptr) {
                     heightTopLeft = heightBottomLeft;
@@ -300,18 +303,18 @@ namespace Atlas {
             float xIndex = floorf(x);
             float zIndex = floorf(z);
 
-            return storage.GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
+            return storage->GetCell((int32_t) xIndex, (int32_t) zIndex, LoD);
 
         }
 
         Common::Image<float> Terrain::GetHeightField(int32_t LoD) {
 
-            auto lodCountSqd = storage.GetCellCount(LoD);
+            auto lodCountSqd = storage->GetCellCount(LoD);
             auto lodCount = std::sqrt(lodCountSqd);
 
             int32_t width = 0, height = 0;
             for (int32_t x = 0; x < lodCount; x++) {
-                auto cell = storage.GetCell(x, 0, LoD);
+                auto cell = storage->GetCell(x, 0, LoD);
 
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
@@ -320,7 +323,7 @@ namespace Atlas {
             }
 
             for (int32_t y = 0; y < lodCount; y++) {
-                auto cell = storage.GetCell(0, y, LoD);
+                auto cell = storage->GetCell(0, y, LoD);
 
                 AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                     be loaded to be converted into height field");
@@ -334,7 +337,7 @@ namespace Atlas {
             for (int32_t cellY = 0; cellY < lodCount; cellY++) {
                 width = 0;
                 for (int32_t cellX = 0; cellX < lodCount; cellX++) {
-                    auto cell = storage.GetCell(cellX, cellY, LoD);
+                    auto cell = storage->GetCell(cellX, cellY, LoD);
 
                     AE_ASSERT(cell->IsLoaded() && "All cells in a given LoD must \
                         be loaded to be converted into height field");
@@ -350,7 +353,7 @@ namespace Atlas {
                     width += cell->heightField->width - 1;
                 }
 
-                auto cell = storage.GetCell(0, cellY, LoD);
+                auto cell = storage->GetCell(0, cellY, LoD);
                 height += cell->heightField->height - 1;
             }
 

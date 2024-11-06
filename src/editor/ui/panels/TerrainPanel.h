@@ -14,7 +14,19 @@ namespace Atlas::Editor::UI {
         void Render(ResourceHandle<Terrain::Terrain> terrain, Ref<Scene::Scene> scene);
 
     private:
+        void RenderGeneralSettings(ResourceHandle<Terrain::Terrain>& terrain);
+
+        void RenderMaterialSettings(ResourceHandle<Terrain::Terrain>& terrain);
+
+        void RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain);
+
         TerrainGenerator terrainGenerator;
+
+        ImguiExtension::MaterialsPanel materialsPanel;
+
+        ResourceSelectionPanel<Terrain::Terrain> terrainSelectionPanel;
+        ResourceSelectionPanel<Material> materialSelectionPanel;
+        ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
 
     };
 

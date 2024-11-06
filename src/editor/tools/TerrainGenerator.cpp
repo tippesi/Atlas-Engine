@@ -14,16 +14,28 @@ namespace Atlas::Editor {
 
     TerrainGenerator::TerrainGenerator() {
 
-        previewHeightMap = Texture::Texture2D(16, 16, VK_FORMAT_R16_SNORM,
+        previewHeightImg = CreateRef<Common::Image<uint16_t>>(128, 128, 1);
+        previewMoistureImg = CreateRef<Common::Image<uint16_t>>(128, 128, 1);
+        previewBiomeImg = CreateRef<Common::Image<uint8_t>>(128, 128, 4);
+
+        previewHeightMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        previewMoistureMap = Texture::Texture2D(16, 16, VK_FORMAT_R16_SNORM,
+        previewMoistureMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        previewBiomeMap = Texture::Texture2D(16, 16, VK_FORMAT_R8G8B8A8_UNORM,
+        previewBiomeMap = Texture::Texture2D(128, 128, VK_FORMAT_R8G8B8A8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        previewHeightImg = CreateRef<Common::Image<uint16_t>>(16, 16, 1);
-        previewMoistureImg = CreateRef<Common::Image<uint16_t>>(16, 16, 1);
-        previewBiomeImg = CreateRef<Common::Image<uint8_t>>(16, 16, 4);
+        newPreviewHeightMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        newPreviewMoistureMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+        newPreviewBiomeMap = Texture::Texture2D(128, 128, VK_FORMAT_R8G8B8A8_UNORM,
+            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        // Set this first since it will be swapped out
+        newPreviewHeightMap.SetData(previewHeightImg->GetData());
+        newPreviewMoistureMap.SetData(previewMoistureImg->GetData());
+        newPreviewBiomeMap.SetData(previewBiomeImg->GetData());
 
         name.resize(500);
 
@@ -48,6 +60,8 @@ namespace Atlas::Editor {
 
         textureSelectionPanel.Reset();
         materialSelectionPanel.Reset();
+
+        GeneratePreviews();
 
         if (heightMap.IsLoaded() && heightMap->width != heightMap->height) {
             Notifications::Push({ "Texture isn't square. Need a texture with equal amount of pixel on each axis" });
@@ -81,7 +95,7 @@ namespace Atlas::Editor {
         ImGui::SameLine();
         ImGui::RadioButton("Load file", &loadFromFile, 1);
 
-        UIElements::TextureView(imguiWrapper, &previewHeightMap, width / 3.0f);
+        UIElements::TextureView(imguiWrapper, &previewHeightMap, width / 2.0f);
         ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n \
                     Use the sliders to change the strength of an octave");
 
@@ -108,14 +122,26 @@ namespace Atlas::Editor {
             case 4: heightMapResolution = 8192; break;
             }
 
-            Common::NoiseGenerator::GeneratePerlinNoise2D(*previewHeightImg, heightAmplitudes,
-                (uint32_t)heightSeed, heightExp);
-
-            previewHeightMap.SetData(previewHeightImg->GetData());
-
         }
         else {
             heightMap = textureSelectionPanel.Render(heightMap);
+        }
+
+        ImGui::Separator();
+
+        ImGui::Text("General settings");
+
+        ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
+        ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
+        ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
+
+        std::string buttonText = "Advanced";
+
+        if (advanced)
+            buttonText = "Standard";
+
+        if (ImGui::Button(buttonText.c_str(), ImVec2(width, 0.0f))) {
+            advanced = !advanced;
         }
 
         ImGui::Separator();
@@ -138,7 +164,7 @@ namespace Atlas::Editor {
         else {
             ImGui::Text("Moisture");
 
-            UIElements::TextureView(imguiWrapper, &previewMoistureMap, width / 3.0f);
+            UIElements::TextureView(imguiWrapper, &previewMoistureMap, width / 2.0f);
             ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n \
                     Use the sliders to change the strength of an octave");
 
@@ -191,7 +217,7 @@ namespace Atlas::Editor {
             ImGui::Separator();
             ImGui::Text("Biomes");
 
-            UIElements::TextureView(imguiWrapper, &previewBiomeMap, width / 3.0f);
+            UIElements::TextureView(imguiWrapper, &previewBiomeMap, width / 2.0f);
             ImGui::SetItemTooltip("Add materials to get started with the biome editing.\n"
                 "Elevation biomes change the material based on the elevation of the height map.\n"
                 "Moisture biomes change the material within an elevation biome based on the moisture map.");
@@ -299,57 +325,11 @@ namespace Atlas::Editor {
             }
 
             ImGui::SetItemTooltip("Sorts the biome based on a biome function. After sorting, all\n"
-                "biomes get evaluated from top to bottom.");
-
-            Common::NoiseGenerator::GeneratePerlinNoise2D(*previewMoistureImg, moistureAmplitudes,
-                (uint32_t)moistureSeed);
-
-            previewMoistureMap.SetData(previewMoistureImg->GetData());
-
-            auto biomes = SortBiomes();
-
-            for (int32_t y = 0; y < previewBiomeImg->height; y++) {
-                for (int32_t x = 0; x < previewBiomeImg->width; x++) {
-                    auto fx = float(x) / float(previewBiomeImg->width);
-                    auto fy = float(y) / float(previewBiomeImg->height);
-                    auto pair = Biome(fx, fy, biomes, previewHeightImg,
-                        previewMoistureImg, height);
-                    previewBiomeImg->SetData(x, y, 0, (uint8_t)(255.0f * pair.second.r));
-                    previewBiomeImg->SetData(x, y, 1, (uint8_t)(255.0f * pair.second.g));
-                    previewBiomeImg->SetData(x, y, 2, (uint8_t)(255.0f * pair.second.b));
-                    previewBiomeImg->SetData(x, y, 3, 255);
-                }
-            }
-            
-            previewBiomeMap.SetData(previewBiomeImg->GetData());
+                "biomes get evaluated from top to bottom.");                       
 
         }
 
-        ImGui::Separator();
-        ImGui::Text("General settings");
-
-        ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
-        ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
-        ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
-
-        std::string buttonText = "Advanced";
-
-        if (advanced)
-            buttonText = "Standard";
-
-        if (ImGui::Button(buttonText.c_str(), ImVec2(width, 0.0f))) {
-            advanced = !advanced;
-        }
-
-        if (ImGui::Button("Cancel")) {
-
-            visible = false;
-
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Ok")) {
+        if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
             if (name[0] == '\0') {
                 Notifications::Push({"Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f)});
@@ -443,8 +423,8 @@ namespace Atlas::Editor {
                 for (int32_t x = 0; x < splatImage.width; x++) {
                     auto fx = (float)x / (float)splatImage.width;
                     auto fy = (float)y / (float)splatImage.height;
-                    auto pair = Biome(fx, fy, biomes, heightImage,
-                        moistureImage, scale);
+                    auto pair = Biome(fx, fy, biomes, *heightImage,
+                        *moistureImage, scale);
                     auto mat = pair.first;
                     uint8_t index = 0;
 
@@ -470,6 +450,52 @@ namespace Atlas::Editor {
         successful = false;
 
         return terrain;
+
+    }
+
+    void TerrainGenerator::GeneratePreviews() {
+
+        if (!previewMapGenerationJob.HasFinished())
+            return;
+
+        std::swap(newPreviewHeightMap, previewHeightMap);
+        std::swap(newPreviewMoistureMap, previewMoistureMap);
+        std::swap(newPreviewBiomeMap, previewBiomeMap);
+
+        auto biomes = SortBiomes();
+
+        // Need to have copies of the images
+        JobSystem::Execute(previewMapGenerationJob, 
+            [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
+            previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
+            moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
+            heightExp = heightExp, this](JobData&) mutable {
+
+                Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
+                    (uint32_t)heightSeed, heightExp);
+
+                newPreviewHeightMap.SetData(previewHeightImg.GetData());
+
+                Common::NoiseGenerator::GeneratePerlinNoise2D(previewMoistureImg, moistureAmplitudes,
+                    (uint32_t)moistureSeed);
+
+                newPreviewMoistureMap.SetData(previewMoistureImg.GetData());
+
+                for (int32_t y = 0; y < previewBiomeImg.height; y++) {
+                    for (int32_t x = 0; x < previewBiomeImg.width; x++) {
+                        auto fx = float(x) / float(previewBiomeImg.width);
+                        auto fy = float(y) / float(previewBiomeImg.height);
+                        auto pair = Biome(fx, fy, biomes, previewHeightImg,
+                            previewMoistureImg, height);
+                        previewBiomeImg.SetData(x, y, 0, (uint8_t)(255.0f * pair.second.r));
+                        previewBiomeImg.SetData(x, y, 1, (uint8_t)(255.0f * pair.second.g));
+                        previewBiomeImg.SetData(x, y, 2, (uint8_t)(255.0f * pair.second.b));
+                        previewBiomeImg.SetData(x, y, 3, 255);
+                    }
+                }
+
+                newPreviewBiomeMap.SetData(previewBiomeImg.GetData());
+            });
 
     }
 
@@ -530,22 +556,22 @@ namespace Atlas::Editor {
     }
 
     std::pair<ResourceHandle<Material>, vec3> TerrainGenerator::Biome(float x, float y, std::vector<ElevationBiome>& biomes,
-        Ref<Common::Image<uint16_t>>& heightImg, Ref<Common::Image<uint16_t>>& moistureImg, float scale) {
+        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
 
         ResourceHandle<Material> material;
 
-        auto xTex = 1.0f / (float)heightImg->width;
-        auto yTex = 1.0f / (float)heightImg->height;
-        float heightL = (float)heightImg->SampleBilinear(x - xTex, y).r * scale / 65535.0f;
-        float heightR = (float)heightImg->SampleBilinear(x + xTex, y).r * scale / 65535.0f;
-        float heightD = (float)heightImg->SampleBilinear(x, y - yTex).r * scale / 65535.0f;
-        float heightU = (float)heightImg->SampleBilinear(x, y + yTex).r * scale / 65535.0f;
+        auto xTex = 1.0f / (float)heightImg.width;
+        auto yTex = 1.0f / (float)heightImg.height;
+        float heightL = (float)heightImg.SampleBilinear(x - xTex, y).r * scale / 65535.0f;
+        float heightR = (float)heightImg.SampleBilinear(x + xTex, y).r * scale / 65535.0f;
+        float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
+        float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
 
         auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
             heightD - heightU));
 
-        auto e = (float)heightImg->SampleBilinear(x, y).r / 65535.0f;
-        auto m = (float)moistureImg->SampleBilinear(x, y).r / 65535.0f;
+        auto e = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
+        auto m = (float)moistureImg.SampleBilinear(x, y).r / 65535.0f;
         auto s = glm::dot(normal, vec3(0.0f, 1.0f, 0.0f));
 
         for (auto& eleBiome : biomes) {

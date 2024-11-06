@@ -15,7 +15,7 @@ namespace Atlas {
         public:
             TerrainNode(vec2 location, float height, float sideLength, int32_t LoD, int32_t LoDCount,
                 int32_t LoDMultiplier, ivec2 parentIndex, ivec2 relativeIndex,
-                TerrainStorage* storage, TerrainStorageCell* cell);
+                const Ref<TerrainStorage>& storage, TerrainStorageCell* cell);
 
             ~TerrainNode();
 
@@ -49,7 +49,7 @@ namespace Atlas {
 
             std::vector<TerrainNode> children;
 
-            TerrainStorage* storage;
+            Ref<TerrainStorage> storage = nullptr;
 
         };
 

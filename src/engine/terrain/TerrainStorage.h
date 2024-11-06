@@ -71,6 +71,15 @@ namespace Atlas {
              */
             void RemoveMaterial(int32_t slot, ResourceHandle<Material> material);
 
+
+            void PushRequestedCellsToQueue();
+            
+            std::set<TerrainStorageCell*> GetRequestedCellsQueue();
+            
+            void PushRequestedBvhCellsToQueue();
+
+            std::set<TerrainStorageCell*> GetRequestedBvhCellsQueue();
+
             /**
              *
              * @return
@@ -78,10 +87,11 @@ namespace Atlas {
              */
             std::vector<ResourceHandle<Material>> GetMaterials();
 
-            /**
-             * The storage cells the terrain request to change the level of detail.
-             */
             std::vector<TerrainStorageCell*> requestedCells;
+            std::vector<TerrainStorageCell*> requestedBvhCells;
+
+            std::set<TerrainStorageCell*> requestedCellQueue;
+            std::set<TerrainStorageCell*> requestedBvhCellQueue;
 
             /**
              * The storage cells the terrain doesn't need any more because of a change
@@ -111,6 +121,9 @@ namespace Atlas {
             int32_t* LoDSideLengths;
 
             Graphics::CommandList* commandList = nullptr;
+
+            std::mutex cellQueueMutex;
+            std::mutex bvhCellQueueMutex;
 
         };
 

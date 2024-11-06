@@ -26,9 +26,9 @@ namespace Atlas {
 
             auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
-            terrain->storage.BeginMaterialWrite();
-            terrain->storage.WriteMaterial(0, material);
-            terrain->storage.EndMaterialWrite();
+            terrain->storage->BeginMaterialWrite();
+            terrain->storage->WriteMaterial(0, material);
+            terrain->storage->EndMaterialWrite();
 
             // Calculate the number of vertices per tile and resize the height data to map 1:1
             int32_t tileResolution = 8 * patchSize;
@@ -60,9 +60,9 @@ namespace Atlas {
             // i is in x direction, j in y direction
             for (int32_t i = 0; i < maxNodesPerSide; i++) {
                 for (int32_t j = 0; j < maxNodesPerSide; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
+                    auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
 
-                    cell->storage = &terrain->storage;
+                    cell->storage = terrain->storage.get();
 
                     // Create the data structures for the cell
                     cell->heightData.resize(tileResolutionSquared);
@@ -121,11 +121,11 @@ namespace Atlas {
             auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
             int32_t count = 0;
-            terrain->storage.BeginMaterialWrite();
+            terrain->storage->BeginMaterialWrite();
             for (auto& material : materials) {
-                terrain->storage.WriteMaterial(count++, material);
+                terrain->storage->WriteMaterial(count++, material);
             }
-            terrain->storage.EndMaterialWrite();
+            terrain->storage->EndMaterialWrite();
 
             // Calculate the number of vertices per tile and resize the height data to map 1:1
             int32_t tileResolution = 8 * patchSize;
@@ -146,8 +146,8 @@ namespace Atlas {
             }
 
             if (splatImage.width != totalResolution) {
-                stbir_resize_uint8_generic(splatMap.GetData().data(), splatMap.width, splatMap.height,
-                    splatMap.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
+                stbir_resize_uint8_generic(splatImage.GetData().data(), splatImage.width, splatImage.height,
+                    splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
                     1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
             }
             else {
@@ -173,9 +173,9 @@ namespace Atlas {
                     int32_t j = idx / maxNodesPerSide;
                     int32_t i = idx % maxNodesPerSide;
 
-                    auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
+                    auto cell = terrain->storage->GetCell(i, j, LoDCount - 1);
 
-                    cell->storage = &terrain->storage;
+                    cell->storage = terrain->storage.get();
 
                     // Create the data structures for the cell
                     cell->heightData.resize(tileResolutionSquared);
@@ -229,7 +229,7 @@ namespace Atlas {
             // Generate one large heightmap (assumes all tiles have the same size)
             int32_t tileResolution = 8 * terrain->patchSizeFactor;
             int32_t tileResolutionSquared = tileResolution * tileResolution;
-            int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
+            int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
             int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
@@ -251,7 +251,7 @@ namespace Atlas {
                     int32_t j = idx / tileSideCount;
                     int32_t i = idx % tileSideCount;
 
-                    auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
+                    auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
                     auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                     // Now copy a tile of the original image
@@ -365,7 +365,7 @@ namespace Atlas {
                         int32_t j = idx / tileSideCountLod;
                         int32_t i = idx % tileSideCountLod;
 
-                        auto cell = terrain->storage.GetCell(i, j, Lod);
+                        auto cell = terrain->storage->GetCell(i, j, Lod);
 
                         // Now copy a tile of the original image
                         // We make sure that every tile has the same size
@@ -456,14 +456,14 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+            auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
+            auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+            auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+            auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+            auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+            auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+            auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+            auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
             Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                            middleLeft, middleMiddle, middleRight,
@@ -584,14 +584,14 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+            auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
+            auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+            auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+            auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+            auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+            auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+            auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+            auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
             Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                            middleLeft, middleMiddle, middleRight,
@@ -731,14 +731,14 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
-            auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
-            auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
-            auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
-            auto middleRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
-            auto bottomLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
-            auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
-            auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
+            auto upperLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
+            auto upperMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
+            auto upperRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
+            auto middleLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
+            auto middleRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y, LoD);
+            auto bottomLeft = terrain->storage->GetCell(middleMiddle->x - 1, middleMiddle->y + 1, LoD);
+            auto bottomMiddle = terrain->storage->GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
+            auto bottomRight = terrain->storage->GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
             Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                                     middleLeft, middleMiddle, middleRight,
@@ -853,7 +853,7 @@ namespace Atlas {
 
             int32_t tileResolution = 8 * terrain->patchSizeFactor;
             int32_t tileResolutionSquared = tileResolution * tileResolution;
-            int32_t tileCount = terrain->storage.GetCellCount(terrain->LoDCount - 1);
+            int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
             int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
 
@@ -865,7 +865,7 @@ namespace Atlas {
             // i is in x direction, j in z direction
             for (int32_t i = 0; i < tileSideCount; i++) {
                 for (int32_t j = 0; j < tileSideCount; j++) {
-                    auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
+                    auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
                     auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
                     // Now copy a tile of the original image

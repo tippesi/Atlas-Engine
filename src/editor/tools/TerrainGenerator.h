@@ -50,9 +50,10 @@ namespace Atlas::Editor {
             ResourceHandle<Material> material;
         };
 
+        void GeneratePreviews();
         std::vector<ElevationBiome> SortBiomes();
         std::pair<ResourceHandle<Material>, vec3> Biome(float x, float y, std::vector<ElevationBiome>& biomes,
-            Ref<Common::Image<uint16_t>>& heightImg, Ref<Common::Image<uint16_t>>& moistureImg, float scale);
+            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
 
         UI::ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
         UI::ResourceSelectionPanel<Material> materialSelectionPanel;

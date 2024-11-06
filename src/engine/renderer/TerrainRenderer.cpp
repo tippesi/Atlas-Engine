@@ -55,7 +55,7 @@ namespace Atlas {
                 }
             }
 
-            auto materials = terrain->storage.GetMaterials();
+            auto materials = terrain->storage->GetMaterials();
 
             std::vector<TerrainMaterial> terrainMaterials(128);
 
@@ -74,11 +74,11 @@ namespace Atlas {
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);
 
-            terrain->storage.baseColorMaps.Bind(commandList, 3, 3);
-            terrain->storage.roughnessMaps.Bind(commandList, 3, 4);
-            terrain->storage.aoMaps.Bind(commandList, 3, 5);
-            terrain->storage.normalMaps.Bind(commandList, 3, 6);
-            terrain->storage.displacementMaps.Bind(commandList, 3, 7);
+            terrain->storage->baseColorMaps.Bind(commandList, 3, 3);
+            terrain->storage->roughnessMaps.Bind(commandList, 3, 4);
+            terrain->storage->aoMaps.Bind(commandList, 3, 5);
+            terrain->storage->normalMaps.Bind(commandList, 3, 6);
+            terrain->storage->displacementMaps.Bind(commandList, 3, 7);
 
             Uniforms uniforms = {
                 .heightScale = terrain->heightScale,

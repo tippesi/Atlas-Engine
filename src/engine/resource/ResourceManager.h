@@ -262,6 +262,20 @@ namespace Atlas {
 
         }
 
+        static std::vector<ResourceHandle<T>> GetOwnedResources() {
+
+            std::vector<ResourceHandle<T>> resourceHandles;
+
+            for (auto& [_, resource] : resources) {
+                if (resource.use_count() == 1)
+                    continue;
+                resourceHandles.emplace_back(resource);
+            }
+
+            return resourceHandles;
+
+        }
+
         static std::vector<ResourceHandle<T>> GetResourcesByOrigin(ResourceOrigin origin) {
 
             std::vector<ResourceHandle<T>> resourceHandles;

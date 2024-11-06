@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../texture/Texture2D.h"
 #include "Image.h"
+#include "RandomHelper.h"
 
 #include <perlin noise/PerlinNoise.h>
 #include <algorithm>
@@ -41,6 +42,7 @@ namespace Atlas {
 
                 auto& data = image.GetData();
 
+                auto offset = vec2(float(seed) * 100.0f);
                 auto amplitude = std::accumulate(amplitudes.begin(), amplitudes.end(), 0.0f);
 
                 amplitude = 1.0f / amplitude;
@@ -53,7 +55,7 @@ namespace Atlas {
                         float noise = 0.0f;
                         float oct = 1.0f;
                         for (auto amp : amplitudes) {
-                            vec2 coord = vec2(fx, fy) * oct;
+                            vec2 coord = (vec2(fx, fy) + offset) * oct;
                             noise += glm::perlin(coord, vec2(oct)) * amp;
                             oct *= 2.0f;
                         }

@@ -469,7 +469,7 @@ namespace Atlas {
             std::vector<ResourceHandle<Material>> materials;
 
             if (terrain.IsLoaded()) {
-                auto terrainMaterials = terrain->storage.GetMaterials();
+                auto terrainMaterials = terrain->storage->GetMaterials();
                 materials.reserve(terrainMaterials.size());
 
                 for (const auto& material : terrainMaterials) {
