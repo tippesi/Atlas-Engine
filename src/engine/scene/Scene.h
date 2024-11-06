@@ -98,7 +98,7 @@ namespace Atlas {
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 
-            std::vector<Ref<Material>> GetMaterials();
+            std::vector<ResourceHandle<Material>> GetMaterials();
 
             CameraComponent& GetMainCamera();
 

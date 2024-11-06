@@ -36,7 +36,7 @@ namespace Atlas {
             auto device = Graphics::GraphicsDevice::DefaultDevice;
 
             if (!device->swapChain->isComplete) return;
-            if (!subset.Any()) return;
+            if (!subset.Any() && !scene->terrain.IsLoaded()) return;
 
             auto renderState = &scene->renderState;
 

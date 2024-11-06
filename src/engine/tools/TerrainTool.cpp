@@ -13,8 +13,8 @@ namespace Atlas {
 
     namespace Tools {
 
-        Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>&heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-                                              int32_t patchSize, float resolution, float height, Ref<Material> material) {
+        Ref<Terrain::Terrain> TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
+            int32_t patchSize, float resolution, float height, ResourceHandle<Material> material) {
 
             // Check if everything is correct
             int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -24,9 +24,11 @@ namespace Atlas {
                 return nullptr;
             }
 
-            auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
+            auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
+            terrain->storage.BeginMaterialWrite();
             terrain->storage.WriteMaterial(0, material);
+            terrain->storage.EndMaterialWrite();
 
             // Calculate the number of vertices per tile and resize the height data to map 1:1
             int32_t tileResolution = 8 * patchSize;
@@ -60,16 +62,19 @@ namespace Atlas {
                 for (int32_t j = 0; j < maxNodesPerSide; j++) {
                     auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
 
-                    /*
+                    cell->storage = &terrain->storage;
+
                     // Create the data structures for the cell
                     cell->heightData.resize(tileResolutionSquared);
-                    cell->heightField = new Texture::Texture2D(tileResolution, 
-                        tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    cell->normalMap = new Texture::Texture2D(tileResolution, 
-                        tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-                    cell->splatMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                     */
+                    cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Nearest, false, false);
+                    cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Linear, false, false);
+                    cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Nearest, false, false);
 
                     // Now copy a tile of the original image
                     // We make sure that every tile has the same size
@@ -82,7 +87,7 @@ namespace Atlas {
                             int32_t yImage = j * (tileResolution - 1) + y;
 
                             auto sample = (uint16_t)heightMap.Sample(xImage, yImage).r;
-                            
+
                             cell->heightData[cellOffset] = (float)sample / 65535.0f;
                             cellHeightData[cellOffset] = sample;
 
@@ -101,9 +106,9 @@ namespace Atlas {
 
         }
 
-        Terrain::Terrain* TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
+        Ref<Terrain::Terrain> TerrainTool::GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
             int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
-            float height, std::vector<Ref<Material>> materials) {
+            float height, std::vector<ResourceHandle<Material>> materials) {
 
             // Check if everything is correct
             int32_t maxNodesPerSide = (int32_t)powf(2.0f, (float)LoDCount - 1.0f) * rootNodeSideCount;
@@ -113,12 +118,14 @@ namespace Atlas {
                 return nullptr;
             }
 
-            auto terrain = new Terrain::Terrain(rootNodeSideCount, LoDCount, patchSize, resolution, height);
+            auto terrain = CreateRef<Terrain::Terrain>(rootNodeSideCount, LoDCount, patchSize, resolution, height);
 
             int32_t count = 0;
+            terrain->storage.BeginMaterialWrite();
             for (auto& material : materials) {
                 terrain->storage.WriteMaterial(count++, material);
             }
+            terrain->storage.EndMaterialWrite();
 
             // Calculate the number of vertices per tile and resize the height data to map 1:1
             int32_t tileResolution = 8 * patchSize;
@@ -132,38 +139,55 @@ namespace Atlas {
                 stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
                     heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
                     1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-                stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
-                    heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                    1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
             }
             else {
                 heightMap.SetData(heightImage.GetData());
+
+            }
+
+            if (splatImage.width != totalResolution) {
+                stbir_resize_uint8_generic(splatMap.GetData().data(), splatMap.width, splatMap.height,
+                    splatMap.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
+                    1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+            }
+            else {
                 splatMap.SetData(splatImage.GetData());
             }
 
             // We need some room in the bottom and right for overlapping vertices
-
             tileResolution += 1;
             int32_t tileResolutionSquared = tileResolution * tileResolution;
+            int32_t totalNodeCount = maxNodesPerSide * maxNodesPerSide;
 
-            std::vector<uint16_t> cellHeightData(tileResolutionSquared);
-            std::vector<uint8_t> cellSplatData(tileResolutionSquared);
+            JobGroup leafCellGroup(JobPriority::High);
 
-            // i is in x direction, j in y direction
-            for (int32_t i = 0; i < maxNodesPerSide; i++) {
-                for (int32_t j = 0; j < maxNodesPerSide; j++) {
+            auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+            std::atomic_int32_t cellCounter = 0;
+
+            JobSystem::ExecuteMultiple(leafCellGroup, workerCount, [&](JobData&) {
+                std::vector<uint16_t> cellHeightData(tileResolutionSquared);
+                std::vector<uint8_t> cellSplatData(tileResolutionSquared);
+
+                int32_t idx = cellCounter++;
+                while (idx < totalNodeCount) {
+                    int32_t j = idx / maxNodesPerSide;
+                    int32_t i = idx % maxNodesPerSide;
+
                     auto cell = terrain->storage.GetCell(i, j, LoDCount - 1);
 
-                    /*
+                    cell->storage = &terrain->storage;
+
                     // Create the data structures for the cell
                     cell->heightData.resize(tileResolutionSquared);
-                    cell->heightField = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    cell->normalMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, false, false);
-                    cell->splatMap = new Texture::Texture2D(tileResolution,
-                        tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
-                    */
+                    cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Nearest, false, false);
+                    cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Linear, false, false);
+                    cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                        tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                        Texture::Filtering::Nearest, false, false);
 
                     // Now copy a tile of the original image
                     // We make sure that every tile has the same size
@@ -188,8 +212,11 @@ namespace Atlas {
                     cell->heightField->SetData(cellHeightData);
                     cell->splatMap->SetData(cellSplatData);
 
+                    idx = cellCounter++;
                 }
-            }
+                });
+
+            JobSystem::Wait(leafCellGroup);
 
             BakeTerrain(terrain);
 
@@ -197,7 +224,7 @@ namespace Atlas {
 
         }
 
-        void TerrainTool::BakeTerrain(Terrain::Terrain *terrain) {
+        void TerrainTool::BakeTerrain(Ref<Terrain::Terrain> terrain) {
 
             // Generate one large heightmap (assumes all tiles have the same size)
             int32_t tileResolution = 8 * terrain->patchSizeFactor;
@@ -210,11 +237,20 @@ namespace Atlas {
                 * (tileSideCount * tileResolution + 1));
             auto splatData = std::vector<uint8_t>(heightData.size());
 
-            int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());            
+            int32_t heightDataResolution = (int32_t)sqrtf((float)heightData.size());
 
-            // i is in x direction, j in z direction
-            for (int32_t i = 0; i < tileSideCount; i++) {
-                for (int32_t j = 0; j < tileSideCount; j++) {
+            auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+
+            JobGroup tileGroup(JobPriority::High);
+            std::atomic_int32_t tileCounter = 0;
+
+            int32_t totalTileCount = tileSideCount * tileSideCount;
+            JobSystem::ExecuteMultiple(tileGroup, workerCount, [&](JobData&) {
+                int32_t idx = tileCounter++;
+                while (idx < totalTileCount) {
+                    int32_t j = idx / tileSideCount;
+                    int32_t i = idx % tileSideCount;
+
                     auto cell = terrain->storage.GetCell(i, j, terrain->LoDCount - 1);
                     auto cellSplatData = cell->splatMap->GetData<uint8_t>();
 
@@ -226,13 +262,17 @@ namespace Atlas {
                         for (int32_t x = 0; x <= tileResolution; x++) {
                             int32_t cellOffset = y * (tileResolution + 1) + x;
                             int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
-                                                  i * tileResolution + x;
+                                i * tileResolution + x;
                             heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
-                            splatData[imageOffset] = cellSplatData[cellOffset];    
+                            splatData[imageOffset] = cellSplatData[cellOffset];
                         }
                     }
+
+                    idx = tileCounter++;
                 }
-            }
+                });
+
+            JobSystem::Wait(tileGroup);
 
             tileResolution += 1;
 
@@ -241,10 +281,6 @@ namespace Atlas {
 
             GenerateNormalData(heightData, normalData, heightDataResolution,
                 heightDataResolution, terrain->heightScale);
-
-            // Iterate through all the LoD level and resize images according to the tile size
-            std::vector<uint16_t> tileHeightData(tileResolution * tileResolution);
-            std::vector<uint8_t> tileSplatData(tileHeightData.size() * 4);
 
             auto currentResolution = heightDataResolution;
 
@@ -255,13 +291,13 @@ namespace Atlas {
                 int32_t downsample = (int32_t)powf(2.0f, (float)k);
                 int32_t tileSideCountLod = tileSideCount / downsample;
 
-                std::vector<uint16_t> resizedHeightData(currentResolution * currentResolution);                
+                std::vector<uint16_t> resizedHeightData(currentResolution * currentResolution);
                 std::vector<uint8_t> resizedSplatData(resizedHeightData.size() * 4);
 
                 auto resizedHeightDataResolution = (int32_t)sqrtf((float)resizedHeightData.size());
 
                 if (k == 0) {
-                    resizedHeightData = heightData;                    
+                    resizedHeightData = heightData;
                     resizedSplatData = splatData;
                 }
                 else {
@@ -280,18 +316,10 @@ namespace Atlas {
 
                 }
 
-                //Common::Image8 img(resizedHeightDataResolution, resizedHeightDataResolution, 4);
-                //img.SetData(resizedSplatData);
-
-                //Loader::ImageLoader::SaveImage(img, "splat" + std::to_string(k) + ".png");
-
                 // We need to keep the normal maps at a higher resolution to make the terrain
                 // look realistic enough when having low triangle count in the distance
                 auto sizeFactor = glm::min(downsample, terrain->bakeResolution / (tileResolution - 1));
                 auto normalDataResolution = (tileResolution - 1) * sizeFactor + 3;
-
-                std::vector<uint8_t> tileNormalData(normalDataResolution * 
-                    normalDataResolution * 3);
 
                 auto resizedNormalDataResolution = 0;
                 Common::Image<uint8_t> resizedNormalMap;
@@ -319,9 +347,24 @@ namespace Atlas {
                     }
                 }
 
-                // i is in x direction, j in y direction
-                for (int32_t i = 0; i < tileSideCountLod; i++) {
-                    for (int32_t j = 0; j < tileSideCountLod; j++) {
+                JobGroup lodCellGroup(JobPriority::High);
+                std::atomic_int32_t cellCounter = 0;
+
+                int32_t totalTileCountLod = tileSideCountLod * tileSideCountLod;
+                JobSystem::ExecuteMultiple(lodCellGroup, workerCount, [&](JobData&) {
+
+                      // Iterate through all the LoD level and resize images according to the tile size
+                    std::vector<float> tileScaledHeightData(tileResolution * tileResolution);
+                    std::vector<uint16_t> tileHeightData(tileResolution * tileResolution);
+                    std::vector<uint8_t> tileSplatData(tileHeightData.size() * 4);
+                    std::vector<uint8_t> tileNormalData(normalDataResolution *
+                        normalDataResolution * 4);
+
+                    int32_t idx = cellCounter++;
+                    while (idx < totalTileCountLod) {
+                        int32_t j = idx / tileSideCountLod;
+                        int32_t i = idx % tileSideCountLod;
+
                         auto cell = terrain->storage.GetCell(i, j, Lod);
 
                         // Now copy a tile of the original image
@@ -337,54 +380,64 @@ namespace Atlas {
 
                                 auto imageOffset = yImage * totalResolution + xImage;
 
+                                tileScaledHeightData[cellOffset] = float(resizedHeightData[imageOffset]) / 65535.0f;
                                 tileHeightData[cellOffset] = resizedHeightData[imageOffset];
                                 tileSplatData[cellOffset] = resizedSplatData[imageOffset];
                             }
                         }
-                        
+
                         for (int32_t y = -1; y < normalDataResolution - 1; y++) {
                             for (int32_t x = -1; x < normalDataResolution - 1; x++) {
 
                                 int32_t cellOffset = (y + 1) * normalDataResolution + x + 1;
                                 int32_t xImage = i * (normalDataResolution - 3) + x;
                                 int32_t yImage = j * (normalDataResolution - 3) + y;
-                                
+
                                 auto sample = resizedNormalMap.Sample(xImage, yImage);
 
-                                tileNormalData[cellOffset * 3] = (uint8_t)sample.r;
-                                tileNormalData[cellOffset * 3 + 1] = (uint8_t)sample.g;
-                                tileNormalData[cellOffset * 3 + 2] = (uint8_t)sample.b;
+                                tileNormalData[cellOffset * 4] = uint8_t(sample.r);
+                                tileNormalData[cellOffset * 4 + 1] = uint8_t(sample.g);
+                                tileNormalData[cellOffset * 4 + 2] = uint8_t(sample.b);
+                                tileNormalData[cellOffset * 4 + 3] = 0;
                             }
                         }
 
-                        /*
                         if (!cell->heightField) {
-                            cell->heightField = new Texture::Texture2D(tileResolution,
-                                tileResolution, AE_R16UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+                            cell->heightField = CreateRef<Texture::Texture2D>(tileResolution,
+                                tileResolution, VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge,
+                                Texture::Filtering::Nearest, false, false);
                         }
                         if (!cell->normalMap) {
-                            cell->normalMap = new Texture::Texture2D(normalDataResolution,
-                                normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                            cell->normalMap = CreateRef<Texture::Texture2D>(tileResolution,
+                                tileResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                                Texture::Filtering::Linear, false, false);
                         }
                         if (!cell->splatMap) {
-                            cell->splatMap = new Texture::Texture2D(tileResolution,
-                                tileResolution, AE_R8UI, GL_CLAMP_TO_EDGE, GL_NEAREST, false, false);
+                            cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution,
+                                tileResolution, VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge,
+                                Texture::Filtering::Nearest, false, false);
                         }
 
                         if (cell->normalMap->width != normalDataResolution ||
                             cell->normalMap->height != normalDataResolution) {
-                            delete cell->normalMap;
-                            cell->normalMap = new Texture::Texture2D(normalDataResolution,
-                                normalDataResolution, AE_RGB8, GL_CLAMP_TO_EDGE, GL_LINEAR, true, true);
+                            cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution,
+                                normalDataResolution, VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge,
+                                Texture::Filtering::Linear, true, true);
                         }
-                        */
-                        
+
                         cell->normalMap->SetData(tileNormalData);
                         cell->heightField->SetData(tileHeightData);
                         cell->splatMap->SetData(tileSplatData);
 
+                        cell->heightData = tileScaledHeightData;
+                        cell->normalData = tileNormalData;
+                        cell->materialIdxData = tileSplatData;
+
+                        idx = cellCounter++;
                     }
-                }
+                    });
+
+                JobSystem::Wait(lodCellGroup);
 
                 currentResolution = (currentResolution - 1) / 2 + 1;
 
@@ -393,7 +446,7 @@ namespace Atlas {
 
         }
 
-        void TerrainTool::BrushHeight(Terrain::Terrain *terrain, Filter* filter, float scale, vec2 position) {
+        void TerrainTool::BrushHeight(Ref<Terrain::Terrain> terrain, Filter* filter, float scale, vec2 position) {
 
             int32_t LoD = terrain->LoDCount - 1;
 
@@ -403,7 +456,7 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
             auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
             auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
             auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
@@ -412,9 +465,9 @@ namespace Atlas {
             auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
             auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+            Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                            middleLeft, middleMiddle, middleRight,
-                                           bottomLeft, bottomMiddle, bottomRight};
+                                           bottomLeft, bottomMiddle, bottomRight };
 
             // Now bring all height data into one array (we assume that all tiles have the same size)
             int32_t width = middleMiddle->heightField->width - 1;
@@ -520,8 +573,8 @@ namespace Atlas {
 
         }
 
-        void TerrainTool::SmoothHeight(Terrain::Terrain *terrain, int32_t size, int32_t contributingRadius,
-                                       float strength, vec2 position) {
+        void TerrainTool::SmoothHeight(Ref<Terrain::Terrain> terrain, int32_t size, int32_t contributingRadius,
+            float strength, vec2 position) {
 
             int32_t LoD = terrain->LoDCount - 1;
 
@@ -531,7 +584,7 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
             auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
             auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
             auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
@@ -540,9 +593,9 @@ namespace Atlas {
             auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
             auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+            Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                            middleLeft, middleMiddle, middleRight,
-                                           bottomLeft, bottomMiddle, bottomRight};
+                                           bottomLeft, bottomMiddle, bottomRight };
 
             // Now bring all height data into one array (we assume that all tiles have the same size)
             int32_t width = middleMiddle->heightField->width - 1;
@@ -585,7 +638,7 @@ namespace Atlas {
             position -= middleMiddle->position;
 
             int32_t x = (int32_t)floorf(position.x / terrain->resolution);
-            int32_t y = (int32_t)floorf(position.y /terrain->resolution);
+            int32_t y = (int32_t)floorf(position.y / terrain->resolution);
 
             x += width;
             y += height;
@@ -668,7 +721,7 @@ namespace Atlas {
 
         }
 
-        void TerrainTool::BrushMaterial(Terrain::Terrain* terrain, vec2 position, float size, int32_t slot) {
+        void TerrainTool::BrushMaterial(Ref<Terrain::Terrain> terrain, vec2 position, float size, int32_t slot) {
 
             int32_t LoD = terrain->LoDCount - 1;
 
@@ -678,7 +731,7 @@ namespace Atlas {
             if (middleMiddle == nullptr)
                 return;
 
-            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle-> y - 1, LoD);
+            auto upperLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y - 1, LoD);
             auto upperMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y - 1, LoD);
             auto upperRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y - 1, LoD);
             auto middleLeft = terrain->storage.GetCell(middleMiddle->x - 1, middleMiddle->y, LoD);
@@ -687,9 +740,9 @@ namespace Atlas {
             auto bottomMiddle = terrain->storage.GetCell(middleMiddle->x, middleMiddle->y + 1, LoD);
             auto bottomRight = terrain->storage.GetCell(middleMiddle->x + 1, middleMiddle->y + 1, LoD);
 
-            Terrain::TerrainStorageCell* cells[] = {upperLeft, upperMiddle, upperRight,
+            Terrain::TerrainStorageCell* cells[] = { upperLeft, upperMiddle, upperRight,
                                                     middleLeft, middleMiddle, middleRight,
-                                                    bottomLeft, bottomMiddle, bottomRight};
+                                                    bottomLeft, bottomMiddle, bottomRight };
 
             std::vector<uint8_t> cellDatas[9];
 
@@ -723,8 +776,8 @@ namespace Atlas {
                             int32_t dataOffset = y * 3 * width + x;
                             int32_t cellOffset = k * (width + 1) + l;
 
-                            data[dataOffset] = splatData[cellOffset];                              
-                            
+                            data[dataOffset] = splatData[cellOffset];
+
 
                         }
 
@@ -783,7 +836,7 @@ namespace Atlas {
                             // Might fail because the outer right and bottom cells (globally) always have one row less
                             // Needs some fix with the terrain generation. We need to make sure that all terrain tiles
                             // have the same size.
-                            splatData[cellOffset] = data[dataOffset];                            
+                            splatData[cellOffset] = data[dataOffset];
 
                         }
                     }
@@ -796,7 +849,7 @@ namespace Atlas {
 
         }
 
-        Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(Terrain::Terrain* terrain, float oceanHeight, int32_t resolution) {
+        Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(Ref<Terrain::Terrain> terrain, float oceanHeight, int32_t resolution) {
 
             int32_t tileResolution = 8 * terrain->patchSizeFactor;
             int32_t tileResolutionSquared = tileResolution * tileResolution;
@@ -835,7 +888,7 @@ namespace Atlas {
             stbir_resize_float_generic(heightData.data(), heightDataResolution, heightDataResolution,
                 heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
                 1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
-            
+
             Common::Image<uint8_t> image(resolution, resolution, 4);
             auto maxDistance = 2.0f * (float)heightDataResolution * (float)heightDataResolution;
 
@@ -890,7 +943,7 @@ namespace Atlas {
 
             Atlas::Filter filter;
             filter.CalculateGaussianFilter(31.0f / 6.0f, 31);
-            
+
             image.ApplyFilter(filter);
 
             //Texture::Texture2D shoreTexture(resolution, resolution, AE_RGBA8,
@@ -904,17 +957,28 @@ namespace Atlas {
 
         void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float scale) {
 
-            int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
+            const int32_t batchSize = 128;
 
-            for (int32_t x = 0; x < dataWidth; x++) {
-                for (int32_t y = 0; y < dataWidth; y++) {
+            int32_t dataWidth = (int32_t)sqrtf((float)heightData.size());
+            int32_t totalSize = int32_t(heightData.size());
+
+            auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+
+            JobGroup normalMapGroup(JobPriority::High);
+            std::atomic_int32_t tileCounter = 0;
+
+            JobSystem::ExecuteMultiple(normalMapGroup, workerCount, [&](JobData&) {
+                int32_t idx = tileCounter.fetch_add(batchSize);
+                while (idx < totalSize) {
+                    int32_t y = idx / dataWidth;
+                    int32_t x = idx % dataWidth;
 
                     float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height) * scale;
                     float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height) * scale;
                     float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height) * scale;
                     float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height) * scale;
 
-                    auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f, 
+                    auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
                         heightD - heightU));
 
                     normal = (0.5f * normal + 0.5f) * 255.0f;
@@ -923,13 +987,20 @@ namespace Atlas {
                     normalData[3 * y * dataWidth + 3 * x + 1] = (uint8_t)normal.y;
                     normalData[3 * y * dataWidth + 3 * x + 2] = (uint8_t)normal.z;
 
+                    idx++;
+
+                    if (idx % batchSize == 0) {
+                        idx = tileCounter.fetch_add(batchSize);
+                    }
                 }
-            }
+                });
+
+            JobSystem::Wait(normalMapGroup);
 
         }
 
         float TerrainTool::GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
-                                     int32_t x, int32_t y, int32_t width, int32_t height) {
+            int32_t x, int32_t y, int32_t width, int32_t height) {
 
             x = x < 0 ? 0 : x;
             x = x >= width ? width - 1 : x;

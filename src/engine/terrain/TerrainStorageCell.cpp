@@ -19,6 +19,9 @@ namespace Atlas {
             if (!normalMap || !normalMap->IsValid())
                 return false;
 
+            if (!storage)
+                return false;
+
             return true;
 
         }
@@ -44,6 +47,7 @@ namespace Atlas {
             }
 
             auto vertexSideCount = heightFieldSideLength - 1;
+            AE_ASSERT(vertexSideCount > 0);
 
             std::vector<uint32_t> indices(vertexSideCount * vertexSideCount * 6);
             for (int32_t y = 0; y < vertexSideCount; y++) {
@@ -66,8 +70,8 @@ namespace Atlas {
 
             std::vector<ResourceHandle<Material>> materials;
             for (size_t i = 0; i < storage->materials.size(); i++) {
-                if (storage->materials[i] != nullptr) {
-                    materials.push_back(ResourceHandle<Material>(storage->materials[i]));
+                if (storage->materials[i].IsLoaded()) {
+                    materials.push_back(storage->materials[i]);
                     materials.back()->twoSided = false;
                 }
                 else {
@@ -107,7 +111,7 @@ namespace Atlas {
                 .opaque = true
             }};
 
-            blas = CreateRef<RayTracing::BLAS>();
+            auto blas = CreateRef<RayTracing::BLAS>();
             blas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);
 
             if (Graphics::GraphicsDevice::DefaultDevice->support.hardwareRayTracing) {
@@ -118,6 +122,8 @@ namespace Atlas {
                 blas->blas = blases.front();
                 blas->needsBvhRefresh = false;
             }
+
+            this->blas = blas;
 
         }
 

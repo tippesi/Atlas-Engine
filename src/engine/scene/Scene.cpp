@@ -464,16 +464,16 @@ namespace Atlas {
 
         }
 
-        std::vector<Ref<Material>> Scene::GetMaterials() {
+        std::vector<ResourceHandle<Material>> Scene::GetMaterials() {
 
-            std::vector<Ref<Material>> materials;
+            std::vector<ResourceHandle<Material>> materials;
 
             if (terrain.IsLoaded()) {
                 auto terrainMaterials = terrain->storage.GetMaterials();
                 materials.reserve(terrainMaterials.size());
 
                 for (const auto& material : terrainMaterials) {
-                    if (!material)
+                    if (!material.IsLoaded())
                         continue;
 
                     materials.push_back(material);
@@ -496,7 +496,7 @@ namespace Atlas {
                     if (!material.IsLoaded())
                         continue;
 
-                    materials.push_back(material.Get());
+                    materials.push_back(material);
                 }
             }
 

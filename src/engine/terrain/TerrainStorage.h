@@ -57,7 +57,7 @@ namespace Atlas {
              * @param slot
              * @param material
              */
-            void WriteMaterial(int32_t slot, Ref<Material> material);
+            void WriteMaterial(int32_t slot, ResourceHandle<Material> material);
 
             /**
              * Generates all mipmaps after materials have been written
@@ -69,14 +69,14 @@ namespace Atlas {
              * @param slot
              * @param material
              */
-            void RemoveMaterial(int32_t slot, Ref<Material> material);
+            void RemoveMaterial(int32_t slot, ResourceHandle<Material> material);
 
             /**
              *
              * @return
              * @note Material pointers might be null (empty slots)
              */
-            std::vector<Ref<Material>> GetMaterials();
+            std::vector<ResourceHandle<Material>> GetMaterials();
 
             /**
              * The storage cells the terrain request to change the level of detail.
@@ -95,7 +95,7 @@ namespace Atlas {
             Texture::Texture2DArray normalMaps;
             Texture::Texture2DArray displacementMaps;
 
-            std::vector<Ref<Material>> materials;
+            std::vector<ResourceHandle<Material>> materials;
             std::vector<std::vector<TerrainStorageCell>> cells;
 
         private:

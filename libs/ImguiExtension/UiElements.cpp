@@ -19,7 +19,8 @@ namespace Atlas::ImguiExtension {
 
         auto region = ImGui::GetContentRegionAvail();
 
-        auto size = std::min(region.x, region.y);
+        auto size = std::min(region.x > 0.0f ? region.x : region.y, region.y > 0.0f ? region.y : region.x);
+        size = std::max(1.0f, size);
 
         if (maxTextureSize > 0)
             size = std::min(maxTextureSize, size);
@@ -36,6 +37,19 @@ namespace Atlas::ImguiExtension {
             ImGui::EndTooltip();
         }
         */
+
+    }
+
+    void UIElements::Tooltip(const char* text, float size) {
+
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * size);
+            ImGui::TextUnformatted(text);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
 
     }
 

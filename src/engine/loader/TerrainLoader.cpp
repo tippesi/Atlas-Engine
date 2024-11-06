@@ -23,7 +23,7 @@ namespace Atlas {
             // There don't have to be all materials
             int32_t count = 0;
             for (auto material : materials)
-                if (material)
+                if (material.IsValid())
                     count++;
 
             // Write file header in ASCII
@@ -63,10 +63,12 @@ namespace Atlas {
 
             count = 0;
             for (auto& material : materials) {
-                if (material) {
+                if (material.IsValid()) {
+                    body.append(std::to_string(count) + " " + material.GetResource()->path + "\n");
+                }
+                if (material.IsLoaded()) {
                     auto filename = materialDir + "/" + material->name + ".aematerial";
-                    MaterialLoader::SaveMaterial(material, filename);
-                    body.append(std::to_string(count) + " material/" + material->name + ".aematerial" + "\n");
+                    MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
                 }
                 count++;
             }
@@ -111,7 +113,7 @@ namespace Atlas {
 
         }
 
-        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(const std::string& filename) {
+        Ref<Terrain::Terrain> TerrainLoader::LoadTerrain(const std::string& filename, bool loadNodes) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
@@ -190,6 +192,24 @@ namespace Atlas {
             fileStream.close();
 
             terrain->filename = filename;
+
+            // Return early here, work is done
+            if (!loadNodes)
+                return terrain;
+
+            for (int32_t depth = 0; depth < terrain->LoDCount; depth++) {
+                int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage.GetCellCount(depth));
+
+                for (int32_t x = 0; x < cellSideCount; x++) {
+                    for (int32_t y = 0; y < cellSideCount; y++) {
+
+                        auto cell = terrain->storage.GetCell(x, y, depth);
+
+                        Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cell, filename, true);
+
+                    }
+                }
+            }
 
             return terrain;
 

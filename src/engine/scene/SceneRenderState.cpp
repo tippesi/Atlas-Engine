@@ -50,7 +50,7 @@ namespace Atlas::Scene {
 
             for (auto material : sceneMaterials) {
                 // Might happen due to the scene giving back materials on a mesh basis
-                if (materialMap.contains(material.get()))
+                if (materialMap.contains(material.Get().get()))
                     continue;
 
                 Renderer::PackedMaterial packed;
@@ -94,7 +94,7 @@ namespace Atlas::Scene {
 
                 materials.push_back(packed);
 
-                materialMap[material.get()] = idx++;
+                materialMap[material.Get().get()] = idx++;
             }
 
             auto meshes = scene->GetMeshes();

@@ -74,7 +74,7 @@ namespace Atlas {
 
         }
 
-        void TerrainStorage::WriteMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::WriteMaterial(int32_t slot, ResourceHandle<Material> material) {
 
             materials[slot] = material;
 
@@ -120,13 +120,13 @@ namespace Atlas {
 
         }
 
-        void TerrainStorage::RemoveMaterial(int32_t slot, Ref<Material> material) {
+        void TerrainStorage::RemoveMaterial(int32_t slot, ResourceHandle<Material> material) {
 
-            materials[slot] = nullptr;
+            materials[slot].Reset();
 
         }
 
-        std::vector<Ref<Material>> TerrainStorage::GetMaterials() {
+        std::vector<ResourceHandle<Material>> TerrainStorage::GetMaterials() {
 
             return materials;
 

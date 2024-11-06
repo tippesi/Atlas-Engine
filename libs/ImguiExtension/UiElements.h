@@ -16,6 +16,8 @@ namespace Atlas::ImguiExtension {
 
         static void TextureView(Ref<ImguiWrapper>& wrapper, const Texture::Texture* texture, float maxTextureSize = 0.0f);
 
+        static void Tooltip(const char* text, float size = 1.0f);
+
     };
 
 }

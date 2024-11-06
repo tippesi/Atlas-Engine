@@ -7,6 +7,7 @@
 #include "EntityPropertiesPanel.h"
 #include "SceneStatisticsPanel.h"
 #include "ResourceSelectionPanel.h"
+#include "TerrainPanel.h"
 #include "ImguiExtension/Panels.h"
 
 #include <type_traits>
@@ -33,6 +34,10 @@ namespace Atlas::Editor::UI {
                     RenderHeading("Entity");
                     entityPropertiesPanel.Render(scene, t);
                 }
+            }
+            else if constexpr (std::is_same_v<T, ResourceHandle<Terrain::Terrain>>) {
+                RenderHeading("Terrain");
+                terrainPanel.Render(t, scene);
             }
             else if constexpr (std::is_same_v<T, Ref<Lighting::Fog>>) {
                 RenderHeading("Fog");
@@ -111,6 +116,7 @@ namespace Atlas::Editor::UI {
         ResourceSelectionPanel<Texture::Cubemap> cubemapSelectionPanel;
         ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
 
+        TerrainPanel terrainPanel;
         ImguiExtension::FogPanel fogPanel;
         ImguiExtension::VolumetricCloudsPanel volumetricCloudsPanel;
         ImguiExtension::IrradianceVolumePanel irradianceVolumePanel;

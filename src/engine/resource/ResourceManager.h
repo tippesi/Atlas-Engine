@@ -194,7 +194,7 @@ namespace Atlas {
         static ResourceHandle<T> AddResource(const std::string& path, Ref<Resource<T>> resource) {
 
             bool alreadyExisted;
-            AddResource(path, resource, alreadyExisted);
+            return AddResource(path, resource, alreadyExisted);
 
         }
 

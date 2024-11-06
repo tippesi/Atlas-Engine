@@ -68,6 +68,9 @@ namespace Atlas {
                 node.Update(camera, LoDDistances,
                     leafList, LoDImage);
 
+            for (auto& cell : storage.unusedCells)
+                cell->blas = nullptr;
+
         }
 
         void Terrain::UpdateRenderlist(const Volume::Frustum& frustum, vec3 location) {

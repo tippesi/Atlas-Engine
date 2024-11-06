@@ -119,7 +119,9 @@ namespace Atlas::Editor::UI {
                 .editorCameraEntity = cameraEntity
             };
 
-            if (sceneHierarchyPanel.selectedProperty.fog)
+            if (sceneHierarchyPanel.selectedProperty.terrain)
+                scenePropertiesPanel.Render(scene->terrain, refScene, target);
+            else if (sceneHierarchyPanel.selectedProperty.fog)
                 scenePropertiesPanel.Render(scene->fog, nullptr, target);
             else if (sceneHierarchyPanel.selectedProperty.volumetricClouds)
                 scenePropertiesPanel.Render(scene->sky.clouds, nullptr, target);

@@ -16,7 +16,7 @@ namespace Atlas {
              * @return
              * @note This method just loads the terrain information, not the nodes.
              */
-            static Ref<Terrain::Terrain> LoadTerrain(const std::string& filename);
+            static Ref<Terrain::Terrain> LoadTerrain(const std::string& filename, bool loadNodes = false);
 
             /**
              * Stores the terrain in a directory on the hard drive

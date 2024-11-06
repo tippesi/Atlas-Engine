@@ -248,6 +248,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::Separator();
 
+        RenderExtendedItem("Terrain", &selectedProperty.terrain, selectionChanged);
         if (scene->irradianceVolume)
             RenderExtendedItem("Irradiance volume", &selectedProperty.irradianceVolume, selectionChanged);
         if (scene->rtgi)

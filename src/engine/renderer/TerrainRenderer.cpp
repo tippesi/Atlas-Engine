@@ -60,8 +60,8 @@ namespace Atlas {
             std::vector<TerrainMaterial> terrainMaterials(128);
 
             for (size_t i = 0; i < materials.size(); i++) {
-                if (materials[i]) {
-                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].get()];
+                if (materials[i].IsLoaded()) {
+                    terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].Get().get()];
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
                     terrainMaterials[i].ao = materials[i]->ao;

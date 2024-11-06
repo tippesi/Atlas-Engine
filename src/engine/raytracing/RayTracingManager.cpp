@@ -49,6 +49,8 @@ namespace Atlas::RayTracing {
                         if (cell.blas && cell.blas->IsBuilt())
                             continue;
 
+                        cell.storage = &storage;
+
                         float nodeStretch = terrain->resolution * powf(2.0f,
                             (float)(terrain->LoDCount - cell.LoD) - 1.0f);
                         float heightStretch = terrain->heightScale;

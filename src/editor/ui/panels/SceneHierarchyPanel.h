@@ -7,6 +7,7 @@
 namespace Atlas::Editor::UI {
 
     struct SelectedProperty {
+        bool terrain = false;
         bool fog = false;
         bool volumetricClouds = false;
         bool reflection = false;
