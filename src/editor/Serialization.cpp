@@ -3,6 +3,7 @@
 #include "FileImporter.h"
 
 #include "common/SerializationHelper.h"
+#include "tools/ToolSerializer.h"
 #include "scene/SceneSerializer.h"
 
 #include "Log.h"
@@ -91,6 +92,7 @@ namespace Atlas::Editor {
             { "depthTestBoundingVolumes", sceneWindow->depthTestBoundingVolumes },
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
+            { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
             { "camera", camera }
         };
 
@@ -129,6 +131,7 @@ namespace Atlas::Editor {
         try_get_json(j, "playMaximized", sceneWindow->playMaximized);
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);
+        try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());

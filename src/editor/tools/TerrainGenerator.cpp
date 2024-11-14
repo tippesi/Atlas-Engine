@@ -1,6 +1,7 @@
 #include "TerrainGenerator.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <ImguiExtension/UiElements.h>
 #include <tools/TerrainTool.h>
 #include <common/NoiseGenerator.h>
@@ -37,8 +38,6 @@ namespace Atlas::Editor {
         newPreviewMoistureMap.SetData(previewMoistureImg->GetData());
         newPreviewBiomeMap.SetData(previewBiomeImg->GetData());
 
-        name.resize(500);
-
         auto amplitude = 1.0f;
 
         for (uint8_t i = 0; i < 8; i++) {
@@ -56,6 +55,7 @@ namespace Atlas::Editor {
 
     void TerrainGenerator::Render() {
 
+        const float padding = 8.0f;
         auto imguiWrapper = Singletons::imguiWrapper;
 
         textureSelectionPanel.Reset();
@@ -73,7 +73,7 @@ namespace Atlas::Editor {
 
         auto width = ImGui::GetContentRegionAvail().x;
 
-        ImGui::InputTextWithHint("Name", "Type name", (char*)name.data(), 500);
+        ImGui::InputTextWithHint("Name", "Type name", &name);
 
         ImGui::Separator();
         ImGui::Text("Heightmap");
@@ -100,21 +100,13 @@ namespace Atlas::Editor {
 
             ImGui::SliderFloat("Exponent", &heightExp, 0.01f, 10.0f, "%.3f");
             ImGui::SliderInt("Seed##0", &heightSeed, 0, 100);
-
-            switch (resolutionSelection) {
-            case 0: heightMapResolution = 512; break;
-            case 1: heightMapResolution = 1024; break;
-            case 2: heightMapResolution = 2048; break;
-            case 3: heightMapResolution = 4096; break;
-            case 4: heightMapResolution = 8192; break;
-            }
-
         }
         else {
             bool resourceChanged = false;
             heightMap = textureSelectionPanel.Render(heightMap, resourceChanged);
 
-            if (heightMap.IsLoaded() && resourceChanged) {
+            // This is also done when the terrain generator is deserialized again
+            if (heightMap.IsLoaded() && resourceChanged || heightMap.IsLoaded() && !heightMapImage) {
                 heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
             }
         }
@@ -124,6 +116,7 @@ namespace Atlas::Editor {
         ImGui::Text("General settings");
 
         ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
+        ImGui::SliderInt("Patch size", &patchSize, 1, 32);
         ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
         ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
 
@@ -175,18 +168,18 @@ namespace Atlas::Editor {
             auto lineHeight = ImGui::GetTextLineHeight();
             auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
 
+            auto& deleteIcon = Singletons::icons->Get(IconType::Delete);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+
             int32_t matCount = 0;
             int32_t loopCount = 0;
             for (auto& [material, color] : materials) {
                 auto name = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
 
-                auto treeNodeSize = region.x - (material.IsValid() ? deleteButtonSize.x + 2.0f * 8.0f : 0.0f);
+                auto treeNodeSize = region.x - (material.IsValid() ? deleteButtonSize.x + 2.0f * padding : 0.0f);
                 ImGui::SetNextItemWidth(treeNodeSize);
                 bool open = ImGui::TreeNode(name.c_str());
                 ImGui::SameLine();
-
-                auto& deleteIcon = Singletons::icons->Get(IconType::Delete);
-                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
                 if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
@@ -196,13 +189,13 @@ namespace Atlas::Editor {
 
                 if (open) {
                     material = materialSelectionPanel.Render(material);
-                    ImGui::ColorEdit3(("Biome color##" + std::to_string(matCount++)).c_str(), &color[0]);
+                    ImGui::ColorEdit3(("Material color##" + std::to_string(matCount++)).c_str(), &color[0]);
                     ImGui::TreePop();
                 }
                 loopCount++;
             }
 
-            if (ImGui::Button("Add material")) {
+            if (ImGui::Button("Add material", ImVec2(-FLT_MIN, 0.0f))) {
                 materials.push_back({ ResourceHandle<Material>(), vec3(0.0f) });
             }
 
@@ -234,11 +227,27 @@ namespace Atlas::Editor {
             }
 
             int32_t eleBiomeCount = 0;
-            int32_t moiBiomeCount = 0;
-            int32_t sloBiomeCount = 0;
-            int32_t totalCount = 0;
+            int32_t deleteElevationElement = -1;
             for (auto& eleBiome : elevationBiomes) {
-                if (ImGui::TreeNode(("Elevation biome " + std::to_string(eleBiomeCount++)).c_str())) {
+                ImGui::PushID(eleBiomeCount);
+
+                int32_t moiBiomeCount = 0;
+                int32_t sloBiomeCount = 0;
+
+                auto eleRegion = ImGui::GetContentRegionAvail();
+
+                bool eleOpen = ImGui::TreeNode(("Elevation biome " + std::to_string(eleBiomeCount++)).c_str());
+
+                ImGui::SameLine();
+
+                ImGui::SetCursorPosX(eleRegion.x - deleteButtonSize.x - padding);
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                    deleteElevationElement = eleBiomeCount - 1;
+                }
+                ImGui::PopStyleColor();
+
+                if (eleOpen) {
                     ImGui::SliderFloat("Elevation", &eleBiome.elevation, 0.0f, 1.0f);
                     ImGui::RadioButton("Larger", &eleBiome.less, 0);
                     ImGui::SameLine();
@@ -247,33 +256,25 @@ namespace Atlas::Editor {
                     ImGui::RadioButton("Less", &eleBiome.less, 1);
                     ImGui::SameLine();
                     UIElements::Tooltip("Everything smaller than the biome elevation will be painted with the biomes materials");
-                    if (eleBiome.selection >= 0) {
-                        ImGui::Combo(("Material##" + std::to_string(totalCount++)).c_str(), &eleBiome.selection,
-                            pointer.data(), pointer.size());
-                        if ((size_t)eleBiome.selection < materials.size()) {
-                            eleBiome.material = materials[eleBiome.selection].first;
-                        }
+                    if (eleBiome.materialIdx >= 0) {
+                        ImGui::Combo("Material", &eleBiome.materialIdx, pointer.data(), pointer.size());
                     }
                     else {
-                        if (ImGui::Button("Add material")) {
-                            eleBiome.selection = 0;
+                        if (ImGui::Button("Add material", ImVec2(-FLT_MIN, 0.0f))) {
+                            eleBiome.materialIdx = 0;
                         }
                     }
                     if (ImGui::TreeNode("Moisture biomes")) {
                         for (auto& moiBiome : eleBiome.moistureBiomes) {
                             if (ImGui::TreeNode(("Moisture biome " + std::to_string(moiBiomeCount++)).c_str())) {
                                 ImGui::SliderFloat("Moisture", &moiBiome.moisture, 0.0f, 1.0f);
-                                ImGui::Combo(("Material##" + std::to_string(totalCount++)).c_str(), &moiBiome.selection,
-                                    pointer.data(), pointer.size());
-                                if ((size_t)moiBiome.selection < materials.size()) {
-                                    moiBiome.material = materials[moiBiome.selection].first;
-                                }
+                                ImGui::Combo("Material", &moiBiome.materialIdx, pointer.data(), pointer.size());
                                 ImGui::TreePop();
                             }
                         }
-                        if (ImGui::Button("Add moisture biome")) {
+                        if (ImGui::Button("Add moisture biome", ImVec2(-FLT_MIN, 0.0f))) {
                             MoistureBiome biome;
-                            biome.selection = 0;
+                            biome.materialIdx = 0;
                             biome.moisture = 0.1f;
                             eleBiome.moistureBiomes.push_back(biome);
                         }
@@ -283,17 +284,13 @@ namespace Atlas::Editor {
                         for (auto& sloBiome : eleBiome.slopeBiomes) {
                             if (ImGui::TreeNode(("Slope biome " + std::to_string(sloBiomeCount++)).c_str())) {
                                 ImGui::SliderFloat("Slope", &sloBiome.slope, 0.0f, 1.0f);
-                                ImGui::Combo(("Material##" + std::to_string(totalCount++)).c_str(), &sloBiome.selection,
-                                    pointer.data(), pointer.size());
-                                if ((size_t)sloBiome.selection < materials.size()) {
-                                    sloBiome.material = materials[sloBiome.selection].first;
-                                }
+                                ImGui::Combo("Material", &sloBiome.materialIdx, pointer.data(), pointer.size());
                                 ImGui::TreePop();
                             }
                         }
-                        if (ImGui::Button("Add slope biome")) {
+                        if (ImGui::Button("Add slope biome", ImVec2(-FLT_MIN, 0.0f))) {
                             SlopeBiome biome;
-                            biome.selection = 0;
+                            biome.materialIdx = 0;
                             biome.slope = 0.5f;
                             eleBiome.slopeBiomes.push_back(biome);
                         }
@@ -302,28 +299,33 @@ namespace Atlas::Editor {
 
                     ImGui::TreePop();
                 }
+
+                ImGui::PopID();
             }
 
-            if (ImGui::Button("Add elevation biome")) {
+            if (ImGui::Button("Add elevation biome", ImVec2(-FLT_MIN, 0.0f))) {
                 ElevationBiome biome;
                 biome.elevation = 0.1f;
-                biome.selection = -1;
+                biome.materialIdx = -1;
                 biome.less = 0;
                 elevationBiomes.push_back(biome);
             }
 
-            if (ImGui::Button("Sort biomes")) {
+            if (ImGui::Button("Sort biomes", ImVec2(-FLT_MIN, 0.0f))) {
                 elevationBiomes = SortBiomes();
             }
 
             ImGui::SetItemTooltip("Sorts the biome based on a biome function. After sorting, all\n"
-                "biomes get evaluated from top to bottom.");                       
+                "biomes get evaluated from top to bottom.");
+
+            if (deleteElevationElement >= 0)
+                elevationBiomes.erase(elevationBiomes.begin() + deleteElevationElement);
 
         }
 
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
-            if (name[0] == '\0') {
+            if (name.empty()) {
                 Notifications::Push({"Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f)});
             }
             else if (!materials.size() && advanced) {
@@ -337,6 +339,10 @@ namespace Atlas::Editor {
             }
             else {
                 successful = true;
+
+                Singletons::blockingOperation->Block("Generating terrain. Please wait...", [&]() {
+                    Generate();
+                    });
             }
 
         }
@@ -345,28 +351,36 @@ namespace Atlas::Editor {
 
     }
 
-    void TerrainGenerator::Clear() {
+    ResourceHandle<Terrain::Terrain> TerrainGenerator::GetTerrain() {
 
-        name.clear();
-        name.resize(500);
-        heightMapResolution = 0;
-        elevationBiomes.clear();
-        materials.clear();
-        selectedMaterial.Reset();
-        materialSelection = 0;
-        advanced = false;
+        if (!successful || !Singletons::blockingOperation->job.HasFinished())
+            return ResourceHandle<Terrain::Terrain>();
+
+        auto path = "terrains/" + name + "/" + name + ".aeterrain";
+        auto handle = ResourceManager<Terrain::Terrain>::GetResource(path);
         successful = false;
+
+        return handle;
 
     }
 
-    Ref<Terrain::Terrain> TerrainGenerator::GetTerrain() {
+    void TerrainGenerator::Generate() {
 
-        if (!successful)
-            return nullptr;
+        auto path = "terrains/" + name + "/" + name + ".aeterrain";
+        auto handle = ResourceManager<Terrain::Terrain>::GetResource(path);
 
         Ref<Common::Image<uint16_t>> heightImage, moistureImage;
 
         if (!loadFromFile) {
+            int32_t heightMapResolution = 128;
+            switch (resolutionSelection) {
+            case 0: heightMapResolution = 512; break;
+            case 1: heightMapResolution = 1024; break;
+            case 2: heightMapResolution = 2048; break;
+            case 3: heightMapResolution = 4096; break;
+            case 4: heightMapResolution = 8192; break;
+            }
+
             heightImage = CreateRef<Common::Image<uint16_t>>(heightMapResolution,
                 heightMapResolution, 1);
             Common::NoiseGenerator::GeneratePerlinNoise2D(*heightImage, heightAmplitudes,
@@ -380,15 +394,15 @@ namespace Atlas::Editor {
 
         if (!advanced) {
             terrain = Tools::TerrainTool::GenerateTerrain(*heightImage, 1,
-                LoDCount, 8, resolution, height, selectedMaterial);
+                LoDCount, patchSize, resolution, height, selectedMaterial);
         }
         else {
             std::vector<ResourceHandle<Material>> mats;
-            Common::Image<uint8_t> splatImage(heightMapResolution,
-                heightMapResolution, 1);
+            Common::Image<uint8_t> splatImage(heightImage->width,
+                heightImage->height, 1);
 
-            moistureImage = CreateRef<Common::Image<uint16_t>>(heightMapResolution,
-                heightMapResolution, 1);
+            moistureImage = CreateRef<Common::Image<uint16_t>>(heightImage->width / 2,
+                heightImage->height / 2, 1);
             Common::NoiseGenerator::GeneratePerlinNoise2D(*moistureImage, moistureAmplitudes,
                 (uint32_t)moistureSeed);
 
@@ -418,19 +432,21 @@ namespace Atlas::Editor {
                 }
             }
 
-            auto ref = CreateRef(splatImage);
-            Loader::ImageLoader::SaveImage(ref, "Splat.png");
-
             terrain = Tools::TerrainTool::GenerateTerrain(*heightImage, splatImage, 1,
-                LoDCount, 8, resolution, height, mats);
+                LoDCount, patchSize, resolution, height, mats);
 
         }
 
         terrain->filename = name;
 
-        successful = false;
-
-        return terrain;
+        if (!handle.IsLoaded()) {
+            handle = ResourceManager<Terrain::Terrain>::AddResource(path, terrain);
+            // Only save when there is nothing on the disk yet
+            Loader::TerrainLoader::SaveTerrain(terrain, path);
+        }
+        else {
+            handle.GetResource()->Swap(terrain);
+        }
 
     }
 
@@ -553,7 +569,7 @@ namespace Atlas::Editor {
     std::pair<ResourceHandle<Material>, vec3> TerrainGenerator::Biome(float x, float y, std::vector<ElevationBiome>& biomes,
         Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
 
-        ResourceHandle<Material> material;
+        std::pair<ResourceHandle<Material>, vec3> material;
 
         auto xTex = 1.0f / (float)heightImg.width;
         auto yTex = 1.0f / (float)heightImg.height;
@@ -571,73 +587,74 @@ namespace Atlas::Editor {
 
         for (auto& eleBiome : biomes) {
             if (eleBiome.less) {
-                if (e >= eleBiome.elevation) {
+                if (e >= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
                     continue;
                 }
 
                 for (auto& moiBiome : eleBiome.moistureBiomes) {
-                    if (m >= moiBiome.moisture) {
+                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
                         continue;
                     }
-                    material = moiBiome.material;
-                    if (material.IsValid())
+                    material = materials[moiBiome.materialIdx];
+                    if (material.first.IsValid())
                         break;
                 }
 
                 for (auto& sloBiome : eleBiome.slopeBiomes) {
-                    if (s >= sloBiome.slope) {
+                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
                         continue;
                     }
-                    material = sloBiome.material;
-                    if (material.IsValid())
+                    material = materials[sloBiome.materialIdx];
+                    if (material.first.IsValid())
                         break;
                 }
 
-                if (material.IsValid())
+                if (material.first.IsValid())
                     break;
-                material = eleBiome.material;
-                if (material.IsValid())
+                material = materials[eleBiome.materialIdx];
+                if (material.first.IsValid())
                     break;
             }
             else {
-                if (e <= eleBiome.elevation) {
+                if (e <= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
                     continue;
                 }
 
                 for (auto& moiBiome : eleBiome.moistureBiomes) {
-                    if (m >= moiBiome.moisture) {
+                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
                         continue;
                     }
-                    material = moiBiome.material;
-                    if (material.IsValid())
+                    material = materials[moiBiome.materialIdx];
+                    if (material.first.IsValid())
                         break;
                 }
 
                 for (auto& sloBiome : eleBiome.slopeBiomes) {
-                    if (s >= sloBiome.slope) {
+                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
                         continue;
                     }
-                    material = sloBiome.material;
-                    if (material.IsValid())
+                    material = materials[sloBiome.materialIdx];
+                    if (material.first.IsValid())
                         break;
                 }
 
-                if (material.IsValid())
+                if (material.first.IsValid())
                     break;
 
-                material = eleBiome.material;
-                if (material.IsValid())
+                material = materials[eleBiome.materialIdx];
+                if (material.first.IsValid())
                     break;
             }
         }
 
         // Use default material
-        if (!material.IsLoaded()) {
-            material = selectedMaterial;
+        if (material.first.IsLoaded()) {
+            return material;
         }
 
+        // Try to use the default material
         for (auto mat : materials) {
-            if (mat.first == material) {
+            if (mat.first == selectedMaterial) {
                 return mat;
             }
         }

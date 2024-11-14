@@ -10,9 +10,22 @@ namespace Atlas::Editor::UI {
     class TerrainPanel : public Panel {
 
     public:
+        enum class TerrainBrushType {
+            HeightGauss = 0,
+            HeightBox,
+            HeightSmooth,
+            Material
+        };
+
         TerrainPanel() : Panel("Terrain") {}
 
         void Render(ResourceHandle<Terrain::Terrain> terrain, Ref<Scene::Scene> scene);
+
+        bool editingMode = false;
+        float brushSize = 1.0f;
+        TerrainBrushType brushType = TerrainBrushType::HeightGauss;
+
+        TerrainGenerator terrainGenerator;
 
     private:
         void RenderGeneralSettings(ResourceHandle<Terrain::Terrain>& terrain);
@@ -21,15 +34,15 @@ namespace Atlas::Editor::UI {
 
         void RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain);
 
-        void AddTerrainToScene(Ref<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene);
-
-        TerrainGenerator terrainGenerator;
+        void AddTerrainToScene(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene);
 
         ImguiExtension::MaterialsPanel materialsPanel;
 
         ResourceSelectionPanel<Terrain::Terrain> terrainSelectionPanel;
         ResourceSelectionPanel<Material> materialSelectionPanel;
         ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
+        
+        std::vector<float> LoDDistances;
 
     };
 

@@ -465,11 +465,6 @@ void main() {
     variance *= varianceBoost;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
-    imageStore(resolveImage, pixel, vec4(vec3(historyLength / 32.0), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(adjClipBlend), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(abs(velocity.x) + abs(velocity.y)), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(success ? 1.0 : 0.0), variance));
-    //imageStore(resolveImage, pixel, vec4(vec3(materialIdx) / 3000.0, variance));
     imageStore(resolveImage, pixel, vec4(resolve, variance));
 
 }

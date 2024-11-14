@@ -239,7 +239,7 @@ void main() {
                                     centerLinearDepth, sampleLinearDepth,
                                     centerMaterialIdx, sampleMaterialIdx,
                                     stdDeviation * pushConstants.strength, 
-                                    noHistory ? 2.0 : NdotV * 512.0, depthPhi, noHistory);
+                                    noHistory ? 2.0 : NdotV * 128.0, depthPhi, noHistory);
 
             float weight = kernelWeight * edgeStoppingWeight;
             

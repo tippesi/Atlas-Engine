@@ -75,17 +75,35 @@ namespace Atlas::Physics {
     }
 
     void to_json(json& j, const HeightFieldShapeSettings& p) {
+        // Raw json floating point could get too memory expensive
+        std::vector<uint8_t> binaryData(p.heightData.size() * sizeof(float));
+
+        if (!p.heightData.empty())
+            std::memcpy(binaryData.data(), p.heightData.data(), binaryData.size());
+
         j = json {
-            {"heightData", p.heightData},
+            {"heightData", json::binary(binaryData)},
             {"translation", p.translation},
             {"scale", p.scale},
         };
     }
 
-    void from_json(const json& j, HeightFieldShapeSettings& p) {
-        j.at("heightData").get_to(p.heightData);
+    void from_json(const json& j, HeightFieldShapeSettings& p) {        
+
         j.at("translation").get_to(p.translation);
         j.at("scale").get_to(p.scale);
+
+        // Raw json floating point could get too memory expensive
+        std::vector<uint8_t> binaryData;
+        if (j["heightData"].is_binary())
+            binaryData = j["heightData"].get_binary();
+        else
+            j.at("heightData").at("bytes").get_to(binaryData);
+        
+        if (!binaryData.empty()) {
+            p.heightData.resize(binaryData.size() / sizeof(float));
+            std::memcpy(p.heightData.data(), binaryData.data(), binaryData.size());
+        }
     }
 
     void to_json(json& j, const Shape& p) {

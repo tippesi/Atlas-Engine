@@ -99,7 +99,7 @@ void main() {
 
 #ifdef DDGI
         bool insideVolume = IsInsideVolume(worldPos);
-        vec3 probeIrradiance = GetLocalIrradiance(worldPos, -worldView, worldNorm).rgb * ddgiData.volumeStrength;
+        vec3 probeIrradiance = GetLocalIrradianceInterpolated(worldPos, -worldView, worldNorm,worldNorm, vec3(0.0)).rgb * ddgiData.volumeStrength;
         probeIrradiance = insideVolume ? probeIrradiance : vec3(0.0);
 #else
         bool insideVolume = false;

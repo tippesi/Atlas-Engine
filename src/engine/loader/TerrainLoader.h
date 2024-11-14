@@ -33,7 +33,7 @@ namespace Atlas {
              * @param filename
              * @param initWithHeightData
              */
-            static void LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
+            static void LoadStorageCell(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cell,
                 const std::string& filename, bool initWithHeightData = false);
 
         private:

@@ -1,5 +1,7 @@
 #include "TerrainRenderer.h"
 
+#include "../common/NoiseGenerator.h"
+
 namespace Atlas {
 
     namespace Renderer {
@@ -10,6 +12,15 @@ namespace Atlas {
             auto usage = Buffer::BufferUsageBits::HostAccessBit | Buffer::BufferUsageBits::MultiBufferedBit |
                 Buffer::BufferUsageBits::UniformBufferBit;
             terrainMaterialBuffer = Buffer::Buffer(usage, sizeof(TerrainMaterial) * 128, 1);
+
+            Common::Image<float> noiseImage(512, 512, 1);
+            std::vector<float> amplitudes = { 1.0f, 0.75f, 0.5f, .25f, 0.20f, 0.075f };
+            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+
+            noiseTexture = Texture::Texture2D(512, 512,
+                VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear);
+            auto data = noiseImage.ConvertData<float16>();
+            noiseTexture.SetData(data);
         }
 
         void TerrainRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
@@ -98,6 +109,8 @@ namespace Atlas {
 
             terrainMaterialBuffer.Bind(commandList, 3, 8);
             uniformBuffer.Bind(commandList, 3, 9);
+
+            noiseTexture.Bind(commandList, 3, 10);
 
             for (uint8_t i = 0; i < 3; i++) {
 

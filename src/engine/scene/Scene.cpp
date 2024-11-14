@@ -897,13 +897,13 @@ namespace Atlas {
             json j;
             SceneToJson(j, scene.get());
 
-            return json::to_bjdata(j);
+            return json::to_msgpack(j);
 
         }
 
         Ref<Scene> Scene::Restore(const std::vector<uint8_t>& serialized) {
 
-            json j = json::from_bjdata(serialized);
+            json j = json::from_msgpack(serialized);
 
             Ref<Scene> scene;
             SceneFromJson(j, scene);

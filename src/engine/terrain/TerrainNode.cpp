@@ -66,10 +66,7 @@ namespace Atlas {
 
             if (children.size()) {
                 if (LoDDistances[LoD] <= minDistance) {
-                    for (auto& child : children) {                        
-                        child.cell->blas = nullptr;
-                    }
-                    children.clear();
+                    ClearChildren();
                 }
             }
             else {
@@ -160,12 +157,25 @@ namespace Atlas {
                 return;
             }
 
+            children.reserve(4);
+
             for (int32_t i = 0; i < 2; i++) {
                 for (int32_t j = 0; j < 2; j++) {
                     children.push_back(TerrainNode(location + vec2((float)i, (float)j) * sideLength / 2.0f, height, sideLength / 2.0f,
                         LoD + 1, LoDCount, LoDMultiplier * 2, globalIndex * 2, ivec2(i, j), storage, childrenCells[i][j]));
                 }
             }
+
+        }
+
+        void TerrainNode::ClearChildren() {
+
+            for (auto& child : children) {
+                child.cell->blas.reset();
+                child.ClearChildren();
+            }
+
+            children.clear();
 
         }
 

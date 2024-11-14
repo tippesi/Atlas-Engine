@@ -54,9 +54,9 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     int textureLevel;
     float roughnessCutoff;
     int halfRes;
+    ivec2 resolution;
     int padding0;
     int padding1;
-    ivec2 resolution;
     Shadow shadow;
 } uniforms;
 
@@ -81,7 +81,7 @@ void main() {
         if (uniforms.halfRes > 0)
             recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
         else
-            recontructTexCoord = (vec2(pixel) + 0.5) / (vec2(resolution));
+            recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
             
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
@@ -145,16 +145,29 @@ void main() {
 
                     vec3 radiance = vec3(0.0);
                     if (material.roughness <= uniforms.roughnessCutoff) {                 
-                        vec3 viewRayOrigin = viewPos + 10.0 * viewNormal * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
+                        vec3 viewRayOrigin = viewPos + 2.0 * viewNormal * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
                         float rayLength = globalData.cameraFarPlane;
 
                         vec2 hitPixel;
                         vec3 hitPoint;
                         float jitter =  GetInterleavedGradientNoise(vec2(pixel), 4u) / float(sampleCount) + i / float(sampleCount);
-                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 0.1, 16.0, 0.5, 64.0, rayLength, false, hitPixel, hitPoint)) {
-                            vec2 hitTexCoord =  vec2(hitPixel + 0.5) / vec2(textureSize(depthTexture, 0));
-                            radiance = textureLod(lightingTexture, hitTexCoord, 1).rgb;
+                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, 16.0, jitter, 64.0, rayLength, false, hitPixel, hitPoint)) {
+                            int offsetIdx = texelFetch(offsetTexture, ivec2(hitPixel), 0).r;
+                            vec2 hitOffset = vec2(offsets[offsetIdx]);
+
+                            vec2 hitTexCoord;
+                            if (uniforms.halfRes > 0)
+                                hitTexCoord = vec2(2.0 * hitPixel + hitOffset + 0.5) / vec2(textureSize(lightingTexture, 0));
+                            else
+                                hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(lightingTexture, 0));
+
+                            radiance = textureLod(lightingTexture, hitTexCoord, 0).rgb;
                             hits += 1.0;
+                        }
+                        else {
+#ifndef RT
+                            radiance =  SampleEnvironmentMap(ray.direction).rgb;
+#endif
                         }
                     }
 
@@ -165,6 +178,10 @@ void main() {
             }
 
             reflection /= float(sampleCount);
+
+        }
+
+        if (hits < 1.0) {
 
         }
 

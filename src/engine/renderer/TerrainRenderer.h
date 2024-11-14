@@ -69,6 +69,8 @@ namespace Atlas {
             Buffer::UniformBuffer uniformBuffer;
             Buffer::Buffer terrainMaterialBuffer;
 
+            Texture::Texture2D noiseTexture;
+
             PipelineConfig GeneratePipelineConfig(Ref<RenderTarget> target,
                 Ref<Terrain::Terrain>& terrain, bool detailConfig,
                 bool materialMappingConfig);

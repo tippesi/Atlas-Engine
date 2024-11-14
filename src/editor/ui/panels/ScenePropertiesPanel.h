@@ -96,20 +96,7 @@ namespace Atlas::Editor::UI {
             ImGui::End();
 
         }
-
-    private:
-        void RenderHeading(const std::string& heading) {
-
-            ImGui::SetWindowFontScale(1.5f);
-
-            ImGui::Text("%s", heading.c_str());
-
-            ImGui::SetWindowFontScale(1.0f);
-
-            ImGui::Separator();
-
-        }
-
+       
         EntityPropertiesPanel entityPropertiesPanel;
         SceneStatisticsPanel sceneStatisticsPanel;
 
@@ -127,6 +114,19 @@ namespace Atlas::Editor::UI {
         ImguiExtension::WindPanel windPanel;
         ImguiExtension::SkyPanel skyPanel;
         ImguiExtension::PostProcessingPanel postProcessingPanel;
+
+    private:
+        void RenderHeading(const std::string& heading) {
+
+            ImGui::SetWindowFontScale(1.5f);
+
+            ImGui::Text("%s", heading.c_str());
+
+            ImGui::SetWindowFontScale(1.0f);
+
+            ImGui::Separator();
+
+        }
 
     };
 

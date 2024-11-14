@@ -117,7 +117,8 @@ bool traceScreenSpace(
     // Scale derivatives by the desired pixel stride and then
     // offset the starting values by the jitter fraction
 
-    float strideScale = 1.0 - min(1.0, abs(csOrig.z) * 0.01);
+    const float strideOffset = 0.01;
+    float strideScale = 1.0 - min(1.0, abs(csOrig.z) * strideOffset);
     stride = 1.0 + strideScale * stride;
 
     P0 += dP; 
@@ -141,10 +142,11 @@ bool traceScreenSpace(
     float k = k0, stepCount = 0.0, prevZMaxEstimate = csOrig.z;
     float rayZMin = prevZMaxEstimate, rayZMax = prevZMaxEstimate;
     float sceneZMax = rayZMax + maxDistance;
+    float sceneDepthMax = 0.0;
     point2 P = P0;
     for (; 
          ((P.x * stepDir) <= end) && (stepCount < maxSteps) &&
-         !intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, 0.01) &&
+         !intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, strideOffset) &&
          (sceneZMax != 0); 
          P += dP, Q.z += dQ.z, k += dk, ++stepCount) {
         
@@ -158,7 +160,8 @@ bool traceScreenSpace(
         hitPixel = permute ? P.yx : P;
         // You may need hitPixel.y = csZBufferSize.y - hitPixel.y; here if your vertical axis
         // is different than ours in screen space
-        sceneZMax = ConvertDepthToViewSpaceDepth(texelFetch(csZBuffer, ivec2(hitPixel), 0).r, ipMatrix);
+        sceneDepthMax = texelFetch(csZBuffer, ivec2(hitPixel), 0).r;
+        sceneZMax = ConvertDepthToViewSpaceDepth(sceneDepthMax, ipMatrix);
     }
 
     minPoint = Q0 + dQ * (stepCount - 2.0);
@@ -171,7 +174,7 @@ bool traceScreenSpace(
     Q.xy += dQ.xy * stepCount;
     hitPoint = Q * (1.0 / k);   
     
-    return intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, 0.01)
+    return (intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, strideOffset))
         && validPixel(hitPixel, csZBufferSize);
 }
 
@@ -259,8 +262,8 @@ bool traceScreenSpaceAdvanced(
         
     csOrig = minPoint;
     csDir = normalize(maxPoint - minPoint);
-    stride = max(1.0, 2.0 * stride / maxSteps);;
-    //zThickness /= (2.0 * maxSteps);
+    stride = max(1.0, stride / maxSteps);
+    //zThickness /= (1.0 * maxSteps);
     //maxDistance = min(maxDistance, 20.0 * distance(maxPoint, minPoint));
 
     vec2 newHitPixel;

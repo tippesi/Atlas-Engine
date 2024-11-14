@@ -113,7 +113,7 @@ namespace Atlas {
             uniforms.sampleCount = reflection->sampleCount;
             uniforms.lightSampleCount = reflection->lightSampleCount;
             uniforms.textureLevel = reflection->textureLevel;
-            uniforms.halfRes = target->GetReflectionResolution() == HALF_RES ? 1 : 0;
+            uniforms.halfRes = reflection->halfResolution ? 1 : 0;
             uniforms.resolution = rayRes;
 
             if (shadow && reflection->useShadowMap) {
@@ -161,6 +161,7 @@ namespace Atlas {
 
                 ssrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 ssrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
+                ssrPipelineConfig.ManageMacro("RT", reflection->rt);
                 ssrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
                 ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
 

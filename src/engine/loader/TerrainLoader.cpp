@@ -180,7 +180,7 @@ namespace Atlas {
                 auto slot = ReadInt(" ", line, offset);
 
                 auto pos = line.find_last_of("\r\n");
-                auto materialPath = terrainDir + "/" + line.substr(offset, pos - offset);
+                auto materialPath = line.substr(offset, pos - offset);
                 auto material = MaterialLoader::LoadMaterial(materialPath);
 
                 if (material)
@@ -197,25 +197,28 @@ namespace Atlas {
             if (!loadNodes)
                 return terrain;
 
+            std::vector<Terrain::TerrainStorageCell*> cells;
+
             for (int32_t depth = 0; depth < terrain->LoDCount; depth++) {
                 int32_t cellSideCount = (int32_t)sqrtf((float)terrain->storage->GetCellCount(depth));
 
                 for (int32_t x = 0; x < cellSideCount; x++) {
                     for (int32_t y = 0; y < cellSideCount; y++) {
 
-                        auto cell = terrain->storage->GetCell(x, y, depth);
-
-                        Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cell, filename, true);
+                        Terrain::TerrainStorageCell* cell = terrain->storage->GetCell(x, y, depth);
+                        cells.push_back(cell);                        
 
                     }
                 }
             }
 
+            Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cells, filename, true);            
+
             return terrain;
 
         }
 
-        void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, Terrain::TerrainStorageCell* cell,
+        void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
                 const std::string& filename, bool initWithHeightData) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
@@ -226,7 +229,6 @@ namespace Atlas {
             }
 
             std::string header, body;
-
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
@@ -241,68 +243,70 @@ namespace Atlas {
             for (int32_t i = 0; i < materialCount + 2; i++)
                 std::getline(fileStream, body);
 
-            auto isLeaf = cell->LoD == terrain->LoDCount - 1;
+            auto basePosition = fileStream.tellg();
             auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
             // Height map + splat map
-            auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;
-
-            auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
-            auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
+            auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;            
             auto normalDataResolution = int64_t(0);
 
-            auto currPos = int64_t(0);
+            for (auto cell : cells) {
+                auto isLeaf = cell->LoD == terrain->LoDCount - 1;
+                auto currPos = int64_t(0);
 
-            // Different resolutions for each LoD
-            for (int32_t i = 0; i <= cell->LoD; i++) {
-                auto sizeFactor = int64_t(glm::min(downsample, 
-                    terrain->bakeResolution / (tileResolution - 1)));
-                normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
-                auto nodeSize = nodeDataCount + normalDataResolution
-                    * normalDataResolution * 3;
+                auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
+                auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
 
-                if (cell->LoD == i) {
-                    currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
-                    break;
+                // Different resolutions for each LoD
+                for (int32_t i = 0; i <= cell->LoD; i++) {
+                    auto sizeFactor = int64_t(glm::min(downsample,
+                        terrain->bakeResolution / (tileResolution - 1)));
+                    normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
+                    auto nodeSize = nodeDataCount + normalDataResolution
+                        * normalDataResolution * 4;
+
+                    if (cell->LoD == i) {
+                        currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
+                        break;
+                    }
+
+                    currPos += tileSideCount * tileSideCount * nodeSize;
+
+                    downsample /= 2;
+                    tileSideCount *= 2;
                 }
-                
-                currPos += tileSideCount * tileSideCount * nodeSize;
 
-                downsample /= 2;
-                tileSideCount *= 2;
-            }
+                cell->storage = terrain->storage.get();
 
-            cell->storage = terrain->storage.get();
+                fileStream.seekg(currPos + basePosition);
 
-            fileStream.seekg(currPos, std::ios_base::cur);
+                std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
+                fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
+                cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
+                    VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                cell->heightField->SetData(heightFieldData);
 
-            std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
-            fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
-            cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
-                VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->heightField->SetData(heightFieldData);
+                Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
+                fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
+                cell->normalData = image.GetData();
 
-            Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 3);
-            fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
-            cell->normalData = image.GetData();
+                cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
+                    VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
+                cell->normalMap->SetData(image.GetData());
 
-            image.ExpandToChannelCount(4, 255);
-            cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
-                VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-            cell->normalMap->SetData(image.GetData());            
+                std::vector<uint8_t> splatMapData(heightFieldData.size());
+                fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
+                cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
+                    VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
+                cell->splatMap->SetData(splatMapData);
+                cell->materialIdxData = splatMapData;
 
-            std::vector<uint8_t> splatMapData(heightFieldData.size());
-            fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
-            cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
-                VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-            cell->splatMap->SetData(splatMapData);
-            cell->materialIdxData = splatMapData;
-            
-            if (initWithHeightData) {
-                cell->heightData.resize(tileResolution * tileResolution);
+                if (initWithHeightData) {
+                    cell->heightData.resize(tileResolution * tileResolution);
 
-                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
-                    cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
+                    for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
+                        cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
+                }
             }
 
             fileStream.close();

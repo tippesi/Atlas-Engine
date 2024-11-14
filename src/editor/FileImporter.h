@@ -78,7 +78,7 @@ namespace Atlas::Editor {
         }
         else if constexpr (std::is_same_v<T, Scene::Scene>) {
             handle = ResourceManager<Scene::Scene>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Serializer::DeserializeScene, false);
+                ResourceOrigin::User, Serializer::DeserializeScene, true);
         }
         else if constexpr (std::is_same_v<T, Scripting::Script>) {
             handle = ResourceManager<Scripting::Script>::GetOrLoadResourceAsync(

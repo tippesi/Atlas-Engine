@@ -10,13 +10,13 @@ namespace Atlas::Scene {
 		std::set<ECS::Entity> insertedEntities;
 		EntityToJson(j, entity, scene.get(), insertedEntities);
 
-		return json::to_bjdata(j);
+		return json::to_msgpack(j);
 
 	}
 
 	Entity Entity::Restore(const Ref<Scene>& scene, const std::vector<uint8_t>& serialized) {
 
-		json j = json::from_bjdata(serialized);
+		json j = json::from_msgpack(serialized);
 
 		auto entity = scene->CreateEntity();
 

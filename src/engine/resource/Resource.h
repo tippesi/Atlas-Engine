@@ -8,10 +8,8 @@
 #include "../jobsystem/JobSystem.h"
 
 #include <vector>
-#include <mutex>
 #include <atomic>
 #include <functional>
-#include <future>
 
 #define RESOURCE_RETENTION_FRAME_COUNT 30
 
@@ -111,7 +109,9 @@ namespace Atlas {
         }
 
         void Swap(Ref<T>& newData) {
+
             data.swap(newData);
+
         }
 
         std::string GetFileName() const {
@@ -137,7 +137,6 @@ namespace Atlas {
 
         std::atomic_bool isLoaded = false;
         JobGroup jobGroup{ JobPriority::Low };
-        std::shared_future<void> future;
 
         int32_t framesToDeletion = RESOURCE_RETENTION_FRAME_COUNT;
     };

@@ -429,10 +429,10 @@ namespace Atlas {
         static void ShutdownHandler() {
 
             for (const auto& [_, resource] : resources) {
-                if (!resource->future.valid())
+                if (!resource->jobGroup.HasFinished())
                     continue;
-                resource->future.wait();
-                resource->future.get();
+                
+                JobSystem::Wait(resource->jobGroup);
             }
 
             resources.clear();

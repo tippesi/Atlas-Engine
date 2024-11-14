@@ -28,7 +28,7 @@ namespace Atlas {
             Scene::SceneToJson(j, scene.get());
 
             if (binaryJson) {
-                auto data = json::to_bjdata(j);
+                auto data = json::to_msgpack(j);
                 fileStream.write(reinterpret_cast<const char*>(data.data()), data.size());
             }
             else {
@@ -57,7 +57,7 @@ namespace Atlas {
             json j;
             if (binaryJson) {
                 auto data = Loader::AssetLoader::GetFileContent(fileStream);
-                j = json::from_bjdata(data);
+                j = json::from_msgpack(data);
             }
             else {
                 std::string serialized((std::istreambuf_iterator<char>(fileStream)),

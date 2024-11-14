@@ -39,13 +39,16 @@ namespace Atlas {
 
             for (int32_t i = 0; i < LoDCount; i++) {
                 distance /= 2.0f;
-                LoDDistances[i] = distance;                
+                LoDDistances[i] = distance;
             }
+
+            rootNodes.reserve(rootNodeCount);
 
             for (int32_t i = 0; i < rootNodeSideCount; i++) {
                 for (int32_t j = 0; j < rootNodeSideCount; j++) {
                     TerrainStorageCell *cell = storage->GetCell(i, j, 0);
                     storage->requestedCells.push_back(cell);
+                    storage->requestedBvhCells.push_back(cell);
                     rootNodes.push_back(TerrainNode(vec2((float) i * ratio, (float) j * ratio), heightScale,
                         ratio, 0, LoDCount, rootNodeSideCount, ivec2(0, 0), ivec2(i, j), storage, cell));
                 }
@@ -70,9 +73,6 @@ namespace Atlas {
 
             storage->PushRequestedCellsToQueue();
             storage->PushRequestedBvhCellsToQueue();
-
-            //for (auto& cell : storage->unusedCells)
-                //cell->blas = nullptr;
 
         }
 

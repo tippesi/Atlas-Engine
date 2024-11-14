@@ -102,9 +102,7 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     }
 
-    //result = vec4(data[closestMemoryOffset], 1.0);
-
-    return vec4(result.rgb, 1.0);
+    return vec4(result.rgb / max(totalWeight, 1e-20), 1.0);
 
 }
 

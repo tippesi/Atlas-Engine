@@ -38,6 +38,8 @@ namespace Atlas {
         private:
             void CreateChildren();
 
+            void ClearChildren();
+
             ivec2 index;
 
             int32_t LoD;

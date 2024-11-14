@@ -28,9 +28,9 @@ namespace Atlas {
                 int32_t textureLevel;
                 float roughnessCutoff;
                 int32_t halfRes;
+                ivec2 resolution;
                 int32_t padding0;
                 int32_t padding1;
-                ivec2 resolution;
                 Shadow shadow;
             };
 
