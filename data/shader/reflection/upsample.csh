@@ -102,7 +102,8 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     }
 
-    return vec4(result.rgb / max(totalWeight, 1e-20), 1.0);
+    return vec4(data[closestMemoryOffset], 1.0);
+    //return vec4(result.rgb / max(totalWeight, 1e-20), 1.0);
 
 }
 
@@ -137,7 +138,7 @@ void main() {
     if (downSamplePixel * 2 + offset == pixel) {
         ivec2 samplePixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
         int sharedMemoryOffset = Flatten2D(samplePixel, unflattenedDepthDataSize);
-        upsampleResult.rgb = data[sharedMemoryOffset];
+        //upsampleResult.rgb = data[sharedMemoryOffset];
     }
 
     imageStore(image, pixel, upsampleResult);

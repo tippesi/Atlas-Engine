@@ -38,7 +38,9 @@ namespace Atlas {
         private:
             void CreateChildren();
 
-            void ClearChildren();
+            void ClearChildren(bool rootClear);
+
+            bool AreChildrenClearable();
 
             ivec2 index;
 

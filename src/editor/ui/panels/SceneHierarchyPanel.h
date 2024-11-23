@@ -49,11 +49,14 @@ namespace Atlas::Editor::UI {
         bool SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
             std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches);
 
+        void ToggleHierarchyVisibility(Scene::Entity entity, bool visible);
+
         JobGroup searchJob{ JobPriority::Medium };;
 
         std::string entitySearch;
         std::string transformedEntitySearch;
         std::unordered_set<ECS::Entity> matchSet;
+        std::unordered_set<ECS::Entity> nodeInvisibleSet;
 
     };
 

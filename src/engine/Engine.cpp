@@ -10,6 +10,7 @@
 #include "input/KeyboardMap.h"
 #include "events/EventManager.h"
 #include "raytracing/RayTracingManager.h"
+#include "terrain/TerrainManager.h"
 #include "jobsystem/JobSystem.h"
 
 #include "graphics/ShaderCompiler.h"
@@ -125,6 +126,7 @@ namespace Atlas {
         Audio::AudioManager::Update();
         Physics::ShapesManager::Update();
         RayTracing::RayTracingManager::Update();
+        Terrain::TerrainManager::Update();
 
     }
 

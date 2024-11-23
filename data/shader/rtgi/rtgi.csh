@@ -192,6 +192,8 @@ vec3 EvaluateHit(inout Ray ray) {
     Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
 
 #ifdef DDGI
+    // Fade out ddgi secondary bounce the shorter the ray is, should really help out light leaking in tight spaces
+    float ddgiDistanceDamp = min(1.0, distance(surface.P, ray.origin));
     surface.NdotV = saturate(dot(surface.N, surface.V));
     vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
     //vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
@@ -199,7 +201,7 @@ vec3 EvaluateHit(inout Ray ray) {
     // This enables metallic materials to have some kind of secondary reflection
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
         EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength * ddgiDistanceDamp : vec3(0.0);
 #endif
     
     radiance += surface.material.emissiveColor;

@@ -986,6 +986,8 @@ namespace Atlas {
 
 		void MainRenderer::SetUniforms(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, const CameraComponent& camera) {
 
+			bool mipBias = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+
 			auto globalUniforms = GlobalUniforms{
 				.vMatrix = camera.viewMatrix,
 				.pMatrix = camera.projectionMatrix,
@@ -1009,7 +1011,7 @@ namespace Atlas {
 				.time = Clock::Get(),
 				.deltaTime = Clock::GetDelta(),
 				.frameCount = frameCount,
-				.mipLodBias = -1.0f / target->GetScalingFactor(),
+				.mipLodBias = mipBias ? log2f(target->GetScalingFactor()) - 1.0f : 0.0f,
 				.cameraNearPlane = camera.nearPlane,
 				.cameraFarPlane = camera.farPlane,
 			};

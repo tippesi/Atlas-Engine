@@ -42,7 +42,7 @@ namespace Atlas {
 
                 auto& data = image.GetData();
 
-                auto offset = vec2(float(seed) * 100.0f);
+                auto offset = glm::mod(vec2(float(seed) / 100.0f), 1.0f);
                 auto amplitude = std::accumulate(amplitudes.begin(), amplitudes.end(), 0.0f);
 
                 amplitude = 1.0f / amplitude;

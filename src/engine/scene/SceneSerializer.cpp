@@ -206,7 +206,7 @@ namespace Atlas::Scene {
         }
         if (j.contains("terrain")) {
             scene->terrain = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(
-                j["terrain"], Loader::TerrainLoader::LoadTerrain, true);
+                j["terrain"], Loader::TerrainLoader::LoadTerrain, false);
         }
 
         std::vector<json> jEntities = j["entities"];

@@ -23,7 +23,11 @@ namespace Atlas {
         public:
             TerrainStorageCell(TerrainStorage* storage);
 
+            TerrainStorageCell(const TerrainStorageCell& that);
+
             bool IsLoaded();
+
+            void Unload();
 
             void BuildBVH(float stretchFactor, float heightFactor);
 
@@ -36,7 +40,6 @@ namespace Atlas {
             Volume::AABB aabb;
             mat3x4 inverseMatrix;
 
-            Physics::ShapeRef shape;
             Ref<RayTracing::BLAS> blas;
 
             std::vector<float> heightData;
@@ -46,6 +49,9 @@ namespace Atlas {
             Ref<Texture::Texture2D> heightField = nullptr;
             Ref<Texture::Texture2D> normalMap = nullptr;
             Ref<Texture::Texture2D> splatMap = nullptr;
+
+            std::atomic_bool isLoaded = false;
+            std::atomic_bool loadRequested = false;
 
             TerrainStorage* storage = nullptr;
 

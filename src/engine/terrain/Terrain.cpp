@@ -71,6 +71,7 @@ namespace Atlas {
                 node.Update(camera, LoDDistances,
                     leafList, LoDImage);
 
+            storage->PushUnusedCellsToQueue();
             storage->PushRequestedCellsToQueue();
             storage->PushRequestedBvhCellsToQueue();
 

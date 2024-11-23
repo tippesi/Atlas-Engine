@@ -413,7 +413,7 @@ void main() {
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     float historyLength = historyMoments.b;
-    if (factor < 0.1 * roughness || !valid) {
+    if (factor <= 0.1 * roughness || !valid) {
         historyLength = 0.0;
         currentMoments.g = 1.0;
         currentMoments.r = 0.0;

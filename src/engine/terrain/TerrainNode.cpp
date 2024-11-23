@@ -19,8 +19,7 @@ namespace Atlas {
 
         TerrainNode::~TerrainNode() {
 
-            // Let the user decide what to do with unused cells
-            storage->unusedCells.push_back(cell);
+            
 
         }
 
@@ -65,8 +64,8 @@ namespace Atlas {
             }
 
             if (children.size()) {
-                if (LoDDistances[LoD] <= minDistance) {
-                    ClearChildren();
+                if (LoDDistances[LoD] <= minDistance && AreChildrenClearable()) {
+                    ClearChildren(true);
                 }
             }
             else {
@@ -143,7 +142,10 @@ namespace Atlas {
                     auto childAbsoluteIndex = globalIndex * 2 + ivec2(i, j);
                     childrenCells[i][j] = storage->GetCell((int32_t)childAbsoluteIndex.x, (int32_t)childAbsoluteIndex.y, LoD + 1);
                     if (!childrenCells[i][j]->IsLoaded()) {
-                        storage->requestedCells.push_back(childrenCells[i][j]);
+                        if (!childrenCells[i][j]->loadRequested) {
+                            childrenCells[i][j]->loadRequested = true;
+                            storage->requestedCells.push_back(childrenCells[i][j]);
+                        }
                         creatable = false;
                     }
                     if (childrenCells[i][j]->IsLoaded() && (!childrenCells[i][j]->blas || !childrenCells[i][j]->blas->IsBuilt())) {
@@ -166,16 +168,52 @@ namespace Atlas {
                 }
             }
 
+            // Important to set by hand here (could otherwise take some frames for it to be unloaded, 
+            // while we could reuse it in the meantime and expect it to stay available)
+            cell->isLoaded = false;
+            storage->unusedCells.push_back(cell);
+
         }
 
-        void TerrainNode::ClearChildren() {
+        void TerrainNode::ClearChildren(bool rootClear) {
+
+            // Only need to wait for our cell to be loaded if we are at the top of the clear hierarchy
+            if (!cell->IsLoaded() && rootClear) {
+                // Only request once
+                if (!cell->loadRequested) {
+                    cell->loadRequested = true;
+                    storage->requestedCells.push_back(cell);
+                }
+                return;
+            }
+
+            if ((!cell->blas || !cell->blas->IsBuilt()) && rootClear) {
+                storage->requestedBvhCells.push_back(cell);
+                return;
+            }
 
             for (auto& child : children) {
-                child.cell->blas.reset();
-                child.ClearChildren();
+                // Here the same reason as above is true
+                child.cell->isLoaded = false;
+                storage->unusedCells.push_back(child.cell);
+
+                child.ClearChildren(false);
             }
 
             children.clear();
+
+        }
+
+        bool TerrainNode::AreChildrenClearable() {
+
+            bool clearable = true;
+
+            for (auto& child : children) {
+                clearable &= child.cell->IsLoaded();
+                clearable &= child.AreChildrenClearable();
+            }
+
+            return clearable;
 
         }
 

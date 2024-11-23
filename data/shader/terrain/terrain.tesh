@@ -1,5 +1,6 @@
 #include <terrainMaterial.hsh>
 #include <../globals.hsh>
+#include <../common/random.hsh>
 
 #ifndef DISTANCE
 layout(quads, equal_spacing, cw) in;
@@ -9,7 +10,8 @@ layout(quads, equal_spacing, cw) in;
 
 layout (set = 3, binding = 1) uniform sampler2D normalMap;
 layout (set = 3, binding = 2) uniform usampler2D splatMap;
-layout(set = 3, binding = 7) uniform sampler2DArray displacementMaps;
+layout (set = 3, binding = 7) uniform sampler2DArray displacementMaps;
+layout (set = 3, binding = 10) uniform sampler2D noiseMap;
 
 layout (set = 3, binding = 8, std140) uniform UBO {
     TerrainMaterial materials[128];
@@ -26,6 +28,7 @@ layout (set = 3, binding = 9, std140) uniform UniformBuffer {
     float tessellationShift;
     float maxTessellationLevel;
 } Uniforms;
+
 
 layout(push_constant) uniform constants {
     float nodeSideLength;
@@ -46,17 +49,26 @@ layout(location=1) out vec2 texCoords;
 layout(location=2) out vec3 ndcCurrent;
 layout(location=3) out vec3 ndcLast;
 
-float SampleDisplacement(vec2 off, uvec4 indices) {
+float SampleDisplacement(vec2 off, vec2 coords, uvec4 indices) {
+
+    vec2 position = materialTexCoords + PushConstants.nodeLocation;
+
+    float noiseX = textureLod(noiseMap, 0.25 * position, 0).r;
+    float noiseY = textureLod(noiseMap, 0.25 * position + vec2(0.5), 0).r;
+
+    vec2 flooredCoords = floor(position + vec2(noiseX, noiseY));
+    float rand = random(flooredCoords);
+    vec2 rotTexCoords = rotateUV(position, rand);
 
     if (indices.x == indices.y && 
         indices.x == indices.z &&
         indices.x == indices.w)
-        return texture(displacementMaps, vec3(materialTexCoords, float(indices.x))).r;
+        return texture(displacementMaps, vec3(rotTexCoords, float(indices.x))).r;
     
-    float q00 = texture(displacementMaps, vec3(materialTexCoords, float(indices.x))).r;
-    float q10 = texture(displacementMaps, vec3(materialTexCoords, float(indices.y))).r;
-    float q01 = texture(displacementMaps, vec3(materialTexCoords, float(indices.z))).r;
-    float q11 = texture(displacementMaps, vec3(materialTexCoords, float(indices.w))).r;
+    float q00 = texture(displacementMaps, vec3(rotTexCoords, float(indices.x))).r;
+    float q10 = texture(displacementMaps, vec3(rotTexCoords, float(indices.y))).r;
+    float q01 = texture(displacementMaps, vec3(rotTexCoords, float(indices.z))).r;
+    float q11 = texture(displacementMaps, vec3(rotTexCoords, float(indices.w))).r;
     
     // Interpolate samples horizontally
     float h0 = mix(q00, q10, off.x);
@@ -85,10 +97,10 @@ void main(){
     
     // world position
     vec4 position =
-    ((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
-    u * (1.0 - v) * gl_in[0].gl_Position +
-    u * v * gl_in[1].gl_Position +
-    (1.0 - u) * v * gl_in[2].gl_Position);
+        ((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
+        u * (1.0 - v) * gl_in[0].gl_Position +
+        u * v * gl_in[1].gl_Position +
+        (1.0 - u) * v * gl_in[2].gl_Position);
     
     texCoords = vec2(position.x, position.z) - PushConstants.nodeLocation;
 
@@ -123,7 +135,7 @@ void main(){
             Materials.materials[indices.w].displacementScale,
             off
         );
-        float displacement = SampleDisplacement(off, indices)
+        float displacement = SampleDisplacement(off, materialTexCoords, indices)
             * displacementScale * weight;
         
         position.xyz += norm * displacement;

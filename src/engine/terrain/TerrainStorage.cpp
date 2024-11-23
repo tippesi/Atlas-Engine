@@ -132,6 +132,26 @@ namespace Atlas {
 
         }
 
+        void TerrainStorage::PushUnusedCellsToQueue() {
+
+            std::lock_guard lock(unusedCellQueueMutex);
+
+            unusedCellQueue.insert(unusedCells.begin(), unusedCells.end());
+            unusedCells.clear();
+
+        }
+
+        std::vector<TerrainStorageCell*> TerrainStorage::GetUnusedCellsQueue() {
+
+            std::lock_guard lock(unusedCellQueueMutex);
+
+            auto cells = std::vector<TerrainStorageCell*>{ unusedCellQueue.begin(), unusedCellQueue.end() };
+            unusedCellQueue.clear();
+
+            return cells;
+
+        }
+
         void TerrainStorage::PushRequestedCellsToQueue() {
 
             std::lock_guard lock(cellQueueMutex);
@@ -141,11 +161,11 @@ namespace Atlas {
 
         }
 
-        std::set<TerrainStorageCell*> TerrainStorage::GetRequestedCellsQueue() {
+        std::vector<TerrainStorageCell*> TerrainStorage::GetRequestedCellsQueue() {
 
             std::lock_guard lock(cellQueueMutex);
 
-            auto cells = requestedCellQueue;
+            auto cells = std::vector<TerrainStorageCell*>{ requestedCellQueue.begin(), requestedCellQueue.end() };
             requestedCellQueue.clear();
 
             return cells;
@@ -161,11 +181,11 @@ namespace Atlas {
 
         }
 
-        std::set<TerrainStorageCell*> TerrainStorage::GetRequestedBvhCellsQueue() {
+        std::vector<TerrainStorageCell*> TerrainStorage::GetRequestedBvhCellsQueue() {
 
             std::lock_guard lock(bvhCellQueueMutex);
 
-            auto cells = requestedBvhCellQueue;
+            auto cells = std::vector<TerrainStorageCell*>{ requestedBvhCellQueue.begin(), requestedBvhCellQueue.end() };
             requestedBvhCellQueue.clear();
 
             return cells;

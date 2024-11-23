@@ -71,14 +71,17 @@ namespace Atlas {
              */
             void RemoveMaterial(int32_t slot, ResourceHandle<Material> material);
 
+            void PushUnusedCellsToQueue();
+
+            std::vector<TerrainStorageCell*> GetUnusedCellsQueue();
 
             void PushRequestedCellsToQueue();
             
-            std::set<TerrainStorageCell*> GetRequestedCellsQueue();
+            std::vector<TerrainStorageCell*> GetRequestedCellsQueue();
             
             void PushRequestedBvhCellsToQueue();
 
-            std::set<TerrainStorageCell*> GetRequestedBvhCellsQueue();
+            std::vector<TerrainStorageCell*> GetRequestedBvhCellsQueue();
 
             /**
              *
@@ -87,17 +90,13 @@ namespace Atlas {
              */
             std::vector<ResourceHandle<Material>> GetMaterials();
 
+            std::vector<TerrainStorageCell*> unusedCells;
             std::vector<TerrainStorageCell*> requestedCells;
             std::vector<TerrainStorageCell*> requestedBvhCells;
 
+            std::set<TerrainStorageCell*> unusedCellQueue;
             std::set<TerrainStorageCell*> requestedCellQueue;
-            std::set<TerrainStorageCell*> requestedBvhCellQueue;
-
-            /**
-             * The storage cells the terrain doesn't need any more because of a change
-             * in the level of detail.
-             */
-            std::vector<TerrainStorageCell*> unusedCells;
+            std::set<TerrainStorageCell*> requestedBvhCellQueue;           
 
             Texture::Texture2DArray baseColorMaps;
             Texture::Texture2DArray roughnessMaps;
@@ -122,6 +121,7 @@ namespace Atlas {
 
             Graphics::CommandList* commandList = nullptr;
 
+            std::mutex unusedCellQueueMutex;
             std::mutex cellQueueMutex;
             std::mutex bvhCellQueueMutex;
 

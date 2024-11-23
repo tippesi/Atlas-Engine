@@ -307,6 +307,9 @@ namespace Atlas {
                     for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
                         cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
                 }
+                
+                cell->isLoaded = true;
+                cell->loadRequested = false;
             }
 
             fileStream.close();

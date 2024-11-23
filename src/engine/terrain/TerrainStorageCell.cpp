@@ -11,18 +11,57 @@ namespace Atlas {
 
         }
 
+        TerrainStorageCell::TerrainStorageCell(const TerrainStorageCell& that) {
+
+            if (this != &that) {
+
+                // Due to the atomic bool we need to do the copying manually (this method should ONLY be called when initializing the terrain)
+                this->x = that.x;
+                this->y = that.y;
+                this->LoD = that.LoD;
+
+                this->position = that.position;
+                this->inverseMatrix = that.inverseMatrix;
+
+                this->heightData = that.heightData;
+                this->materialIdxData = that.materialIdxData;
+                this->normalData = that.normalData;
+
+                this->heightField = that.heightField;
+                this->normalMap = that.normalMap;
+                this->splatMap = that.splatMap;
+
+                this->storage = that.storage;
+
+                this->isLoaded.store(that.isLoaded.load());
+
+            }
+
+        }
+
         bool TerrainStorageCell::IsLoaded() {
 
-            if (!heightField || !heightField->IsValid())
-                return false;
+            return isLoaded;
 
-            if (!normalMap || !normalMap->IsValid())
-                return false;
+        }
 
-            if (!storage)
-                return false;
+        void TerrainStorageCell::Unload() {
 
-            return true;
+            heightData.clear();
+            materialIdxData.clear();
+            normalData.clear();
+
+            heightData.shrink_to_fit();
+            materialIdxData.shrink_to_fit();
+            normalData.shrink_to_fit();
+
+            heightField = nullptr;
+            normalMap = nullptr;
+            splatMap = nullptr;
+
+            blas.reset();
+
+            isLoaded = false;
 
         }
 

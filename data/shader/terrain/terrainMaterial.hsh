@@ -1,3 +1,7 @@
+#extension GL_EXT_nonuniform_qualifier : require
+
+#include <../globals.hsh>
+
 struct TerrainMaterial {
     
     uint idx;
@@ -12,3 +16,15 @@ struct TerrainMaterial {
     float tiling;
 
 };
+
+// https://gist.github.com/ayamflow/c06bc0c8a64f985dd431bd0ac5b557cd
+vec2 rotateUV(vec2 uv, float rotation) {
+    const float mid = 0.5;
+    float cosAngle = cos(rotation);
+    float sinAngle = sin(rotation);
+    vec2 p = uv - vec2(mid);
+    return vec2(
+        cosAngle * p.x + sinAngle * p.y + 0.5,
+        cosAngle * p.y - sinAngle * p.x + 0.5
+    );
+}
