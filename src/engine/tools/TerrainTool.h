@@ -25,12 +25,21 @@ namespace Atlas {
              * @warning The input should correspond to the terrain specifications
              */
             static Ref<Terrain::Terrain> GenerateTerrain(Common::Image<uint16_t>& heightImage, int32_t rootNodeSideCount, int32_t LoDCount,
-                    int32_t patchSize, float resolution, float height, ResourceHandle<Material> material);
+                int32_t patchSize, float resolution, float height, ResourceHandle<Material> material);
 
 
             static Ref<Terrain::Terrain> GenerateTerrain(Common::Image<uint16_t>& heightImage, Common::Image<uint8_t>& splatImage,
                 int32_t rootNodeSideCount, int32_t LoDCount, int32_t patchSize, float resolution,
                 float height, std::vector<ResourceHandle<Material>> materials);
+
+             /**
+             *
+             * @param terrain
+             * @warning All storage cells of the terrain and their heightData member must be loaded.
+             * It is assumed that all cells have textures of the same resolution.
+             */
+            static void UpdateTerrain(Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
+                std::vector<ResourceHandle<Material>> materials);
 
             /**
              *
@@ -38,7 +47,7 @@ namespace Atlas {
              * @warning All storage cells of the terrain and their heightData member must be loaded.
              * It is assumed that all cells have textures of the same resolution.
              */
-            static void BakeTerrain(Ref<Terrain::Terrain> terrain);
+            static void BakeTerrain(Ref<Terrain::Terrain>& terrain);
 
             /**
              *
@@ -50,7 +59,7 @@ namespace Atlas {
              * must be loaded. It is assumed that all cells have textures of the same resolution.
              * @note The kernel size needs to be smaller than 2 times the edge of a cell
              */
-            static void BrushHeight(Ref<Terrain::Terrain> terrain, Filter* filter, float strength, vec2 position);
+            static void BrushHeight(Ref<Terrain::Terrain>& terrain, Filter* filter, float strength, vec2 position);
 
             /**
              *
@@ -60,13 +69,17 @@ namespace Atlas {
              * @param strength
              * @param position
              */
-            static void SmoothHeight(Ref<Terrain::Terrain> terrain, int32_t size, int32_t contributingRadius,
+            static void SmoothHeight(Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
                     float strength, vec2 position);
 
 
-            static void BrushMaterial(Ref<Terrain::Terrain> terrain, vec2 position, float size, int32_t slot);
+            static void BrushMaterial(Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot);
 
-            static Texture::Texture2D GenerateTerrainOceanMap(Ref<Terrain::Terrain> terrain, float oceanHeight, int32_t resolution);
+            static Texture::Texture2D GenerateTerrainOceanMap(Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
+
+            static Ref<Common::Image<uint16_t>> GenerateHeightMap(Ref<Terrain::Terrain>& terrain);
+
+            static void LoadMissingCells(Ref<Terrain::Terrain>& terrain, const std::string& filename);
 
         private:
             static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,

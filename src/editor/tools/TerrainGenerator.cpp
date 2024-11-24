@@ -53,7 +53,7 @@ namespace Atlas::Editor {
 
     }
 
-    void TerrainGenerator::Render() {
+    void TerrainGenerator::Render(ResourceHandle<Terrain::Terrain>& terrain) {
 
         const float padding = 8.0f;
         auto imguiWrapper = Singletons::imguiWrapper;
@@ -78,15 +78,17 @@ namespace Atlas::Editor {
         ImGui::Separator();
         ImGui::Text("Heightmap");
 
-        ImGui::RadioButton("Generate new", &loadFromFile, 0);
+        ImGui::RadioButton("Generate new", &heightMapSelection, 0);
         ImGui::SameLine();
-        ImGui::RadioButton("Load file", &loadFromFile, 1);
+        ImGui::RadioButton("Load file", &heightMapSelection, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Use existing terrain", &heightMapSelection, 2);
 
         UIElements::TextureView(imguiWrapper, &previewHeightMap, width / 2.0f);
         ImGui::SetItemTooltip("Higher octaves have a higher frequency, which might not be visible in the preview\n \
-                    Use the sliders to change the strength of an octave");
+            Use the sliders to change the strength of an octave");
 
-        if (!loadFromFile) {
+        if (heightMapSelection == 0) {
             const char* resolutions[] = { "512x512", "1024x1024", "2048x2048",
                 "4096x4096", "8192x8192" };
 
@@ -101,7 +103,7 @@ namespace Atlas::Editor {
             ImGui::SliderFloat("Exponent", &heightExp, 0.01f, 10.0f, "%.3f");
             ImGui::SliderInt("Seed##0", &heightSeed, 0, 100);
         }
-        else {
+        else if (heightMapSelection == 1) {
             bool resourceChanged = false;
             heightMap = textureSelectionPanel.Render(heightMap, resourceChanged);
 
@@ -110,21 +112,25 @@ namespace Atlas::Editor {
                 heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
             }
         }
+        else if (heightMapSelection == 2) {
+            // Needs to be done in an async way in the future
+            if (terrain.IsLoaded())
+                UpdateHeightmapFromTerrain(terrain);
+        }
 
         ImGui::Separator();
 
         ImGui::Text("General settings");
 
-        ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
-        ImGui::SliderInt("Patch size", &patchSize, 1, 32);
-        ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
-        ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
+        // Only display these options if we want to generate a fresh terrain
+        if (heightMapSelection < 2) {
+            ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
+            ImGui::SliderInt("Patch size", &patchSize, 1, 32);
+            ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
+            ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
+        }
 
-        std::string buttonText = "Advanced";
-
-        if (advanced)
-            buttonText = "Standard";
-
+        std::string buttonText = advanced ? "Advanced" : "Standard";
         if (ImGui::Button(buttonText.c_str(), ImVec2(width, 0.0f))) {
             advanced = !advanced;
         }
@@ -334,7 +340,7 @@ namespace Atlas::Editor {
             else if (!selectedMaterial.IsLoaded() && !advanced) {
                 Notifications::Push({"At least one material is required!", vec3(1.0f, 0.0f, 0.0f)});
             }
-            else if (loadFromFile && !heightMapImage->HasData()) {
+            else if (heightMapSelection && !heightMapImage->HasData()) {
                 Notifications::Push({"No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f)});
             }
             else {
@@ -364,6 +370,13 @@ namespace Atlas::Editor {
 
     }
 
+    void TerrainGenerator::UpdateHeightmapFromTerrain(ResourceHandle<Terrain::Terrain>& terrain) {
+
+        Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
+        heightMapImage = Tools::TerrainTool::GenerateHeightMap(terrain.Get());
+
+    }
+
     void TerrainGenerator::Generate() {
 
         auto path = "terrains/" + name + "/" + name + ".aeterrain";
@@ -371,7 +384,7 @@ namespace Atlas::Editor {
 
         Ref<Common::Image<uint16_t>> heightImage, moistureImage;
 
-        if (!loadFromFile) {
+        if (!heightMapSelection) {
             int32_t heightMapResolution = 128;
             switch (resolutionSelection) {
             case 0: heightMapResolution = 512; break;

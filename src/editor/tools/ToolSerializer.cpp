@@ -74,7 +74,7 @@ namespace Atlas::Editor {
             {"height", p.height},
             {"resolutionSelection", p.resolutionSelection},
             {"materialSelection", p.materialSelection},
-            {"loadFromFile", p.loadFromFile},
+            {"loadFromFile", p.heightMapSelection},
             {"advanced", p.advanced}
         };
 
@@ -107,7 +107,7 @@ namespace Atlas::Editor {
         j.at("resolution").get_to(p.resolution);
         j.at("resolutionSelection").get_to(p.resolutionSelection);
         j.at("materialSelection").get_to(p.materialSelection);
-        j.at("loadFromFile").get_to(p.loadFromFile);
+        j.at("loadFromFile").get_to(p.heightMapSelection);
         j.at("advanced").get_to(p.advanced);
 
         if (j.contains("heightMap"))

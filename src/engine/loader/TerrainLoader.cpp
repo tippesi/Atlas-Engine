@@ -212,14 +212,14 @@ namespace Atlas {
                 }
             }
 
-            Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cells, filename, true);            
+            Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cells, filename);            
 
             return terrain;
 
         }
 
         void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
-                const std::string& filename, bool initWithHeightData) {
+                const std::string& filename) {
 
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
@@ -301,12 +301,9 @@ namespace Atlas {
                 cell->splatMap->SetData(splatMapData);
                 cell->materialIdxData = splatMapData;
 
-                if (initWithHeightData) {
-                    cell->heightData.resize(tileResolution * tileResolution);
-
-                    for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
-                        cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
-                }
+                cell->heightData.resize(tileResolution * tileResolution);
+                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
+                    cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
                 
                 cell->isLoaded = true;
                 cell->loadRequested = false;

@@ -36,9 +36,11 @@ namespace Atlas::Editor {
 
         void Update();
 
-        void Render();
+        void Render(ResourceHandle<Terrain::Terrain>& terrain);
 
         ResourceHandle<Terrain::Terrain> GetTerrain();
+
+        void UpdateHeightmapFromTerrain(ResourceHandle<Terrain::Terrain>& terrain);
 
         ResourceHandle<Texture::Texture2D> heightMap;
         ResourceHandle<Material> selectedMaterial;
@@ -60,7 +62,7 @@ namespace Atlas::Editor {
 
         int32_t resolutionSelection = 2;
         int32_t materialSelection = 0;
-        int32_t loadFromFile = 0;
+        int32_t heightMapSelection = 0;
 
         bool advanced = false;
 

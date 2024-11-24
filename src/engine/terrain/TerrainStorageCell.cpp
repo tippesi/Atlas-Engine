@@ -47,11 +47,10 @@ namespace Atlas {
 
         void TerrainStorageCell::Unload() {
 
-            heightData.clear();
+            // We keep the height data, even after unload (e.g. needed for ray casting, height estimation)
             materialIdxData.clear();
             normalData.clear();
 
-            heightData.shrink_to_fit();
             materialIdxData.shrink_to_fit();
             normalData.shrink_to_fit();
 

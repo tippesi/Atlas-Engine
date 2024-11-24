@@ -6,11 +6,11 @@
 
 namespace Atlas::Terrain {
 
+    bool TerrainManager::enable;
     JobGroup TerrainManager::loadTerrainCellGroup;
 
     void TerrainManager::Update() {
 
-#ifdef AE_BINDLESS
         auto loadTerrainCells = [&](JobData) {
             auto terrains = ResourceManager<Terrain>::GetOwnedResources();
 
@@ -29,14 +29,19 @@ namespace Atlas::Terrain {
                 // Load new cells
                 cells = storage->GetRequestedCellsQueue();
                 auto span = std::span<TerrainStorageCell*> { cells.begin(), cells.end() };
-                Loader::TerrainLoader::LoadStorageCell(terrain.Get(), cells, terrain.GetResource()->path, true);
+                Loader::TerrainLoader::LoadStorageCell(terrain.Get(), cells, terrain.GetResource()->path);
             }
         };
 
-        if (loadTerrainCellGroup.HasFinished()) {
+        if (loadTerrainCellGroup.HasFinished() && enable) {
             JobSystem::Execute(loadTerrainCellGroup, loadTerrainCells);
         }
-#endif
+
+    }
+
+    void TerrainManager::WaitForJobCompletion() {
+
+        JobSystem::Wait(loadTerrainCellGroup);
 
     }
 

@@ -26,14 +26,20 @@ namespace Atlas::Editor::UI {
             RenderEditingSettings(terrain);
         }
         if (ImGui::CollapsingHeader("Generator")) {
-            if (scene->terrain.IsLoaded())
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Regenerating the terrain overrides any manual changes.");
+            if (scene->terrain.IsLoaded() && editingMode) {
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Exit terrain editing mode to access the generator");
+            }
+            else {
+                if (scene->terrain.IsLoaded()) {
+                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Regenerating might terrain overrides any manual changes.");
+                }
 
-            terrainGenerator.Render();
+                terrainGenerator.Render(scene->terrain);
 
-            terrain = terrainGenerator.GetTerrain();
-            if (terrain.IsValid()) {
-                terrainChanged = true;
+                terrain = terrainGenerator.GetTerrain();
+                if (terrain.IsValid()) {
+                    terrainChanged = true;
+                }
             }
         }
 
@@ -123,9 +129,13 @@ namespace Atlas::Editor::UI {
             }
         }
         else if (!editingMode && LoDDistances.size()) {
+            // If we are here it means we have exited editing mode
             for (int32_t i = 0; i < terrain->LoDCount; i++) {
                 terrain->SetLoDDistance(i, LoDDistances[i]);
             }
+            // Means the height map needs to come from the freshly edited terrain
+            if (terrainGenerator.heightMapSelection == 2)
+                terrainGenerator.UpdateHeightmapFromTerrain(terrain);
         }
 
         ImGui::SameLine();

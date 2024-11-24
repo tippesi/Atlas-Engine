@@ -12,6 +12,10 @@ namespace Atlas::Terrain {
 	public:
 		static void Update();
 
+		static void WaitForJobCompletion();
+
+		static bool enable;
+
 	private:
 		static JobGroup loadTerrainCellGroup;
 
