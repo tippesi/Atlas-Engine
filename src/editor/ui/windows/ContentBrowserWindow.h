@@ -32,6 +32,11 @@ namespace Atlas::Editor::UI {
             std::vector<std::string> paths;
         };
 
+        enum EditingType {
+            Create = 0,
+            Rename
+        };
+
         void RenderDirectoryControl();
 
         void RenderDirectoryContent();
@@ -50,18 +55,14 @@ namespace Atlas::Editor::UI {
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
-        bool TextInputPopup(const char* name, bool& isVisible, std::string& input);
-
         std::vector<std::string> GetSelectedPaths();
+
+        void ApplyEdit(ContentType type);
 
         int selectedFilter = -1;
 
         std::string nextDirectory;
         std::string assetSearch;
-
-        std::string renameString;
-        std::filesystem::path renamePath;
-        bool renamePopupVisible = false;
 
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;
@@ -69,6 +70,12 @@ namespace Atlas::Editor::UI {
         JobGroup searchAndFilterJob{ JobPriority::Medium };
 
         ImGuiSelectionBasicStorage selectionStorage;
+
+        bool isEditing = false;
+        bool editingChanged = false;
+        EditingType editingType;
+        std::string editingString;
+        std::filesystem::path editingPath;
 
         const float padding = 8.0f;
         const float iconSize = 64.f;

@@ -249,8 +249,8 @@ namespace Atlas::Editor::UI {
         nextDirectory = std::string();
 
         auto entryCount = int32_t(directories.size()) + int32_t(files.size());
-        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d | 
-           ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
+        ImGuiMultiSelectIO* multiSelectionIO = ImGui::BeginMultiSelect(ImGuiMultiSelectFlags_BoxSelect2d |
+            ImGuiMultiSelectFlags_ClearOnClickVoid, selectionStorage.Size, entryCount);
         selectionStorage.ApplyRequests(multiSelectionIO);
 
         ImGui::SetCursorPosX(padding);
@@ -262,13 +262,13 @@ namespace Atlas::Editor::UI {
             if (directory->assetPath.at(0) == '.')
                 continue;
 
-            RenderContentEntry(directory->path, directory->assetPath, ContentType::None, 
+            RenderContentEntry(directory->path, directory->assetPath, ContentType::None,
                 entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         for (const auto& file : files) {
-            RenderContentEntry(file.path, file.assetPath, file.type, 
-                entryIdx++, columnCount, columnSize, columnHeight);            
+            RenderContentEntry(file.path, file.assetPath, file.type,
+                entryIdx++, columnCount, columnSize, columnHeight);
         }
 
         multiSelectionIO = ImGui::EndMultiSelect();
@@ -276,11 +276,36 @@ namespace Atlas::Editor::UI {
 
         if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
             if (ImGui::BeginMenu("Create")) {
+                auto path = Common::Path::GetAbsolute(currentDirectory);
                 if (ImGui::MenuItem("Folder")) {
-
+                    isEditing = true;
+                    directories.push_back(CreateRef<ContentDirectory>({
+                        .path = path,
+                        .assetPath = path,
+                        }));
+                }
+                if (ImGui::MenuItem("Material")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::Material,
+                        });
                 }
                 if (ImGui::MenuItem("Script")) {
+                    isEditing = true;
+                    files.push_back(Content{
+                        .path = path,
+                        .assetPath = path,
+                        .type = ContentType::Script,
+                        });
+                }
 
+                if (isEditing) {
+                    editingChanged = true;
+                    editingPath = path;
+                    editingString.clear();
+                    editingType = EditingType::Create;
                 }
                 ImGui::EndMenu();
             }
@@ -294,21 +319,13 @@ namespace Atlas::Editor::UI {
             ImGui::EndPopup();
         }
 
-        if (TextInputPopup("Rename item", renamePopupVisible, renameString)) {
-            auto newPath = renamePath;
-            newPath = newPath.replace_filename(renameString);
-            if (renamePath.has_extension())
-                newPath = newPath.replace_extension(renamePath.extension());
-            std::filesystem::rename(renamePath, newPath);
-        }
-
         if (!nextDirectory.empty()) {
             currentDirectory = nextDirectory;
         }
 
     }
 
-    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
+    void ContentBrowserWindow::RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath,
         ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight) {
 
         bool isDirectory = contentType == ContentType::None;
@@ -331,14 +348,6 @@ namespace Atlas::Editor::UI {
             iconTexture = GetIcon(contentType);
         auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
 
-        std::string fileType = Common::Path::GetFileType(assetPath);
-        std::transform(fileType.begin(), fileType.end(), fileType.begin(), ::tolower);
-
-        // Assign default value, which is not valid if this dir entry is a directory
-        auto type = ContentType::Audio;
-        if (!isDirectory)
-            type = Content::contentTypeMapping.at(fileType);
-
         auto assetRelativePath = Common::Path::Normalize(assetPath);
 
         // Add selectable to allow for multi-select
@@ -350,7 +359,7 @@ namespace Atlas::Editor::UI {
             if (ImGui::IsMouseDoubleClicked(0)) {
                 if (isDirectory)
                     nextDirectory = path.string();
-                else if (type == ContentType::Scene)
+                else if (contentType == ContentType::Scene)
                     FileImporter::ImportFile<Scene::Scene>(assetRelativePath);
             }
         }
@@ -368,7 +377,7 @@ namespace Atlas::Editor::UI {
         if (ImGui::BeginPopupContextItem()) {
             auto singleSelect = selectionStorage.Size == 1;
             // Do a direct import here without relying on the file importer
-            if (type == ContentType::MeshSource && singleSelect && ImGui::MenuItem("Import as scene")) {
+            if (contentType == ContentType::MeshSource && singleSelect && ImGui::MenuItem("Import as scene")) {
                 PopupPanels::filename = assetRelativePath;
                 PopupPanels::isImportScenePopupVisible = true;
             }
@@ -378,10 +387,12 @@ namespace Atlas::Editor::UI {
                 OpenExternally(std::filesystem::absolute(path).string(), isDirectory);
 
             if (singleSelect && ImGui::MenuItem("Rename")) {
-                renamePopupVisible = true;
+                isEditing = true;
                 auto dirEntryFilename = path.filename();
-                renameString = dirEntryFilename.replace_extension("").string();
-                renamePath = path;
+                editingString = dirEntryFilename.replace_extension("").string();
+                editingChanged = true;
+                editingPath = path;
+                editingType = EditingType::Rename;
             }
 
             if (singleSelect && ImGui::MenuItem("Duplicate")) {
@@ -389,7 +400,7 @@ namespace Atlas::Editor::UI {
             }
 
             if (ImGui::MenuItem("Copy")) {
-                ContentCopy copy { GetSelectedPaths() };
+                ContentCopy copy{ GetSelectedPaths() };
                 CopyPasteHelper::Copy(copy);
             }
 
@@ -410,18 +421,51 @@ namespace Atlas::Editor::UI {
 
         ImGui::PopStyleColor();
 
-        auto offset = 0.0f;
+        if (isEditing && editingPath == path) {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        auto textSize = ImGui::CalcTextSize(filename.c_str());
-        if (textSize.x < iconSize)
-            offset = (iconSize - textSize.x) / 2.0f;
+            ImGui::SetNextItemWidth(buttonSize.x);
+            if (editingChanged) {
+                ImGui::SetKeyboardFocusHere();
+            }
+            if (ImGui::InputText("##Editing", &editingString, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                isEditing = false;
+                ApplyEdit(contentType);
+                ContentDiscovery::Execute();
+            }
+            // Only can apply a scroll after the element was specified above
+            if (editingChanged && editingType == EditingType::Create) {
+                ImGui::SetScrollY(ImGui::GetCursorPosY());
+            }
+            // Will not be immediately valid, so only check in next frame
+            if ((!ImGui::IsItemFocused() || ImGui::IsItemDeactivated()) && !editingChanged) {
+                isEditing = false;
+                // Means we need to delete the last element (first the directory)
+                if (editingType == EditingType::Create && contentType == ContentType::None) {
+                    directories.pop_back();
+                }
+                else if (editingType == EditingType::Create && contentType != ContentType::None) {
+                    files.pop_back();
+                }
+                ContentDiscovery::Execute();
+            }
+            editingChanged = false;
 
-        auto cursorX = ImGui::GetCursorPosX();
-        ImGui::SetCursorPosX(cursorX + offset);
-
-        ImGui::PushTextWrapPos(cursorX + buttonSize.x);
-        ImGui::Text("%s", filename.c_str());
-        ImGui::PopTextWrapPos();
+            ImGui::PopStyleColor();
+            ImGui::PopStyleColor();
+        }
+        else {
+            auto offset = 0.0f;
+            auto textSize = ImGui::CalcTextSize(filename.c_str());
+            if (textSize.x < iconSize)
+                offset = (iconSize - textSize.x) / 2.0f;
+            auto cursorX = ImGui::GetCursorPosX();
+            ImGui::SetCursorPosX(cursorX + offset);
+            ImGui::PushTextWrapPos(cursorX + buttonSize.x);
+            ImGui::Text("%s", filename.c_str());
+            ImGui::PopTextWrapPos();
+        }
 
         ImGui::PopID();
 
@@ -429,7 +473,7 @@ namespace Atlas::Editor::UI {
 
         // Advance to next column
         columnHeight = std::max(ImGui::GetCursorPosY() - cursorPos.y, columnHeight);
-            
+
         ImGui::SetCursorPosX(((entryIdx + 1) % columnCount) * columnSize + padding);
         if ((entryIdx + 1) % columnCount == 0) {
             cursorPos.y = cursorPos.y + columnHeight;
@@ -465,12 +509,17 @@ namespace Atlas::Editor::UI {
         case ContentType::Prefab: return icons->Get(IconType::Prefab);
         case ContentType::Texture: return icons->Get(IconType::Image);
         case ContentType::EnvironmentTexture: return icons->Get(IconType::EnvironmentImage);
+        case ContentType::Terrain: return icons->Get(IconType::Terrain);
         default: return icons->Get(IconType::Document);
         }
 
     }
 
     void ContentBrowserWindow::UpdateFilteredAndSortedDirEntries() {
+
+        // Don't want to update anything now
+        if (isEditing)
+            return;
 
         ContentType filterFileType = ContentType::None;
         if (selectedFilter >= 0)
@@ -493,7 +542,7 @@ namespace Atlas::Editor::UI {
 
         std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
             return file0.name < file1.name;
-        });
+            });
 
         if (assetSearch.empty() && !settings.filterRecursively) {
             directories = contentDirectory->directories;
@@ -506,14 +555,14 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
-            const ContentType contentType, const std::string& searchQuery, bool recursively) {
+    void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
+        const ContentType contentType, const std::string& searchQuery, bool recursively) {
 
         for (const auto& file : directory->files) {
             if (file.type != contentType && contentType != ContentType::None) {
                 continue;
             }
-            
+
             if (!searchQuery.empty() && file.name.find(searchQuery) == std::string::npos) {
                 continue;
             }
@@ -541,50 +590,6 @@ namespace Atlas::Editor::UI {
 
     }
 
-    bool ContentBrowserWindow::TextInputPopup(const char* name, bool& isVisible, std::string& input) {
-
-        if (!isVisible)
-            return false;
-
-        PopupPanels::SetupPopupSize(0.4f, 0.1f);
-
-        bool popupNew = false;
-
-        if (!ImGui::IsPopupOpen(name)) {
-            popupNew = true;
-            ImGui::OpenPopup(name);
-        }
-
-        bool success = false;
-
-        if (ImGui::BeginPopupModal(name, nullptr, ImGuiWindowFlags_NoResize)) {
-
-            if (popupNew)
-                ImGui::SetKeyboardFocusHere();
-
-            ImGui::InputText("New name", &input);
-
-            if (ImGui::Button("Cancel")) {
-                isVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Ok") || ImGui::IsKeyReleased(ImGuiKey_Enter)) {
-                success = true;
-                isVisible = false;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-
-        }
-
-        return success;
-
-    }
-
     std::vector<std::string> ContentBrowserWindow::GetSelectedPaths() {
 
         std::vector<std::string> paths;
@@ -605,6 +610,49 @@ namespace Atlas::Editor::UI {
         }
 
         return paths;
+
+    }
+
+    void ContentBrowserWindow::ApplyEdit(ContentType type) {
+
+        if (editingType == EditingType::Rename) {
+            auto newPath = editingPath;
+            newPath = newPath.replace_filename(editingString);
+            if (editingPath.has_extension())
+                newPath = newPath.replace_extension(editingPath.extension());
+            std::filesystem::rename(editingPath, newPath);
+            return;
+        }
+
+        if (type == ContentType::None) {
+            auto dirPath = editingPath;
+            dirPath.append(editingString);
+            std::filesystem::create_directory(dirPath);
+            return;
+        }
+
+        auto path = editingPath;
+        path.append(editingString);
+
+        // All the file types with a loader
+        if (type == ContentType::Material) {
+            path.replace_extension("aematerial");            
+            Loader::MaterialLoader::SaveMaterial(CreateRef<Material>(), path.string());
+            return;
+        }
+
+        // All the files with empty contents
+        if (type == ContentType::Script) {
+            path.replace_extension("lua");
+        }
+        auto assetRelative = Common::Path::GetAbsolute(path);
+        auto fileStream = Loader::AssetLoader::WriteFile(assetRelative, std::ios::out | std::ios::binary);
+        if (!fileStream.is_open()) {
+            Notifications::Push({"Couldn't write file " + 
+                Loader::AssetLoader::GetRelativePath(assetRelative), vec3(1.0f, 0.0f, 0.0f)});
+            return;
+        }
+        fileStream.close();
 
     }
 
