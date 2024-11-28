@@ -5,6 +5,7 @@
 
 #include "Serializer.h"
 #include "common/Hash.h"
+#include "tools/TerrainTool.h"
 #include "Clock.h"
 
 #include <imgui_internal.h>
@@ -49,6 +50,8 @@ namespace Atlas::Editor::UI {
         else {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
             camera.aspectRatio = float(viewportPanel.viewport->width) / std::max(float(viewportPanel.viewport->height), 1.0f);
+
+            ApplyBrush();
         }
 
         bool controlDown;        
@@ -63,7 +66,7 @@ namespace Atlas::Editor::UI {
         
         if (controlDown && playMaximized && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
-        }
+        }   
 
     }
 
@@ -505,7 +508,7 @@ namespace Atlas::Editor::UI {
                     && mousePos.x < float(viewport->x + viewport->width)
                     && mousePos.y < float(viewport->y + viewport->height);
 
-                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport && !lockSelection) {
+                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport && !lockSelection && !brushActive) {
 
                     auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
                     auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
@@ -674,12 +677,93 @@ namespace Atlas::Editor::UI {
 
                 Serializer::SerializeScene(scene.Get(), "scenes/" + std::string(scene->name) + ".aescene", true, true);
 
+                // Here we can finally reset the in-editing status, as it was now saved and we could reload from disk
+                if (scene->terrain.IsLoaded())
+                    scene->terrain->storage->inEditing = false;
+
                 cameraEntity = Scene::Entity::Restore(scene.Get(), cameraState);
 
                 cameraState.clear();
 
                 Notifications::Push({ .message = "Saved scene " + scene->name });
             });       
+
+    }
+
+    void SceneWindow::ApplyBrush() {
+
+        auto& terrainPanel = scenePropertiesPanel.terrainPanel;
+
+        brushActive = terrainPanel.editingMode;
+        if (!brushActive || !cameraEntity.IsValid())
+            return;
+
+        auto& viewport = viewportPanel.viewport;
+        auto camera = cameraEntity.GetComponent<CameraComponent>();
+
+        auto mousePos = ImGui::GetMousePos();
+        Volume::Ray ray(viewport, camera, vec2(mousePos.x, mousePos.y));
+        
+        Scene::SceneQueryComponents componentBits = Scene::SceneQueryComponentBits::TerrainComponentBit;
+        if (terrainPanel.brushFlattenQueryRegularGeometry &&
+            terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Flatten)
+            componentBits = Scene::SceneQueryComponentBits::RigidBodyComponentBit;
+
+        auto result = scene->CastRay(ray, componentBits);
+
+        bool mousePressed = ImGui::GetIO().MouseDown[ImGuiMouseButton_Right];
+        bool brushTerrain = mousePressed && result.valid && terrainPanel.editingMode;
+
+        if (!mousePressed)
+            terrainFlattenHeight = Terrain::Terrain::invalidHeight;
+
+        // Check for right mouse button down
+        if (brushTerrain) {
+            auto intersection = ray.Get(result.hitDistance);
+            uint32_t brushSize = uint32_t(terrainPanel.brushSize);
+            // This should only trigger once when the button is started to be pressed
+            if (terrainFlattenHeight == Terrain::Terrain::invalidHeight ||
+                terrainPanel.brushFlattenQueryRegularGeometry)
+                terrainFlattenHeight = intersection.y;
+
+            if (terrainPanel.brushType == TerrainPanel::TerrainBrushType::Height) {
+                Filter filter;
+                
+                float brushStrength = terrainPanel.brushStrength;
+
+                if (terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Gauss) {
+                    auto sigma = (float)brushSize / 6.0f;
+                    filter.CalculateGaussianFilter(sigma, brushSize);
+                }
+                if (terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Box) {
+                    filter.CalculateBoxFilter(brushSize);
+                }
+
+                if (terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Gauss ||
+                    terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Box) {
+                    Tools::TerrainTool::BrushHeight(scene->terrain.Get(), &filter,
+                        brushStrength, vec2(intersection.x, intersection.z));
+                }
+                else if(terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Smooth) {
+                    brushSize = 2 * brushSize + 1;
+                    Tools::TerrainTool::SmoothHeight(scene->terrain.Get(), brushSize,
+                        1, brushStrength, vec2(intersection.x, intersection.z));
+                }
+                else if (terrainPanel.brushFunction == TerrainPanel::TerrainBrushFunction::Flatten &&
+                    terrainFlattenHeight != Terrain::Terrain::invalidHeight) {
+                    brushSize = 2 * brushSize + 1;
+                    Tools::TerrainTool::FlattenHeight(scene->terrain.Get(), brushSize,
+                        brushStrength, vec2(intersection.x, intersection.z), terrainFlattenHeight);
+                }
+
+            }
+            else if (terrainPanel.brushType == TerrainPanel::TerrainBrushType::Material) {
+                brushSize = 2 * brushSize + 1;
+                Atlas::Tools::TerrainTool::BrushMaterial(scene->terrain.Get(),
+                    vec2(intersection.x, intersection.z),
+                    brushSize, terrainPanel.materialBrushSelection);
+            }
+        }
 
     }
 

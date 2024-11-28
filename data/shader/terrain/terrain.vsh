@@ -18,6 +18,7 @@ layout(location=3) out vec3 ndcLast;
 
 layout (set = 3, binding = 9, std140) uniform UniformBuffer {
     vec4 frustumPlanes[6];
+    vec4 translation;
 
     float heightScale;
     float displacementDistance;
@@ -93,7 +94,7 @@ void main() {
     // The middle of the texel should match the vertex position
     float height = float(texture(heightField, texCoords).r) / 65535.0 * Uniforms.heightScale;
 
-    vec4 worldPosition = vec4(position.x, height, position.y, 1.0);
+    vec4 worldPosition = vec4(vec3(position.x, height, position.y) + Uniforms.translation.xyz, 1.0);
 
 #ifndef DISTANCE
     gl_Position =  worldPosition;

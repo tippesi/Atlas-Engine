@@ -47,7 +47,8 @@ namespace Atlas {
             MeshComponentBit = (1 << 0),
             RigidBodyComponentBit = (1 << 1),
             TextComponentBit = (1 << 2),
-            AllComponentsBit = (1 << 3) - 1
+            TerrainComponentBit = (1 << 3),
+            AllComponentsBit = (1 << 4) - 1
         } SceneQueryComponentBits;
 
         class Scene : public SpacePartitioning {

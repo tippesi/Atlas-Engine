@@ -68,7 +68,7 @@ namespace Atlas {
             leafList.clear();
 
             for (auto& node : rootNodes)
-                node.Update(camera, LoDDistances,
+                node.Update(translation, camera, LoDDistances,
                     leafList, LoDImage);
 
             storage->PushUnusedCellsToQueue();
@@ -83,9 +83,9 @@ namespace Atlas {
 
             for (auto node : leafList) {
                 auto aabb = Volume::AABB(
-                    vec3(node->location.x, 0.0f, node->location.y),
+                    vec3(node->location.x, 0.0f, node->location.y) + translation,
                     vec3(node->location.x + node->sideLength, heightScale,
-                        node->location.y + node->sideLength)
+                        node->location.y + node->sideLength) + translation
                 );
 
                 if (frustum.Intersects(aabb))
@@ -144,8 +144,11 @@ namespace Atlas {
 
         float Terrain::GetHeight(float x, float z, vec3& normal, vec3& forward) {
 
+            x -= translation.x;
+            z -= translation.z;
+
             if (x < 0.0f || z < 0.0f || x > sideLength || z > sideLength)
-                return 0.0f;
+                return invalidHeight;
 
             float nodeSideLength = 8.0f * patchSizeFactor * resolution;
 
@@ -157,8 +160,8 @@ namespace Atlas {
 
             auto cell = storage->GetCell(int32_t(xPosition), int32_t(zPosition), LoDCount - 1);
 
-            if (!cell)
-                return 0.0f;
+            if (!cell || !cell->IsLoaded())
+                return invalidHeight;
 
             x -= xPosition;
             z -= zPosition;
@@ -276,7 +279,7 @@ namespace Atlas {
                 normal = -glm::normalize(glm::cross(forward, right));
             }
 
-            return height;
+            return height + translation.y;
 
         }
 
@@ -361,6 +364,30 @@ namespace Atlas {
             return heightImage;
         }
 
+        bool Terrain::IntersectRay(const Volume::Ray& ray, vec3& hitPosition, float& hitDistance) {
+
+            const float linearStepLength = 1.0f;
+
+            auto distance = linearStepLength + ray.tMin;
+
+            vec3 position = ray.origin + ray.direction * ray.tMin;
+            vec3 nextPosition;
+
+            while (distance < ray.tMax) {
+                nextPosition = ray.Get(distance);
+                if (!IsUnderground(position) && IsUnderground(nextPosition)) {
+                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition);
+                    hitDistance = glm::distance(hitPosition, ray.origin);
+                    return true;
+                }
+                position = nextPosition;
+                distance += linearStepLength;
+            }
+
+            return false;
+
+        }
+
         void Terrain::SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation) {
 
             std::sort(nodes.begin(), nodes.end(),
@@ -427,6 +454,46 @@ namespace Atlas {
             float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
             float l3 = 1.0f - l1 - l2;
             return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+
+        }
+
+        void Terrain::BinarySearch(const Volume::Ray& ray, float start,
+            float finish, int count, vec3& hitPosition) {
+
+            float half = start + (finish - start) / 2.0f;
+
+            if (count == 0) {
+                hitPosition = ray.origin + ray.direction * half;
+                return;
+            }
+
+            if (IntersectionInRange(ray, start, half)) {
+                BinarySearch(ray, start, half, count - 1, hitPosition);
+            }
+            else {
+                BinarySearch(ray, half, finish, count - 1, hitPosition);
+            }
+
+        }
+
+        bool Terrain::IntersectionInRange(const Volume::Ray& ray, float start, float finish) {
+
+            auto startPosition = ray.origin + ray.direction * start;
+            auto finishPosition = ray.origin + ray.direction * finish;
+
+            if (!IsUnderground(startPosition) && IsUnderground(finishPosition)) {
+                return true;
+            }
+
+            return false;
+
+        }
+
+        bool Terrain::IsUnderground(vec3 position) {
+
+            float height = GetHeight(position.x, position.z);
+
+            return (height > position.y);
 
         }
 

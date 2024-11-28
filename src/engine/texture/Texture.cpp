@@ -35,31 +35,31 @@ namespace Atlas {
 
         }
 
-        void Texture::SetData(std::vector<uint8_t> &data) {
+        void Texture::SetData(std::vector<uint8_t> &data, Graphics::MemoryTransferManager* transferManager) {
 
-            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
-
-        }
-
-        void Texture::SetData(std::vector<uint16_t> &data) {
-
-            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth), 0, 1, transferManager);
 
         }
 
-        void Texture::SetData(std::vector<float16> &data) {
+        void Texture::SetData(std::vector<uint16_t> &data, Graphics::MemoryTransferManager* transferManager) {
 
-            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
-
-        }
-
-        void Texture::SetData(std::vector<float> &data) {
-
-            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth));
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth), 0, 1, transferManager);
 
         }
 
-        void Texture::GenerateMipmap() {
+        void Texture::SetData(std::vector<float16> &data, Graphics::MemoryTransferManager* transferManager) {
+
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth), 0, 1, transferManager);
+
+        }
+
+        void Texture::SetData(std::vector<float> &data, Graphics::MemoryTransferManager* transferManager) {
+
+            image->SetData(data.data(), 0, 0, 0, size_t(width), size_t(height), size_t(depth), 0, 1, transferManager);
+
+        }
+
+        void Texture::GenerateMipmap(Graphics::MemoryTransferManager* transferManager) {
 
             // TODO...
 
@@ -174,6 +174,7 @@ namespace Atlas {
             VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
             switch(wrapping) {
                 case Wrapping::Repeat: mode = VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
+                case Wrapping::MirroredRepeat: mode = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT; break;
                 case Wrapping::ClampToEdge: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; break;
                 case Wrapping::ClampToWhite: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; break;
                 case Wrapping::ClampToBlack: mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; break;

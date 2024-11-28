@@ -72,6 +72,7 @@ namespace Atlas {
             static void SmoothHeight(Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
                     float strength, vec2 position);
 
+            static void FlattenHeight(Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float height);
 
             static void BrushMaterial(Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot);
 
@@ -87,6 +88,16 @@ namespace Atlas {
 
             static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
                     int32_t x, int32_t y, int32_t width, int32_t height);
+
+            static bool GetNearbyStorageCells(Ref<Terrain::Terrain>& terrain, vec2 position,
+                Terrain::TerrainStorageCell** cells);
+
+            static void ExtractNearbyStorageData(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+                std::span<float> heightData, std::span<uint8_t> splatData);
+
+            static void ApplyDataToNearbyStorage(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+                std::span<float> heightData, std::span<uint8_t> splatData);
+
 
         };
 

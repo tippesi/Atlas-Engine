@@ -20,6 +20,7 @@ namespace Atlas {
 
         JobPriority priority = JobPriority::Low;
         std::atomic_int32_t counter = 0;
+        std::atomic_int32_t userCounter = 0;
 
     };
 

@@ -111,6 +111,8 @@ namespace Atlas {
         void Swap(Ref<T>& newData) {
 
             data.swap(newData);
+            // When an error on the previous data load and we replace the data, we need to set this flag
+            isLoaded = true;
 
         }
 
@@ -173,8 +175,8 @@ namespace Atlas {
 
         inline void WaitForLoad() {
             if (IsValid()) {
-                while (!resource->isLoaded)
-                    JobSystem::Wait(resource->jobGroup);                
+                while (!resource->isLoaded && !resource->errorOnLoad)
+                    JobSystem::Wait(resource->jobGroup);
             }
         }
 

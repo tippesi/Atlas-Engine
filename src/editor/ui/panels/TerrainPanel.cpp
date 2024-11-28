@@ -64,7 +64,8 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::Checkbox("Wireframe", &terrain->wireframe);
-        ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 1000.0f, "%.3f", 2.0f);
+        ImGui::DragFloat3("Translation", glm::value_ptr(terrain->translation), 1.0f, -10000.0f, 10000.0f);
+        ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
         ImGui::Text("Tessellation");
@@ -124,6 +125,8 @@ namespace Atlas::Editor::UI {
         ImGui::Checkbox("Editing mode", &editingMode);
 
         if (editingMode && !LoDDistances.size()) {
+            // Can't really reset other than when the scene is finally saved (together with the new terrain)
+            terrain->storage->inEditing = true;
             for (int32_t i = 0; i < terrain->LoDCount; i++) {
                 LoDDistances.push_back(terrain->GetLoDDistance(i));
             }
@@ -133,77 +136,73 @@ namespace Atlas::Editor::UI {
             for (int32_t i = 0; i < terrain->LoDCount; i++) {
                 terrain->SetLoDDistance(i, LoDDistances[i]);
             }
-            // Means the height map needs to come from the freshly edited terrain
-            if (terrainGenerator.heightMapSelection == 2)
-                terrainGenerator.UpdateHeightmapFromTerrain(terrain);
         }
 
         ImGui::SameLine();
 
         UIElements::Tooltip("Pushes LoD distances to 512 to enable editing without baking");
 
-        auto maxSize = 8.0f * terrain->patchSizeFactor * 2.0f - 1.0f;
-        ImGui::SliderFloat("Brush size", &brushSize, 1.0f, maxSize);
+        auto maxSize = 8.0f * terrain->patchSizeFactor - 1.0f;
+        ImGui::DragFloat("Brush size", &brushSize, 0.25f, 1.0f, maxSize);
+
+        auto brushStrengthMin = -2000.0f;
+        auto brushStrengthMax = 2000.0f;
+
+        if (brushFunction == TerrainBrushFunction::Smooth ||
+            brushFunction == TerrainBrushFunction::Flatten) {
+            brushStrengthMin = 0.0f;
+            brushStrengthMax = 1.0f;
+            brushStrength = glm::min(1.0f, brushStrength);
+        }
+        ImGui::SliderFloat("Brush strength", &brushStrength, brushStrengthMin,
+            brushStrengthMax, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
-        ImGui::Text("Geometry Brush");
+        ImGui::Text("Height Brush");
+        ImGui::PushID("Height");
 
+        bool heightBrushActive = brushType == TerrainBrushType::Height;
+        ImGui::Checkbox("Active", &heightBrushActive);
+        brushType = heightBrushActive ? TerrainBrushType::Height : brushType;
 
+        const char* comboItems[] = { "Gauss", "Box", "Smooth", "Flatten" };
+        int32_t heightBrushSelection = static_cast<int32_t>(brushFunction);
+        ImGui::Combo("Function", &heightBrushSelection, comboItems, IM_ARRAYSIZE(comboItems));
+        brushFunction = static_cast<TerrainBrushFunction>(heightBrushSelection);
+        // Need some extra setting here
+        if (brushFunction == TerrainBrushFunction::Flatten) {
+            ImGui::Checkbox("Query regular geometry", &brushFlattenQueryRegularGeometry);
+        }
 
         ImGui::Separator();
+
+        ImGui::PopID();
         ImGui::Text("Material Brush");
+        ImGui::PushID("Material");
 
-        /*
-        if (ImGui::CollapsingHeader("Geometry Brush")) {
+        bool materialBrushActive = brushType == TerrainBrushType::Material;
+        ImGui::Checkbox("Active", &materialBrushActive);
+        brushType = materialBrushActive ? TerrainBrushType::Material : brushType;
 
-            int32_t geometryBrushSelection = static_cast<int32_t>(brushType);
+        std::vector<std::string> counter;
+        std::vector<const char*> pointer;
 
-            const char* comboItems[] = { "Gauss", "Box", "Smooth" };
-
-            bool 
-            ImGui::Checkbox("Activated##0", &geometryBrush);
-
-            ImGui::Combo("Preset", &geometryBrushSelection, comboItems, 3);
-
-            auto min = -500.0f;
-            auto max = 500.0f;
-            auto power = 2.0f;
-
-            if (geometryBrushSelection == 2) {
-                min = 0.0f;
-                max = 1.0f;
-                geometryBrushStrength = glm::min(1.0f, geometryBrushStrength);
-            }
-
-            ImGui::SliderFloat("Strength##0", &geometryBrushStrength, min, max,
-                "%.3f", ImGuiSliderFlags_Logarithmic);
-
+        for (size_t count = 0; count < terrainGenerator.materials.size(); count++) {
+            counter.push_back(std::to_string(count));
+        }
+        for (auto& name : counter) {
+            pointer.push_back(name.c_str());
         }
 
-        if (ImGui::CollapsingHeader("Material Brush")) {
-
-            ImGui::Checkbox("Activated##1", &materialBrush);
-
-            std::vector<std::string> counter;
-            std::vector<const char*> pointer;
-
-            for (size_t count = 0; count < materials.size(); count++) {
-                counter.push_back(std::to_string(count));
-            }
-            for (auto& name : counter) {
-                pointer.push_back(name.c_str());
-            }
-
-            ImGui::Combo("Slot##1", &materialBrushMaterial,
-                pointer.data(), pointer.size());
-
-        }
-        */
+        ImGui::Combo("Slot", &materialBrushSelection,
+            pointer.data(), pointer.size());
 
         if (ImGui::Button("Bake terrain", ImVec2(region.x, 0.0f))) {
+            Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
             Tools::TerrainTool::BakeTerrain(terrain.Get());
         }
 
+        ImGui::PopID();
     }
 
     void TerrainPanel::AddTerrainToScene(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene) {

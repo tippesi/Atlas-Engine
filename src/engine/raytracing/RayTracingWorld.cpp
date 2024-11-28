@@ -138,6 +138,8 @@ namespace Atlas {
 
                 if (!meshComponent.mesh.IsLoaded() || !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
                     continue;
+                if (!meshComponent.visible)
+                    continue;
 
                 auto &blasInfo = blasInfos[meshComponent.mesh->blas];
                 auto distSqd = glm::distance2(
@@ -194,7 +196,7 @@ namespace Atlas {
                 if (hardwareRayTracing && !node->cell->blas->blas->isBuilt || node->cell->blas->needsBvhRefresh)
                     continue;
 
-                auto nodePosition = vec3(node->location.x, 0.0f, node->location.y);
+                auto nodePosition = vec3(node->location.x, 0.0f, node->location.y) + scene->terrain->translation;
                 mat4 globalMatrix = glm::translate(nodePosition), nodeScale;
                 mat4 inverseGlobalMatrix = glm::inverse(globalMatrix);
 

@@ -5,6 +5,7 @@
 #include <texture/Texture2D.h>
 
 #include "../ui/panels/ResourceSelectionPanel.h"
+#include "ImguiExtension/panels/MaterialPanel.h"
 
 namespace Atlas::Editor {
 
@@ -33,6 +34,8 @@ namespace Atlas::Editor {
         };
 
         TerrainGenerator();
+
+        ~TerrainGenerator();
 
         void Update();
 
@@ -73,12 +76,16 @@ namespace Atlas::Editor {
         std::pair<ResourceHandle<Material>, vec3> Biome(float x, float y, std::vector<ElevationBiome>& biomes,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
 
+        ImguiExtension::MaterialPanel materialPanel;
+
         UI::ResourceSelectionPanel<Texture::Texture2D> textureSelectionPanel;
         UI::ResourceSelectionPanel<Material> materialSelectionPanel;
         
+        Ref<Common::Image<uint16_t>> newHeightMapImage;
         Ref<Common::Image<uint16_t>> heightMapImage;
 
         JobGroup previewMapGenerationJob;
+        JobGroup heightMapUpdateJob;
 
         Texture::Texture2D previewHeightMap;
         Texture::Texture2D previewMoistureMap;
@@ -88,6 +95,7 @@ namespace Atlas::Editor {
         Texture::Texture2D newPreviewMoistureMap;
         Texture::Texture2D newPreviewBiomeMap;
 
+        
         Ref<Common::Image<uint16_t>> previewHeightImg;
         Ref<Common::Image<uint16_t>> previewMoistureImg;
         Ref<Common::Image<uint8_t>> previewBiomeImg;

@@ -36,6 +36,7 @@ namespace Atlas {
             struct alignas(16) Uniforms {
 
                 vec4 frustumPlanes[6];
+                vec4 translation;
 
                 float heightScale;
                 float displacementDistance;

@@ -23,12 +23,12 @@ namespace Atlas {
 
         }
 
-        void TerrainNode::Update(const CameraComponent& camera, std::vector<float>& LoDDistances,
+        void TerrainNode::Update(vec3 translation, const CameraComponent& camera, std::vector<float>& LoDDistances,
             std::vector<TerrainNode*>& leafList, Common::Image<uint8_t>& LoDImage) {
 
             auto calcHeight = 0.0f;
 
-            auto cameraLocation = camera.GetLocation();
+            auto cameraLocation = camera.GetLocation() - translation;
 
             if (cameraLocation.y > height) {
                 calcHeight = height;
@@ -77,7 +77,7 @@ namespace Atlas {
             }
 
             for (auto& child : children)
-                child.Update(camera, LoDDistances, leafList, LoDImage);
+                child.Update(translation, camera, LoDDistances, leafList, LoDImage);
 
             // We just want to render leafs
             if (children.size() == 0) {
@@ -170,7 +170,8 @@ namespace Atlas {
 
             // Important to set by hand here (could otherwise take some frames for it to be unloaded, 
             // while we could reuse it in the meantime and expect it to stay available)
-            cell->isLoaded = false;
+            if (!storage->inEditing)
+                cell->isLoaded = false;
             storage->unusedCells.push_back(cell);
 
         }
@@ -194,7 +195,8 @@ namespace Atlas {
 
             for (auto& child : children) {
                 // Here the same reason as above is true
-                child.cell->isLoaded = false;
+                if (!storage->inEditing)
+                    child.cell->isLoaded = false;
                 storage->unusedCells.push_back(child.cell);
 
                 child.ClearChildren(false);

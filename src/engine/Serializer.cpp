@@ -10,6 +10,8 @@
 #include "loader/MeshLoader.h"
 #include "loader/MaterialLoader.h"
 
+#include "tools/TerrainTool.h"
+
 #include <map>
 
 namespace Atlas {
@@ -35,11 +37,11 @@ namespace Atlas {
                 fileStream << (formatJson ? j.dump(2) : j.dump());
             }
 
+            fileStream.close();
+
             if (saveDependencies) {
                 SaveDependencies(scene);
-            }
-
-            fileStream.close();
+            }           
 
         }
 
@@ -160,6 +162,8 @@ namespace Atlas {
             }
 
             if (scene->terrain.IsLoaded() && !scene->terrain.IsGenerated()) {
+                // Make sure everything is there before saving
+                Tools::TerrainTool::LoadMissingCells(scene->terrain.Get(), scene->terrain.GetResource()->path);
                 Loader::TerrainLoader::SaveTerrain(scene->terrain.Get(), scene->terrain.GetResource()->path);
             }
 

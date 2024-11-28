@@ -85,7 +85,7 @@ namespace Atlas {
                 VK_CHECK(vkCreateImageView(device->device, &imageViewInfo, nullptr, &attachmentViews[i]))
             }
 
-            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers);
+            if (desc.data) SetData(desc.data, 0, 0, 0, desc.width, desc.height, desc.depth, 0, desc.layers, desc.transferManager);
 
         }
 
@@ -102,8 +102,11 @@ namespace Atlas {
 
         }
 
-        void Image::SetData(void *data, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ,
-            uint32_t width, uint32_t height, uint32_t depth, uint32_t layerOffset, uint32_t layerCount) {
+        void Image::SetData(void *data, uint32_t offsetX, uint32_t offsetY, uint32_t offsetZ, uint32_t width, 
+            uint32_t height, uint32_t depth, uint32_t layerOffset, uint32_t layerCount, MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
 
             if (domain == ImageDomain::Device) {
                 VkOffset3D offset = {};
@@ -116,15 +119,19 @@ namespace Atlas {
                 extent.height = uint32_t(height);
                 extent.depth = uint32_t(depth);
 
-                memoryManager->transferManager->UploadImageData(data, this, offset, extent, layerOffset, layerCount);
+                transferManager->UploadImageData(data, this, offset, extent, 
+                    layerOffset, layerCount);
             }
 
         }
 
-        void Image::GenerateMipMaps() {
+        void Image::GenerateMipMaps(MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
 
             if (domain == ImageDomain::Device) {
-                memoryManager->transferManager->GenerateMipMaps(this);
+                transferManager->GenerateMipMaps(this);
             }
 
         }

@@ -36,6 +36,9 @@ namespace Atlas {
             header.append(std::to_string(terrain->patchSizeFactor) + " ");
             header.append(std::to_string(terrain->resolution) + " ");
             header.append(std::to_string(terrain->heightScale) + " ");
+            header.append(std::to_string(terrain->translation.x) + " ");
+            header.append(std::to_string(terrain->translation.y) + " ");
+            header.append(std::to_string(terrain->translation.z) + " ");
             header.append(std::to_string(terrain->bakeResolution) + "\n");
 
             fileStream << header;
@@ -118,19 +121,17 @@ namespace Atlas {
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in);
 
             if (!fileStream.is_open()) {
-                Log::Error("Couldn't read terrain file " + filename);
-                return nullptr;
+                throw ResourceLoadException(filename, "Couldn't read terrain file " + filename);
             }
 
             std::string header, line;
-
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
-                Log::Error("File isn't a terrain file " + filename);
-                return nullptr;
+                throw ResourceLoadException(filename, "File isn't a terrain file " + filename);
             }
 
+            vec3 translation;
             size_t offset = 4;
             auto materialCount = ReadInt(" ", header, offset);
             auto rootNodeSideCount = ReadInt(" ", header, offset);
@@ -138,6 +139,9 @@ namespace Atlas {
             auto patchSizeFactor = ReadInt(" ", header, offset);
             auto resolution = ReadFloat(" ", header, offset);
             auto heightScale = ReadFloat(" ", header, offset);
+            translation.x = ReadFloat(" ", header, offset);
+            translation.y = ReadFloat(" ", header, offset);
+            translation.z = ReadFloat(" ", header, offset);
             auto bakeResolution = ReadInt("\r\n", header, offset);
 
             std::getline(fileStream, line);
@@ -152,6 +156,7 @@ namespace Atlas {
             auto terrain = std::make_shared<Terrain::Terrain>(rootNodeSideCount, LoDCount,
                 patchSizeFactor, resolution, heightScale);
 
+            terrain->translation = translation;
             terrain->SetTessellationFunction(tessFactor, tessSlope, tessShift, tessMaxLevel);
             terrain->SetDisplacementDistance(displacementDistance);
 
@@ -221,19 +226,20 @@ namespace Atlas {
         void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
                 const std::string& filename) {
 
+            if (cells.empty())
+                return;
+
             auto fileStream = AssetLoader::ReadFile(filename, std::ios::in | std::ios::binary);
 
             if (!fileStream.is_open()) {
-                Log::Error("Couldn't read terrain file " + filename);
-                return;
+                throw ResourceLoadException(filename, "Couldn't read terrain file " + filename);
             }
 
             std::string header, body;
             std::getline(fileStream, header);
 
             if (header.compare(0, 4, "AET ") != 0) {
-                Log::Error("File isn't a terrain file " + filename);
-                return;
+                throw ResourceLoadException(filename, "File isn't a terrain file " + filename);
             }
 
             auto position = header.find_first_of(' ', 4);
@@ -250,7 +256,21 @@ namespace Atlas {
             auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;            
             auto normalDataResolution = int64_t(0);
 
-            for (auto cell : cells) {
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
+
+            const size_t batchCount = 8;
+            transferManager.BeginMultiTransfer();
+
+            for (size_t i = 0; i < cells.size(); i++) {
+                if (i % batchCount == 0 && i > 0) {
+                    // Close old batch, create new one
+                    transferManager.EndMultiTransfer();
+                    transferManager.BeginMultiTransfer();
+                }
+
+                auto cell = cells[i];
+
                 auto isLeaf = cell->LoD == terrain->LoDCount - 1;
                 auto currPos = int64_t(0);
 
@@ -284,7 +304,7 @@ namespace Atlas {
                 fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
                 cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-                cell->heightField->SetData(heightFieldData);
+                cell->heightField->SetData(heightFieldData, &transferManager);
 
                 Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
                 fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
@@ -292,13 +312,13 @@ namespace Atlas {
 
                 cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
                     VK_FORMAT_R8G8B8A8_UNORM, Texture::Wrapping::ClampToEdge, Texture::Filtering::Anisotropic);
-                cell->normalMap->SetData(image.GetData());
+                cell->normalMap->SetData(image.GetData(), &transferManager);
 
                 std::vector<uint8_t> splatMapData(heightFieldData.size());
                 fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
                 cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
-                cell->splatMap->SetData(splatMapData);
+                cell->splatMap->SetData(splatMapData, &transferManager);
                 cell->materialIdxData = splatMapData;
 
                 cell->heightData.resize(tileResolution * tileResolution);
@@ -308,6 +328,8 @@ namespace Atlas {
                 cell->isLoaded = true;
                 cell->loadRequested = false;
             }
+
+            transferManager.EndMultiTransfer();
 
             fileStream.close();
 

@@ -17,6 +17,7 @@ namespace Atlas {
 
         enum class Wrapping {
             Repeat = 0,
+            MirroredRepeat,
             ClampToEdge,
             ClampToWhite,
             ClampToBlack
@@ -69,25 +70,25 @@ namespace Atlas {
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<uint8_t>& data);
+            void SetData(std::vector<uint8_t>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<uint16_t>& data);
+            void SetData(std::vector<uint16_t>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<float16>& data);
+            void SetData(std::vector<float16>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Sets the data of the texture
              * @param data A vector holding the new data.
              */
-            void SetData(std::vector<float>& data);
+            void SetData(std::vector<float>& data, Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Retrieves the data of the texture from the GPU.
@@ -107,7 +108,7 @@ namespace Atlas {
             /**
              *
              */
-            void GenerateMipmap();
+            void GenerateMipmap(Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Release all shared texture resources

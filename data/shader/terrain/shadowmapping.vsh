@@ -4,6 +4,7 @@ layout (set = 3, binding = 0) uniform usampler2D heightField;
 
 layout(push_constant) uniform constants {
     mat4 lightSpaceMatrix;
+    vec4 translation;
 
     float nodeSideLength;
     float tileScale;
@@ -56,8 +57,8 @@ void main() {
     texCoords /= PushConstants.nodeSideLength;
 
     // The middle of the texel should match the vertex position
-    float height = float(texture(heightField, texCoords).r) / 65535.0 * PushConstants.heightScale;
+    float height = float(texture(heightField, texCoords).r) / 65535.0 * PushConstants.heightScale + PushConstants.translation.y;
 
-    gl_Position =  PushConstants.lightSpaceMatrix * vec4(position.x, height, position.y, 1.0);
+    gl_Position =  PushConstants.lightSpaceMatrix * vec4(vec3(position.x, height, position.y) + PushConstants.translation.xyz, 1.0);
 
 }

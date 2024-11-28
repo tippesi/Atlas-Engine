@@ -48,6 +48,13 @@ namespace Atlas::Editor {
 
     }
 
+    TerrainGenerator::~TerrainGenerator() {
+
+        JobSystem::Wait(heightMapUpdateJob);
+        JobSystem::Wait(previewMapGenerationJob);
+
+    }
+
     void TerrainGenerator::Update() {
 
 
@@ -121,14 +128,10 @@ namespace Atlas::Editor {
         ImGui::Separator();
 
         ImGui::Text("General settings");
-
-        // Only display these options if we want to generate a fresh terrain
-        if (heightMapSelection < 2) {
-            ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
-            ImGui::SliderInt("Patch size", &patchSize, 1, 32);
-            ImGui::SliderFloat("Resolution", &resolution, 0.25f, 2.0f);
-            ImGui::SliderFloat("Height", &height, 1.0f, 1000.0f, "%.3f");
-        }
+        ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
+        ImGui::SliderInt("Patch size", &patchSize, 1, 32);
+        ImGui::DragFloat("Resolution", &resolution, 0.01f, 0.1f, 4.0f);
+        ImGui::DragFloat("Height", &height, 0.25f, 1.0f, 1000.0f);
 
         std::string buttonText = advanced ? "Advanced" : "Standard";
         if (ImGui::Button(buttonText.c_str(), ImVec2(width, 0.0f))) {
@@ -180,6 +183,8 @@ namespace Atlas::Editor {
             int32_t matCount = 0;
             int32_t loopCount = 0;
             for (auto& [material, color] : materials) {
+                ImGui::PushID(loopCount);
+
                 auto name = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
 
                 auto treeNodeSize = region.x - (material.IsValid() ? deleteButtonSize.x + 2.0f * padding : 0.0f);
@@ -194,11 +199,16 @@ namespace Atlas::Editor {
                 ImGui::PopStyleColor();
 
                 if (open) {
+                    ImGui::ColorEdit3("Material color", glm::value_ptr(color));
                     material = materialSelectionPanel.Render(material);
-                    ImGui::ColorEdit3(("Material color##" + std::to_string(matCount++)).c_str(), &color[0]);
+                    materialPanel.Render(imguiWrapper, material.Get(), [&](ResourceHandle<Texture::Texture2D> texture) {
+                        return textureSelectionPanel.Render(texture);
+                        });
                     ImGui::TreePop();
                 }
                 loopCount++;
+
+                ImGui::PopID();
             }
 
             if (ImGui::Button("Add material", ImVec2(-FLT_MIN, 0.0f))) {
@@ -344,10 +354,9 @@ namespace Atlas::Editor {
                 Notifications::Push({"No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f)});
             }
             else {
-                successful = true;
-
                 Singletons::blockingOperation->Block("Generating terrain. Please wait...", [&]() {
                     Generate();
+                    successful = true;
                     });
             }
 
@@ -372,8 +381,17 @@ namespace Atlas::Editor {
 
     void TerrainGenerator::UpdateHeightmapFromTerrain(ResourceHandle<Terrain::Terrain>& terrain) {
 
-        Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
-        heightMapImage = Tools::TerrainTool::GenerateHeightMap(terrain.Get());
+        if (!heightMapUpdateJob.HasFinished())
+            return;
+
+        std::swap(newHeightMapImage, heightMapImage);
+
+        // Need to have copies of the images
+        JobSystem::Execute(heightMapUpdateJob,
+            [terrain = terrain, this](JobData&) mutable {
+                Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
+                newHeightMapImage = Tools::TerrainTool::GenerateHeightMap(terrain.Get());
+            });
 
     }
 
@@ -384,7 +402,7 @@ namespace Atlas::Editor {
 
         Ref<Common::Image<uint16_t>> heightImage, moistureImage;
 
-        if (!heightMapSelection) {
+        if (heightMapSelection == 0) {
             int32_t heightMapResolution = 128;
             switch (resolutionSelection) {
             case 0: heightMapResolution = 512; break;
@@ -396,8 +414,8 @@ namespace Atlas::Editor {
 
             heightImage = CreateRef<Common::Image<uint16_t>>(heightMapResolution,
                 heightMapResolution, 1);
-            Common::NoiseGenerator::GeneratePerlinNoise2D(*heightImage, heightAmplitudes,
-                (uint32_t)heightSeed, heightExp);
+            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*heightImage, heightAmplitudes,
+                (uint32_t)heightSeed, JobPriority::High, heightExp);
         }
         else {
             heightImage = heightMapImage;
@@ -416,8 +434,8 @@ namespace Atlas::Editor {
 
             moistureImage = CreateRef<Common::Image<uint16_t>>(heightImage->width / 2,
                 heightImage->height / 2, 1);
-            Common::NoiseGenerator::GeneratePerlinNoise2D(*moistureImage, moistureAmplitudes,
-                (uint32_t)moistureSeed);
+            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*moistureImage, moistureAmplitudes,
+                (uint32_t)moistureSeed, JobPriority::High);
 
             for (auto mat : materials) {
                 mats.push_back(mat.first);
@@ -427,6 +445,7 @@ namespace Atlas::Editor {
 
             auto scale = height * (float)splatImage.width / (float)previewHeightImg->width;
 
+            // Making this multi-threaded doesn't help much :(
             for (int32_t y = 0; y < splatImage.height; y++) {
                 for (int32_t x = 0; x < splatImage.width; x++) {
                     auto fx = (float)x / (float)splatImage.width;
@@ -443,7 +462,7 @@ namespace Atlas::Editor {
                     }
                     splatImage.SetData(x, y, 0, index);
                 }
-            }
+            };
 
             terrain = Tools::TerrainTool::GenerateTerrain(*heightImage, splatImage, 1,
                 LoDCount, patchSize, resolution, height, mats);
@@ -451,16 +470,21 @@ namespace Atlas::Editor {
         }
 
         terrain->filename = name;
+        
 
         if (!handle.IsLoaded()) {
             handle = ResourceManager<Terrain::Terrain>::AddResource(path, terrain);
+
             // Only save when there is nothing on the disk yet
             Loader::TerrainLoader::SaveTerrain(terrain, path);
         }
         else {
+            terrain->translation = handle->translation;
+            // Need the mark the terrain as in-editing, otherwise data gets unloaded and reset from the hard disk
+            terrain->storage->inEditing = true;
+
             handle.GetResource()->Swap(terrain);
         }
-
     }
 
     void TerrainGenerator::GeneratePreviews() {
@@ -479,9 +503,9 @@ namespace Atlas::Editor {
             [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
             previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
             moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
-            heightExp = heightExp, heightMapImage = heightMapImage, this](JobData&) mutable {
+            heightExp = heightExp, heightMapImage = heightMapImage, heightMapSelection = heightMapSelection, this](JobData&) mutable {
 
-                if (!heightMapImage) {
+                if (heightMapSelection == 0 || !heightMapImage) {
                     Common::NoiseGenerator::GeneratePerlinNoise2D(previewHeightImg, heightAmplitudes,
                         (uint32_t)heightSeed, heightExp);
 

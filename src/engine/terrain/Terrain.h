@@ -4,7 +4,8 @@
 #include "TerrainNode.h"
 #include "TerrainStorage.h"
 
-#include "buffer/VertexArray.h"
+#include "../buffer/VertexArray.h"
+#include "../volume/Ray.h"
 
 #include <vector>
 
@@ -140,6 +141,8 @@ namespace Atlas {
              */
             Common::Image<float> GetHeightField(int32_t LoD);
 
+            bool IntersectRay(const Volume::Ray& ray, vec3& hitPosition, float& hitDistance);
+
             Ref<TerrainStorage> storage = nullptr;
 
             Texture::Texture2D shoreLine;
@@ -179,6 +182,8 @@ namespace Atlas {
 
             bool wireframe = false;
 
+            static const inline float invalidHeight = -1e20f;
+
         private:
             void SortNodes(std::vector<TerrainNode*>& nodes, vec3 cameraLocation);
 
@@ -187,6 +192,13 @@ namespace Atlas {
             void GeneratePatchOffsets();
 
             float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
+
+            void BinarySearch(const Volume::Ray& ray, float start,
+                float finish, int count, vec3& hitPosition);
+
+            bool IntersectionInRange(const Volume::Ray& ray, float start, float finish);
+
+            bool IsUnderground(vec3 position);
 
             int32_t rootNodeCount;
 

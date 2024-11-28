@@ -22,6 +22,7 @@ namespace Atlas {
             struct alignas(16) PushConstants {
 
                 mat4 lightSpaceMatrix;
+                vec4 translation;
 
                 float nodeSideLength;
                 float tileScale;

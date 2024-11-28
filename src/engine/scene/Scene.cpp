@@ -567,12 +567,14 @@ namespace Atlas {
                             result.valid = true;
                             result.data = { entity, &entityManager };
                             result.hitDistance = dist;
+                            result.normal = vec3(0.0f);
                         }
 
                         // Only accept zero hits (i.e we're inside their volume) if there wasn't anything before
                         if (!result.valid) {
                             result.valid = true;
                             result.data = { entity, &entityManager };
+                            result.normal = vec3(0.0f);
                         }
                     }
                 }
@@ -591,7 +593,22 @@ namespace Atlas {
                         result.valid = true;
                         result.data = { entity, &entityManager };
                         result.hitDistance = dist;
+                        result.normal = vec3(0.0f);
+                    }
+                }
+            }
 
+            if (queryComponents & SceneQueryComponentBits::TerrainComponentBit && terrain.IsLoaded()) {
+
+                vec3 hitPosition;
+                float hitDistance;
+                if (terrain->IntersectRay(ray, hitPosition, hitDistance)) {
+
+                    if (hitDistance < result.hitDistance) {
+                        result.data = Entity();
+                        result.valid = true;
+                        result.hitDistance = hitDistance;
+                        result.normal = vec3(0.0f);
                     }
                 }
             }

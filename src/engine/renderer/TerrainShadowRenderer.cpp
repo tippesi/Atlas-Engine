@@ -79,6 +79,7 @@ namespace Atlas {
 
                         PushConstants constants = {
                             .lightSpaceMatrix = lightSpace,
+                            .translation = vec4(terrain->translation, 1.0f),
 
                             .nodeSideLength = node->sideLength,
                             .tileScale = tileScale,

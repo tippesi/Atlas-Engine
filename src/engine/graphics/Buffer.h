@@ -21,6 +21,10 @@ namespace Atlas {
             Random = 1
         };
 
+        class GraphicsDevice;
+        class MemoryManager;
+        class MemoryTransferManager;
+
         struct BufferDesc {
             VkBufferUsageFlags usageFlags;
 
@@ -36,6 +40,8 @@ namespace Atlas {
 
             bool dedicatedMemory = false;
             float priority = 0.5f;
+
+            MemoryTransferManager* transferManager = nullptr;
         };
 
         struct BufferAllocation {
@@ -43,16 +49,14 @@ namespace Atlas {
             VmaAllocation allocation;
         };
 
-        class GraphicsDevice;
-        class MemoryManager;
-
         class Buffer {
         public:
             Buffer(GraphicsDevice* device, const BufferDesc& desc);
 
             ~Buffer();
 
-            void SetData(void* data, size_t offset, size_t length);
+            void SetData(void* data, size_t offset, size_t length,
+                MemoryTransferManager* transferManager = nullptr);
 
             void* Map();
 

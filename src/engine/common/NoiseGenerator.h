@@ -79,6 +79,71 @@ namespace Atlas {
 
             }
 
+            template<typename T>
+            static void GeneratePerlinNoise2DParallel(Image<T>& image, std::vector<float> amplitudes,
+                uint32_t seed, JobPriority priority, float exp = 1.0f) {
+
+                auto& data = image.GetData();
+
+                auto offset = glm::mod(vec2(float(seed) / 100.0f), 1.0f);
+                auto amplitude = std::accumulate(amplitudes.begin(), amplitudes.end(), 0.0f);
+
+                amplitude = 1.0f / amplitude;
+
+                const int32_t batchSize = 128;
+
+                int32_t dataWidth = image.width;
+                int32_t totalSize = image.width * image.height;
+
+                auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
+
+                JobGroup perlinNoiseGroup(priority);
+                std::atomic_int32_t tileCounter = 0;
+
+                JobSystem::ExecuteMultiple(perlinNoiseGroup, workerCount, [&](JobData&) {
+                    int32_t idx = tileCounter.fetch_add(batchSize);
+                    while (idx < totalSize) {
+                        int32_t y = idx / dataWidth;
+                        int32_t x = idx % dataWidth;
+
+                        auto fx = (float)x / (float)image.width;
+                        auto fy = (float)y / (float)image.height;
+
+                        float noise = 0.0f;
+                        float oct = 1.0f;
+                        for (auto amp : amplitudes) {
+                            vec2 coord = (vec2(fx, fy) + offset) * oct;
+                            noise += glm::perlin(coord, vec2(oct)) * amp;
+                            oct *= 2.0f;
+                        }
+
+                        auto value = noise * amplitude;
+                        value = powf(0.5f * value + 0.5f, exp);
+                        for (size_t channel = 0; channel < image.channels; channel++) {
+                            auto idx = (y * image.width + x) * image.channels + channel;
+                            if constexpr (std::is_same_v<T, uint8_t>) {
+                                data[idx] = T(255.0f * value);
+                            }
+                            else if constexpr (std::is_same_v<T, uint16_t>) {
+                                data[idx] = T(65535.0f * value);
+                            }
+                            else if constexpr (std::is_same_v<T, float>) {
+                                data[idx] = T(value);
+                            }
+                        }
+
+                        idx++;
+
+                        if (idx % batchSize == 0) {
+                            idx = tileCounter.fetch_add(batchSize);
+                        }
+                    }
+                    });
+
+                JobSystem::Wait(perlinNoiseGroup);
+
+            }
+
         };        
 
     }

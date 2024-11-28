@@ -38,6 +38,8 @@ namespace Atlas::Editor::UI {
 
         void SaveScene();
 
+        void ApplyBrush();
+
         SceneHierarchyPanel sceneHierarchyPanel;
         ViewportPanel viewportPanel;
         ScenePropertiesPanel scenePropertiesPanel;
@@ -69,12 +71,15 @@ namespace Atlas::Editor::UI {
         bool perfOverlayMaximized = false;
         bool isActiveWindow = false;
         bool lockSelection = false;
+        bool brushActive = false;
 
     private:
         void RenderEntityBoundingVolumes(Scene::Entity entity);
 
         std::vector<uint8_t> sceneState;
         std::vector<uint8_t> cameraState;
+
+        float terrainFlattenHeight = Terrain::Terrain::invalidHeight;
 
     };
 

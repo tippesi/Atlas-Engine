@@ -13,8 +13,8 @@ namespace Atlas {
 
     namespace Graphics {
 
-        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager *memManager)
-            : device(device), memoryManager(memManager) {
+        MemoryTransferManager::MemoryTransferManager(GraphicsDevice* device, MemoryManager* memoryManager)
+            : device(device), memoryManager(memoryManager) {
 
 
 
@@ -22,14 +22,43 @@ namespace Atlas {
 
         MemoryTransferManager::~MemoryTransferManager() {
 
-            
+            AE_ASSERT(commandList == nullptr, "Transfer was probably not completed before deallocation of the manager");
+
+        }
+
+        void MemoryTransferManager::BeginMultiTransfer() {
+
+            commandList = device->GetCommandList(GraphicsQueue, true);
+            commandList->BeginCommands();
+
+        }
+
+        void MemoryTransferManager::EndMultiTransfer() {
+
+            commandList->EndCommands();
+            device->FlushCommandList(commandList);
+
+            for (auto& stagingBuffer : allocations)
+                DestroyStagingBuffer(stagingBuffer);
+
+            allocations.clear();
+            commandList = nullptr;
 
         }
 
         void MemoryTransferManager::UploadBufferData(void *data, Buffer* destinationBuffer,
             VkBufferCopy bufferCopyDesc) {
 
-            auto commandList = device->GetCommandList(TransferQueue, true);
+            bool inTransfer = commandList != nullptr;
+            CommandList* commandList = nullptr;
+
+            if (!inTransfer) {
+                commandList = device->GetCommandList(TransferQueue, true);
+                commandList->BeginCommands();
+            }
+            else {
+                commandList = this->commandList;
+            }
 
             VmaAllocator allocator = memoryManager->allocator;
 
@@ -38,29 +67,39 @@ namespace Atlas {
             void* destination;
             vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
             std::memcpy(destination, data, bufferCopyDesc.size);
-            vmaUnmapMemory(allocator, stagingAllocation.allocation);
-
-            commandList->BeginCommands();
+            vmaUnmapMemory(allocator, stagingAllocation.allocation);            
 
             vkCmdCopyBuffer(commandList->commandBuffer, stagingAllocation.buffer,
                 destinationBuffer->buffer, 1, &bufferCopyDesc);
 
-            commandList->EndCommands();
-
-            device->FlushCommandList(commandList);
-            DestroyStagingBuffer(stagingAllocation);
+            if (!inTransfer) {
+                commandList->EndCommands();
+                device->FlushCommandList(commandList);
+                DestroyStagingBuffer(stagingAllocation);
+            }
+            else {
+                allocations.push_back(stagingAllocation);
+            }
 
         }
 
         void MemoryTransferManager::UploadImageData(void *data, Image* image, VkOffset3D offset, VkExtent3D extent,
             uint32_t layerOffset, uint32_t layerCount) {
 
+            bool inTransfer = commandList != nullptr;
+            CommandList* commandList = nullptr;
+
             // Need graphics queue for mip generation
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            if (!inTransfer) {
+                commandList = device->GetCommandList(GraphicsQueue, true);
+                commandList->BeginCommands();
+            }
+            else {
+                commandList = this->commandList;
+            }
+
             VmaAllocator allocator = memoryManager->allocator;
-
-            commandList->BeginCommands();
-
+            
             auto formatSize = GetFormatSize(image->format);
             auto pixelCount = image->width * image->height * image->depth;
             auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
@@ -133,10 +172,14 @@ namespace Atlas {
 
             if (mipLevels > 1) GenerateMipMaps(image, commandList->commandBuffer);
 
-            commandList->EndCommands();
-
-            device->FlushCommandList(commandList);
-            DestroyStagingBuffer(stagingAllocation);
+            if (!inTransfer) {
+                commandList->EndCommands();
+                device->FlushCommandList(commandList);
+                DestroyStagingBuffer(stagingAllocation);
+            }
+            else {
+                allocations.push_back(stagingAllocation);
+            }
 
         }
 
@@ -268,6 +311,21 @@ namespace Atlas {
             auto mipWidth = int32_t(image->width);
             auto mipHeight = int32_t(image->height);
             auto mipDepth = int32_t(image->depth);
+
+            // Transition to useful layout if not done already
+            if (image->layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                imageBarrier.subresourceRange.baseMipLevel = 0;
+                imageBarrier.subresourceRange.levelCount = image->mipLevels;
+                imageBarrier.oldLayout = image->layout;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                imageBarrier.srcAccessMask = image->accessMask;
+                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+                imageBarrier.subresourceRange.levelCount = 1;
+            }
 
             for (uint32_t i = 1; i < image->mipLevels; i++) {
                 imageBarrier.subresourceRange.baseMipLevel = i - 1;

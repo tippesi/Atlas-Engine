@@ -107,6 +107,8 @@ namespace Atlas {
             std::vector<ResourceHandle<Material>> materials;
             std::vector<std::vector<TerrainStorageCell>> cells;
 
+            bool inEditing = false;
+
         private:
             void BlitImageToImageArray(Ref<Graphics::Image>& srcImage,
                 Ref<Graphics::Image>& dstImage, int32_t slot);

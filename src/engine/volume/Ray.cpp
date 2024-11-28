@@ -11,6 +11,18 @@ namespace Atlas {
 
         }
 
+        Ray::Ray(Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition, 
+            float tMin, float tMax) : tMin(tMin), tMax(tMax) {
+
+            auto nearPoint = viewport->Unproject(vec3(mousePosition, 0.0f), camera);
+            auto farPoint = viewport->Unproject(vec3(mousePosition, 1.0f), camera);
+
+            direction = glm::normalize(farPoint - nearPoint);
+            inverseDirection = 1.0f / direction;
+            origin = nearPoint;
+
+        }
+
         vec3 Ray::Get(float distance) const {
 
             return origin + distance * direction;

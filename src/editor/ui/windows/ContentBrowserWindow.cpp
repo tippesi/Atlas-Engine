@@ -645,7 +645,7 @@ namespace Atlas::Editor::UI {
         if (type == ContentType::Script) {
             path.replace_extension("lua");
         }
-        auto assetRelative = Common::Path::GetAbsolute(path);
+        auto assetRelative = Common::Path::GetAbsolute(path.string());
         auto fileStream = Loader::AssetLoader::WriteFile(assetRelative, std::ios::out | std::ios::binary);
         if (!fileStream.is_open()) {
             Notifications::Push({"Couldn't write file " + 

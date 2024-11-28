@@ -42,7 +42,7 @@ namespace Atlas {
                     &allocationCreateInfo, alignment, &buffer, &allocation, nullptr))
             }
 
-            if (desc.data) SetData(desc.data, 0, desc.dataSize > 0 ? desc.dataSize : desc.size);
+            if (desc.data) SetData(desc.data, 0, desc.dataSize > 0 ? desc.dataSize : desc.size, desc.transferManager);
 
         }
 
@@ -52,7 +52,10 @@ namespace Atlas {
 
         }
 
-        void Buffer::SetData(void *data, size_t offset, size_t length) {
+        void Buffer::SetData(void *data, size_t offset, size_t length, MemoryTransferManager* transferManager) {
+
+            if (!transferManager)
+                transferManager = memoryManager->transferManager;
 
             // Upload data through staging buffer for device local memory
             if (domain == BufferDomain::Device) {
@@ -61,7 +64,10 @@ namespace Atlas {
                 bufferCopy.dstOffset = 0;
                 bufferCopy.size = length;
 
-                memoryManager->transferManager->UploadBufferData(data, this, bufferCopy);
+                if (transferManager == nullptr)
+                    Log::Warning("Oh no!");
+
+                transferManager->UploadBufferData(data, this, bufferCopy);
             }
             else {
                 // If there isn't a valid mapping yet start and complete it in this call

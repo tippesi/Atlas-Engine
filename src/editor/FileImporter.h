@@ -101,7 +101,7 @@ namespace Atlas::Editor {
         else if constexpr (std::is_same_v<T, Terrain::Terrain>) {
             // No support internally for async loading, load syncho. for now
             handle = ResourceManager<Terrain::Terrain>::GetOrLoadResourceWithLoaderAsync(filename,
-                ResourceOrigin::User, Loader::TerrainLoader::LoadTerrain, false);
+                ResourceOrigin::User, Loader::TerrainLoader::LoadTerrain, true);
         }
 
         return handle;

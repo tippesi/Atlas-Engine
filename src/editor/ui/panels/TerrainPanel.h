@@ -11,10 +11,15 @@ namespace Atlas::Editor::UI {
 
     public:
         enum class TerrainBrushType {
-            HeightGauss = 0,
-            HeightBox,
-            HeightSmooth,
+            Height = 0,
             Material
+        };
+
+        enum class TerrainBrushFunction {
+            Gauss = 0,
+            Box,
+            Smooth,
+            Flatten
         };
 
         TerrainPanel() : Panel("Terrain") {}
@@ -23,7 +28,12 @@ namespace Atlas::Editor::UI {
 
         bool editingMode = false;
         float brushSize = 1.0f;
-        TerrainBrushType brushType = TerrainBrushType::HeightGauss;
+        float brushStrength = 1.0f;
+        bool brushFlattenQueryRegularGeometry = false;
+        TerrainBrushType brushType = TerrainBrushType::Height;
+        TerrainBrushFunction brushFunction = TerrainBrushFunction::Gauss;
+
+        int32_t materialBrushSelection = 0;
 
         TerrainGenerator terrainGenerator;
 

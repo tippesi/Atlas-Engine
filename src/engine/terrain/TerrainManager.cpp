@@ -6,7 +6,7 @@
 
 namespace Atlas::Terrain {
 
-    bool TerrainManager::enable;
+    bool TerrainManager::enable = true;
     JobGroup TerrainManager::loadTerrainCellGroup;
 
     void TerrainManager::Update() {
@@ -20,6 +20,8 @@ namespace Atlas::Terrain {
                     continue;
 
                 auto& storage = terrain->storage;
+                if (!storage)
+                    continue;
 
                 // Unload old cells first
                 auto cells = storage->GetUnusedCellsQueue();

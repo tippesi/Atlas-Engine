@@ -92,6 +92,8 @@ namespace Atlas {
             terrain->storage->displacementMaps.Bind(commandList, 3, 7);
 
             Uniforms uniforms = {
+                .translation = vec4(terrain->translation, 1.0f),
+
                 .heightScale = terrain->heightScale,
                 .displacementDistance = terrain->displacementDistance,
 

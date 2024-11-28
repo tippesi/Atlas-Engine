@@ -48,19 +48,21 @@ namespace Atlas {
         void TerrainStorageCell::Unload() {
 
             // We keep the height data, even after unload (e.g. needed for ray casting, height estimation)
-            materialIdxData.clear();
-            normalData.clear();
+            if (!storage->inEditing) {
+                materialIdxData.clear();
+                normalData.clear();
 
-            materialIdxData.shrink_to_fit();
-            normalData.shrink_to_fit();
+                materialIdxData.shrink_to_fit();
+                normalData.shrink_to_fit();
 
-            heightField = nullptr;
-            normalMap = nullptr;
-            splatMap = nullptr;
+                heightField = nullptr;
+                normalMap = nullptr;
+                splatMap = nullptr;
+            
+                isLoaded = false;
+            }
 
             blas.reset();
-
-            isLoaded = false;
 
         }
 
