@@ -105,6 +105,7 @@ namespace Atlas::Editor {
         j.at("LoDCount").get_to(p.LoDCount);
         j.at("patchSize").get_to(p.patchSize);
         j.at("resolution").get_to(p.resolution);
+        j.at("height").get_to(p.height);
         j.at("resolutionSelection").get_to(p.resolutionSelection);
         j.at("materialSelection").get_to(p.materialSelection);
         j.at("loadFromFile").get_to(p.heightMapSelection);

@@ -141,7 +141,7 @@ namespace Atlas {
              */
             Common::Image<float> GetHeightField(int32_t LoD);
 
-            bool IntersectRay(const Volume::Ray& ray, vec3& hitPosition, float& hitDistance);
+            bool IntersectRay(const Volume::Ray& ray, vec3& hitPosition, vec3& hitNormal, float& hitDistance);
 
             Ref<TerrainStorage> storage = nullptr;
 
@@ -194,7 +194,7 @@ namespace Atlas {
             float BarryCentric(vec3 p1, vec3 p2, vec3 p3, vec2 pos);
 
             void BinarySearch(const Volume::Ray& ray, float start,
-                float finish, int count, vec3& hitPosition);
+                float finish, int count, vec3& hitPosition, vec3& hitNormal);
 
             bool IntersectionInRange(const Volume::Ray& ray, float start, float finish);
 

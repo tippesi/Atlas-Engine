@@ -364,7 +364,7 @@ namespace Atlas {
             return heightImage;
         }
 
-        bool Terrain::IntersectRay(const Volume::Ray& ray, vec3& hitPosition, float& hitDistance) {
+        bool Terrain::IntersectRay(const Volume::Ray& ray, vec3& hitPosition, vec3& hitNormal, float& hitDistance) {
 
             const float linearStepLength = 1.0f;
 
@@ -376,7 +376,7 @@ namespace Atlas {
             while (distance < ray.tMax) {
                 nextPosition = ray.Get(distance);
                 if (!IsUnderground(position) && IsUnderground(nextPosition)) {
-                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition);
+                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
                     hitDistance = glm::distance(hitPosition, ray.origin);
                     return true;
                 }
@@ -458,20 +458,22 @@ namespace Atlas {
         }
 
         void Terrain::BinarySearch(const Volume::Ray& ray, float start,
-            float finish, int count, vec3& hitPosition) {
+            float finish, int count, vec3& hitPosition, vec3& hitNormal) {
 
             float half = start + (finish - start) / 2.0f;
 
             if (count == 0) {
                 hitPosition = ray.origin + ray.direction * half;
+                glm::vec3 forward;
+                GetHeight(hitPosition.x, hitPosition.z, hitNormal, forward);
                 return;
             }
 
             if (IntersectionInRange(ray, start, half)) {
-                BinarySearch(ray, start, half, count - 1, hitPosition);
+                BinarySearch(ray, start, half, count - 1, hitPosition, hitNormal);
             }
             else {
-                BinarySearch(ray, half, finish, count - 1, hitPosition);
+                BinarySearch(ray, half, finish, count - 1, hitPosition, hitNormal);
             }
 
         }

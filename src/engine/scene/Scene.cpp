@@ -601,14 +601,15 @@ namespace Atlas {
             if (queryComponents & SceneQueryComponentBits::TerrainComponentBit && terrain.IsLoaded()) {
 
                 vec3 hitPosition;
+                vec3 hitNormal;
                 float hitDistance;
-                if (terrain->IntersectRay(ray, hitPosition, hitDistance)) {
+                if (terrain->IntersectRay(ray, hitPosition, hitNormal, hitDistance)) {
 
                     if (hitDistance < result.hitDistance) {
                         result.data = Entity();
                         result.valid = true;
                         result.hitDistance = hitDistance;
-                        result.normal = vec3(0.0f);
+                        result.normal = hitNormal;
                     }
                 }
             }

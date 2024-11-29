@@ -48,7 +48,7 @@ endif()
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
 target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension 
-    unofficial::imguizmo::imguizmo Jolt::Jolt)
+    imguizmo::imguizmo Jolt::Jolt)
 
 if (APPLE AND ATLAS_BUNDLE)
     set(path ${Vulkan_LIBRARY})

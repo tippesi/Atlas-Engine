@@ -33,6 +33,7 @@ namespace Atlas::Editor::UI {
         float brushRadius = 5.0f;
         float brushRayLength = 5.0f;
         bool brushAlignToSurface = false;
+        bool brushOnlyQueryTerrain = false;
         int32_t brushDropRate = 10.0f;
 
         float brushLastApplied = 0.0f;

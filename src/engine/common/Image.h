@@ -3,7 +3,7 @@
 #include "../System.h"
 #include "../Filter.h"
 
-#include <stb_image_resize.h>
+#include <stb_image_resize2.h>
 
 #include <vector>
 #include <type_traits>
@@ -571,6 +571,14 @@ namespace Atlas {
                 dim.y /= 2;
             }
 
+            stbir_pixel_layout pixelLayout = STBIR_RGBA;
+            switch (channels) {
+            case 1: pixelLayout = STBIR_1CHANNEL; break;
+            case 2: pixelLayout = STBIR_2CHANNEL; break;
+            case 3: pixelLayout = STBIR_RGB; break;
+            default: pixelLayout = STBIR_RGBA; break;
+            }
+
             for (int32_t i = 1; i < int32_t(mipLevels.size()); i++) {
                 dim.x /= 2;
                 dim.y /= 2;
@@ -578,25 +586,22 @@ namespace Atlas {
                     stbir_resize_uint8_generic(mipLevels[i - 1].data.data(), dim.x * 2,
                         dim.y * 2, dim.x * 2 * channels,
                         mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * channels, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        dim.y, dim.x * channels, channels, pixelLayout,
+                        STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
                 else if constexpr (std::is_same_v<T, uint16_t>) {
                     stbir_resize_uint16_generic(mipLevels[i - 1].data.data(), dim.x * 2,
                         dim.y * 2, dim.x * 4 * channels,
                         mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 2 * channels, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        dim.y, dim.x * 2 * channels, channels, pixelLayout,
+                        STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
                 else if constexpr (std::is_same_v<T, float>) {
                     stbir_resize_float_generic(mipLevels[i - 1].data.data(), dim.x * 2,
                         dim.y * 2, dim.x * 8 * channels,
                         mipLevels[i].data.data(), dim.x,
-                        dim.y, dim.x * 4 * channels, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        dim.y, dim.x * 4 * channels, channels, pixelLayout,
+                        STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
             }
 
@@ -619,30 +624,35 @@ namespace Atlas {
             level.height = height;
             level.data.resize(width * height * channels);
 
+            stbir_pixel_layout pixelLayout = STBIR_RGBA;
+            switch (channels) {
+            case 1: pixelLayout = STBIR_1CHANNEL; break;
+            case 2: pixelLayout = STBIR_2CHANNEL; break;
+            case 3: pixelLayout = STBIR_RGB; break;
+            default: pixelLayout = STBIR_RGBA; break;
+            }
+
             if (resizableData.size()) {
                 if constexpr (std::is_same_v<T, uint8_t>) {
-                    stbir_resize_uint8_generic(resizableData.data(), this->width,
+                    stbir_resize(resizableData.data(), this->width,
                         this->height, this->width * channels,
                         level.data.data(), width,
-                        height, width * channels, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        height, width * channels, pixelLayout,
+                        STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
                 else if constexpr (std::is_same_v<T, uint16_t>) {
-                    stbir_resize_uint16_generic(resizableData.data(), this->width,
+                    stbir_resize(resizableData.data(), this->width,
                         this->height, this->width * channels * 2,
                         level.data.data(), width,
-                        height, width * channels * 2, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        height, width * channels * 2, pixelLayout,
+                        STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
                 else if constexpr (std::is_same_v<T, float>) {
-                    stbir_resize_float_generic(resizableData.data(), this->width,
+                    stbir_resize(resizableData.data(), this->width,
                         this->height, this->width * channels * 4,
                         level.data.data(), width,
-                        height, width * channels * 4, channels, -1, 0,
-                        STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT,
-                        STBIR_COLORSPACE_LINEAR, nullptr);
+                        height, width * channels * 4, pixelLayout,
+                        STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
                 }
             }
 

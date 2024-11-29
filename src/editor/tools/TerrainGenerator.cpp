@@ -15,22 +15,24 @@ namespace Atlas::Editor {
 
     TerrainGenerator::TerrainGenerator() {
 
-        previewHeightImg = CreateRef<Common::Image<uint16_t>>(128, 128, 1);
-        previewMoistureImg = CreateRef<Common::Image<uint16_t>>(128, 128, 1);
-        previewBiomeImg = CreateRef<Common::Image<uint8_t>>(128, 128, 4);
+        const int32_t previewSize = 128;
 
-        previewHeightMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+        previewHeightImg = CreateRef<Common::Image<uint16_t>>(previewSize, previewSize, 1);
+        previewMoistureImg = CreateRef<Common::Image<uint16_t>>(previewSize, previewSize, 1);
+        previewBiomeImg = CreateRef<Common::Image<uint8_t>>(previewSize, previewSize, 4);
+
+        previewHeightMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        previewMoistureMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+        previewMoistureMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        previewBiomeMap = Texture::Texture2D(128, 128, VK_FORMAT_R8G8B8A8_UNORM,
+        previewBiomeMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R8G8B8A8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
-        newPreviewHeightMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+        newPreviewHeightMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        newPreviewMoistureMap = Texture::Texture2D(128, 128, VK_FORMAT_R16_SNORM,
+        newPreviewMoistureMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R16_SNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
-        newPreviewBiomeMap = Texture::Texture2D(128, 128, VK_FORMAT_R8G8B8A8_UNORM,
+        newPreviewBiomeMap = Texture::Texture2D(previewSize, previewSize, VK_FORMAT_R8G8B8A8_UNORM,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
 
         // Set this first since it will be swapped out
@@ -131,7 +133,7 @@ namespace Atlas::Editor {
         ImGui::SliderInt("Number of LODs", &LoDCount, 1, 8);
         ImGui::SliderInt("Patch size", &patchSize, 1, 32);
         ImGui::DragFloat("Resolution", &resolution, 0.01f, 0.1f, 4.0f);
-        ImGui::DragFloat("Height", &height, 0.25f, 1.0f, 1000.0f);
+        ImGui::DragFloat("Height", &height, 0.25f, 1.0f, 2000.0f);
 
         std::string buttonText = advanced ? "Advanced" : "Standard";
         if (ImGui::Button(buttonText.c_str(), ImVec2(width, 0.0f))) {
@@ -201,9 +203,11 @@ namespace Atlas::Editor {
                 if (open) {
                     ImGui::ColorEdit3("Material color", glm::value_ptr(color));
                     material = materialSelectionPanel.Render(material);
-                    materialPanel.Render(imguiWrapper, material.Get(), [&](ResourceHandle<Texture::Texture2D> texture) {
-                        return textureSelectionPanel.Render(texture);
-                        });
+                    if (material.IsLoaded()) {
+                        materialPanel.Render(imguiWrapper, material.Get(), [&](ResourceHandle<Texture::Texture2D> texture) {
+                            return textureSelectionPanel.Render(texture);
+                            });
+                    }
                     ImGui::TreePop();
                 }
                 loopCount++;
@@ -264,7 +268,7 @@ namespace Atlas::Editor {
                 ImGui::PopStyleColor();
 
                 if (eleOpen) {
-                    ImGui::SliderFloat("Elevation", &eleBiome.elevation, 0.0f, 1.0f);
+                    ImGui::DragFloat("Elevation", &eleBiome.elevation, 0.001f, 0.0f, 1.0f);
                     ImGui::RadioButton("Larger", &eleBiome.less, 0);
                     ImGui::SameLine();
                     UIElements::Tooltip("Everything larger than the biome elevation will be painted with the biomes materials");
@@ -283,7 +287,7 @@ namespace Atlas::Editor {
                     if (ImGui::TreeNode("Moisture biomes")) {
                         for (auto& moiBiome : eleBiome.moistureBiomes) {
                             if (ImGui::TreeNode(("Moisture biome " + std::to_string(moiBiomeCount++)).c_str())) {
-                                ImGui::SliderFloat("Moisture", &moiBiome.moisture, 0.0f, 1.0f);
+                                ImGui::DragFloat("Moisture", &moiBiome.moisture, 0.001f, 0.0f, 1.0f);
                                 ImGui::Combo("Material", &moiBiome.materialIdx, pointer.data(), pointer.size());
                                 ImGui::TreePop();
                             }
@@ -299,7 +303,7 @@ namespace Atlas::Editor {
                     if (ImGui::TreeNode("Slope biomes")) {
                         for (auto& sloBiome : eleBiome.slopeBiomes) {
                             if (ImGui::TreeNode(("Slope biome " + std::to_string(sloBiomeCount++)).c_str())) {
-                                ImGui::SliderFloat("Slope", &sloBiome.slope, 0.0f, 1.0f);
+                                ImGui::DragFloat("Slope", &sloBiome.slope, 0.001f, 0.0f, 1.0f);
                                 ImGui::Combo("Material", &sloBiome.materialIdx, pointer.data(), pointer.size());
                                 ImGui::TreePop();
                             }
@@ -684,7 +688,6 @@ namespace Atlas::Editor {
             }
         }
 
-        // Use default material
         if (material.first.IsLoaded()) {
             return material;
         }

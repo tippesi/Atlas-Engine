@@ -5,7 +5,7 @@
 #include "../loader/TerrainLoader.h"
 #include "../Log.h"
 
-#include <stb_image_resize.h>
+#include <stb_image_resize2.h>
 
 #include <string>
 #include <sys/stat.h>
@@ -38,9 +38,9 @@ namespace Atlas::Tools {
         Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
 
         if (heightImage.width != totalResolution) {
-            stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
+            stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
                 heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+                STBIR_1CHANNEL, STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
         }
         else {
             heightMap.SetData(heightImage.GetData());
@@ -136,18 +136,18 @@ namespace Atlas::Tools {
         Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
 
         if (heightImage.width != totalResolution) {
-            stbir_resize_uint16_generic(heightImage.GetData().data(), heightImage.width, heightImage.height,
+            stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
                 heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
-                1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+                STBIR_1CHANNEL, STBIR_TYPE_UINT16, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
         }
         else {
             heightMap.SetData(heightImage.GetData());
         }
 
         if (splatImage.width != totalResolution) {
-            stbir_resize_uint8_generic(splatImage.GetData().data(), splatImage.width, splatImage.height,
+            stbir_resize(splatImage.GetData().data(), splatImage.width, splatImage.height,
                 splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
-                1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+                STBIR_1CHANNEL, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_POINT_SAMPLE);
         }
         else {
             splatMap.SetData(splatImage.GetData());
@@ -244,9 +244,9 @@ namespace Atlas::Tools {
 
         Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
         if (splatImage.width != totalResolution) {
-            stbir_resize_uint8_generic(splatImage.GetData().data(), splatImage.width, splatImage.height,
+            stbir_resize(splatImage.GetData().data(), splatImage.width, splatImage.height,
                 splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
-                1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+                STBIR_1CHANNEL, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
         }
         else {
             splatMap.SetData(splatImage.GetData());
@@ -779,9 +779,9 @@ namespace Atlas::Tools {
 
         std::vector<float> resizedHeightData(resolution * resolution);
 
-        stbir_resize_float_generic(heightData.data(), heightDataResolution, heightDataResolution,
+        stbir_resize(heightData.data(), heightDataResolution, heightDataResolution,
             heightDataResolution * 4, resizedHeightData.data(), resolution, resolution, resolution * 4,
-            1, -1, 0, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT, STBIR_COLORSPACE_LINEAR, nullptr);
+            STBIR_1CHANNEL, STBIR_TYPE_FLOAT, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
 
         Common::Image<uint8_t> image(resolution, resolution, 4);
         auto maxDistance = 2.0f * (float)heightDataResolution * (float)heightDataResolution;
@@ -1103,11 +1103,11 @@ namespace Atlas::Tools {
                     }
                 }
 
-                // Need to only take the heights from the cell storage, since heights in allHeightData have border issues
-                for (size_t i = 0; i < cell->heightData.size(); i++)
-                    cellHeightData[i] = uint16_t(cell->heightData[i] * 65535.0f);
-
                 if (!heightData.empty()) {
+                    // Need to only take the heights from the cell storage, since heights in allHeightData have border issues
+                    for (size_t i = 0; i < cell->heightData.size(); i++)
+                        cellHeightData[i] = uint16_t(cell->heightData[i] * 65535.0f);
+
                     cell->heightField->SetData(cellHeightData, &transferManager);
                     cell->normalMap->SetData(cell->normalData, &transferManager);
                 }

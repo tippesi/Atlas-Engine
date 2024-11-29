@@ -197,6 +197,8 @@ namespace Atlas::Editor::UI {
 
         End();
 
+        lockSelection = false;
+
     }
 
     void SceneWindow::RegisterViewportAndGizmoOverlay() {

@@ -84,6 +84,7 @@ namespace Atlas::Editor::UI {
         ImGui::DragInt("Brush drop rate (per second)", &brushDropRate, 1.0f, 1, 100000);
 
         ImGui::Checkbox("Align to surface", &brushAlignToSurface);
+        ImGui::Checkbox("Only query terrain", &brushOnlyQueryTerrain);
 
         ImGui::Separator();
 
@@ -125,8 +126,13 @@ namespace Atlas::Editor::UI {
 
             Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
 
-            auto rayCastResult = scene->CastRay(ray);
+            Scene::SceneQueryComponents queryComponent = Scene::SceneQueryComponentBits::AllComponentsBit;
+            if (brushOnlyQueryTerrain)
+                queryComponent = Scene::SceneQueryComponentBits::TerrainComponentBit;
+
+            auto rayCastResult = scene->CastRay(ray, queryComponent);
             if (rayCastResult.valid && rayCastResult.IsNormalValid()) {
+
                 target.center = ray.Get(rayCastResult.hitDistance);
                 target.normal = rayCastResult.normal;
 
@@ -162,6 +168,10 @@ namespace Atlas::Editor::UI {
 
         auto decomposition = brushEntity.GetComponent<TransformComponent>().Decompose();
 
+        Scene::SceneQueryComponents queryComponent = Scene::SceneQueryComponentBits::AllComponentsBit;
+        if (brushOnlyQueryTerrain)
+            queryComponent = Scene::SceneQueryComponentBits::TerrainComponentBit;
+
         for (int32_t i = 0; i < dropsPerFrame; i++) {
             auto deg = Common::Random::SampleFastUniformFloat() * 2.0f * 3.14159f;
             auto dist = Common::Random::SampleFastUniformFloat() + Common::Random::SampleFastUniformFloat();
@@ -172,10 +182,10 @@ namespace Atlas::Editor::UI {
             pos += dropTarget.center;
 
             Atlas::Volume::Ray ray(pos + dropTarget.normal * brushRayLength, -dropTarget.normal);
-            auto rayCastResult = scene->CastRay(ray);
+            auto rayCastResult = scene->CastRay(ray, queryComponent);
 
             if (!rayCastResult.valid || !rayCastResult.IsNormalValid() || rayCastResult.hitDistance > 2.0f * brushRayLength) {
-                return;
+                continue;
             }                
 
             mat4 rot { 1.0f };

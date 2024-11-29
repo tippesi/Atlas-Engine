@@ -129,9 +129,9 @@ namespace Atlas {
         void Texture2D::InitializeInternal(const Ref<Common::Image<T>>& image, Wrapping wrapping, Filtering filtering,
             bool dedicatedMemory, bool usedForRenderTarget) {
 
-            // RGB images are mostly not supported
+            // RGB images are mostly not supported (but we don't want the alpha channel to be zero)
             if (image->channels == 3) {
-                image->ExpandToChannelCount(4, 0);
+                image->ExpandToChannelCount(4, 255);
             }
 
             if constexpr (std::is_same_v<T, uint8_t>) {

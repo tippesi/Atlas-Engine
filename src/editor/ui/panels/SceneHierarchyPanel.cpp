@@ -82,7 +82,7 @@ namespace Atlas::Editor::UI {
 #endif
             if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_D, false))
                 DuplicateSelectedEntity(scene);
-            if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+            if (inFocus && !io.WantCaptureKeyboard && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
                 DeleteSelectedEntity(scene);
 
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {

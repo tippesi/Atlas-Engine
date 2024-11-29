@@ -65,7 +65,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::Checkbox("Wireframe", &terrain->wireframe);
         ImGui::DragFloat3("Translation", glm::value_ptr(terrain->translation), 1.0f, -10000.0f, 10000.0f);
-        ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Height", &terrain->heightScale, 1.0f, 2000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
         ImGui::Text("Tessellation");
@@ -187,7 +187,7 @@ namespace Atlas::Editor::UI {
         std::vector<std::string> counter;
         std::vector<const char*> pointer;
 
-        for (size_t count = 0; count < terrainGenerator.materials.size(); count++) {
+        for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
             counter.push_back(std::to_string(count));
         }
         for (auto& name : counter) {
