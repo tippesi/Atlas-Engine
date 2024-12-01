@@ -81,6 +81,12 @@ namespace Atlas::Editor::UI {
 
         bool isBlocked = Singletons::blockingOperation->block;
 
+        // Get rid of the selection and don't allow new one
+        if (lockSelection || brushActive) {
+            sceneHierarchyPanel.selectedEntity = Scene::Entity();
+            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+        }
+
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
 
         if (!ImGui::DockBuilderGetNode(dsID) || resetDockingLayout) {

@@ -157,11 +157,13 @@ namespace Atlas::Lighting {
             {"currentClipFactor", p.currentClipFactor},
             {"enable", p.enable},
             {"rt", p.rt},
+            {"ssr", p.ssr},
             {"ddgi", p.ddgi},
             {"useShadowMap", p.useShadowMap},
             {"useNormalMaps", p.useNormalMaps},
             {"opacityCheck", p.opacityCheck},
             {"halfResolution", p.halfResolution},
+            {"upsampleBeforeFiltering", p.upsampleBeforeFiltering},
             {"lightSampleCount", p.lightSampleCount},
             {"sampleCount", p.sampleCount},
         };
@@ -181,6 +183,8 @@ namespace Atlas::Lighting {
         j.at("useShadowMap").get_to(p.useShadowMap);
         j.at("useNormalMaps").get_to(p.useNormalMaps);
         j.at("opacityCheck").get_to(p.opacityCheck);
+        try_get_json(j, "ssr", p.ssr);
+        try_get_json(j, "upsampleBeforeFiltering", p.upsampleBeforeFiltering);
         try_get_json(j, "halfResolution", p.halfResolution);
         try_get_json(j, "roughnessCutoff", p.roughnessCutoff);
         try_get_json(j, "lightSampleCount", p.lightSampleCount);

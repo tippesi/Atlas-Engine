@@ -225,11 +225,11 @@ namespace Atlas {
 
             void* userData;
 
-        private:
-            Pools pools;
-
             std::vector<Entity> entities;
             std::vector<Entity> destroyed;
+
+        private:
+            Pools pools;            
 
         };
 

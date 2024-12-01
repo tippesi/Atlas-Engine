@@ -158,6 +158,8 @@ namespace Atlas::Scene {
             EntityToJson(entities.back(), entity, scene, insertedEntities);
         }
 
+        EntityManagerToJson(j["entityManager"], scene->entityManager);
+
         // Parse all mandatory members
         j["name"] = scene->name;
         j["aabb"] = scene->aabb;
@@ -166,7 +168,7 @@ namespace Atlas::Scene {
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;
-
+        
         // Parse all optional members
         if (scene->fog)
             j["fog"] = *scene->fog;
@@ -200,6 +202,11 @@ namespace Atlas::Scene {
         scene->physicsWorld = CreateRef<Physics::PhysicsWorld>();
         scene->physicsWorld->pauseSimulation = true;
 
+        bool containsEntityManager = j.contains("entityManager");
+        if (containsEntityManager) {
+            EntityManagerFromJson(j["entityManager"], scene->entityManager);
+        }
+
         if (j.contains("physicsWorld")) {
             std::unordered_map<uint32_t, Physics::BodyCreationSettings> bodyCreationMap;
             Physics::DeserializePhysicsWorld(j["physicsWorld"], bodyCreationMap);
@@ -211,7 +218,12 @@ namespace Atlas::Scene {
 
         std::vector<json> jEntities = j["entities"];
         for (auto jEntity : jEntities) {
-            auto entity = scene->CreateEntity();
+            Entity entity;
+            if (containsEntityManager)
+                entity = Entity(jEntity["id"], &scene->entityManager);
+            else                
+                entity = scene->CreateEntity();
+
             EntityFromJson(jEntity, entity, scene.get());
         }
 
@@ -253,6 +265,22 @@ namespace Atlas::Scene {
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
 
         scene->physicsWorld->OptimizeBroadphase();
+
+    }
+
+    void EntityManagerToJson(json& j, const ECS::EntityManager& p) {
+
+        j = json{
+            {"entities", p.entities},
+            {"destroyed", p.destroyed}
+        };
+
+    }
+
+    void EntityManagerFromJson(const json& j, ECS::EntityManager& p) {
+
+        try_get_json(j, "entities", p.entities);
+        try_get_json(j, "destroyed", p.destroyed);
 
     }
 

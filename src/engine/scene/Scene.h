@@ -155,6 +155,7 @@ namespace Atlas {
             PostProcessing::PostProcessing postProcessing;
 
             SceneRenderState renderState;
+            ECS::EntityManager entityManager = ECS::EntityManager(this);
 
         private:
             Entity ToSceneEntity(ECS::Entity entity);
@@ -172,9 +173,7 @@ namespace Atlas {
             void UnregisterResource(std::map<Hash, RegisteredResource<T>>& resources, ResourceHandle<T> resource);
 
             template<class T>
-            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);
-
-            ECS::EntityManager entityManager = ECS::EntityManager(this);
+            void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);           
 
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;

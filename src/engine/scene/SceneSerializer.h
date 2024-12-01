@@ -16,6 +16,10 @@ namespace Atlas::Scene {
 
     void SceneFromJson(const json& j, Ref<Scene>& scene);
 
+    void EntityManagerToJson(json& j, const ECS::EntityManager& p);
+
+    void EntityManagerFromJson(const json& j, ECS::EntityManager& p);
+
     void to_json(json& j, const Wind& p);
 
     void from_json(const json& j, Wind& p);
