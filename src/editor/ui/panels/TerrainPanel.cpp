@@ -42,6 +42,9 @@ namespace Atlas::Editor::UI {
                 }
             }
         }
+        if(ImGui::CollapsingHeader("Vegetation")) {
+            vegetationGeneratorPanel.Render(scene, terrainGenerator);
+        }
 
         if (terrainChanged) {
             AddTerrainToScene(terrain, scene);

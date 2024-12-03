@@ -226,7 +226,7 @@ namespace Atlas::Editor {
             ImGui::SetItemTooltip("Add materials to get started with the biome editing.\n"
                 "Elevation biomes change the material based on the elevation of the height map.\n"
                 "Moisture biomes change the material within an elevation biome based on the moisture map.");
-            
+
             auto mats = materials;
             std::vector<std::string> names;
             std::vector<const char*> pointer;
@@ -346,16 +346,16 @@ namespace Atlas::Editor {
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
             if (name.empty()) {
-                Notifications::Push({"Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f)});
+                Notifications::Push({ "Terrain name is missing!", vec3(1.0f, 0.0f, 0.0f) });
             }
             else if (!materials.size() && advanced) {
-                Notifications::Push({"At least one material is required!", vec3(1.0f, 0.0f, 0.0f)});
+                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
             }
             else if (!selectedMaterial.IsLoaded() && !advanced) {
-                Notifications::Push({"At least one material is required!", vec3(1.0f, 0.0f, 0.0f)});
+                Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
             }
             else if (heightMapSelection && !heightMapImage->HasData()) {
-                Notifications::Push({"No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f)});
+                Notifications::Push({ "No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f) });
             }
             else {
                 Singletons::blockingOperation->Block("Generating terrain. Please wait...", [&]() {
@@ -399,12 +399,8 @@ namespace Atlas::Editor {
 
     }
 
-    void TerrainGenerator::Generate() {
-
-        auto path = "terrains/" + name + "/" + name + ".aeterrain";
-        auto handle = ResourceManager<Terrain::Terrain>::GetResource(path);
-
-        Ref<Common::Image<uint16_t>> heightImage, moistureImage;
+    void TerrainGenerator::GenerateHeightAndMoistureImages(Ref<Common::Image<uint16_t>>& heightImg,
+        Ref<Common::Image<uint16_t>>& moistureImg) {
 
         if (heightMapSelection == 0) {
             int32_t heightMapResolution = 128;
@@ -416,14 +412,118 @@ namespace Atlas::Editor {
             case 4: heightMapResolution = 8192; break;
             }
 
-            heightImage = CreateRef<Common::Image<uint16_t>>(heightMapResolution,
+            heightImg = CreateRef<Common::Image<uint16_t>>(heightMapResolution,
                 heightMapResolution, 1);
-            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*heightImage, heightAmplitudes,
+            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*heightImg, heightAmplitudes,
                 (uint32_t)heightSeed, JobPriority::High, heightExp);
         }
         else {
-            heightImage = heightMapImage;
+            heightImg = heightMapImage;
         }
+
+        moistureImg = CreateRef<Common::Image<uint16_t>>(heightImg->width / 2,
+            heightImg->height / 2, 1);
+        Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*moistureImg, moistureAmplitudes,
+            (uint32_t)moistureSeed, JobPriority::High);
+
+    }
+
+    TerrainGenerator::Biome TerrainGenerator::GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
+        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
+
+        Biome biome;
+
+        auto xTex = 1.0f / (float)heightImg.width;
+        auto yTex = 1.0f / (float)heightImg.height;
+        float heightL = (float)heightImg.SampleBilinear(x - xTex, y).r * scale / 65535.0f;
+        float heightR = (float)heightImg.SampleBilinear(x + xTex, y).r * scale / 65535.0f;
+        float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
+        float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
+
+        auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+            heightD - heightU));
+
+        auto e = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
+        auto m = (float)moistureImg.SampleBilinear(x, y).r / 65535.0f;
+        auto s = glm::dot(normal, vec3(0.0f, 1.0f, 0.0f));
+
+        for (auto& eleBiome : biomes) {
+            if (eleBiome.less) {
+                if (e >= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
+                    continue;
+                }
+
+                for (auto& moiBiome : eleBiome.moistureBiomes) {
+                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
+                        continue;
+                    }
+                    biome = moiBiome;
+                    if (IsBiomeValid(biome))
+                        break;
+                }
+
+                for (auto& sloBiome : eleBiome.slopeBiomes) {
+                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
+                        continue;
+                    }
+                    biome = sloBiome;
+                    if (IsBiomeValid(biome))
+                        break;
+                }
+
+                if (IsBiomeValid(biome))
+                    break;
+                biome = eleBiome;
+                if (IsBiomeValid(biome))
+                    break;
+            }
+            else {
+                if (e <= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
+                    continue;
+                }
+
+                for (auto& moiBiome : eleBiome.moistureBiomes) {
+                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
+                        continue;
+                    }
+                    biome = moiBiome;
+                    if (IsBiomeValid(biome))
+                        break;
+                }
+
+                for (auto& sloBiome : eleBiome.slopeBiomes) {
+                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
+                        continue;
+                    }
+                    biome = sloBiome;
+                    if (IsBiomeValid(biome))
+                        break;
+                }
+
+                if (IsBiomeValid(biome))
+                    break;
+
+                biome = eleBiome;
+                if (IsBiomeValid(biome))
+                    break;
+            }
+        }
+
+        if (IsBiomeValid(biome)) {
+            return biome;
+        }
+
+        return biome;
+
+    }
+
+    void TerrainGenerator::Generate() {
+
+        auto path = "terrains/" + name + "/" + name + ".aeterrain";
+        auto handle = ResourceManager<Terrain::Terrain>::GetResource(path);
+
+        Ref<Common::Image<uint16_t>> heightImage, moistureImage;
+        GenerateHeightAndMoistureImages(heightImage, moistureImage);
 
         Ref<Terrain::Terrain> terrain = nullptr;
 
@@ -435,11 +535,6 @@ namespace Atlas::Editor {
             std::vector<ResourceHandle<Material>> mats;
             Common::Image<uint8_t> splatImage(heightImage->width,
                 heightImage->height, 1);
-
-            moistureImage = CreateRef<Common::Image<uint16_t>>(heightImage->width / 2,
-                heightImage->height / 2, 1);
-            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(*moistureImage, moistureAmplitudes,
-                (uint32_t)moistureSeed, JobPriority::High);
 
             for (auto mat : materials) {
                 mats.push_back(mat.first);
@@ -454,9 +549,25 @@ namespace Atlas::Editor {
                 for (int32_t x = 0; x < splatImage.width; x++) {
                     auto fx = (float)x / (float)splatImage.width;
                     auto fy = (float)y / (float)splatImage.height;
-                    auto pair = Biome(fx, fy, biomes, *heightImage,
+
+                    auto biome = GetBiome(fx, fy, biomes, *heightImage,
                         *moistureImage, scale);
-                    auto mat = pair.first;
+
+                    std::pair<ResourceHandle<Material>, vec3> pair;
+                    if (biome.materialIdx < 0) {
+                        // Try to use the default material
+                        for (auto mat : materials) {
+                            if (mat.first == selectedMaterial) {
+                                pair = mat;
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        pair = materials[biome.materialIdx];
+                    }
+
+                    auto& mat = pair.first;
                     uint8_t index = 0;
 
                     for (auto material : mats) {
@@ -474,7 +585,7 @@ namespace Atlas::Editor {
         }
 
         terrain->filename = name;
-        
+
 
         if (!handle.IsLoaded()) {
             handle = ResourceManager<Terrain::Terrain>::AddResource(path, terrain);
@@ -503,7 +614,7 @@ namespace Atlas::Editor {
         auto biomes = SortBiomes();
 
         // Need to have copies of the images
-        JobSystem::Execute(previewMapGenerationJob, 
+        JobSystem::Execute(previewMapGenerationJob,
             [previewHeightImg = *previewHeightImg, previewMoistureImg = *previewMoistureImg,
             previewBiomeImg = *previewBiomeImg, biomes = biomes, heightAmplitudes = heightAmplitudes,
             moistureAmplitudes = moistureAmplitudes, heightSeed = heightSeed, moistureSeed = moistureSeed,
@@ -537,8 +648,23 @@ namespace Atlas::Editor {
                     for (int32_t x = 0; x < previewBiomeImg.width; x++) {
                         auto fx = float(x) / float(previewBiomeImg.width);
                         auto fy = float(y) / float(previewBiomeImg.height);
-                        auto pair = Biome(fx, fy, biomes, previewHeightImg,
+                        auto biome = GetBiome(fx, fy, biomes, previewHeightImg,
                             previewMoistureImg, height);
+
+                        std::pair<ResourceHandle<Material>, vec3> pair;
+                        if (biome.materialIdx < 0) {
+                            // Try to use the default material
+                            for (auto mat : materials) {
+                                if (mat.first == selectedMaterial) {
+                                    pair = mat;
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            pair = materials[biome.materialIdx];
+                        }
+
                         previewBiomeImg.SetData(x, y, 0, (uint8_t)(255.0f * pair.second.r));
                         previewBiomeImg.SetData(x, y, 1, (uint8_t)(255.0f * pair.second.g));
                         previewBiomeImg.SetData(x, y, 2, (uint8_t)(255.0f * pair.second.b));
@@ -607,99 +733,12 @@ namespace Atlas::Editor {
 
     }
 
-    std::pair<ResourceHandle<Material>, vec3> TerrainGenerator::Biome(float x, float y, std::vector<ElevationBiome>& biomes,
-        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
+    bool TerrainGenerator::IsBiomeValid(const Biome& biome) const {
 
-        std::pair<ResourceHandle<Material>, vec3> material;
+        if (biome.materialIdx < 0)
+            return false;
 
-        auto xTex = 1.0f / (float)heightImg.width;
-        auto yTex = 1.0f / (float)heightImg.height;
-        float heightL = (float)heightImg.SampleBilinear(x - xTex, y).r * scale / 65535.0f;
-        float heightR = (float)heightImg.SampleBilinear(x + xTex, y).r * scale / 65535.0f;
-        float heightD = (float)heightImg.SampleBilinear(x, y - yTex).r * scale / 65535.0f;
-        float heightU = (float)heightImg.SampleBilinear(x, y + yTex).r * scale / 65535.0f;
-
-        auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
-            heightD - heightU));
-
-        auto e = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
-        auto m = (float)moistureImg.SampleBilinear(x, y).r / 65535.0f;
-        auto s = glm::dot(normal, vec3(0.0f, 1.0f, 0.0f));
-
-        for (auto& eleBiome : biomes) {
-            if (eleBiome.less) {
-                if (e >= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
-                    continue;
-                }
-
-                for (auto& moiBiome : eleBiome.moistureBiomes) {
-                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
-                        continue;
-                    }
-                    material = materials[moiBiome.materialIdx];
-                    if (material.first.IsValid())
-                        break;
-                }
-
-                for (auto& sloBiome : eleBiome.slopeBiomes) {
-                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
-                        continue;
-                    }
-                    material = materials[sloBiome.materialIdx];
-                    if (material.first.IsValid())
-                        break;
-                }
-
-                if (material.first.IsValid())
-                    break;
-                material = materials[eleBiome.materialIdx];
-                if (material.first.IsValid())
-                    break;
-            }
-            else {
-                if (e <= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
-                    continue;
-                }
-
-                for (auto& moiBiome : eleBiome.moistureBiomes) {
-                    if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
-                        continue;
-                    }
-                    material = materials[moiBiome.materialIdx];
-                    if (material.first.IsValid())
-                        break;
-                }
-
-                for (auto& sloBiome : eleBiome.slopeBiomes) {
-                    if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
-                        continue;
-                    }
-                    material = materials[sloBiome.materialIdx];
-                    if (material.first.IsValid())
-                        break;
-                }
-
-                if (material.first.IsValid())
-                    break;
-
-                material = materials[eleBiome.materialIdx];
-                if (material.first.IsValid())
-                    break;
-            }
-        }
-
-        if (material.first.IsLoaded()) {
-            return material;
-        }
-
-        // Try to use the default material
-        for (auto mat : materials) {
-            if (mat.first == selectedMaterial) {
-                return mat;
-            }
-        }
-
-        return std::pair<ResourceHandle<Material>, vec3>(ResourceHandle<Material>{}, vec3(1.0f));
+        return materials[biome.materialIdx].first.IsLoaded();
 
     }
 

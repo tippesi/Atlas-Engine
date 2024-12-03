@@ -12,25 +12,24 @@ namespace Atlas::Editor {
     class TerrainGenerator {
 
     public:
-        struct SlopeBiome {
+        struct Biome {
+            size_t id = Hash(Clock::Get());
+            int32_t materialIdx = -1;
+        };
+
+        struct SlopeBiome : Biome {
             float slope;
-
-            int32_t materialIdx = 0;
         };
 
-        struct MoistureBiome {
+        struct MoistureBiome : Biome {
             float moisture;
-
-            int32_t materialIdx = 0;
         };
 
-        struct ElevationBiome {
+        struct ElevationBiome : Biome  {
             float elevation;
             int32_t less;
             std::vector<MoistureBiome> moistureBiomes;
             std::vector<SlopeBiome> slopeBiomes;
-
-            int32_t materialIdx = 0;
         };
 
         TerrainGenerator();
@@ -44,6 +43,12 @@ namespace Atlas::Editor {
         ResourceHandle<Terrain::Terrain> GetTerrain();
 
         void UpdateHeightmapFromTerrain(ResourceHandle<Terrain::Terrain>& terrain);
+
+        void GenerateHeightAndMoistureImages(Ref<Common::Image<uint16_t>>& heightImg,
+        Ref<Common::Image<uint16_t>>& moistureImg);
+
+        Biome GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
+            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
 
         ResourceHandle<Texture::Texture2D> heightMap;
         ResourceHandle<Material> selectedMaterial;
@@ -73,8 +78,7 @@ namespace Atlas::Editor {
         void Generate();
         void GeneratePreviews();
         std::vector<ElevationBiome> SortBiomes();
-        std::pair<ResourceHandle<Material>, vec3> Biome(float x, float y, std::vector<ElevationBiome>& biomes,
-            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
+        bool IsBiomeValid(const Biome& biome) const;
 
         ImguiExtension::MaterialPanel materialPanel;
 

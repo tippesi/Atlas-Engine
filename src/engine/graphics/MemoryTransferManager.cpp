@@ -22,7 +22,7 @@ namespace Atlas {
 
         MemoryTransferManager::~MemoryTransferManager() {
 
-            AE_ASSERT(commandList == nullptr, "Transfer was probably not completed before deallocation of the manager");
+            AE_ASSERT(commandList == nullptr && "Transfer was probably not completed before deallocation of the manager");
 
         }
 
