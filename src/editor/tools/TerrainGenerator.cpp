@@ -15,8 +15,6 @@ namespace Atlas::Editor {
 
     TerrainGenerator::TerrainGenerator() {
 
-        const int32_t previewSize = 128;
-
         previewHeightImg = CreateRef<Common::Image<uint16_t>>(previewSize, previewSize, 1);
         previewMoistureImg = CreateRef<Common::Image<uint16_t>>(previewSize, previewSize, 1);
         previewBiomeImg = CreateRef<Common::Image<uint8_t>>(previewSize, previewSize, 4);
@@ -542,6 +540,7 @@ namespace Atlas::Editor {
 
             auto biomes = SortBiomes();
 
+            // Need to do this because we want the slopes to be computed as in the preview image
             auto scale = height * (float)splatImage.width / (float)previewHeightImg->width;
 
             // Making this multi-threaded doesn't help much :(

@@ -29,7 +29,9 @@ namespace Atlas {
                 TransformComponent(Scene* scene, Entity entity) : entity(entity) {}
                 TransformComponent(Scene* scene, Entity entity, const TransformComponent& that);
                 explicit TransformComponent(Scene* scene, Entity entity, 
-                    mat4 matrix, bool isStatic = true) : matrix(matrix), isStatic(isStatic), entity(entity) {}
+                    mat4 matrix, bool isStatic = true) : isStatic(isStatic), entity(entity) {
+                    Set(matrix);
+                }
 
                 void Set(const glm::mat4& matrix);
 

@@ -91,7 +91,9 @@ namespace Atlas {
                 normal = vec4(-vec3(normal.x, normal.y, normal.z), normal.w);
 
             UpdateData();
-            blas->isBvhBuilt = false;
+
+            if (blas)
+                blas->isBvhBuilt = false;
 
         }
 

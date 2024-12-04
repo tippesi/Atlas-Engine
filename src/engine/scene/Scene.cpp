@@ -132,13 +132,16 @@ namespace Atlas {
 
             TransformComponent rootTransform = {};
 
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+            auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
+
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
             // Update hierarchy and their entities
             for (auto entity : hierarchySubset) {
                 auto& hierarchyComponent = hierarchySubset.Get(entity);
 
                 if (hierarchyComponent.root) {
-                    auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
                     if (transformComponent) {
                         auto parentChanged = transformComponent->changed;
                         transformComponent->Update(rootTransform, false);
@@ -167,7 +170,7 @@ namespace Atlas {
 
             // Update all other transforms not affected by the hierarchy (entities don't need to be in hierarchy)
             for (auto entity : transformSubset) {
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                auto& transformComponent = transformSubset.Get(entity);
 
                 if (!transformComponent.updated) {
                     transformComponent.Update(rootTransform, false);
@@ -197,7 +200,7 @@ namespace Atlas {
 
                     playerComponent.Update(deltaTime);
 
-                    auto hierarchyComponent = entityManager.TryGet<HierarchyComponent>(entity);
+                    auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
                     if (hierarchyComponent) {
                         hierarchyComponent->Update(transformComponent, true);
                     }
@@ -270,7 +273,7 @@ namespace Atlas {
                     // Now we need to update all the hiearchies
                     auto rigidBodyHierarchySubset = entityManager.GetSubset<RigidBodyComponent, HierarchyComponent, TransformComponent>();
                     for (auto entity : rigidBodyHierarchySubset) {
-                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+                        auto& hierarchyComponent = hierarchyComponentPool.Get(entity);
 
                         hierarchyComponent.updated = false;
                     }
@@ -287,7 +290,7 @@ namespace Atlas {
                     // Now we need to update all the hiearchies
                     auto playerHierarchySubset = entityManager.GetSubset<PlayerComponent, HierarchyComponent, TransformComponent>();
                     for (auto entity : playerHierarchySubset) {
-                        auto& hierarchyComponent = entityManager.Get<HierarchyComponent>(entity);
+                        auto& hierarchyComponent = hierarchyComponentPool.Get(entity);
 
                         hierarchyComponent.updated = false;
                     }
@@ -306,8 +309,7 @@ namespace Atlas {
             // Do the space partitioning update here (ofc also update AABBs)
             auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
             for (auto entity : meshSubset) {
-                auto& meshComponent = entityManager.Get<MeshComponent>(entity);
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                const auto& [meshComponent, transformComponent] = meshSubset.Get(entity);
                 if (!meshComponent.mesh.IsLoaded()) {
                     // We can't update the transform yet
                     transformComponent.updated = false;
@@ -328,7 +330,7 @@ namespace Atlas {
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
             for (auto entity : transformSubset) {
-                auto& transformComponent = entityManager.Get<TransformComponent>(entity);
+                auto& transformComponent = transformSubset.Get(entity);
 
                 if (transformComponent.updated) {
                     transformComponent.changed = false;
@@ -343,7 +345,7 @@ namespace Atlas {
                 if (lightComponent.isMain && lightComponent.type == LightType::DirectionalLight)
                     mainLightEntity = Entity(entity, &entityManager);
 
-                auto transformComponent = entityManager.TryGet<TransformComponent>(entity);
+                auto transformComponent = transformComponentPool.TryGet(entity);
 
                 lightComponent.Update(transformComponent);
             }
@@ -631,6 +633,9 @@ namespace Atlas {
                 auto& comp = subset.Get<MeshComponent>(entity);
 
                 if (!comp.mesh.IsLoaded())
+                    continue;
+
+                if (pass->type == RenderList::RenderPassType::Shadow && !comp.mesh->castShadow)
                     continue;
 
                 auto diff = comp.aabb.GetCenter() - cameraPos;

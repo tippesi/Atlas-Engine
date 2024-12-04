@@ -3,6 +3,7 @@
 #include "scene/Scene.h"
 #include "common/RandomHelper.h"
 #include "TerrainGenerator.h"
+#include "volume/Octree.h"
 
 #include <vector>
 
@@ -11,30 +12,53 @@ namespace Atlas::Editor {
     class VegetationGenerator {
 
     public:
+        struct VegetationType;
+
+        struct VegetationInstance {
+            vec3 position = vec3(0.0f);
+            vec3 normal = vec3(0.0f, 1.0f, 0.0f);
+            vec3 scale = vec3(1.0f);
+            int32_t age = 0;
+            VegetationType* type;
+        };
+
         struct VegetationType {
             size_t id = 0;
 
             std::string name;
 
+            vec3 offset = vec3(0.0f);
+
             vec3 scaleMin = vec3(1.0f);
             vec3 scaleMax = vec3(1.0f);
 
-            int32_t seed = Common::Random::SampleUniformInt(0, (1 << 24));
+            int32_t seed = int32_t(Common::Random::SampleUniformInt(0, (1 << 24)));
 
             int32_t biomeId = 0;
             
+            int32_t iterations = 4;
             float initialDensity = 0.5f;
             float offspringPerIteration = 0.5f;
             float offspringSpreadRadius = 10.0f;
 
+            float priority = 1.0f;
+
             bool alignToSurface = true;
+
+            float collisionRadius = 1.0f;
+            float shadeRadius = 1.0f;
+
+            int32_t growthMaxAge = 10;
+
+            float growthMinScale = 1.0f;
+            float growthMaxScale = 1.5f;
 
             ResourceHandle<Mesh::Mesh> mesh;
 
-            ECS::Entity parentEntity;
+            ECS::Entity parentEntity = ECS::EntityConfig::InvalidEntity;
             std::vector<ECS::Entity> entities;
-            std::vector<vec3> positions;
-        };
+            std::vector<VegetationInstance> instances;
+        };        
 
         VegetationGenerator() = default;
 
@@ -45,7 +69,6 @@ namespace Atlas::Editor {
 
         void RemoveEntitiesFromScene(VegetationType& type, Ref<Scene::Scene>& scene);
         
-        int32_t iterations = 4;
         std::vector<VegetationType> types;
 
         const int32_t initialCountPerType = 10000;
@@ -57,6 +80,8 @@ namespace Atlas::Editor {
             std::mt19937& randGenerator, VegetationType& type);
 
         float GenerateUniformRandom(std::mt19937& randGenerator);
+
+        Volume::Octree<VegetationInstance> octree;
 
     };
 

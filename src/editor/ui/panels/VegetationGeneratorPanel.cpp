@@ -26,8 +26,6 @@ namespace Atlas::Editor::UI {
 
         auto width = ImGui::GetContentRegionAvail().x;
 
-        ImGui::DragInt("Iterations", &vegetationGenerator.iterations, 1.0f, 0);
-
         int32_t eleBiomeCount = 0;
         for (auto& eleBiome : terrainGenerator.elevationBiomes) {
             ImGui::PushID(eleBiomeCount);
@@ -71,6 +69,7 @@ namespace Atlas::Editor::UI {
             Singletons::blockingOperation->Block("Generating vegetation. Please wait...", 
                 [&, scene = scene]() mutable {
 
+                Tools::TerrainTool::LoadMissingCells(scene->terrain.Get(), scene->terrain.GetResource()->path);
                 vegetationGenerator.types.clear();
 
                 for (auto& [id, biomeVegTypes] : biomeToVegetationType) {
@@ -81,6 +80,19 @@ namespace Atlas::Editor::UI {
                 } 
 
                 vegetationGenerator.GenerateAll(scene, terrainGenerator);
+                
+                // Copy resulting entities into our biome map
+                for (auto& type : vegetationGenerator.types) {
+
+                    auto& biomeVegTypes = biomeToVegetationType[type.biomeId];
+                    for (auto& biomeVegType : biomeVegTypes) {
+                        if (biomeVegType.biomeId == type.biomeId) {
+                            biomeVegType.entities = std::move(type.entities);
+                            biomeVegType.parentEntity = type.parentEntity;
+                        }
+                    }
+
+                }
                 });
 
         }
@@ -91,8 +103,7 @@ namespace Atlas::Editor::UI {
 
     void VegetationGeneratorPanel::RenderBiomeVegetationTypes(std::vector<VegetationGenerator::VegetationType>& types) {
 
-        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap |
-            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
 
         for (auto& type : types) {
             bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
@@ -109,17 +120,32 @@ namespace Atlas::Editor::UI {
             bool meshChanged = false;
             type.mesh = meshSelectionPanel.Render(type.mesh, meshChanged);
 
+            type.iterations = std::max(0, type.iterations);
+            type.growthMaxAge = std::max(0, type.growthMaxAge);
+            type.initialDensity = std::max(0.001f, type.initialDensity);
+
             ImGui::SeparatorText("General");
 
+            ImGui::DragInt("Iterations", &type.iterations);
+            ImGui::DragInt("Seed", &type.seed);
             ImGui::DragFloat("Initial density", &type.initialDensity, 0.01f, 0.0f);
             ImGui::DragFloat("Offspring per iteration", &type.offspringPerIteration, 0.01f, 0.0f);
             ImGui::DragFloat("Offspring spread radius", &type.offspringSpreadRadius, 0.1f, 0.1f, 100.0f);
 
             ImGui::Checkbox("Align to surface", &type.alignToSurface);
 
-            ImGui::SeparatorText("Scale");
-            ImGui::DragFloat3("Min", glm::value_ptr(type.scaleMin), 0.1f);
-            ImGui::DragFloat3("Max", glm::value_ptr(type.scaleMax), 0.1f);
+            ImGui::SeparatorText("Transform");
+            ImGui::DragFloat3("Offset", glm::value_ptr(type.offset), 0.1f);
+            ImGui::DragFloat3("Min scale", glm::value_ptr(type.scaleMin), 0.1f);
+            ImGui::DragFloat3("Max scale", glm::value_ptr(type.scaleMax), 0.1f);
+
+            ImGui::SeparatorText("Growth");
+            ImGui::DragFloat("Collision radius", &type.collisionRadius, 0.01f, 0.0f);
+            ImGui::DragFloat("Shade radius", &type.shadeRadius, 0.01f, 0.0f);
+
+            ImGui::DragInt("Max growth age", &type.growthMaxAge);
+            ImGui::DragFloat("Min growth scale", &type.growthMinScale, 0.01f);
+            ImGui::DragFloat("Max growth scale", &type.growthMaxScale, 0.01f);
 
             if (open)
                 ImGui::TreePop();

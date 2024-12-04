@@ -42,12 +42,16 @@ namespace Atlas {
 
 				globalMatrix = transform.globalMatrix;
 
+				auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
+				auto& hierarchyComponentPool = scene->entityManager.GetPool<HierarchyComponent>();
+				auto& cameraComponentPool = scene->entityManager.GetPool<CameraComponent>();
+
 				for (auto entity : entities) {
                     bool transformChanged = parentChanged;
 
-					auto transformComponent = entity.TryGetComponent<TransformComponent>();
-					auto cameraComponent = entity.TryGetComponent<CameraComponent>();
-					auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+					auto transformComponent = transformComponentPool.TryGet(entity);
+					auto cameraComponent = cameraComponentPool.TryGet(entity);
+					auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 					if (transformComponent) {
                         transformChanged |= transformComponent->changed;

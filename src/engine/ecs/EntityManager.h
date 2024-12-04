@@ -208,6 +208,12 @@ namespace Atlas {
             template<typename Comp>
             size_t GetCount();
 
+            /*
+             * Returns the pool for a component type
+             */
+            template<typename Comp>
+            Pool<Comp>& GetPool();
+
             template<typename Comp>
             size_t SubscribeToTopic(const Topic topic, std::function<void(const Entity, Comp&)> function);
 
@@ -312,6 +318,13 @@ namespace Atlas {
         size_t EntityManager::GetCount() {
 
             return pools.Get<Comp>().GetCount();
+
+        }
+
+        template<typename Comp>
+        Pool<Comp>& EntityManager::GetPool() {
+
+            return pools.Get<Comp>();
 
         }
 

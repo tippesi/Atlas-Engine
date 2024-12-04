@@ -3,6 +3,7 @@
 #include <terrain/Terrain.h>
 #include <Material.h>
 #include <texture/Texture2D.h>
+#include <common/RandomHelper.h>
 
 #include "../ui/panels/ResourceSelectionPanel.h"
 #include "ImguiExtension/panels/MaterialPanel.h"
@@ -13,7 +14,7 @@ namespace Atlas::Editor {
 
     public:
         struct Biome {
-            size_t id = Hash(Clock::Get());
+            size_t id = size_t(Common::Random::SampleUniformInt(0, (1 << 31)));
             int32_t materialIdx = -1;
         };
 
@@ -50,6 +51,8 @@ namespace Atlas::Editor {
         Biome GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
 
+        std::vector<ElevationBiome> SortBiomes();
+
         ResourceHandle<Texture::Texture2D> heightMap;
         ResourceHandle<Material> selectedMaterial;
         std::vector<std::pair<ResourceHandle<Material>, vec3>> materials;
@@ -74,10 +77,11 @@ namespace Atlas::Editor {
 
         bool advanced = false;
 
+        const int32_t previewSize = 128;
+
     private:
         void Generate();
-        void GeneratePreviews();
-        std::vector<ElevationBiome> SortBiomes();
+        void GeneratePreviews();        
         bool IsBiomeValid(const Biome& biome) const;
 
         ImguiExtension::MaterialPanel materialPanel;

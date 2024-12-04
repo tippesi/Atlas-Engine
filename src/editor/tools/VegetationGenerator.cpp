@@ -4,12 +4,21 @@ namespace Atlas::Editor {
 
     void VegetationGenerator::GenerateAll(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator) {
 
+        if (!scene->terrain.IsLoaded())
+            return;
+
         Ref<Common::Image<uint16_t>> heightImage, moistureImage;
         terrainGenerator.GenerateHeightAndMoistureImages(heightImage, moistureImage);
+
+        Volume::AABB aabb(scene->terrain->translation, scene->terrain->translation + 
+            vec3(scene->terrain->sideLength, scene->terrain->heightScale, scene->terrain->sideLength));
+        octree = Volume::Octree<VegetationInstance>(aabb, 7);
 
         for (auto& type : types) {
             GenerateType(scene, terrainGenerator, *heightImage, *moistureImage, type);
         }
+
+        octree.Clear();
 
     }
 
@@ -24,15 +33,58 @@ namespace Atlas::Editor {
         RemoveEntitiesFromScene(type, scene);
 
         type.entities.clear();
-        type.positions.clear();
+        type.instances.clear();
+
+        auto rootEntity = scene->GetEntityByName("Root");
 
         Scene::Entity parentEntity = scene->CreateEntity();
-        parentEntity.AddComponent<HierarchyComponent>();
+        auto& parentHierarchy = parentEntity.AddComponent<HierarchyComponent>();
         parentEntity.AddComponent<NameComponent>(type.name + " Generated");
 
-        for (int32_t i = 0; i < iterations; i++) {
+        if (rootEntity.IsValid() && rootEntity.HasComponent<HierarchyComponent>()) {
+            auto& hierarchy = rootEntity.GetComponent<HierarchyComponent>();
+            hierarchy.AddChild(parentEntity);
+        }
+
+        type.parentEntity = parentEntity;
+
+        for (int32_t i = 0; i < type.iterations; i++) {
             PerformIterationOnType(scene, terrainGenerator, heightImg, moistureImg,
                 randGenerator, type);
+        }
+
+        for (auto& instance : type.instances) {
+
+            auto entity = scene->CreateEntity();
+
+            vec3 scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
+
+            instance.scale *= glm::mix(type.growthMinScale, type.growthMaxScale, 
+                glm::clamp(float(instance.age) / float(type.growthMaxAge), 0.0f, 1.0f));
+
+            mat4 rot{ 1.0f };
+            if (type.alignToSurface) {
+                vec3 N = instance.normal;
+                vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+                vec3 tangent = normalize(cross(up, N));
+                vec3 bitangent = cross(N, tangent);
+
+                rot = mat4(mat3(tangent, N, bitangent));
+            }
+
+            glm::mat4 matrix(1.0f);
+            matrix = glm::scale(matrix, vec3(1.0f));
+            matrix = glm::translate(matrix, instance.position) * rot;
+
+            auto& transform = entity.AddComponent<TransformComponent>(matrix);
+            transform.globalMatrix = matrix;
+
+            entity.AddComponent<MeshComponent>(type.mesh);
+
+            type.entities.push_back(entity);
+
+            parentHierarchy.AddChild(entity);
+
         }
 
     }
@@ -50,7 +102,8 @@ namespace Atlas::Editor {
         }
 
         Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
-        scene->DestroyEntity(parentEntity, false);
+        if (parentEntity.IsValid())
+            scene->DestroyEntity(parentEntity, false);
 
     }
 
@@ -63,55 +116,90 @@ namespace Atlas::Editor {
             vec3 normal;
         };
 
-        auto& terrain = scene->terrain;
+        Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
 
-        auto spawnPoint = [&](vec2 offset, float scale, SpawnPoint& point) -> bool {
-            point = {
+        auto& terrain = scene->terrain;
+        auto& hierarchy = parentEntity.GetComponent<HierarchyComponent>();
+
+        std::vector<VegetationInstance> octreeInstances;
+
+        float invSideLength = 1.0f / terrain->sideLength;
+        auto heightScale = terrain->heightScale * float(heightImg.width) / float(terrainGenerator.previewSize);
+
+        auto typeOffset = vec2(type.offset.x, type.offset.z) * invSideLength;
+        auto biomes = terrainGenerator.SortBiomes();
+
+        auto spawnInstance = [&](vec2 offset, float scale, VegetationInstance& instance, Volume::AABB& aabb) -> bool {
+            instance = {
                 .position = vec3(
-                    (2.0f * GenerateUniformRandom(randGenerator) - 1.0f) * scale + offset.x,
+                    (2.0f * GenerateUniformRandom(randGenerator) - 1.0f) * scale + offset.x + typeOffset.x,
                     0.0f,
-                    (2.0f * GenerateUniformRandom(randGenerator) - 1.0f) * scale + offset.y
+                    (2.0f * GenerateUniformRandom(randGenerator) - 1.0f) * scale + offset.y + typeOffset.y
                     )
             };
 
-            auto biome = terrainGenerator.GetBiome(point.position.x, point.position.z,
-                terrainGenerator.elevationBiomes, heightImg, moistureImg, terrain->heightScale);
+            auto biome = terrainGenerator.GetBiome(instance.position.x, instance.position.z,
+                biomes, heightImg, moistureImg, heightScale);
 
             if (biome.id != type.biomeId)
                 return false;
 
-            point.position = (point.position * terrain->sideLength) + terrain->translation;
+            instance.position = (instance.position * terrain->sideLength) + terrain->translation;
 
             vec3 forward;
-            point.position.y = terrain->GetHeight(point.position.x, point.position.z, point.normal, forward);
+            instance.position.y = terrain->GetHeight(instance.position.x, instance.position.z, instance.normal, forward);
 
-            if (point.position.y == terrain->invalidHeight)
+            if (instance.position.y == terrain->invalidHeight)
                 return false;
+
+            octreeInstances.clear();
+
+            aabb = type.mesh->data.aabb.Translate(instance.position);
+            octree.QueryAABB(octreeInstances, aabb);
+
+            for (auto& octreeInstance : octreeInstances) {
+                auto distance = glm::distance(instance.position, octreeInstance.position);
+
+                distance -= octreeInstance.type->collisionRadius;
+                distance -= type.collisionRadius;
+
+                if (distance < 0.0f)
+                    return false;
+            }
+
+            instance.age = 0;
+            instance.type = &type;
+            instance.scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
+            instance.position.y += type.offset.y;
 
             return true;
             };
 
-        std::vector<SpawnPoint> spawnPoints;
-        if (type.entities.empty()) {
+       
+        if (type.instances.empty()) {
 
             int32_t initialCount = int32_t(float(initialCountPerType) * type.initialDensity);
             for (int32_t i = 0; i < initialCount; i++) {
 
-                SpawnPoint point;
-                if (!spawnPoint(vec2(0.5f), 0.5f, point))
+                Volume::AABB aabb;
+                VegetationInstance instance;
+                if (!spawnInstance(vec2(0.5f), 0.5f, instance, aabb))
                     continue;
 
-                spawnPoints.push_back(point);
+                octree.Insert(instance, aabb);
+                type.instances.push_back(instance);
 
             }
 
         }
         else {
 
-            float invSideLength = 1.0f / terrain->sideLength;
             float spawnScale = type.offspringSpreadRadius * invSideLength;
 
-            for (size_t i = 0; i < type.entities.size(); i++) {
+            for (size_t i = 0; i < type.instances.size(); i++) {
+
+                auto& instance = type.instances[i];
+                instance.age++;
 
                 bool hasOffspring = type.offspringPerIteration >= GenerateUniformRandom(randGenerator);
                 if (!hasOffspring)
@@ -120,46 +208,20 @@ namespace Atlas::Editor {
                 //Scene::Entity entity(ecsEntity, &scene->entityManager);
                 //auto& meshComponent = entity.GetComponent<MeshComponent>();
 
-                auto position = type.positions[i];
+                auto position = instance.position;
 
                 position -= terrain->translation;
                 position *= invSideLength;
 
-                SpawnPoint point;
-                if (!spawnPoint(position, spawnScale, point))
+                Volume::AABB aabb;
+                VegetationInstance offspring;
+                if (!spawnInstance(vec2(position.x, position.z), spawnScale, offspring, aabb))
                     continue;
 
-                spawnPoints.push_back(point);
+                octree.Insert(offspring, aabb);
+                type.instances.push_back(offspring);
 
             }
-
-        }
-
-        for (const auto& point : spawnPoints) {
-
-            auto entity = scene->CreateEntity();
-
-            vec3 scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
-
-            mat4 rot { 1.0f };
-            if (type.alignToSurface) {
-                vec3 N = point.normal;
-                vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-                vec3 tangent = normalize(cross(up, N));
-                vec3 bitangent = cross(N, tangent);
-
-                rot = mat4(mat3(tangent, N, bitangent));
-            }
-
-            glm::mat4 matrix;
-            matrix = glm::scale(scale);
-            matrix = glm::translate(matrix, point.position);
-
-            entity.AddComponent<TransformComponent>(matrix);
-            entity.AddComponent<MeshComponent>(type.mesh);
-
-            type.entities.push_back(entity);
-            type.positions.push_back(point.position);
 
         }
 
