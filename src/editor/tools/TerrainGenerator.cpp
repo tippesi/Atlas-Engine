@@ -116,7 +116,7 @@ namespace Atlas::Editor {
 
             // This is also done when the terrain generator is deserialized again
             if (heightMap.IsLoaded() && resourceChanged || heightMap.IsLoaded() && !heightMapImage) {
-                heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
+                UpdateHeightmapFromFile();
             }
         }
         else if (heightMapSelection == 2) {
@@ -397,6 +397,14 @@ namespace Atlas::Editor {
 
     }
 
+    void TerrainGenerator::UpdateHeightmapFromFile() {
+
+        if (heightMap.IsLoaded()) {
+            heightMapImage = Loader::ImageLoader::LoadImage<uint16_t>(heightMap.GetResource()->path, false, 1);
+        }
+
+    }
+
     void TerrainGenerator::GenerateHeightAndMoistureImages(Ref<Common::Image<uint16_t>>& heightImg,
         Ref<Common::Image<uint16_t>>& moistureImg) {
 
@@ -416,6 +424,9 @@ namespace Atlas::Editor {
                 (uint32_t)heightSeed, JobPriority::High, heightExp);
         }
         else {
+            if (!heightMapImage)
+                UpdateHeightmapFromFile();
+                
             heightImg = heightMapImage;
         }
 

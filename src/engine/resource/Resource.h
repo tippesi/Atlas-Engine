@@ -56,7 +56,7 @@ namespace Atlas {
 
                 isLoaded = true;
             }
-            catch (const ResourceLoadException& exception) {
+            catch (const ResourceLoadException exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
@@ -75,7 +75,7 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const std::exception& exception) {
+            catch (const std::exception exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));

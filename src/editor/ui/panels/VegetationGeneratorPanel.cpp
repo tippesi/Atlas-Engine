@@ -86,7 +86,7 @@ namespace Atlas::Editor::UI {
 
                     auto& biomeVegTypes = biomeToVegetationType[type.biomeId];
                     for (auto& biomeVegType : biomeVegTypes) {
-                        if (biomeVegType.biomeId == type.biomeId) {
+                        if (biomeVegType.id == type.id) {
                             biomeVegType.entities = std::move(type.entities);
                             biomeVegType.parentEntity = type.parentEntity;
                         }
@@ -143,6 +143,7 @@ namespace Atlas::Editor::UI {
             ImGui::DragFloat("Collision radius", &type.collisionRadius, 0.01f, 0.0f);
             ImGui::DragFloat("Shade radius", &type.shadeRadius, 0.01f, 0.0f);
 
+            ImGui::Checkbox("Can grow in shade", &type.canGrowInShade);
             ImGui::DragInt("Max growth age", &type.growthMaxAge);
             ImGui::DragFloat("Min growth scale", &type.growthMinScale, 0.01f);
             ImGui::DragFloat("Max growth scale", &type.growthMaxScale, 0.01f);

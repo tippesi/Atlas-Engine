@@ -8,6 +8,9 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::Update(Ref<Scene::Scene>& scene) {
 
+        if (Singletons::blockingOperation->block)
+            return;
+
         JobSystem::Execute(searchJob, [&](JobData&) {
             auto root = scene->GetEntityByName("Root");
 

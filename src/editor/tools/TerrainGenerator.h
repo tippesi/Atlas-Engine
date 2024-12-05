@@ -45,6 +45,8 @@ namespace Atlas::Editor {
 
         void UpdateHeightmapFromTerrain(ResourceHandle<Terrain::Terrain>& terrain);
 
+        void UpdateHeightmapFromFile();
+
         void GenerateHeightAndMoistureImages(Ref<Common::Image<uint16_t>>& heightImg,
         Ref<Common::Image<uint16_t>>& moistureImg);
 

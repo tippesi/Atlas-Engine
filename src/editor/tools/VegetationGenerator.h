@@ -48,6 +48,7 @@ namespace Atlas::Editor {
             float collisionRadius = 1.0f;
             float shadeRadius = 1.0f;
 
+            bool canGrowInShade = false;
             int32_t growthMaxAge = 10;
 
             float growthMinScale = 1.0f;
@@ -58,6 +59,8 @@ namespace Atlas::Editor {
             ECS::Entity parentEntity = ECS::EntityConfig::InvalidEntity;
             std::vector<ECS::Entity> entities;
             std::vector<VegetationInstance> instances;
+
+            std::mt19937 randGenerator;
         };        
 
         VegetationGenerator() = default;
@@ -75,6 +78,12 @@ namespace Atlas::Editor {
         size_t typeCounter = 0;
 
     private:
+        void BeginGenerationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
+            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type);
+
+        void EndGenerationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
+            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type);
+
         void PerformIterationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, 
             std::mt19937& randGenerator, VegetationType& type);

@@ -25,8 +25,11 @@ namespace Atlas::Editor::UI {
 
             if (ImGui::BeginPopup(GetNameID())) {
 
+                if (wasJustOpened) {
+                    ImGui::SetKeyboardFocusHere();
+                }
                 ImGui::InputTextWithHint("Search", "Type to search for loaded resource", &resourceSearch);
-
+                
                 ImGui::BeginChild("Resource list");
 
                 resources = ApplySearchAndSortFiltering(resources);
@@ -44,6 +47,8 @@ namespace Atlas::Editor::UI {
                 }
 
                 ImGui::EndChild();
+
+                wasJustOpened = false;
 
                 if (handle.IsValid())
                     ImGui::CloseCurrentPopup();

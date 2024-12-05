@@ -332,8 +332,9 @@ namespace Atlas::Scene {
         
         auto lightSubset = scene->GetSubset<LightComponent>();
         auto camera = scene->GetMainCamera();
+        auto cameraFrustum = camera.frustum;
 
-        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera](JobData&) {           
+        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera, cameraFrustum](JobData&) {           
 
             auto meshes = scene->GetMeshes();
             renderList.NewFrame(scene);
@@ -374,7 +375,7 @@ namespace Atlas::Scene {
                 mainPass = renderList.NewMainPass();
 
             mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
-            scene->GetRenderList(camera.frustum, mainPass);
+            scene->GetRenderList(cameraFrustum, mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass);
@@ -385,15 +386,17 @@ namespace Atlas::Scene {
 
         JobSystem::Wait(cullAndSortLightsJob);
 
-        JobSystem::Execute(cullAndSortLightsJob, [&](JobData&) {
-            auto& camera = scene->GetMainCamera();
+        auto& camera = scene->GetMainCamera();
+        auto cameraFrustum = camera.frustum;
+
+        JobSystem::Execute(cullAndSortLightsJob, [&, camera, cameraFrustum](JobData&) {
 
             lightEntities.clear();
             lightEntities.reserve(scene->GetComponentCount<LightComponent>());
             auto lightSubset = scene->GetSubset<LightComponent>();
             for (auto& lightEntity : lightSubset) {
                 auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.IsVisible(camera.frustum))
+                if (!light.IsVisible(cameraFrustum))
                     continue;
                 lightEntities.emplace_back(LightEntity{ lightEntity, light });
             }
@@ -410,9 +413,10 @@ namespace Atlas::Scene {
 
                 std::sort(lightEntities.begin(), lightEntities.end(),
                     [&](const LightEntity& light0, const LightEntity& light1) {
+                        if (light1.comp.isMain)
+                            return false;
                         if (light0.comp.isMain)
                             return true;
-
                         if (light0.comp.type == LightType::DirectionalLight)
                             return true;
 

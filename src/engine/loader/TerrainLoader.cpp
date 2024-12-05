@@ -1,6 +1,7 @@
 #include "TerrainLoader.h"
 #include "AssetLoader.h"
 #include "MaterialLoader.h"
+#include "resource/ResourceManager.h"
 #include "../Log.h"
 
 #include "../common/Path.h"
@@ -60,9 +61,6 @@ namespace Atlas {
 
             // Write all material paths and store the materials
             auto terrainDir = Common::Path::GetDirectory(filename);
-            auto materialDir = terrainDir + "/material";
-
-            AssetLoader::MakeDirectory(materialDir);
 
             count = 0;
             for (auto& material : materials) {
@@ -70,7 +68,6 @@ namespace Atlas {
                     body.append(std::to_string(count) + " " + material.GetResource()->path + "\n");
                 }
                 if (material.IsLoaded()) {
-                    auto filename = materialDir + "/" + material->name + ".aematerial";
                     MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
                 }
                 count++;
@@ -186,9 +183,11 @@ namespace Atlas {
 
                 auto pos = line.find_last_of("\r\n");
                 auto materialPath = line.substr(offset, pos - offset);
-                auto material = MaterialLoader::LoadMaterial(materialPath);
 
-                if (material)
+                auto material = ResourceManager<Material>::GetOrLoadResourceWithLoader(materialPath,
+                    ResourceOrigin::User, Loader::MaterialLoader::LoadMaterial, false);
+
+                if (material.IsLoaded())
                     terrain->storage->WriteMaterial(slot, material);
             }
 
