@@ -48,7 +48,11 @@ namespace Atlas {
 
             bool interpolation = false;
             bool pixelDepthOffset = true;
-            vec3 transmissiveColor = vec3(0.0f);
+
+            vec3 approxTransmissiveColor = vec3(0.0f);
+            float approxReflectance = 0.5f;
+
+            bool isGenerated = false;
 
         private:
             struct ViewPlane {

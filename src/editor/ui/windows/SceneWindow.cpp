@@ -609,41 +609,45 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::StartPlaying() {
 
-        bool hasMainPlayingCamera = false;
-        auto cameraSubset = scene->GetSubset<CameraComponent>();
-        for (auto entity : cameraSubset) {
-            if (entity == cameraEntity)
-                continue;
+        Singletons::blockingOperation->Block("Preparing to play. Please wait...", [&]() {
+            bool hasMainPlayingCamera = false;
+            auto cameraSubset = scene->GetSubset<CameraComponent>();
+            for (auto entity : cameraSubset) {
+                if (entity == cameraEntity)
+                    continue;
 
-            const auto& comp = cameraSubset.Get(entity);
-            hasMainPlayingCamera |= comp.isMain;
-        }
+                const auto& comp = cameraSubset.Get(entity);
+                hasMainPlayingCamera |= comp.isMain;
+            }
 
-        if (!hasMainPlayingCamera) {
-            Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
-            return;
-        }
+            if (!hasMainPlayingCamera) {
+                Notifications::Push({ .message = "No main camera in scene. Please add one to start playing", .color = vec3(1.0f, 1.0f, 0.0f) });
+                return;
+            }
 
-        SaveSceneState();
+            SaveSceneState();
 
-        scene->physicsWorld->pauseSimulation = false;
-        // Unselect when starting the simulation/scene (otherwise some physics settings might not
-        // be reverted after stopping
-        sceneHierarchyPanel.selectedEntity = Scene::Entity();
+            scene->physicsWorld->pauseSimulation = false;
+            // Unselect when starting the simulation/scene (otherwise some physics settings might not
+            // be reverted after stopping
+            sceneHierarchyPanel.selectedEntity = Scene::Entity();
 
-        isPlaying = true;
+            isPlaying = true;
 
-        if (playMaximized) {
-            Notifications::Push({ "To stop playing, press Ctrl + Q" });
-        }
+            if (playMaximized) {
+                Notifications::Push({ "To stop playing, press Ctrl + Q" });
+            }
+            });        
 
     }
 
     void SceneWindow::StopPlaying() {
 
-        RestoreSceneState(); 
+        Singletons::blockingOperation->Block("Restoring scene state. Please wait...", [&]() {
+            RestoreSceneState();
 
-        isPlaying = false;
+            isPlaying = false;
+            });        
 
     }
 

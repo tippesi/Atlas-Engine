@@ -14,7 +14,7 @@ layout(location=1) flat in int indexVS;
 #endif
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=7) in vec3 modelPositionVS;
-layout(location=8) flat in mat4 instanceMatrix;
+layout(location=8) flat in vec3 instanceScale;
 #endif
 
 layout(set = 3, binding = 0) uniform sampler2DArray baseColorMap;
@@ -46,21 +46,21 @@ layout(push_constant) uniform constants {
 
 void main() {
 
-    vec4 baseColor;
+    float alpha;
 
 #ifdef INTERPOLATION
-    vec4 baseColor0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).rgba;
-    vec4 baseColor1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).rgba;
-    vec4 baseColor2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).rgba;
+    vec4 alpha0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).a;
+    vec4 alpha1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).a;
+    vec4 alpha2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).a;
 
-    baseColor = weight0VS * baseColor0 + 
-		weight1VS * baseColor1 + 
-		  weight2VS * baseColor2;
+    alpha = weight0VS * alpha0 + 
+		weight1VS * alpha1 + 
+		weight2VS * alpha2;
 #else
-    baseColor = texture(baseColorMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).rgba;
+    alpha = texture(baseColorMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).a;
 #endif
 
-    if (baseColor.a < uniforms.cutoff)
+    if (alpha < uniforms.cutoff)
         discard;
 
 #ifdef PIXEL_DEPTH_OFFSET
@@ -75,8 +75,8 @@ void main() {
 #else
     float depthOffset = texture(depthMap, vec3(texCoordVS, float(indexVS)), uniforms.mipBias).r;
 #endif
-    vec3 modelPosition = modelPositionVS + depthOffset * normalize(pushConstants.lightLocation.xyz);
-    vec4 modelPositionFS = instanceMatrix * vec4(modelPosition.xyz, 1.0);
+    vec3 modelPosition = modelPositionVS + depthOffset * normalize(pushConstants.lightLocation.xyz) * instanceScale;
+    vec4 modelPositionFS = pushConstants.lightSpaceMatrix * vec4(modelPosition.xyz, 1.0);
     float modelDepth = modelPositionFS.z / modelPositionFS.w;
     gl_FragDepth = modelDepth;
 #endif

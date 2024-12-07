@@ -32,7 +32,7 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = renderList->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
@@ -152,7 +152,7 @@ namespace Atlas {
 
                     auto pushConstants = PushConstants {
                         .vMatrix = viewMatrices[i],
-                        .baseColor = vec4(material->baseColor, 1.0f),
+                        .baseColor = vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 1.0f),
                         .roughness = material->roughness,
                         .metalness = material->metalness,
                         .ao = material->ao,
@@ -202,6 +202,8 @@ namespace Atlas {
             commandList->EndCommands();
 
             graphicsDevice->FlushCommandList(commandList);
+
+            impostor->isGenerated = true;
 
         }
 

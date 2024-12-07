@@ -52,7 +52,7 @@ void main() {
         backFaceHits = 0u;
         inCellHits = 0u;
         probeState = GetProbeState(historyBaseIdx);
-        temporalCellHits = (probeState == PROBE_STATE_NEW || reset) ? 1.0 : historyProbeStates[historyBaseIdx].y;
+        temporalCellHits = (probeState == PROBE_STATE_NEW || reset) ? 0.01 : historyProbeStates[historyBaseIdx].y;
         temporalBackFaceRatio = (probeState == PROBE_STATE_NEW || reset) ? 0.25 : historyProbeStates[historyBaseIdx].z;
     }
 

@@ -1,7 +1,6 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #define SHADOW_FILTER_VOGEL
-#define SHADOW_CASCADE_BLENDING
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -195,10 +194,8 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
 
     if (light.shadow.mapIdx < 0)
         return 1.0;
-
-    ivec2 resolution = imageSize(image);
+    
     ivec2 pixel = ivec2(gl_GlobalInvocationID);
-    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
     float shadowFactor = 1.0;
 
@@ -245,6 +242,8 @@ float GetShadowFactor(Light light, Surface surface, uint lightType, vec3 geometr
 #endif
         float shadowFactorTransmissive = shadowFactor;
 #ifdef SCREEN_SPACE_SHADOWS
+         ivec2 resolution = imageSize(image);
+        vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
         float sssFactor = textureLod(sssTexture, texCoord, 0).r;
         shadowFactor = min(sssFactor, shadowFactor);
 #endif

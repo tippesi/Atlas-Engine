@@ -112,7 +112,7 @@ namespace Atlas::Scene {
 
                 packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(1.0f));
                 packed.emissiveColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(0.0f));
-                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->transmissiveColor), 1.0f));
+                packed.transmissionColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(impostor->approxTransmissiveColor), 1.0f));
 
                 vec4 data0, data1, data2;
 
@@ -124,7 +124,7 @@ namespace Atlas::Scene {
                 data1.y = 0.0f;
                 data1.z = 0.0f;
 
-                data2.x = 0.5f;
+                data2.x = impostor->approxReflectance;
                 // Note used
                 data2.y = 0.0f;
                 data2.z = 0.0f;
@@ -139,7 +139,7 @@ namespace Atlas::Scene {
                     Renderer::MaterialFeatures::FEATURE_ROUGHNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_METALNESS_MAP |
                     Renderer::MaterialFeatures::FEATURE_AO_MAP;
-                packed.features |= glm::length(impostor->transmissiveColor) > 0.0f ?
+                packed.features |= glm::length(impostor->approxTransmissiveColor) > 0.0f ?
                     Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
 
                 materials.push_back(packed);

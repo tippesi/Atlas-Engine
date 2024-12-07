@@ -348,7 +348,7 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal,
 
     }
 
-    return vec4(irradiance);
+    return irradiance;
 
 }
 

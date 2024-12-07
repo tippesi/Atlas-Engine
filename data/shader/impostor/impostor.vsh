@@ -37,8 +37,9 @@ layout(location=4) flat out int indexVS;
 
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=10) out vec3 modelPositionVS;
-layout(location=11) flat out mat4 instanceMatrix;
+layout(location=11) flat out vec3 instanceScale;
 #endif
+layout(location=12) flat out mat3 rotationMatrix;
 
 layout(set = 3, binding = 5, std140) uniform UniformBuffer{
 	vec4 center;
@@ -76,9 +77,11 @@ void main() {
 
 	mat4 mMatrix = mat4(transpose(matrices[gl_InstanceIndex]));
     texCoordVS = 0.5 * vPosition + 0.5;
+
+	vec3 translation = vec3(mMatrix[3]);
 	
-	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
-	vec3 dir = normalize(globalData.cameraLocation.xyz - pos);
+	vec3 pos = translation + uniforms.center.xyz;
+	vec3 dir = normalize(vec3(inverse(mMatrix) * vec4(globalData.cameraLocation.xyz - pos, 0.0)));
 
     float frames = float(uniforms.views);
 
@@ -139,24 +142,26 @@ void main() {
 	up = viewPlane.up;
 	right = viewPlane.right;
 #endif
-	
-	// up = globalData.cameraUp;
-	// right = globalData.cameraRight;
 
-	vec4 modelPosition = vec4((normalize(up.xyz) * position.y
+	vec4 modelPosition = mMatrix * vec4((normalize(up.xyz) * position.y
         + normalize(right.xyz) * position.x) + uniforms.center.xyz, 1.0);
-	positionVS = vec3(globalData.vMatrix * mMatrix * modelPosition);
+	positionVS = vec3(globalData.vMatrix * modelPosition);
 
+	rotationMatrix = mat3(mMatrix);
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceMatrix = globalData.pMatrix * globalData.vMatrix * mMatrix;
-	modelPositionVS = modelPosition.xyz;
+	modelPositionVS = vec3(modelPosition);
+	instanceScale = vec3(
+		length(mMatrix[0]),
+		length(mMatrix[1]),
+		length(mMatrix[2])
+	);
 #endif
 
     gl_Position =  globalData.pMatrix * vec4(positionVS, 1.0);
 
     ndcCurrentVS = vec3(gl_Position.xy, gl_Position.w);
 	// For moving objects we need the last matrix
-    vec4 last = globalData.pvMatrixLast * mMatrix * modelPosition;
+    vec4 last = globalData.pvMatrixLast * modelPosition;
 	ndcLastVS = vec3(last.xy, last.w);
 
 }

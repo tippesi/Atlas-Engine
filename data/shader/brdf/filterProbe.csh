@@ -4,7 +4,7 @@
 #include <preintegrate.hsh>
 #include <filtering.hsh>
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 8, local_size_y = 4) in;
 
 layout(set = 3, binding = 0, rgba16f) uniform imageCube filteredCubeMap;
 layout(set = 3, binding = 1) uniform samplerCube cubeMap;
@@ -85,7 +85,7 @@ vec3 FilterDiffuse(vec3 worldDirection, ivec2 cubeMapSize) {
 
 vec3 FilterSpecular(vec3 worldDirection, ivec2 cubeMapSize) {
 
-    const uint maxSampleCount = 256u;
+    const uint maxSampleCount = 64u;
 
     uint sampleCount = uint(mix(16.0, float(maxSampleCount), pushConstants.roughness));
     sampleCount = pushConstants.mipLevel == 0u ? 1u : sampleCount;

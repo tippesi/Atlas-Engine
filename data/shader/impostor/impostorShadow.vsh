@@ -18,7 +18,7 @@ layout(location=1) flat out int indexVS;
 #endif
 #ifdef PIXEL_DEPTH_OFFSET
 layout(location=7) out vec3 modelPositionVS;
-layout(location=8) flat out mat4 instanceMatrix;
+layout(location=8) flat out vec3 instanceScale;
 #endif
 
 struct ViewPlane {
@@ -30,7 +30,7 @@ layout(std430, set = 1, binding = 3) readonly buffer Matrices {
     mat3x4 matrices[];
 };
 
-layout (std430, set = 3, binding = 1) readonly buffer ViewPlanes {
+layout (std430, set = 3, binding = 2) readonly buffer ViewPlanes {
 	ViewPlane viewPlanes[];
 };
 
@@ -74,8 +74,10 @@ void main() {
 
     texCoordVS = 0.5 * vPosition + 0.5;
 	
-	vec3 pos = vec3(mMatrix * vec4(uniforms.center.xyz, 1.0));
-	vec3 dir = pushConstants.lightLocation.xyz - pos;
+	vec3 translation = vec3(mMatrix[3]);
+
+	vec3 pos = translation + uniforms.center.xyz;
+	vec3 dir = normalize(vec3(inverse(mMatrix) * vec4(pushConstants.lightLocation.xyz - pos, 0.0)));
     float frames = float(uniforms.views);
 
 	vec2 octahedron = UnitVectorToHemiOctahedron(normalize(dir));
@@ -108,17 +110,39 @@ void main() {
 	
     vec2 position = vPosition.xy * uniforms.radius;
 
-	vec4 up = pushConstants.lightUp;
-	vec4 right = pushConstants.lightRight;
+	vec4 up, right;
 
-    vec4 modelPosition = vec4((normalize(up.xyz) * position.y
+#ifdef INTERPOLATION
+    ViewPlane viewPlane0 = viewPlanes[index0VS];
+	ViewPlane viewPlane1 = viewPlanes[index1VS];
+	ViewPlane viewPlane2 = viewPlanes[index2VS];
+
+	up = weight0VS * viewPlane0.up + 
+		weight1VS * viewPlane1.up + 
+		weight2VS * viewPlane2.up;
+	
+	right = weight0VS * viewPlane0.right + 
+		weight1VS * viewPlane1.right + 
+		weight2VS * viewPlane2.right;
+#else
+	ViewPlane viewPlane = viewPlanes[indexVS];
+
+	up = viewPlane.up;
+	right = viewPlane.right;
+#endif
+
+    vec4 modelPosition = mMatrix * vec4((normalize(up.xyz) * position.y
         + normalize(right.xyz) * position.x) + uniforms.center.xyz, 1.0);
 
 #ifdef PIXEL_DEPTH_OFFSET
-	instanceMatrix = pushConstants.lightSpaceMatrix * mMatrix;
-	modelPositionVS = modelPosition.xyz;
+	instanceScale = vec3(
+		length(mMatrix[0]),
+		length(mMatrix[1]),
+		length(mMatrix[2])
+	);
+	modelPositionVS = vec3(modelPosition);
 #endif
 
-    gl_Position =  pushConstants.lightSpaceMatrix * mMatrix * modelPosition;
+    gl_Position =  pushConstants.lightSpaceMatrix * modelPosition;
 
 }

@@ -136,10 +136,11 @@ namespace Atlas {
             for (auto entity : subset) {
                 const auto& [meshComponent, transformComponent] = subset.Get(entity);
 
-                if (!meshComponent.mesh.IsLoaded() || !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
-                    continue;
                 if (!meshComponent.visible)
                     continue;
+                if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace ||
+                    !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
+                    continue;                
 
                 auto &blasInfo = blasInfos[meshComponent.mesh->blas];
                 auto distSqd = glm::distance2(

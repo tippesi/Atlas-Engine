@@ -34,7 +34,7 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto mesh = renderList->meshIdToMeshMap[meshId];
+                auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)

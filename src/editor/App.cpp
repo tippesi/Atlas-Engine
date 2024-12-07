@@ -327,9 +327,7 @@ namespace Atlas::Editor {
                     Exit();
 
                 ImGui::EndMainMenuBar();
-            }
-
-            UI::PopupPanels::Render();
+            }            
 
             for (auto& sceneWindow : sceneWindows) {
                 sceneWindow->Render();
@@ -349,6 +347,7 @@ namespace Atlas::Editor {
         }
 
         Notifications::Display();
+        UI::PopupPanels::Render();
 
         ImGui::Render();
         Singletons::imguiWrapper->Render(true);

@@ -76,17 +76,18 @@ namespace Atlas {
 
             impostor->FillViewPlaneBuffer(rightVectors, upVectors);
 
+            impostor->approxReflectance = 0.0f;
+
             // Approximate transmission
             for (auto& material : mesh->data.materials) {
-                impostor->transmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
+                impostor->approxTransmissiveColor += material->transmissiveColor / (float)mesh->data.materials.size();
+                impostor->approxReflectance += material->reflectance / (float)mesh->data.materials.size();
             }
 
             impostor->baseColorTexture.GenerateMipmap();
             impostor->roughnessMetalnessAoTexture.GenerateMipmap();
             impostor->normalTexture.GenerateMipmap();
-            impostor->depthTexture.GenerateMipmap();
-
-            
+            impostor->depthTexture.GenerateMipmap();            
 
             return impostor;
 
