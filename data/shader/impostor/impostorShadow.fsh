@@ -49,9 +49,9 @@ void main() {
     float alpha;
 
 #ifdef INTERPOLATION
-    vec4 alpha0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).a;
-    vec4 alpha1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).a;
-    vec4 alpha2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).a;
+    float alpha0 = texture(baseColorMap, vec3(texCoordVS, float(index0VS)), uniforms.mipBias).a;
+    float alpha1 = texture(baseColorMap, vec3(texCoordVS, float(index1VS)), uniforms.mipBias).a;
+    float alpha2 = texture(baseColorMap, vec3(texCoordVS, float(index2VS)), uniforms.mipBias).a;
 
     alpha = weight0VS * alpha0 + 
 		weight1VS * alpha1 + 
