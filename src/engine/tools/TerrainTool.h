@@ -80,6 +80,8 @@ namespace Atlas {
 
             static Ref<Common::Image<uint16_t>> GenerateHeightMap(Ref<Terrain::Terrain>& terrain);
 
+            static Ref<Common::Image<uint8_t>> GenerateSplatMap(Ref<Terrain::Terrain>& terrain);
+
             static void LoadMissingCells(Ref<Terrain::Terrain>& terrain, const std::string& filename);
 
         private:

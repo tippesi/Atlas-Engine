@@ -1,5 +1,9 @@
 #include "VegetationGenerator.h"
 
+#include "tools/TerrainTool.h"
+
+#include <glm/gtx/polar_coordinates.hpp> 
+
 namespace Atlas::Editor {
 
     void VegetationGenerator::GenerateAll(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator) {
@@ -9,6 +13,8 @@ namespace Atlas::Editor {
 
         Ref<Common::Image<uint16_t>> heightImage, moistureImage;
         terrainGenerator.GenerateHeightAndMoistureImages(heightImage, moistureImage);
+
+        auto splatImage = Tools::TerrainTool::GenerateSplatMap(scene->terrain.Get());
 
         Volume::AABB aabb(scene->terrain->translation, scene->terrain->translation +
             vec3(scene->terrain->sideLength, scene->terrain->heightScale, scene->terrain->sideLength));
@@ -28,12 +34,11 @@ namespace Atlas::Editor {
                     continue;
 
                 PerformIterationOnType(scene, terrainGenerator, *heightImage, *moistureImage,
-                    type.randGenerator, type);
+                    *splatImage, type.randGenerator, type);
 
                 generatingOffspring = true;
             }
-        }
-        while(generatingOffspring);
+        } while (generatingOffspring);
 
         for (auto& type : types) {
             EndGenerationOnType(scene, terrainGenerator, *heightImage, *moistureImage, type);
@@ -67,7 +72,7 @@ namespace Atlas::Editor {
         if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
             return;
 
-        type.randGenerator = std::mt19937(type.seed);
+        type.randGenerator = std::mt19937(type.seed * glm::clamp(seed, 0, 255));
 
         RemoveEntitiesFromScene(type, scene);
 
@@ -98,18 +103,32 @@ namespace Atlas::Editor {
         Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
         auto& hierachy = parentEntity.GetComponent<HierarchyComponent>();
 
+        const float alignmentLimit = glm::half_pi<float>() - type.maxAlignmentAngle;
+
         for (auto& instance : type.instances) {
 
             auto entity = scene->CreateEntity();
 
-            vec3 scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(type.randGenerator));
+            vec3 scale = mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(type.randGenerator));
 
             instance.scale *= glm::mix(type.growthMinScale, type.growthMaxScale,
                 glm::clamp(float(instance.age) / float(type.growthMaxAge), 0.0f, 1.0f));
 
             mat4 rot{ 1.0f };
             if (type.alignToSurface) {
-                vec3 N = instance.normal;
+                vec3 N = glm::normalize(instance.normal);
+
+                float cosTheta = glm::dot(N, vec3(0.0f, 1.0f, 0.0f));
+                cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
+
+                float currentAngle = std::acos(cosTheta);
+                if (currentAngle > type.maxAlignmentAngle) {
+                    auto spherical = glm::polar(N);
+                    spherical.x = alignmentLimit;
+
+                    N = glm::euclidean(vec2(spherical.x, spherical.y));
+                }
+
                 vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
                 vec3 tangent = normalize(cross(up, N));
                 vec3 bitangent = cross(N, tangent);
@@ -117,8 +136,8 @@ namespace Atlas::Editor {
                 rot = mat4(mat3(tangent, N, bitangent));
             }
 
-            glm::mat4 matrix(1.0f);
-            matrix = glm::translate(matrix, instance.position) * rot;
+            mat4 matrix(1.0f);
+            matrix = translate(matrix, instance.position) * rot;
             matrix = glm::scale(matrix, instance.scale);
 
             auto& transform = entity.AddComponent<TransformComponent>(matrix);
@@ -136,7 +155,7 @@ namespace Atlas::Editor {
 
     void VegetationGenerator::PerformIterationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
         Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg,
-        std::mt19937& randGenerator, VegetationType& type) {
+         Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator, VegetationType& type) {
 
         if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
             return;
@@ -167,10 +186,17 @@ namespace Atlas::Editor {
                     )
             };
 
-            auto biome = terrainGenerator.GetBiome(instance.position.x, instance.position.z,
-                biomes, heightImg, moistureImg, heightScale);
+            float height, slope, moisture;
+            terrainGenerator.GetBiomeIndicators(instance.position.x, instance.position.z, heightImg,
+                moistureImg, heightScale, height, slope, moisture);
 
-            if (biome.id != type.biomeId)
+            if (height < type.heightMin || height > type.heightMax ||
+                slope < type.slopeMin || slope > type.slopeMax)
+                return false;
+
+            auto materialIdx = splatImage.Sample(instance.position.x, instance.position.z).r;
+
+            if (type.exludeMaterialIndices.contains(int32_t(materialIdx)))
                 return false;
 
             instance.position = (instance.position * terrain->sideLength) + terrain->translation;
@@ -206,12 +232,12 @@ namespace Atlas::Editor {
 
                 if (shadeDistance < 0.0f)
                     return false;
-                
+
             }
 
             instance.age = 0;
             instance.type = &type;
-            instance.scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
+            instance.scale = mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
             instance.position.y += type.offset.y;
 
             return true;

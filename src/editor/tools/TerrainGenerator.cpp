@@ -426,7 +426,7 @@ namespace Atlas::Editor {
         else {
             if (!heightMapImage)
                 UpdateHeightmapFromFile();
-                
+
             heightImg = heightMapImage;
         }
 
@@ -437,10 +437,8 @@ namespace Atlas::Editor {
 
     }
 
-    TerrainGenerator::Biome TerrainGenerator::GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
-        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
-
-        Biome biome;
+    void TerrainGenerator::GetBiomeIndicators(float x, float y, Common::Image<uint16_t>& heightImg, 
+            Common::Image<uint16_t>& moistureImg, float scale, float& height, float& slope, float& moisture) {
 
         auto xTex = 1.0f / (float)heightImg.width;
         auto yTex = 1.0f / (float)heightImg.height;
@@ -452,9 +450,19 @@ namespace Atlas::Editor {
         auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
             heightD - heightU));
 
-        auto e = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
-        auto m = (float)moistureImg.SampleBilinear(x, y).r / 65535.0f;
-        auto s = glm::dot(normal, vec3(0.0f, 1.0f, 0.0f));
+        height = (float)heightImg.SampleBilinear(x, y).r / 65535.0f;
+        moisture = (float)moistureImg.SampleBilinear(x, y).r / 65535.0f;
+        slope = glm::dot(normal, vec3(0.0f, 1.0f, 0.0f));
+
+    }
+
+    TerrainGenerator::Biome TerrainGenerator::GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
+        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
+
+        Biome biome;
+
+        float e, s, m;
+        GetBiomeIndicators(x, y, heightImg, moistureImg, scale, e, s, m);
 
         for (auto& eleBiome : biomes) {
             if (eleBiome.less) {

@@ -13,12 +13,9 @@ namespace Atlas::Editor::UI {
         void Render(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator);
 
         VegetationGenerator vegetationGenerator;
-        std::unordered_map<size_t, std::vector<VegetationGenerator::VegetationType>> biomeToVegetationType;
 
     private:
-        void RenderBiomeVegetationTypes(std::vector<VegetationGenerator::VegetationType>& types);
-
-        std::vector<VegetationGenerator::VegetationType>& GetVegetationTypes(size_t id);
+        void RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator);
 
         UI::ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
 

@@ -29,7 +29,7 @@ namespace Atlas::Editor {
         std::filesystem::path path;
         std::string assetPath;
 
-        ContentType type;
+        ContentType type = ContentType::None;
 
         static const std::map<const std::string, ContentType> contentTypeMapping;
     };

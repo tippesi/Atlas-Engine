@@ -26,43 +26,9 @@ namespace Atlas::Editor::UI {
 
         auto width = ImGui::GetContentRegionAvail().x;
 
-        int32_t eleBiomeCount = 0;
-        for (auto& eleBiome : terrainGenerator.elevationBiomes) {
-            ImGui::PushID(eleBiomeCount);
+        ImGui::DragInt("Seed", &vegetationGenerator.seed, 1.0f, 1, 255);
 
-            int32_t moiBiomeCount = 0;
-            int32_t sloBiomeCount = 0;
-
-            auto eleRegion = ImGui::GetContentRegionAvail();
-
-            bool eleOpen = ImGui::TreeNode(("Elevation biome " + std::to_string(eleBiomeCount++)).c_str());
-            if (eleOpen) {
-                RenderBiomeVegetationTypes(GetVegetationTypes(eleBiome.id));
-                ImGui::Separator();
-                if (ImGui::TreeNode("Moisture biomes")) {
-                    for (auto& moiBiome : eleBiome.moistureBiomes) {
-                        if (ImGui::TreeNode(("Moisture biome " + std::to_string(moiBiomeCount++)).c_str())) {
-                            RenderBiomeVegetationTypes(GetVegetationTypes(moiBiome.id));
-                        }
-                    }
-                    ImGui::TreePop();
-                }
-                ImGui::Separator();
-                if (ImGui::TreeNode("Slope biomes")) {
-                    for (auto& sloBiome : eleBiome.slopeBiomes) {
-                        if (ImGui::TreeNode(("Slope biome " + std::to_string(sloBiomeCount++)).c_str())) {
-                            RenderBiomeVegetationTypes(GetVegetationTypes(sloBiome.id));
-                        }
-                    }
-                    ImGui::TreePop();
-                }
-
-                ImGui::TreePop();
-            }
-
-            ImGui::PopID();
-        }
-
+        RenderBiomeVegetationTypes(scene->terrain.Get(), terrainGenerator);
 
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
@@ -70,29 +36,7 @@ namespace Atlas::Editor::UI {
                 [&, scene = scene]() mutable {
 
                 Tools::TerrainTool::LoadMissingCells(scene->terrain.Get(), scene->terrain.GetResource()->path);
-                vegetationGenerator.types.clear();
-
-                for (auto& [id, biomeVegTypes] : biomeToVegetationType) {
-                    for (auto& type : biomeVegTypes) {
-                        type.biomeId = id;
-                        vegetationGenerator.types.push_back(type);
-                    }
-                } 
-
                 vegetationGenerator.GenerateAll(scene, terrainGenerator);
-                
-                // Copy resulting entities into our biome map
-                for (auto& type : vegetationGenerator.types) {
-
-                    auto& biomeVegTypes = biomeToVegetationType[type.biomeId];
-                    for (auto& biomeVegType : biomeVegTypes) {
-                        if (biomeVegType.id == type.id) {
-                            biomeVegType.entities = std::move(type.entities);
-                            biomeVegType.parentEntity = type.parentEntity;
-                        }
-                    }
-
-                }
                 });
 
         }
@@ -101,15 +45,15 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void VegetationGeneratorPanel::RenderBiomeVegetationTypes(std::vector<VegetationGenerator::VegetationType>& types) {
+    void VegetationGeneratorPanel::RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator) {
 
         const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
 
+        auto& types = vegetationGenerator.types;
         for (auto& type : types) {
             bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
 
             // Here we can use the copy pase helper to copy over some settings to other biomes
-
             if (!open)
                 continue;
 
@@ -128,16 +72,24 @@ namespace Atlas::Editor::UI {
 
             ImGui::DragInt("Iterations", &type.iterations);
             ImGui::DragInt("Seed", &type.seed);
-            ImGui::DragFloat("Initial density", &type.initialDensity, 0.01f, 0.0f);
-            ImGui::DragFloat("Offspring per iteration", &type.offspringPerIteration, 0.01f, 0.0f);
+            ImGui::DragFloat("Initial density", &type.initialDensity, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Offspring per iteration", &type.offspringPerIteration, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Offspring spread radius", &type.offspringSpreadRadius, 0.1f, 0.1f, 100.0f);
 
-            ImGui::Checkbox("Align to surface", &type.alignToSurface);
+            ImGui::SeparatorText("Placement");
+            ImGui::DragFloat("Min height", &type.heightMin, 0.001f, 0.0f, 1.0f);
+            ImGui::DragFloat("Max height", &type.heightMax, 0.001f, 0.0f, 1.0f);
+
+            ImGui::DragFloat("Min slope", &type.slopeMin, 0.001f, 0.0f, 1.0f);
+            ImGui::DragFloat("Max slope", &type.slopeMax, 0.001f, 0.0f, 1.0f);
 
             ImGui::SeparatorText("Transform");
             ImGui::DragFloat3("Offset", glm::value_ptr(type.offset), 0.1f);
             ImGui::DragFloat3("Min scale", glm::value_ptr(type.scaleMin), 0.1f);
             ImGui::DragFloat3("Max scale", glm::value_ptr(type.scaleMax), 0.1f);
+
+            ImGui::Checkbox("Align to surface", &type.alignToSurface);
+            ImGui::DragFloat("Max alignment angle", &type.maxAlignmentAngle, 0.01f, 0.0f, 3.14f / 2.0f);
 
             ImGui::SeparatorText("Growth");
             ImGui::DragFloat("Collision radius", &type.collisionRadius, 0.01f, 0.0f);
@@ -147,6 +99,30 @@ namespace Atlas::Editor::UI {
             ImGui::DragInt("Max growth age", &type.growthMaxAge);
             ImGui::DragFloat("Min growth scale", &type.growthMinScale, 0.01f);
             ImGui::DragFloat("Max growth scale", &type.growthMaxScale, 0.01f);
+
+            // Create a child window with a scrollbar
+            ImGui::SeparatorText("Exclude materials");
+            ImGui::BeginChild("ChildWindow", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
+
+            for (int32_t i = 0; i < int32_t(terrain->storage->materials.size()); i++) {
+                auto& material = terrain->storage->materials[i];
+                if (!material.IsLoaded())
+                    continue;
+
+                auto fileName = material.GetResource()->GetFileName() + "##" + std::to_string(i);
+
+                bool excluded = type.exludeMaterialIndices.contains(i);
+                if (ImGui::RadioButton(fileName.c_str(), excluded)) {
+                    if (excluded) {
+                        type.exludeMaterialIndices.erase(i);
+                    }
+                    else {
+                        type.exludeMaterialIndices.insert(i);
+                    }
+                }
+            }
+
+            ImGui::EndChild();
 
             if (open)
                 ImGui::TreePop();
@@ -158,16 +134,6 @@ namespace Atlas::Editor::UI {
                 .name = "Vegetation type " + std::to_string(vegetationGenerator.typeCounter++)
                 });
         }
-
-    }
-
-    std::vector<VegetationGenerator::VegetationType>& VegetationGeneratorPanel::GetVegetationTypes(size_t id) {
-
-        if (!biomeToVegetationType.contains(id)) {
-            biomeToVegetationType[id] = {};
-        }
-
-        return biomeToVegetationType[id];
 
     }
 

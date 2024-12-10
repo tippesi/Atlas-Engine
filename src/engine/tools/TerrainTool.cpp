@@ -887,6 +887,44 @@ namespace Atlas::Tools {
 
     }
 
+    Ref<Common::Image<uint8_t>> TerrainTool::GenerateSplatMap(Ref<Terrain::Terrain>& terrain) {
+
+        int32_t tileResolution = 8 * terrain->patchSizeFactor;
+        int32_t tileResolutionSquared = tileResolution * tileResolution;
+        int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
+
+        int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
+
+        auto splatImage = CreateRef<Common::Image<uint8_t>>(tileSideCount * tileResolution,
+            tileSideCount * tileResolution, 1);
+        auto& splatData = splatImage->GetData();
+
+        int32_t splatDataResolution = (int32_t)sqrtf((float)splatData.size());
+
+        // i is in x direction, j in z direction
+        for (int32_t i = 0; i < tileSideCount; i++) {
+            for (int32_t j = 0; j < tileSideCount; j++) {
+                auto cell = terrain->storage->GetCell(i, j, terrain->LoDCount - 1);
+
+                // Now copy a tile of the original image
+                // We make sure that every tile has the same size
+                // We also increased resolution to make sure that
+                // adjacent cells connect to each other
+                for (int32_t y = 0; y < tileResolution; y++) {
+                    for (int32_t x = 0; x < tileResolution; x++) {
+                        int32_t cellOffset = y * (tileResolution + 1) + x;
+                        int32_t imageOffset = (j * tileResolution + y) * splatDataResolution +
+                            i * tileResolution + x;
+                        splatData[imageOffset] = uint8_t(cell->materialIdxData[cellOffset]);
+                    }
+                }
+            }
+        }
+
+        return splatImage;
+
+    }
+
     void TerrainTool::LoadMissingCells(Ref<Terrain::Terrain>& terrain, const std::string& filename) {
 
         Terrain::TerrainManager::enable = false;

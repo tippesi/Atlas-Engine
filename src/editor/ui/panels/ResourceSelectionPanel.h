@@ -5,6 +5,7 @@
 #include "Notifications.h"
 #include "ui/popups/ResourceSelectionPopup.h"
 #include "tools/ResourcePayloadHelper.h"
+#include "ui/windows/ContentBrowserWindow.h"
 
 namespace Atlas::Editor::UI {
 
@@ -45,6 +46,9 @@ namespace Atlas::Editor::UI {
                     ImGui::SetClipboardText(buttonName.c_str());
                     Notifications::Push({ .message = "Copied file name to clipboard.", .displayTime = 3.0f });
                 }
+                if (ImGui::MenuItem("Show in content browser")) {
+                    ContentBrowserWindow::contentToShowPath = resourceHandle.GetResource()->path;
+                }
                 ImGui::EndPopup();
             }
 
@@ -74,6 +78,20 @@ namespace Atlas::Editor::UI {
                 }
                 ImGui::PopStyleColor();
             }
+
+            /*
+            // Here we could decide from where we take the content to display in the popup
+            std::vector<Content> content;
+            switch(ResourceSelectionPopup::resourceOrigin) {
+                case ResourceSelectionPopup::ResourceOriginBits::ContentBrowserBit:
+                    resources = Content
+                    break;
+                case ResourceSelectionPopup::ResourceOriginBits::ResourceManagerBit:
+                default:
+                    resources = ResourceManager<T>::GetResources();
+                    break;
+            }
+            */
 
             auto resources = ResourceManager<T>::GetResources();
             handle = popup.Render(resources);

@@ -26,6 +26,8 @@ namespace Atlas::Editor::UI {
         void Render();
 
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        
+        static inline std::string contentToShowPath = "";
 
     private:
         struct ContentCopy {
@@ -63,6 +65,7 @@ namespace Atlas::Editor::UI {
 
         std::string nextDirectory;
         std::string assetSearch;
+        std::string hightlightPath;
 
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;

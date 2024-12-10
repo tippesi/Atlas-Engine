@@ -153,6 +153,18 @@ namespace Atlas::Editor::UI {
             ImGui::EndDragDropTarget();
         }
 
+        hightlightPath.clear();
+
+        // We can only set this up for the next frame
+        if (!contentToShowPath.empty()) {
+            // We expect the content to show to be relative to the asset directory
+            currentDirectory =  Loader::AssetLoader::GetAssetDirectory() + "/" 
+                + Common::Path::GetDirectory(contentToShowPath);
+            hightlightPath = contentToShowPath;
+            selectionStorage.Clear();
+        }
+        contentToShowPath.clear();
+
         ImGui::End();
 
     }
@@ -347,6 +359,12 @@ namespace Atlas::Editor::UI {
         else
             iconTexture = GetIcon(contentType);
         auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
+
+        bool highlight = assetPath == hightlightPath;
+        if (highlight) {
+            ImGui::SetScrollY(ImGui::GetCursorPosY());
+            selectionStorage.SetItemSelected((ImGuiID)entryIdx, true);
+        }
 
         auto assetRelativePath = Common::Path::Normalize(assetPath);
 

@@ -29,14 +29,20 @@ namespace Atlas::Editor {
 
             vec3 offset = vec3(0.0f);
 
+            float slopeMin = 0.0f;
+            float slopeMax = 1.0f;
+
+            float heightMin = 0.0f;
+            float heightMax = 1.0f;
+
+            std::set<int32_t> exludeMaterialIndices;
+
             vec3 scaleMin = vec3(1.0f);
             vec3 scaleMax = vec3(1.0f);
 
             int32_t seed = int32_t(Common::Random::SampleUniformInt(0, (1 << 24)));
-
-            int32_t biomeId = 0;
             
-            int32_t iterations = 4;
+            int32_t iterations = 10;
             float initialDensity = 0.5f;
             float offspringPerIteration = 0.5f;
             float offspringSpreadRadius = 10.0f;
@@ -44,6 +50,7 @@ namespace Atlas::Editor {
             float priority = 1.0f;
 
             bool alignToSurface = true;
+            float maxAlignmentAngle = 3.14f / 2.0f;
 
             float collisionRadius = 1.0f;
             float shadeRadius = 1.0f;
@@ -68,13 +75,16 @@ namespace Atlas::Editor {
         void GenerateAll(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator);
 
         void GenerateType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
-            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type);
+            Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, 
+            Common::Image<uint8_t>& splatImage, VegetationType& type);
 
         void RemoveEntitiesFromScene(VegetationType& type, Ref<Scene::Scene>& scene);
         
         std::vector<VegetationType> types;
 
         const int32_t initialCountPerType = 10000;
+
+        int32_t seed = 1;
         size_t typeCounter = 0;
 
     private:
@@ -86,7 +96,7 @@ namespace Atlas::Editor {
 
         void PerformIterationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, 
-            std::mt19937& randGenerator, VegetationType& type);
+            Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator, VegetationType& type);
 
         float GenerateUniformRandom(std::mt19937& randGenerator);
 

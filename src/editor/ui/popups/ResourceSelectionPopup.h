@@ -14,14 +14,23 @@ namespace Atlas::Editor::UI {
     class ResourceSelectionPopup : public Popup {
 
     public:
+        // Idea: This whole class could be changed to a content selection popup, such that it would work with
+        // the content browser content as well
+        typedef enum ResourceOriginBits {
+            ResourceManagerBit = (1 << 0),
+            ContentBrowserBit = (1 << 1)
+        }ResourceOriginBits;
+
+        typedef int32_t ResourceOrigin;
+
         ResourceSelectionPopup() : Popup("ResourceSelectionPopup") {}
 
         template<class T>
-        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources) {
+        ResourceHandle<T> Render(std::vector<ResourceHandle<T>> resources, ImVec2 size = ImVec2(-FLT_MAX, 200.0f)) {
 
             ResourceHandle<T> handle;
 
-            ImGui::SetNextWindowSize(ImVec2(-FLT_MAX, 200.0f));
+            ImGui::SetNextWindowSize(size);
 
             if (ImGui::BeginPopup(GetNameID())) {
 
@@ -60,6 +69,8 @@ namespace Atlas::Editor::UI {
             return handle;
 
         }
+
+        static inline ResourceOrigin resourceOrigin = ResourceOriginBits::ResourceManagerBit;
 
     private:
         template<class T>
