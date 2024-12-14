@@ -60,7 +60,7 @@ void main() {
             hit.direction = ray.direction;
             hit.hitDistance = ray.hitDistance;
 
-            hits[GetRayInvocation()] = PackRayHit(hit);
+            hits[ray.ID] = PackRayHit(hit);
         }
     }
 

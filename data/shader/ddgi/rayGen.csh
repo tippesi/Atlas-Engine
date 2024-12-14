@@ -64,8 +64,9 @@ void main() {
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
 
+    // We could atomic increment the global ray counter by the probeRayCount once an the just write the data
     uint workGroupOffset = gl_WorkGroupSize.x;
-    for(uint i = gl_LocalInvocationIndex; i < ddgiData.rayCount; i += workGroupOffset) {
+    for(uint i = gl_LocalInvocationIndex; i < probeRayCount; i += workGroupOffset) {
         Ray ray;
         if (i < probeRayCount) {       
             ray.ID = int(rayBaseIdx + i);
@@ -77,6 +78,6 @@ void main() {
             ray.ID = -1;
         }
 
-        WriteRay(ray, rayBaseIdx + i);
+        WriteRay(ray);
     }
 }

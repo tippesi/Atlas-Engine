@@ -206,6 +206,7 @@ namespace Atlas::Renderer {
 
         Texture::Texture2D outputTexture;
         Texture::Texture2D bloomTexture;
+        Texture::Texture2D exposureTexture;
 
         Texture::Texture2D giTexture;
         Texture::Texture2D swapGiTexture;

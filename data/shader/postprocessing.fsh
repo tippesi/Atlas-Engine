@@ -13,8 +13,13 @@ layout(set = 3, binding = 1) uniform sampler2D bloomTexture;
 layout(set = 3, binding = 2) uniform sampler2D bloomDirtTexture;
 #endif
 
+#ifdef AUTO_EXPOSURE
+layout(set = 3, binding = 5) uniform sampler2D autoExposureTexture;
+#endif
+
 layout(set = 3, binding = 4) uniform UniformBuffer {
     float exposure;
+    float autoExposureMipLevel;
     float paperWhiteLuminance;
     float maxScreenLuminance;
     float saturation;
@@ -29,7 +34,6 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
     float vignetteStrength;
     float padding0;
     float padding1;
-    float padding2;
     vec4 vignetteColor;
     vec4 tintColor;
 } Uniforms;
@@ -37,6 +41,13 @@ layout(set = 3, binding = 4) uniform UniformBuffer {
 const float gamma = 1.0 / 2.2;
 float screenMaxNits = Uniforms.maxScreenLuminance;
 float paperWhiteNits = Uniforms.paperWhiteLuminance;
+
+float Luma(vec3 color) {
+
+    const vec3 luma = vec3(0.299, 0.587, 0.114);
+    return dot(color, luma);
+
+}
 
 vec3 ACESToneMap(vec3 hdrColor) {
     float a = 2.51;
@@ -127,7 +138,12 @@ void main() {
 
     color += bloom;
 
-    color *= Uniforms.exposure;
+    color *= Uniforms.exposure * 0.00001;
+#ifdef AUTO_EXPOSURE
+    float exposureBrightness = texelFetch(autoExposureTexture, ivec2(0.0), 0).r;
+    if (exposureBrightness != 0.0)
+        color /= exposureBrightness;
+#endif
 
 #ifdef FILM_GRAIN
     color = color + color * Uniforms.filmGrainStrength * (2.0 * random(vec3(texCoord * 1000.0, globalData.time)) - 1.0);
