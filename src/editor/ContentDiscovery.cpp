@@ -119,9 +119,9 @@ namespace Atlas::Editor {
 					});
 				directory->directories.push_back(childDirectory);
 
-				auto path = childDirectory->path.string();
-				std::replace(path.begin(), path.end(), '\\', '/');
-				result->contentDirectories[path] = childDirectory;
+				auto childPath = childDirectory->path.string();
+				std::replace(childPath.begin(), childPath.end(), '\\', '/');
+				result->contentDirectories[childPath] = childDirectory;
 				DiscoverDirectory(childDirectory, result);
 				continue;
 			}

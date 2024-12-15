@@ -10,7 +10,7 @@ namespace Atlas {
             LoDCount(LoDCount), materialResolution(materialResolution), materialCount(materialCount) {
 
             cells.resize(LoDCount);
-            LoDSideLengths = new int32_t[LoDCount];
+            LoDSideLengths.resize(LoDCount);
 
             baseColorMaps = Atlas::Texture::Texture2DArray(materialResolution,
                 materialResolution, materialCount, VK_FORMAT_R8G8B8A8_UNORM,
@@ -145,10 +145,10 @@ namespace Atlas {
 
             std::lock_guard lock(unusedCellQueueMutex);
 
-            auto cells = std::vector<TerrainStorageCell*>{ unusedCellQueue.begin(), unusedCellQueue.end() };
+            auto wantedCells = std::vector<TerrainStorageCell*>{ unusedCellQueue.begin(), unusedCellQueue.end() };
             unusedCellQueue.clear();
 
-            return cells;
+            return wantedCells;
 
         }
 
@@ -165,10 +165,10 @@ namespace Atlas {
 
             std::lock_guard lock(cellQueueMutex);
 
-            auto cells = std::vector<TerrainStorageCell*>{ requestedCellQueue.begin(), requestedCellQueue.end() };
+            auto wantedCells = std::vector<TerrainStorageCell*>{ requestedCellQueue.begin(), requestedCellQueue.end() };
             requestedCellQueue.clear();
 
-            return cells;
+            return wantedCells;
 
         }
 
@@ -185,10 +185,10 @@ namespace Atlas {
 
             std::lock_guard lock(bvhCellQueueMutex);
 
-            auto cells = std::vector<TerrainStorageCell*>{ requestedBvhCellQueue.begin(), requestedBvhCellQueue.end() };
+            auto wantedCells = std::vector<TerrainStorageCell*>{ requestedBvhCellQueue.begin(), requestedBvhCellQueue.end() };
             requestedBvhCellQueue.clear();
 
-            return cells;
+            return wantedCells;
 
         }
 

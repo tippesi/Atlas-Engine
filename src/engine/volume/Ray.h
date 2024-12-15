@@ -27,7 +27,7 @@ namespace Atlas {
 
             Ray(vec3 origin, vec3 direction, float tMin = 0.0f, float tMax = 2048.0f);
 
-            Ray(Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition,
+            Ray(const Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition,
                 float tMin = 0.0f, float tMax = 2048.0f);
 
             vec3 Get(float distance) const;

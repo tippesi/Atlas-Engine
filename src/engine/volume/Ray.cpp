@@ -11,7 +11,7 @@ namespace Atlas {
 
         }
 
-        Ray::Ray(Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition, 
+        Ray::Ray(const Ref<Viewport>& viewport, const CameraComponent& camera, vec2 mousePosition, 
             float tMin, float tMax) : tMin(tMin), tMax(tMax) {
 
             auto nearPoint = viewport->Unproject(vec3(mousePosition, 0.0f), camera);

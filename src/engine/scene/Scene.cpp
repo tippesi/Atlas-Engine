@@ -370,6 +370,15 @@ namespace Atlas {
 
             renderState.mainCameraSignal.Reset();
 
+             // After everything we need to reset transform component changed and prepare the updated for next frame
+            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
+
+                hierarchyComponent.updated = false;
+                });
+
+            JobSystem::Wait(hierarchyJobGroup);
+
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
             JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
@@ -383,16 +392,6 @@ namespace Atlas {
                 rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });          
 #endif
-
-
-            // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
-                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
-
-                hierarchyComponent.updated = false;
-                });
-
-            JobSystem::Wait(hierarchyJobGroup);
 
             // Everything below assumes that entities themselves have a transform
             // Without it they won't be transformed when they are in a hierarchy

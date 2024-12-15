@@ -193,7 +193,7 @@ namespace Atlas::Editor::UI {
         for (size_t count = 0; count < terrain->storage->materials.size(); count++) {
             counter.push_back(std::to_string(count));
         }
-        for (auto& name : counter) {
+        for (const auto& name : counter) {
             pointer.push_back(name.c_str());
         }
 

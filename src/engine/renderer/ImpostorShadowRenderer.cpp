@@ -30,11 +30,11 @@ namespace Atlas {
 
             auto lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
-            for (auto& item : renderPass->meshToInstancesMap) {
+            for (const auto& item : renderPass->meshToInstancesMap) {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto& mesh = renderList->meshIdToMeshMap[meshId];
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
@@ -64,7 +64,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorShadowRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
             bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {

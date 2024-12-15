@@ -27,12 +27,12 @@ namespace Atlas {
 
             vertexArray.Bind(commandList);
 
-            for (auto& item : mainPass->meshToInstancesMap) {
+            for (const auto& item : mainPass->meshToInstancesMap) {
 
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                auto& mesh = renderList->meshIdToMeshMap[meshId];
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
@@ -262,7 +262,7 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfig(Ref<Graphics::FrameBuffer> &frameBuffer,
+        PipelineConfig ImpostorRenderer::GetPipelineConfig(const Ref<Graphics::FrameBuffer> &frameBuffer,
             bool interpolation, bool pixelDepthOffset) {
 
             auto shaderConfig = ShaderConfig {
@@ -285,8 +285,8 @@ namespace Atlas {
 
         }
 
-        PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(Mesh::MeshSubData *subData,
-            Mesh::Mesh *mesh, Ref<Graphics::FrameBuffer>& frameBuffer) {
+        PipelineConfig ImpostorRenderer::GetPipelineConfigForSubData(const Mesh::MeshSubData *subData,
+            Mesh::Mesh *mesh, const Ref<Graphics::FrameBuffer>& frameBuffer) {
 
             auto material = subData->material;
 

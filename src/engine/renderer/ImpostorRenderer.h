@@ -24,11 +24,11 @@ namespace Atlas {
         private:
             Ref<Graphics::FrameBuffer> GenerateFrameBuffer(Mesh::Impostor* impostor);
 
-            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer,
+            PipelineConfig GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 bool interpolation, bool pixelDepthOffset);
 
-            PipelineConfig GetPipelineConfigForSubData(Mesh::MeshSubData* subData,
-                Mesh::Mesh* mesh, Ref<Graphics::FrameBuffer>& frameBuffer);
+            PipelineConfig GetPipelineConfigForSubData(const Mesh::MeshSubData* subData,
+                Mesh::Mesh* mesh, const Ref<Graphics::FrameBuffer>& frameBuffer);
 
             Buffer::VertexArray vertexArray;
 

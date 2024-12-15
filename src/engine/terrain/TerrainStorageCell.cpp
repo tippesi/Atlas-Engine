@@ -76,10 +76,10 @@ namespace Atlas {
             aabb.max = glm::vec3(-std::numeric_limits<float>::max());
 
             std::vector<vec3> vertices(heightData.size());
-            for (int32_t y = 0; y < heightFieldSideLength; y++) {
-                for (int32_t x = 0; x < heightFieldSideLength; x++) {
-                    auto idx = y * heightFieldSideLength + x;
-                    vertices[idx] = vec3(float(x) * stretchFactor, heightData[idx] * heightFactor, float(y) * stretchFactor);
+            for (int32_t i = 0; i < heightFieldSideLength; i++) {
+                for (int32_t j = 0; j < heightFieldSideLength; j++) {
+                    auto idx = i * heightFieldSideLength + j;
+                    vertices[idx] = vec3(float(j) * stretchFactor, heightData[idx] * heightFactor, float(i) * stretchFactor);
 
                     aabb.min = glm::min(aabb.min, vertices[idx]);
                     aabb.max = glm::max(aabb.max, vertices[idx]);
@@ -90,10 +90,10 @@ namespace Atlas {
             AE_ASSERT(vertexSideCount > 0);
 
             std::vector<uint32_t> indices(vertexSideCount * vertexSideCount * 6);
-            for (int32_t y = 0; y < vertexSideCount; y++) {
-                for (int32_t x = 0; x < vertexSideCount; x++) {
-                    auto idx = y * heightFieldSideLength + x;
-                    auto baseIdx = (y * vertexSideCount + x) * 6;
+            for (int32_t i = 0; i < vertexSideCount; i++) {
+                for (int32_t j = 0; j < vertexSideCount; j++) {
+                    auto idx = i * heightFieldSideLength + j;
+                    auto baseIdx = (i * vertexSideCount + j) * 6;
 
                     indices[baseIdx + 0] = idx;
                     indices[baseIdx + 1] = idx + 1;
@@ -151,19 +151,19 @@ namespace Atlas {
                 .opaque = true
             }};
 
-            auto blas = CreateRef<RayTracing::BLAS>();
-            blas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);
+            auto newBlas = CreateRef<RayTracing::BLAS>();
+            newBlas->Build(triangles, materials, vertexBuffer, indexBuffer,  geometryRegions);
 
             if (Graphics::GraphicsDevice::DefaultDevice->support.hardwareRayTracing) {
                 Graphics::ASBuilder asBuilder;
-                std::vector<Ref<Graphics::BLAS>> blases = { blas->blas };
+                Ref<Graphics::BLAS> blases[] = { newBlas->blas };
                 asBuilder.BuildBLAS(blases);
 
-                blas->blas = blases.front();
-                blas->needsBvhRefresh = false;
+                newBlas->blas = blases.front();
+                newBlas->needsBvhRefresh = false;
             }
 
-            this->blas = blas;
+            blas = newBlas;
 
         }
 

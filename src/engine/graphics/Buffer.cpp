@@ -64,9 +64,6 @@ namespace Atlas {
                 bufferCopy.dstOffset = 0;
                 bufferCopy.size = length;
 
-                if (transferManager == nullptr)
-                    Log::Warning("Oh no!");
-
                 transferManager->UploadBufferData(data, this, bufferCopy);
             }
             else {

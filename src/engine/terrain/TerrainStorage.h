@@ -119,7 +119,7 @@ namespace Atlas {
             int32_t materialResolution;
             int32_t materialCount;
 
-            int32_t* LoDSideLengths;
+            std::vector<int32_t> LoDSideLengths;
 
             Graphics::CommandList* commandList = nullptr;
 

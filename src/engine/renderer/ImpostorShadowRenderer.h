@@ -21,7 +21,7 @@ namespace Atlas {
         private:
             Buffer::VertexArray vertexArray;
 
-            PipelineConfig GetPipelineConfig(Ref<Graphics::FrameBuffer>& frameBuffer,
+            PipelineConfig GetPipelineConfig(const Ref<Graphics::FrameBuffer>& frameBuffer,
                 bool interpolation, bool pixelDepthOffset);
 
         };

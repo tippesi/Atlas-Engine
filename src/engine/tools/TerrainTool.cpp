@@ -226,7 +226,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::UpdateTerrain(Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
+    void TerrainTool::UpdateTerrain(const Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
             std::vector<ResourceHandle<Material>> materials) {
 
         int32_t maxNodesPerSide = (int32_t)powf(2.0f, float(terrain->LoDCount) - 1.0f) * terrain->rootNodeSideCount;
@@ -299,7 +299,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BakeTerrain(Ref<Terrain::Terrain>& terrain) {
+    void TerrainTool::BakeTerrain(const Ref<Terrain::Terrain>& terrain) {
 
         // Generate one large heightmap (assumes all tiles have the same size)
         int32_t tileResolution = 8 * terrain->patchSizeFactor;
@@ -538,7 +538,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BrushHeight(Ref<Terrain::Terrain>& terrain, Filter* filter, float scale, vec2 position) {
+    void TerrainTool::BrushHeight(const Ref<Terrain::Terrain>& terrain, Filter* filter, float scale, vec2 position) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
 
@@ -585,7 +585,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::SmoothHeight(Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
+    void TerrainTool::SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
         float strength, vec2 position) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
@@ -653,7 +653,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::FlattenHeight(Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float flattenHeight) {
+    void TerrainTool::FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float flattenHeight) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
 
@@ -699,7 +699,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BrushMaterial(Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot) {
+    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
         
@@ -743,7 +743,7 @@ namespace Atlas::Tools {
 
     }
 
-    Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution) {
+    Texture::Texture2D TerrainTool::GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution) {
 
         int32_t tileResolution = 8 * terrain->patchSizeFactor;
         int32_t tileResolutionSquared = tileResolution * tileResolution;
@@ -849,10 +849,9 @@ namespace Atlas::Tools {
 
     }
 
-    Ref<Common::Image<uint16_t>> TerrainTool::GenerateHeightMap(Ref<Terrain::Terrain>& terrain) {
+    Ref<Common::Image<uint16_t>> TerrainTool::GenerateHeightMap(const Ref<Terrain::Terrain>& terrain) {
 
         int32_t tileResolution = 8 * terrain->patchSizeFactor;
-        int32_t tileResolutionSquared = tileResolution * tileResolution;
         int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
         int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
@@ -887,10 +886,9 @@ namespace Atlas::Tools {
 
     }
 
-    Ref<Common::Image<uint8_t>> TerrainTool::GenerateSplatMap(Ref<Terrain::Terrain>& terrain) {
+    Ref<Common::Image<uint8_t>> TerrainTool::GenerateSplatMap(const Ref<Terrain::Terrain>& terrain) {
 
         int32_t tileResolution = 8 * terrain->patchSizeFactor;
-        int32_t tileResolutionSquared = tileResolution * tileResolution;
         int32_t tileCount = terrain->storage->GetCellCount(terrain->LoDCount - 1);
 
         int32_t tileSideCount = (int32_t)sqrtf((float)tileCount);
@@ -925,7 +923,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::LoadMissingCells(Ref<Terrain::Terrain>& terrain, const std::string& filename) {
+    void TerrainTool::LoadMissingCells(const Ref<Terrain::Terrain>& terrain, const std::string& filename) {
 
         Terrain::TerrainManager::enable = false;
         Terrain::TerrainManager::WaitForJobCompletion();
@@ -1003,7 +1001,7 @@ namespace Atlas::Tools {
 
     }
 
-    float TerrainTool::GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
+    float TerrainTool::GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
         int32_t x, int32_t y, int32_t width, int32_t height) {
 
         x = x < 0 ? 0 : (x >= width ? width - 1 : x);
@@ -1014,7 +1012,7 @@ namespace Atlas::Tools {
 
     }
 
-    bool TerrainTool::GetNearbyStorageCells(Ref<Terrain::Terrain>& terrain, 
+    bool TerrainTool::GetNearbyStorageCells(const Ref<Terrain::Terrain>& terrain, 
         vec2 position, Terrain::TerrainStorageCell** cells) {
 
         const int32_t LoD = terrain->LoDCount - 1;
@@ -1038,7 +1036,7 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::ExtractNearbyStorageData(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells, 
+    void TerrainTool::ExtractNearbyStorageData(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells, 
         std::span<float> heightData, std::span<uint8_t> splatData) {
 
         // Now bring all height data into one array (we assume that all tiles have the same size)
@@ -1079,19 +1077,19 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::ApplyDataToNearbyStorage(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+    void TerrainTool::ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
         std::span<float> heightData, std::span<uint8_t> splatData) {
 
         auto center = cells[4];
         int32_t width = center->splatMap->width;
         int32_t height = center->splatMap->height;
 
-        std::vector<uint16_t> allHeightData;
         std::vector<uint8_t> allNormalData;
         std::vector<uint16_t> cellHeightData;
         if (!heightData.empty()) {
             cellHeightData.resize(width * height);
 
+            std::vector<uint16_t> allHeightData;
             allHeightData.resize(heightData.size());
             allNormalData.resize(heightData.size() * 3);
             for (size_t i = 0; i < heightData.size(); i++)
@@ -1143,8 +1141,8 @@ namespace Atlas::Tools {
 
                 if (!heightData.empty()) {
                     // Need to only take the heights from the cell storage, since heights in allHeightData have border issues
-                    for (size_t i = 0; i < cell->heightData.size(); i++)
-                        cellHeightData[i] = uint16_t(cell->heightData[i] * 65535.0f);
+                    for (size_t k = 0; k < cell->heightData.size(); k++)
+                        cellHeightData[k] = uint16_t(cell->heightData[k] * 65535.0f);
 
                     cell->heightField->SetData(cellHeightData, &transferManager);
                     cell->normalMap->SetData(cell->normalData, &transferManager);

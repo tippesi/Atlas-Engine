@@ -141,17 +141,6 @@ namespace Atlas::Editor {
         ImGui::Separator();
 
         if (!advanced) {
-            auto materials = ResourceManager<Material>::GetResources();
-            std::vector<std::string> names;
-            std::vector<const char*> pointer;
-
-            for (auto mat : materials) {
-                names.push_back(mat->name);
-            }
-
-            for (auto& name : names) {
-                pointer.push_back(name.c_str());
-            }
             ImGui::Text("Material");
             selectedMaterial = materialSelectionPanel.Render(selectedMaterial);
         }
@@ -185,11 +174,11 @@ namespace Atlas::Editor {
             for (auto& [material, color] : materials) {
                 ImGui::PushID(loopCount);
 
-                auto name = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
+                auto materialName = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
 
                 auto treeNodeSize = region.x - (material.IsValid() ? deleteButtonSize.x + 2.0f * padding : 0.0f);
                 ImGui::SetNextItemWidth(treeNodeSize);
-                bool open = ImGui::TreeNode(name.c_str());
+                bool open = ImGui::TreeNode(materialName.c_str());
                 ImGui::SameLine();
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -226,16 +215,16 @@ namespace Atlas::Editor {
                 "Moisture biomes change the material within an elevation biome based on the moisture map.");
 
             auto mats = materials;
-            std::vector<std::string> names;
+            std::vector<std::string> materialNames;
             std::vector<const char*> pointer;
 
             for (auto& [material, color] : mats) {
-                auto name = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
-                names.push_back(name);
+                auto materialName = material.IsValid() ? material.GetResource()->GetFileName() : "No material " + std::to_string(loopCount);
+                materialNames.push_back(materialName);
             }
 
-            for (auto& name : names) {
-                pointer.push_back(name.c_str());
+            for (auto& materialName : materialNames) {
+                pointer.push_back(materialName.c_str());
             }
 
             ImGui::Combo("Default material", &materialSelection,
@@ -248,9 +237,6 @@ namespace Atlas::Editor {
             int32_t deleteElevationElement = -1;
             for (auto& eleBiome : elevationBiomes) {
                 ImGui::PushID(eleBiomeCount);
-
-                int32_t moiBiomeCount = 0;
-                int32_t sloBiomeCount = 0;
 
                 auto eleRegion = ImGui::GetContentRegionAvail();
 
@@ -282,7 +268,9 @@ namespace Atlas::Editor {
                             eleBiome.materialIdx = 0;
                         }
                     }
+
                     if (ImGui::TreeNode("Moisture biomes")) {
+                        int32_t moiBiomeCount = 0;
                         for (auto& moiBiome : eleBiome.moistureBiomes) {
                             if (ImGui::TreeNode(("Moisture biome " + std::to_string(moiBiomeCount++)).c_str())) {
                                 ImGui::DragFloat("Moisture", &moiBiome.moisture, 0.001f, 0.0f, 1.0f);
@@ -299,6 +287,7 @@ namespace Atlas::Editor {
                         ImGui::TreePop();
                     }
                     if (ImGui::TreeNode("Slope biomes")) {
+                        int32_t sloBiomeCount = 0;
                         for (auto& sloBiome : eleBiome.slopeBiomes) {
                             if (ImGui::TreeNode(("Slope biome " + std::to_string(sloBiomeCount++)).c_str())) {
                                 ImGui::DragFloat("Slope", &sloBiome.slope, 0.001f, 0.0f, 1.0f);
@@ -464,13 +453,13 @@ namespace Atlas::Editor {
         float e, s, m;
         GetBiomeIndicators(x, y, heightImg, moistureImg, scale, e, s, m);
 
-        for (auto& eleBiome : biomes) {
+        for (const auto& eleBiome : biomes) {
             if (eleBiome.less) {
                 if (e >= eleBiome.elevation || eleBiome.materialIdx >= materials.size()) {
                     continue;
                 }
 
-                for (auto& moiBiome : eleBiome.moistureBiomes) {
+                for (const auto& moiBiome : eleBiome.moistureBiomes) {
                     if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
                         continue;
                     }
@@ -479,7 +468,7 @@ namespace Atlas::Editor {
                         break;
                 }
 
-                for (auto& sloBiome : eleBiome.slopeBiomes) {
+                for (const auto& sloBiome : eleBiome.slopeBiomes) {
                     if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
                         continue;
                     }
@@ -499,7 +488,7 @@ namespace Atlas::Editor {
                     continue;
                 }
 
-                for (auto& moiBiome : eleBiome.moistureBiomes) {
+                for (const auto& moiBiome : eleBiome.moistureBiomes) {
                     if (m >= moiBiome.moisture || moiBiome.materialIdx >= materials.size()) {
                         continue;
                     }
@@ -508,7 +497,7 @@ namespace Atlas::Editor {
                         break;
                 }
 
-                for (auto& sloBiome : eleBiome.slopeBiomes) {
+                for (const auto& sloBiome : eleBiome.slopeBiomes) {
                     if (s >= sloBiome.slope || sloBiome.materialIdx >= materials.size()) {
                         continue;
                     }
@@ -585,7 +574,7 @@ namespace Atlas::Editor {
                         pair = materials[biome.materialIdx];
                     }
 
-                    auto& mat = pair.first;
+                    const auto& mat = pair.first;
                     uint8_t index = 0;
 
                     for (auto material : mats) {
@@ -711,14 +700,14 @@ namespace Atlas::Editor {
         }
 
         std::sort(lessBiomes.begin(), lessBiomes.end(),
-            [=](ElevationBiome& biome1, ElevationBiome& biome2) -> bool {
+            [=](const ElevationBiome& biome1, const ElevationBiome& biome2) -> bool {
 
                 return biome1.elevation < biome2.elevation;
 
             });
 
         std::sort(largerBiomes.begin(), largerBiomes.end(),
-            [=](ElevationBiome& biome1, ElevationBiome& biome2) -> bool {
+            [=](const ElevationBiome& biome1, const ElevationBiome& biome2) -> bool {
 
                 return biome1.elevation > biome2.elevation;
 
@@ -734,13 +723,13 @@ namespace Atlas::Editor {
 
         for (auto& biome : biomes) {
             std::sort(biome.moistureBiomes.begin(), biome.moistureBiomes.end(),
-                [=](MoistureBiome& biome1, MoistureBiome& biome2) -> bool {
+                [=](const MoistureBiome& biome1, const MoistureBiome& biome2) -> bool {
 
                     return biome1.moisture < biome2.moisture;
 
                 });
             std::sort(biome.slopeBiomes.begin(), biome.slopeBiomes.end(),
-                [=](SlopeBiome& biome1, SlopeBiome& biome2) -> bool {
+                [=](const SlopeBiome& biome1, const SlopeBiome& biome2) -> bool {
 
                     return biome1.slope < biome2.slope;
 

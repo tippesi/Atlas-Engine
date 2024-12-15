@@ -38,7 +38,7 @@ namespace Atlas {
              * @warning All storage cells of the terrain and their heightData member must be loaded.
              * It is assumed that all cells have textures of the same resolution.
              */
-            static void UpdateTerrain(Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
+            static void UpdateTerrain(const Ref<Terrain::Terrain>& terrain, Common::Image<uint8_t>& splatImage, 
                 std::vector<ResourceHandle<Material>> materials);
 
             /**
@@ -47,7 +47,7 @@ namespace Atlas {
              * @warning All storage cells of the terrain and their heightData member must be loaded.
              * It is assumed that all cells have textures of the same resolution.
              */
-            static void BakeTerrain(Ref<Terrain::Terrain>& terrain);
+            static void BakeTerrain(const Ref<Terrain::Terrain>& terrain);
 
             /**
              *
@@ -59,7 +59,7 @@ namespace Atlas {
              * must be loaded. It is assumed that all cells have textures of the same resolution.
              * @note The kernel size needs to be smaller than 2 times the edge of a cell
              */
-            static void BrushHeight(Ref<Terrain::Terrain>& terrain, Filter* filter, float strength, vec2 position);
+            static void BrushHeight(const Ref<Terrain::Terrain>& terrain, Filter* filter, float strength, vec2 position);
 
             /**
              *
@@ -69,35 +69,35 @@ namespace Atlas {
              * @param strength
              * @param position
              */
-            static void SmoothHeight(Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
+            static void SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
                     float strength, vec2 position);
 
-            static void FlattenHeight(Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float height);
+            static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float height);
 
-            static void BrushMaterial(Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot);
+            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot);
 
-            static Texture::Texture2D GenerateTerrainOceanMap(Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
+            static Texture::Texture2D GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
 
-            static Ref<Common::Image<uint16_t>> GenerateHeightMap(Ref<Terrain::Terrain>& terrain);
+            static Ref<Common::Image<uint16_t>> GenerateHeightMap(const Ref<Terrain::Terrain>& terrain);
 
-            static Ref<Common::Image<uint8_t>> GenerateSplatMap(Ref<Terrain::Terrain>& terrain);
+            static Ref<Common::Image<uint8_t>> GenerateSplatMap(const Ref<Terrain::Terrain>& terrain);
 
-            static void LoadMissingCells(Ref<Terrain::Terrain>& terrain, const std::string& filename);
+            static void LoadMissingCells(const Ref<Terrain::Terrain>& terrain, const std::string& filename);
 
         private:
             static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
                                            int32_t width, int32_t height, float strength);
 
-            static float GetHeight(std::vector<uint16_t>& heightData, int32_t dataWidth,
+            static float GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
                     int32_t x, int32_t y, int32_t width, int32_t height);
 
-            static bool GetNearbyStorageCells(Ref<Terrain::Terrain>& terrain, vec2 position,
+            static bool GetNearbyStorageCells(const Ref<Terrain::Terrain>& terrain, vec2 position,
                 Terrain::TerrainStorageCell** cells);
 
-            static void ExtractNearbyStorageData(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+            static void ExtractNearbyStorageData(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
                 std::span<float> heightData, std::span<uint8_t> splatData);
 
-            static void ApplyDataToNearbyStorage(Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
+            static void ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
                 std::span<float> heightData, std::span<uint8_t> splatData);
 
 

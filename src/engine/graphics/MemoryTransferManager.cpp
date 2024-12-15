@@ -50,14 +50,14 @@ namespace Atlas {
             VkBufferCopy bufferCopyDesc) {
 
             bool inTransfer = commandList != nullptr;
-            CommandList* commandList = nullptr;
+            CommandList* localCommandList = nullptr;
 
             if (!inTransfer) {
-                commandList = device->GetCommandList(TransferQueue, true);
-                commandList->BeginCommands();
+                localCommandList = device->GetCommandList(TransferQueue, true);
+                localCommandList->BeginCommands();
             }
             else {
-                commandList = this->commandList;
+                localCommandList = commandList;
             }
 
             VmaAllocator allocator = memoryManager->allocator;
@@ -69,12 +69,12 @@ namespace Atlas {
             std::memcpy(destination, data, bufferCopyDesc.size);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);            
 
-            vkCmdCopyBuffer(commandList->commandBuffer, stagingAllocation.buffer,
+            vkCmdCopyBuffer(localCommandList->commandBuffer, stagingAllocation.buffer,
                 destinationBuffer->buffer, 1, &bufferCopyDesc);
 
             if (!inTransfer) {
-                commandList->EndCommands();
-                device->FlushCommandList(commandList);
+                localCommandList->EndCommands();
+                device->FlushCommandList(localCommandList);
                 DestroyStagingBuffer(stagingAllocation);
             }
             else {
@@ -87,15 +87,15 @@ namespace Atlas {
             uint32_t layerOffset, uint32_t layerCount) {
 
             bool inTransfer = commandList != nullptr;
-            CommandList* commandList = nullptr;
+            CommandList* localCommandList = nullptr;
 
             // Need graphics queue for mip generation
             if (!inTransfer) {
-                commandList = device->GetCommandList(GraphicsQueue, true);
-                commandList->BeginCommands();
+                localCommandList = device->GetCommandList(GraphicsQueue, true);
+                localCommandList->BeginCommands();
             }
             else {
-                commandList = this->commandList;
+                localCommandList = commandList;
             }
 
             VmaAllocator allocator = memoryManager->allocator;
@@ -129,7 +129,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = 0;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -146,7 +146,7 @@ namespace Atlas {
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyBufferToImage(commandList->commandBuffer, stagingAllocation.buffer, image->image,
+                vkCmdCopyBufferToImage(localCommandList->commandBuffer, stagingAllocation.buffer, image->image,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
             }
 
@@ -164,17 +164,17 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 imageBarrier.dstAccessMask = dstAccessMask;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
                 image->layout = newLayout;
                 image->accessMask = dstAccessMask;
             }
 
-            if (mipLevels > 1) GenerateMipMaps(image, commandList->commandBuffer);
+            if (mipLevels > 1) GenerateMipMaps(image, localCommandList->commandBuffer);
 
             if (!inTransfer) {
-                commandList->EndCommands();
-                device->FlushCommandList(commandList);
+                localCommandList->EndCommands();
+                device->FlushCommandList(localCommandList);
                 DestroyStagingBuffer(stagingAllocation);
             }
             else {
@@ -188,10 +188,10 @@ namespace Atlas {
 
             if (block) device->WaitForIdle();
 
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            auto localCommandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            commandList->BeginCommands();
+            localCommandList->BeginCommands();
 
             auto formatSize = GetFormatSize(image->format);
             auto pixelCount = image->width * image->height * image->depth;
@@ -217,7 +217,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = 0;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
@@ -234,7 +234,7 @@ namespace Atlas {
                 copyRegion.imageOffset = offset;
                 copyRegion.imageExtent = extent;
 
-                vkCmdCopyImageToBuffer(commandList->commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                vkCmdCopyImageToBuffer(localCommandList->commandBuffer, image->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     stagingAllocation.buffer, 1, &copyRegion);
             }
 
@@ -249,7 +249,7 @@ namespace Atlas {
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
                 imageBarrier.dstAccessMask = dstAccessMask;
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
                 image->layout = newLayout;
                 image->accessMask = dstAccessMask;
@@ -260,13 +260,13 @@ namespace Atlas {
                 VkBufferMemoryBarrier bufferBarrier = Initializers::InitBufferMemoryBarrier(stagingAllocation.buffer,
                     VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT);
 
-                vkCmdPipelineBarrier(commandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_HOST_BIT, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
             }
 
-            commandList->EndCommands();
+            localCommandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+            device->FlushCommandList(localCommandList);
             device->WaitForIdle();
 
             void* src;
@@ -282,16 +282,16 @@ namespace Atlas {
         void MemoryTransferManager::GenerateMipMaps(Image *image) {
 
             // Need graphics queue for mip generation
-            auto commandList = device->GetCommandList(GraphicsQueue, true);
+            auto localCommandList = device->GetCommandList(GraphicsQueue, true);
             VmaAllocator allocator = memoryManager->allocator;
 
-            commandList->BeginCommands();
+            localCommandList->BeginCommands();
 
             AE_ASSERT(false && "Needs to be implemented if needed");
 
-            commandList->EndCommands();
+            localCommandList->EndCommands();
 
-            device->FlushCommandList(commandList);
+            device->FlushCommandList(localCommandList);
             device->WaitForIdle();
 
         }
