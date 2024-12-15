@@ -147,7 +147,7 @@ void main() {
 
                 // This might be used to move probes closer to geometry and make the visibility test more effective, disabled for now
                 if (dist > 0.0 && dist < probeOffsetDistance && ddgiData.optimizeProbes > 0) {
-                    // newProbeOffset -= rayData[j].direction.xyz * (probeOffsetDistance - dist) * 0.001 * probeOffset.w / probeOffsetDistance;
+                    //newProbeOffset -= rayData[j].direction.xyz * (probeOffsetDistance - dist) * 0.001 * probeOffset.w / probeOffsetDistance;
                 }
             }
 #else

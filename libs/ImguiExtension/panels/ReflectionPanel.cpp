@@ -25,7 +25,7 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Use DDGI in reflection", &reflection->ddgi);
         ImGui::Checkbox("Opacity check", &reflection->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
-        ImGui::SliderFloat("Radiance limit", &reflection->radianceLimit, 0.0f, 10.0f);
+        ImGui::DragFloat("Radiance limit", &reflection->radianceLimit, 0.1f, 0.0f, 1000.0f);
         ImGui::SliderFloat("Bias", &reflection->bias, 0.0f, 1.0f);
         ImGui::SliderFloat("Roughness cuttoff", &reflection->roughnessCutoff, 0.0f, 1.0f);
         ImGui::SliderInt("Texture level##Reflection", &reflection->textureLevel, 0, 10);

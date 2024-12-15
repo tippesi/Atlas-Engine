@@ -138,11 +138,10 @@ void main() {
 
     color += bloom;
 
-    color *= Uniforms.exposure * 0.00001;
+    color *= Uniforms.exposure;
 #ifdef AUTO_EXPOSURE
     float exposureBrightness = texelFetch(autoExposureTexture, ivec2(0.0), 0).r;
-    if (exposureBrightness != 0.0)
-        color /= exposureBrightness;
+    color /= (9.6 * exposureBrightness);
 #endif
 
 #ifdef FILM_GRAIN

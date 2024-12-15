@@ -374,7 +374,9 @@ namespace Atlas::Editor::UI {
 
                 ImGui::Separator();
                 ImGui::Text("Path traces samples");
+                // ImGui::Checkbox("Realtime", &Singletons::mainRenderer->pathTracingRenderer.realTime);
                 ImGui::DragInt("Sample count", &Singletons::mainRenderer->pathTracingRenderer.realTimeSamplesPerFrame, 1, 1, 16);
+                ImGui::DragFloat("Max clipping", &Singletons::mainRenderer->pathTracingRenderer.historyClipMax, 0.001f, 0.0f, 1.0f);
 
                 ImGui::Separator();
                 ImGui::Text("Playing");

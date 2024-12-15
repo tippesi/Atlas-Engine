@@ -49,7 +49,7 @@ namespace Atlas::Editor::UI {
         std::function<void()> drawOverlayFunc;
 
     private:
-        void RenderVisualization();
+        void RenderVisualization(float exposure);
 
         void CreateRenderPass();
 

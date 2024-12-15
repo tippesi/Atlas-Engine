@@ -39,6 +39,9 @@ namespace Atlas {
             std::function<void(JobData&, ivec3)> func, int32_t batchSize = 256,
             void* userData = nullptr);
 
+        static void ParallelFor(JobGroup& group, int32_t count, int32_t jobCount,
+            std::function<void(JobData&, int32_t)> func, void* userData = nullptr);
+
         static void Wait(JobSignal& signal, JobPriority priority);
 
         static void Wait(JobGroup& group);

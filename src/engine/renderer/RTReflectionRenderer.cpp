@@ -77,28 +77,15 @@ namespace Atlas {
                 shadow = mainLightEntity.GetComponent<LightComponent>().shadow;
 
             auto downsampledRT = target->GetData(!reflection->halfResolution ? FULL_RES : HALF_RES);
-
             // Should be reflection resolution
-            auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
-            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
-            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
-            auto offsetTexture = downsampledRT->offsetTexture;
-            auto velocityTexture = downsampledRT->velocityTexture;
-            auto materialIdxTexture = downsampledRT->materialIdxTexture;
             auto lightingTexture = &target->lightingTexture;
-
-            // Bind the geometry normal texure and depth texture
-            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
-            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
-            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
-            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
             commandList->BindImage(lightingTexture->image, lightingTexture->sampler, 3, 9);
+
+            target->exposureTexture.Bind(commandList, 3, 11);
 
             Texture::Texture2D* reflectionTexture = reflection->upsampleBeforeFiltering ? &target->swapReflectionTexture : &target->reflectionTexture;
             Texture::Texture2D* swapReflectionTexture = reflection->upsampleBeforeFiltering ? &target->reflectionTexture : &target->swapReflectionTexture;
@@ -150,11 +137,27 @@ namespace Atlas {
 
             // Screen space reflections
             if (reflection->ssr) {
-                Graphics::Profiler::BeginQuery("SSR");                
+                Graphics::Profiler::BeginQuery("SSR");
 
-                ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 8);
+                auto rt = target->GetData(FULL_RES);
+
+                auto depthTexture = rt->depthTexture;
+                auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
+                auto geometryNormalTexture = rt->geometryNormalTexture;
+                auto roughnessTexture = rt->roughnessMetallicAoTexture;
+                auto offsetTexture = downsampledRT->offsetTexture;
+                auto materialIdxTexture = rt->materialIdxTexture;
+
+                // Bind the geometry normal texure and depth texture
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+                commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+
+                ivec2 groupCount = ivec2(rayRes.x / 8, rayRes.y / 4);
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
-                groupCount.y += ((groupCount.y * 8 == rayRes.y) ? 0 : 1);
+                groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
@@ -164,6 +167,8 @@ namespace Atlas {
                 ssrPipelineConfig.ManageMacro("RT", reflection->rt);
                 ssrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
                 ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
+                ssrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
+                ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
 
                 auto pipeline = PipelineManager::GetPipeline(ssrPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -179,6 +184,22 @@ namespace Atlas {
 
                 Graphics::Profiler::EndQuery();
             }
+
+            // Should be reflection resolution
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
+            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
+            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
+            auto offsetTexture = downsampledRT->offsetTexture;
+            auto materialIdxTexture = downsampledRT->materialIdxTexture;
+            auto velocityTexture = downsampledRT->velocityTexture;
+
+            // Bind the geometry normal texure and depth texture
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
             Graphics::Profiler::BeginQuery("Trace rays");
 
@@ -200,6 +221,8 @@ namespace Atlas {
                 rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             
                 rtrPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
+                rtrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
+                rtrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
 
@@ -258,13 +281,14 @@ namespace Atlas {
             geometryNormalTexture = downsampledRT->geometryNormalTexture;
             roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             offsetTexture = downsampledRT->offsetTexture;
-            velocityTexture = downsampledRT->velocityTexture;
             materialIdxTexture = downsampledRT->materialIdxTexture;
+            velocityTexture = downsampledRT->velocityTexture;
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;
             auto historyNormalTexture = reflection->useNormalMaps ? downsampledHistoryRT->normalTexture : downsampledHistoryRT->geometryNormalTexture;
             auto historyGeometryNormalTexture = downsampledHistoryRT->geometryNormalTexture;
+            auto historyRoughnessTexture = downsampledHistoryRT->roughnessMetallicAoTexture;
 
             Graphics::Profiler::EndAndBeginQuery("Temporal filter");
 
@@ -279,9 +303,11 @@ namespace Atlas {
                 commandList->BindPipeline(pipeline);
 
                 TemporalConstants constants = {
+                    .cameraLocationLast = vec4(scene->GetMainCamera().GetLastLocation(), 1.0),
                     .temporalWeight = reflection->temporalWeight,
                     .historyClipMax = reflection->historyClipMax,
                     .currentClipFactor = reflection->currentClipFactor,
+                    .roughnessCutoff = reflection->roughnessCutoff,
                     .resetHistory = !target->HasHistory() ? 1 : 0
                 };
 
@@ -309,6 +335,7 @@ namespace Atlas {
                 commandList->BindImage(historyDepthTexture->image, historyDepthTexture->sampler, 3, 10);
                 commandList->BindImage(historyGeometryNormalTexture->image, historyGeometryNormalTexture->sampler, 3, 11);
                 commandList->BindImage(historyMaterialIdxTexture->image, historyMaterialIdxTexture->sampler, 3, 12);
+                commandList->BindImage(historyRoughnessTexture->image, historyRoughnessTexture->sampler, 3, 13);
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
             }
@@ -358,7 +385,8 @@ namespace Atlas {
 
                     AtrousConstants constants = {
                         .stepSize = 1 << i,
-                        .strength = reflection->spatialFilterStrength
+                        .strength = reflection->spatialFilterStrength,
+                        .roughnessCutoff = reflection->roughnessCutoff
                     };
                     commandList->PushConstants("constants", &constants);
 

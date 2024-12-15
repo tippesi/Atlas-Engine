@@ -14,7 +14,7 @@ namespace Atlas::ImguiExtension {
         ImGui::SliderInt("Sample count", &ssgi->sampleCount, 1, 16);
         ImGui::SliderFloat("Radius", &ssgi->radius, 0.0f, 10.0f);
         ImGui::SliderFloat("Ao strength", &ssgi->aoStrength, 0.0f, 10.0f);
-        ImGui::SliderFloat("Irradiance limit", &ssgi->irradianceLimit, 0.0f, 10.0f);
+        ImGui::DragFloat("Irradiance limit", &ssgi->irradianceLimit, 0.1f, 0.0f, 1000.0f);
 
         ImGui::PopID();
 

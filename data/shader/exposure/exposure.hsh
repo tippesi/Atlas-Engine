@@ -1,5 +1,5 @@
 const uint histogramBinCount = 256;
-const float lumaEpsilon = 0.05;
+const float lumaEpsilon = 0.00001;
 
 layout (std430, set = 3, binding = 1) buffer Histogram {
     uint histogram[];

@@ -19,6 +19,7 @@ layout(set = 1, binding = 31, std140) uniform GlobalBuffer {
     mat4 ipvMatrixLast;
     mat4 ipvMatrixCurrent;
     mat4 vMatrixLast;
+    mat4 pMatrixUnjitterd;
     vec2 jitterLast;
     vec2 jitterCurrent;
     vec4 cameraLocation;

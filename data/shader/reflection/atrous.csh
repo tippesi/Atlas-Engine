@@ -48,6 +48,7 @@ shared PackedPixelData pixelData[sharedDataSize];
 layout(push_constant) uniform constants {
     int stepSize;
     float strength;
+    float roughnessCutoff;
 } pushConstants;
 
 const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
@@ -197,47 +198,49 @@ void main() {
 
     float depthPhi = 32.0 / abs(centerLinearDepth);
 
-    const int radius = 2;
-    for (int x = -radius; x <= radius; x++) {
-        for (int y = -radius; y <= radius; y++) {            
-            ivec2 samplePixel = pixel + ivec2(x, y) * pushConstants.stepSize;
+    if (centerRoughness < pushConstants.roughnessCutoff) {
+        const int radius = 2;
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {            
+                ivec2 samplePixel = pixel + ivec2(x, y) * pushConstants.stepSize;
 
-            if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y
-                || (x == 0 && y == 0))
-                continue;
+                if (samplePixel.x >= resolution.x || samplePixel.y >= resolution.y
+                    || (x == 0 && y == 0))
+                    continue;
 
-            PixelData samplePixelData = GetPixel(ivec2(x, y) * pushConstants.stepSize);
+                PixelData samplePixelData = GetPixel(ivec2(x, y) * pushConstants.stepSize);
 
-            if (samplePixelData.depth == 1.0)
-                continue;
+                if (samplePixelData.depth == 1.0)
+                    continue;
 
-            vec4 sampleColor = samplePixelData.color;
-            vec3 sampleNormal = samplePixelData.normal;
+                vec4 sampleColor = samplePixelData.color;
+                vec3 sampleNormal = samplePixelData.normal;
 
-            float sampleLinearDepth = samplePixelData.depth;
-            float sampleLuminance = Luma(sampleColor.rgb);
+                float sampleLinearDepth = samplePixelData.depth;
+                float sampleLuminance = Luma(sampleColor.rgb);
 
-            float sampleRoughness = samplePixelData.roughness;
+                float sampleRoughness = samplePixelData.roughness;
 
-            float kernelWeight = kernelWeights[abs(x)] * kernelWeights[abs(y)];
-            float edgeStoppingWeight = ComputeEdgeStoppingWeight(
-                                    centerLuminance, sampleLuminance,
-                                    centerNormal, sampleNormal,
-                                    centerLinearDepth, sampleLinearDepth,
-                                    centerRoughness, sampleRoughness,
-                                    stdDeviation * pushConstants.strength, 
-                                    256.0, 128.0, 0.05);
+                float kernelWeight = kernelWeights[abs(x)] * kernelWeights[abs(y)];
+                float edgeStoppingWeight = ComputeEdgeStoppingWeight(
+                                        centerLuminance, sampleLuminance,
+                                        centerNormal, sampleNormal,
+                                        centerLinearDepth, sampleLinearDepth,
+                                        centerRoughness, sampleRoughness,
+                                        stdDeviation * pushConstants.strength, 
+                                        256.0, 128.0, 0.05);
 
-            float weight = kernelWeight * edgeStoppingWeight;
-            
-            totalWeight += weight;
-            outputColor += vec4(vec3(weight), weight * weight) * sampleColor;
+                float weight = kernelWeight * edgeStoppingWeight;
+                
+                totalWeight += weight;
+                outputColor += vec4(vec3(weight), weight * weight) * sampleColor;
+            }
         }
+
+        outputColor = outputColor / vec4(vec3(totalWeight), totalWeight * totalWeight);
     }
 
-    outputColor = outputColor / vec4(vec3(totalWeight), totalWeight * totalWeight);
-
-    imageStore(outputImage, pixel, vec4(centerColor.a));
     imageStore(outputImage, pixel, outputColor);
+    //imageStore(outputImage, pixel, vec4(centerColor.a));
 
 }

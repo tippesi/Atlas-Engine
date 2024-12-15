@@ -111,7 +111,7 @@ namespace Atlas {
             int32_t cascadeCount;
 
             uint32_t rayCount = 128;
-            uint32_t rayCountInactive = 32;
+            uint32_t rayCountInactive = 16;
 
             float hysteresis = 0.98f;
             float bias = 0.3f;

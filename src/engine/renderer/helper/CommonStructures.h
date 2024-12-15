@@ -118,6 +118,7 @@ namespace Atlas {
             mat4 ipvMatrixLast;
             mat4 ipvMatrixCurrent;
             mat4 vMatrixLast;
+            mat4 pMatrixUnjittered;
             vec2 jitterLast;
             vec2 jitterCurrent;
             vec4 cameraLocation;

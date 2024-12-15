@@ -310,38 +310,41 @@ namespace Atlas {
 
 			rtgiRenderer.Render(target, scene, commandList);
 
-			rtrRenderer.Render(target, scene, commandList);
-
 			sssRenderer.Render(target, scene, commandList);
 
-			{
-				Graphics::Profiler::BeginQuery("Lighting pass");
+			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+			directLightRenderer.Render(target, scene, commandList);
 
-				directLightRenderer.Render(target, scene, commandList);
+			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 
-				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-				if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {				
-					ssgiRenderer.Render(target, scene, commandList);
-				}
-				
-
-				commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
-					VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-				indirectLightRenderer.Render(target, scene, commandList);
-
-				Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
-					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-				commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-				Graphics::Profiler::EndQuery();
+			if (!scene->rtgi || !scene->rtgi->enable || !scene->IsRtDataValid()) {
+				ssgiRenderer.Render(target, scene, commandList);
 			}
+
+			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+			indirectLightRenderer.RenderIndirectDiffuse(target, scene, commandList);
+
+			Graphics::ImageBarrier outBarrier(target->lightingTexture.image,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			rtrRenderer.Render(target, scene, commandList);
+
+			commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_GENERAL,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+			indirectLightRenderer.RenderIndirectSpecular(target, scene, commandList);
+
+			outBarrier = Graphics::ImageBarrier(target->lightingTexture.image,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+			commandList->ImageMemoryBarrier(outBarrier, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 			// This was needed after the ocean renderer, if we ever want to have alpha transparency we need it again
 			// downscaleRenderer.Downscale(target, commandList);
@@ -452,6 +455,7 @@ namespace Atlas {
 				.ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
 				.ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
 				.vMatrixLast = camera.GetLastViewMatrix(),
+				.pMatrixUnjittered = camera.unjitterdProjection,
 				.jitterLast = camera.GetLastJitter(),
 				.jitterCurrent = camera.GetJitter(),
 				.cameraLocation = vec4(camera.GetLocation(), 0.0f),
@@ -998,6 +1002,7 @@ namespace Atlas {
 				.ipvMatrixLast = glm::inverse(camera.GetLastJitteredMatrix()),
 				.ipvMatrixCurrent = glm::inverse(camera.projectionMatrix * camera.viewMatrix),
 				.vMatrixLast = camera.GetLastViewMatrix(),
+				.pMatrixUnjittered = camera.unjitterdProjection,
 				.jitterLast = camera.GetLastJitter(),
 				.jitterCurrent = camera.GetJitter(),
 				.cameraLocation = vec4(camera.GetLocation(), 0.0f),

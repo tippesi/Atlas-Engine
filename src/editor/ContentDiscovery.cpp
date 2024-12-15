@@ -118,7 +118,10 @@ namespace Atlas::Editor {
 						.assetPath = assetPath
 					});
 				directory->directories.push_back(childDirectory);
-				result->contentDirectories[childDirectory->path.string()] = childDirectory;
+
+				auto path = childDirectory->path.string();
+				std::replace(path.begin(), path.end(), '\\', '/');
+				result->contentDirectories[path] = childDirectory;
 				DiscoverDirectory(childDirectory, result);
 				continue;
 			}
@@ -133,7 +136,7 @@ namespace Atlas::Editor {
 			auto contentType = Content::contentTypeMapping.at(fileType);
 			directory->files.emplace_back(Content {
 				.name = filename,
-				.path = dirEntry.path().string(),
+				.path = path,
 				.assetPath = assetPath,
 				.type = contentType,
 			});

@@ -170,6 +170,27 @@ namespace Atlas {
 
     }
 
+    void JobSystem::ParallelFor(JobGroup& group, int32_t count, int32_t jobCount, 
+        std::function<void(JobData&, int32_t)> func, void* userData) {
+
+        int32_t iterationsPerJob = count / jobCount;
+        if (count < jobCount) {
+            jobCount = 1;
+            iterationsPerJob = count;
+        }
+        else {
+            jobCount = count % jobCount == 0 ? jobCount : jobCount + 1;
+        }
+        JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func](JobData& data) mutable {
+
+            int32_t offset = data.idx * iterationsPerJob;
+            for (int32_t i = offset; i < iterationsPerJob + offset && i < count; i++) {
+                func(data, i);
+            }
+            });
+
+    }
+
     void JobSystem::Wait(JobSignal& signal, JobPriority priority) {
 
 #ifdef JOBS_SINGLE_THREADED

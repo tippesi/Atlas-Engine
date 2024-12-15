@@ -35,15 +35,18 @@ namespace Atlas {
             };
 
             struct alignas(16) TemporalConstants {
+                vec4 cameraLocationLast;
                 float temporalWeight;
                 float historyClipMax;
                 float currentClipFactor;
+                float roughnessCutoff;
                 int32_t resetHistory;
             };
 
             struct alignas(16) AtrousConstants {
                 int32_t stepSize;
                 float strength;
+                float roughnessCutoff;
             };
 
             Helper::RayTracingHelper helper;

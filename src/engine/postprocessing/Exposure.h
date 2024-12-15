@@ -11,10 +11,10 @@ namespace Atlas::PostProcessing {
         Exposure();
 
         bool autoExposure = true;
-        float luminanceMin = 0.0f;
-        float luminanceMax = 100.0f;
+        float luminanceMin = 0.001f;
+        float luminanceMax = 1000.0f;
 
-        float timeCoefficient = 0.1f;
+        float timeCoefficient = 1.0f;
 
         Buffer::Buffer histogramBuffer;
 

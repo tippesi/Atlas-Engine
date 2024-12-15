@@ -32,7 +32,7 @@ namespace Atlas::Renderer {
             Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
         bloomTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::MipMapLinear, false, true);
-        exposureTexture = Texture::Texture2D(1, 1, VK_FORMAT_R16_SFLOAT,
+        exposureTexture = Texture::Texture2D(1, 1, VK_FORMAT_R32_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest, false, true);
         outputTexture = Texture::Texture2D(width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
             Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);

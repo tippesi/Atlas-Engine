@@ -59,6 +59,8 @@ bool traceScreenSpace(
  // Maximum camera-space distance to trace before returning a miss
  float maxDistance, 
 
+ bool stopBehindGeometry,
+
  // Pixel coordinates of the first intersection with the scene
  out point2 hitPixel, 
 
@@ -117,7 +119,7 @@ bool traceScreenSpace(
     // Scale derivatives by the desired pixel stride and then
     // offset the starting values by the jitter fraction
 
-    const float strideOffset = 0.01;
+    const float strideOffset = 0.002;
     float strideScale = 1.0 - min(1.0, abs(csOrig.z) * strideOffset);
     stride = 1.0 + strideScale * stride;
 
@@ -162,6 +164,11 @@ bool traceScreenSpace(
         // is different than ours in screen space
         sceneDepthMax = texelFetch(csZBuffer, ivec2(hitPixel), 0).r;
         sceneZMax = ConvertDepthToViewSpaceDepth(sceneDepthMax, ipMatrix);
+
+        // If we have a raytracing fallback we want to reject rays that go behind the depth buffer in
+        // certain phases in the screen space trace.
+        if (stopBehindGeometry && sceneZMax > rayZMax)
+            return false;
     }
 
     minPoint = Q0 + dQ * (stepCount - 2.0);
@@ -175,7 +182,7 @@ bool traceScreenSpace(
     hitPoint = Q * (1.0 / k);   
     
     return (intersectsDepthBuffer(sceneZMax, rayZMin, rayZMax, zThickness, strideOffset))
-        && validPixel(hitPixel, csZBufferSize);
+        && validPixel(hitPixel, csZBufferSize) && sceneDepthMax < 1.0;
 }
 
 bool traceScreenSpace(
@@ -212,7 +219,7 @@ bool traceScreenSpace(
  out point3 hitPoint) {
 
     point3 minPoint, maxPoint;
-    return traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, hitPixel, hitPoint, minPoint, maxPoint);
+    return traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, false, hitPixel, hitPoint, minPoint, maxPoint);
     
 }
 
@@ -245,6 +252,8 @@ bool traceScreenSpaceAdvanced(
 
  bool allowFallback,
 
+ bool stopBehindGeometry,
+
  // Pixel coordinates of the first intersection with the scene
  out point2 hitPixel, 
 
@@ -254,10 +263,14 @@ bool traceScreenSpaceAdvanced(
     bool hit = false;
 
     point3 minPoint, maxPoint;
-    if(traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, hitPixel, hitPoint, minPoint, maxPoint)) {
-        hit = allowFallback;
+    if(traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, stopBehindGeometry, hitPixel, hitPoint, minPoint, maxPoint)) {
+        hit = true;
     }
 
+    if (!hit && !allowFallback)
+        return false;
+
+    hit = false;
     // maxSteps /= 2.0;
         
     csOrig = minPoint;
@@ -268,7 +281,7 @@ bool traceScreenSpaceAdvanced(
 
     vec2 newHitPixel;
     vec3 newHitPoint;
-    if (traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, newHitPixel, newHitPoint, minPoint, maxPoint)) {
+    if (traceScreenSpace(csOrig, csDir, csZBuffer, zThickness, stride, jitter, maxSteps, maxDistance, false, newHitPixel, newHitPoint, minPoint, maxPoint)) {
         hitPixel = newHitPixel;
         hitPoint = newHitPoint;            
         hit = true;

@@ -1,9 +1,11 @@
 #pragma once
 
 #include "../Entity.h"
+#include "jobsystem/JobGroup.h"
 #include "../../System.h"
 
 #include "TransformComponent.h"
+#include "CameraComponent.h"
 
 namespace Atlas {
 
@@ -32,7 +34,15 @@ namespace Atlas {
                 glm::mat4 globalMatrix {1.0f};            
 
             protected:
-                void Update(const TransformComponent& transform, bool parentChanged);
+                void Update(const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,
+                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool);
+
+                void Update(JobGroup& jobGroup, const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,
+                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool);
+
+                void ProcessChild(Entity entity, const TransformComponent& transform, bool parentChanged, 
+                    JobGroup& jobGroup, ECS::Pool<TransformComponent>& transformComponentPool,
+                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool,  ECS::Pool<CameraComponent>& cameraComponentPool);
 
                 std::vector<Entity> entities;
 
@@ -40,6 +50,8 @@ namespace Atlas {
                 Entity owningEntity;
 
                 Scene* scene = nullptr;
+
+                inline static const int32_t batchSize = 16;
 
             };
 

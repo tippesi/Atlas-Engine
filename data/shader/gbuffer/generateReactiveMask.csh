@@ -21,7 +21,7 @@ void main() {
 
         vec3 roughnessMetallicAo = texelFetch(roughnessMetalnessAoTexture, pixel, 0).rgb;
         float reflectiveReactivity = min(1.0, 5.0 * roughnessMetallicAo.r);
-        //reactivity = max(reactivity, mix(1.0, 0.0, reflectiveReactivity));
+        reactivity = max(reactivity, mix(0.5, 0.0, reflectiveReactivity));
 
         imageStore(reactiveMaskImage, pixel, vec4(reactivity, 0.0, 0.0, 0.0));
         

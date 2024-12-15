@@ -183,7 +183,7 @@ namespace Atlas::Editor::UI {
         if (ImGui::ImageButton(set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0)) {
             if (currentDirectory != assetDirectory) {
                 auto parentPath = std::filesystem::path(currentDirectory).parent_path();
-                currentDirectory = parentPath.string();
+                currentDirectory = Common::Path::Normalize(parentPath.string());
             }
         }
 
@@ -332,7 +332,7 @@ namespace Atlas::Editor::UI {
         }
 
         if (!nextDirectory.empty()) {
-            currentDirectory = nextDirectory;
+            currentDirectory = Common::Path::Normalize(nextDirectory);
         }
 
     }

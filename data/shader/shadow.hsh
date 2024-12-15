@@ -299,11 +299,8 @@ float CalculateCascadedShadow(inout Shadow shadow,  texture2DArray cascadeMaps, 
     // Note: The code below is actually the fastest code on every platform tested
     // Some platforms have problems directly indexing the cascade array.
     // We allow 6 cascades
-#ifdef SHADOW_CASCADE_BLENDING
     float distance = -fragmentPosition.z - shadow.cascadeBlendDistance;
-#else
-    float distance = -fragmentPosition.z;
-#endif
+
     int cascadeIndex = 0;
     cascadeIndex = distance >= shadow.cascades[0].distance ? 1 : cascadeIndex;
     cascadeIndex = distance >= shadow.cascades[1].distance ? 2 : cascadeIndex;

@@ -104,6 +104,8 @@ namespace Atlas {
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
+            target->exposureTexture.Bind(commandList, 3, 11);
+
             // Cast rays and calculate radiance
             {
                 static uint32_t frameCount = 0;
@@ -123,6 +125,7 @@ namespace Atlas {
                 rtPipelineConfig.ManageMacro("DDGI_VISIBILITY", rtgi->ddgi && ddgiVisibility);
                 rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
                 rtPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
+                rtPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
 
                 auto pipeline = PipelineManager::GetPipeline(rtPipelineConfig);
 

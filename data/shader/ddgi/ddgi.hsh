@@ -193,7 +193,7 @@ vec3 GetProbeCoord(ivec3 probeIndex, int cascadeIndex, vec2 octCoord, vec2 probe
 vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, int cascadeIndex) {
 
     float minAxialDistance = min3(ddgiData.cascades[cascadeIndex].cellSize.xyz);
-    vec3 biasedP = P + (0.7 * geometryNormal - 0.3 * V) * 
+    vec3 biasedP = P + (0.5 * geometryNormal + 0.5 * V) * 
         (0.75 * minAxialDistance) * ddgiData.volumeBias;
 
     vec2 irrRes = vec2(ddgiData.volumeIrradianceRes + 2);

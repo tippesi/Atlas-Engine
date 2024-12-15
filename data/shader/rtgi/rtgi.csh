@@ -40,6 +40,10 @@ layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 layout(set = 3, binding = 9) uniform sampler2D cloudMap;
 #endif
 
+#ifdef AUTO_EXPOSURE
+layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
+#endif
+
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
     ivec2(1, 0),
@@ -97,18 +101,15 @@ void main() {
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
 
-#ifdef DDGI
-        bool insideVolume = IsInsideVolume(worldPos);
-        vec3 probeIrradiance = GetLocalIrradianceInterpolated(worldPos, -worldView, worldNorm,worldNorm, vec3(0.0)).rgb * ddgiData.volumeStrength;
-        probeIrradiance = insideVolume ? probeIrradiance : vec3(0.0);
-#else
-        bool insideVolume = false;
-        vec3 probeIrradiance = vec3(0.0);
-#endif
-
         vec3 reflection = vec3(0.0);
 
         if (depth < 1.0) {
+
+#ifdef AUTO_EXPOSURE
+            float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+#else
+            float radianceLimit = uniforms.radianceLimit;
+#endif
 
             const int sampleCount = uniforms.sampleCount;
 
@@ -145,23 +146,38 @@ void main() {
                     ray.hitID = -1;
                     ray.hitDistance = 0.0;
 
-                    float rayLength = insideVolume ? length(GetCellSize(worldPos)) : INF;
+#ifdef DDGI
+                    bool insideVolume = IsInsideVolume(worldPos);
+                    float rayLength = length(GetCellSize(worldPos));
+                    // Outside the volume we can scale the ray by 2x again
+                    rayLength = insideVolume ? 2.0 * rayLength : 2.0 * rayLength;
+#else
+                    float rayLength = INF;
+#endif
 
                     vec3 radiance = vec3(0.0);
 #ifdef OPACITY_CHECK
                     HitClosestTransparency(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
 #else
                     HitClosest(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
+#endif                    
+
+#ifdef DDGI                    
+                    radiance = EvaluateHit(ray);
+
+                    if (ray.hitID == -1) {
+                        radiance = GetLocalIrradianceInterpolated(worldPos, V, worldNorm, worldNorm, radiance).rgb * ddgiData.volumeStrength;
+                    }
+                    else {
+                        float radianceMax = max(max(max(radiance.r, 
+                            max(radiance.g, radiance.b)), radianceLimit), 0.01);
+                        radiance *= (radianceLimit / radianceMax);
+                    }
+#else
+                    radiance = EvaluateHit(ray);
 #endif
-
-                    if (ray.hitID >= 0 || !insideVolume)
-                        radiance = EvaluateHit(ray);
-                    else
-                        radiance = probeIrradiance;
-
-                    float radianceMax = max(max(max(radiance.r, 
-                            max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
-                    reflection += radiance * (uniforms.radianceLimit / radianceMax);
+                    
+                    reflection += radiance;
                 }
             }
 
@@ -192,16 +208,16 @@ vec3 EvaluateHit(inout Ray ray) {
     Surface surface = GetSurfaceParameters(instance, tri, ray, false, backfaceHit, uniforms.textureLevel);
 
 #ifdef DDGI
-    // Fade out ddgi secondary bounce the shorter the ray is, should really help out light leaking in tight spaces
-    float ddgiDistanceDamp = min(1.0, distance(surface.P, ray.origin));
+    // Trick: Offset on secondary bounce towards camera, avoids light leaking (introducing innacuracies ofc)
+    vec3 V = normalize(globalData.cameraLocation.xyz - surface.P);
     surface.NdotV = saturate(dot(surface.N, surface.V));
-    vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    vec3 irradiance = GetLocalIrradiance(surface.P, V, V).rgb;
     //vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
     // Approximate indirect specular for ray by using the irradiance grid
     // This enables metallic materials to have some kind of secondary reflection
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
         EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength * ddgiDistanceDamp : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
 #endif
     
     radiance += surface.material.emissiveColor;

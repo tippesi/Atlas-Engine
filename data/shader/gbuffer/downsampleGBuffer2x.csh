@@ -98,6 +98,8 @@ void main() {
         vec4 depthVec = vec4(depth00, depth10, depth01, depth11);        
         //int depthIdx = (CheckerboardDepth(depthVec, coord, depthVec.x) + int(globalData.frameCount)) % 4;
         int depthIdx = int(globalData.frameCount) % 4;
+        //int depthIdx = CheckerboardDepth(depthVec, coord, depthVec.x);
+        //int depthIdx = 0;
         //int depthIdx = (int(Checkerboard4x(coord)) + int(globalData.frameCount)) % 4;
         float depth = depthVec[depthIdx];
         imageStore(depthOut, coord, vec4(depth, 0.0, 0.0, 1.0));

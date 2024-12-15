@@ -1,6 +1,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #define SHADOW_FILTER_VOGEL
+//#define SHADOW_CASCADE_BLENDING
 
 layout (local_size_x = 16, local_size_y = 16) in;
 

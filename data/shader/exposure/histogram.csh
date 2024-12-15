@@ -2,7 +2,7 @@
 
 #include <exposure.hsh>
 
-layout (local_size_x = 16, local_size_x = 16) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 3, binding = 0) uniform sampler2D hdrTexture;
 
@@ -40,7 +40,6 @@ void main() {
             pushConstants.invLogLuminanceRange);
 
         atomicAdd(sharedHistogram[binIdx], 1u);
-
     }
 
     barrier();

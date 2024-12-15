@@ -109,6 +109,8 @@ namespace Atlas {
             commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
             commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);
 
+            target->exposureTexture.Bind(commandList, 3, 13);
+
             Graphics::Profiler::BeginQuery("Main pass");
 
             {
@@ -117,6 +119,13 @@ namespace Atlas {
                 ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
                 groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
                 groupCount.y += ((res.y % 4 == 0) ? 0 : 1);
+
+                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
+                auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+
+                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
+                ssgiPipelineConfig.ManageMacro("DDGI", ssgi->ddgi && ddgiEnabled);
+                ssgiPipelineConfig.ManageMacro("DDGI_VISIBILITY", ssgi->ddgi && ddgiVisibility);
 
                 auto pipeline = PipelineManager::GetPipeline(ssgiPipelineConfig);
                 commandList->BindPipeline(pipeline);

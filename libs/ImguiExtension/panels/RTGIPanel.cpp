@@ -21,7 +21,7 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Use DDGI as secondary bounce", &rtgi->ddgi);
         ImGui::Checkbox("Opacity check", &rtgi->opacityCheck);
         // ImGui::SliderInt("Sample count", &reflection->sampleCount, 1, 32);
-        ImGui::SliderFloat("Radiance limit", &rtgi->radianceLimit, 0.0f, 10.0f);
+        ImGui::DragFloat("Radiance limit", &rtgi->radianceLimit, 0.1f, 0.0f, 1000.0f);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Limits the amount of incoming radiance. Is internally scale by the camera exposure.");
         }

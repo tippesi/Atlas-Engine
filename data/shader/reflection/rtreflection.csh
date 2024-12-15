@@ -40,6 +40,10 @@ layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
 layout(set = 3, binding = 9) uniform sampler2D cloudMap;
 #endif
 
+#ifdef AUTO_EXPOSURE
+layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
+#endif
+
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
     ivec2(1, 0),
@@ -74,8 +78,6 @@ void main() {
         int(gl_GlobalInvocationID.y) < resolution.y) {
 
         ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-        
-        vec2 texCoord = (vec2(pixel) + vec2(0.5)) / vec2(resolution);
 
 #ifdef SSR
         vec4 reflection = imageLoad(rtrImage, pixel);
@@ -89,22 +91,30 @@ void main() {
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 
+        ivec2 highResPixel;
         vec2 recontructTexCoord;
-        if (uniforms.halfRes > 0)
+        if (uniforms.halfRes > 0) {
             recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
-        else
+            highResPixel = 2 * pixel + offset;
+        }
+        else {
             recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
+            highResPixel = pixel;
+        }
             
         vec3 viewPos = ConvertDepthToViewSpace(depth, recontructTexCoord);
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
-        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg), 0.0)));
+        vec3 worldNorm = normalize(vec3(globalData.ivMatrix * 
+            vec4(DecodeNormal(textureLod(normalTexture, recontructTexCoord, 0).rg), 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;        
+        material.roughness *= material.roughnessMap ? roughness : 1.0;
+
+        float hitDistance = reflection.a;
 
         if (material.roughness <= 1.0 && depth < 1.0 && reflection.a == 0.0) {
 
@@ -157,7 +167,7 @@ void main() {
 #else
                         HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #endif
-
+                        hitDistance = ray.hitDistance;
                         radiance = EvaluateHit(ray);
                     }
                     else {
@@ -167,19 +177,23 @@ void main() {
 #endif
                     }
 
+#ifdef AUTO_EXPOSURE
+                    float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+#else
+                    float radianceLimit = uniforms.radianceLimit;
+#endif
+
                     float radianceMax = max(max(max(radiance.r, 
-                        max(radiance.g, radiance.b)), uniforms.radianceLimit), 0.01);
-                    reflection.rgb += radiance * (uniforms.radianceLimit / radianceMax);
+                        max(radiance.g, radiance.b)), radianceLimit), 0.01);
+                    reflection.rgb += radiance * (radianceLimit / radianceMax);
                 }
             }
 
             reflection.rgb /= float(sampleCount);
 
-            //reflection.rgb = vec3(0.0);
-
         }
 
-        imageStore(rtrImage, pixel, vec4(reflection.rgb, 0.0));
+        imageStore(rtrImage, pixel, vec4(reflection.rgb, hitDistance));
     }
 
 }
@@ -203,14 +217,16 @@ vec3 EvaluateHit(inout Ray ray) {
 
     // Evaluate indirect lighting
 #ifdef DDGI
-    vec3 irradiance = GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    // Trick: Offset on secondary bounce towards camera, avoids light leaking (introducing innacuracies ofc)
+    vec3 V = normalize(globalData.cameraLocation.xyz - surface.P);
+    vec3 irradiance = GetLocalIrradiance(surface.P, V, surface.N, surface.geometryNormal).rgb;
     // Approximate indirect specular for ray by using the irradiance grid
     // This enables metallic materials to have some kind of secondary reflection
-    
+    float ddgiDistanceDamp = min(1.0, sqr(distance(surface.P, ray.origin)));
     surface.NdotV = saturate(dot(surface.N, surface.V));
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * irradiance +
         EvaluateIndirectSpecularBRDF(surface) * irradiance;
-    radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiDistanceDamp * ddgiData.volumeStrength: vec3(0.0);
 #endif
     
     radiance += surface.material.emissiveColor;

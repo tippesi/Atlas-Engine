@@ -25,7 +25,6 @@ layout(set = 3, binding = 6) uniform UniformBuffer {
 } Uniforms;
 
 struct UpsampleResult {
-    vec3 reflection;
     vec4 gi;
 };
 
@@ -33,7 +32,6 @@ struct UpsampleResult {
 shared float depths[36];
 shared vec3 normals[36];
 shared float aos[36];
-shared vec3 reflections[36];
 shared vec4 gi[36];
 
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
@@ -55,10 +53,6 @@ void LoadGroupSharedData() {
 #ifdef AO
         if (Uniforms.aoDownsampled2x > 0)
             aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
-#endif
-#ifdef REFLECTION
-        if (Uniforms.reflectionDownsampled2x > 0)
-            reflections[gl_LocalInvocationIndex] = texelFetch(reflectionTexture, offset, 0).rgb;
 #endif
 #if defined(SSGI) || defined(RTGI)
         if (Uniforms.giDownsampled2x > 0)
@@ -150,7 +144,6 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
 
     result.gi = vec4(0.0);
-    result.reflection = vec3(0.0);
 
     float totalWeight = 0.0;
 
@@ -163,14 +156,10 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 #if defined(SSGI) || defined(RTGI)
         result.gi += gi[sharedMemoryOffset] * weight;
 #endif
-#ifdef REFLECTION
-        result.reflection += reflections[sharedMemoryOffset] * weight;
-#endif
 
         totalWeight += weight;
     }
 
-    result.reflection /= totalWeight;
     result.gi /= totalWeight;
 
     float maxWeight = 0.0;
@@ -187,11 +176,9 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
     if (totalWeight < 10e-3) {
         result.gi = gi[maxMemoryIdx];
-        result.reflection = reflections[maxMemoryIdx];
     }
 
     result.gi = max(result.gi, vec4(0.0));
-    result.reflection = max(result.reflection, vec3(0.0));
 
     return result;
 
@@ -221,7 +208,7 @@ void main() {
         // We don't have any light direction, that's why we use vec3(0.0, -1.0, 0.0) as a placeholder
         Surface surface = GetSurface(texCoord, depth, vec3(0.0, -1.0, 0.0), geometryNormal);
 
-        vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
+        vec3 worldView = -normalize(vec3(globalData.ivMatrix * vec4(surface.P, 0.0)));
         vec3 worldPosition = vec3(globalData.ivMatrix * vec4(surface.P, 1.0));
         vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
         vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
@@ -249,33 +236,14 @@ void main() {
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
         vec3 indirectDiffuse = prefilteredDiffuse * EvaluateIndirectDiffuseBRDF(surface);
 #endif
-#endif
+#endif   
 
-        // Indirect specular BRDF
-        vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));
-        float mipLevel = surface.material.roughness * float(Uniforms.specularProbeMipLevels - 1);
-        vec3 prefilteredSpecular = textureLod(specularProbe, R, mipLevel).rgb;
-        // We multiply by local sky visibility because the reflection probe only includes the sky
-        //vec3 indirectSpecular = prefilteredSpecular * EvaluateIndirectSpecularBRDF(surface)
-        //    * prefilteredDiffuseLocal.a;        
-
-#ifdef REFLECTION
-        vec3 indirectSpecular = Uniforms.reflectionDownsampled2x > 0 ? upsampleResult.reflection : textureLod(reflectionTexture, texCoord, 0.0).rgb;
-#else
-#ifdef DDGI
-        vec3 indirectSpecular = IsInsideVolume(worldPosition) ? vec3(0.0) : prefilteredSpecular;
-#else
-        vec3 indirectSpecular = prefilteredSpecular;
-#endif
-#endif
-
-        indirectSpecular *= EvaluateIndirectSpecularBRDF(surface);
 #if !defined(SSGI) || defined(RTGI)
-        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+        indirect = (indirectDiffuse) * surface.material.ao;
 #else
         // This is just there if the new SSGI is enabled
-        // indirect = (indirectSpecular) * surface.material.ao;
-        indirect = (indirectDiffuse + indirectSpecular) * surface.material.ao;
+        indirect = vec3(0.0);
+        //indirect = (indirectDiffuse) * surface.material.ao;
 #endif
 
 #ifdef SSGI
@@ -291,10 +259,11 @@ void main() {
 #endif
 #ifdef SSGI
         // Only apply SSGI ao if normal AO is turned off
+
+        indirect += EvaluateIndirectDiffuseBRDF(surface) * surface.material.ao * ssgi.rgb;
 #ifndef AO
         indirect *= vec3(pow(ssgi.a, Uniforms.aoStrength));
 #endif
-        indirect += EvaluateIndirectDiffuseBRDF(surface) * ssgi.rgb;
 #endif
 
     }

@@ -93,6 +93,8 @@ namespace Atlas::Editor::UI {
             auto& config = Singletons::config;
             auto& renderTarget = Singletons::renderTarget;
 
+            
+
             if (renderTarget->GetWidth() != viewportTexture.width ||
                 renderTarget->GetHeight() != viewportTexture.height) {
                 renderTarget->Resize(viewportTexture.width, viewportTexture.height);
@@ -106,7 +108,11 @@ namespace Atlas::Editor::UI {
                     primitiveBatchWrapper.primitiveBatch, &viewportTexture);
 
                 if (visualization != Lit) {
-                    RenderVisualization();
+                    float exposure = 1.0f;
+                    if (scene->HasMainCamera())
+                        exposure = scene->GetMainCamera().exposure;
+
+                    RenderVisualization(exposure);
                 }
             }
 
@@ -115,7 +121,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void ViewportPanel::RenderVisualization() {
+    void ViewportPanel::RenderVisualization(float exposure) {
 
         auto graphicsDevice = Graphics::GraphicsDevice::DefaultDevice;
 
@@ -166,15 +172,15 @@ namespace Atlas::Editor::UI {
         }
         else if (visualization == Reflections) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == Volumetrics) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == Clouds) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->volumetricCloudsTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
         }
         else if (visualization == SSS) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->sssTexture,
@@ -182,7 +188,7 @@ namespace Atlas::Editor::UI {
         }
         else if (visualization == SSGI) {
             mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->giTexture,
-                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
+                0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, exposure, false, true);
         }
 
         commandList->EndRenderPass();
