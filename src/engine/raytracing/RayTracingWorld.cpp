@@ -307,7 +307,8 @@ namespace Atlas {
             for (auto& [blas, blasInfo] : blasInfos)
                 materialCount += blas->materials.size();
 
-            materials.clear();            
+            materials.clear();
+            
             std::atomic_int counter = 0;
 
             materials.resize(materialCount);
@@ -327,7 +328,7 @@ namespace Atlas {
 
                 auto& [blas, blasInfo] = *iterators[data.idx];
 
-                blasInfo.materialOffset = counter++;
+                blasInfo.materialOffset = counter.fetch_add(int32_t(blas->materials.size()));
 
                 int32_t meshMaterialID = 0;
 
@@ -399,89 +400,11 @@ namespace Atlas {
                         }
                     }
 
-                    materials[blasInfo.materialOffset + meshMaterialID] = gpuMaterial;
+                    materials[blasInfo.materialOffset + meshMaterialID - 1] = gpuMaterial;
                 }
                 });
             JobSystem::Wait(jobGroup);
             
-            /*
-            for (auto& [blas, blasInfo] : blasInfos) {
-                blasInfo.materialOffset = int32_t(materials.size());
-
-                int32_t meshMaterialID = 0;
-
-                for (auto& material : blas->materials) {
-                    GPUMaterial gpuMaterial;
-
-                    size_t hash = 0;
-                    HashCombine(hash, blas.get());
-                    HashCombine(hash, meshMaterialID++);
-
-                    // Only is persistent when no materials are reorderd in mesh
-                    gpuMaterial.ID = int32_t(hash % 65535);
-
-                    if (material.IsLoaded()) {
-                        auto& mesh = blasInfo.mesh;
-
-                        gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
-                        gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
-                            * material->emissiveIntensity;
-
-                        gpuMaterial.opacity = material->opacity;
-
-                        gpuMaterial.roughness = material->roughness;
-                        gpuMaterial.metalness = material->metalness;
-                        gpuMaterial.ao = material->ao;
-
-                        gpuMaterial.reflectance = material->reflectance;
-
-                        gpuMaterial.normalScale = material->normalScale;
-
-                        gpuMaterial.tiling = material->tiling;
-                        gpuMaterial.terrainTiling = blasInfo.node ? 1.0f / blasInfo.node->sideLength : 1.0f;
-
-                        gpuMaterial.invertUVs = mesh.IsLoaded() ? (mesh->invertUVs ? 1 : 0) : 0;
-                        gpuMaterial.twoSided = material->twoSided ? 1 : 0;
-                        gpuMaterial.cullBackFaces = mesh.IsLoaded() ? (mesh->cullBackFaces ? 1 : 0) : 0;
-                        gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
-
-                        if (material->HasBaseColorMap()) {
-                            gpuMaterial.baseColorTexture = sceneState->textureToBindlessIdx[material->baseColorMap.Get()];
-                        }
-
-                        if (material->HasOpacityMap()) {
-                            gpuMaterial.opacityTexture = sceneState->textureToBindlessIdx[material->opacityMap.Get()];
-                        }
-
-                        if (material->HasNormalMap()) {
-                            gpuMaterial.normalTexture = sceneState->textureToBindlessIdx[material->normalMap.Get()];
-                        }
-
-                        if (material->HasRoughnessMap()) {
-                            gpuMaterial.roughnessTexture = sceneState->textureToBindlessIdx[material->roughnessMap.Get()];
-                        }
-
-                        if (material->HasMetalnessMap()) {
-                            gpuMaterial.metalnessTexture = sceneState->textureToBindlessIdx[material->metalnessMap.Get()];
-                        }
-
-                        if (material->HasAoMap()) {
-                            gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
-                        }
-
-                        if (material->HasEmissiveMap()) {
-                            gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
-                        }
-
-                        if (blasInfo.node) {
-                            gpuMaterial.terrainNormalTexture = sceneState->textureToBindlessIdx[blasInfo.node->cell->normalMap];
-                        }
-                    }
-
-                    materials.push_back(gpuMaterial);
-                }
-            }
-            */
 
             if (materials.empty())
                 return;
