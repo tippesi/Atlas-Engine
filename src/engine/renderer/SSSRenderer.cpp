@@ -52,12 +52,15 @@ namespace Atlas {
                 commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 1);
                 commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 2);
 
+                bool temporalEnabled = scene->postProcessing.fsr2 || scene->postProcessing.taa.enable;
+
                 PushConstants constants = {
                     .lightDirection = vec4(lightDirection, 0.0),
                     .sampleCount = sss->sampleCount,
                     .maxLength = sss->maxLength,
                     .minLengthWorldSpace = sss->minLengthWorldSpace,
-                    .thickness = sss->thickness
+                    .thickness = sss->thickness,
+                    .jitter = temporalEnabled ? 1 : 0
                 };
                 commandList->PushConstants("constants", &constants);
 

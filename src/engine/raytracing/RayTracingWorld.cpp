@@ -29,6 +29,8 @@ namespace Atlas {
             tlasNodeBuffer = Buffer::Buffer(bufferUsage, sizeof(GPUBVHNode));
             lastMatricesBuffer = Buffer::Buffer(bufferUsage, sizeof(mat4x3));
 
+            jobContexts.resize(6);
+
         }
 
         void RayTracingWorld::Update(Scene::Subset<MeshComponent, TransformComponent> subset, bool updateTriangleLights) {
@@ -110,15 +112,20 @@ namespace Atlas {
                 }
             }
 
-            for (auto& [_, blasInfo] : blasInfos) {
-                blasInfo.instanceIndices.clear();
-                blasInfo.matrices.clear();
-            }
-
             hardwareInstances.clear();
             gpuBvhInstances.clear();
             instanceAABBs.clear();
             lastMatrices.clear();
+
+            for (auto& jobContext : jobContexts) {
+                jobContext.gpuBvhInstances.clear();
+                jobContext.hardwareInstances.clear();
+                jobContext.instanceAABBs.clear();
+                jobContext.lastMatrices.clear();
+            }
+
+            auto& meshComponentPool = scene->entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = scene->entityManager.GetPool<TransformComponent>();
 
             JobSystem::Wait(renderState->bindlessTextureMapUpdateJob);
 
@@ -131,63 +138,71 @@ namespace Atlas {
             if (hasCamera) {
                 auto& camera = scene->GetMainCamera();
                 cameraLocation = camera.GetLocation();
-            }
+            }            
 
-            for (auto entity : subset) {
-                const auto& [meshComponent, transformComponent] = subset.Get(entity);
+            JobGroup jobGroup{ JobPriority::High };
+            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), int32_t(jobContexts.size()),
+                [&](JobData& data, int32_t idx) {
+                    auto& jobContext = jobContexts[data.idx];
 
-                if (!meshComponent.visible)
-                    continue;
-                if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace ||
-                    !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
-                    continue;                
+                    auto entity = meshComponentPool[idx];
+                    auto& meshComponent = meshComponentPool.GetByIndex(idx);
 
-                auto &blasInfo = blasInfos[meshComponent.mesh->blas];
-                auto distSqd = glm::distance2(
-                    vec3(transformComponent.globalMatrix[3]),
-                    cameraLocation);
-                if (hasCamera && distSqd > blasInfo.cullingDistanceSqr)
-                    continue;
-                if (hardwareRayTracing && !meshComponent.mesh->blas->blas->isBuilt || meshComponent.mesh->blas->needsBvhRefresh)
-                    continue;
+                    if (!meshComponent.visible)
+                        return;
+                    if (!meshComponent.mesh.IsLoaded() || !meshComponent.mesh->rayTrace ||
+                        !renderState->blasToBindlessIdx.contains(meshComponent.mesh->blas))
+                        return;
+                    if (hardwareRayTracing && !meshComponent.mesh->blas->blas->isBuilt || meshComponent.mesh->blas->needsBvhRefresh)
+                        return;
 
-                instanceAABBs.push_back(meshComponent.aabb);
-                auto inverseMatrix = mat3x4(glm::transpose(transformComponent.inverseGlobalMatrix));
+                    auto transformComponent = transformComponentPool.TryGet(entity);
+                    if (!transformComponent)
+                        return;
 
-                uint32_t mask = InstanceCullMasks::MaskAll;
-                mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
+                    auto& blasInfo = blasInfos[meshComponent.mesh->blas];
+                    auto distSqd = glm::distance2(
+                        vec3(transformComponent->globalMatrix[3]),
+                        cameraLocation);
+                    if (hasCamera && distSqd > blasInfo.cullingDistanceSqr)
+                        return;
+                    
+                    jobContext.instanceAABBs.push_back(meshComponent.aabb);
+                    auto inverseMatrix = mat3x4(glm::transpose(transformComponent->inverseGlobalMatrix));
 
-                GPUBVHInstance gpuBvhInstance = {
-                    .inverseMatrix = inverseMatrix,
-                    .meshOffset = blasInfo.offset,
-                    .materialOffset = blasInfo.materialOffset,
-                    .mask = mask
-                };                
+                    uint32_t mask = InstanceCullMasks::MaskAll;
+                    mask |= meshComponent.mesh->castShadow ? InstanceCullMasks::MaskShadow : 0;
 
-                blasInfo.matrices.emplace_back(transformComponent.globalMatrix);
-                blasInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
-                gpuBvhInstances.emplace_back(gpuBvhInstance);
+                    GPUBVHInstance gpuBvhInstance = {
+                        .inverseMatrix = inverseMatrix,
+                        .meshOffset = blasInfo.offset,
+                        .materialOffset = blasInfo.materialOffset,
+                        .mask = mask
+                    };
 
-                if (includeObjectHistory)
-                    lastMatrices.emplace_back(glm::transpose(transformComponent.lastGlobalMatrix));
+                    jobContext.gpuBvhInstances.emplace_back(gpuBvhInstance);
 
-                // Some extra path for hardware raytracing, don't want to do work twice
-                if (hardwareRayTracing) {
-                    VkAccelerationStructureInstanceKHR inst = {};
-                    VkTransformMatrixKHR transform;
+                    if (includeObjectHistory)
+                        jobContext.lastMatrices.emplace_back(glm::transpose(transformComponent->lastGlobalMatrix));
 
-                    auto transposed = glm::transpose(transformComponent.globalMatrix);
-                    std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
+                    // Some extra path for hardware raytracing, don't want to do work twice
+                    if (hardwareRayTracing) {
+                        VkAccelerationStructureInstanceKHR inst = {};
+                        VkTransformMatrixKHR transform;
 
-                    inst.transform = transform;
-                    inst.instanceCustomIndex = blasInfo.offset;
-                    inst.accelerationStructureReference = meshComponent.mesh->blas->blas->bufferDeviceAddress;
-                    inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                    inst.mask = mask;
-                    inst.instanceShaderBindingTableRecordOffset = 0;
-                    hardwareInstances.push_back(inst);
-                }
-            }
+                        auto transposed = glm::transpose(transformComponent->globalMatrix);
+                        std::memcpy(&transform, &transposed, sizeof(VkTransformMatrixKHR));
+
+                        inst.transform = transform;
+                        inst.instanceCustomIndex = blasInfo.offset;
+                        inst.accelerationStructureReference = meshComponent.mesh->blas->blas->bufferDeviceAddress;
+                        inst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                        inst.mask = mask;
+                        inst.instanceShaderBindingTableRecordOffset = 0;
+                        jobContext.hardwareInstances.push_back(inst);
+                    }
+                });
+            
 
             for (const auto node : renderState->terrainLeafNodes) {
                 if (!node->cell || !node->cell->IsLoaded() || !renderState->blasToBindlessIdx.contains(node->cell->blas))
@@ -214,8 +229,6 @@ namespace Atlas {
                     .mask = mask
                 };                
 
-                blasInfo.matrices.emplace_back(globalMatrix);
-                blasInfo.instanceIndices.push_back(uint32_t(gpuBvhInstances.size()));
                 gpuBvhInstances.push_back(gpuBvhInstance);
 
                 if (includeObjectHistory)
@@ -237,6 +250,15 @@ namespace Atlas {
                     inst.instanceShaderBindingTableRecordOffset = 0;
                     hardwareInstances.push_back(inst);
                 }
+            }
+
+            JobSystem::Wait(jobGroup);
+
+            for (auto& jobContext : jobContexts) {
+                hardwareInstances.insert_range(hardwareInstances.end(), jobContext.hardwareInstances);
+                gpuBvhInstances.insert_range(gpuBvhInstances.end(), jobContext.gpuBvhInstances);
+                instanceAABBs.insert_range(instanceAABBs.end(), jobContext.instanceAABBs);
+                lastMatrices.insert_range(lastMatrices.end(), jobContext.lastMatrices);
             }
 
             if (gpuBvhInstances.empty()) {
@@ -281,8 +303,108 @@ namespace Atlas {
 
             auto sceneState = &scene->renderState;
 
-            materials.clear();
+            size_t materialCount = 0;
+            for (auto& [blas, blasInfo] : blasInfos)
+                materialCount += blas->materials.size();
 
+            materials.clear();            
+            std::atomic_int counter = 0;
+
+            materials.resize(materialCount);
+            std::unordered_map<Ref<BLAS>, BlasInfo>::iterator iterators[4];
+            for (size_t i = 0; i < std::size(iterators); i++)
+                iterators[i] = blasInfos.begin();
+
+            JobGroup jobGroup{ JobPriority::High };
+            JobSystem::ParallelFor(jobGroup, int32_t(blasInfos.size()), int32_t(std::size(iterators)), 
+                [&](JobData& data, int32_t idx) {
+
+                // First advance
+                if (iterators[data.idx] == blasInfos.begin())
+                    std::advance(iterators[data.idx], idx);
+                else
+                    iterators[data.idx]++;
+
+                auto& [blas, blasInfo] = *iterators[data.idx];
+
+                blasInfo.materialOffset = counter++;
+
+                int32_t meshMaterialID = 0;
+
+                for (auto& material : blas->materials) {
+                    GPUMaterial gpuMaterial;
+
+                    size_t hash = 0;
+                    HashCombine(hash, blas.get());
+                    HashCombine(hash, meshMaterialID++);
+
+                    // Only is persistent when no materials are reorderd in mesh
+                    gpuMaterial.ID = int32_t(hash % 65535);
+
+                    if (material.IsLoaded()) {
+                        auto& mesh = blasInfo.mesh;
+
+                        gpuMaterial.baseColor = Common::ColorConverter::ConvertSRGBToLinear(material->baseColor);
+                        gpuMaterial.emissiveColor = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor)
+                            * material->emissiveIntensity;
+
+                        gpuMaterial.opacity = material->opacity;
+
+                        gpuMaterial.roughness = material->roughness;
+                        gpuMaterial.metalness = material->metalness;
+                        gpuMaterial.ao = material->ao;
+
+                        gpuMaterial.reflectance = material->reflectance;
+
+                        gpuMaterial.normalScale = material->normalScale;
+
+                        gpuMaterial.tiling = material->tiling;
+                        gpuMaterial.terrainTiling = blasInfo.node ? 1.0f / blasInfo.node->sideLength : 1.0f;
+
+                        gpuMaterial.invertUVs = mesh.IsLoaded() ? (mesh->invertUVs ? 1 : 0) : 0;
+                        gpuMaterial.twoSided = material->twoSided ? 1 : 0;
+                        gpuMaterial.cullBackFaces = mesh.IsLoaded() ? (mesh->cullBackFaces ? 1 : 0) : 0;
+                        gpuMaterial.useVertexColors = material->vertexColors ? 1 : 0;
+
+                        if (material->HasBaseColorMap()) {
+                            gpuMaterial.baseColorTexture = sceneState->textureToBindlessIdx[material->baseColorMap.Get()];
+                        }
+
+                        if (material->HasOpacityMap()) {
+                            gpuMaterial.opacityTexture = sceneState->textureToBindlessIdx[material->opacityMap.Get()];
+                        }
+
+                        if (material->HasNormalMap()) {
+                            gpuMaterial.normalTexture = sceneState->textureToBindlessIdx[material->normalMap.Get()];
+                        }
+
+                        if (material->HasRoughnessMap()) {
+                            gpuMaterial.roughnessTexture = sceneState->textureToBindlessIdx[material->roughnessMap.Get()];
+                        }
+
+                        if (material->HasMetalnessMap()) {
+                            gpuMaterial.metalnessTexture = sceneState->textureToBindlessIdx[material->metalnessMap.Get()];
+                        }
+
+                        if (material->HasAoMap()) {
+                            gpuMaterial.aoTexture = sceneState->textureToBindlessIdx[material->aoMap.Get()];
+                        }
+
+                        if (material->HasEmissiveMap()) {
+                            gpuMaterial.emissiveTexture = sceneState->textureToBindlessIdx[material->emissiveMap.Get()];
+                        }
+
+                        if (blasInfo.node) {
+                            gpuMaterial.terrainNormalTexture = sceneState->textureToBindlessIdx[blasInfo.node->cell->normalMap];
+                        }
+                    }
+
+                    materials[blasInfo.materialOffset + meshMaterialID] = gpuMaterial;
+                }
+                });
+            JobSystem::Wait(jobGroup);
+            
+            /*
             for (auto& [blas, blasInfo] : blasInfos) {
                 blasInfo.materialOffset = int32_t(materials.size());
 
@@ -359,6 +481,7 @@ namespace Atlas {
                     materials.push_back(gpuMaterial);
                 }
             }
+            */
 
             if (materials.empty())
                 return;
@@ -500,6 +623,7 @@ namespace Atlas {
 
             triangleLights.clear();
 
+            /*
             for (auto& [meshIdx, blasInfo] : blasInfos) {
 
                 for (auto& light : blasInfo.triangleLights) {
@@ -526,6 +650,7 @@ namespace Atlas {
                 }
 
             }
+            */
 
         }
 

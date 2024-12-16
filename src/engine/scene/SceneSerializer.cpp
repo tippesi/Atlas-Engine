@@ -12,6 +12,9 @@ namespace Atlas::Scene {
     void EntityToJson(json& j, const Entity& p, Scene* scene,
         std::set<ECS::Entity>& insertedEntities) {
 
+        if (!p.IsValid())
+            return;
+
         AE_ASSERT(!insertedEntities.contains(p) && "Entity should only be present once in the hierarchy");
 
         if (!insertedEntities.contains(p))
@@ -69,7 +72,7 @@ namespace Atlas::Scene {
         }
     }
 
-    void EntityFromJson(const json& j, Entity& p, Scene* scene) {
+    void EntityFromJson(const json& j, Entity& p, Scene* scene, bool containsEntityManager) {
         if (j.contains("name")) {
             NameComponent comp = j["name"];
             p.AddComponent<NameComponent>(comp);
@@ -121,8 +124,12 @@ namespace Atlas::Scene {
             std::vector<json> jEntities = j["entities"];
             std::vector<Entity> entities;
             for (auto jEntity : jEntities) {
-                auto entity = scene->CreateEntity();
-                EntityFromJson(jEntity, entity, scene);
+                Entity entity;
+                if (containsEntityManager)
+                    entity = Entity(jEntity["id"], &scene->entityManager);
+                else
+                    entity = scene->CreateEntity();
+                EntityFromJson(jEntity, entity, scene, containsEntityManager);
                 entities.push_back(entity);
             }
 
@@ -152,6 +159,8 @@ namespace Atlas::Scene {
         for (auto entity : *scene) {
             // No need here, since it was already inserted through the hierarchy
             if (insertedEntities.contains(entity))
+                continue;
+            if (!entity.IsValid())
                 continue;
 
             entities.emplace_back();
@@ -224,7 +233,7 @@ namespace Atlas::Scene {
             else                
                 entity = scene->CreateEntity();
 
-            EntityFromJson(jEntity, entity, scene.get());
+            EntityFromJson(jEntity, entity, scene.get(), containsEntityManager);
         }
 
         scene->sky = j["sky"];

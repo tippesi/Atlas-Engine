@@ -3,6 +3,7 @@
 #include "tools/TerrainTool.h"
 
 #include <glm/gtx/polar_coordinates.hpp> 
+#include <glm/gtx/quaternion.hpp>
 
 namespace Atlas::Editor {
 
@@ -129,15 +130,14 @@ namespace Atlas::Editor {
                     N = glm::euclidean(vec2(spherical.x, spherical.y));
                 }
 
-                vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-                vec3 tangent = normalize(cross(up, N));
-                vec3 bitangent = cross(N, tangent);
-
-                rot = mat4(mat3(tangent, N, bitangent));
+                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+                glm::quat rotation = glm::rotation(up, glm::normalize(N));
+                rot = glm::toMat4(rotation);
             }
 
             mat4 matrix(1.0f);
-            matrix = translate(matrix, instance.position) * rot;
+            matrix = translate(matrix, instance.position);
+            matrix *= rot;
             matrix = glm::scale(matrix, instance.scale);
 
             auto& transform = entity.AddComponent<TransformComponent>(matrix);

@@ -170,7 +170,7 @@ void main() {
                     }
                     else {
                         float radianceMax = max(max(max(radiance.r, 
-                            max(radiance.g, radiance.b)), radianceLimit), 0.01);
+                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
                         radiance *= (radianceLimit / radianceMax);
                     }
 #else

@@ -202,7 +202,7 @@ namespace Atlas {
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
-			ddgiRenderer.TraceAndUpdateProbes(scene, commandList);
+			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
 
 			// Only here does the main pass need to be ready
 			JobSystem::Wait(renderState->fillRenderListJob);

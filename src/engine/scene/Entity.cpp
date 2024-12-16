@@ -20,7 +20,7 @@ namespace Atlas::Scene {
 
 		auto entity = scene->CreateEntity();
 
-		EntityFromJson(j, entity, scene.get());
+		EntityFromJson(j, entity, scene.get(), false);
 
 		return entity;
 

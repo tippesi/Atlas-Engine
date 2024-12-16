@@ -22,6 +22,7 @@ namespace Atlas {
                 float maxLength;
                 float minLengthWorldSpace;
                 float thickness;
+                int32_t jitter;
             };
 
             Filter blurFilter;

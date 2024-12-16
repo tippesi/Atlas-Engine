@@ -161,7 +161,7 @@ void main() {
             }
 
             float irradianceMax = max(max(max(irradiance.r,
-                max(irradiance.g, irradiance.b)), radianceLimit), 0.01);
+                max(irradiance.g, irradiance.b)), radianceLimit), 1e-12);
             irradiance *= (radianceLimit / irradianceMax);
             
             // Supplement misses with the probe irradiance

@@ -20,6 +20,7 @@ layout(push_constant) uniform constants {
     float maxLength;
     float minLengthWorldSpace;
     float thickness;
+    int jitter;
 } pushConstants;
 
 // https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
@@ -95,7 +96,9 @@ void main() {
     float rayLength = distance(rayPos, rayEndPos);
 
     vec2 uvPos = texCoord;
-    float noiseOffset = GetInterleavedGradientNoise(texCoord * vec2(resolution));
+    float noiseOffset = 0.5;
+    if (pushConstants.jitter > 0)
+        noiseOffset = GetInterleavedGradientNoise(texCoord * vec2(resolution));
 
 #ifdef TRACE_WORLD_SPACE
     rayPos += noiseOffset * stepLength * rayDir;

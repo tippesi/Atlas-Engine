@@ -264,13 +264,15 @@ namespace Atlas {
                     float logLuminanceRange;
                     float timeCoefficient;
                     float pixelCount;
+                    int32_t resetHistory;
                 };
 
                 auto pushConstants = TemporalPushConstants{
                     .logLuminanceMin = logLuminanceMin,
                     .logLuminanceRange = logLuminanceRange,
                     .timeCoefficient = 1.0f - exp(-Clock::GetDelta() * exposure.timeCoefficient),
-                    .pixelCount = float(target->GetScaledWidth() * target->GetScaledHeight())
+                    .pixelCount = float(target->GetScaledWidth() * target->GetScaledHeight()),
+                    .resetHistory = !target->HasHistory() ? 1 : 0
                 };
 
                 auto pipelineConfig = PipelineConfig("exposure/temporal.csh");

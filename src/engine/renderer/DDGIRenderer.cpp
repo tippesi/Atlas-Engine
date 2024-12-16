@@ -36,7 +36,7 @@ namespace Atlas {
 
         }
 
-        void DDGIRenderer::TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList) {
+        void DDGIRenderer::TraceAndUpdateProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
 
             auto volume = scene->irradianceVolume;
             if (!volume || !volume->enable || !volume->update || !scene->IsRtDataValid())
@@ -291,7 +291,7 @@ namespace Atlas {
 
         }
 
-        void DDGIRenderer::DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+        void DDGIRenderer::DebugProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
             std::unordered_map<void*, uint16_t>& materialMap) {
 
             auto volume = scene->irradianceVolume;

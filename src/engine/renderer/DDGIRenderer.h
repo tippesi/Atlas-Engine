@@ -16,11 +16,11 @@ namespace Atlas {
 
             void Init(Graphics::GraphicsDevice* device);
 
-            void Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void TraceAndUpdateProbes(Ref<Scene::Scene> scene, Graphics::CommandList* commandList);
+            void TraceAndUpdateProbes(const Ref<RenderTarget>& renderTarget, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
 
-            void DebugProbes(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
+            void DebugProbes(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList,
                 std::unordered_map<void*, uint16_t>& materialMap);
 
         private:

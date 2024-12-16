@@ -11,6 +11,7 @@ layout(push_constant) uniform constants {
     float logLuminanceRange;
     float timeCoefficient;
     float pixelCount;
+    int resetHistory;
 } pushConstants;
 
 shared uint sharedHistogram[histogramBinCount];
@@ -39,16 +40,15 @@ void main() {
         float weightedLogAverage = (sharedHistogram[0] / max(pushConstants.pixelCount - float(countForThisBin), 1.0)) - 1.0;
 
         float weightedAvgLum = exp2((weightedLogAverage / 254.0 * pushConstants.logLuminanceRange) + pushConstants.logLuminanceMin);
-        if (isnan(weightedAvgLum) || isinf(weightedAvgLum))
-            weightedAvgLum = 1.0;
 
         // The new stored value will be interpolated using the last frames value
         // to prevent sudden shifts in the exposure.
         float lumLastFrame = imageLoad(exposureImage, ivec2(0, 0)).r;
         //lumLastFrame = 1.0;
         float adaptedLum = lumLastFrame + (weightedAvgLum - lumLastFrame) * pushConstants.timeCoefficient;
-        if (isinf(adaptedLum) || isnan(adaptedLum))
-            adaptedLum = 1.0;
+
+        if (pushConstants.resetHistory > 0)
+            adaptedLum = weightedAvgLum;
     
         imageStore(exposureImage, ivec2(0), vec4(adaptedLum, 0.0, 0.0, 0.0));
     }

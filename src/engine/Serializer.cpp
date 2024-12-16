@@ -123,7 +123,7 @@ namespace Atlas {
 
             auto entity = scene->CreateEntity();
 
-            Scene::EntityFromJson(j, entity, scene.get());
+            Scene::EntityFromJson(j, entity, scene.get(), false);
 
             auto rigidBody = entity.TryGetComponent<RigidBodyComponent>();
             if (rigidBody)

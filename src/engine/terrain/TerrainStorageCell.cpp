@@ -159,7 +159,7 @@ namespace Atlas {
                 Ref<Graphics::BLAS> blases[] = { newBlas->blas };
                 asBuilder.BuildBLAS(blases);
 
-                newBlas->blas = blases.front();
+                newBlas->blas = blases[0];
                 newBlas->needsBvhRefresh = false;
             }
 

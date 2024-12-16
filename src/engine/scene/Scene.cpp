@@ -180,7 +180,7 @@ namespace Atlas {
 
             auto transformSubset = entityManager.GetSubset<TransformComponent>();
 
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
                 auto& transformComponent = transformComponentPool.GetByIndex(idx);
 
                 if (!transformComponent.updated) {
@@ -345,13 +345,20 @@ namespace Atlas {
             }
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
                 auto& transformComponent = transformComponentPool.GetByIndex(idx);
 
                 if (transformComponent.updated) {
                     transformComponent.changed = false;
                     transformComponent.updated = false;
                 }
+                });
+
+            // After everything we need to reset transform component changed and prepare the updated for next frame
+            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
+
+                hierarchyComponent.updated = false;
                 });
 
             JobSystem::Wait(hierarchyJobGroup);
@@ -369,15 +376,6 @@ namespace Atlas {
             }
 
             renderState.mainCameraSignal.Reset();
-
-             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
-                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
-
-                hierarchyComponent.updated = false;
-                });
-
-            JobSystem::Wait(hierarchyJobGroup);
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();

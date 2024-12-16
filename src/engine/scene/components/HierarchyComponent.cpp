@@ -95,14 +95,8 @@ namespace Atlas {
 					}
 				}
 				else {
-					int32_t entitiesPerJob = entities.size() / 4;
-					JobSystem::ExecuteMultiple(jobGroup, int32_t(entities.size()) / entitiesPerJob + 1, [&, parentChanged, entitiesPerJob](JobData& data) mutable {
-
-						for (int32_t i = 0; i < entitiesPerJob; i++) {
-							auto idx = data.idx * entitiesPerJob + i;
-							if (idx >= int32_t(entities.size()))
-								break;
-
+					JobSystem::ParallelFor(jobGroup, int32_t(entities.size()), 8, 
+						[&, parentChanged](JobData& data, int32_t idx) {
 							auto entity = entities[idx];
 							bool transformChanged = parentChanged;
 
@@ -120,7 +114,6 @@ namespace Atlas {
 								hierarchyComponent->Update(jobGroup, transformComponent ? *transformComponent : transform,
 									transformChanged, transformComponentPool, hierarchyComponentPool, cameraComponentPool);
 							}
-						}
 						});
 				}
 

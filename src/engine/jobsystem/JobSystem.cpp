@@ -179,7 +179,7 @@ namespace Atlas {
             iterationsPerJob = count;
         }
         else {
-            jobCount = count % jobCount == 0 ? jobCount : jobCount + 1;
+            iterationsPerJob = count % jobCount == 0 ? iterationsPerJob : iterationsPerJob + 1;
         }
         JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func](JobData& data) mutable {
 

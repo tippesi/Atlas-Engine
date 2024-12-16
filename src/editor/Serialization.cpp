@@ -134,7 +134,7 @@ namespace Atlas::Editor {
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
-        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get());
+        Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);
 
         // When closing the application while playing the entity is saved in the wrong state
         sceneWindow->cameraEntity.GetComponent<CameraComponent>().isMain = true;

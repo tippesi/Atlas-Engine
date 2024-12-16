@@ -62,8 +62,13 @@ namespace Atlas {
                 int32_t idx = 0;
 
                 std::vector<GPULight> triangleLights;
-                std::vector<uint32_t> instanceIndices;
-                std::vector<mat4x3> matrices;
+            };
+
+            struct JobContext {
+                std::vector<VkAccelerationStructureInstanceKHR> hardwareInstances;
+                std::vector<GPUBVHInstance> gpuBvhInstances;
+                std::vector<Volume::AABB> instanceAABBs;
+                std::vector<mat3x4> lastMatrices;
             };
 
             void UpdateMaterials(std::vector<GPUMaterial>& materials);
@@ -101,6 +106,7 @@ namespace Atlas {
             std::unordered_map<Ref<BLAS>, BlasInfo> prevBlasInfos;
 
             std::vector<GPUMaterial> materials;
+            std::vector<JobContext> jobContexts;
 
             bool hardwareRayTracing = false;
 
