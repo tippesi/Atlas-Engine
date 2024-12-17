@@ -98,7 +98,9 @@ namespace Atlas::Editor {
 
         const ImGuiIO& io = ImGui::GetIO();
 
-        ContentDiscovery::Update();
+        // Will lead to frame time spikes, don't do it if content can't be seen
+        if (!playingMaximized)
+            ContentDiscovery::Update();
         Singletons::imguiWrapper->Update(&window, deltaTime);
 
         Singletons::blockingOperation->Update();
@@ -240,7 +242,7 @@ namespace Atlas::Editor {
 
         ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-        bool playingMaximized = false;
+        playingMaximized = false;
         auto activeSceneWindow = sceneWindows.empty() ? nullptr : sceneWindows[activeSceneIdx];
         if (activeSceneWindow) {
             playingMaximized = activeSceneWindow->isPlaying && activeSceneWindow->playMaximized;

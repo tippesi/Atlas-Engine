@@ -25,9 +25,9 @@ void main() {
 
         normal = material.normalMap ? normal : geometryNormal;
 
-        roughnessMetalnessAo.r = material.roughnessMap ? roughnessMetalnessAo.r * material.roughness : material.roughness;
-        roughnessMetalnessAo.g = material.metalnessMap ? roughnessMetalnessAo.g * material.metalness : material.metalness;
-        roughnessMetalnessAo.b = material.aoMap ? roughnessMetalnessAo.b * material.ao : material.ao;
+        roughnessMetalnessAo.r = material.roughnessMap || material.terrain ? roughnessMetalnessAo.r * material.roughness : material.roughness;
+        roughnessMetalnessAo.g = material.metalnessMap || material.terrain ? roughnessMetalnessAo.g * material.metalness : material.metalness;
+        roughnessMetalnessAo.b = material.aoMap || material.terrain ? roughnessMetalnessAo.b * material.ao : material.ao;
 
         imageStore(normalImage, coord, vec4(normal, 0.0, 0.0));
         imageStore(roughnessMetalnessAoImage, coord, vec4(roughnessMetalnessAo, 0.0));

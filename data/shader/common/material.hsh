@@ -11,6 +11,7 @@
 #define FEATURE_EMISSIVE_MAP (1 << 7)
 #define FEATURE_TRANSMISSION (1 << 8)
 #define FEATURE_VERTEX_COLORS (1 << 9)
+#define FEATURE_TERRAIN (1 << 10)
 
 struct Material {
     uint ID;
@@ -40,6 +41,7 @@ struct Material {
     bool emissiveMap;
     bool transmissive;
     bool vertexColors;
+    bool terrain;
 };
 
 struct PackedMaterial {
@@ -92,6 +94,15 @@ Material UnpackMaterial(uint idx) {
     material.emissiveMap = (features & FEATURE_EMISSIVE_MAP) > 0;
     material.transmissive = (features & FEATURE_TRANSMISSION) > 0;
     material.vertexColors = (features & FEATURE_VERTEX_COLORS) > 0;
+    material.terrain = (features & FEATURE_TERRAIN) > 0;
+
+    // For terrain we get it all premultiplied from the fragment shader
+    if (material.terrain) {
+        material.baseColor = vec3(1.0);
+        material.roughness = 1.0;
+        material.metalness = 1.0;
+        material.ao = 1.0;
+    }
 
     return material;
 

@@ -168,7 +168,7 @@ namespace Atlas {
                 ssrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
                 ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
                 ssrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
-                ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
+                ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
 
                 auto pipeline = PipelineManager::GetPipeline(ssrPipelineConfig);
                 commandList->BindPipeline(pipeline);
@@ -222,7 +222,7 @@ namespace Atlas {
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             
                 rtrPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
                 rtrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
-                rtrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
+                rtrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
 
                 auto pipeline = PipelineManager::GetPipeline(rtrPipelineConfig);
 

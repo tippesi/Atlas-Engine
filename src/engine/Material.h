@@ -12,6 +12,14 @@
 
 namespace Atlas {
 
+    typedef uint32_t MaterialUsage;
+
+    typedef enum MaterialUsageBits {
+        MeshBit = (1 << 0),
+        TerrainBit = (1 << 1),
+        ImpostorBit = (1 << 2)
+    } MaterialUsageBits;
+
     class Material {
 
     public:
@@ -62,6 +70,8 @@ namespace Atlas {
         vec2 uvAnimation = vec2(0.0f);
 
         uint32_t uvChannel = 0;
+
+        std::atomic_uint32_t usage = 0;
 
     };
 

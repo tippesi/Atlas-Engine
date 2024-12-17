@@ -19,16 +19,16 @@ Material GetMaterial(vec2 texCoord) {
     uint materialIdx = textureLod(materialIdxTexture, texCoord, 0).r;
     Material material = UnpackMaterial(materialIdx);
 
-    if (material.baseColorMap || material.vertexColors) {
+    if (material.baseColorMap || material.vertexColors || material.terrain) {
         material.baseColor *= textureLod(baseColorTexture, texCoord, 0).rgb;
     }
-    if (material.roughnessMap) {
+    if (material.roughnessMap || material.terrain) {
         material.roughness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).r;
     }
-    if (material.metalnessMap) {
+    if (material.metalnessMap || material.terrain) {
         material.metalness *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).g;
     }
-    if (material.aoMap) {
+    if (material.aoMap || material.terrain) {
         material.ao *= textureLod(roughnessMetalnessAoTexture, texCoord, 0).b;
     }
     if (material.emissiveMap) {

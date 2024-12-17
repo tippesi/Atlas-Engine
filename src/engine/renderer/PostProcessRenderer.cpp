@@ -42,7 +42,7 @@ namespace Atlas {
             groupCount.y += ((groupCount.y * 8 == resolution.y) ? 0 : 1);
 
             bool fsr2 = postProcessing.fsr2;
-            bool autoExposure = postProcessing.exposure.autoExposure;
+            bool autoExposure = postProcessing.autoExposure.enable;
             bool spatialUpscalingEnabled = !fsr2 && target->GetScalingFactor() != 1.0f;
             bool shapenEnabled = !fsr2 && sharpen.enable;
 
@@ -209,7 +209,7 @@ namespace Atlas {
         void PostProcessRenderer::GenerateExposureTexture(Ref<RenderTarget>& target,
             Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
 
-            auto& exposure = scene->postProcessing.exposure;
+            auto& exposure = scene->postProcessing.autoExposure;
 
             Graphics::Profiler::BeginQuery("Auto-exposure");
 
@@ -221,11 +221,13 @@ namespace Atlas {
                 struct HistogramPushConstants {
                     float logLuminanceMin;
                     float invLogLuminanceRange;
+                    float blackLevel;
                 };
 
                 auto pushConstants = HistogramPushConstants{
                     .logLuminanceMin = logLuminanceMin,
-                    .invLogLuminanceRange = 1.0f / logLuminanceRange
+                    .invLogLuminanceRange = 1.0f / logLuminanceRange,
+                    .blackLevel = exposure.blackLevel
                 };
 
                 ivec2 resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());

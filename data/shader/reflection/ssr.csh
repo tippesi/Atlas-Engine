@@ -162,7 +162,7 @@ void main() {
         Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, highResPixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;
+        material.roughness *= material.roughnessMap || material.terrain ? roughness : 1.0;
 
         if (material.roughness < 0.1) {
             atomicMax(maxSteps, 128);

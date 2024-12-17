@@ -73,6 +73,7 @@ namespace Atlas {
             for (size_t i = 0; i < materials.size(); i++) {
                 if (materials[i].IsLoaded()) {
                     terrainMaterials[i].idx = (uint32_t)materialMap[materials[i].Get().get()];
+                    terrainMaterials[i].baseColor = vec4(materials[i]->baseColor, 1.0);
                     terrainMaterials[i].roughness = materials[i]->roughness;
                     terrainMaterials[i].metalness = materials[i]->metalness;
                     terrainMaterials[i].ao = materials[i]->ao;
@@ -80,7 +81,6 @@ namespace Atlas {
                     terrainMaterials[i].normalScale = materials[i]->normalScale;
                     terrainMaterials[i].tiling = materials[i]->tiling;
                 }
-
             }
 
             terrainMaterialBuffer.SetData(terrainMaterials.data(), 0, 1);

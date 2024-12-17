@@ -112,7 +112,7 @@ void main() {
         Material material = UnpackMaterial(materialIdx);
 
         float roughness = texelFetch(roughnessMetallicAoTexture, pixel, 0).r;
-        material.roughness *= material.roughnessMap ? roughness : 1.0;
+        material.roughness *= material.roughnessMap || material.terrain ? roughness : 1.0;
 
         float hitDistance = reflection.a;
 

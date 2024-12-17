@@ -123,7 +123,7 @@ namespace Atlas {
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
 
-                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
+                ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
                 ssgiPipelineConfig.ManageMacro("DDGI", ssgi->ddgi && ddgiEnabled);
                 ssgiPipelineConfig.ManageMacro("DDGI_VISIBILITY", ssgi->ddgi && ddgiVisibility);
 

@@ -20,7 +20,9 @@ namespace Atlas {
         private:
             void GetUniforms();
 
-            struct TerrainMaterial {
+            struct alignas(16) TerrainMaterial {
+                vec4 baseColor;
+
                 uint32_t idx;
                 
                 float roughness;

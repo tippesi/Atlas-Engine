@@ -69,6 +69,10 @@ namespace Atlas::Editor::UI {
 		ImGui::DragFloat("Fast movement velocity", &player.fastVelocity, 0.1f, 0.0f, 100.0f);
 		ImGui::DragFloat("Jump velocity", &player.jumpVelocity, 0.1f, 0.0f, 100.0f);
 
+		ImGui::Separator();
+		ImGui::DragFloat("Stick to ground distance", &player.stickToGroundDistance, 0.01f, 0.0f, 10.0f);
+		ImGui::DragFloat("Step up distance", &player.walkStairStepUpDistance, 0.01f, 0.0f, 10.0f);
+
 		ImGui::Checkbox("Allow input", &player.allowInput);
 
 	}

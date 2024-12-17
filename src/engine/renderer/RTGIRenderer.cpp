@@ -125,7 +125,7 @@ namespace Atlas {
                 rtPipelineConfig.ManageMacro("DDGI_VISIBILITY", rtgi->ddgi && ddgiVisibility);
                 rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
                 rtPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
-                rtPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.exposure.autoExposure);
+                rtPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
 
                 auto pipeline = PipelineManager::GetPipeline(rtPipelineConfig);
 

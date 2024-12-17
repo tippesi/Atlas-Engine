@@ -488,6 +488,8 @@ namespace Atlas {
 
             std::vector<ResourceHandle<Material>> materials;
 
+            // We could update the material usage bits in a separate method where we might not need 
+            // any atomic operations. 
             if (terrain.IsLoaded()) {
                 auto terrainMaterials = terrain->storage->GetMaterials();
                 materials.reserve(terrainMaterials.size());
@@ -496,6 +498,7 @@ namespace Atlas {
                     if (!material.IsLoaded())
                         continue;
 
+                    material->usage |= MaterialUsageBits::TerrainBit;
                     materials.push_back(material);
                 }
 
@@ -516,6 +519,7 @@ namespace Atlas {
                     if (!material.IsLoaded())
                         continue;
 
+                    material->usage |= MaterialUsageBits::MeshBit;
                     materials.push_back(material);
                 }
             }

@@ -3,6 +3,8 @@
 #include <../globals.hsh>
 
 struct TerrainMaterial {
+
+    vec4 baseColor;
     
     uint idx;
 
@@ -14,6 +16,8 @@ struct TerrainMaterial {
     float normalScale;
 
     float tiling;
+
+    int padding;
 
 };
 

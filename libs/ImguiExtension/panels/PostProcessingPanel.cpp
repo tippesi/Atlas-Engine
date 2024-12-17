@@ -53,10 +53,10 @@ namespace Atlas::ImguiExtension {
         postProcessing.bloom.mipLevels = mipLevels;
         ImGui::Separator();
         ImGui::Text("Auto-exposure");
-        ImGui::Checkbox("Enable##Exposure", &postProcessing.exposure.autoExposure);
-        ImGui::DragFloat("Min luminance##Exposure", &postProcessing.exposure.luminanceMin, 0.0005f, 0.00001f, 1000.0f);
-        ImGui::DragFloat("Max luminance##Exposure", &postProcessing.exposure.luminanceMax, 0.1f, 0.0f, 1000.0f);
-        ImGui::DragFloat("Time coefficient##Exposure", &postProcessing.exposure.timeCoefficient, 0.01f);
+        ImGui::Checkbox("Enable##Exposure", &postProcessing.autoExposure.enable);
+        ImGui::DragFloat("Min luminance##Exposure", &postProcessing.autoExposure.luminanceMin, 0.0005f, 0.00001f, 1000.0f);
+        ImGui::DragFloat("Max luminance##Exposure", &postProcessing.autoExposure.luminanceMax, 0.1f, 0.0f, 1000.0f);
+        ImGui::DragFloat("Time coefficient##Exposure", &postProcessing.autoExposure.timeCoefficient, 0.01f);
 
         ImGui::PopID();
 

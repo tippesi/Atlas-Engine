@@ -135,6 +135,17 @@ vec3 SampleNormal(vec2 off, uvec4 indices, vec4 tiling, vec2 coords, vec2 origCo
     
 }
 
+vec3 Interpolate(vec3 q00, vec3 q10, vec3 q01, vec3 q11, vec2 off) {
+
+    // Interpolate samples horizontally
+    vec3 h0 = mix(q00, q10, off.x);
+    vec3 h1 = mix(q01, q11, off.x);
+    
+    // Interpolate samples vertically
+    return mix(h0, h1, off.y);    
+
+}
+
 float Interpolate(float q00, float q10, float q01, float q11, vec2 off) {
 
     // Interpolate samples horizontally
@@ -190,7 +201,15 @@ void main() {
         Materials.materials[nonuniformEXT(indices.w)].tiling
     );
 
-    baseColorFS = SampleBaseColor(off, indices, tiling, rotTexCoords, materialTexCoords);
+    baseColorFS = Interpolate(
+        Materials.materials[nonuniformEXT(indices.x)].baseColor.rgb,
+        Materials.materials[nonuniformEXT(indices.y)].baseColor.rgb,
+        Materials.materials[nonuniformEXT(indices.z)].baseColor.rgb,
+        Materials.materials[nonuniformEXT(indices.w)].baseColor.rgb,
+        off
+    );
+    
+    baseColorFS *= SampleBaseColor(off, indices, tiling, rotTexCoords, materialTexCoords);
     baseColorFS = hueShift(baseColorFS, noiseZ - 0.5);
     baseColorFS = baseColorFS * (noiseW * 0.5 + 0.5);
     
@@ -245,8 +264,8 @@ void main() {
     mat3 tbn = mat3(tang, bitang, norm);
     normal = normalize(tbn * (2.0 * normal - 1.0));
     normal = mix(norm, normal, normalScale);
-    ao *= SampleAo(off, indices, tiling, rotTexCoords, materialTexCoords);
-    roughness *= SampleRoughness(off, indices, tiling, rotTexCoords, materialTexCoords);
+    //ao *= SampleAo(off, indices, tiling, rotTexCoords, materialTexCoords);
+    //roughness *= SampleRoughness(off, indices, tiling, rotTexCoords, materialTexCoords);
 #else
     vec3 normal = norm;
 #endif

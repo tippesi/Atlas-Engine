@@ -101,6 +101,24 @@ namespace Atlas::PostProcessing {
                 Texture::Wrapping::Repeat, Texture::Filtering::Linear, 0);
     }
 
+    void to_json(json& j, const AutoExposure& p) {
+        j = json {
+            {"enable", p.enable},
+            {"luminanceMin", p.luminanceMin},
+            {"luminanceMax", p.luminanceMax},
+            {"blackLevel", p.blackLevel},
+            {"timeCoefficient", p.timeCoefficient}
+        };
+    }
+
+    void from_json(const json& j, AutoExposure& p) {
+        j.at("enable").get_to(p.enable);
+        j.at("luminanceMin").get_to(p.luminanceMin);
+        j.at("luminanceMax").get_to(p.luminanceMax);
+        j.at("blackLevel").get_to(p.blackLevel);
+        j.at("timeCoefficient").get_to(p.timeCoefficient);
+    }
+
     void to_json(json& j, const PostProcessing& p) {
         j = json {
             {"tint", p.tint},
@@ -116,6 +134,7 @@ namespace Atlas::PostProcessing {
             {"filmGrain", p.filmGrain},
             {"sharpen", p.sharpen},
             {"bloom", p.bloom},
+            {"autoExposure", p.autoExposure},
         };
     }
 
@@ -133,6 +152,7 @@ namespace Atlas::PostProcessing {
         j.at("filmGrain").get_to(p.filmGrain);
         j.at("sharpen").get_to(p.sharpen);
         try_get_json(j, "bloom", p.bloom);
+        try_get_json(j, "autoExposure", p.autoExposure);
     }
 
 }

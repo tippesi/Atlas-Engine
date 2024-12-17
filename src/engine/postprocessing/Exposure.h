@@ -5,14 +5,16 @@
 
 namespace Atlas::PostProcessing {
 
-    class Exposure {
+    class AutoExposure {
 
     public:
-        Exposure();
+        AutoExposure();
 
-        bool autoExposure = true;
+        bool enable = true;
+
         float luminanceMin = 0.001f;
         float luminanceMax = 1000.0f;
+        float blackLevel = 0.001f;
 
         float timeCoefficient = 1.0f;
 

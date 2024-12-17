@@ -34,7 +34,7 @@ namespace Atlas {
             FilmGrain filmGrain;
             Sharpen sharpen;
             Bloom bloom;
-            Exposure exposure;
+            AutoExposure autoExposure;
 
         };
 

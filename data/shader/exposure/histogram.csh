@@ -9,6 +9,7 @@ layout(set = 3, binding = 0) uniform sampler2D hdrTexture;
 layout(push_constant) uniform constants {
     float logLuminanceMin;
     float invLogLuminanceRange;
+    float blackLevel;
 } pushConstants;
 
 shared uint sharedHistogram[histogramBinCount];
@@ -16,7 +17,7 @@ shared uint sharedHistogram[histogramBinCount];
 uint CalculateBin(vec3 color, float logLuminanceMin, float invLogLuminanceRange) {
 
     float luma = Luma(color);
-    if (luma < lumaEpsilon)
+    if (luma < pushConstants.blackLevel)
         return 0u;
 
     float logLuma = clamp((log2(luma) - logLuminanceMin) * invLogLuminanceRange, 0.0, 1.0);

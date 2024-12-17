@@ -62,6 +62,7 @@ namespace Atlas::Editor {
         ImGuiID upperDockNodeID;
 
         bool resetDockspaceLayout = false;
+        bool playingMaximized = false;
 
     };
 

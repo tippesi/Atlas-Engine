@@ -53,6 +53,8 @@ namespace Atlas::Scene {
                 if (materialMap.contains(material.Get().get()))
                     continue;
 
+                auto usage = material->usage.load();
+
                 Renderer::PackedMaterial packed;
 
                 packed.baseColor = Common::Packing::PackUnsignedVector3x10_1x2(vec4(Common::ColorConverter::ConvertSRGBToLinear(material->baseColor), 0.0f));
@@ -91,6 +93,7 @@ namespace Atlas::Scene {
                 packed.features |= material->HasEmissiveMap() ? Renderer::MaterialFeatures::FEATURE_EMISSIVE_MAP : 0;
                 packed.features |= glm::length(material->transmissiveColor) > 0.0f ? Renderer::MaterialFeatures::FEATURE_TRANSMISSION : 0;
                 packed.features |= material->vertexColors ? Renderer::MaterialFeatures::FEATURE_VERTEX_COLORS : 0;
+                packed.features |= usage & MaterialUsageBits::TerrainBit ? Renderer::MaterialFeatures::FEATURE_TERRAIN : 0;
 
                 materials.push_back(packed);
 
