@@ -85,7 +85,7 @@ namespace Atlas {
             static void LoadMissingCells(const Ref<Terrain::Terrain>& terrain, const std::string& filename);
 
         private:
-            static void GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
+            static void GenerateNormalData(const std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData,
                                            int32_t width, int32_t height, float strength);
 
             static float GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,

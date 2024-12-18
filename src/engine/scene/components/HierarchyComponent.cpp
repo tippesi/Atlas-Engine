@@ -48,7 +48,7 @@ namespace Atlas {
 					bool transformChanged = parentChanged;
 
 					auto transformComponent = transformComponentPool.TryGet(entity);
-					auto cameraComponent = cameraComponentPool.TryGet(entity);
+					// auto cameraComponent = cameraComponentPool.TryGet(entity);
 					auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 					if (transformComponent) {
@@ -79,7 +79,7 @@ namespace Atlas {
 						bool transformChanged = parentChanged;
 
 						auto transformComponent = transformComponentPool.TryGet(entity);
-						auto cameraComponent = cameraComponentPool.TryGet(entity);
+						// auto cameraComponent = cameraComponentPool.TryGet(entity);
 						auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 						if (transformComponent) {
@@ -101,7 +101,7 @@ namespace Atlas {
 							bool transformChanged = parentChanged;
 
 							auto transformComponent = transformComponentPool.TryGet(entity);
-							auto cameraComponent = cameraComponentPool.TryGet(entity);
+							// auto cameraComponent = cameraComponentPool.TryGet(entity);
 							auto hierarchyComponent = hierarchyComponentPool.TryGet(entity);
 
 							if (transformComponent) {

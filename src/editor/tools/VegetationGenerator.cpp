@@ -17,6 +17,8 @@ namespace Atlas::Editor {
 
         auto splatImage = Tools::TerrainTool::GenerateSplatMap(scene->terrain.Get());
 
+        std::vector<ProposalVegetationInstance> proposalInstances(initialCountPerType);
+
         Volume::AABB aabb(scene->terrain->translation, scene->terrain->translation +
             vec3(scene->terrain->sideLength, scene->terrain->heightScale, scene->terrain->sideLength));
         octree = Volume::Octree<VegetationInstance>(aabb, 7);
@@ -34,8 +36,8 @@ namespace Atlas::Editor {
                 if (type.iterations < iteration)
                     continue;
 
-                PerformIterationOnType(scene, terrainGenerator, *heightImage, *moistureImage,
-                    *splatImage, type.randGenerator, type);
+                PerformIterationOnType(scene, terrainGenerator, proposalInstances,
+                    *heightImage, *moistureImage, *splatImage, type.randGenerator, type);
 
                 generatingOffspring = true;
             }
@@ -154,8 +156,9 @@ namespace Atlas::Editor {
     }
 
     void VegetationGenerator::PerformIterationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
-        Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg,
-         Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator, VegetationType& type) {
+        std::vector<ProposalVegetationInstance>& proposalInstances, Common::Image<uint16_t>& heightImg, 
+        Common::Image<uint16_t>& moistureImg, Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator,
+        VegetationType& type) {
 
         if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
             return;
@@ -177,7 +180,9 @@ namespace Atlas::Editor {
 
         auto biomes = terrainGenerator.SortBiomes();
 
-        auto spawnInstance = [&](vec2 offset, float scale, VegetationInstance& instance, Volume::AABB& aabb) -> bool {
+        // Proposal spawner
+        auto spawnProposalInstance = [&](vec2 offset, float scale, ProposalVegetationInstance& propInstance) -> bool {
+            auto& instance = propInstance.instance;
             instance = {
                 .position = vec3(
                     (2.0f * GenerateUniformRandom(randGenerator) - 1.0f) * scale + offset.x,
@@ -194,12 +199,36 @@ namespace Atlas::Editor {
                 slope < type.slopeMin || slope > type.slopeMax)
                 return false;
 
-            auto materialIdx = splatImage.Sample(instance.position.x, instance.position.z).r;
-
-            if (type.exludeMaterialIndices.contains(int32_t(materialIdx)))
-                return false;
-
             instance.position = (instance.position * terrain->sideLength) + terrain->translation;
+            instance.rotation = glm::mix(type.rotationMin, type.rotationMax, GenerateUniformRandom(randGenerator));
+            instance.scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
+
+            if (type.excludeBasedOnCorners) {
+                glm::mat4 transform {1.0f};
+                transform = translate(transform, instance.position);
+                transform *= glm::rotate(instance.rotation, vec3(0.0f, 1.0f, 0.0f));
+                transform = glm::scale(transform, instance.scale);
+
+                propInstance.aabb = type.mesh->data.aabb.Transform(transform);
+
+                auto min = propInstance.aabb.min;
+                auto max = propInstance.aabb.max;
+                vec2 corners[] = { vec2(min.x, min.z), vec2(min.x, max.z),
+                    vec2(max.x, min.z), vec2(max.x, max.z) };
+                for (int32_t i = 0; i < 4; i++) {
+                    auto position = (corners[i] - vec2(terrain->translation.x, terrain->translation.z)) 
+                        * invSideLength;
+                    auto materialIdx = splatImage.Sample(position.x, position.y).r;
+                    if (type.exludeMaterialIndices.contains(int32_t(materialIdx)))
+                        return false;
+                }
+            }
+            else {
+                auto materialIdx = splatImage.Sample(instance.position.x, instance.position.z).r;
+
+                if (type.exludeMaterialIndices.contains(int32_t(materialIdx)))
+                    return false;
+            }
 
             vec3 forward;
             instance.position.y = terrain->GetHeight(instance.position.x, instance.position.z, instance.normal, forward);
@@ -207,10 +236,19 @@ namespace Atlas::Editor {
             if (instance.position.y == terrain->invalidHeight)
                 return false;
 
+            instance.age = 0;
+            instance.type = &type;
+            instance.position.y += type.offset.y;
+
+            return true;
+            };
+
+        // Check for other instances that might have spawned
+        auto canSpawnInstance = [&](ProposalVegetationInstance& propInstance) -> bool {
+            auto& instance = propInstance.instance;
             octreeInstances.clear();
 
-            aabb = type.mesh->data.aabb.Translate(instance.position);
-            octree.QueryAABB(octreeInstances, aabb);
+            octree.QueryAABB(octreeInstances, propInstance.aabb);
 
             for (auto& octreeInstance : octreeInstances) {
                 auto distance = glm::distance(instance.position, octreeInstance.position);
@@ -232,66 +270,68 @@ namespace Atlas::Editor {
 
                 if (shadeDistance < 0.0f)
                     return false;
-
             }
-
-            instance.age = 0;
-            instance.type = &type;
-            instance.scale = mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
-            instance.position.y += type.offset.y;
 
             return true;
             };
+
+        JobGroup jobGroup { JobPriority::High };
+        std::atomic_int32_t instanceCounter = 0;
 
         if (type.instances.empty()) {
 
             // The offset is only applied initially
             int32_t initialCount = int32_t(float(initialCountPerType) * type.initialDensity);
             auto typeInitialOffset = vec2(type.offset.x, type.offset.z) * invSideLength;
-            for (int32_t i = 0; i < initialCount; i++) {
+            JobSystem::ParallelFor(jobGroup, initialCount, 16, [&](JobData&, int32_t idx) {
+                ProposalVegetationInstance instance;
+                if (!spawnProposalInstance(vec2(0.5f) + typeInitialOffset, 0.5f, instance))
+                    return;
 
-                Volume::AABB aabb;
-                VegetationInstance instance;
-                if (!spawnInstance(vec2(0.5f) + typeInitialOffset, 0.5f, instance, aabb))
-                    continue;
-
-                octree.Insert(instance, aabb);
-                type.instances.push_back(instance);
-
-            }
-
+                proposalInstances[instanceCounter++] = instance;
+            });
         }
         else {
 
             float spawnScale = type.offspringSpreadRadius * invSideLength;
 
-            for (size_t i = 0; i < type.instances.size(); i++) {
+            // Check for enough space
+            if (proposalInstances.size() < type.instances.size()) {
+                proposalInstances.resize(type.instances.size());
+            }
 
-                auto& instance = type.instances[i];
+            JobSystem::ParallelFor(jobGroup, int32_t(type.instances.size()), 16, [&](JobData&, int32_t idx) {
+                auto& instance = type.instances[idx];
                 instance.age++;
 
                 bool hasOffspring = type.offspringPerIteration >= GenerateUniformRandom(randGenerator);
                 if (!hasOffspring)
-                    continue;
-
-                //Scene::Entity entity(ecsEntity, &scene->entityManager);
-                //auto& meshComponent = entity.GetComponent<MeshComponent>();
+                    return;
 
                 auto position = instance.position;
 
                 position -= terrain->translation;
                 position *= invSideLength;
 
-                Volume::AABB aabb;
-                VegetationInstance offspring;
-                if (!spawnInstance(vec2(position.x, position.z), spawnScale, offspring, aabb))
-                    continue;
+                ProposalVegetationInstance offspring;
+                if (!spawnProposalInstance(vec2(position.x, position.z), spawnScale, offspring))
+                    return;
 
-                octree.Insert(offspring, aabb);
-                type.instances.push_back(offspring);
+                proposalInstances[instanceCounter++] = offspring;
+            });
+        }
 
-            }
+        JobSystem::Wait(jobGroup);
 
+        auto count = instanceCounter.load();
+        for (int32_t i = 0; i < count; i++) {
+            auto& proposalInstance = proposalInstances[i];
+
+            if (!canSpawnInstance(proposalInstance)) 
+                continue;
+
+            octree.Insert(proposalInstance.instance, proposalInstance.aabb);
+            type.instances.push_back(proposalInstance.instance);
         }
 
     }

@@ -76,7 +76,7 @@ namespace Atlas::Editor::UI {
 
         bool isEditing = false;
         bool editingChanged = false;
-        EditingType editingType;
+        EditingType editingType = EditingType::Create;
         std::string editingString;
         std::filesystem::path editingPath;
 

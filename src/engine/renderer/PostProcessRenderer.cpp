@@ -447,7 +447,7 @@ namespace Atlas {
         }
 
         void PostProcessRenderer::SetUniforms(const CameraComponent& camera,
-            Ref<RenderTarget>& target, Ref<Scene::Scene>& scene) {
+            const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene) {
 
             const auto& postProcessing = scene->postProcessing;
 

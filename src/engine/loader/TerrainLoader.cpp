@@ -216,13 +216,13 @@ namespace Atlas {
                 }
             }
 
-            Atlas::Loader::TerrainLoader::LoadStorageCell(terrain, cells, filename);            
+            Atlas::Loader::TerrainLoader::LoadStorageCells(terrain, cells, filename);            
 
             return terrain;
 
         }
 
-        void TerrainLoader::LoadStorageCell(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
+        void TerrainLoader::LoadStorageCells(Ref<Terrain::Terrain> terrain, std::span<Terrain::TerrainStorageCell*> cells,
                 const std::string& filename) {
 
             if (cells.empty())
@@ -277,14 +277,14 @@ namespace Atlas {
                 auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
 
                 // Different resolutions for each LoD
-                for (int32_t i = 0; i <= cell->LoD; i++) {
+                for (int32_t j = 0; j <= cell->LoD; j++) {
                     auto sizeFactor = int64_t(glm::min(downsample,
                         terrain->bakeResolution / (tileResolution - 1)));
                     normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
                     auto nodeSize = nodeDataCount + normalDataResolution
                         * normalDataResolution * 4;
 
-                    if (cell->LoD == i) {
+                    if (cell->LoD == j) {
                         currPos += (cell->x * tileSideCount + cell->y) * nodeSize;
                         break;
                     }
@@ -321,8 +321,8 @@ namespace Atlas {
                 cell->materialIdxData = splatMapData;
 
                 cell->heightData.resize(tileResolution * tileResolution);
-                for (uint32_t i = 0; i < uint32_t(cell->heightData.size()); i++)
-                    cell->heightData[i] = (float)heightFieldData[i] / 65535.0f;
+                for (uint32_t j = 0; j < uint32_t(cell->heightData.size()); j++)
+                    cell->heightData[j] = (float)heightFieldData[j] / 65535.0f;
                 
                 cell->isLoaded = true;
                 cell->loadRequested = false;

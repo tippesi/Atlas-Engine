@@ -948,13 +948,14 @@ namespace Atlas::Tools {
         }
 
 
-        Loader::TerrainLoader::LoadStorageCell(terrain, { cells }, filename);
+        Loader::TerrainLoader::LoadStorageCells(terrain, { cells }, filename);
 
         Terrain::TerrainManager::enable = true;
 
     }
 
-    void TerrainTool::GenerateNormalData(std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, int32_t width, int32_t height, float scale) {
+    void TerrainTool::GenerateNormalData(const std::vector<uint16_t>& heightData, std::vector<uint8_t>& normalData, 
+        int32_t width, int32_t height, float scale) {
 
         const int32_t batchSize = 128;
 

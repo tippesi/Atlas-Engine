@@ -14,7 +14,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorShadowRenderer::Render(Ref<Graphics::FrameBuffer>& frameBuffer,
+        void ImpostorShadowRenderer::Render(const Ref<Graphics::FrameBuffer>& frameBuffer,
             Graphics::CommandList* commandList, RenderList* renderList, RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
@@ -34,11 +34,11 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                const auto& mesh = renderList->meshIdToMeshMap[meshId];
-
-                // If there aren't any impostors there won't be a buffer
+                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
                     continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 auto config = GetPipelineConfig(frameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);

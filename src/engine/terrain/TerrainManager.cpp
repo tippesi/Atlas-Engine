@@ -31,7 +31,7 @@ namespace Atlas::Terrain {
                 // Load new cells
                 cells = storage->GetRequestedCellsQueue();
                 auto span = std::span<TerrainStorageCell*> { cells.begin(), cells.end() };
-                Loader::TerrainLoader::LoadStorageCell(terrain.Get(), cells, terrain.GetResource()->path);
+                Loader::TerrainLoader::LoadStorageCells(terrain.Get(), cells, terrain.GetResource()->path);
             }
         };
 

@@ -18,8 +18,14 @@ namespace Atlas::Editor {
             vec3 position = vec3(0.0f);
             vec3 normal = vec3(0.0f, 1.0f, 0.0f);
             vec3 scale = vec3(1.0f);
+            float rotation = 0.0f;
             int32_t age = 0;
             VegetationType* type;
+        };
+
+        struct ProposalVegetationInstance {
+            VegetationInstance instance;
+            Volume::AABB aabb;
         };
 
         struct VegetationType {
@@ -35,10 +41,14 @@ namespace Atlas::Editor {
             float heightMin = 0.0f;
             float heightMax = 1.0f;
 
+            bool excludeBasedOnCorners = true;
             std::set<int32_t> exludeMaterialIndices;
 
             vec3 scaleMin = vec3(1.0f);
             vec3 scaleMax = vec3(1.0f);
+
+            float rotationMin = 0.0f;
+            float rotationMax = 2.0f * 3.14f;
 
             int32_t seed = int32_t(Common::Random::SampleUniformInt(0, (1 << 24)));
             
@@ -50,6 +60,7 @@ namespace Atlas::Editor {
             float priority = 1.0f;
 
             bool alignToSurface = true;
+            bool alignBasedOnCorners = false;
             float maxAlignmentAngle = 3.14f / 2.0f;
 
             float collisionRadius = 1.0f;
@@ -95,6 +106,7 @@ namespace Atlas::Editor {
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type);
 
         void PerformIterationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
+            std::vector<ProposalVegetationInstance>& proposalInstances,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, 
             Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator, VegetationType& type);
 

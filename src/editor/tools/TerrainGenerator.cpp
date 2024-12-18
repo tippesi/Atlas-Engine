@@ -223,7 +223,7 @@ namespace Atlas::Editor {
                 materialNames.push_back(materialName);
             }
 
-            for (auto& materialName : materialNames) {
+            for (const auto& materialName : materialNames) {
                 pointer.push_back(materialName.c_str());
             }
 

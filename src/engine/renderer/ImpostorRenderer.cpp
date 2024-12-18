@@ -13,7 +13,7 @@ namespace Atlas {
 
         }
 
-        void ImpostorRenderer::Render(Ref<RenderTarget> target, Ref<Scene::Scene> scene,
+        void ImpostorRenderer::Render(const Ref<RenderTarget>& target, const Ref<Scene::Scene>& scene,
             Graphics::CommandList* commandList, RenderList* renderList,
             std::unordered_map<void*, uint16_t> materialMap) {
 
@@ -32,11 +32,11 @@ namespace Atlas {
                 auto meshId = item.first;
                 auto instance = item.second;
 
-                const auto& mesh = renderList->meshIdToMeshMap[meshId];
-
                 // If there aren't any impostors there won't be a buffer
                 if (!instance.impostorCount)
                     continue;
+
+                const auto& mesh = renderList->meshIdToMeshMap[meshId];
 
                 auto config = GetPipelineConfig(target->gBufferFrameBuffer, mesh->impostor->interpolation, mesh->impostor->pixelDepthOffset);
                 auto pipeline = PipelineManager::GetPipeline(config);
