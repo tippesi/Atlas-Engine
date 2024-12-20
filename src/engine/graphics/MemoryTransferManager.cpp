@@ -273,7 +273,6 @@ namespace Atlas {
             vmaMapMemory(allocator, stagingAllocation.allocation, &src);
             std::memcpy(data, src, pixelCount * formatSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
-
             
             DestroyStagingBuffer(stagingAllocation);
 

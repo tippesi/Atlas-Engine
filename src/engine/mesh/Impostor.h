@@ -14,28 +14,35 @@ namespace Atlas {
 
     namespace Mesh {
 
+        struct ImpostorViewPlane {
+            vec4 right;
+            vec4 up;
+        };
+
         class Impostor {
 
             friend Renderer::MainRenderer;
 
         public:
-            Impostor() = default;
-
-            Impostor(const Impostor& that);
+            Impostor();
 
             Impostor(int32_t views, int32_t resolution);
 
-            Impostor& operator=(const Impostor& that);
+            void FillViewPlaneBuffer(const std::vector<vec3>& rightVectors, const std::vector<vec3>& upVectors);
 
-            void FillViewPlaneBuffer(std::vector<vec3> rightVectors, std::vector<vec3> upVectors);
+            void RefreshViewPlaneBuffer();
 
-            Texture::Texture2DArray baseColorTexture;
-            Texture::Texture2DArray roughnessMetalnessAoTexture;
-            Texture::Texture2DArray normalTexture;
-            Texture::Texture2DArray depthTexture;
+            void AllocateTextures();
+
+            Ref<Texture::Texture2DArray> baseColorTexture;
+            Ref<Texture::Texture2DArray> roughnessMetalnessAoTexture;
+            Ref<Texture::Texture2DArray> normalTexture;
+            Ref<Texture::Texture2DArray> depthTexture;
 
             Buffer::Buffer viewPlaneBuffer;
             Buffer::UniformBuffer impostorInfoBuffer;
+
+            std::vector<ImpostorViewPlane> viewPlanes;
 
             vec3 center = vec3(0.0f);
             float radius = 1.0f;
@@ -55,11 +62,6 @@ namespace Atlas {
             bool isGenerated = false;
 
         private:
-            struct ViewPlane {
-                vec4 right;
-                vec4 up;
-            };
-
             struct ImpostorInfo {
                 vec4 center;
 

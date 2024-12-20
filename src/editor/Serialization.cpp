@@ -93,6 +93,7 @@ namespace Atlas::Editor {
             { "playMaximized", sceneWindow->playMaximized },
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
+            { "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator },
             { "camera", camera }
         };
 
@@ -132,6 +133,7 @@ namespace Atlas::Editor {
         try_get_json(j, "perfOverlayMaximized", sceneWindow->perfOverlayMaximized);
         try_get_json(j, "camera", camera);
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
+        try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);

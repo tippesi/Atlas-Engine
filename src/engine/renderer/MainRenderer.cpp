@@ -1101,9 +1101,9 @@ namespace Atlas {
 
 			auto meshes = scene->GetMeshes();
 			for (auto& mesh : meshes) {
-				if (!mesh.IsLoaded() || !mesh->impostor || !mesh->impostor->isGenerated) continue;
+				if (!mesh.IsLoaded() || !mesh->impostor.IsLoaded() || !mesh->impostor->isGenerated) continue;
 
-				auto impostor = mesh->impostor;
+				auto& impostor = mesh->impostor;
 				Mesh::Impostor::ImpostorInfo impostorInfo = {
 					.center = vec4(impostor->center, 1.0f),
 					.radius = impostor->radius,

@@ -106,9 +106,9 @@ namespace Atlas::Scene {
                 if (!mesh.IsLoaded())
                     continue;
 
-                auto impostor = mesh->impostor;
+                auto& impostor = mesh->impostor;
 
-                if (!impostor)
+                if (!impostor.IsLoaded())
                     continue;
 
                 Renderer::PackedMaterial packed;
@@ -147,7 +147,7 @@ namespace Atlas::Scene {
 
                 materials.push_back(packed);
 
-                materialMap[impostor.get()] = idx++;
+                materialMap[impostor.Get().get()] = idx++;
             }
 
             if (materials.size() > materialBuffer.GetElementCount()) {

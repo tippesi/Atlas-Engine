@@ -21,6 +21,10 @@ namespace Atlas::Mesh {
 
     void from_json(const json& j, MeshSubData& p);
 
+    void to_json(json& j, const ImpostorViewPlane& p);
+
+    void from_json(const json& j, ImpostorViewPlane& p);
+
     void to_json(json& j, const Impostor& p);
 
     void from_json(const json& j, Impostor& p);

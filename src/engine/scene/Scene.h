@@ -75,7 +75,8 @@ namespace Atlas {
             template<typename T, typename ...Args>
             T CreatePrefab(Args&&... args);
 
-            void DestroyEntity(Entity entity, bool removeRecursively = true);
+            void DestroyEntity(Entity entity, bool removeRecursively = true, 
+                bool parentDeleted = false);
 
             Entity DuplicateEntity(Entity entity);
 

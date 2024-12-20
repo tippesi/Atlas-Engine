@@ -98,7 +98,7 @@ namespace Atlas::ImguiExtension {
         auto prevGamma = volume->gamma;
         ImGui::SliderFloat("Gamma exponent", &volume->gamma, 0.0f, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
         if (prevGamma != volume->gamma) volume->ClearProbes();
-        ImGui::SliderFloat("Split correction", &volume->splitCorrection, 1.0f, 10.0f);
+        ImGui::DragFloat("Split correction", &volume->splitCorrection, 0.01f, 1.0f, 10.0f);
         ImGui::Separator();
         if (ImGui::Button("Reset probe offsets")) {
             volume->ResetProbeOffsets();

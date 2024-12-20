@@ -75,8 +75,8 @@ namespace Atlas {
                 rayHitBuffer.SetSize(totalRayCount);
             }
 
-            auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
-            auto [lastIrradianceArray, lastMomentsArray] = internalVolume.GetLastProbes();
+            auto [irradianceArray, radianceArray, momentsArray] = internalVolume.GetCurrentProbes();
+            auto [lastIrradianceArray, lastRadianceArray, lastMomentsArray] = internalVolume.GetLastProbes();
 
             auto& rayDirBuffer = internalVolume.rayDirBuffer;
             auto& rayDirInactiveBuffer = internalVolume.rayDirInactiveBuffer;
@@ -300,7 +300,7 @@ namespace Atlas {
 
             // Need additional barrier, since in the normal case DDGI is made to be sampled just in compute shader
             auto& internalVolume = volume->internal;
-            auto [irradianceArray, momentsArray] = internalVolume.GetCurrentProbes();
+            auto [irradianceArray, radianceArray, momentsArray] = internalVolume.GetCurrentProbes();
 
             // Need to rebind after barrier
             commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);

@@ -24,16 +24,16 @@ namespace Atlas {
         public:
             InternalIrradianceVolume() = default;
 
-            InternalIrradianceVolume(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
+            InternalIrradianceVolume(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
 
             void SetRayCount(uint32_t rayCount, uint32_t rayCountInactive);
 
             void SwapTextures();
 
-            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
                 GetCurrentProbes() const;
 
-            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&>
+            std::tuple<const Texture::Texture2DArray&, const Texture::Texture2DArray&, const Texture::Texture2DArray&>
                 GetLastProbes() const;
 
             std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
@@ -42,7 +42,7 @@ namespace Atlas {
             std::tuple<const Buffer::Buffer&, const Buffer::Buffer&>
                 GetLastProbeBuffers() const;
 
-            void ClearProbes(ivec2 irrRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
+            void ClearProbes(ivec2 irrRes, ivec2 radRes, ivec2 momRes, ivec3 probeCount, int32_t cascadeCount);
 
             void ResetProbeOffsets();
 
@@ -65,9 +65,11 @@ namespace Atlas {
             void FillRayBuffers();
 
             Texture::Texture2DArray irradianceArray0;
+            Texture::Texture2DArray radianceArray0;
             Texture::Texture2DArray momentsArray0;
 
             Texture::Texture2DArray irradianceArray1;
+            Texture::Texture2DArray radianceArray1;
             Texture::Texture2DArray momentsArray1;
 
             int32_t swapIdx = 0;
@@ -141,6 +143,7 @@ namespace Atlas {
             friend Renderer::MainRenderer;
 
             int32_t irrRes = 6;
+            int32_t radRes = 1;
             int32_t momRes = 14;
 
         };

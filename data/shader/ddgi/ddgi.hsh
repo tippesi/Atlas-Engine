@@ -171,7 +171,7 @@ void GetProbeHistoryInfo(ivec3 probeIndex, int cascadeIndex, out ivec3 historyPr
 
     reset = any(lessThan(historyCascadeProbeIndex, ivec3(0))) || 
         any(greaterThanEqual(historyCascadeProbeIndex, ivec3(ddgiData.volumeProbeCount)));
-    // Now calculate the actual valid (clamped) istory probe index
+    // Now calculate the actual valid (clamped) history probe index
     historyProbeCoord = clamp(historyCascadeProbeIndex, ivec3(0), ivec3(ddgiData.volumeProbeCount - 1));
     historyProbeCoord += cascadeProbeOffset;
 
@@ -216,8 +216,6 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
     vec3 alpha = localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz - vec3(baseCell);
 
-    float totalVisibility = 0.0;
-
     for (int i = 0; i < 8; i++) {
         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
         ivec3 gridCell = clamp(baseCell + offset, ivec3(0), ddgiData.volumeProbeCount.xyz - ivec3(1));
@@ -253,16 +251,12 @@ vec4 GetLocalIrradianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
             float variance = abs(mean * mean - mean2);
             float visibility = variance / (variance + sqr(biasedDistToProbe - mean));
             visibilityWeight *= max(0.0, visibility * visibility * visibility);
-            totalVisibility += visibilityWeight;
-        }
-        else {
-            totalVisibility += 1.0;
         }
 
-        weight *= max(0.05, visibilityWeight);
+        weight *= max(0.0001, visibilityWeight);
 #endif
 
-        weight = max(0.000001, weight);
+        weight = max(0.00001, weight);
 
         float trilinearWeight = trilinear.x * trilinear.y * trilinear.z;
         weight *= trilinearWeight;
@@ -324,9 +318,11 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal,
 
     cascadeIndex = max(cascadeIndex - 1, 0);
 
+    vec3 cascadeSize = ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(3));
+
     // Shrink AABB to get a proper blend distance
-    vec3 aabbMin = ddgiData.volumeCenter.xyz - ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
-    vec3 aabbMax = ddgiData.volumeCenter.xyz + ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(4)) * 0.5;
+    vec3 aabbMin = ddgiData.volumeCenter.xyz - cascadeSize * 0.5;
+    vec3 aabbMax = ddgiData.volumeCenter.xyz + cascadeSize * 0.5;
 
     vec3 closestPoint = clamp(P, aabbMin, aabbMax);
     float distanceToAABB = distance(P, closestPoint);

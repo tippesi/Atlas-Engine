@@ -106,7 +106,7 @@ void main() {
         vec3 worldPos = vec3(globalData.ivMatrix * vec4(viewPos, 1.0));
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * 
-            vec4(DecodeNormal(textureLod(normalTexture, recontructTexCoord, 0).rg), 0.0)));
+            vec4(DecodeNormal(texelFetch(normalTexture, pixel, 0).rg), 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
@@ -123,8 +123,8 @@ void main() {
             for (int i = 0; i < sampleCount; i++) {
                 int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
                 vec2 blueNoiseVec = vec2(
-                    SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-                    SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+                    SampleBlueNoise(highResPixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
+                    SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
                     );
 
                 float alpha = sqr(max(0.0, material.roughness));

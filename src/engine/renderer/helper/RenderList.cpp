@@ -201,7 +201,7 @@ namespace Atlas {
             if (!mesh->castShadow && type == RenderPassType::Shadow)
                 continue;
 
-            auto hasImpostor = mesh->impostor != nullptr && mesh->impostor->isGenerated;
+            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated;
             maxActorCount += batch.count;
             maxImpostorCount += hasImpostor ? batch.count : 0;
         }
@@ -215,7 +215,7 @@ namespace Atlas {
             if (!batch.count) continue;
             if (!mesh->castShadow && type == RenderPassType::Shadow) continue;
 
-            auto hasImpostor = mesh->impostor != nullptr && mesh->impostor->isGenerated;
+            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated;
             auto needsHistory = mesh->mobility != Mesh::MeshMobility::Stationary
                 && type != RenderPassType::Shadow;
 

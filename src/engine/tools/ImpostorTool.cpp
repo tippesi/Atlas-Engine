@@ -84,10 +84,10 @@ namespace Atlas {
                 impostor->approxReflectance += material->reflectance / (float)mesh->data.materials.size();
             }
 
-            impostor->baseColorTexture.GenerateMipmap();
-            impostor->roughnessMetalnessAoTexture.GenerateMipmap();
-            impostor->normalTexture.GenerateMipmap();
-            impostor->depthTexture.GenerateMipmap();            
+            impostor->baseColorTexture->GenerateMipmap();
+            impostor->roughnessMetalnessAoTexture->GenerateMipmap();
+            impostor->normalTexture->GenerateMipmap();
+            impostor->depthTexture->GenerateMipmap();            
 
             return impostor;
 

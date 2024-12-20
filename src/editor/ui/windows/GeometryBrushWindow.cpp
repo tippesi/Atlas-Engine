@@ -3,6 +3,8 @@
 #include "common/RandomHelper.h"
 #include "../../Notifications.h"
 
+#include <glm/gtx/quaternion.hpp>
+
 namespace Atlas::Editor::UI {
 
     void GeometryBrushWindow::Render(const Ref<SceneWindow>& activeSceneWindow) {
@@ -191,25 +193,28 @@ namespace Atlas::Editor::UI {
             mat4 rot { 1.0f };
             if (brushAlignToSurface) {
                 vec3 N = rayCastResult.normal;
-                vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-                vec3 tangent = normalize(cross(up, N));
-                vec3 bitangent = cross(N, tangent);
 
-                rot = mat4(mat3(tangent, N, bitangent));
+                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+                glm::quat rotation = glm::rotation(up, glm::normalize(N));
+                rot = glm::toMat4(rotation);
             }
 
-            decomposition.translation = ray.Get(rayCastResult.hitDistance);
+            auto translation = ray.Get(rayCastResult.hitDistance);
 
-            auto transform = decomposition.Compose() * rot;
+            mat4 matrix(1.0f);
+            matrix = glm::translate(matrix, translation);
+            matrix *= rot;
+            matrix = glm::scale(matrix, decomposition.scale);
+
             auto entity = scene->DuplicateEntity(brushEntity);
 
             auto& transformComponent = entity.GetComponent<TransformComponent>();
-            transformComponent.Set(transform);
+            transformComponent.Set(matrix);
 
             parentEntity.GetComponent<HierarchyComponent>().AddChild(entity);
 
             // Ray cast result is in global space, so need to bring transform to valid local one
-            transformComponent.globalMatrix = transform;
+            transformComponent.globalMatrix = matrix;
             transformComponent.ReconstructLocalMatrix(parentEntity);
         }
 

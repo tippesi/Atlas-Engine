@@ -192,7 +192,6 @@ namespace Atlas {
             auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             auto offsetTexture = downsampledRT->offsetTexture;
             auto materialIdxTexture = downsampledRT->materialIdxTexture;
-            auto velocityTexture = downsampledRT->velocityTexture;
 
             // Bind the geometry normal texure and depth texture
             commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
@@ -209,7 +208,7 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
 
-                auto clouds = scene->sky.clouds;
+                auto clouds = scene->sky.clouds;               
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
@@ -282,7 +281,7 @@ namespace Atlas {
             roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
             offsetTexture = downsampledRT->offsetTexture;
             materialIdxTexture = downsampledRT->materialIdxTexture;
-            velocityTexture = downsampledRT->velocityTexture;
+            auto velocityTexture = downsampledRT->velocityTexture;
 
             auto historyDepthTexture = downsampledHistoryRT->depthTexture;
             auto historyMaterialIdxTexture = downsampledHistoryRT->materialIdxTexture;

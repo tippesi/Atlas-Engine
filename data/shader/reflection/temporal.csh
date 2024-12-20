@@ -34,7 +34,7 @@ layout(set = 3, binding = 13) uniform sampler2D historyRoughnessMetallicAoTextur
 vec2 invResolution = 1.0 / vec2(imageSize(resolveImage));
 vec2 resolution = vec2(imageSize(resolveImage));
 
-const int kernelRadius = 4;
+const int kernelRadius = 5;
 
 const uint sharedDataSize = (gl_WorkGroupSize.x + 2 * kernelRadius) * (gl_WorkGroupSize.y + 2 * kernelRadius);
 const ivec2 unflattenedSharedDataSize = ivec2(gl_WorkGroupSize) + 2 * kernelRadius;
@@ -458,7 +458,7 @@ void main() {
     float dominantFactor = GetSpecularDominantFactor(NdotV, sqrt(roughness));
 
     vec3 mean, std;
-    const int radius = int(mix(3.0, float(kernelRadius), min(1.0, roughness * 2.0)));
+    const int radius = int(mix(3.0, float(kernelRadius), min(1.0, roughness * 4.0)));
     ComputeVarianceMinMax(roughness, radius, mean, std);
 
     ivec2 velocityPixel = pixel;
@@ -544,7 +544,7 @@ void main() {
     float temporalWeight = mix(pushConstants.temporalWeight, 0.0, adjClipBlend);
 
 #ifdef UPSCALE
-    float roughnessMinTemporalWeight = 0.75;
+    float roughnessMinTemporalWeight = 0.5;
 #else
     float roughnessMinTemporalWeight = temporalWeight;
 #endif

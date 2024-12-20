@@ -87,7 +87,7 @@ namespace Atlas {
             Buffer::VertexBuffer colorBuffer;
 
             Ref<RayTracing::BLAS> blas = nullptr;
-            Ref<Impostor> impostor = nullptr;
+            ResourceHandle<Impostor> impostor;
 
             bool cullBackFaces = true;
             bool depthTest = true;

@@ -63,6 +63,39 @@ struct RayData {
 
 shared RayData rayData[sharedSize];
 
+vec4 GetHistoryFromHigherCascade(ivec2 pixel, int cascadeIndex) {
+
+    vec3 probePosition = vec3(gl_WorkGroupID.xyz) * ddgiData.cascades[cascadeIndex].cellSize.xyz + ddgiData.cascades[cascadeIndex].volumeMin.xyz;
+
+    // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
+    cascadeIndex = max(cascadeIndex - 1, 0);
+
+    vec3 localPosition = probePosition - ddgiData.cascades[cascadeIndex].volumeMin.xyz;
+    ivec3 baseCell = ivec3(localPosition / ddgiData.cascades[cascadeIndex].cellSize.xyz);
+
+    bool reset;
+    ivec3 historyProbeCoord;
+    GetProbeHistoryInfo(baseCell, cascadeIndex, historyProbeCoord, reset);
+
+#ifdef IRRADIANCE
+    ivec2 res = ivec2(ddgiData.volumeIrradianceRes);
+#else
+    ivec2 res = ivec2(ddgiData.volumeMomentsRes);
+#endif
+
+    ivec2 historyResOffset = (res + ivec2(2)) * ivec2(historyProbeCoord.xz) + ivec2(1);
+    ivec3 historyVolumeCoord = ivec3(historyResOffset + pixel, int(historyProbeCoord.y));
+
+#ifdef IRRADIANCE
+    vec3 lastResult = texelFetch(irradianceVolume, historyVolumeCoord, 0).rgb;
+    return vec4(lastResult, 0.0); 
+#else
+    vec2 lastResult = texelFetch(momentsVolume, historyVolumeCoord, 0).rg;
+    return vec4(lastResult, 0.0, 0.0);
+#endif
+
+}
+
 void main() {
 
     uint baseIdx = Flatten3D(ivec3(gl_WorkGroupID.xzy), ivec3(gl_NumWorkGroups.xzy));
@@ -173,16 +206,20 @@ void main() {
 
     // Use a dynamic hysteris based on probe age to accumulate more efficiently at the beginning of a probes life
     float hysteresis = min(ddgiData.hysteresis, probeAge / (probeAge + 1.0));
+    //hysteresis = ddgiData.hysteresis;
 
 #ifdef IRRADIANCE
     vec3 lastResult = texelFetch(irradianceVolume, historyVolumeCoord, 0).rgb;
+    if (probeState == PROBE_STATE_NEW || reset) {
+        //lastResult = GetHistoryFromHigherCascade(pix, cascadeIndex).rgb;
+    }
     vec3 resultOut = lastResult;
     if (result.w > 0.0) {
         result.xyz /= result.w;
         result.xyz = pow(result.xyz, vec3(1.0 / ddgiData.volumeGamma));
 
         if (probeState == PROBE_STATE_NEW || reset) {
-            resultOut = result.xyz;
+            resultOut = mix(result.xyz, lastResult, hysteresis);
         }
         else {                
             resultOut = mix(result.xyz, lastResult, hysteresis);
@@ -198,6 +235,9 @@ void main() {
     }
 #else
     vec2 lastResult = texelFetch(momentsVolume, historyVolumeCoord, 0).rg;
+    if (probeState == PROBE_STATE_NEW || reset) {
+        //lastResult = GetHistoryFromHigherCascade(pix, cascadeIndex).rg;
+    }
     vec2 resultOut = lastResult;
     if (result.w > 0.0) {
         if (probeState == PROBE_STATE_NEW || reset) {

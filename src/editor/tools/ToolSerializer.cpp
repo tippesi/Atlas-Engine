@@ -126,4 +126,103 @@ namespace Atlas::Editor {
 
     }
 
+    void to_json(json& j, const VegetationGenerator::VegetationType& p) {
+
+        j = json{
+           {"id", p.id},
+           {"name", p.name},
+           {"offset", p.offset},
+           {"slopeMin", p.slopeMin},
+           {"slopeMax", p.slopeMax},
+           {"heightMin", p.heightMin},
+           {"heightMax", p.heightMax},
+           {"excludeBasedOnCorners", p.excludeBasedOnCorners},
+           {"exludeMaterialIndices", p.exludeMaterialIndices},
+           {"scaleMin", p.scaleMin},
+           {"scaleMax", p.scaleMax},
+           {"rotationMin", p.rotationMin},
+           {"rotationMax", p.rotationMax},
+           {"seed", p.seed},
+           {"iterations", p.iterations},
+           {"initialDensity", p.initialDensity},
+           {"offspringPerIteration", p.offspringPerIteration},
+           {"offspringSpreadRadius", p.offspringSpreadRadius},
+           {"priority", p.priority},
+           {"alignToSurface", p.alignToSurface},
+           {"alignBasedOnCorners", p.alignBasedOnCorners},
+           {"maxAlignmentAngle", p.maxAlignmentAngle},
+           {"collisionRadius", p.collisionRadius},
+           {"shadeRadius", p.shadeRadius},
+           {"canGrowInShade", p.canGrowInShade},
+           {"growthMaxAge", p.growthMaxAge},
+           {"growthMinScale", p.growthMinScale},
+           {"growthMaxScale", p.growthMaxScale},
+           {"attachMeshPhysicsComponent", p.attachMeshPhysicsComponent},
+           {"parentEntity", p.parentEntity},
+           {"entities", p.entities}
+        };
+
+        if (p.mesh.IsValid())
+            j["mesh"] = p.mesh.GetResource()->path;
+
+    }
+
+    void from_json(const json& j, VegetationGenerator::VegetationType& p) {
+
+        j.at("id").get_to(p.id);
+        j.at("name").get_to(p.name);
+        j.at("offset").get_to(p.offset);
+        j.at("slopeMin").get_to(p.slopeMin);
+        j.at("slopeMax").get_to(p.slopeMax);
+        j.at("heightMin").get_to(p.heightMin);
+        j.at("heightMax").get_to(p.heightMax);
+        j.at("excludeBasedOnCorners").get_to(p.excludeBasedOnCorners);
+        j.at("exludeMaterialIndices").get_to(p.exludeMaterialIndices);
+        j.at("scaleMin").get_to(p.scaleMin);
+        j.at("scaleMax").get_to(p.scaleMax);
+        j.at("rotationMin").get_to(p.rotationMin);
+        j.at("rotationMax").get_to(p.rotationMax);
+        j.at("seed").get_to(p.seed);
+        j.at("iterations").get_to(p.iterations);
+        j.at("initialDensity").get_to(p.initialDensity);
+        j.at("offspringPerIteration").get_to(p.offspringPerIteration);
+        j.at("offspringSpreadRadius").get_to(p.offspringSpreadRadius);
+        j.at("priority").get_to(p.priority);
+        j.at("alignToSurface").get_to(p.alignToSurface);
+        j.at("alignBasedOnCorners").get_to(p.alignBasedOnCorners);
+        j.at("maxAlignmentAngle").get_to(p.maxAlignmentAngle);
+        j.at("collisionRadius").get_to(p.collisionRadius);
+        j.at("shadeRadius").get_to(p.shadeRadius);
+        j.at("canGrowInShade").get_to(p.canGrowInShade);
+        j.at("growthMaxAge").get_to(p.growthMaxAge);
+        j.at("growthMinScale").get_to(p.growthMinScale);
+        j.at("growthMaxScale").get_to(p.growthMaxScale);
+        j.at("attachMeshPhysicsComponent").get_to(p.attachMeshPhysicsComponent);
+        j.at("parentEntity").get_to(p.parentEntity);
+        j.at("entities").get_to(p.entities);
+
+        if (j.contains("mesh"))
+            p.mesh = FileImporter::ImportFile<Mesh::Mesh>(j["mesh"]);
+
+    }
+
+    void to_json(json& j, const VegetationGenerator& p) {
+
+        j = json{
+            {"types", p.types},
+            {"seed", p.seed},
+            {"useSceneForCollision", p.useSceneForCollision}
+        };
+
+
+    }
+
+    void from_json(const json& j, VegetationGenerator& p) {
+
+        j.at("types").get_to(p.types);
+        j.at("seed").get_to(p.seed);
+        j.at("useSceneForCollision").get_to(p.useSceneForCollision);
+
+    }
+
 }

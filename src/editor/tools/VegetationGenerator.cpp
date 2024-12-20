@@ -52,20 +52,11 @@ namespace Atlas::Editor {
     }
 
     void VegetationGenerator::RemoveEntitiesFromScene(VegetationType& type, Ref<Scene::Scene>& scene) {
-
-        for (auto ecsEntity : type.entities) {
-
-            Scene::Entity entity(ecsEntity, &scene->entityManager);
-            if (!entity.IsValid())
-                continue;
-
-            scene->DestroyEntity(entity);
-
-        }
-
+       
+        // Destroy parent recursive
         Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
         if (parentEntity.IsValid())
-            scene->DestroyEntity(parentEntity, false);
+            scene->DestroyEntity(parentEntity, true);
 
     }
 
@@ -134,7 +125,7 @@ namespace Atlas::Editor {
 
                 glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
                 glm::quat rotation = glm::rotation(up, glm::normalize(N));
-                rot = glm::toMat4(rotation);
+                rot = glm::toMat4(rotation) * glm::rotate(instance.rotation, up);
             }
 
             mat4 matrix(1.0f);
@@ -275,21 +266,21 @@ namespace Atlas::Editor {
             return true;
             };
 
-        JobGroup jobGroup { JobPriority::High };
-        std::atomic_int32_t instanceCounter = 0;
+
+        std::int32_t instanceCounter = 0;
 
         if (type.instances.empty()) {
 
             // The offset is only applied initially
             int32_t initialCount = int32_t(float(initialCountPerType) * type.initialDensity);
             auto typeInitialOffset = vec2(type.offset.x, type.offset.z) * invSideLength;
-            JobSystem::ParallelFor(jobGroup, initialCount, 16, [&](JobData&, int32_t idx) {
+            for (int32_t i = 0; i < initialCount; i++) {
                 ProposalVegetationInstance instance;
                 if (!spawnProposalInstance(vec2(0.5f) + typeInitialOffset, 0.5f, instance))
-                    return;
+                    continue;
 
                 proposalInstances[instanceCounter++] = instance;
-            });
+            }
         }
         else {
 
@@ -300,13 +291,13 @@ namespace Atlas::Editor {
                 proposalInstances.resize(type.instances.size());
             }
 
-            JobSystem::ParallelFor(jobGroup, int32_t(type.instances.size()), 16, [&](JobData&, int32_t idx) {
-                auto& instance = type.instances[idx];
+            for (int32_t i = 0; i < int32_t(type.instances.size()); i++) {
+                auto& instance = type.instances[i];
                 instance.age++;
 
                 bool hasOffspring = type.offspringPerIteration >= GenerateUniformRandom(randGenerator);
                 if (!hasOffspring)
-                    return;
+                    continue;
 
                 auto position = instance.position;
 
@@ -315,15 +306,13 @@ namespace Atlas::Editor {
 
                 ProposalVegetationInstance offspring;
                 if (!spawnProposalInstance(vec2(position.x, position.z), spawnScale, offspring))
-                    return;
+                    continue;
 
                 proposalInstances[instanceCounter++] = offspring;
-            });
+            }
         }
 
-        JobSystem::Wait(jobGroup);
-
-        auto count = instanceCounter.load();
+        auto count = instanceCounter;
         for (int32_t i = 0; i < count; i++) {
             auto& proposalInstance = proposalInstances[i];
 

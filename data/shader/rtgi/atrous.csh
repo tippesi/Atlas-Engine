@@ -207,7 +207,7 @@ void main() {
 
     vec3 viewDir = normalize(ConvertDepthToViewSpace(centerDepth, texCoord));
     float NdotV = abs(dot(viewDir, centerNormal));
-    float depthPhi = max(32.0, NdotV * 128.0 / max(1.0, abs(ConvertDepthToViewSpaceDepth(centerLinearDepth))));
+    float depthPhi = max(32.0, NdotV * 128.0 / max(1.0, abs(centerLinearDepth)));
 
     const int radius = 2;
     for (int x = -radius; x <= radius; x++) {

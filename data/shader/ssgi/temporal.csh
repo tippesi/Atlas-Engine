@@ -265,7 +265,7 @@ void main() {
     vec4 historyNeighbourhoodMin = mean - historyClipFactor * std;
     vec4 historyNeighbourhoodMax = mean + historyClipFactor * std;
 
-    const float currentClipFactor = 2.0;
+    const float currentClipFactor = 1.0;
     vec4 currentNeighbourhoodMin = mean - currentClipFactor * std;
     vec4 currentNeighbourhoodMax = mean + currentClipFactor * std;
 
@@ -273,7 +273,8 @@ void main() {
     vec2 velocity = texelFetch(velocityTexture, velocityPixel, 0).rg;
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
-    vec2 historyPixel = vec2(pixel) + velocity * resolution;
+    
+    vec2 historyPixel = vec2(pixel) + velocity * resolution - globalData.jitterCurrent;
 
     bool valid = true;
     vec4 history;

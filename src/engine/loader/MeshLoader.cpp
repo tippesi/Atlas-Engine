@@ -1,4 +1,5 @@
 #include "MeshLoader.h"
+#include "ImpostorLoader.h"
 #include "mesh/MeshSerializer.h"
 
 namespace Atlas::Loader {
@@ -58,6 +59,10 @@ namespace Atlas::Loader {
         }
 
         fileStream.close();
+
+        if (mesh->impostor.IsLoaded()) {
+            ImpostorLoader::SaveImpostor(mesh->impostor.Get(), mesh->impostor.GetResource()->path, binaryJson);
+        }
 
     }
 

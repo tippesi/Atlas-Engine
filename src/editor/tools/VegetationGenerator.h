@@ -73,6 +73,7 @@ namespace Atlas::Editor {
             float growthMaxScale = 1.5f;
 
             ResourceHandle<Mesh::Mesh> mesh;
+            bool attachMeshPhysicsComponent = false;
 
             ECS::Entity parentEntity = ECS::EntityConfig::InvalidEntity;
             std::vector<ECS::Entity> entities;
@@ -96,6 +97,7 @@ namespace Atlas::Editor {
         const int32_t initialCountPerType = 10000;
 
         int32_t seed = 1;
+        bool useSceneForCollision = false;
         size_t typeCounter = 0;
 
     private:

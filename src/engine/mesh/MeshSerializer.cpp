@@ -1,6 +1,7 @@
 #include "MeshSerializer.h"
 #include "resource/ResourceManager.h"
 #include "loader/MaterialLoader.h"
+#include "loader/ImpostorLoader.h"
 
 namespace Atlas::Mesh {
 
@@ -29,6 +30,10 @@ namespace Atlas::Mesh {
             {"invertUVs", p.invertUVs},
             {"data", p.data},
         };
+
+        if (p.impostor.IsLoaded()) {
+            j["impostor"] = p.impostor.GetResource()->path;
+        }
     }
 
     void from_json(const json& j, Mesh& p) {
@@ -55,6 +60,12 @@ namespace Atlas::Mesh {
 
         try_get_json(j, "rayTrace", p.rayTrace);
         try_get_json(j, "rayTraceDistanceCulling", p.rayTraceDistanceCulling);
+
+        if (j.contains("impostor")) {
+            std::string path = j["impostor"];
+            p.impostor = ResourceManager<Impostor>::GetOrLoadResourceWithLoaderAsync(
+                path, ResourceOrigin::User, Loader::ImpostorLoader::LoadImpostor, true);
+        }
 
         p.mobility = static_cast<MeshMobility>(mobility);
         p.usage = static_cast<MeshUsage>(usage);
@@ -141,11 +152,11 @@ namespace Atlas::Mesh {
     void to_json(json& j, const MeshSubData& p) {
 
         j = json{
-           {"name", p.name},
-           {"indicesOffset", p.indicesOffset},
-           {"indicesCount", p.indicesCount},
-           {"materialIdx", p.materialIdx},
-           {"aabb", p.aabb},
+            {"name", p.name},
+            {"indicesOffset", p.indicesOffset},
+            {"indicesCount", p.indicesCount},
+            {"materialIdx", p.materialIdx},
+            {"aabb", p.aabb},
         };
 
     }
@@ -160,15 +171,53 @@ namespace Atlas::Mesh {
 
     }
 
+    void to_json(json& j, const ImpostorViewPlane& p) {
+
+        j = json{
+            {"right", p.right},
+            {"up", p.up}
+        };
+
+    }
+
+    void from_json(const json& j, ImpostorViewPlane& p) {
+
+        j.at("right").get_to(p.right);
+        j.at("up").get_to(p.up);
+
+    }
+
     void to_json(json& j, const Impostor& p) {
 
-
+        j = json{
+            {"viewPlanes", p.viewPlanes},
+            {"center", p.center},
+            {"radius", p.radius},
+            {"views", p.views},
+            {"resolution", p.resolution},
+            {"cutoff", p.cutoff},
+            {"mipBias", p.mipBias},
+            {"interpolation", p.interpolation},
+            {"pixelDepthOffset", p.pixelDepthOffset},
+            {"approxTransmissiveColor", p.approxTransmissiveColor},
+            {"approxReflectance", p.approxReflectance},
+        };
 
     }
 
     void from_json(const json& j, Impostor& p) {
 
-
+        j.at("viewPlanes").get_to(p.viewPlanes);
+        j.at("center").get_to(p.center);
+        j.at("radius").get_to(p.radius);
+        j.at("views").get_to(p.views);
+        j.at("resolution").get_to(p.resolution);
+        j.at("cutoff").get_to(p.cutoff);
+        j.at("mipBias").get_to(p.mipBias);
+        j.at("interpolation").get_to(p.interpolation);
+        j.at("pixelDepthOffset").get_to(p.pixelDepthOffset);
+        j.at("approxTransmissiveColor").get_to(p.approxTransmissiveColor);
+        j.at("approxReflectance").get_to(p.approxReflectance);
 
     }
 

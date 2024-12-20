@@ -106,13 +106,35 @@ namespace Atlas::Editor::UI {
             return;
         }
 
+        bool changed = false;
         materialsPanel.Render(Singletons::imguiWrapper, terrain->storage->materials,
             [&](ResourceHandle<Material> material) {
-                return materialSelectionPanel.Render(material);
+                bool materialChanged = false;
+                auto handle = materialSelectionPanel.Render(material, materialChanged);
+                changed |= materialChanged;
+                return handle;
             },
             [&](ResourceHandle<Texture::Texture2D> texture) {
-                return textureSelectionPanel.Render(texture);
+                bool textureChanged = false;
+                auto handle = textureSelectionPanel.Render(texture);
+                changed |= textureChanged;
+                return handle;
             });
+
+        if (changed) {
+            terrain->storage->BeginMaterialWrite();
+
+            int32_t count = 0;
+            for (int32_t i = 0; i < int32_t(terrain->storage->materials.size()); i++) {
+                auto material = terrain->storage->materials[i];
+                if (!material.IsLoaded())
+                    continue;
+
+                terrain->storage->WriteMaterial(i, material);
+            }
+
+            terrain->storage->EndMaterialWrite();
+        }
 
     }
 

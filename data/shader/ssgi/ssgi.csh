@@ -85,7 +85,7 @@ void main() {
         vec3 viewVec = vec3(globalData.ivMatrix * vec4(viewPos, 0.0));
         vec3 viewNorm = normalize(DecodeNormal(textureLod(normalTexture, texCoord, 0).rg));
         vec3 worldNorm = normalize(vec3(globalData.ivMatrix * vec4(viewNorm, 0.0)));
-        vec3 worldView = normalize(vec3(globalData.ivMatrix * vec4(viewVec, 0.0)));
+        vec3 worldView = -normalize(vec3(globalData.ivMatrix * vec4(viewPos, 0.0)));
 
         uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
         Material material = UnpackMaterial(materialIdx);
@@ -93,7 +93,8 @@ void main() {
         vec3 globalProbeFallback = textureLod(diffuseProbe, worldNorm, 0).rgb;
 #ifdef DDGI
         //rayIrradiance = GetLocalIrradianceInterpolated(worldPos, -V, N, N, globalProbeFallback).rgb * ddgiData.volumeStrength;
-        vec3 probeIrradiance = GetLocalIrradiance(worldPos, worldNorm, worldNorm).rgb * ddgiData.volumeStrength;
+        vec3 probeIrradiance = GetLocalIrradianceInterpolated(worldPos, worldView, worldNorm,
+             worldNorm, globalProbeFallback).rgb * ddgiData.volumeStrength;
         probeIrradiance = IsInsideVolume(worldPos) ? probeIrradiance : globalProbeFallback;
 #else
         vec3 probeIrradiance = globalProbeFallback;

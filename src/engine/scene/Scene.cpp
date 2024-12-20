@@ -23,11 +23,11 @@ namespace Atlas {
 
         }
 
-        void Scene::DestroyEntity(Entity entity, bool removeRecursively) {
+        void Scene::DestroyEntity(Entity entity, bool removeRecursively, bool parentDeleted) {
 
             auto parentEntity = GetParentEntity(entity);
 
-            if (parentEntity.IsValid()) {
+            if (!parentDeleted && parentEntity.IsValid()) {
                 auto& hierarchyComponent = parentEntity.GetComponent<HierarchyComponent>();
                 hierarchyComponent.RemoveChild(entity);
             }
@@ -37,7 +37,7 @@ namespace Atlas {
                 if (hierarchyComponent) {
                     auto children = hierarchyComponent->GetChildren();
                     for (auto childEntity : children) {
-                        DestroyEntity(childEntity, removeRecursively);
+                        DestroyEntity(childEntity, removeRecursively, true);
                     }
                 }
             }

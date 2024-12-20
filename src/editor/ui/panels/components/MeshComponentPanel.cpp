@@ -54,16 +54,19 @@ namespace Atlas::Editor::UI {
                 ImGui::Separator();
                 ImGui::Text("Impostor settings");
 
-                bool impostorEnabled = mesh->impostor != nullptr;
+                auto impostorFilename = mesh.GetResource()->path + ".aeimpostor";
+                bool impostorEnabled = mesh->impostor.IsLoaded();
                 ImGui::Checkbox("Enable", &impostorEnabled);
-                if (impostorEnabled && !mesh->impostor) {
-                    mesh->impostor = CreateRef<Mesh::Impostor>();
+                if (impostorEnabled && !mesh->impostor.IsLoaded()) {
+                    
+                    auto impostor = CreateRef<Mesh::Impostor>();
+                    mesh->impostor = ResourceManager<Mesh::Impostor>::AddResource(impostorFilename, impostor);
                 }
-                else if (!impostorEnabled && mesh->impostor) {
-                    mesh->impostor = nullptr;
+                else if (!impostorEnabled && mesh->impostor.IsLoaded()) {
+                    mesh->impostor = ResourceHandle<Mesh::Impostor>();
                 }
 
-                if (mesh->impostor) {
+                if (mesh->impostor.IsLoaded()) {
                     auto& impostor = mesh->impostor;
 
                     ImGui::SliderInt("Resolution", &impostor->resolution, 64, 1024);
@@ -75,9 +78,10 @@ namespace Atlas::Editor::UI {
                     ImGui::Checkbox("Pixel-depth offset", &impostor->pixelDepthOffset);
 
                     if (ImGui::Button("Generate", ImVec2(-FLT_MIN, 0.0f))) {
-                        mesh->impostor = Atlas::Tools::ImpostorTool::GenerateImpostor(
+                        auto newImpostor = Atlas::Tools::ImpostorTool::GenerateImpostor(
                             mesh, impostor->views, impostor->resolution
                         );
+                        impostor.GetResource()->Swap(newImpostor);                        
                     }
                 }
             }

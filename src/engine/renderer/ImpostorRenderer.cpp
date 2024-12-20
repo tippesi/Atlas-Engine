@@ -43,17 +43,17 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                mesh->impostor->roughnessMetalnessAoTexture.Bind(commandList, 3, 1);
-                mesh->impostor->normalTexture.Bind(commandList, 3, 2);
-                mesh->impostor->depthTexture.Bind(commandList, 3, 3);
+                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
+                mesh->impostor->roughnessMetalnessAoTexture->Bind(commandList, 3, 1);
+                mesh->impostor->normalTexture->Bind(commandList, 3, 2);
+                mesh->impostor->depthTexture->Bind(commandList, 3, 3);
 
                 // Base 0 is used by the materials
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 4);
                 mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 5);
 
                 PushConstants constants = {
-                    .materialIdx = uint32_t(materialMap[mesh->impostor.get()]),
+                    .materialIdx = uint32_t(materialMap[mesh->impostor.Get().get()]),
                 };
                 commandList->PushConstants("constants", &constants);
 
@@ -106,10 +106,10 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
                 Graphics::ImageBarrier imageBarriers[] = {
-                    {impostor->baseColorTexture.image,            layout, access},
-                    {impostor->normalTexture.image,               layout, access},
-                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
-                    {impostor->depthTexture.image, layout, access},
+                    {impostor->baseColorTexture->image,            layout, access},
+                    {impostor->normalTexture->image,               layout, access},
+                    {impostor->roughnessMetalnessAoTexture->image, layout, access},
+                    {impostor->depthTexture->image, layout, access},
                     {frameBuffer->GetDepthImage(), layout, access},
                 };
                 commandList->PipelineBarrier(imageBarriers, {},
@@ -118,10 +118,10 @@ namespace Atlas {
 
             for (size_t i = 0; i < viewMatrices.size(); i++) {
 
-                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture.image, i, 0);
-                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture.image, i, 1);
-                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture.image, i, 2);
-                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture.image, i, 3);
+                frameBuffer->ChangeColorAttachmentImage(impostor->baseColorTexture->image, i, 0);
+                frameBuffer->ChangeColorAttachmentImage(impostor->normalTexture->image, i, 1);
+                frameBuffer->ChangeColorAttachmentImage(impostor->roughnessMetalnessAoTexture->image, i, 2);
+                frameBuffer->ChangeColorAttachmentImage(impostor->depthTexture->image, i, 3);
                 frameBuffer->Refresh();
 
                 commandList->BeginRenderPass(frameBuffer->renderPass, frameBuffer, true);
@@ -176,24 +176,24 @@ namespace Atlas {
                 VkImageLayout layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 VkAccessFlags access = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
                 Graphics::ImageBarrier preImageBarriers[] = {
-                    {impostor->baseColorTexture.image, layout, access},
-                    {impostor->normalTexture.image, layout, access},
-                    {impostor->roughnessMetalnessAoTexture.image, layout, access},
-                    {impostor->depthTexture.image, layout, access},
+                    {impostor->baseColorTexture->image, layout, access},
+                    {impostor->normalTexture->image, layout, access},
+                    {impostor->roughnessMetalnessAoTexture->image, layout, access},
+                    {impostor->depthTexture->image, layout, access},
                 };
                 commandList->PipelineBarrier(preImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-                commandList->GenerateMipMaps(impostor->baseColorTexture.image);
-                commandList->GenerateMipMaps(impostor->normalTexture.image);
-                commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture.image);
-                commandList->GenerateMipMaps(impostor->depthTexture.image);
+                commandList->GenerateMipMaps(impostor->baseColorTexture->image);
+                commandList->GenerateMipMaps(impostor->normalTexture->image);
+                commandList->GenerateMipMaps(impostor->roughnessMetalnessAoTexture->image);
+                commandList->GenerateMipMaps(impostor->depthTexture->image);
 
                 Graphics::ImageBarrier postImageBarriers[] = {
-                    {impostor->baseColorTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->normalTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->roughnessMetalnessAoTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                    {impostor->depthTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->baseColorTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->normalTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->roughnessMetalnessAoTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                    {impostor->depthTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                 };
                 commandList->PipelineBarrier(postImageBarriers, {},
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
@@ -250,10 +250,10 @@ namespace Atlas {
             auto frameBufferDesc = Graphics::FrameBufferDesc{
                 .renderPass = renderPass,
                 .colorAttachments = {
-                    {impostor->baseColorTexture.image, 0, true},
-                    {impostor->normalTexture.image, 0, true},
-                    {impostor->roughnessMetalnessAoTexture.image, 0, true},
-                    {impostor->depthTexture.image, 0, true}
+                    {impostor->baseColorTexture->image, 0, true},
+                    {impostor->normalTexture->image, 0, true},
+                    {impostor->roughnessMetalnessAoTexture->image, 0, true},
+                    {impostor->depthTexture->image, 0, true}
                 },
                 .depthAttachment = {depthImage, 0, true},
                 .extent = {uint32_t(impostor->resolution), uint32_t(impostor->resolution)}

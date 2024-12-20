@@ -45,8 +45,8 @@ namespace Atlas {
 
                 commandList->BindPipeline(pipeline);
 
-                mesh->impostor->baseColorTexture.Bind(commandList, 3, 0);
-                mesh->impostor->depthTexture.Bind(commandList, 3, 1);
+                mesh->impostor->baseColorTexture->Bind(commandList, 3, 0);
+                mesh->impostor->depthTexture->Bind(commandList, 3, 1);
                 mesh->impostor->viewPlaneBuffer.Bind(commandList, 3, 2);
                 mesh->impostor->impostorInfoBuffer.Bind(commandList, 3, 3);
 

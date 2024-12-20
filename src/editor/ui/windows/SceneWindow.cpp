@@ -84,7 +84,6 @@ namespace Atlas::Editor::UI {
         // Get rid of the selection and don't allow new one
         if (lockSelection || brushActive) {
             sceneHierarchyPanel.selectedEntity = Scene::Entity();
-            sceneHierarchyPanel.selectedProperty = SelectedProperty();
         }
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
@@ -160,6 +159,9 @@ namespace Atlas::Editor::UI {
             scenePropertiesPanel.Render(sceneHierarchyPanel.selectedEntity, refScene);
         }
 
+        sceneHierarchyPanel.Render(refScene, inFocus);
+        RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
+
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
             // Temporarily disable all scene cameras, only let editor camera be main
@@ -189,9 +191,6 @@ namespace Atlas::Editor::UI {
                 comp.isMain = cameraMainMap[entity];
             }
         }
-
-        sceneHierarchyPanel.Render(refScene, inFocus);
-        RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
 
         viewportPanel.Render(refScene, isActiveWindow);
 

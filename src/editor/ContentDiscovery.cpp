@@ -107,6 +107,7 @@ namespace Atlas::Editor {
 			auto assetPath = Common::Path::GetRelative(assetDirectory, path);
 			if (assetPath.starts_with('/'))
 				assetPath.erase(assetPath.begin());
+			assetPath = Common::Path::Normalize(assetPath);
 
 			if (dirEntry.is_directory()) {
 				auto dirname = Common::Path::GetFileName(dirEntry.path().string());
