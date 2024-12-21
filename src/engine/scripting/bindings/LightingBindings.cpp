@@ -1,7 +1,6 @@
 #include "LightingBindings.h"
 
 #include "lighting/Shadow.h"
-#include "lighting/AO.h"
 #include "lighting/SSGI.h"
 #include "lighting/EnvironmentProbe.h"
 #include "lighting/SSS.h"

@@ -24,7 +24,6 @@
 #include "SSGIRenderer.h"
 #include "DDGIRenderer.h"
 #include "RTGIRenderer.h"
-#include "AORenderer.h"
 #include "RTReflectionRenderer.h"
 #include "SSSRenderer.h"
 #include "VolumetricRenderer.h"
@@ -111,7 +110,6 @@ namespace Atlas {
             SSGIRenderer ssgiRenderer;
             DDGIRenderer ddgiRenderer;
             RTGIRenderer rtgiRenderer;
-            AORenderer aoRenderer;
             RTReflectionRenderer rtrRenderer;
             SSSRenderer sssRenderer;
             VolumetricRenderer volumetricRenderer;

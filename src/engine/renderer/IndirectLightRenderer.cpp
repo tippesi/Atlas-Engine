@@ -20,7 +20,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Indirect diffuse lighting");
 
             auto volume = scene->irradianceVolume;
-            auto ao = scene->ao;
             auto reflection = scene->reflection;
             auto ssgi = scene->ssgi;
             auto rtgi = scene->rtgi;
@@ -30,7 +29,6 @@ namespace Atlas {
             auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
             auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && (rtDataValid || reflection->ssr);
-            auto aoEnabled = ao && ao->enable && (!ao->rt  || rtDataValid) && !rtgiEnabled;
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;            
 
@@ -39,7 +37,6 @@ namespace Atlas {
             diffusePipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
             diffusePipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             diffusePipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
-            diffusePipelineConfig.ManageMacro("AO", aoEnabled);
             diffusePipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
@@ -48,30 +45,21 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(diffusePipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            if (aoEnabled) {
-                commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
-            }
-            if (reflectionEnabled) {
-                commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
-            }
             if (ssgiEnabled || rtgiEnabled) {
-                commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 3);
+                commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 1);
             }
-
             auto uniforms = Uniforms {
-                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES :
-                    target->GetAOResolution() == RenderResolution::HALF_RES,
                 .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
                 .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
-                .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ao->strength : ssgi->aoStrength / sqrt(ssgi->radius)) : 1.0f,
+                .aoStrength =  ssgiAo ? ssgi->aoStrength / sqrt(ssgi->radius) : 1.0f,
                 .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->GetCubemap().image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
-            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 5);
-            commandList->BindBuffer(uniformBuffer.Get(), 3, 6);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 3);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 4);
 
             auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;
@@ -90,7 +78,6 @@ namespace Atlas {
             Graphics::Profiler::BeginQuery("Indirect specular lighting");
 
             auto volume = scene->irradianceVolume;
-            auto ao = scene->ao;
             auto reflection = scene->reflection;
             auto ssgi = scene->ssgi;
             auto rtgi = scene->rtgi;
@@ -100,7 +87,6 @@ namespace Atlas {
             auto ddgiEnabled = volume && volume->enable && !rtgiEnabled && rtDataValid;
             auto ddgiVisibility = volume && volume->enable && rtDataValid && volume->visibility;
             auto reflectionEnabled = reflection && reflection->enable && (rtDataValid || reflection->ssr);
-            auto aoEnabled = ao && ao->enable && (!ao->rt || rtDataValid) && !rtgiEnabled;
             auto ssgiEnabled = ssgi && ssgi->enable && !rtgiEnabled;
             bool ssgiAo = ssgiEnabled && ssgi->enableAo;
 
@@ -109,7 +95,6 @@ namespace Atlas {
             specularPipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
             specularPipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
             specularPipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
-            specularPipelineConfig.ManageMacro("AO", aoEnabled);
             specularPipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
             auto depthTexture = target->GetData(HALF_RES)->depthTexture;
@@ -118,30 +103,25 @@ namespace Atlas {
             auto pipeline = PipelineManager::GetPipeline(specularPipelineConfig);
             commandList->BindPipeline(pipeline);
 
-            if (aoEnabled) {
-                commandList->BindImage(target->aoTexture.image, target->aoTexture.sampler, 3, 1);
-            }
             if (reflectionEnabled) {
-                commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 2);
+                commandList->BindImage(target->reflectionTexture.image, target->reflectionTexture.sampler, 3, 1);
             }
             if (ssgiEnabled || rtgiEnabled) {
-                commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 3);
+                commandList->BindImage(target->giTexture.image, target->giTexture.sampler, 3, 2);
             }
 
-            auto uniforms = Uniforms{
-                .aoDownsampled2x = ssgiAo ? target->GetGIResolution() == RenderResolution::HALF_RES :
-                    target->GetAOResolution() == RenderResolution::HALF_RES,
+            auto uniforms = Uniforms{ 
                 .reflectionDownsampled2x = target->GetReflectionResolution() == RenderResolution::HALF_RES,
                 .giDownsampled2x = target->GetGIResolution() == RenderResolution::HALF_RES,
-                .aoStrength = aoEnabled || ssgiAo ? (aoEnabled ? ao->strength : ssgi->aoStrength / sqrt(ssgi->radius)) : 1.0f,
+                .aoStrength =  ssgiAo ? ssgi->aoStrength / sqrt(ssgi->radius) : 1.0f,
                 .specularProbeMipLevels = int32_t(scene->sky.GetProbe() ? scene->sky.GetProbe()->GetCubemap().image->mipLevels : 1)
             };
             uniformBuffer.SetData(&uniforms, 0);
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
-            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 4);
-            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 5);
-            commandList->BindBuffer(uniformBuffer.Get(), 3, 6);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 3);
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 4);
+            commandList->BindBuffer(uniformBuffer.Get(), 3, 5);
 
             auto resolution = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
             auto groupCount = resolution / 8;

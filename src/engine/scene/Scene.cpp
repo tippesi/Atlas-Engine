@@ -380,9 +380,14 @@ namespace Atlas {
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
             JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
+                // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
+                auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
+                    (reflection && reflection->enable && reflection->rt) ||
+                    (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                    (rtgi && rtgi->enable);
                 // Need to wait before updating graphic resources
                 Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                if (rayTracingWorld) {
+                if (rayTracingWorld && rtUpdateNeeded) {
                     rayTracingWorld->scene = this;
                     // Don't update triangle lights for now (second argument)
                     rayTracingWorld->Update(rayTracingSubset, false);

@@ -68,8 +68,6 @@ void App::LoadContent(AppConfiguration config) {
         directionalLight.isMain = true;
     }
 
-    scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
-
     if (config.reflection) {
         scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
         scene->reflection->useShadowMap = true;

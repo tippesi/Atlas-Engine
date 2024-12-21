@@ -183,8 +183,6 @@ namespace Atlas::Scene {
             j["fog"] = *scene->fog;
         if (scene->irradianceVolume)
             j["irradianceVolume"] = *scene->irradianceVolume;
-        if (scene->ao)
-            j["ao"] = *scene->ao;
         if (scene->reflection)
             j["reflection"] = *scene->reflection;
         if (scene->rtgi)
@@ -246,10 +244,6 @@ namespace Atlas::Scene {
         if (j.contains("irradianceVolume")) {
             scene->irradianceVolume = CreateRef<Lighting::IrradianceVolume>();
             *scene->irradianceVolume = j["irradianceVolume"];
-        }
-        if (j.contains("ao")) {
-            scene->ao = CreateRef<Lighting::AO>();
-            *scene->ao = j["ao"];
         }
         if (j.contains("reflection")) {
             scene->reflection = CreateRef<Lighting::Reflection>();

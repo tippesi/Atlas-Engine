@@ -52,7 +52,6 @@ namespace Atlas::Renderer {
         CreateFrameBuffers();
 
         SetGIResolution(HALF_RES, false);
-        SetAOResolution(HALF_RES);
         SetVolumetricResolution(HALF_RES);
         SetReflectionResolution(HALF_RES);
 
@@ -83,7 +82,6 @@ namespace Atlas::Renderer {
         oceanStencilTexture.Resize(scaledWidth, scaledHeight);
 
         SetGIResolution(giResolution, giMomentsTexture.IsValid());
-        SetAOResolution(aoResolution);
         SetVolumetricResolution(volumetricResolution);
         SetReflectionResolution(reflectionResolution);
 
@@ -177,33 +175,6 @@ namespace Atlas::Renderer {
     RenderResolution RenderTarget::GetGIResolution() {
 
         return giResolution;
-
-    }
-
-    void RenderTarget::SetAOResolution(RenderResolution resolution) {
-
-        auto res = GetRelativeResolution(resolution);
-        aoResolution = resolution;
-
-        aoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        swapAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        historyAoTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-
-        aoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-        historyAoLengthTexture = Texture::Texture2D(res.x, res.y, VK_FORMAT_R16_SFLOAT,
-            Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear, false, true);
-
-        hasHistory = false;
-
-    }
-
-    RenderResolution RenderTarget::GetAOResolution() {
-
-        return aoResolution;
 
     }
 

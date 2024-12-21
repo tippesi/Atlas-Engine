@@ -136,8 +136,6 @@ void main() {
 
                 // We could also use ray tracing here
                 float rayLength = uniforms.radius;
-
-                float stepSize = rayLength / float(uniforms.sampleCount);
                 
                 vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(ray.direction, 0.0)));
                 float viewOffset = max(1.0, length(viewPos));

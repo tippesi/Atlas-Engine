@@ -28,10 +28,6 @@ namespace Atlas::Editor {
 
         mainHierarchy.AddChild(directionalLightEntity);
 
-        scene->ao = CreateRef<Lighting::AO>(16);
-        scene->ao->rt = true;
-        // Use SSGI by default
-        scene->ao->enable = false;
         scene->reflection = CreateRef<Lighting::Reflection>();
 
         scene->fog = CreateRef<Lighting::Fog>();
@@ -90,11 +86,7 @@ namespace Atlas::Editor {
         directionalLight.isMain = true;
 
         mainHierarchy.AddChild(directionalLightEntity);
-
-        scene->ao = CreateRef<Lighting::AO>(16);
-        scene->ao->rt = true;
-        // Use SSGI by default
-        scene->ao->enable = false;
+        
         scene->reflection = CreateRef<Lighting::Reflection>();
 
         scene->fog = CreateRef<Lighting::Fog>();

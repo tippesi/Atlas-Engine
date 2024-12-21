@@ -140,16 +140,6 @@ namespace Atlas::Renderer {
         RenderResolution GetGIResolution();
 
         /*
-         * Sets the render resolution for screen space ambient occlusion
-         */
-        void SetAOResolution(RenderResolution resolution);
-
-        /*
-         * Gets the render resolution for screen space ambient occlusion
-         */
-        RenderResolution GetAOResolution();
-
-        /*
          * Sets the render resolution for volumetric effetcs
          */
         void SetVolumetricResolution(RenderResolution resolution);
@@ -216,12 +206,6 @@ namespace Atlas::Renderer {
         Texture::Texture2D giMomentsTexture;
         Texture::Texture2D historyGiMomentsTexture;
 
-        Texture::Texture2D aoTexture;
-        Texture::Texture2D swapAoTexture;
-        Texture::Texture2D historyAoTexture;
-        Texture::Texture2D aoLengthTexture;
-        Texture::Texture2D historyAoLengthTexture;
-
         Texture::Texture2D sssTexture;
 
         Texture::Texture2D oceanDepthTexture;
@@ -270,7 +254,6 @@ namespace Atlas::Renderer {
         int32_t scaledWidth = 0;
 
         RenderResolution giResolution;
-        RenderResolution aoResolution;
         RenderResolution volumetricResolution;
         RenderResolution reflectionResolution;
 

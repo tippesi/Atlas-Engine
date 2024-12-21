@@ -3,28 +3,6 @@
 
 namespace Atlas::Lighting {
 
-    void to_json(json& j, const AO& p) {
-        j = json {
-            {"sampleCount", p.sampleCount},
-            {"radius", p.radius},
-            {"strength", p.strength},
-            {"enable", p.enable},
-            {"rt", p.rt},
-            {"opacityCheck", p.opacityCheck},
-            {"halfResolution", p.halfResolution},
-        };
-    }
-
-    void from_json(const json& j, AO& p) {
-        p = AO(j["sampleCount"].get<int32_t>());
-        j.at("radius").get_to(p.radius);
-        j.at("strength").get_to(p.strength);
-        j.at("enable").get_to(p.enable);
-        j.at("rt").get_to(p.rt);
-        j.at("opacityCheck").get_to(p.opacityCheck);
-        try_get_json(j, "halfResolution", p.halfResolution);
-    }
-
     void to_json(json& j, const EnvironmentProbe& p) {
         j = json {
             {"resolution", p.GetCubemap().width},

@@ -75,10 +75,6 @@ void App::LoadContent() {
         glm::vec3(0.0f), glm::vec4(-100.0f, 100.0f, -70.0f, 120.0f));
     directionalLight.isMain = true;
 
-    scene->ao = Atlas::CreateRef<Atlas::Lighting::AO>(16);
-    scene->ao->rt = true;
-    // Use SSGI by default
-    scene->ao->enable = false;
     scene->reflection = Atlas::CreateRef<Atlas::Lighting::Reflection>();
     scene->reflection->useShadowMap = true;
 
@@ -292,7 +288,6 @@ void App::Render(float deltaTime) {
     static bool firstFrame = true;
     static bool animateLight = false;
     static bool pathTrace = false;
-    static bool debugAo = false;
     static bool debugReflection = false;
     static bool debugClouds = false;
     static bool debugSSS = false;
@@ -333,18 +328,14 @@ void App::Render(float deltaTime) {
     else {
         mainRenderer->RenderScene(viewport, renderTarget, scene);
 
-        auto debug = debugAo || debugReflection || debugClouds || debugSSS || debugSSGI || debugRTGI || debugMotion;
+        auto debug = debugReflection || debugClouds || debugSSS || debugSSGI || debugRTGI || debugMotion;
 
         if (debug && graphicsDevice->swapChain->isComplete) {
             auto commandList = graphicsDevice->GetCommandList(Atlas::Graphics::GraphicsQueue);
             commandList->BeginCommands();
             commandList->BeginRenderPass(graphicsDevice->swapChain, true);
 
-            if (debugAo) {
-                mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->aoTexture,
-                    0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
-            }
-            else if (debugReflection) {
+            if (debugReflection) {
                 mainRenderer->textureRenderer.RenderTexture2D(commandList, viewport, &renderTarget->reflectionTexture,
                     0.0f, 0.0f, float(viewport->width), float(viewport->height), 0.0, 1.0f, false, true);
             }
@@ -383,7 +374,6 @@ void App::Render(float deltaTime) {
         auto& camera = cameraEntity.GetComponent<CameraComponent>();
         auto& light = directionalLightEntity.GetComponent<LightComponent>();
         auto& volume = scene->irradianceVolume;
-        auto& ao = scene->ao;
         auto& fog = scene->fog;
         auto& reflection = scene->reflection;
         auto& clouds = scene->sky.clouds;
@@ -568,15 +558,6 @@ void App::Render(float deltaTime) {
             if (ImGui::CollapsingHeader("Screen-space shadows")) {
                 ImGui::Checkbox("Debug##SSS", &debugSSS);
                 sssPanel.Render(sss);
-            }
-            if (ImGui::CollapsingHeader("Ambient Occlusion")) {
-                ImGui::Checkbox("Debug##Ao", &debugAo);
-                ImGui::Checkbox("Enable ambient occlusion##Ao", &ao->enable);
-                ImGui::Checkbox("Enable raytracing (preview)##Ao", &ao->rt);
-                ImGui::Checkbox("Opacity check##Ao", &ao->opacityCheck);
-                ImGui::SliderFloat("Radius##Ao", &ao->radius, 0.0f, 10.0f);
-                ImGui::SliderFloat("Strength##Ao", &ao->strength, 0.0f, 20.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-                //ImGui::SliderInt("Sample count##Ao", &ao->s, 0.0f, 20.0f, "%.3f", 2.0f);
             }
             if (ImGui::CollapsingHeader("Reflection")) {
                 ImGui::Checkbox("Debug##Reflection", &debugReflection);

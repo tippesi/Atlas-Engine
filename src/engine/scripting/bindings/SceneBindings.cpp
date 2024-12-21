@@ -21,7 +21,6 @@ namespace Atlas::Scripting::Bindings {
             "sky", &Scene::Scene::sky,
             "fog", &Scene::Scene::fog,
             "irradianceVolume", &Scene::Scene::irradianceVolume,
-            "ao", &Scene::Scene::ao,
             "reflection", &Scene::Scene::reflection,
             "sss", &Scene::Scene::sss,
             "ssgi", &Scene::Scene::ssgi,

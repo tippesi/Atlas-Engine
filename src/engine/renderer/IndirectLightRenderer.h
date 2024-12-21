@@ -20,7 +20,6 @@ namespace Atlas {
 
         private:
             struct Uniforms {
-                int aoDownsampled2x;
                 int reflectionDownsampled2x;
                 int giDownsampled2x;
                 float aoStrength;

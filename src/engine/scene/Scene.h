@@ -12,7 +12,6 @@
 #include "../lighting/IrradianceVolume.h"
 #include "../lighting/RTGI.h"
 #include "../lighting/SSGI.h"
-#include "../lighting/AO.h"
 #include "../lighting/Reflection.h"
 #include "../lighting/VolumetricClouds.h"
 #include "../lighting/SSS.h"
@@ -150,7 +149,6 @@ namespace Atlas {
             Ref<Lighting::IrradianceVolume> irradianceVolume = nullptr;
             Ref<Lighting::RTGI> rtgi = nullptr;
             Ref<Lighting::SSGI> ssgi = nullptr;
-            Ref<Lighting::AO> ao = nullptr;
             Ref<Lighting::Reflection> reflection = nullptr;
             Ref<Lighting::SSS> sss = nullptr;
             PostProcessing::PostProcessing postProcessing;

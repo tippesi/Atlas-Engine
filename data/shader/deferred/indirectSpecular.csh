@@ -10,14 +10,12 @@
 layout (local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 3, binding = 0, rgba16f) uniform image2D image;
-layout(set = 3, binding = 1) uniform sampler2D aoTexture;
-layout(set = 3, binding = 2) uniform sampler2D reflectionTexture;
-layout(set = 3, binding = 3) uniform sampler2D giTexture;
-layout(set = 3, binding = 4) uniform sampler2D lowResDepthTexture;
-layout(set = 3, binding = 5) uniform sampler2D lowResNormalTexture;
+layout(set = 3, binding = 1) uniform sampler2D reflectionTexture;
+layout(set = 3, binding = 2) uniform sampler2D giTexture;
+layout(set = 3, binding = 3) uniform sampler2D lowResDepthTexture;
+layout(set = 3, binding = 4) uniform sampler2D lowResNormalTexture;
 
-layout(set = 3, binding = 6) uniform UniformBuffer {
-    int aoDownsampled2x;
+layout(set = 3, binding = 5) uniform UniformBuffer {
     int reflectionDownsampled2x;
     int giDownsampled2x;
     float aoStrength;
@@ -51,12 +49,8 @@ void LoadGroupSharedData() {
 
         vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
         normals[gl_LocalInvocationIndex] = normalize(normal);
-#ifdef AO
-        if (Uniforms.aoDownsampled2x > 0)
-            aos[gl_LocalInvocationIndex] = texelFetch(aoTexture, offset, 0).r;
-#endif
 #ifdef SSGI
-        if (Uniforms.aoDownsampled2x > 0)
+        if (Uniforms.giDownsampled2x > 0)
             aos[gl_LocalInvocationIndex] = texelFetch(giTexture, offset, 0).a;
 #endif
 #ifdef REFLECTION
@@ -159,7 +153,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         float edgeWeight = GetPixelEdgeWeight(sharedMemoryOffset, referenceDepth, referenceNormal);
         float weight = edgeWeight * weights[i];
 
-#if defined(SSGI) || defined(AO)
+#ifdef SSGI
         result.ao += aos[sharedMemoryOffset] * weight;
 #endif
 #ifdef REFLECTION
@@ -198,7 +192,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
 void main() {
 
-    if (Uniforms.aoDownsampled2x > 0 || Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
+    if (Uniforms.giDownsampled2x > 0 || Uniforms.reflectionDownsampled2x > 0) LoadGroupSharedData();
 
     if (gl_GlobalInvocationID.x > imageSize(image).x ||
         gl_GlobalInvocationID.y > imageSize(image).y)
@@ -250,16 +244,8 @@ void main() {
 
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
-#ifdef AO
-        float occlusionFactor = Uniforms.aoDownsampled2x > 0 ? UpsampleAo2x(depth) : textureLod(aoTexture, texCoord, 0.0).r;
-
-        indirect *= vec3(pow(occlusionFactor, Uniforms.aoStrength));
-#endif
 #ifdef SSGI
-        // Only apply SSGI ao if normal AO is turned off
-#ifndef AO
         indirect *= vec3(pow(upsampleResult.ao, Uniforms.aoStrength));
-#endif
 #endif
 
     }

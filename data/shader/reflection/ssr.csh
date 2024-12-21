@@ -1,9 +1,6 @@
-#define SHADOW_FILTER_1x1
+#define EPSILON 0.001
 
 #include <../globals.hsh>
-#include <../raytracer/lights.hsh>
-#include <../raytracer/tracing.hsh>
-#include <../raytracer/direct.hsh>
 
 #include <../common/random.hsh>
 #include <../common/utility.hsh>
@@ -40,6 +37,9 @@ layout(set = 3, binding = 9) uniform sampler2D lightingTexture;
 #ifdef AUTO_EXPOSURE
 layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
 #endif
+
+// From deferred.hsh
+layout(set = 1, binding = 11) uniform samplerCube specularProbe;
 
 const ivec2 offsets[4] = ivec2[4](
     ivec2(0, 0),
@@ -197,76 +197,68 @@ void main() {
 
                 Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
-                Ray ray;
-                ray.ID = i;
-                blueNoiseVec.y *= (1.0 - uniforms.bias);
-
+                vec3 rayDirection;
                 float pdf = 1.0;
                 BRDFSample brdfSample;
                 if (material.roughness >= 0.05) {
                     ImportanceSampleGGXVNDF(blueNoiseVec.xy, N, V, alpha,
-                        ray.direction, pdf);
+                        rayDirection, pdf);
                 }
                 else {
-                    ray.direction = normalize(reflect(-V, N));
+                    rayDirection = normalize(reflect(-V, N));
                 }
 
-                vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(ray.direction, 0.0)));
+                vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(rayDirection, 0.0)));
 
-                bool isRayValid = !isnan(ray.direction.x) || !isnan(ray.direction.y) || 
-                    !isnan(ray.direction.z) || dot(N, ray.direction) >= 0.0;
+                bool isRayValid = !isnan(rayDirection.x) || !isnan(rayDirection.y) || 
+                    !isnan(rayDirection.z) || dot(N, rayDirection) >= 0.0;
+
+                vec3 radiance = vec3(0.0);
 
                 if (isRayValid) {
                     // Scale offset by depth since the depth buffer inaccuracies increase at a distance and might not match the ray traced geometry anymore
                     float viewOffset = max(1.0,2.0 * length(viewPos));
-                    ray.origin = worldPos + ray.direction * EPSILON * viewOffset + worldNorm * EPSILON * viewOffset;
+          
+                    vec3 viewRayOrigin = viewPos + 2.0 * viewNormal * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
+                    float rayLength = globalData.cameraFarPlane;
 
-                    ray.hitID = -1;
-                    ray.hitDistance = 0.0;
-
-                    vec3 radiance = vec3(0.0);
-                    if (material.roughness <= uniforms.roughnessCutoff) {                 
-                        vec3 viewRayOrigin = viewPos + 2.0 * viewNormal * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
-                        float rayLength = globalData.cameraFarPlane;
-
-                        vec2 hitPixel;
-                        vec3 hitPoint;
+                    vec2 hitPixel;
+                    vec3 hitPoint;
 #ifdef UPSCALE
-                        float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
+                    float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
 #else
-                        float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
+                    float jitter = GetInterleavedGradientNoise(vec2(highResPixel), 32u) / float(sampleCount) + i / float(sampleCount);
 #endif
 #ifdef RT
-                        bool stopBehindGeometry = true;
+                    bool stopBehindGeometry = true;
 #else
-                        bool stopBehindGeometry = false;
+                    bool stopBehindGeometry = false;
 #endif
-                        if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, stepSize, 0.5, maxSteps, 
-                            rayLength, false, stopBehindGeometry, hitPixel, hitPoint)) {
-                            vec2 hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(lightingTexture, 0));
+                    if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, stepSize, 0.5, maxSteps, 
+                        rayLength, false, stopBehindGeometry, hitPixel, hitPoint)) {
+                        vec2 hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(lightingTexture, 0));
 
-                            //radiance = SampleCatmullRom(hitTexCoord).rgb;
-                            radiance = textureLod(lightingTexture, hitTexCoord, 0.0).rgb;
-                            hitDistance += distance(hitPoint, viewRayOrigin);
-                        }
-                        else {
-#ifndef RT
-                            radiance =  SampleEnvironmentMap(ray.direction).rgb;
-#endif
-                        }
+                        //radiance = SampleCatmullRom(hitTexCoord).rgb;
+                        radiance = textureLod(lightingTexture, hitTexCoord, 0.0).rgb;
+                        hitDistance += distance(hitPoint, viewRayOrigin);
                     }
+                    else {
+#ifndef RT
+                        radiance =  textureLod(specularProbe, rayDirection, 0).rgb;
+#endif
+                    }
+                }
 
 #ifdef AUTO_EXPOSURE
-                    float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
+                float radianceLimit = 9.6 * uniforms.radianceLimit * texelFetch(exposureTexture, ivec2(0), 0).r;
 #else
-                    float radianceLimit = uniforms.radianceLimit;
+                float radianceLimit = uniforms.radianceLimit;
 #endif
 
-                    float radianceMax = max(max(max(radiance.r, 
-                        max(radiance.g, radiance.b)), radianceLimit), 1e-12);
-                    reflection.rgb += radiance * (radianceLimit / radianceMax);
+                float radianceMax = max(max(max(radiance.r, 
+                    max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                reflection.rgb += radiance * (radianceLimit / radianceMax);
                 }
-            }
 
             reflection /= float(sampleCount);
             hitDistance /= float(sampleCount);

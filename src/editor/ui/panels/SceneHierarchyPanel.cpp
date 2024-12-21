@@ -199,10 +199,10 @@ namespace Atlas::Editor::UI {
             auto width = ImGui::GetContentRegionAvail().x;
             auto pos = ImGui::GetCursorPosX();
 
-            ImGui::SetCursorPosX(pos + width - buttonSize - 8.0f);
+            ImGui::SetCursorPosX(pos + width - buttonSize);
 
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
             if (ImGui::ImageButton(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                 isNodeVisible = !isNodeVisible;

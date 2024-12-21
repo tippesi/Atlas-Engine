@@ -47,11 +47,35 @@ namespace Atlas::Editor::UI {
 
     void VegetationGeneratorPanel::RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator) {
 
-        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth;
+        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
+            | ImGuiTreeNodeFlags_AllowOverlap;
 
+        int32_t deleteIdx = -1;
         auto& types = vegetationGenerator.types;
-        for (auto& type : types) {
+        for (int32_t i = 0; i < int32_t(types.size()); i++) {
+            auto& type = types[i];
             bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
+
+            auto deleteIcon = Singletons::icons->Get(IconType::Delete);
+            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+
+            ImGui::SameLine();
+
+            float buttonSize = ImGui::GetTextLineHeight();
+            auto width = ImGui::GetContentRegionAvail().x;
+            auto pos = ImGui::GetCursorPosX();
+
+            ImGui::SetCursorPosX(pos + width - buttonSize);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+
+            if (ImGui::ImageButton(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                deleteIdx = i;
+            }
+
+            ImGui::PopStyleColor();
+            ImGui::PopStyleVar();
 
             // Here we can use the copy pase helper to copy over some settings to other biomes
             if (!open)
@@ -126,6 +150,10 @@ namespace Atlas::Editor::UI {
 
             if (open)
                 ImGui::TreePop();
+        }
+
+        if (deleteIdx >= 0) {
+            types.erase(types.begin() + size_t(deleteIdx));
         }
 
         if (ImGui::Button("Add vegetation type", ImVec2(-FLT_MIN, 0.0f))) {

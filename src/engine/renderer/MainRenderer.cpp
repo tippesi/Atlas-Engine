@@ -49,7 +49,6 @@ namespace Atlas {
 			ddgiRenderer.Init(device);
 			rtgiRenderer.Init(device);
 			ssgiRenderer.Init(device);
-			aoRenderer.Init(device);
 			rtrRenderer.Init(device);
 			sssRenderer.Init(device);
 			directLightRenderer.Init(device);
@@ -305,8 +304,6 @@ namespace Atlas {
 			gBufferRenderer.Patch(target, commandList);
 
 			gBufferRenderer.Downscale(target, commandList);
-
-			aoRenderer.Render(target, scene, commandList);
 
 			rtgiRenderer.Render(target, scene, commandList);
 
