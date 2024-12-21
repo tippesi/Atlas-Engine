@@ -97,7 +97,7 @@ namespace Atlas::Editor {
 
             alpha += glm::pi<float>() / float(horizontalSubdivs);
 
-        } 
+        }
 
     }
 

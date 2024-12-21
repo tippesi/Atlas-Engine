@@ -49,21 +49,7 @@ namespace Atlas {
             Texture::Texture2D* writeTexture = &target->hdrTexture, * readTexture;
 
             if (autoExposure) {
-                Graphics::Profiler::BeginQuery("Auto-exposure");
-
-                commandList->ImageMemoryBarrier(target->lightingTexture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
-                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                // The cube map generating automatically transforms the image layout to read-only optimal
-                commandList->GenerateMipMaps(target->lightingTexture.image);
-
-                commandList->ImageMemoryBarrier(target->lightingTexture.image,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
-
                 GenerateExposureTexture(target, scene, commandList);
-
-                Graphics::Profiler::EndQuery();
             }
 
             // Want to have the last pass to always write into the hdr texture

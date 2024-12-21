@@ -245,7 +245,8 @@ void main() {
         // This normally only accounts for diffuse occlusion, we need seperate terms
         // for diffuse and specular.
 #ifdef SSGI
-        indirect *= vec3(pow(upsampleResult.ao, Uniforms.aoStrength));
+        float ao = Uniforms.giDownsampled2x > 0 ? upsampleResult.ao : texelFetch(giTexture, pixel, 0).r;
+        indirect *= vec3(pow(ao, Uniforms.aoStrength));
 #endif
 
     }

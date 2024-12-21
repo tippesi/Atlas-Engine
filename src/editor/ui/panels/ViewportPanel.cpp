@@ -89,9 +89,7 @@ namespace Atlas::Editor::UI {
 
         if (scene != nullptr && validSize && isActive && !Singletons::blockingOperation->block) {
             auto& config = Singletons::config;
-            auto& renderTarget = Singletons::renderTarget;
-
-            
+            auto& renderTarget = Singletons::renderTarget;            
 
             if (renderTarget->GetWidth() != viewportTexture.width ||
                 renderTarget->GetHeight() != viewportTexture.height) {
