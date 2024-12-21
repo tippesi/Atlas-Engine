@@ -118,7 +118,7 @@ namespace Atlas {
 
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
 
-            JobGroup hierarchyJobGroup{ JobPriority::High };
+            JobGroup jobGroup{ JobPriority::High };
 
             // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
@@ -131,11 +131,11 @@ namespace Atlas {
                     if (transformComponent) {
                         auto parentChanged = transformComponent->changed;
                         transformComponent->Update(rootTransform, false);
-                        hierarchyComponent.Update(hierarchyJobGroup, *transformComponent, parentChanged,
+                        hierarchyComponent.Update(jobGroup, *transformComponent, parentChanged,
                             transformComponentPool, hierarchyComponentPool, cameraComponentPool);
                     }
                     else {
-                        hierarchyComponent.Update(hierarchyJobGroup, rootTransform, false,
+                        hierarchyComponent.Update(jobGroup, rootTransform, false,
                             transformComponentPool, hierarchyComponentPool, cameraComponentPool);
                     }
                 }
@@ -161,7 +161,7 @@ namespace Atlas {
 #endif
             renderState.PrepareMaterials();
 
-            JobSystem::Wait(hierarchyJobGroup);
+            JobSystem::Wait(jobGroup);
 
             auto hierarchyTransformSubset = entityManager.GetSubset<HierarchyComponent, TransformComponent>();
 
@@ -180,7 +180,7 @@ namespace Atlas {
 
             auto transformSubset = entityManager.GetSubset<TransformComponent>();
 
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
                 auto& transformComponent = transformComponentPool.GetByIndex(idx);
 
                 if (!transformComponent.updated) {
@@ -188,7 +188,7 @@ namespace Atlas {
                 }
                 });
 
-            JobSystem::Wait(hierarchyJobGroup);
+            JobSystem::Wait(jobGroup);
 
             // Wait for transform updates to finish
             if (physicsWorld != nullptr) {
@@ -345,7 +345,7 @@ namespace Atlas {
             }
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
                 auto& transformComponent = transformComponentPool.GetByIndex(idx);
 
                 if (transformComponent.updated) {
@@ -355,13 +355,13 @@ namespace Atlas {
                 });
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(hierarchyJobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+            JobSystem::ParallelFor(jobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                 auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
 
                 hierarchyComponent.updated = false;
                 });
 
-            JobSystem::Wait(hierarchyJobGroup);
+            JobSystem::Wait(jobGroup);
 
             auto lightSubset = entityManager.GetSubset<LightComponent>();
             for (auto entity : lightSubset) {

@@ -94,7 +94,10 @@ void main(){
 
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
-    
+
+    bool hole = gl_in[3].gl_Position.w < 0.0 || gl_in[2].gl_Position.w < 0.0 ||
+        gl_in[1].gl_Position.w < 0.0 || gl_in[0].gl_Position.w < 0.0;
+
     // world position
     vec4 position =
         ((1.0 - u) * (1.0 - v) * gl_in[3].gl_Position +
@@ -148,5 +151,10 @@ void main(){
     
     vec4 last = globalData.pvMatrixLast * position;
     ndcLast = vec3(last.xy, last.w);
+
+    if (hole) {
+        gl_Position = vec4(0.0, 0.0, 0.0, -1.0);
+        ndcLast = ndcCurrent;
+    }
     
 }

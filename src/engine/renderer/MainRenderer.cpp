@@ -68,7 +68,7 @@ namespace Atlas {
 		}
 
 		void MainRenderer::RenderScene(Ref<Viewport> viewport, Ref<RenderTarget> target, Ref<Scene::Scene> scene,
-			Ref<PrimitiveBatch> primitiveBatch, Texture::Texture2D* texture) {
+			std::span<Ref<PrimitiveBatch>> primitiveBatches, Texture::Texture2D* texture) {
 
 			if (!device->swapChain->isComplete || !scene->HasMainCamera())
 				return;
@@ -376,7 +376,7 @@ namespace Atlas {
 
 			oceanRenderer.Render(target, scene, commandList);
 
-			if (primitiveBatch)
+			for (auto& primitiveBatch : primitiveBatches)
 				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
 			if (scene->postProcessing.fsr2) {

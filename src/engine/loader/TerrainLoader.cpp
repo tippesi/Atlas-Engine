@@ -321,8 +321,14 @@ namespace Atlas {
                 cell->materialIdxData = splatMapData;
 
                 cell->heightData.resize(tileResolution * tileResolution);
-                for (uint32_t j = 0; j < uint32_t(cell->heightData.size()); j++)
-                    cell->heightData[j] = (float)heightFieldData[j] / 65535.0f;
+                for (uint32_t j = 0; j < uint32_t(cell->heightData.size()); j++) {
+                    if (heightFieldData[j] != 65535) {
+                        cell->heightData[j] = (float)heightFieldData[j] / 65534.0f;
+                    }
+                    else {
+                        cell->heightData[j] = FLT_MAX;
+                    }
+                }
                 
                 cell->isLoaded = true;
                 cell->loadRequested = false;

@@ -13,7 +13,8 @@ namespace Atlas::Editor::UI {
     public:
         enum class TerrainBrushType {
             Height = 0,
-            Material
+            Material,
+            Hole
         };
 
         enum class TerrainBrushFunction {
@@ -44,7 +45,7 @@ namespace Atlas::Editor::UI {
 
         void RenderMaterialSettings(ResourceHandle<Terrain::Terrain>& terrain);
 
-        void RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain);
+        void RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene> scene);
 
         void AddTerrainToScene(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene>& scene);
 

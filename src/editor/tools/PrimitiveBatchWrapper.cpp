@@ -8,14 +8,21 @@ namespace Atlas::Editor {
 
         auto device = Graphics::GraphicsDevice::DefaultDevice;
 
-        primitiveBatch = CreateRef<Renderer::PrimitiveBatch>();
-        primitiveBatch->SetLineWidth(device->support.wideLines ? 2.0f : 1.0f);
+        primitiveBatchNoDepthTest = CreateRef<Renderer::PrimitiveBatch>();
+        primitiveBatchNoDepthTest->SetLineWidth(device->support.wideLines ? 2.0f : 1.0f);
+        primitiveBatchNoDepthTest->testDepth = false;
+
+        primitiveBatchDepthTest = CreateRef<Renderer::PrimitiveBatch>();
+        primitiveBatchDepthTest->SetLineWidth(device->support.wideLines ? 2.0f : 1.0f);
+        primitiveBatchDepthTest->testDepth = true;
 
     }
 
-    void PrimitiveBatchWrapper::RenderLineAABB(Volume::AABB aabb, glm::vec3 color) {
+    void PrimitiveBatchWrapper::RenderLineAABB(Volume::AABB aabb, glm::vec3 color, bool depthTest) {
 
         auto corners = aabb.GetCorners();
+
+        auto& primitiveBatch = depthTest ? primitiveBatchDepthTest : primitiveBatchNoDepthTest;
 
         primitiveBatch->AddLine(corners[0], corners[1], color, color);
         primitiveBatch->AddLine(corners[1], corners[2], color, color);
@@ -32,11 +39,13 @@ namespace Atlas::Editor {
 
     }
 
-    void PrimitiveBatchWrapper::RenderLineFrustum(Volume::Frustum frustum, glm::vec3 color) {
+    void PrimitiveBatchWrapper::RenderLineFrustum(Volume::Frustum frustum, glm::vec3 color, bool depthTest) {
 
         auto corners = frustum.GetCorners();
         if (corners.empty())
             return;
+
+        auto& primitiveBatch = depthTest ? primitiveBatchDepthTest : primitiveBatchNoDepthTest;
 
         primitiveBatch->AddLine(corners[0], corners[1], color, color);
         primitiveBatch->AddLine(corners[2], corners[3], color, color);
@@ -53,10 +62,12 @@ namespace Atlas::Editor {
 
     }
 
-    void PrimitiveBatchWrapper::RenderLineSphere(vec3 position, float radius, vec3 color) {
+    void PrimitiveBatchWrapper::RenderLineSphere(vec3 position, float radius, vec3 color, bool depthTest) {
 
         const int32_t verticalSubdivs = 20;
         const int32_t horizontalSubdivs = 20;
+
+        auto& primitiveBatch = depthTest ? primitiveBatchDepthTest : primitiveBatchNoDepthTest;
 
         vec3 lastPoint;
 
@@ -90,16 +101,25 @@ namespace Atlas::Editor {
 
     }
 
-    void PrimitiveBatchWrapper::RenderLineRectangle(const Volume::Rectangle& rect, vec3 color) {
+    void PrimitiveBatchWrapper::RenderLineRectangle(const Volume::Rectangle& rect, vec3 color, bool depthTest) {
 
         auto point = rect.point;
         auto right = rect.s0;
         auto down = rect.s1;
 
+        auto& primitiveBatch = depthTest ? primitiveBatchDepthTest : primitiveBatchNoDepthTest;
+
         primitiveBatch->AddLine(point, point + right, color, color);
         primitiveBatch->AddLine(point, point + down, color, color);
         primitiveBatch->AddLine(point + right, point + right + down, color, color);
         primitiveBatch->AddLine(point + down, point + right + down, color, color);
+
+    }
+
+    void PrimitiveBatchWrapper::Clear() {
+
+        primitiveBatchDepthTest->Clear();
+        primitiveBatchNoDepthTest->Clear();
 
     }
 

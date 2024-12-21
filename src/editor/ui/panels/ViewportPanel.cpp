@@ -10,8 +10,6 @@ namespace Atlas::Editor::UI {
         viewport = CreateRef<Viewport>();
         viewportTexture = Texture::Texture2D(1, 1, VK_FORMAT_R16G16B16A16_SFLOAT);
 
-        primitiveBatchWrapper.primitiveBatch->testDepth = false;
-
         CreateRenderPass();
 
     }
@@ -103,9 +101,14 @@ namespace Atlas::Editor::UI {
             if (config->pathTrace) {               
                 Singletons::mainRenderer->PathTraceScene(viewport, renderTarget, scene, &viewportTexture);
             }
-            else {              
+            else {
+                Ref<Renderer::PrimitiveBatch> primitiveBatches[] = { 
+                    primitiveBatchWrapper.primitiveBatchDepthTest,
+                    primitiveBatchWrapper.primitiveBatchNoDepthTest
+                };
+
                 Singletons::mainRenderer->RenderScene(viewport, renderTarget, scene,
-                    primitiveBatchWrapper.primitiveBatch, &viewportTexture);
+                    primitiveBatches, &viewportTexture);
 
                 if (visualization != Lit) {
                     float exposure = 1.0f;
@@ -116,7 +119,7 @@ namespace Atlas::Editor::UI {
                 }
             }
 
-            primitiveBatchWrapper.primitiveBatch->Clear();
+            primitiveBatchWrapper.Clear();
         }
 
     }

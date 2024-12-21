@@ -73,6 +73,7 @@ namespace Atlas::Editor::UI {
                     ImGui::SliderInt("Views", &impostor->views, 2, 32);
                     ImGui::DragFloat("Distance", &mesh->impostorDistance, 1.0f, 1.0f, 2000.0f);
                     ImGui::DragFloat("Shadow distance", &mesh->impostorShadowDistance, 1.0f, 1.0f, 2000.0f);
+                    ImGui::DragFloat("Mip bias", &impostor->mipBias, 0.01f, 0.0f, 1.0f);
                     ImGui::SliderFloat("Cutoff", &impostor->cutoff, 0.0, 1.0f);
                     ImGui::Checkbox("Interpolation", &impostor->interpolation);
                     ImGui::Checkbox("Pixel-depth offset", &impostor->pixelDepthOffset);

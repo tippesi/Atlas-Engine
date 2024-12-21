@@ -51,7 +51,7 @@ namespace Atlas {
             int32_t resolution = 64;
 
             float cutoff = 0.7f;
-            float mipBias = -1.0f;
+            float mipBias = 0.0f;
 
             bool interpolation = false;
             bool pixelDepthOffset = true;

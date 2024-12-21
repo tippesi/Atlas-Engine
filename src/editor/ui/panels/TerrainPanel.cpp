@@ -23,7 +23,7 @@ namespace Atlas::Editor::UI {
             RenderMaterialSettings(terrain);
         }
         if (ImGui::CollapsingHeader("Editing")) {
-            RenderEditingSettings(terrain);
+            RenderEditingSettings(terrain, scene);
         }
         if (ImGui::CollapsingHeader("Generator")) {
             if (scene->terrain.IsLoaded() && editingMode) {
@@ -138,7 +138,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void TerrainPanel::RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain) {
+    void TerrainPanel::RenderEditingSettings(ResourceHandle<Terrain::Terrain>& terrain, Ref<Scene::Scene> scene) {
 
         if (!terrain.IsLoaded()) {
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "No terrain generated or selected.");
@@ -222,9 +222,24 @@ namespace Atlas::Editor::UI {
         ImGui::Combo("Slot", &materialBrushSelection,
             pointer.data(), pointer.size());
 
+        ImGui::Separator();
+
+        ImGui::PopID();
+        ImGui::Text("Hole Brush");
+        ImGui::PushID("Hole");
+
+        bool holeBrushActive = brushType == TerrainBrushType::Hole;
+        ImGui::Checkbox("Active", &holeBrushActive);
+        brushType = holeBrushActive ? TerrainBrushType::Hole : brushType;
+
         if (ImGui::Button("Bake terrain", ImVec2(region.x, 0.0f))) {
             Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
             Tools::TerrainTool::BakeTerrain(terrain.Get());
+        }
+
+        if (ImGui::Button("Recalculate physics shape", ImVec2(region.x, 0.0f))) {
+            Tools::TerrainTool::LoadMissingCells(terrain.Get(), terrain.GetResource()->path);
+            AddTerrainToScene(terrain, scene);
         }
 
         ImGui::PopID();

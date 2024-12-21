@@ -92,19 +92,28 @@ void main() {
     texCoords /= PushConstants.nodeSideLength;
 
     // The middle of the texel should match the vertex position
-    float height = float(texture(heightField, texCoords).r) / 65535.0 * Uniforms.heightScale;
+    uint heightDiscretized = texture(heightField, texCoords).r;
+    float height = float(heightDiscretized) / 65534.0 * Uniforms.heightScale;
 
     vec4 worldPosition = vec4(vec3(position.x, height, position.y) + Uniforms.translation.xyz, 1.0);
 
 #ifndef DISTANCE
-    gl_Position =  worldPosition;
+    gl_Position = worldPosition;
 #else
-    gl_Position =  globalData.pMatrix * globalData.vMatrix * worldPosition;
+    gl_Position = globalData.pMatrix * globalData.vMatrix * worldPosition;
 
     ndcCurrent = vec3(gl_Position.xy, gl_Position.w);
 
     vec4 last = globalData.pvMatrixLast * worldPosition;
     ndcLast = vec3(last.xy, last.w);
 #endif
+
+    // Produce NaNs here
+    if (heightDiscretized == 65535u) {
+        gl_Position = vec4(0.0, 0.0, 0.0, intBitsToFloat(int(0xFFC00000u)));
+#ifdef DISTANCE
+        ndcLast = ndcCurrent;
+#endif
+    }
     
 }

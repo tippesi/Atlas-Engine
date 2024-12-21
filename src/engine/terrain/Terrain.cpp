@@ -252,6 +252,10 @@ namespace Atlas {
                 heightTopRight = cell->heightData[xIndex + 1 + cell->heightField->width * (zIndex + 1)];
             }
 
+            if (heightBottomLeft == FLT_MAX || heightBottomRight == FLT_MAX ||
+                heightTopLeft == FLT_MAX || heightTopRight == FLT_MAX)
+                return invalidHeight;
+
             heightBottomLeft *= heightScale;
             heightBottomRight *= heightScale;
             heightTopLeft *= heightScale;
@@ -376,9 +380,11 @@ namespace Atlas {
             while (distance < ray.tMax) {
                 nextPosition = ray.Get(distance);
                 if (!IsUnderground(position) && IsUnderground(nextPosition)) {
-                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
+                    bool hit = BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
                     hitDistance = glm::distance(hitPosition, ray.origin);
-                    return true;
+
+                    // Sanity check, is important if there are holes
+                    return abs(hitPosition.y - ray.Get(hitDistance).y) < 1.0f;
                 }
                 position = nextPosition;
                 distance += linearStepLength;
@@ -457,7 +463,7 @@ namespace Atlas {
 
         }
 
-        void Terrain::BinarySearch(const Volume::Ray& ray, float start,
+        bool Terrain::BinarySearch(const Volume::Ray& ray, float start,
             float finish, int count, vec3& hitPosition, vec3& hitNormal) {
 
             float half = start + (finish - start) / 2.0f;
@@ -465,15 +471,15 @@ namespace Atlas {
             if (count == 0) {
                 hitPosition = ray.origin + ray.direction * half;
                 glm::vec3 forward;
-                GetHeight(hitPosition.x, hitPosition.z, hitNormal, forward);
-                return;
+                hitPosition.y = GetHeight(hitPosition.x, hitPosition.z, hitNormal, forward);
+                return hitPosition.y != invalidHeight;
             }
 
             if (IntersectionInRange(ray, start, half)) {
-                BinarySearch(ray, start, half, count - 1, hitPosition, hitNormal);
+                return BinarySearch(ray, start, half, count - 1, hitPosition, hitNormal);
             }
             else {
-                BinarySearch(ray, half, finish, count - 1, hitPosition, hitNormal);
+                return BinarySearch(ray, half, finish, count - 1, hitPosition, hitNormal);
             }
 
         }
@@ -495,7 +501,7 @@ namespace Atlas {
 
             float height = GetHeight(position.x, position.z);
 
-            return (height > position.y);
+            return (height > position.y) && height != invalidHeight;
 
         }
 

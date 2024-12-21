@@ -35,8 +35,10 @@ namespace Atlas::Tools {
 
         int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
+        // We need to compute it here to preserve the wholes (image resize might smooth it out)
+        auto holeMap = CalculateHoleMap(totalResolution, heightImage);
 
+        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
         if (heightImage.width != totalResolution) {
             stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
                 heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
@@ -85,10 +87,17 @@ namespace Atlas::Tools {
                         int32_t xImage = i * (tileResolution - 1) + x;
                         int32_t yImage = j * (tileResolution - 1) + y;
 
-                        auto sample = (uint16_t)heightMap.Sample(xImage, yImage).r;
+                        auto hole = holeMap.Sample(xImage, yImage).r > 0;
+                        auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
 
-                        cell->heightData[cellOffset] = (float)sample / 65535.0f;
-                        cellHeightData[cellOffset] = sample;
+                        if (hole) {
+                            cell->heightData[cellOffset] = FLT_MAX;
+                            cellHeightData[cellOffset] = 65535;
+                        }
+                        else {
+                            cell->heightData[cellOffset] = (float)height / 65534.0f;
+                            cellHeightData[cellOffset] = height;
+                        }
                         cell->materialIdxData[cellOffset] = 0;
 
                     }
@@ -132,9 +141,10 @@ namespace Atlas::Tools {
 
         int32_t totalResolution = tileResolution * maxNodesPerSide;
 
-        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
-        Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
+        // We need to compute it here to preserve the wholes (image resize might smooth it out)
+        auto holeMap = CalculateHoleMap(totalResolution, heightImage);
 
+        Common::Image<uint16_t> heightMap(totalResolution, totalResolution, 1);
         if (heightImage.width != totalResolution) {
             stbir_resize(heightImage.GetData().data(), heightImage.width, heightImage.height,
                 heightImage.width * 2, heightMap.GetData().data(), totalResolution, totalResolution, totalResolution * 2,
@@ -144,6 +154,7 @@ namespace Atlas::Tools {
             heightMap.SetData(heightImage.GetData());
         }
 
+        Common::Image<uint8_t> splatMap(totalResolution, totalResolution, 1);
         if (splatImage.width != totalResolution) {
             stbir_resize(splatImage.GetData().data(), splatImage.width, splatImage.height,
                 splatImage.width, splatMap.GetData().data(), totalResolution, totalResolution, totalResolution,
@@ -200,12 +211,18 @@ namespace Atlas::Tools {
                         int32_t xImage = i * (tileResolution - 1) + x;
                         int32_t yImage = j * (tileResolution - 1) + y;
 
+                        auto hole = holeMap.Sample(xImage, yImage).r > 0;
                         auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
                         auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
 
-                        cell->heightData[cellOffset] = (float)height / 65535.0f;
-                        cell->heightData[cellOffset] = (float)height / 65535.0f;
-                        cellHeightData[cellOffset] = height;
+                        if (hole) {
+                            cell->heightData[cellOffset] = FLT_MAX;
+                            cellHeightData[cellOffset] = 65535;
+                        }
+                        else {
+                            cell->heightData[cellOffset] = (float)height / 65534.0f;
+                            cellHeightData[cellOffset] = height;
+                        }
                         cell->materialIdxData[cellOffset] = splat;
 
                     }
@@ -337,7 +354,12 @@ namespace Atlas::Tools {
                         int32_t cellOffset = y * (tileResolution + 1) + x;
                         int32_t imageOffset = (j * tileResolution + y) * heightDataResolution +
                             i * tileResolution + x;
-                        heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65535.0f);
+                        if (cell->heightData[cellOffset] == FLT_MAX) {
+                            heightData[imageOffset] = 65535;
+                        }
+                        else {
+                            heightData[imageOffset] = (uint16_t)(cell->heightData[cellOffset] * 65534.0f);
+                        }                        
                         splatData[imageOffset] = cell->materialIdxData[cellOffset];
                     }
                 }
@@ -470,8 +492,14 @@ namespace Atlas::Tools {
                             int32_t totalResolution = currentResolution;
 
                             auto imageOffset = yImage * totalResolution + xImage;
+                            bool hole = resizedHeightData[imageOffset] == 65535;
 
-                            cell->heightData[cellOffset] = float(resizedHeightData[imageOffset]) / 65535.0f;
+                            if (hole) {
+                                cell->heightData[cellOffset] = FLT_MAX;
+                            }
+                            else {
+                                cell->heightData[cellOffset] = float(resizedHeightData[imageOffset]) / 65534.0f;
+                            }
                             tileHeightData[cellOffset] = resizedHeightData[imageOffset];
                             cell->materialIdxData[cellOffset] = resizedSplatData[imageOffset];
                         }
@@ -576,6 +604,9 @@ namespace Atlas::Tools {
                 int32_t xTranslated = x + offsets[i][j].x;
                 int32_t yTranslated = y + offsets[i][j].y;
                 int32_t index = yTranslated * width * 3 + xTranslated;
+                // Skip holes
+                if (data[index] == FLT_MAX)
+                    continue;
                 float value = data[index] + scale * weights[i][j] / terrain->heightScale;
                 data[index] = glm::clamp(value, 0.0f, 1.0f);
             }
@@ -635,6 +666,10 @@ namespace Atlas::Tools {
                         // values need to be discarded
                         if (heightsCopy[index] < 0.0f)
                             continue;
+                        // Skip holes
+                        if (heightsCopy[index] == FLT_MAX)
+                            continue;
+
                         sum += heightsCopy[index];
                         contributing += 1.0f;
                     }
@@ -691,6 +726,9 @@ namespace Atlas::Tools {
                 int32_t xTranslated = x + i;
                 int32_t yTranslated = y + j;
                 int32_t index = yTranslated * width * 3 + xTranslated;
+                // Skip holes
+                if (data[index] == FLT_MAX)
+                    continue;
                 data[index] = glm::mix(data[index], flattenHeight, strength);
             }
         }
@@ -699,7 +737,51 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot) {
+    void TerrainTool::BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size) {
+
+        position -= vec2(terrain->translation.x, terrain->translation.z);
+
+        Terrain::TerrainStorageCell* cells[9];
+        if (!GetNearbyStorageCells(terrain, position, cells))
+            return;
+
+        auto center = cells[4];
+
+        // Now bring all height data into one array (we assume that all tiles have the same size)
+        int32_t width = center->splatMap->width - 1;
+        int32_t height = center->splatMap->height - 1;
+
+        std::vector<float> heights(width * height * 9);
+        std::fill(heights.begin(), heights.end(), -1.0f);
+        auto& data = heights;
+
+        ExtractNearbyStorageData(terrain, cells, data, {});
+
+        // Apply the kernel on the whole data
+        position -= center->position;
+
+        int32_t x = (int32_t)floorf(position.x / terrain->resolution);
+        int32_t y = (int32_t)floorf(position.y / terrain->resolution);
+
+        x += width;
+        y += height;
+
+        auto offset = (size - 1) / 2;
+
+        for (int32_t i = 0; i < size; i++) {
+            for (int32_t j = 0; j < size; j++) {
+                auto xTranslated = x - offset + i;
+                auto yTranslated = y - offset + j;
+                auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
+                data[index] = FLT_MAX;
+            }
+        }
+
+        ApplyDataToNearbyStorage(terrain, cells, data, {});
+
+    }
+
+    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
         
@@ -730,8 +812,8 @@ namespace Atlas::Tools {
 
         auto offset = (size - 1) / 2;
 
-        for (uint32_t i = 0; i < size; i++) {
-            for (uint32_t j = 0; j < size; j++) {
+        for (int32_t i = 0; i < size; i++) {
+            for (int32_t j = 0; j < size; j++) {
                 auto xTranslated = x - offset + i;
                 auto yTranslated = y - offset + j;
                 auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
@@ -973,22 +1055,30 @@ namespace Atlas::Tools {
                 int32_t y = idx / dataWidth;
                 int32_t x = idx % dataWidth;
 
-                float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height) * scale;
-                float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height) * scale;
-                float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height) * scale;
-                float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height) * scale;
+                float heightC = GetHeight(heightData, dataWidth, x, y, width, height, scale);
+                if (heightC != FLT_MAX) {
+                    float heightL = GetHeight(heightData, dataWidth, x - 1, y, width, height, scale);
+                    float heightR = GetHeight(heightData, dataWidth, x + 1, y, width, height, scale);
+                    float heightD = GetHeight(heightData, dataWidth, x, y - 1, width, height, scale);
+                    float heightU = GetHeight(heightData, dataWidth, x, y + 1, width, height, scale);
 
-                auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
-                    heightD - heightU));
+                    heightL = heightL == FLT_MAX ? heightC : heightL;
+                    heightR = heightR == FLT_MAX ? heightC : heightR;
+                    heightD = heightD == FLT_MAX ? heightC : heightD;
+                    heightU = heightU == FLT_MAX ? heightC : heightU;
 
-                normal = (0.5f * normal + 0.5f) * 255.0f;
+                    auto normal = glm::normalize(glm::vec3(heightL - heightR, 1.0f,
+                        heightD - heightU));
 
-                auto xOffset = 3 * x;
-                auto yOffset = 3 * y * dataWidth;
+                    normal = (0.5f * normal + 0.5f) * 255.0f;
 
-                normalData[yOffset + xOffset] = (uint8_t)normal.x;
-                normalData[yOffset + xOffset + 1] = (uint8_t)normal.y;
-                normalData[yOffset + xOffset + 2] = (uint8_t)normal.z;
+                    auto xOffset = 3 * x;
+                    auto yOffset = 3 * y * dataWidth;
+
+                    normalData[yOffset + xOffset] = (uint8_t)normal.x;
+                    normalData[yOffset + xOffset + 1] = (uint8_t)normal.y;
+                    normalData[yOffset + xOffset + 2] = (uint8_t)normal.z;
+                }
 
                 idx++;
 
@@ -1003,13 +1093,14 @@ namespace Atlas::Tools {
     }
 
     float TerrainTool::GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
-        int32_t x, int32_t y, int32_t width, int32_t height) {
+        int32_t x, int32_t y, int32_t width, int32_t height, float scale) {
 
         x = x < 0 ? 0 : (x >= width ? width - 1 : x);
         y = y < 0 ? 0 : (y >= height ? height - 1 : y);
 
-        const float heightFactor = 1.0f / 65535.0f;
-        return (float)heightData[y * dataWidth + x] * heightFactor;
+        uint16_t pixelHeight = heightData[y * dataWidth + x];
+        const float heightFactor = 1.0f / 65534.0f;
+        return pixelHeight < 65535 ? float(pixelHeight) * heightFactor * scale : FLT_MAX;
 
     }
 
@@ -1142,8 +1233,14 @@ namespace Atlas::Tools {
 
                 if (!heightData.empty()) {
                     // Need to only take the heights from the cell storage, since heights in allHeightData have border issues
-                    for (size_t k = 0; k < cell->heightData.size(); k++)
-                        cellHeightData[k] = uint16_t(cell->heightData[k] * 65535.0f);
+                    for (size_t k = 0; k < cell->heightData.size(); k++) {
+                        if (cell->heightData[k] == FLT_MAX) {
+                            cellHeightData[k] = 65535;
+                        }
+                        else {
+                            cellHeightData[k] = uint16_t(cell->heightData[k] * 65534.0f);
+                        }
+                    }
 
                     cell->heightField->SetData(cellHeightData, &transferManager);
                     cell->normalMap->SetData(cell->normalData, &transferManager);
@@ -1157,6 +1254,24 @@ namespace Atlas::Tools {
         }
 
         transferManager.EndMultiTransfer();
+
+    }
+
+    Common::Image<uint8_t> TerrainTool::CalculateHoleMap(int32_t resolution, 
+        const Common::Image<uint16_t>& heightMap) {
+
+        Common::Image<uint8_t> holeMap(resolution, resolution, 1);
+        for (int32_t i = 0; i < resolution * resolution; i++) {
+            auto x = i % resolution;
+            auto y = i / resolution;
+
+            auto fx = float(x) / float(resolution);
+            auto fy = float(y) / float(resolution);
+
+            holeMap.SetData(x, y, 0, heightMap.Sample(fx, fy).r == 65535 ? 1 : 0);
+        }
+
+        return holeMap;
 
     }
 

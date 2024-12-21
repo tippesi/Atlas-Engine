@@ -56,9 +56,14 @@ void main() {
     vec2 texCoords = localPosition;
     texCoords /= PushConstants.nodeSideLength;
 
+    float heightDiscretized = texture(heightField, texCoords).r;
     // The middle of the texel should match the vertex position
-    float height = float(texture(heightField, texCoords).r) / 65535.0 * PushConstants.heightScale + PushConstants.translation.y;
+    float height = float(heightDiscretized) / 65535.0 * PushConstants.heightScale;
 
     gl_Position =  PushConstants.lightSpaceMatrix * vec4(vec3(position.x, height, position.y) + PushConstants.translation.xyz, 1.0);
+
+    if (heightDiscretized == 65535u) {
+        gl_Position = vec4(0.0, 0.0, 0.0, intBitsToFloat(int(0xFFC00000u)));
+    }
 
 }

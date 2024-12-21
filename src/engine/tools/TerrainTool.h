@@ -74,7 +74,9 @@ namespace Atlas {
 
             static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float height);
 
-            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, float size, int32_t slot);
+            static void BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size);
+
+            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot);
 
             static Texture::Texture2D GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
 
@@ -89,7 +91,7 @@ namespace Atlas {
                                            int32_t width, int32_t height, float strength);
 
             static float GetHeight(const std::vector<uint16_t>& heightData, int32_t dataWidth,
-                    int32_t x, int32_t y, int32_t width, int32_t height);
+                    int32_t x, int32_t y, int32_t width, int32_t height, float scale);
 
             static bool GetNearbyStorageCells(const Ref<Terrain::Terrain>& terrain, vec2 position,
                 Terrain::TerrainStorageCell** cells);
@@ -100,6 +102,7 @@ namespace Atlas {
             static void ApplyDataToNearbyStorage(const Ref<Terrain::Terrain>& terrain, Terrain::TerrainStorageCell** cells,
                 std::span<float> heightData, std::span<uint8_t> splatData);
 
+            static Common::Image<uint8_t> CalculateHoleMap(int32_t resolution, const Common::Image<uint16_t>& heightMap);
 
         };
 

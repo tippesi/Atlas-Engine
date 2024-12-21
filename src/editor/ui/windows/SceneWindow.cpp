@@ -540,12 +540,12 @@ namespace Atlas::Editor::UI {
         if (!entity.IsValid())
             return;
 
-        viewportPanel.primitiveBatchWrapper.primitiveBatch->testDepth = depthTestBoundingVolumes;
+        auto testDepth = depthTestBoundingVolumes;
 
         if (entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto aabb = meshComponent.aabb;
-            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f));
+            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<AudioComponent>()) {
             const auto& audioComponent = entity.GetComponent<AudioComponent>();
@@ -557,29 +557,29 @@ namespace Atlas::Editor::UI {
 
             // After this the audio will be cutoff
             float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
-            viewportPanel.primitiveBatchWrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f));
+            viewportPanel.primitiveBatchWrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
-            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f));
+            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<CameraComponent>()) {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
-            viewportPanel.primitiveBatchWrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f));
+            viewportPanel.primitiveBatchWrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f), testDepth);
         }
         if (entity.HasComponent<LightComponent>()) {
             const auto& lightComponent = entity.GetComponent<LightComponent>();
             if (lightComponent.shadow) {
                 for (const auto& component : lightComponent.shadow->views)
                     viewportPanel.primitiveBatchWrapper.RenderLineFrustum(
-                        Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f));
+                        Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f), testDepth);
             }
         }
         if (entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
             auto rectangle = textComponent.GetRectangle();
-            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f));
+            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f), testDepth);
         }
 
     }
@@ -730,9 +730,13 @@ namespace Atlas::Editor::UI {
         if (!mousePressed)
             terrainFlattenHeight = Terrain::Terrain::invalidHeight;
 
+        float brushRadius = terrainPanel.brushSize * scene->terrain->resolution;
+
+        auto intersection = ray.Get(result.hitDistance);
+        viewportPanel.primitiveBatchWrapper.RenderLineSphere(intersection, brushRadius, vec3(1.0f), true);
+
         // Check for right mouse button down
         if (brushTerrain) {
-            auto intersection = ray.Get(result.hitDistance);
             uint32_t brushSize = uint32_t(terrainPanel.brushSize);
             // This should only trigger once when the button is started to be pressed
             if (terrainFlattenHeight == Terrain::Terrain::invalidHeight ||
@@ -776,6 +780,13 @@ namespace Atlas::Editor::UI {
                     vec2(intersection.x, intersection.z),
                     brushSize, terrainPanel.materialBrushSelection);
             }
+            else if (terrainPanel.brushType == TerrainPanel::TerrainBrushType::Hole) {
+                brushSize = 2 * brushSize + 1;
+                Atlas::Tools::TerrainTool::BrushHole(scene->terrain.Get(),
+                    vec2(intersection.x, intersection.z), brushSize);
+            }
+
+            
         }
 
     }

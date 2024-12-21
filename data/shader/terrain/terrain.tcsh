@@ -63,6 +63,9 @@ bool IsTileVisible(vec3 min, vec3 max) {
 void main() {
 
     if(gl_InvocationID == 0) {
+
+        bool hole = gl_in[3].gl_Position.w < 0.0 || gl_in[2].gl_Position.w < 0.0 ||
+            gl_in[1].gl_Position.w < 0.0 || gl_in[0].gl_Position.w < 0.0;
     
         vec3 minVec = min(gl_in[0].gl_Position.xyz,
             min(gl_in[1].gl_Position.xyz,
