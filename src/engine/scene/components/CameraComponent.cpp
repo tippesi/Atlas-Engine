@@ -144,15 +144,15 @@ namespace Atlas {
                 vec3 farPoint = cameraLocation + globalDirection * farPlane;
                 vec3 nearPoint = cameraLocation + globalDirection * nearPlane;
 
-                corners[0] = farPoint + farHeight * globalUp - farWidth * globalRight;
-                corners[1] = farPoint + farHeight * globalUp + farWidth * globalRight;
-                corners[2] = farPoint - farHeight * globalUp - farWidth * globalRight;
-                corners[3] = farPoint - farHeight * globalUp + farWidth * globalRight;
+                corners[0] = nearPoint + nearHeight * globalUp - nearWidth * globalRight;
+                corners[1] = nearPoint + nearHeight * globalUp + nearWidth * globalRight;
+                corners[2] = nearPoint - nearHeight * globalUp - nearWidth * globalRight;
+                corners[3] = nearPoint - nearHeight * globalUp + nearWidth * globalRight;
 
-                corners[4] = nearPoint + nearHeight * globalUp - nearWidth * globalRight;
-                corners[5] = nearPoint + nearHeight * globalUp + nearWidth * globalRight;
-                corners[6] = nearPoint - nearHeight * globalUp - nearWidth * globalRight;
-                corners[7] = nearPoint - nearHeight * globalUp + nearWidth * globalRight;
+                corners[4] = farPoint + farHeight * globalUp - farWidth * globalRight;
+                corners[5] = farPoint + farHeight * globalUp + farWidth * globalRight;
+                corners[6] = farPoint - farHeight * globalUp - farWidth * globalRight;
+                corners[7] = farPoint - farHeight * globalUp + farWidth * globalRight;
 
                 return corners;
 

@@ -88,7 +88,7 @@ namespace Atlas {
             void CalculateCorners(const mat4& matrix);
 
             enum {
-                NEAR_PLANE = 0,    FAR_PLANE, TOP_PLANE,
+                NEAR_PLANE = 0, FAR_PLANE, TOP_PLANE,
                 BOTTOM_PLANE, LEFT_PLANE, RIGHT_PLANE
             };
 
@@ -96,10 +96,8 @@ namespace Atlas {
                 Plane() {}
 
                 Plane(vec3 v0, vec3 v1, vec3 v2) {
-                    auto d0 = v0 - v1;
-                    auto d1 = v2 - v1;
-                    normal = glm::normalize(glm::cross(d1, d0));
-                    distance = -glm::dot(normal, v1);
+                    normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+                    distance = -glm::dot(normal, v0);
                 }
 
                 vec3 normal = vec3(0.0f);

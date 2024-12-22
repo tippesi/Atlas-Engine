@@ -164,13 +164,12 @@ namespace Atlas {
         void Octree<T>::QueryFrustum(std::vector<T>& data, std::vector<T>& insideData, Frustum frustum) {
 
             auto scaled = this->aabb.Scale(relaxFactor);
-
             if (!frustum.Intersects(scaled))
                 return;
 
             // Check if frustum encloses this octree node
             // In that case we can add all data and children data
-            if (frustum.IsInside(scaled)) {
+            if (frustum.IsInside(aabb)) {
                 GetData(insideData);
                 return;
             }
