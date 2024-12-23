@@ -255,10 +255,10 @@ namespace Atlas {
             JobSystem::Wait(jobGroup);
 
             for (auto& jobContext : jobContexts) {
-                hardwareInstances.insert_range(hardwareInstances.end(), jobContext.hardwareInstances);
-                gpuBvhInstances.insert_range(gpuBvhInstances.end(), jobContext.gpuBvhInstances);
-                instanceAABBs.insert_range(instanceAABBs.end(), jobContext.instanceAABBs);
-                lastMatrices.insert_range(lastMatrices.end(), jobContext.lastMatrices);
+                hardwareInstances.insert(hardwareInstances.end(), jobContext.hardwareInstances.begin(), jobContext.hardwareInstances.end());
+                gpuBvhInstances.insert(gpuBvhInstances.end(), jobContext.gpuBvhInstances.begin(), jobContext.gpuBvhInstances.end());
+                instanceAABBs.insert(instanceAABBs.end(), jobContext.instanceAABBs.begin(), jobContext.instanceAABBs.end());
+                lastMatrices.insert(lastMatrices.end(), jobContext.lastMatrices.begin(), jobContext.lastMatrices.end());
             }
 
             if (gpuBvhInstances.empty()) {

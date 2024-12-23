@@ -647,6 +647,31 @@ namespace Atlas {
 
         }
 
+        std::vector<Entity> Scene::QueryAABB(const Volume::AABB& aabb, SceneQueryComponents queryComponents) {
+
+            std::set<Entity> entities;
+
+            if (queryComponents & SceneQueryComponentBits::MeshComponentBit) {
+
+                auto queried = SpacePartitioning::QueryAABB(aabb);
+                auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+                for (auto entity : queried) {
+                    auto meshComponent = entity.TryGetComponent<MeshComponent>();
+
+                    bool validEntity = false;
+                    if (meshComponent && meshComponent->aabb.Intersects(aabb))
+                        validEntity = true;
+
+                    if (validEntity)
+                        entities.insert(entity);
+                }
+
+            }
+
+            return { entities.begin(), entities.end() };
+
+        }
+
         void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
 
             if (!mainCameraEntity.IsValid())

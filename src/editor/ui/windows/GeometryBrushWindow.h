@@ -18,7 +18,12 @@ namespace Atlas::Editor::UI {
         bool brushEnabled = false;
 
     private:
-        struct DropTarget {
+        enum class BrushType {
+            Create = 0,
+            Delete
+        };
+
+        struct BrushTarget {
             vec3 center;
             vec3 normal;
             vec3 tangent;
@@ -35,14 +40,21 @@ namespace Atlas::Editor::UI {
         bool brushAlignToSurface = false;
         bool brushOnlyQueryTerrain = false;
         int32_t brushDropRate = 10.0f;
+        BrushType brushType = BrushType::Create;
 
         float brushLastApplied = 0.0f;
 
-        void RenderBrushSettings();
+        void RenderBrushSettings(const Ref<SceneWindow>& activeSceneWindow);
 
-        DropTarget CalculateDropTarget(const Ref<SceneWindow>& activeSceneWindow);
+        void RenderCreateBrushSettings();
 
-        void ApplyBrush(const Ref<SceneWindow>& activeSceneWindow, const DropTarget& dropTarget);
+        void RenderDeleteBrushSettings();
+
+        BrushTarget CalculateBrushTarget(const Ref<SceneWindow>& activeSceneWindow);
+
+        void ApplyCreateBrush(const Ref<SceneWindow>& activeSceneWindow, const BrushTarget& dropTarget);
+
+        void ApplyDeleteBrush(const Ref<SceneWindow>& activeSceneWindow, const BrushTarget& dropTarget);
 
     };
 

@@ -112,6 +112,9 @@ namespace Atlas {
             Volume::RayResult<Entity> CastRay(Volume::Ray& ray, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
+            std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
+                SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
+
             void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();

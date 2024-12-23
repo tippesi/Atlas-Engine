@@ -10,10 +10,20 @@ namespace Atlas {
 		SpacePartitioning::SpacePartitioning(Scene* scene, vec3 min, vec3 max, int32_t depth) :
             scene(scene), aabb(min, max), depth(depth) {
 
-			renderableStaticEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
-			renderableMovableEntityOctree = Volume::Octree<ECS::Entity>(aabb, depth);
+			renderableStaticEntityOctree = Volume::Octree<Entity>(aabb, depth);
+			renderableMovableEntityOctree = Volume::Octree<Entity>(aabb, depth);
 
 		}
+
+        std::vector<Entity> SpacePartitioning::QueryAABB(const Volume::AABB& aabb) {
+
+            std::vector<Entity> entities;
+            renderableStaticEntityOctree.QueryAABB(entities, aabb);
+            renderableMovableEntityOctree.QueryAABB(entities, aabb);
+
+            return entities;
+
+        }
 
 		void SpacePartitioning::InsertRenderableEntity(Entity entity, const MeshComponent& transform) {
 

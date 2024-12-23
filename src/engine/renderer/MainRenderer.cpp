@@ -589,7 +589,6 @@ namespace Atlas {
 
 			}
 
-
 			if (batch->GetTriangleCount()) {
 
 				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
