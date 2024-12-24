@@ -96,8 +96,9 @@ void main() {
     //vec3 fNormal = normal;
     vec3 fNormal = normalize(vec3(gradientDisplacement.x, 2.0, gradientDisplacement.y));
     
-    float shadowFactor = CalculateCascadedShadow(light.shadow,
-        cascadeMaps, fPosition, fNormal, 1.0);
+    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, fPosition, 
+        vec3(gl_FragCoord.xy, 0.0), fNormal, 0.0), 1.0);
+
 
 #ifdef CLOUD_SHADOWS
     float cloudShadowFactor = CalculateCloudShadow(fPosition, cloudShadowUniforms.cloudShadow, cloudShadowMap);

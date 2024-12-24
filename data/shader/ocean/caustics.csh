@@ -58,7 +58,8 @@ void main() {
     if (waterDepth <= 0.0 || fadeout <= 0.0)
         return;
 
-    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, vec3(0.0, 1.0, 0.0), 0.0), 0.0);
+    float shadowFactor = max(CalculateCascadedShadow(light.shadow, cascadeMaps, viewSpacePos, 
+        vec3(vec2(pixel) + 0.5, 0.0), vec3(0.0, 1.0, 0.0), 0.0), 0.0);
 
     vec3 pos = vec3(pixelPos.x, globalData.time * 0.5, pixelPos.z);
     pos *= 2.0;

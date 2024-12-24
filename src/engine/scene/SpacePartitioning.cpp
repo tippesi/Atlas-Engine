@@ -47,8 +47,7 @@ namespace Atlas {
 
 		}
 
-        void SpacePartitioning::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
-
+        void SpacePartitioning::GetRenderList(const Volume::Frustum& frustum, const Ref<RenderList::Pass>& pass) {
             
             auto entityManager = &scene->entityManager;
 

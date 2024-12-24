@@ -32,17 +32,17 @@ namespace Atlas {
 
             vec3 Get(float distance) const;
 
-            bool Intersects(const AABB& aabb);
+            bool Intersects(const AABB& aabb) const;
 
-            bool Intersects(const AABB& aabb, float& t);
+            bool Intersects(const AABB& aabb, float& t) const;
 
-            bool Intersects(vec3 v0, vec3 v1, vec3 v2);
+            bool Intersects(vec3 v0, vec3 v1, vec3 v2) const;
 
-            bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection);
+            bool Intersects(vec3 v0, vec3 v1, vec3 v2, vec3& intersection) const;
 
-            bool Intersects(const Rectangle& rect, float& t);
+            bool Intersects(const Rectangle& rect, float& t) const;
 
-            vec3 Distance(Ray ray, float& distance);
+            vec3 Distance(Ray ray, float& distance) const;
 
             vec3 origin = vec3(0.0f);
             vec3 direction = vec3(0.0f, 1.0f, 0.0f);

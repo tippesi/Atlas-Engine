@@ -489,7 +489,7 @@ namespace Atlas {
         void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
             auto& gpuTriangles = mesh->blas->gpuTriangles;
-            const auto& materials = mesh->blas->materials;
+            const auto& blasMaterials = mesh->blas->materials;
 
             auto& blasInfo = blasInfos[mesh->blas];
             blasInfo.triangleLights.clear();
@@ -498,7 +498,7 @@ namespace Atlas {
             for (size_t i = 0; i < gpuTriangles.size(); i++) {
                 auto& triangle = gpuTriangles[i];
                 auto idx = reinterpret_cast<int32_t&>(triangle.d0.w);
-                auto& material = materials[idx];
+                auto& material = blasMaterials[idx];
 
                 auto radiance = Common::ColorConverter::ConvertSRGBToLinear(material->emissiveColor);
                 auto brightness = dot(radiance, vec3(0.3333f));
