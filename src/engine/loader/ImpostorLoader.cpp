@@ -64,7 +64,7 @@ namespace Atlas::Loader {
                     try_get_binary_json(jsonLayer, "data", jsonData);
 
                     int32_t width, height, channels;
-                    void* data = stbi_load_from_memory((unsigned char*)jsonData.data(),
+                    void* data = stbi_load_from_memory(jsonData.data(),
                         (int32_t)jsonData.size(), &width, &height, &channels, 0);
 
                     transferManager.UploadImageData(data, texture->image.get(),
@@ -113,8 +113,8 @@ namespace Atlas::Loader {
         if (impostor->isGenerated) {
             // Stbi callback
             auto writePngToMemory = [](void* context, void* data, int32_t size) {
-                auto imageData = (std::vector<uint8_t>*)context;
-                auto imageBytes = (uint8_t*)data;
+                auto imageData = static_cast<std::vector<uint8_t>*>(context);
+                auto imageBytes = static_cast<uint8_t*>(data);
 
                 for (int i = 0; i < size; i++)
                     imageData->push_back(imageBytes[i]);

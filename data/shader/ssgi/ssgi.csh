@@ -139,7 +139,7 @@ void main() {
                 
                 vec3 viewDir = normalize(vec3(globalData.vMatrix * vec4(ray.direction, 0.0)));
                 float viewOffset = max(1.0, length(viewPos));
-                vec3 viewRayOrigin = viewPos + 10.0 * viewNorm * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
+                vec3 viewRayOrigin = viewPos + 2.0 * viewNorm * EPSILON * viewOffset + viewDir * EPSILON * viewOffset;
                 
                 vec2 hitPixel;
                 vec3 hitPoint;

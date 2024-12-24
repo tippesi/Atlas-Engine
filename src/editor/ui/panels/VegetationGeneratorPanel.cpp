@@ -128,20 +128,20 @@ namespace Atlas::Editor::UI {
             ImGui::SeparatorText("Exclude materials");
             ImGui::BeginChild("ChildWindow", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
 
-            for (int32_t i = 0; i < int32_t(terrain->storage->materials.size()); i++) {
-                auto& material = terrain->storage->materials[i];
+            for (int32_t j = 0; j < int32_t(terrain->storage->materials.size()); j++) {
+                auto& material = terrain->storage->materials[j];
                 if (!material.IsLoaded())
                     continue;
 
-                auto fileName = material.GetResource()->GetFileName() + "##" + std::to_string(i);
+                auto fileName = material.GetResource()->GetFileName() + "##" + std::to_string(j);
 
-                bool excluded = type.exludeMaterialIndices.contains(i);
+                bool excluded = type.exludeMaterialIndices.contains(j);
                 if (ImGui::RadioButton(fileName.c_str(), excluded)) {
                     if (excluded) {
-                        type.exludeMaterialIndices.erase(i);
+                        type.exludeMaterialIndices.erase(j);
                     }
                     else {
-                        type.exludeMaterialIndices.insert(i);
+                        type.exludeMaterialIndices.insert(j);
                     }
                 }
             }

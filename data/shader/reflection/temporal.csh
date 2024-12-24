@@ -211,7 +211,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
         float confidence = 1.0;
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
@@ -507,7 +507,8 @@ void main() {
         vec3 virtualNormal = normalize(DecodeNormal(texelFetch(historyNormalTexture, ivec2(virtualHistoryPixel), 0).rg));
         float virtualRoughness = texelFetch(historyRoughnessMetallicAoTexture, ivec2(virtualHistoryPixel), 0).r;
 
-        float virtualConfidence = dominantFactor * sqr(1.0 - roughness);
+        const float virtualCutoff = 0.2;
+        float virtualConfidence = dominantFactor * sqr(max((virtualCutoff - roughness) / virtualCutoff, 0.0));
         virtualConfidence *= pow(max(dot(virtualNormal, normal), 0.0), 512.0);
         virtualConfidence *= pow(1.0 - abs(virtualRoughness - roughness), 32.0);
 

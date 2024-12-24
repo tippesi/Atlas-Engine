@@ -169,9 +169,6 @@ namespace Atlas {
 
     void RenderList::Pass::Add(const ECS::Entity& entity, const MeshComponent& meshComponent) {
 
-        if (!meshComponent.mesh.IsLoaded())
-            return;
-
         auto id = meshComponent.mesh.GetID();
 
         auto item = meshToEntityMap.find(id);
@@ -206,6 +203,7 @@ namespace Atlas {
             maxImpostorCount += hasImpostor ? batch.count : 0;
         }
 
+        auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);
             // This happens when meshes are loaded async
@@ -231,8 +229,7 @@ namespace Atlas {
             if (hasImpostor) {
                 for (size_t i = 0; i < batch.count; i++) {
                     auto& ecsEntity = batch.entities[i];
-                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<TransformComponent>();
+                    auto& transformComponent = transformPool.Get(ecsEntity);
                     auto distance = glm::distance2(
                         vec3(transformComponent.globalMatrix[3]),
                         cameraLocation);
@@ -255,8 +252,7 @@ namespace Atlas {
             else {
                 for (size_t i = 0; i < batch.count; i++) {
                     auto& ecsEntity = batch.entities[i];
-                    auto entity = Scene::Entity(ecsEntity, &scene->entityManager);
-                    auto& transformComponent = entity.GetComponent<TransformComponent>();
+                    auto& transformComponent = transformPool.Get(ecsEntity);
                     currentEntityMatrices.push_back(glm::transpose(transformComponent.globalMatrix));
                     if (needsHistory) {
                         lastEntityMatrices.push_back(glm::transpose(transformComponent.lastGlobalMatrix));

@@ -53,7 +53,7 @@ namespace Atlas::Editor {
         void GetBiomeIndicators(float x, float y, Common::Image<uint16_t>& heightImg, 
             Common::Image<uint16_t>& moistureImg, float scale, float& height, float& slope, float& moisture);
 
-        Biome GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
+        Biome GetBiome(float x, float y, const std::vector<ElevationBiome>& biomes,
             Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale);
 
         std::vector<ElevationBiome> SortBiomes();

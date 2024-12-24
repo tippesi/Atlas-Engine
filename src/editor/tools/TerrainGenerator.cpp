@@ -445,7 +445,7 @@ namespace Atlas::Editor {
 
     }
 
-    TerrainGenerator::Biome TerrainGenerator::GetBiome(float x, float y, std::vector<ElevationBiome>& biomes,
+    TerrainGenerator::Biome TerrainGenerator::GetBiome(float x, float y, const std::vector<ElevationBiome>& biomes,
         Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, float scale) {
 
         Biome biome;

@@ -208,7 +208,7 @@ namespace Atlas {
                 if (!node->cell || !node->cell->IsLoaded() || !renderState->blasToBindlessIdx.contains(node->cell->blas))
                     continue;
 
-                auto &blasInfo = blasInfos[node->cell->blas];
+                const auto &blasInfo = blasInfos[node->cell->blas];
                 if (hardwareRayTracing && !node->cell->blas->blas->isBuilt || node->cell->blas->needsBvhRefresh)
                     continue;
 
@@ -489,7 +489,7 @@ namespace Atlas {
         void RayTracingWorld::BuildTriangleLightsForMesh(ResourceHandle<Mesh::Mesh> &mesh) {
 
             auto& gpuTriangles = mesh->blas->gpuTriangles;
-            auto& materials = mesh->blas->materials;
+            const auto& materials = mesh->blas->materials;
 
             auto& blasInfo = blasInfos[mesh->blas];
             blasInfo.triangleLights.clear();

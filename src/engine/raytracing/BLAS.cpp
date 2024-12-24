@@ -93,7 +93,6 @@ namespace Atlas::RayTracing {
 
         auto& data = hardwareRayTracing ? bvhTriangles : bvh.data;
 
-        std::vector<GPUTriangle> gpuTriangles;
         std::vector<GPUBVHTriangle> gpuBvhTriangles;
 
         gpuTriangles.reserve(triangleCount);
@@ -190,7 +189,7 @@ namespace Atlas::RayTracing {
             gpuBvhTriangles.clear();
             gpuBvhTriangles.shrink_to_fit();
 
-            auto& nodes = bvh.GetTree();
+            const auto& nodes = bvh.GetTree();
             std::vector<GPUBVHNode> gpuBvhNodes(nodes.size());
             // Copy to GPU format
             for (size_t i = 0; i < nodes.size(); i++) {

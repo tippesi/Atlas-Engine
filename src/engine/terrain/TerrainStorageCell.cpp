@@ -79,7 +79,12 @@ namespace Atlas {
             for (int32_t i = 0; i < heightFieldSideLength; i++) {
                 for (int32_t j = 0; j < heightFieldSideLength; j++) {
                     auto idx = i * heightFieldSideLength + j;
-                    vertices[idx] = vec3(float(j) * stretchFactor, heightData[idx] * heightFactor, float(i) * stretchFactor);
+
+                    vertices[idx] = vec3(
+                        float(j) * stretchFactor, 
+                        heightData[idx] == FLT_MAX ? FLT_MAX : heightData[idx] * heightFactor,
+                        float(i) * stretchFactor
+                    );
 
                     aabb.min = glm::min(aabb.min, vertices[idx]);
                     aabb.max = glm::max(aabb.max, vertices[idx]);
@@ -94,6 +99,12 @@ namespace Atlas {
                 for (int32_t j = 0; j < vertexSideCount; j++) {
                     auto idx = i * heightFieldSideLength + j;
                     auto baseIdx = (i * vertexSideCount + j) * 6;
+
+                    bool hole = heightData[idx] == FLT_MAX || heightData[idx + 1] == FLT_MAX ||
+                        heightData[idx + heightFieldSideLength] == FLT_MAX || 
+                        heightData[idx + heightFieldSideLength + 1] == FLT_MAX;
+                    if (hole)
+                        continue;
 
                     indices[baseIdx + 0] = idx;
                     indices[baseIdx + 1] = idx + 1;

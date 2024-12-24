@@ -58,21 +58,21 @@ namespace Atlas {
 
         bool Frustum::IsInside(const AABB& aabb) const {
 
-            // Iterate through each frustum plane
-            for (const Plane& plane : planes) {
-                // Test all 8 corners of the AABB
-                bool allInside = true;
-                for (int i = 0; i < 8; i++) {
-                    glm::vec3 corner = glm::vec3(
-                        (i & 1) ? aabb.max.x : aabb.min.x,
-                        (i & 2) ? aabb.max.y : aabb.min.y,
-                        (i & 4) ? aabb.max.z : aabb.min.z
-                    );
+            for (uint8_t i = 0; i < 6; i++) {
 
-                    if (plane.distance + glm::dot(plane.normal, corner) < 0.0f)
-                        return false;
-                }
+                auto& normal = planes[i].normal;
+                auto& distance = planes[i].distance;
+
+                vec3 s;
+                s.x = normal.x >= 0.0f ? aabb.min.x : aabb.max.x;
+                s.y = normal.y >= 0.0f ? aabb.min.y : aabb.max.y;
+                s.z = normal.z >= 0.0f ? aabb.min.z : aabb.max.z;
+
+                if (distance + glm::dot(normal, s) < 0.0f)
+                    return false;
+
             }
+
             return true;
 
         }

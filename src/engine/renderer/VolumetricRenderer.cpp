@@ -84,8 +84,8 @@ namespace Atlas {
             uniforms.lightCount = std::min(128, int32_t(renderState->volumetricLights.size()));
             uniforms.directionalLightCount = 0;
            
-            for (auto& light : renderState->volumetricLights) {
-                auto packedType = reinterpret_cast<uint32_t&>(light.color.a);
+            for (const auto& light : renderState->volumetricLights) {                
+                auto packedType = reinterpret_cast<const uint32_t&>(light.color.a);
                 auto type = static_cast<LightType>(packedType);
                
                 if (type != LightType::DirectionalLight)
@@ -228,7 +228,7 @@ namespace Atlas {
             if (fog && fog->enable && fog->rayMarching) {
                 Graphics::Profiler::BeginQuery("Bilateral blur");
 
-                const int32_t groupSize = 256;
+                const int32_t blurGroupSize = 256;
 
                 auto kernelSize = int32_t(filterSize);
 
@@ -239,8 +239,8 @@ namespace Atlas {
                 commandList->BindBuffer(blurWeightsUniformBuffer.Get(), 3, 4);
 
                 for (int32_t j = 0; j < 3; j++) {
-                    ivec2 groupCount = ivec2(res.x / groupSize, res.y);
-                    groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
+                    groupCount = ivec2(res.x / blurGroupSize, res.y);
+                    groupCount.x += ((res.x % blurGroupSize == 0) ? 0 : 1);
                     Graphics::ImageBarrier preImageBarriers[] = {
                         {target->volumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                         {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
@@ -255,8 +255,8 @@ namespace Atlas {
 
                     commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-                    groupCount = ivec2(res.x, res.y / groupSize);
-                    groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
+                    groupCount = ivec2(res.x, res.y / blurGroupSize);
+                    groupCount.y += ((res.y % blurGroupSize == 0) ? 0 : 1);
 
                     Graphics::ImageBarrier postImageBarriers[] = {
                         {target->swapVolumetricTexture.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
@@ -289,7 +289,7 @@ namespace Atlas {
 
                 res = ivec2(target->GetScaledWidth(), target->GetScaledHeight());
 
-                ivec2 groupCount = res / groupSize;
+                groupCount = res / groupSize;
                 groupCount.x += ((res.x % groupSize == 0) ? 0 : 1);
                 groupCount.y += ((res.y % groupSize == 0) ? 0 : 1);
 

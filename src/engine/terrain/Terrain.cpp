@@ -380,7 +380,7 @@ namespace Atlas {
             while (distance < ray.tMax) {
                 nextPosition = ray.Get(distance);
                 if (!IsUnderground(position) && IsUnderground(nextPosition)) {
-                    bool hit = BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
+                    BinarySearch(ray, distance - linearStepLength, distance, 10, hitPosition, hitNormal);
                     hitDistance = glm::distance(hitPosition, ray.origin);
 
                     // Sanity check, is important if there are holes

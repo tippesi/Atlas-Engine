@@ -679,26 +679,63 @@ namespace Atlas {
 
             auto cameraPos = mainCameraEntity.GetComponent<CameraComponent>().GetLocation();
 
-            // This is much quicker presumably due to cache coherency (need better hierarchical data structure)
-            auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
-            for (auto& entity : subset) {
-                auto& comp = subset.Get<MeshComponent>(entity);
+            bool mainPass = pass->type == RenderList::RenderPassType::Main;
 
-                if (!comp.mesh.IsLoaded())
-                    continue;
-
-                if (pass->type == RenderList::RenderPassType::Shadow && !comp.mesh->castShadow)
-                    continue;
-
+            auto isDistCulled = [&](const MeshComponent& comp) -> bool {
                 auto diff = comp.aabb.GetCenter() - cameraPos;
 
                 float dist2 = glm::dot(diff, diff);
-                float cullingDist = pass->type == RenderList::RenderPassType::Main ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
+                float cullingDist = mainPass ? comp.mesh->distanceCulling : comp.mesh->shadowDistanceCulling;
                 float cullingDist2 = cullingDist * cullingDist;
 
-                if (comp.dontCull || comp.visible && dist2 < cullingDist2 && frustum.Intersects(comp.aabb))
-                    pass->Add(entity, comp);
+                return dist2 > cullingDist2;
+                };
+
+            // For the main pass we use the "dumb" method of just iterating over all the data, since we expect most things to
+            // be visible and are exploiting the cache coherency in the meantime
+            if (mainPass) {
+                auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
+
+                for (auto& entity : subset) {
+                    auto& comp = entityManager.Get<MeshComponent>(entity);
+                    if (!comp.mesh.IsLoaded())
+                        continue;                  
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
+                        pass->Add(entity, comp);
+                }
             }
+            else {
+                std::vector<Entity> entities;
+                std::vector<Entity> insideEntities;
+                renderableMovableEntityOctree.QueryFrustum(entities, insideEntities, frustum);
+
+                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+
+                for (auto& entity : entities) {
+                    auto& comp = meshComponentPool.Get(entity);
+                    if (!comp.mesh.IsLoaded())
+                        continue;
+
+                    if (!comp.mesh->castShadow)
+                        continue;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
+                        pass->Add(entity, comp);
+                }
+
+                for (auto& entity : insideEntities) {
+                    auto& comp = meshComponentPool.Get(entity);
+                    if (!comp.mesh.IsLoaded())
+                        continue;
+
+                    if (!comp.mesh->castShadow)
+                        continue;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp))
+                        pass->Add(entity, comp);
+                }
+            }           
 
         }
 

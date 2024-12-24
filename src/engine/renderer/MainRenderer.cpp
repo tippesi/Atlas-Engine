@@ -264,6 +264,7 @@ namespace Atlas {
 					{rtHalfData->materialIdxTexture->image, layout, access},
 					{rtHalfData->stencilTexture->image, layout, access},
 					{rtHalfData->velocityTexture->image, layout, access},
+					{target->exposureTexture.image, layout, access}
 				};
 				commandList->PipelineBarrier(imageBarriers, {}, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 			}
@@ -376,7 +377,7 @@ namespace Atlas {
 
 			oceanRenderer.Render(target, scene, commandList);
 
-			for (auto& primitiveBatch : primitiveBatches)
+			for (const auto& primitiveBatch : primitiveBatches)
 				RenderPrimitiveBatch(viewport, target, primitiveBatch, scene->GetMainCamera(), commandList);
 
 			if (scene->postProcessing.fsr2) {
@@ -567,15 +568,16 @@ namespace Atlas {
 				{target->lightingTexture.image, layout, access},
 				{rtData->depthTexture->image, layout, access},
 				{rtData->velocityTexture->image, layout, access},
+				{rtData->velocityTexture->image, layout, access},
 			};
 			commandList->PipelineBarrier(preImageBarriers, {}, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBuffer);
+			commandList->BeginRenderPass(target->afterLightingRenderPass, target->afterLightingFrameBufferWithStencil);
 
 			if (batch->GetLineCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
 					batch->lineVertexArray, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, batch->testDepth);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);
@@ -591,7 +593,7 @@ namespace Atlas {
 
 			if (batch->GetTriangleCount()) {
 
-				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBuffer,
+				auto pipelineConfig = GetPipelineConfigForPrimitives(target->afterLightingFrameBufferWithStencil,
 					batch->triangleVertexArray, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, batch->testDepth);
 
 				auto pipeline = PipelineManager::GetPipeline(pipelineConfig);

@@ -216,7 +216,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     }
 
     for (int i = 0; i < 9; i++) {
-        ivec2 offsetPixel = ivec2(historyPixel) + offsets[i];
+        ivec2 offsetPixel = ivec2(historyPixel + 0.5) + offsets[i];
         float confidence = 1.0;
 
         offsetPixel = clamp(offsetPixel, ivec2(0), ivec2(resolution) - ivec2(1));
@@ -274,7 +274,7 @@ void main() {
 
     vec2 uv = (vec2(pixel) + vec2(0.5)) * invResolution + velocity;
     
-    vec2 historyPixel = vec2(pixel) + velocity * resolution - globalData.jitterCurrent;
+    vec2 historyPixel = vec2(pixel) + velocity * resolution;
 
     bool valid = true;
     vec4 history;
@@ -287,9 +287,9 @@ void main() {
     // In case of clipping we might also reject the sample. TODO: Investigate
     currentValue.rgb = clamp(currentValue.rgb, currentNeighbourhoodMin.rgb, currentNeighbourhoodMax.rgb);
     // Only clamp AO for now, since this leaves visible streaks
-    historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
+    //historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
-    float factor = 0.95;
+    float factor = 31.0 / 32.0;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
 

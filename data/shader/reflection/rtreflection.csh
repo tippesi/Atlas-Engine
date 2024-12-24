@@ -121,7 +121,7 @@ void main() {
             const int sampleCount = uniforms.sampleCount;
 
             for (int i = 0; i < sampleCount; i++) {
-                int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
+                int sampleIdx = int(uniforms.frameSeed / 4) * sampleCount + i;
                 vec2 blueNoiseVec = vec2(
                     SampleBlueNoise(highResPixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
                     SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)

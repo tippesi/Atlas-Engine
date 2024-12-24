@@ -176,7 +176,7 @@ namespace Atlas::Editor::UI {
 
             auto rayCastResult = scene->CastRay(ray, queryComponent);
 
-            auto& primitiveBatchWrapper = activeSceneWindow->viewportPanel.primitiveBatchWrapper;
+            const auto& primitiveBatchWrapper = activeSceneWindow->viewportPanel.primitiveBatchWrapper;
             vec3 hitPosition = ray.Get(rayCastResult.hitDistance);
 
             if (rayCastResult.valid && rayCastResult.IsNormalValid()) {

@@ -10,42 +10,42 @@ namespace Atlas {
             bool lowerResMoments) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
             momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(this->irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto radRes = ivec2(this->radRes + 2);
-            radRes.x *= probeCount.x;
-            radRes.y *= probeCount.z;
+            auto radFullRes = ivec2(this->radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto momFullRes = ivec2(this->momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
 
             scroll = cascadeCount > 1;
 
             SetAABB(aabb);
 
-            internal = InternalIrradianceVolume(irrRes, radRes, momRes, probeCount, cascadeCount);
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
             internal.SetRayCount(rayCount, rayCountInactive);
                
         }
 
         ivec3 IrradianceVolume::GetIrradianceArrayOffset(ivec3 probeIndex, int32_t cascadeIndex) {
 
-            auto irrRes = ivec2(this->irrRes + 2);
+            auto irrFullRes = ivec2(this->irrRes + 2);
 
-            return ivec3(probeIndex.x * irrRes.x + 1,
-                probeIndex.z * irrRes.y + 1, probeIndex.y + cascadeIndex * probeCount.y);
+            return ivec3(probeIndex.x * irrFullRes.x + 1,
+                probeIndex.z * irrFullRes.y + 1, probeIndex.y + cascadeIndex * probeCount.y);
 
         }
 
         ivec3 IrradianceVolume::GetMomentsArrayOffset(ivec3 probeIndex, int32_t cascadeIndex) {
 
-            auto momRes = ivec2(this->momRes + 2);
+            auto momFullRes = ivec2(this->momRes + 2);
 
-            return ivec3(probeIndex.x * momRes.x + 1,
-                probeIndex.z * momRes.y + 1, probeIndex.y);
+            return ivec3(probeIndex.x * momFullRes.x + 1,
+                probeIndex.z * momFullRes.y + 1, probeIndex.y);
 
         }
 
@@ -101,38 +101,38 @@ namespace Atlas {
             this->probeCount = probeCount;
             this->cascadeCount = std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES);
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto radRes = ivec2(this->radRes + 2);
-            radRes.x *= probeCount.x;
-            radRes.y *= probeCount.z;
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
 
-            internal = InternalIrradianceVolume(irrRes, radRes, momRes, probeCount, cascadeCount);
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
             internal.SetRayCount(rayCount, rayCountInactive);
 
         }
 
         void IrradianceVolume::ClearProbes() {
 
-            auto irrRes = ivec2(this->irrRes + 2);
-            irrRes.x *= probeCount.x;
-            irrRes.y *= probeCount.z;
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
 
-            auto radRes = ivec2(this->radRes + 2);
-            radRes.x *= probeCount.x;
-            radRes.y *= probeCount.z;
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
 
-            auto momRes = ivec2(this->momRes + 2);
-            momRes.x *= probeCount.x;
-            momRes.y *= probeCount.z;
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
 
-            internal.ClearProbes(irrRes, radRes, momRes, probeCount, cascadeCount);
+            internal.ClearProbes(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
 
         }
 

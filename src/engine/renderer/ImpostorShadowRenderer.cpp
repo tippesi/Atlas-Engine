@@ -15,7 +15,7 @@ namespace Atlas {
         }
 
         void ImpostorShadowRenderer::Render(const Ref<Graphics::FrameBuffer>& frameBuffer,
-            Graphics::CommandList* commandList, RenderList* renderList, RenderList::Pass* renderPass,
+            Graphics::CommandList* commandList, RenderList* renderList, const RenderList::Pass* renderPass,
             mat4 lightViewMatrix, mat4 lightProjectionMatrix, vec3 lightLocation) {
 
             struct alignas(16) PushConstants {
