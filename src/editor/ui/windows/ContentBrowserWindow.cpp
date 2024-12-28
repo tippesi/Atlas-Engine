@@ -211,16 +211,36 @@ namespace Atlas::Editor::UI {
         auto buttonSize = ImVec2(lineHeight, lineHeight);
 
         // Wrap input text field into child, such that we can adjust the total size to not overlap anything
-        ImGui::BeginChild("Search field", ImVec2(region.x - (buttonSize.x + 2.0f * padding), lineHeight + 2.0f * padding));
+        ImGui::BeginChild("Search field", ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), lineHeight + 2.0f * padding));
         ImGui::InputTextWithHint("Search", "Type to search for files", &assetSearch);
         ImGui::EndChild();
 
         region = ImGui::GetContentRegionAvail();
-        auto& moreIcon = Singletons::icons->Get(IconType::Settings);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreIcon);
+        auto& filterIcon = Singletons::icons->Get(IconType::Filter);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&filterIcon);
 
         auto uvMin = ImVec2(0.1f, 0.1f);
         auto uvMax = ImVec2(0.9f, 0.9f);
+
+        ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            ImGui::OpenPopup("Content browser filter settings");
+        }
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopup("Content browser filter settings")) {
+            auto& settings = Singletons::config->contentBrowserSettings;
+
+            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
+            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+
+            ImGui::EndPopup();
+        }
+
+        region = ImGui::GetContentRegionAvail();
+        auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&settingsIcon);
 
         ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));

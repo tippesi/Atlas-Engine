@@ -25,7 +25,6 @@ namespace Atlas {
             Graphics::CommandList* commandList) {
 
             auto renderState = &scene->renderState;
-            if (renderState->lightEntities.empty()) return;
 
             Graphics::Profiler::BeginQuery("Direct lighting");
 

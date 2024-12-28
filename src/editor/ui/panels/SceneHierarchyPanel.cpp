@@ -494,14 +494,14 @@ namespace Atlas::Editor::UI {
         parentMatches |= it != nodeName.end();
         parentMatches |= transformedEntitySearch.empty();
 
-        auto checkBit = [&]<class T>(ECS::Pool<T>&pool, HierarchyFilterBits bit) -> bool {
-            if (hierarchyFilter & bit) {
-                return pool.Contains(entity);
-            }
-            return false;
-        };
-
         if (hierarchyFilter != HierarchyFilterBits::AllBit) {
+            auto checkBit = [&]<class T>(ECS::Pool<T>&pool, HierarchyFilterBits bit) -> bool {
+                if (hierarchyFilter & bit) {
+                    return pool.Contains(entity);
+                }
+                return false;
+            };
+
             bool bitChecks = false;
             bitChecks |= checkBit(data.namePool, HierarchyFilterBits::NameBit);
             bitChecks |= checkBit(data.transformPool, HierarchyFilterBits::TransformBit);
