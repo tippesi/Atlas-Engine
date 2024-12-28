@@ -23,6 +23,23 @@ namespace Atlas::Editor::UI {
     class SceneHierarchyPanel : public Panel {
 
     public:
+        typedef uint32_t HierarchyFilter;
+
+        typedef enum HierarchyFilterBits {
+            NameBit = (1 << 0),
+            TransformBit = (1 << 1),
+            MeshBit = (1 << 2),
+            TextBit = (1 << 3),
+            AudioBit = (1 << 4),
+            AudioVolumeBit = (1 << 5),
+            PlayerBit = (1 << 6),
+            RigidBodyBit = (1 << 7),
+            CameraBit = (1 << 8),
+            ScriptBit = (1 << 9),
+            LightBit = (1 << 10),
+            AllBit = (1 << 11) - 1
+        } HierarchyFilterBits;
+
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
         ~SceneHierarchyPanel() { JobSystem::Wait(searchJob); }
@@ -33,8 +50,24 @@ namespace Atlas::Editor::UI {
 
         Scene::Entity selectedEntity;
         SelectedProperty selectedProperty;
+        HierarchyFilter hierarchyFilter = HierarchyFilterBits::AllBit;
 
     private:
+        struct EntityData {
+            ECS::Pool<HierarchyComponent> hierarchyPool;
+            ECS::Pool<NameComponent> namePool;
+            ECS::Pool<TransformComponent> transformPool;
+            ECS::Pool<MeshComponent> meshPool;
+            ECS::Pool<TextComponent> textPool;
+            ECS::Pool<AudioComponent> audioPool;
+            ECS::Pool<AudioVolumeComponent> audioVolumePool;
+            ECS::Pool<PlayerComponent> playerPool;
+            ECS::Pool<RigidBodyComponent> rigidBodyPool;
+            ECS::Pool<CameraComponent> cameraPool;
+            ECS::Pool<LuaScriptComponent> scriptPool;
+            ECS::Pool<LightComponent> lightPool;
+        };        
+
         void TraverseHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity,
             std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool searchChanged, bool* selectionChanged);
 
@@ -42,21 +75,28 @@ namespace Atlas::Editor::UI {
 
         void RenderExtendedItem(const std::string& name, bool* selected, bool* selectionChanged);
 
+        void RenderFilterPopup();
+
         void DeleteSelectedEntity(Ref<Scene::Scene>& scene);
 
         void DuplicateSelectedEntity(Ref<Scene::Scene>& scene);
 
-        bool SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+        bool SearchHierarchy(EntityData& data, ECS::Entity entity,
             std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches);
 
         void ToggleHierarchyVisibility(Scene::Entity entity, bool visible);
 
-        JobGroup searchJob{ JobPriority::Medium };;
+        JobGroup searchJob{ JobPriority::Low };
 
         std::string entitySearch;
         std::string transformedEntitySearch;
         std::unordered_set<ECS::Entity> matchSet;
+        std::unordered_set<ECS::Entity> newMatchSet;
         std::unordered_set<ECS::Entity> nodeInvisibleSet;
+
+        int32_t lastAliveEntityCount = 0;
+        std::string lastEntitySearch;
+        bool hierarchyFilterChanged = false;
 
     };
 

@@ -68,7 +68,7 @@ namespace Atlas::Editor::UI {
             if (resourceHandle.IsValid()) {
                 ImGui::SameLine();
                 
-                auto& deleteIcon = Singletons::icons->Get(IconType::Delete);
+                auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
                 auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));

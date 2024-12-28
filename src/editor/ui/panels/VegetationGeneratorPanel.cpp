@@ -56,7 +56,7 @@ namespace Atlas::Editor::UI {
             auto& type = types[i];
             bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
 
-            auto deleteIcon = Singletons::icons->Get(IconType::Delete);
+            auto deleteIcon = Singletons::icons->Get(IconType::Trash);
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
 
             ImGui::SameLine();

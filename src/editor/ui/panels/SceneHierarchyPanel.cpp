@@ -11,25 +11,53 @@ namespace Atlas::Editor::UI {
         if (Singletons::blockingOperation->block)
             return;
 
-        JobSystem::Execute(searchJob, [&](JobData&) {
-            auto root = scene->GetEntityByName("Root");
+        if (!searchJob.HasFinished())
+            return;
 
+        matchSet = newMatchSet;
+
+        if (entitySearch == lastEntitySearch && lastAliveEntityCount == scene->GetEntityCount() && !hierarchyFilterChanged)
+            return;
+
+        lastEntitySearch = entitySearch;
+        lastAliveEntityCount = scene->GetEntityCount();
+        hierarchyFilterChanged = false;
+
+        EntityData data{
+            .hierarchyPool = scene->entityManager.GetPool<HierarchyComponent>(),
+            .namePool = scene->entityManager.GetPool<NameComponent>(),
+            .transformPool = scene->entityManager.GetPool<TransformComponent>(),
+            .meshPool = scene->entityManager.GetPool<MeshComponent>(),
+            .textPool = scene->entityManager.GetPool<TextComponent>(),
+            .audioPool = scene->entityManager.GetPool<AudioComponent>(),
+            .audioVolumePool = scene->entityManager.GetPool<AudioVolumeComponent>(),
+            .playerPool = scene->entityManager.GetPool<PlayerComponent>(),
+            .rigidBodyPool = scene->entityManager.GetPool<RigidBodyComponent>(),
+            .cameraPool = scene->entityManager.GetPool<CameraComponent>(),
+            .scriptPool = scene->entityManager.GetPool<LuaScriptComponent>(),
+            .lightPool = scene->entityManager.GetPool<LightComponent>(),
+        };
+
+        auto root = scene->GetEntityByName("Root");
+        // Aquire scene here such that it can't be freed and copy important pools
+        JobSystem::Execute(searchJob, [&, scene = scene, root = root, data = std::move(data)](JobData&) mutable {
+           
             // Search should be case-insensitive
             transformedEntitySearch = entitySearch;
             std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
                 transformedEntitySearch.begin(), ::tolower);
             
-            matchSet.clear();
-            matchSet.reserve(scene->GetEntityCount());
-            if (!transformedEntitySearch.empty()) {
-                std::string nodeName;
-                SearchHierarchy(scene, root, matchSet, nodeName, false);
-            }
+            newMatchSet.clear();
+            newMatchSet.reserve(scene->entityManager.Alive());
+            std::string nodeName;
+            SearchHierarchy(data, root, newMatchSet, nodeName, false);
             });
 
     }
 
     void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
+
+        const float padding = 8.0f;
 
         ImGui::Begin(GetNameID());
 
@@ -65,12 +93,19 @@ namespace Atlas::Editor::UI {
             }
 
             std::string prevEntitySearch = entitySearch;
-            ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
 
+            auto region = ImGui::GetContentRegionAvail();
+            auto lineHeight = ImGui::GetTextLineHeight();
+            auto buttonSize = ImVec2(lineHeight, lineHeight);
+
+            // Wrap input text field into child, such that we can adjust the total size to not overlap anything
+            ImGui::BeginChild("Search field", ImVec2(region.x - (buttonSize.x + padding), lineHeight + padding));
+            ImGui::InputTextWithHint("Search", "Type to search for entity", &entitySearch);
             bool searchChanged = entitySearch != prevEntitySearch;
             if (ImGui::IsItemClicked()) selectionChanged = true;
+            ImGui::EndChild();
 
-            JobSystem::Wait(searchJob);
+            RenderFilterPopup();
 
             TraverseHierarchy(scene, root, matchSet, inFocus, searchChanged, &selectionChanged);
 
@@ -116,12 +151,12 @@ namespace Atlas::Editor::UI {
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
         // If the search term matches we want to display everything below this item in the hierarchy
-        bool validSearch = (transformedEntitySearch.empty() || matchSet.contains(entity));
+        bool validSearch = matchSet.contains(entity);
 
         bool rootNode = nodeName == "Root";
 
         // If we have a search term and the name doesn't match, return
-        if (!rootNode && !validSearch)
+        if (!rootNode && (!validSearch || !entity.IsValid()))
             return;
 
         auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
@@ -192,7 +227,7 @@ namespace Atlas::Editor::UI {
             ImGui::SameLine();
 
             bool isNodeVisible = !nodeInvisibleSet.contains(entity);
-            auto visibilityIcon = Singletons::icons->Get(IconType::Eye);
+            auto visibilityIcon = Singletons::icons->Get(IconType::Visibility);
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&visibilityIcon);
 
             float buttonSize = ImGui::GetTextLineHeight();
@@ -238,7 +273,7 @@ namespace Atlas::Editor::UI {
 
         }
 
-        if (nameComponent && nameComponent->name == "Root") {
+        if (rootNode) {
             duplicateEntity = false;
             deleteEntity = false;
         }
@@ -336,6 +371,66 @@ namespace Atlas::Editor::UI {
 
     }
 
+    void SceneHierarchyPanel::RenderFilterPopup() {
+
+        const float padding = 8.0f;
+
+        ImGui::SameLine();
+
+        auto region = ImGui::GetContentRegionAvail();
+        auto lineHeight = ImGui::GetTextLineHeight();
+        auto buttonSize = ImVec2(lineHeight, lineHeight);
+
+        auto& filterIcon = Singletons::icons->Get(IconType::Filter);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&filterIcon);
+
+        auto uvMin = ImVec2(0.1f, 0.1f);
+        auto uvMax = ImVec2(0.9f, 0.9f);
+
+        //ImGui::SetCursorPosX(ImVec2(region.x - (buttonSize.x + 2.0f * padding), ImGui::GetCursorPosY()));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+            ImGui::OpenPopup("Hierarchy filter settings");
+        }
+        ImGui::PopStyleColor();
+
+        auto renderSingleBitOption = [&](const char* name, HierarchyFilterBits bit) {
+            bool isSet = hierarchyFilter & bit;
+            if (ImGui::RadioButton(name, isSet)) {
+                hierarchyFilter = isSet ? hierarchyFilter & ~bit : hierarchyFilter | bit;
+            }
+            };
+
+        if (ImGui::BeginPopup("Hierarchy filter settings")) {
+            ImGui::Text("Component filter settings");
+            ImGui::Separator();
+
+            auto prevHierarchyFilter = hierarchyFilter;
+            HierarchyFilter filtered = hierarchyFilter & HierarchyFilterBits::AllBit;
+            bool isSet = filtered == HierarchyFilterBits::AllBit;
+
+            if (ImGui::RadioButton("All", isSet)) {
+                hierarchyFilter = isSet ? 0 : HierarchyFilterBits::AllBit;
+            }
+            renderSingleBitOption("Name component", HierarchyFilterBits::NameBit);
+            renderSingleBitOption("Transform component", HierarchyFilterBits::TransformBit);
+            renderSingleBitOption("Mesh component", HierarchyFilterBits::MeshBit);
+            renderSingleBitOption("Text component", HierarchyFilterBits::TextBit);
+            renderSingleBitOption("Audio component", HierarchyFilterBits::AudioBit);
+            renderSingleBitOption("Audio volume component", HierarchyFilterBits::AudioVolumeBit);
+            renderSingleBitOption("Player component", HierarchyFilterBits::PlayerBit);
+            renderSingleBitOption("Rigid body component", HierarchyFilterBits::RigidBodyBit);
+            renderSingleBitOption("Camera component", HierarchyFilterBits::CameraBit);
+            renderSingleBitOption("Script component", HierarchyFilterBits::ScriptBit);
+            renderSingleBitOption("Light component", HierarchyFilterBits::LightBit);
+
+            hierarchyFilterChanged = prevHierarchyFilter != hierarchyFilter;
+
+            ImGui::EndPopup();
+        }
+
+    }
+
     void SceneHierarchyPanel::DeleteSelectedEntity(Ref<Scene::Scene>& scene) {
 
         if (selectedEntity.IsValid())
@@ -379,11 +474,11 @@ namespace Atlas::Editor::UI {
 
     }
 
-    bool SceneHierarchyPanel::SearchHierarchy(Ref<Scene::Scene>& scene, Scene::Entity entity, 
+    bool SceneHierarchyPanel::SearchHierarchy(EntityData& data, ECS::Entity entity,
         std::unordered_set<ECS::Entity>& matchSet, std::string& nodeName, bool parentMatches) {
 
-        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
-        auto nameComponent = entity.TryGetComponent<NameComponent>();
+        auto hierarchyComponent = data.hierarchyPool.TryGet(entity);
+        auto nameComponent = data.namePool.TryGet(entity);
 
         // Only allocate a new string when there is no name component
         if (nameComponent) {
@@ -397,6 +492,32 @@ namespace Atlas::Editor::UI {
             [](unsigned char nodeChar, unsigned char searchChar) { return std::tolower(nodeChar) == searchChar; });
 
         parentMatches |= it != nodeName.end();
+        parentMatches |= transformedEntitySearch.empty();
+
+        auto checkBit = [&]<class T>(ECS::Pool<T>&pool, HierarchyFilterBits bit) -> bool {
+            if (hierarchyFilter & bit) {
+                return pool.Contains(entity);
+            }
+            return false;
+        };
+
+        if (hierarchyFilter != HierarchyFilterBits::AllBit) {
+            bool bitChecks = false;
+            bitChecks |= checkBit(data.namePool, HierarchyFilterBits::NameBit);
+            bitChecks |= checkBit(data.transformPool, HierarchyFilterBits::TransformBit);
+            bitChecks |= checkBit(data.meshPool, HierarchyFilterBits::MeshBit);
+            bitChecks |= checkBit(data.textPool, HierarchyFilterBits::TextBit);
+            bitChecks |= checkBit(data.audioPool, HierarchyFilterBits::AudioBit);
+            bitChecks |= checkBit(data.audioVolumePool, HierarchyFilterBits::AudioVolumeBit);
+            bitChecks |= checkBit(data.playerPool, HierarchyFilterBits::PlayerBit);
+            bitChecks |= checkBit(data.rigidBodyPool, HierarchyFilterBits::RigidBodyBit);
+            bitChecks |= checkBit(data.cameraPool, HierarchyFilterBits::CameraBit);
+            bitChecks |= checkBit(data.scriptPool, HierarchyFilterBits::ScriptBit);
+            bitChecks |= checkBit(data.lightPool, HierarchyFilterBits::LightBit);
+
+            parentMatches &= bitChecks;
+        }
+
         bool matches = parentMatches;
 
         if (hierarchyComponent) {
@@ -404,7 +525,7 @@ namespace Atlas::Editor::UI {
             auto children = hierarchyComponent->GetChildren();
             for (auto childEntity : children) {
 
-                matches |= SearchHierarchy(scene, childEntity, matchSet, nodeName, parentMatches);
+                matches |= SearchHierarchy(data, childEntity, matchSet, nodeName, parentMatches);
 
             }
 

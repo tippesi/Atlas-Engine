@@ -22,6 +22,8 @@ namespace Atlas {
 
         inline void Work() {
 
+            idling = false;
+
             while(true) {
                 auto job = queue.Pop();
                 if (job == std::nullopt)
@@ -30,6 +32,8 @@ namespace Atlas {
                 RunJob(job.value());
             }
 
+            idling = true;
+
         }
 
         int32_t workerId;
@@ -37,6 +41,7 @@ namespace Atlas {
 
         std::thread thread;
         std::atomic_bool quit = false;
+        std::atomic_bool idling = true;
 
         Signal signal;
         ThreadSafeJobQueue queue;

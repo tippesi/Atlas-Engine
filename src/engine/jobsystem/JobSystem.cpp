@@ -73,7 +73,7 @@ namespace Atlas {
         group.counter.fetch_add(1);
 
         auto& worker = priorityPool.GetNextWorker();
-        worker.queue.Push(job);
+        worker.queue.Push(std::move(job));
         worker.signal.Notify();
 
     }
@@ -83,7 +83,7 @@ namespace Atlas {
         Job job = {
             .priority = group.priority,
             .counter = &group.counter,
-            .function = func,
+            .function = std::move(func),
             .userData = userData
         };
 
@@ -123,7 +123,7 @@ namespace Atlas {
 
             for (int32_t j = 0; j < jobsToPush; j++) {
                 job.idx = totalCount++;
-                jobs.push_back(job);
+                jobs.emplace_back(job);
             }
 
             auto& worker = priorityPool.GetNextWorker();
@@ -244,7 +244,29 @@ namespace Atlas {
 
     void JobSystem::WaitAll() {
 
+        bool jobsFound = true;
+        while (jobsFound) {
+            jobsFound = false;
 
+            // Check if any pool has work and help pools that still have work
+            for (auto& priorityPool : priorityPools) {
+                bool poolHasWork = false, poolIsWorking = false;
+
+                for (auto& worker : priorityPool.GetAllWorkers()) {
+                    poolHasWork |= !worker.queue.Empty();
+                    poolIsWorking |= !worker.idling;
+                }
+
+                // Help pool
+                if (poolHasWork) {
+                    auto& worker = priorityPool.GetNextWorker();
+                    priorityPool.Work(worker.workerId);                    
+                }
+
+                if (poolHasWork || poolIsWorking)
+                    jobsFound = true;
+            }
+        }
 
     }
 

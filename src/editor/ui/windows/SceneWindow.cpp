@@ -385,7 +385,7 @@ namespace Atlas::Editor::UI {
                 ImGui::EndPopup();
             }
 
-            auto& eyeIcon = Singletons::icons->Get(IconType::Eye);
+            auto& eyeIcon = Singletons::icons->Get(IconType::Visibility);
             set = Singletons::imguiWrapper->GetTextureDescriptorSet(&eyeIcon);
 
             ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
@@ -610,6 +610,8 @@ namespace Atlas::Editor::UI {
 
     void SceneWindow::StartPlaying() {
 
+        JobSystem::WaitAll();
+
         Singletons::blockingOperation->Block("Preparing to play. Please wait...", [&]() {
             bool hasMainPlayingCamera = false;
             auto cameraSubset = scene->GetSubset<CameraComponent>();
@@ -643,6 +645,8 @@ namespace Atlas::Editor::UI {
     }
 
     void SceneWindow::StopPlaying() {
+
+        JobSystem::WaitAll();
 
         Singletons::blockingOperation->Block("Restoring scene state. Please wait...", [&]() {
             RestoreSceneState();

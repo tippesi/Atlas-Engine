@@ -545,7 +545,7 @@ void main() {
     float temporalWeight = mix(pushConstants.temporalWeight, 0.0, adjClipBlend);
 
 #ifdef UPSCALE
-    float roughnessMinTemporalWeight = 0.5;
+    float roughnessMinTemporalWeight = 0.75;
 #else
     float roughnessMinTemporalWeight = temporalWeight;
 #endif

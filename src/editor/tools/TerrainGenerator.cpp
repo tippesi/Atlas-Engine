@@ -166,7 +166,7 @@ namespace Atlas::Editor {
             auto lineHeight = ImGui::GetTextLineHeight();
             auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
 
-            auto& deleteIcon = Singletons::icons->Get(IconType::Delete);
+            auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
             auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
 
             int32_t matCount = 0;

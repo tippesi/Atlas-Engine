@@ -23,7 +23,8 @@ namespace Atlas::Editor {
         ArrowLeft,
         ArrowRight,
         Prefab,
-        Eye,
+        Visibility,
+        VisibilityOff,
         Move,
         Scale,
         Rotate,
@@ -32,7 +33,8 @@ namespace Atlas::Editor {
         Material,
         MeshSource,
         EnvironmentImage,
-        Delete
+        Trash,
+        Filter
     };
 
     class Icons {
