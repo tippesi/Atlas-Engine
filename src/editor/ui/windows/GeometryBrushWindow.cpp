@@ -57,14 +57,12 @@ namespace Atlas::Editor::UI {
         ImGui::DragFloat("Brush radius", &brushRadius, 0.5f, 0.5f, 1000.0f);
         ImGui::Checkbox("Only query terrain", &brushOnlyQueryTerrain);
 
-        switch (brushType) {
-        case BrushType::Create:
+        if (ImGui::CollapsingHeader("Create brush settings")) {
             RenderCreateBrushSettings();
-            break;
-        case BrushType::Delete:
+        }
+
+        if (ImGui::CollapsingHeader("Delete brush settings")) {
             RenderDeleteBrushSettings();
-            break;
-        default: break;
         }
 
     }
@@ -73,7 +71,7 @@ namespace Atlas::Editor::UI {
 
         auto scene = brushEntity.GetScene();
 
-        ImGui::Separator();
+        
 
         ImGui::Text("Entities");
 
@@ -293,6 +291,15 @@ namespace Atlas::Editor::UI {
 
         auto entities = scene->QueryAABB(aabb);
         for (auto entity : entities) {
+            // Shouldn't really happen, but check anyway
+            if (!entity.HasComponent<TransformComponent>())
+                continue;
+            auto& transform = entity.GetComponent<TransformComponent>();
+            auto position = vec3(transform.globalMatrix[3]);
+            // Check distance such that brush is circular
+            if (glm::distance(position, dropTarget.center) > brushRadius)
+                continue;
+
             scene->DestroyEntity(entity, false);
         }
 

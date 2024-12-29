@@ -70,13 +70,16 @@ namespace Atlas {
              * @param position
              */
             static void SmoothHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, int32_t contributingRadius,
-                    float strength, vec2 position);
+                float strength, vec2 position);
 
-            static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float height);
+            static void FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
+                vec2 position, float height, bool circularBrush = true);
 
-            static void BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size);
+            static void BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size,
+                bool circularBrush = true);
 
-            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot);
+            static void BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot,
+                bool circularBrush = true);
 
             static Texture::Texture2D GenerateTerrainOceanMap(const Ref<Terrain::Terrain>& terrain, float oceanHeight, int32_t resolution);
 

@@ -688,7 +688,8 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, vec2 position, float flattenHeight) {
+    void TerrainTool::FlattenHeight(const Ref<Terrain::Terrain>& terrain, int32_t size, float strength, 
+        vec2 position, float flattenHeight, bool circularBrush) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
 
@@ -722,7 +723,9 @@ namespace Atlas::Tools {
         strength = glm::clamp(strength, 0.0f, 1.0f);
         flattenHeight = glm::clamp((flattenHeight - terrain->translation.y) / terrain->heightScale, 0.0f, 1.0f);
         for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
-            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {               
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
                 int32_t xTranslated = x + i;
                 int32_t yTranslated = y + j;
                 int32_t index = yTranslated * width * 3 + xTranslated;
@@ -737,7 +740,8 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size) {
+    void TerrainTool::BrushHole(const Ref<Terrain::Terrain>& terrain, vec2 position, 
+        int32_t size, bool circularBrush) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
 
@@ -766,12 +770,14 @@ namespace Atlas::Tools {
         x += width;
         y += height;
 
-        auto offset = (size - 1) / 2;
+        int32_t sizeRadius = (size - 1) / 2;
 
-        for (int32_t i = 0; i < size; i++) {
-            for (int32_t j = 0; j < size; j++) {
-                auto xTranslated = x - offset + i;
-                auto yTranslated = y - offset + j;
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                int32_t xTranslated = x + i;
+                int32_t yTranslated = y + j;
                 auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
                 data[index] = FLT_MAX;
             }
@@ -781,7 +787,8 @@ namespace Atlas::Tools {
 
     }
 
-    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, int32_t size, int32_t slot) {
+    void TerrainTool::BrushMaterial(const Ref<Terrain::Terrain>& terrain, vec2 position, 
+        int32_t size, int32_t slot, bool circularBrush) {
 
         position -= vec2(terrain->translation.x, terrain->translation.z);
         
@@ -810,12 +817,14 @@ namespace Atlas::Tools {
         x += width;
         y += height;
 
-        auto offset = (size - 1) / 2;
+        int32_t sizeRadius = (size - 1) / 2;
 
-        for (int32_t i = 0; i < size; i++) {
-            for (int32_t j = 0; j < size; j++) {
-                auto xTranslated = x - offset + i;
-                auto yTranslated = y - offset + j;
+        for (int32_t i = -sizeRadius; i <= sizeRadius; i++) {
+            for (int32_t j = -sizeRadius; j <= sizeRadius; j++) {
+                if (circularBrush && int32_t(sqrt(i * i + j * j)) > sizeRadius)
+                    continue;
+                int32_t xTranslated = x + i;
+                int32_t yTranslated = y + j;
                 auto index = (int32_t)(yTranslated * width * 3 + xTranslated);
                 data[index] = (uint8_t)slot;
             }

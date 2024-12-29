@@ -646,7 +646,7 @@ namespace Atlas::Editor::UI {
             return file0.name < file1.name;
             });
 
-        if (assetSearch.empty() && !filterRecursively) {
+        if (assetSearch.empty() && !filterRecursively && contentFilter == ContentFilterBits::AllBit) {
             directories = contentDirectory->directories;
             files = discoverdFiles;
         }
