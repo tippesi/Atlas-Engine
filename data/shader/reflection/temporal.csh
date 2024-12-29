@@ -464,7 +464,13 @@ void main() {
 #else
     const int radius = int(mix(2.0, float(kernelRadius), min(1.0, roughness * 4.0)));
 #endif
-    ComputeVarianceMinMax(roughness, radius, mean, std);
+    if (roughness < pushConstants.roughnessCutoff) {
+        ComputeVarianceMinMax(roughness, radius, mean, std);
+    }
+    else {
+        // Don't need much denoising here
+        ComputeVarianceMinMax(roughness, 1, mean, std);
+    }
 
     ivec2 velocityPixel = pixel;
 

@@ -16,7 +16,25 @@ namespace Atlas::ImguiExtension {
         ImGui::Text("Quality");
         ImGui::SliderInt("Sample count", &clouds->sampleCount, 1, 128);
         ImGui::SliderInt("Shadow sample count", &clouds->occlusionSampleCount, 1, 16);
-        ImGui::SliderInt("Shadow sample fraction count", &clouds->shadowSampleFraction, 1, 4);
+        ImGui::Text("Shadow map");
+        ImGui::SliderInt("Sample fraction count", &clouds->shadowSampleFraction, 1, 4);
+        auto shadowResolution = clouds->shadowTexture.width;
+        const char* shadowResItems[] = { "512x512", "1024x1024", "2048x2048", "4096x4096" };
+        int shadowResItem = 0;
+        if (shadowResolution == 512) shadowResItem = 0;
+        if (shadowResolution == 1024) shadowResItem = 1;
+        if (shadowResolution == 2048) shadowResItem = 2;
+        if (shadowResolution == 4096) shadowResItem = 3;
+        auto prevItem = shadowResItem;
+        ImGui::Combo("Map resolution", &shadowResItem, shadowResItems, IM_ARRAYSIZE(shadowResItems));
+        if (shadowResItem != prevItem) {
+            switch (shadowResItem) {
+            case 0: clouds->SetShadowResolution(512); break;
+            case 1: clouds->SetShadowResolution(1024); break;
+            case 2: clouds->SetShadowResolution(2048); break;
+            case 3: clouds->SetShadowResolution(4096); break;
+            }
+        }
         ImGui::Text("Shape");
         ImGui::SliderFloat("Density multiplier", &clouds->densityMultiplier, 0.0f, 1.0f);
         ImGui::SliderFloat("Height stretch", &clouds->heightStretch, 0.0f, 1.0f);

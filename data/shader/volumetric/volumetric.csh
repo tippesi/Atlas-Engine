@@ -209,7 +209,7 @@ vec4 ComputeVolumetricDirectionalLights(vec3 fragPos, float startDepth, vec2 tex
             bool isMain = j == 0 ? true : false;
             float shadowValue = GetShadowFactorDirectionalLight(j, light.shadowIdx, lightType, isMain, currentPosition);
 
-            vec3 lightPosition = currentPosition - 10000.0 * light.direction.xyz;
+            vec3 lightPosition = currentPosition - 100000.0 * light.direction.xyz;
             lightPosition = vec3(globalData.ivMatrix * vec4(lightPosition, 1.0));
             float extinctionToLight = ComputeVolumetricFog(uniforms.fog, worldPosition, lightPosition);
             float NdotL = dot(normalize(rayDirection), normalize(light.direction.xyz));

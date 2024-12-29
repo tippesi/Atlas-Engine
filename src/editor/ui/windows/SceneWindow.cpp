@@ -84,6 +84,7 @@ namespace Atlas::Editor::UI {
         // Get rid of the selection and don't allow new one
         if (lockSelection || brushActive) {
             sceneHierarchyPanel.selectedEntity = Scene::Entity();
+            sceneHierarchyPanel.selectedEntities.clear();
         }
 
         ImGuiID dsID = ImGui::GetID(dockSpaceNameID.c_str());
@@ -160,7 +161,11 @@ namespace Atlas::Editor::UI {
         }
 
         sceneHierarchyPanel.Render(refScene, inFocus);
-        RenderEntityBoundingVolumes(sceneHierarchyPanel.selectedEntity);
+
+        for (auto entity : sceneHierarchyPanel.selectedEntities) {
+            Scene::Entity selectedEntity(entity, &scene->entityManager);
+            RenderEntityBoundingVolumes(selectedEntity);
+        }
 
         // We want to update the scene after all panels have update their respective values/changed the scene
         if (!isPlaying && !isBlocked) {
@@ -495,10 +500,22 @@ namespace Atlas::Editor::UI {
                         // Update both the local and global matrix, since e.g. the transform component
                         // panel recovers the local matrix from the global one (needs to do this after
                         // e.g. physics only updated the global matrix
-                        transform.globalMatrix = globalDecomp.Compose();
+                        auto prevGlobalMatrix = transform.globalMatrix;
+                        auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
+                        auto globalMatrix = globalDecomp.Compose();
 
-                        auto parentEntity = scene->GetParentEntity(selectedEntity);
-                        transform.ReconstructLocalMatrix(parentEntity);
+                        for (auto& entity : sceneHierarchyPanel.selectedEntities) {
+                            Scene::Entity transformEntity(entity, &scene->entityManager);
+
+                            if (!transformEntity.HasComponent<TransformComponent>())
+                                continue;
+
+                            auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
+                            selectedTransform.globalMatrix = globalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
+
+                            auto parentEntity = scene->GetParentEntity(transformEntity);
+                            selectedTransform.ReconstructLocalMatrix(parentEntity);
+                        }
                     }
 
                     // Need to disable here, otherwise we can't move around anymore
@@ -516,18 +533,18 @@ namespace Atlas::Editor::UI {
                     && mousePos.y > float(viewport->y)
                     && mousePos.x < float(viewport->x + viewport->width)
                     && mousePos.y < float(viewport->y + viewport->height);
-
-                if (io.MouseDown[ImGuiMouseButton_Right] && inViewport && !lockSelection && !brushActive) {
+                
+                if (ImGui::IsKeyPressed(ImGuiKey_MouseRight, false) && inViewport && !lockSelection && !brushActive) {
 
                     auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
                     auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
 
                     Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
 
-                    auto rayCastResult = scene->CastRay(ray);
+                    auto rayCastResult = scene->CastRay(ray);                    
                     if (rayCastResult.valid) {
-                        sceneHierarchyPanel.selectedEntity = rayCastResult.data;
-                        sceneHierarchyPanel.selectedProperty = SelectedProperty();
+                        bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+                        sceneHierarchyPanel.SelectEntity(rayCastResult.data, shiftPressed);
                     }
                 }
             }
@@ -603,8 +620,7 @@ namespace Atlas::Editor::UI {
             hierarchy->root = false;
 
         if (changeSelection) {
-            sceneHierarchyPanel.selectedEntity = entity;
-            sceneHierarchyPanel.selectedProperty = SelectedProperty();
+            sceneHierarchyPanel.SelectEntity(entity);
         }
     }
 
@@ -633,7 +649,7 @@ namespace Atlas::Editor::UI {
             scene->physicsWorld->pauseSimulation = false;
             // Unselect when starting the simulation/scene (otherwise some physics settings might not
             // be reverted after stopping
-            sceneHierarchyPanel.selectedEntity = Scene::Entity();
+            sceneHierarchyPanel.ClearSelection();
 
             isPlaying = true;
 

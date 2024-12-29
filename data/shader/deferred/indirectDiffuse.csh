@@ -94,7 +94,7 @@ float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 refe
     float depth = depths[sharedMemoryOffset];
 
     float depthDiff = abs(referenceDepth - depth);
-    float depthWeight = min(exp(-depthDiff * 4.0), 1.0);
+    float depthWeight = min(exp(-depthDiff * 32.0 / abs(referenceDepth)), 1.0);
 
     float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 128.0), 1.0);
 
@@ -146,8 +146,10 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         }
     }
 
-    if (totalWeight < 10e-3) {
-        result.gi = gi[maxMemoryIdx];
+    //result.gi = gi[maxMemoryIdx];
+
+    if (totalWeight < 1e-6) {
+        //result.gi = gi[maxMemoryIdx];
     }
 
     result.gi = max(result.gi, vec4(0.0));

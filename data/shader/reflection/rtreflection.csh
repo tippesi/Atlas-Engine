@@ -88,7 +88,7 @@ void main() {
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
 #ifdef UPSCALE
-        ivec2 offset = offsets[uniforms.frameCount % 4];
+        ivec2 offset = offsets[globalData.frameCount % 4];
 #else
         ivec2 offset = ivec2(0);
 #endif
@@ -125,7 +125,11 @@ void main() {
             const int sampleCount = uniforms.sampleCount;
 
             for (int i = 0; i < sampleCount; i++) {
+#ifdef UPSCALE
                 int sampleIdx = int(uniforms.frameSeed / 4) * sampleCount + i;
+#else
+                int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
+#endif
                 vec2 blueNoiseVec = vec2(
                     SampleBlueNoise(highResPixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
                     SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)

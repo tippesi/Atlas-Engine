@@ -31,7 +31,6 @@ layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
 } weights;
 
 const float normalPhi = 256.0;
-const float depthPhi = 1.0 / 32.0;
 
 #if defined(BLUR_RGB)
 shared vec3 inputs[320];
@@ -94,9 +93,13 @@ void main() {
 
     LoadGroupSharedData();
 
-    if (gl_GlobalInvocationID.x >= imageSize(outputImage).x ||
-        gl_GlobalInvocationID.y >= imageSize(outputImage).y)
+    ivec2 pixel = ivec2(gl_GlobalInvocationID);
+    ivec2 resolution = imageSize(outputImage);
+
+    if (pixel.x >= resolution.x || pixel.y >= resolution.y)
         return;
+
+    vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 
     // Get offset of the group in image
     ivec2 offset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize);
@@ -116,11 +119,19 @@ void main() {
     result = center * weights.data[0][0];
     float totalWeight = weights.data[0][0];
 
-#ifdef DEPTH_WEIGHT
-    float centerDepth = depths[sharedDataOffset];
-#endif
 #ifdef NORMAL_WEIGHT
     vec3 centerNormal = normals[sharedDataOffset];
+#endif
+#ifdef DEPTH_WEIGHT
+    float centerDepth = depths[sharedDataOffset];
+    float centerLinearDepth = ConvertDepthToViewSpaceDepth(centerDepth);
+    vec3 viewDir = normalize(ConvertDepthToViewSpace(centerDepth, texCoord));
+#ifdef NORMAL_WEIGHT
+    float NdotV = abs(dot(viewDir, centerNormal));
+#else
+    float NdotV = 1.0;
+#endif
+    const float depthPhi = max(2.0, NdotV * 32.0 / max(1.0, abs(centerLinearDepth)));
 #endif
 
     // First sum and weight left kernel extend
@@ -130,7 +141,7 @@ void main() {
         float depth = depths[sharedDataOffset - i];
 
         float depthDiff = abs(centerDepth - depth);
-        float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
+        float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
         weight *= depthWeight;
 #endif
 #ifdef NORMAL_WEIGHT
@@ -151,7 +162,7 @@ void main() {
         float depth = depths[sharedDataOffset + i];
 
         float depthDiff = abs(centerDepth - depth);
-        float depthWeight = min(exp(-depthDiff / depthPhi), 1.0);
+        float depthWeight = min(exp(-depthDiff * depthPhi), 1.0);
         weight *= depthWeight;
 #endif
 #ifdef NORMAL_WEIGHT
@@ -164,8 +175,6 @@ void main() {
         result += inputs[sharedDataOffset + i] * weight;
         totalWeight += weight;
     }
-
-    ivec2 pixel = offset + ivec2(gl_LocalInvocationID);
 
 #if defined(BLUR_RGB)
     imageStore(outputImage, pixel, vec4(result / totalWeight, 0.0));

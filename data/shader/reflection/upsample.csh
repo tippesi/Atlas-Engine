@@ -89,7 +89,7 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff / referenceDepth), 1.0);
+        float depthWeight = min(exp(-depthDiff * 32.0 / referenceDepth), 1.0);
 
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
@@ -137,7 +137,7 @@ void main() {
     if (downSamplePixel * 2 + offset == pixel) {
         ivec2 samplePixel = ivec2(gl_LocalInvocationID) / 2 + ivec2(1);
         int sharedMemoryOffset = Flatten2D(samplePixel, unflattenedDepthDataSize);
-        //upsampleResult = data[sharedMemoryOffset];
+        upsampleResult = data[sharedMemoryOffset];
     }
 
     imageStore(image, pixel, upsampleResult);

@@ -121,7 +121,7 @@ float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 refe
     float depth = depths[sharedMemoryOffset];
 
     float depthDiff = abs(referenceDepth - depth);
-    float depthWeight = min(exp(-depthDiff * 4.0 / referenceDepth), 1.0);
+    float depthWeight = min(exp(-depthDiff * 32.0 / abs(referenceDepth)), 1.0);
 
     float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 128.0), 1.0);
 

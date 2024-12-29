@@ -14,7 +14,10 @@ namespace Atlas::Editor::UI {
         if (!searchJob.HasFinished())
             return;
 
-        matchSet = newMatchSet;
+        if (!searchJobResultRetrieved) {
+            std::swap(matchSet, newMatchSet);
+            searchJobResultRetrieved = true;
+        }
 
         if (entitySearch == lastEntitySearch && lastAliveEntityCount == scene->GetEntityCount() && !hierarchyFilterChanged)
             return;
@@ -22,6 +25,7 @@ namespace Atlas::Editor::UI {
         lastEntitySearch = entitySearch;
         lastAliveEntityCount = scene->GetEntityCount();
         hierarchyFilterChanged = false;
+        searchJobResultRetrieved = false;
 
         EntityData data{
             .hierarchyPool = scene->entityManager.GetPool<HierarchyComponent>(),
@@ -74,7 +78,7 @@ namespace Atlas::Editor::UI {
 
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
                 // Unselect entity in this case, since this popup could only be opened by clicking on emtpy space
-                selectedEntity = Scene::Entity();
+                ClearSelection();
 
                 Scene::Entity entity;
                 if (ImGui::MenuItem("Add emtpy entity"))
@@ -86,7 +90,7 @@ namespace Atlas::Editor::UI {
                     auto &hierarchyComponent = root.GetComponent<HierarchyComponent>();
                     hierarchyComponent.AddChild(entity);
 
-                    selectedEntity = entity;
+                    SelectEntity(entity);
                 }
 
                 ImGui::EndPopup();
@@ -121,17 +125,42 @@ namespace Atlas::Editor::UI {
             if (inFocus && controlDown && ImGui::IsKeyPressed(ImGuiKey_D, false))
                 DuplicateSelectedEntity(scene);
             if (inFocus && !io.WantCaptureKeyboard && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
-                DeleteSelectedEntity(scene);
+                DeleteSelectedEntities(scene);
 
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !selectionChanged) {
-                selectedEntity = Scene::Entity();
-                selectedProperty = SelectedProperty();
+                ClearSelection();
             }
 
 
         }
 
         ImGui::End();
+
+    }
+
+    void SceneHierarchyPanel::SelectEntity(Scene::Entity entity, bool keepSelection) {
+
+        if (!keepSelection)
+            ClearSelection();
+
+        // Toggle selection if entity is already there
+        if (selectedEntities.contains(entity)) {
+            if (selectedEntity == entity)
+                selectedEntity = Scene::Entity();
+            selectedEntities.erase(entity);
+            return;
+        }
+
+        selectedEntity = entity;
+        selectedEntities.insert(entity);
+
+    }
+
+    void SceneHierarchyPanel::ClearSelection() {
+
+        selectedEntity = Scene::Entity();
+        selectedEntities.clear();
+        selectedProperty = SelectedProperty();
 
     }
 
@@ -170,7 +199,7 @@ namespace Atlas::Editor::UI {
             ImGui::SetNextItemOpen(false, ImGuiCond_Always);
 
         auto nodeFlags = baseFlags;
-        nodeFlags |= entity == selectedEntity ? ImGuiTreeNodeFlags_Selected : 0;
+        nodeFlags |= selectedEntities.contains(entity) ? ImGuiTreeNodeFlags_Selected : 0;
 
         Scene::Entity dropEntity;
         bool nodeOpen = false;
@@ -182,10 +211,17 @@ namespace Atlas::Editor::UI {
         if (isItemVisible) {            
             auto entityId = static_cast<uint64_t>(entity);
             nodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(entityId), nodeFlags, "%s", nodeName.c_str());
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
-                ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen()) {
-                selectedEntity = entity;
-                selectedProperty = SelectedProperty();
+
+            bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+            if (!shiftPressed && (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
+                ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())) {
+                SelectEntity(entity);
+                *selectionChanged = true;
+            }
+
+            if (shiftPressed && (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
+                ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())) {
+                SelectEntity(entity, true);
                 *selectionChanged = true;
             }
 
@@ -288,13 +324,11 @@ namespace Atlas::Editor::UI {
 
             hierarchyComponent->AddChild(newEntity);
 
-            selectedEntity = newEntity;
-            // Reset other properties selection
-            selectedProperty = SelectedProperty();
+            SelectEntity(newEntity);
         }
 
         if (deleteEntity) {
-            DeleteSelectedEntity(scene);
+            DeleteSelectedEntities(scene);
         }
 
         if (duplicateEntity) {
@@ -361,8 +395,7 @@ namespace Atlas::Editor::UI {
         nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
         ImGui::TreeNodeEx(name.c_str(), nodeFlags);
         if (ImGui::IsItemClicked()) {
-            selectedProperty = SelectedProperty();
-            selectedEntity = Scene::Entity();
+            ClearSelection();
             *selected = true;
             *selectionChanged = true;
         }
@@ -429,46 +462,52 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::DeleteSelectedEntity(Ref<Scene::Scene>& scene) {
+    void SceneHierarchyPanel::DeleteSelectedEntities(Ref<Scene::Scene>& scene) {
 
-        if (selectedEntity.IsValid())
-            scene->DestroyEntity(selectedEntity);
+        for (auto entity : selectedEntities) {
+            Scene::Entity selectedEntity(entity, &scene->entityManager);
+            if (selectedEntity.IsValid())
+                scene->DestroyEntity(selectedEntity);
+        }
 
-        selectedEntity = Scene::Entity();
-        // Reset other properties selection
-        selectedProperty = SelectedProperty();
+        ClearSelection();
 
     }
 
     void SceneHierarchyPanel::DuplicateSelectedEntity(Ref<Scene::Scene>& scene) {
 
-        if (!selectedEntity.IsValid())
-            return;
+        auto oldSelectedEntites = selectedEntities;
+        
+        ClearSelection();
 
-        auto parentEntity = scene->GetParentEntity(selectedEntity);
+        for (auto entity : oldSelectedEntites) {
+            Scene::Entity selectedEntity(entity, &scene->entityManager);
+            if (!selectedEntity.IsValid())
+                continue;
 
-        // Create new hierarchy before retrieving other components since they might become
-        // invalid when internal ECS storage resizes
-        auto newEntity = scene->DuplicateEntity(selectedEntity);
+            auto parentEntity = scene->GetParentEntity(selectedEntity);
 
-        HierarchyComponent* component;
-        if (parentEntity.IsValid()) {
-            component = parentEntity.TryGetComponent<HierarchyComponent>();
-        }
-        else {
-            auto root = scene->GetEntityByName("Root");
-            component = root.TryGetComponent<HierarchyComponent>();
-        }
+            // Create new hierarchy before retrieving other components since they might become
+            // invalid when internal ECS storage resizes
+            auto newEntity = scene->DuplicateEntity(selectedEntity);
 
-        AE_ASSERT(component != nullptr);
+            HierarchyComponent* component;
+            if (parentEntity.IsValid()) {
+                component = parentEntity.TryGetComponent<HierarchyComponent>();
+            }
+            else {
+                auto root = scene->GetEntityByName("Root");
+                component = root.TryGetComponent<HierarchyComponent>();
+            }
 
-        if (component != nullptr) {
-            component->AddChild(newEntity);
-        }
+            AE_ASSERT(component != nullptr);
 
-        selectedEntity = newEntity;
-        // Reset other properties selection
-        selectedProperty = SelectedProperty();
+            if (component != nullptr) {
+                component->AddChild(newEntity);
+            }
+
+            SelectEntity(newEntity, true);
+        }        
 
     }
 

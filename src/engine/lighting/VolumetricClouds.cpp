@@ -74,6 +74,13 @@ namespace Atlas {
 
         }
 
+        void VolumetricClouds::SetShadowResolution(int32_t shadowResolution) {
+
+            shadowTexture = Texture::Texture2D(shadowResolution, shadowResolution,
+                VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        }
+
     }
 
 }

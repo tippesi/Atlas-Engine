@@ -48,8 +48,14 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene, bool inFocus);
 
+        void SelectEntity(Scene::Entity entity, bool keepSelection = false);
+
+        void ClearSelection();
+
         Scene::Entity selectedEntity;
+        std::unordered_set<ECS::Entity> selectedEntities;
         SelectedProperty selectedProperty;
+
         HierarchyFilter hierarchyFilter = HierarchyFilterBits::AllBit;
 
     private:
@@ -77,7 +83,7 @@ namespace Atlas::Editor::UI {
 
         void RenderFilterPopup();
 
-        void DeleteSelectedEntity(Ref<Scene::Scene>& scene);
+        void DeleteSelectedEntities(Ref<Scene::Scene>& scene);
 
         void DuplicateSelectedEntity(Ref<Scene::Scene>& scene);
 
@@ -97,6 +103,7 @@ namespace Atlas::Editor::UI {
         int32_t lastAliveEntityCount = 0;
         std::string lastEntitySearch;
         bool hierarchyFilterChanged = false;
+        bool searchJobResultRetrieved = true;
 
     };
 
