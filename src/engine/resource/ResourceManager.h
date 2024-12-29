@@ -254,6 +254,7 @@ namespace Atlas {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
+            std::lock_guard lock(mutex);
             for (auto& [_, resource] : resources) {
                 resourceHandles.emplace_back(resource);
             }
@@ -266,6 +267,7 @@ namespace Atlas {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
+            std::lock_guard lock(mutex);
             for (auto& [_, resource] : resources) {
                 if (resource.use_count() == 1)
                     continue;
@@ -280,6 +282,7 @@ namespace Atlas {
 
             std::vector<ResourceHandle<T>> resourceHandles;
 
+            std::lock_guard lock(mutex);
             for (auto& [_, resource] : resources) {
                 if (resource->origin != origin)
                     continue;

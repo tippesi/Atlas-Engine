@@ -52,6 +52,7 @@ namespace Atlas::Editor {
         Singletons::config = CreateRef<Config>();
 
         Serialization::DeserializeConfig();
+        Serialization::DeserializeContentBrowserWindow(contentBrowserWindow);
 
         // Everything that needs the config comes afterwards
         Singletons::icons = CreateRef<Icons>();
@@ -85,6 +86,7 @@ namespace Atlas::Editor {
             Serialization::SerializeSceneWindow(sceneWindow);
         }
 
+        Serialization::SerializeContentBrowserWindow(contentBrowserWindow);
         Serialization::SerializeConfig();
         ContentDiscovery::Shutdown();
 

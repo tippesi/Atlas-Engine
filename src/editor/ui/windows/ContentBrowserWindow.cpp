@@ -78,24 +78,13 @@ namespace Atlas::Editor::UI {
 
         ImGui::SetWindowFontScale(1.5f);
 
-        ImGui::Text("Filters");
+        ImGui::Text("Folders");
 
         ImGui::SetWindowFontScale(1.0f);
 
         ImGui::Separator();
 
-        const char* items[] = { "Audio", "Mesh", "Mesh source", "Material", "Terrain", "Scene",
-            "Script", "Font", "Prefab", "Texture", "Environment texture" };
-        for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
-            bool isSelected = selectedFilter == i;
-            ImGui::Selectable(items[i], &isSelected, ImGuiSelectableFlags_SpanAvailWidth);
-            if (isSelected) {
-                selectedFilter = i;
-            }
-            else if (selectedFilter == i) {
-                selectedFilter = -1;
-            }
-        }
+        RenderDirectoryControl();
 
         ImGui::End();
 
@@ -104,7 +93,7 @@ namespace Atlas::Editor::UI {
         // Use a child as a dummy to create a drop target, since it doesn't work directly on a window
         ImGui::BeginChild("ResourceTypeDropChild", ImVec2(0.0, 0.0));
 
-        RenderDirectoryControl();
+        RenderDirectoryContentControl();
 
         ImGui::Separator();
 
@@ -171,6 +160,17 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::RenderDirectoryControl() {
 
+        auto rootDirectory = ContentDiscovery::GetContent();
+        if (!rootDirectory)
+            return;
+
+        for (const auto& directory : rootDirectory->directories)
+            RenderDirectoryEntry(directory);
+
+    }
+
+    void ContentBrowserWindow::RenderDirectoryContentControl() {
+
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 
         ImGui::SetWindowFontScale(1.5f);
@@ -230,10 +230,33 @@ namespace Atlas::Editor::UI {
         ImGui::PopStyleColor();
 
         if (ImGui::BeginPopup("Content browser filter settings")) {
-            auto& settings = Singletons::config->contentBrowserSettings;
+            auto renderSingleBitOption = [&](const char* name, ContentFilterBits bit) {
+                bool isSet = contentFilter & bit;
+                if (ImGui::RadioButton(name, isSet)) {
+                    contentFilter = isSet ? contentFilter & ~bit : contentFilter | bit;
+                }
+                };
 
-            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
-            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+            ImGui::Text("Filters");
+            ImGui::Separator();
+
+            ContentFilter filtered = contentFilter & ContentFilterBits::AllBit;
+            bool isSet = filtered == ContentFilterBits::AllBit;
+
+            if (ImGui::RadioButton("All", isSet)) {
+                contentFilter = isSet ? 0 : ContentFilterBits::AllBit;
+            }
+            renderSingleBitOption("Audio", ContentFilterBits::AudioBit);
+            renderSingleBitOption("Mesh", ContentFilterBits::MeshBit);
+            renderSingleBitOption("Mesh source", ContentFilterBits::MeshSourceBit);
+            renderSingleBitOption("Material", ContentFilterBits::MaterialBit);
+            renderSingleBitOption("Terrain", ContentFilterBits::TerrainBit);
+            renderSingleBitOption("Scene", ContentFilterBits::SceneBit);
+            renderSingleBitOption("Script", ContentFilterBits::ScriptBit);
+            renderSingleBitOption("Font", ContentFilterBits::FontBit);
+            renderSingleBitOption("Prefab", ContentFilterBits::PrefabBit);
+            renderSingleBitOption("Texture", ContentFilterBits::TextureBit);
+            renderSingleBitOption("Environment texture", ContentFilterBits::EnvTextureBit);
 
             ImGui::EndPopup();
         }
@@ -250,10 +273,12 @@ namespace Atlas::Editor::UI {
         ImGui::PopStyleColor();
 
         if (ImGui::BeginPopup("Content browser settings")) {
-            auto& settings = Singletons::config->contentBrowserSettings;
 
-            ImGui::Checkbox("Search recursively", &settings.searchRecursively);
-            ImGui::Checkbox("Filter recursively", &settings.filterRecursively);
+            ImGui::Text("Content settings");
+            ImGui::Separator();
+
+            ImGui::Checkbox("Search recursively", &searchRecursively);
+            ImGui::Checkbox("Filter recursively", &filterRecursively);
 
             ImGui::EndPopup();
         }
@@ -353,6 +378,51 @@ namespace Atlas::Editor::UI {
 
         if (!nextDirectory.empty()) {
             currentDirectory = Common::Path::Normalize(nextDirectory);
+        }
+
+    }
+
+    void ContentBrowserWindow::RenderDirectoryEntry(const Ref<ContentDirectory>& directory) {
+
+        // Ignore 'invisible' directories
+        if (directory->assetPath.at(0) == '.')
+            return;
+
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap |
+            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+
+        if (currentDirectory == directory->path)
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+        // Get button size before removing spacing
+        float buttonSize = ImGui::GetTextLineHeightWithSpacing();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2.0f, 0.0f));
+
+        bool nodeOpen = ImGui::TreeNodeEx(directory->name.c_str(), nodeFlags, "");
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) { 
+            currentDirectory = directory->path;
+        }
+
+        ImGui::SameLine();
+
+        auto folderIcon = Singletons::icons->Get(IconType::Folder);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&folderIcon);
+
+        ImGui::Image(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
+
+        ImGui::PopStyleVar();
+
+        ImGui::SameLine();
+
+        ImGui::Text("%s", directory->name.c_str());
+
+        if (nodeOpen) {
+            for (const auto& childDirectory : directory->directories)
+                RenderDirectoryEntry(childDirectory);
+
+            ImGui::TreePop();
         }
 
     }
@@ -559,10 +629,6 @@ namespace Atlas::Editor::UI {
         if (isEditing)
             return;
 
-        ContentType filterFileType = ContentType::None;
-        if (selectedFilter >= 0)
-            filterFileType = static_cast<ContentType>(selectedFilter);
-
         auto contentDirectory = ContentDiscovery::GetDirectory(currentDirectory);
         if (!contentDirectory)
             return;
@@ -572,17 +638,15 @@ namespace Atlas::Editor::UI {
             std::transform(searchQuery.begin(), searchQuery.end(), searchQuery.begin(), ::tolower);
         }
 
-        const auto& settings = Singletons::config->contentBrowserSettings;
-
         std::vector<Content> discoverdFiles;
-        bool recursively = searchQuery.empty() ? settings.filterRecursively && filterFileType != ContentType::None : settings.searchRecursively;
-        SearchDirectory(contentDirectory, discoverdFiles, filterFileType, searchQuery, recursively);
+        bool recursively = searchQuery.empty() ? filterRecursively && contentFilter != ContentFilterBits::AllBit : searchRecursively;
+        SearchDirectory(contentDirectory, discoverdFiles, searchQuery, recursively);
 
         std::sort(discoverdFiles.begin(), discoverdFiles.end(), [](const auto& file0, const auto& file1) {
             return file0.name < file1.name;
             });
 
-        if (assetSearch.empty() && !settings.filterRecursively) {
+        if (assetSearch.empty() && !filterRecursively) {
             directories = contentDirectory->directories;
             files = discoverdFiles;
         }
@@ -594,10 +658,11 @@ namespace Atlas::Editor::UI {
     }
 
     void ContentBrowserWindow::SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles,
-        const ContentType contentType, const std::string& searchQuery, bool recursively) {
+        const std::string& searchQuery, bool recursively) {
 
         for (const auto& file : directory->files) {
-            if (file.type != contentType && contentType != ContentType::None) {
+            // Enum class and ContentFilterBits are in same order, so we can just bitshift the content type
+            if (!((1 << static_cast<uint32_t>(file.type)) & contentFilter)) {
                 continue;
             }
 
@@ -610,7 +675,7 @@ namespace Atlas::Editor::UI {
 
         if (recursively) {
             for (const auto& childDirectory : directory->directories) {
-                SearchDirectory(childDirectory, contentFiles, contentType, searchQuery, true);
+                SearchDirectory(childDirectory, contentFiles, searchQuery, true);
             }
         }
 

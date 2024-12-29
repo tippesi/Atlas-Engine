@@ -173,6 +173,8 @@ namespace Atlas {
 				commandList->BindImage(scene->sky.GetProbe()->filteredDiffuse.image,
 					scene->sky.GetProbe()->filteredDiffuse.sampler, 1, 12);
 			}
+            
+            JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
 
 			{
 				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -197,7 +199,6 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
-			JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
 			renderState->lightBuffer.Bind(commandList, 1, 18);
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 

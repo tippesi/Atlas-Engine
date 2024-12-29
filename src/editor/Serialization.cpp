@@ -13,6 +13,7 @@ namespace Atlas::Editor {
 
     const std::string Serialization::configPath = ".config/";
     const std::string Serialization::configFilename = configPath + "config.json";
+    const std::string Serialization::contentBrowserWindowFilename = configPath + "contentBrowserWindowConfig.json";
 
     void Serialization::SerializeConfig() {
 
@@ -27,11 +28,6 @@ namespace Atlas::Editor {
             { "pathTrace", config->pathTrace },
             { "vsync", config->vsync },
             { "scenes", scenePaths }
-        };
-
-        j["contentBrowserSettings"] = {
-            { "searchRecursively", config->contentBrowserSettings.searchRecursively },
-            { "filterRecursively", config->contentBrowserSettings.filterRecursively },
         };
 
         TryWriteToFile(configFilename, to_string(j));
@@ -59,12 +55,6 @@ namespace Atlas::Editor {
             j.at("vsync").get_to(config->vsync);
         if (j.contains("scenes"))
             j.at("scenes").get_to(scenePaths);
-
-        if (j.contains("contentBrowserSettings")) {
-            auto s = j["contentBrowserSettings"];
-            s.at("searchRecursively").get_to(config->contentBrowserSettings.searchRecursively);
-            s.at("filterRecursively").get_to(config->contentBrowserSettings.filterRecursively);
-        }
 
         // No need to add it to the config, will be done through resource events
         for (const auto& scenePath : scenePaths)
@@ -94,6 +84,7 @@ namespace Atlas::Editor {
             { "perfOverlayMaximized", sceneWindow->perfOverlayMaximized },
             { "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator },
             { "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator },
+            { "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter },
             { "camera", camera }
         };
 
@@ -134,6 +125,7 @@ namespace Atlas::Editor {
         try_get_json(j, "camera", camera);
         try_get_json(j, "terrainGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.terrainGenerator);
         try_get_json(j, "vegetationGenerator", sceneWindow->scenePropertiesPanel.terrainPanel.vegetationGeneratorPanel.vegetationGenerator);
+        try_get_json(j, "hierarchyFilter", sceneWindow->sceneHierarchyPanel.hierarchyFilter);
 
         sceneWindow->cameraEntity = sceneWindow->scene->CreateEntity();
         Scene::EntityFromJson(camera, sceneWindow->cameraEntity, sceneWindow->scene.Get().get(), false);
@@ -143,6 +135,35 @@ namespace Atlas::Editor {
 
         return sceneWindow;
 
+    }
+
+    void Serialization::SerializeContentBrowserWindow(const UI::ContentBrowserWindow& contentBrowserWindow) {
+
+        json j = {
+            { "filterRecursively", contentBrowserWindow.filterRecursively },
+            { "searchRecursively", contentBrowserWindow.searchRecursively },
+            { "contentFilter", contentBrowserWindow.contentFilter },
+        };
+
+        TryWriteToFile(contentBrowserWindowFilename, to_string(j));
+
+    }
+
+    void Serialization::DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow) {
+
+        auto serialized = TryReadFromFile(contentBrowserWindowFilename);
+
+        if (serialized.empty())
+            return;
+
+        json j = json::parse(serialized);
+
+        if (j.contains("filterRecursively"))
+            j.at("filterRecursively").get_to(contentBrowserWindow.filterRecursively);
+        if (j.contains("searchRecursively"))
+            j.at("searchRecursively").get_to(contentBrowserWindow.searchRecursively);
+        if (j.contains("contentFilter"))
+            j.at("contentFilter").get_to(contentBrowserWindow.contentFilter);
     }
 
     void Serialization::TryWriteToFile(const std::string& filename, const std::string& content) {

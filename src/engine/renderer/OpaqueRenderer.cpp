@@ -193,8 +193,11 @@ namespace Atlas {
                 macros.push_back("EMISSIVE_MAP");
             }
             // This is a check if we have any maps at all (no macros, no maps)
-            if (macros.size()) {
+            if (hasTexCoords) {
                 macros.push_back("TEX_COORDS");
+            }
+            if (hasTangents) {
+                macros.push_back("TANGENTS");
             }
             if (glm::length(material->emissiveColor) > 0.0f) {
                 macros.push_back("EMISSIVE");

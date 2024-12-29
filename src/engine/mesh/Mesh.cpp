@@ -111,6 +111,7 @@ namespace Atlas {
             data.BuildBVHData(triangles);
 
             blas = CreateRef<RayTracing::BLAS>();
+            blasCreated = true;
 
             if (hardwareRayTracing) {
                 std::vector<Graphics::ASGeometryRegion> geometryRegions;
@@ -163,7 +164,7 @@ namespace Atlas {
 
         bool Mesh::IsBVHBuilt() const {
 
-            return blas && blas->IsBuilt();
+            return blasCreated && blas && blas->IsBuilt();
 
         }
 

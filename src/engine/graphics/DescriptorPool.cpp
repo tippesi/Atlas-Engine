@@ -68,7 +68,7 @@ namespace Atlas {
             Ref<DescriptorSet> set = CreateRef<DescriptorSet>();
             auto result = vkAllocateDescriptorSets(device->device, &allocInfo, &set->set);
             // Handle the pool out of memory error by allocating a new pool
-            if (result == VK_ERROR_OUT_OF_POOL_MEMORY) {
+            if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL) {
                 poolIdx++;
                 if (poolIdx == pools.size()) {
                     pools.push_back(InitPool(layout->size));

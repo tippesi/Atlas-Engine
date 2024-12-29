@@ -427,8 +427,7 @@ namespace Atlas {
                     binding.binding.size = descriptorBinding->block.size;
                     binding.binding.arrayElement = 0;
                     binding.binding.stageFlags = VK_SHADER_STAGE_ALL;
-                    binding.binding.bindless = descriptorBinding->array.dims_count == 1 &&
-                        descriptorBinding->array.dims[0] == 1 && device->support.bindless;
+                    binding.binding.bindless = device->support.bindless;
 
                     binding.binding.descriptorType =
                         binding.binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

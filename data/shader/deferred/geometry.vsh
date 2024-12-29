@@ -17,7 +17,7 @@ layout(location=1) in vec4 vNormal;
 layout(location=2) in vec2 vTexCoord;
 #endif
 
-#if defined(NORMAL_MAP) || defined(HEIGHT_MAP)
+#ifdef TANGENTS
 layout(location=3) in vec4 vTangent;
 #endif
 

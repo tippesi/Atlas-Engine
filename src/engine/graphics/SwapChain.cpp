@@ -42,7 +42,7 @@ namespace Atlas {
 
             surfaceFormat = ChooseSurfaceFormat(supportDetails.formats, preferredColorSpace);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
-            extent = ChooseExtent(supportDetails.capabilities, desiredWidth, desiredHeight);
+            extent = ChooseExtent(supportDetails.capabilities, 3200, 1938);
 
             if (extent.width == 0 || extent.height == 0) {
                 return;
@@ -282,9 +282,9 @@ namespace Atlas {
                     }
                 }
 
-                if (preferHDRColorSpace && availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT ||
+                if (preferHDRColorSpace && (availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT ||
                     availableFormat.colorSpace == VK_COLOR_SPACE_HDR10_HLG_EXT ||
-                    availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT) {
+                    availableFormat.colorSpace == VK_COLOR_SPACE_DOLBYVISION_EXT)) {
                     // Try to find preferred space
                     if (availableFormat.colorSpace == preferredSpace && !foundSpaceIn16Bit) {
                         if (availableFormat.format == VK_FORMAT_R16G16B16A16_SFLOAT) {
@@ -327,13 +327,9 @@ namespace Atlas {
         VkExtent2D SwapChain::ChooseExtent(VkSurfaceCapabilitiesKHR capabilities,
             int32_t desiredWidth, int32_t desiredHeight) {
 
-            if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-                return capabilities.currentExtent;
-            }
-
             VkExtent2D actualExtent = {
-                    static_cast<uint32_t>(desiredWidth),
-                    static_cast<uint32_t>(desiredHeight)
+                static_cast<uint32_t>(desiredWidth),
+                static_cast<uint32_t>(desiredHeight)
             };
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

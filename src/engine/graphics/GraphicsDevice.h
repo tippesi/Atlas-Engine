@@ -71,7 +71,7 @@ namespace Atlas {
                     for (auto commandList : submittedCommandLists) {
                         fences.push_back(commandList->fence);
                     }
-                    VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000))
+                    VK_CHECK(vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 3000000000))
                     VK_CHECK(vkResetFences(device, uint32_t(fences.size()), fences.data()))
                 }
 

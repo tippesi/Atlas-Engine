@@ -78,7 +78,7 @@ namespace Atlas {
                 }
             }
 
-	    extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	        extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
             extendedInfo.bindingCount = desc.bindingCount;
             extendedInfo.pBindingFlags = desc.bindingCount ? layoutBindingFlags.data() : VK_NULL_HANDLE;
 

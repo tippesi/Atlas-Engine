@@ -1,5 +1,7 @@
+#ifdef AE_HALF_FLOAT
 #extension GL_EXT_shader_explicit_arithmetic_types : require
 #extension GL_EXT_shader_16bit_storage : require
+#endif
 
 #define AeBool   bool
 #define AeF32   float

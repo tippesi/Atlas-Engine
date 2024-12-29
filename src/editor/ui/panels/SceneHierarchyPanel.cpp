@@ -195,7 +195,6 @@ namespace Atlas::Editor::UI {
 
                 ImGui::EndDragDropSource();
             }
-
             
             if (ImGui::BeginDragDropTarget()) {
                 auto dropPayload = ImGui::GetDragDropPayload();
@@ -208,7 +207,6 @@ namespace Atlas::Editor::UI {
 
                 ImGui::EndDragDropTarget();
             }
-
            
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("Add emtpy entity"))

@@ -17,14 +17,18 @@ namespace Atlas::Editor {
 
         static Ref<UI::SceneWindow> DeserializeSceneWindow(ResourceHandle<Scene::Scene> handle);
 
+        static void SerializeContentBrowserWindow(const UI::ContentBrowserWindow& contentBrowserWindow);
+
+        static void DeserializeContentBrowserWindow(UI::ContentBrowserWindow& contentBrowserWindow);
+
     private:
         static void TryWriteToFile(const std::string& filename, const std::string& content);
 
         static std::string TryReadFromFile(const std::string& filename);
 
         static const std::string configFilename;
-
         static const std::string configPath;
+        static const std::string contentBrowserWindowFilename;
 
     };
 

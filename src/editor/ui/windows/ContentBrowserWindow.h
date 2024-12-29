@@ -25,7 +25,28 @@ namespace Atlas::Editor::UI {
 
         void Render();
 
+        typedef uint32_t ContentFilter;
+
+		typedef enum ContentFilterBits {
+			AudioBit = (1 << 0),
+			MeshBit = (1 << 1),
+			MeshSourceBit = (1 << 2),
+			MaterialBit = (1 << 3),
+			TerrainBit = (1 << 4),
+			SceneBit = (1 << 5),
+			ScriptBit = (1 << 6),
+			FontBit = (1 << 7),
+			PrefabBit = (1 << 8),
+			TextureBit = (1 << 9),
+			EnvTextureBit = (1 << 10),
+			AllBit = (1 << 11) - 1
+		} ContentFilterBits;
+
         std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+
+        ContentFilter contentFilter = ContentFilterBits::AllBit;
+        bool searchRecursively = true;
+		bool filterRecursively = false;
         
         static inline std::string contentToShowPath = "";
 
@@ -41,7 +62,11 @@ namespace Atlas::Editor::UI {
 
         void RenderDirectoryControl();
 
+        void RenderDirectoryContentControl();
+
         void RenderDirectoryContent();
+
+        void RenderDirectoryEntry(const Ref<ContentDirectory>& directory);
 
         void RenderContentEntry(const std::filesystem::path& path, const std::string& assetPath, 
             ContentType contentType, int32_t entryIdx, int32_t columnCount, float columnSize, float& columnHeight);
@@ -53,15 +78,13 @@ namespace Atlas::Editor::UI {
         void UpdateFilteredAndSortedDirEntries();
 
         void SearchDirectory(const Ref<ContentDirectory>& directory, std::vector<Content>& contentFiles, 
-            const ContentType contentType, const std::string& searchQuery, bool recursively);
+            const std::string& searchQuery, bool recursively);
 
         void OpenExternally(const std::string& path, bool isDirectory);
 
         std::vector<std::string> GetSelectedPaths();
 
         void ApplyEdit(ContentType type);
-
-        int selectedFilter = -1;
 
         std::string nextDirectory;
         std::string assetSearch;

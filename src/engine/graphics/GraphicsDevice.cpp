@@ -463,7 +463,12 @@ namespace Atlas {
 
             // Recreate a swapchain on with MoltenVK seems to not work (just never returns)
             // Refrain from using complete frame async for now
-            JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            if (!CheckForWindowResize()) {
+                JobSystem::Execute(submitFrameJob, [this] (JobData&) { SubmitFrame(); });
+            }
+            else {
+                SubmitFrame();
+            }
 
         }
 

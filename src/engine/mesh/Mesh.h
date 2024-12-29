@@ -112,7 +112,7 @@ namespace Atlas {
 
         private:
             bool isLoaded = false;
-            
+            std::atomic_bool blasCreated = false;
 
         };
 
