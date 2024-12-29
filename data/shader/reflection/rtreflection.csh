@@ -61,7 +61,7 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     float roughnessCutoff;
     int halfRes;
     ivec2 resolution;
-    int padding0;
+    uint frameCount;
     int padding1;
     Shadow shadow;
 } uniforms;
@@ -87,7 +87,11 @@ void main() {
 
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+#ifdef UPSCALE
+        ivec2 offset = offsets[uniforms.frameCount % 4];
+#else
+        ivec2 offset = ivec2(0);
+#endif
 
         float depth = texelFetch(depthTexture, pixel, 0).r;
 

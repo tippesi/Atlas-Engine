@@ -38,8 +38,8 @@ struct PixelData {
 
 struct PackedPixelData {
     // Contains 16 bit color, variance, normal and roughness
-    f16vec4 color;
-    f16vec4 data;
+    AeF16x4 color;
+    AeF16x4 data;
     float depth;
 };
 
@@ -56,9 +56,9 @@ const float kernelWeights[3] = { 1.0, 2.0 / 3.0, 1.0 / 6.0 };
 PackedPixelData PackPixelData(PixelData data) {
     PackedPixelData compressed;
 
-    compressed.color.rgba = f16vec4(data.color);
-    compressed.data.xyz = f16vec3(data.normal);
-    compressed.data.w = float16_t(data.roughness);
+    compressed.color.rgba = AeF16x4(data.color);
+    compressed.data.xyz = AeF16x3(data.normal);
+    compressed.data.w = AeF16(data.roughness);
     compressed.depth = data.depth;
 
     return compressed;

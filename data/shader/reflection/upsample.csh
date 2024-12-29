@@ -24,6 +24,10 @@ shared vec4 data[36];
 const uint depthDataSize = (gl_WorkGroupSize.x / 2 + 2) * (gl_WorkGroupSize.y / 2 + 2);
 const ivec2 unflattenedDepthDataSize = ivec2(gl_WorkGroupSize) / 2 + 2;
 
+layout(push_constant) uniform constants {
+    int frameCount;
+} pushConstants;
+
 void LoadGroupSharedData() {
 
     ivec2 workGroupOffset = ivec2(gl_WorkGroupID) * ivec2(gl_WorkGroupSize) / 2 - ivec2(1);
@@ -85,7 +89,7 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff), 1.0);
+        float depthWeight = min(exp(-depthDiff / referenceDepth), 1.0);
 
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 
@@ -115,7 +119,7 @@ void main() {
 
     ivec2 downSamplePixel = pixel / 2;
     int offsetIdx = texelFetch(offsetTexture, downSamplePixel, 0).r;
-    ivec2 offset = pixelOffsets[offsetIdx];    
+    ivec2 offset = pixelOffsets[globalData.frameCount % 4];    
 
     vec2 texCoord = (vec2(pixel) + 0.5) / vec2(resolution);
 

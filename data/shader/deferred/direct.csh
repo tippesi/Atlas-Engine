@@ -74,6 +74,7 @@ void main() {
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     int lightCount = 0;
+
     // Load to get the atmosphere which was rendered before
     vec3 direct = imageLoad(image, pixel).rgb;
 

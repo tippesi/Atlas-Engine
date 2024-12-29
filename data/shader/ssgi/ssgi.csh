@@ -117,7 +117,8 @@ void main() {
             Surface surface = CreateSurface(V, N, vec3(1.0), material);
 
             for (uint j = 0; j < uniforms.rayCount; j++) {
-                int sampleIdx = int(uniforms.frameSeed * uniforms.rayCount + j);
+                // Delivers better results than frameCount * rayCount
+                int sampleIdx = int(globalData.frameCount + j);
                 vec3 blueNoiseVec = vec3(
                     SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
                     SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),

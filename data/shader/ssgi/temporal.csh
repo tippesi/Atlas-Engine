@@ -248,6 +248,14 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
 
 }
 
+float EdgeFadeOut(vec2 screenPos, float fadeDist) {
+
+    screenPos = abs(screenPos * 2.0 - 1.0);
+    vec2 fadeOut = (screenPos - 1.0 + fadeDist) / fadeDist;
+    return saturate(1.0 - max(fadeOut.x, fadeOut.y));
+
+}
+
 void main() {
 
     LoadGroupSharedData();
@@ -289,10 +297,12 @@ void main() {
     // Only clamp AO for now, since this leaves visible streaks
     //historyValue = clamp(historyValue, historyNeighbourhoodMin, historyNeighbourhoodMax);
 
+    // At the edge we have invalid information we want to get rid of
+    historyLength = mix(min(historyLength, 8.0), historyLength, EdgeFadeOut(uv, 0.05));
     float factor = 31.0 / 32.0;
     factor = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0
          || uv.y > 1.0) ? 0.0 : factor;
-
+    
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
 
     if (factor == 0.0 || !valid) {

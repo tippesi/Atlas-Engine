@@ -91,12 +91,13 @@ namespace Atlas {
             Texture::Texture2D* swapReflectionTexture = reflection->upsampleBeforeFiltering ? &target->reflectionTexture : &target->swapReflectionTexture;
 
             static uint32_t frameCount = 0;
+            frameCount++;
 
             RTRUniforms uniforms;
             uniforms.radianceLimit = reflection->radianceLimit;
             uniforms.bias = reflection->bias;
             uniforms.roughnessCutoff = reflection->roughnessCutoff;
-            uniforms.frameSeed = frameCount++;
+            uniforms.frameSeed = frameCount;
             uniforms.sampleCount = reflection->sampleCount;
             uniforms.lightSampleCount = reflection->lightSampleCount;
             uniforms.textureLevel = reflection->textureLevel;
@@ -253,6 +254,11 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(upsamplePipelineConfig);
                 commandList->BindPipeline(pipeline);
 
+                UpscalingConstants constants = {
+                   .frameCount = frameCount,
+                };
+                commandList->PushConstants("constants", &constants);
+
                 Graphics::ImageBarrier imageBarriers[] = {
                     {reflectionTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
                     {swapReflectionTexture->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT},
@@ -307,7 +313,8 @@ namespace Atlas {
                     .historyClipMax = reflection->historyClipMax,
                     .currentClipFactor = reflection->currentClipFactor,
                     .roughnessCutoff = reflection->roughnessCutoff,
-                    .resetHistory = !target->HasHistory() ? 1 : 0
+                    .resetHistory = !target->HasHistory() ? 1 : 0,
+                    .frameCount = frameCount,
                 };
 
                 commandList->PushConstants("constants", &constants);

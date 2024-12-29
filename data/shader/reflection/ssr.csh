@@ -58,7 +58,7 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     float roughnessCutoff;
     int halfRes;
     ivec2 resolution;
-    int padding0;
+    uint frameCount;
     int padding1;
     Shadow shadow;
 } uniforms;
@@ -137,7 +137,11 @@ void main() {
 
         // No need, there is no offset right now
         int offsetIdx = texelFetch(offsetTexture, pixel, 0).r;
-        ivec2 offset = offsets[offsetIdx];
+#ifdef UPSCALE
+        ivec2 offset = offsets[globalData.frameCount % 4];
+#else
+        ivec2 offset = ivec2(0);
+#endif
 
         ivec2 highResPixel;
         vec2 recontructTexCoord;
@@ -183,7 +187,11 @@ void main() {
             const int sampleCount = uniforms.sampleCount;
 
             for (int i = 0; i < sampleCount; i++) {
+#ifdef UPSCALE
+                int sampleIdx = int(uniforms.frameSeed / 4) * sampleCount + i;
+#else
                 int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
+#endif
                 vec3 blueNoiseVec = vec3(
                     SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
                     SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),

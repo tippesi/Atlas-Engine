@@ -29,9 +29,13 @@ namespace Atlas {
                 float roughnessCutoff;
                 int32_t halfRes;
                 ivec2 resolution;
-                int32_t padding0;
+                uint32_t frameCount;
                 int32_t padding1;
                 Shadow shadow;
+            };
+
+            struct alignas(16) UpscalingConstants {
+                uint32_t frameCount;
             };
 
             struct alignas(16) TemporalConstants {
@@ -41,6 +45,7 @@ namespace Atlas {
                 float currentClipFactor;
                 float roughnessCutoff;
                 int32_t resetHistory;
+                uint32_t frameCount;
             };
 
             struct alignas(16) AtrousConstants {

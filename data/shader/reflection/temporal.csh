@@ -48,6 +48,7 @@ layout(push_constant) uniform constants {
     float currentClipFactor;
     float roughnessCutoff;
     int resetHistory;
+    uint frameCount;
 } pushConstants;
 
 const ivec2 offsets[9] = ivec2[9](
@@ -458,7 +459,11 @@ void main() {
     float dominantFactor = GetSpecularDominantFactor(NdotV, sqrt(roughness));
 
     vec3 mean, std;
+#ifdef UPSCALE
     const int radius = int(mix(3.0, float(kernelRadius), min(1.0, roughness * 4.0)));
+#else
+    const int radius = int(mix(2.0, float(kernelRadius), min(1.0, roughness * 4.0)));
+#endif
     ComputeVarianceMinMax(roughness, radius, mean, std);
 
     ivec2 velocityPixel = pixel;

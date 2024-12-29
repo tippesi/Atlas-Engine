@@ -31,7 +31,7 @@ layout(set = 3, binding = 4, std140) uniform  WeightBuffer {
 } weights;
 
 const float normalPhi = 256.0;
-const float depthPhi = 0.5;
+const float depthPhi = 1.0 / 32.0;
 
 #if defined(BLUR_RGB)
 shared vec3 inputs[320];
