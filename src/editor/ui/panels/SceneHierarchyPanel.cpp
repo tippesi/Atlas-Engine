@@ -45,12 +45,12 @@ namespace Atlas::Editor::UI {
         auto root = scene->GetEntityByName("Root");
         // Aquire scene here such that it can't be freed and copy important pools
         JobSystem::Execute(searchJob, [&, scene = scene, root = root, data = std::move(data)](JobData&) mutable {
-           
+
             // Search should be case-insensitive
             transformedEntitySearch = entitySearch;
             std::transform(transformedEntitySearch.begin(), transformedEntitySearch.end(),
                 transformedEntitySearch.begin(), ::tolower);
-            
+
             newMatchSet.clear();
             newMatchSet.reserve(scene->entityManager.Alive());
             std::string nodeName;
@@ -59,7 +59,7 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void SceneHierarchyPanel::Render(Ref<Scene::Scene> &scene, bool inFocus) {
+    void SceneHierarchyPanel::Render(Ref<Scene::Scene>& scene, bool inFocus) {
 
         const float padding = 8.0f;
 
@@ -87,7 +87,7 @@ namespace Atlas::Editor::UI {
                 if (entity.IsValid()) {
                     entity.AddComponent<NameComponent>("Entity " + std::to_string(entity));
 
-                    auto &hierarchyComponent = root.GetComponent<HierarchyComponent>();
+                    auto& hierarchyComponent = root.GetComponent<HierarchyComponent>();
                     hierarchyComponent.AddChild(entity);
 
                     SelectEntity(entity);
@@ -131,6 +131,10 @@ namespace Atlas::Editor::UI {
                 ClearSelection();
             }
 
+            // Need to get rid of this set once the mouse button is released
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+                toggledOpenSet.clear();
+            }
 
         }
 
@@ -168,7 +172,7 @@ namespace Atlas::Editor::UI {
         std::unordered_set<ECS::Entity>& matchSet, bool inFocus, bool searchChanged, bool* selectionChanged) {
 
         ImGuiTreeNodeFlags baseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_AllowOverlap |
-            ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
         auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
         auto nameComponent = entity.TryGetComponent<NameComponent>();
@@ -201,49 +205,52 @@ namespace Atlas::Editor::UI {
         auto nodeFlags = baseFlags;
         nodeFlags |= selectedEntities.contains(entity) ? ImGuiTreeNodeFlags_Selected : 0;
 
-        Scene::Entity dropEntity;
         bool nodeOpen = false;
         bool createEntity = false;
         bool deleteEntity = false;
         bool duplicateEntity = false;
+        bool droppedEntities = false;
 
         // Don't waste precious CPU cycles here if not visible
-        if (isItemVisible) {            
+        if (isItemVisible) {
             auto entityId = static_cast<uint64_t>(entity);
             nodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(entityId), nodeFlags, "%s", nodeName.c_str());
 
+            if (ImGui::IsItemToggledOpen())
+                toggledOpenSet.insert(entity);
+
             bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
-            if (!shiftPressed && (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
-                ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())) {
+            if (!shiftPressed && (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !toggledOpenSet.contains(entity))) {
                 SelectEntity(entity);
-                *selectionChanged = true;
+            }
+            if (shiftPressed && (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !toggledOpenSet.contains(entity))) {
+                SelectEntity(entity, true);
+            }
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !toggledOpenSet.contains(entity) && !selectedEntities.contains(entity)) {
+                SelectEntity(entity);
             }
 
-            if (shiftPressed && (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() ||
-                ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsItemToggledOpen())) {
-                SelectEntity(entity, true);
+            // In any case we need to notify that we clicked on an item
+            if ((ImGui::IsItemClicked(ImGuiMouseButton_Right) || ImGui::IsItemClicked(ImGuiMouseButton_Left)) && !ImGui::IsItemToggledOpen()) {
                 *selectionChanged = true;
             }
 
             if (ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload(typeid(Scene::Entity).name(), &entity, sizeof(Scene::Entity));
+                ImGui::SetDragDropPayload(typeid(Scene::Entity).name(), nullptr, 0);
                 ImGui::Text("Drag to other entity in hierarchy");
 
                 ImGui::EndDragDropSource();
             }
-            
+
             if (ImGui::BeginDragDropTarget()) {
                 auto dropPayload = ImGui::GetDragDropPayload();
                 if (dropPayload->IsDataType(typeid(Scene::Entity).name())) {
-                    std::memcpy(&dropEntity, dropPayload->Data, dropPayload->DataSize);
-                    if (entity == dropEntity || !ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name())) {
-                        dropEntity = Scene::Entity();
-                    }
+                    droppedEntities = ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name());
                 }
 
                 ImGui::EndDragDropTarget();
             }
-           
+
             if (ImGui::BeginPopupContextItem()) {
                 if (ImGui::MenuItem("Add emtpy entity"))
                     createEntity = true;
@@ -337,21 +344,29 @@ namespace Atlas::Editor::UI {
 
         *selectionChanged |= createEntity | deleteEntity | duplicateEntity;
 
-        if (dropEntity.IsValid()) {
-            auto dropParentEntity = scene->GetParentEntity(dropEntity);
-
-            if (dropParentEntity.IsValid()) {
-                auto& dropParentHierarchy = dropParentEntity.GetComponent<HierarchyComponent>();
-                dropParentHierarchy.RemoveChild(dropEntity);
-            }
-
+        if (droppedEntities) {
             // No hierarchy component, so create one
             if (!hierarchyComponent) {
                 entity.AddComponent<HierarchyComponent>();
                 hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
             }
 
-            hierarchyComponent->AddChild(dropEntity);
+            for (auto selectedEntity : selectedEntities) {
+                Scene::Entity dropEntity(selectedEntity, &scene->entityManager);
+
+                if (entity == dropEntity)
+                    continue;
+
+                auto dropParentEntity = scene->GetParentEntity(dropEntity);
+
+                if (dropParentEntity.IsValid()) {
+                    auto& dropParentHierarchy = dropParentEntity.GetComponent<HierarchyComponent>();
+                    dropParentHierarchy.RemoveChild(dropEntity);
+                }
+
+                hierarchyComponent->AddChild(dropEntity);
+            }
+
         }
 
         // If the hierarchy is emtpy after movements or deletions, also remove the hierarchy
@@ -380,16 +395,16 @@ namespace Atlas::Editor::UI {
         if (scene->sky.clouds)
             RenderExtendedItem("Volumetric clouds", &selectedProperty.volumetricClouds, selectionChanged);
         if (scene->fog)
-            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);        
+            RenderExtendedItem("Fog", &selectedProperty.fog, selectionChanged);
         RenderExtendedItem("Sky", &selectedProperty.sky, selectionChanged);
         RenderExtendedItem("Wind", &selectedProperty.wind, selectionChanged);
         RenderExtendedItem("Post processing", &selectedProperty.postProcessing, selectionChanged);
 
     }
 
-    void SceneHierarchyPanel::RenderExtendedItem(const std::string &name, bool *selected, bool *selectionChanged) {
+    void SceneHierarchyPanel::RenderExtendedItem(const std::string& name, bool* selected, bool* selectionChanged) {
 
-        ImGuiTreeNodeFlags nodeFlags =  ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 
         nodeFlags |= *selected ? ImGuiTreeNodeFlags_Selected : 0;
@@ -477,7 +492,7 @@ namespace Atlas::Editor::UI {
     void SceneHierarchyPanel::DuplicateSelectedEntity(Ref<Scene::Scene>& scene) {
 
         auto oldSelectedEntites = selectedEntities;
-        
+
         ClearSelection();
 
         for (auto entity : oldSelectedEntites) {
@@ -507,7 +522,7 @@ namespace Atlas::Editor::UI {
             }
 
             SelectEntity(newEntity, true);
-        }        
+        }
 
     }
 
@@ -588,7 +603,7 @@ namespace Atlas::Editor::UI {
 
         for (auto child : hierarchyComponent->GetChildren())
             ToggleHierarchyVisibility(child, visible);
-        
+
 
     }
 

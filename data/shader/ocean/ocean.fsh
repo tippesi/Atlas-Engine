@@ -37,8 +37,9 @@ layout(location=3) in vec3 fOriginalCoord;
 layout(location=6) in float shoreScaling;
 layout(location=7) in vec3 ndcCurrent;
 layout(location=8) in vec3 ndcLast;
+#ifdef TERRAIN
 layout(location=9) in vec3 normalShoreWave;
-layout(location=10) in float perlinScale;
+#endif
 
 // Control water scattering at crests
 const float scatterIntensity = 1.5;

@@ -99,6 +99,7 @@ namespace Atlas::Editor::UI {
         std::unordered_set<ECS::Entity> matchSet;
         std::unordered_set<ECS::Entity> newMatchSet;
         std::unordered_set<ECS::Entity> nodeInvisibleSet;
+        std::unordered_set<ECS::Entity> toggledOpenSet;
 
         int32_t lastAliveEntityCount = 0;
         std::string lastEntitySearch;
