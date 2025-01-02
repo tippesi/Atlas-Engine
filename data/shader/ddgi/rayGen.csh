@@ -40,6 +40,29 @@ layout(std140, set = 3, binding = 4) uniform UniformBuffer {
 shared uint probeState;
 shared vec3 probeOffset;
 
+bool IsProbeVisible(vec3 probePosition, int cascadeIndex) {
+
+    vec3 cellSize = ddgiData.cascades[cascadeIndex].cellSize.xyz;
+
+    vec3 min = probePosition - cellSize;
+    vec3 max = probePosition + cellSize;
+
+    for (int i = 0; i < 6; i++) {
+        vec3 normal = globalData.frustumPlanes[i].xyz;
+        float dist = globalData.frustumPlanes[i].w;
+        
+        vec3 s;
+        s.x = normal.x >= 0.0 ? max.x : min.x;
+        s.y = normal.y >= 0.0 ? max.y : min.y;
+        s.z = normal.z >= 0.0 ? max.z : min.z;
+                
+        if (dist + dot(normal, s) < 0.0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void main() {
 
     ivec3 probeIndex = ivec3(gl_WorkGroupID);
@@ -54,12 +77,20 @@ void main() {
 
     uint historyBaseIdx = Flatten3D(ivec3(historyProbeCoord.xzy), ivec3(gl_NumWorkGroups.xzy));
 
-    if (gl_LocalInvocationID.x == 0u) {
+    if (gl_LocalInvocationIndex == 0u) {
         probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
-        probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) : historyProbeOffsets[historyBaseIdx].xyz;
+        probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) :vec3(0.0);
     }
 
     barrier();
+
+    vec3 probePosition = GetProbePosition(probeIndex, cascadeIndex);
+    if (!IsProbeVisible(probePosition, cascadeIndex)) {
+        probeState = PROBE_STATE_INVISIBLE;
+        if (gl_LocalInvocationIndex == 0u) {
+            historyProbeStates[historyBaseIdx].x = uintBitsToFloat(PROBE_STATE_INVISIBLE);
+        }
+    }
 
     uint rayBaseIdx = baseIdx * ddgiData.rayCount;
     uint probeRayCount = GetProbeRayCount(probeState);
@@ -70,9 +101,9 @@ void main() {
         Ray ray;
         if (i < probeRayCount) {       
             ray.ID = int(rayBaseIdx + i);
-            ray.origin = GetProbePosition(probeIndex, cascadeIndex) + probeOffset;
+            ray.origin = probePosition + probeOffset;
             ray.direction = normalize(mat3(Uniforms.randomRotation) *
-                (probeState == PROBE_STATE_INACTIVE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
+                (probeState == PROBE_STATE_INACTIVE || probeState == PROBE_STATE_INVISIBLE ? rayDirsInactiveProbes[i].xyz : rayDirs[i].xyz));
         }
         else {
             ray.ID = -1;

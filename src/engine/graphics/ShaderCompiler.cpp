@@ -104,7 +104,7 @@ namespace Atlas {
             // Optimization strips debug info
             if (!includeDebugInfo) {
                 spvtools::Optimizer opt(SPV_ENV_VULKAN_1_2);
-                opt.RegisterPerformancePasses(true);
+                opt.RegisterPerformancePasses(false);
 
                 std::vector<uint32_t> optimizedBinary;
                 if (opt.Run(spirvBinary.data(), spirvBinary.size(), &optimizedBinary)) {

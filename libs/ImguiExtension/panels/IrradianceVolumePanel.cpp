@@ -17,9 +17,21 @@ namespace Atlas::ImguiExtension {
         ImGui::Checkbox("Sample emissives", &volume->sampleEmissives);
         ImGui::Checkbox("Use shadow map", &volume->useShadowMap);
         ImGui::Checkbox("Calculate visibility", &volume->visibility);
+        ImGui::Checkbox("Calculate radiance", &volume->radiance);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::SetTooltip("Uses the shadow map to calculate shadows in the GI. \
                         This is only possible when cascaded shadow maps are not used.");
+        }
+        bool prevMomentRes = volume->lowerResMoments;
+        ImGui::Checkbox("Lower resolution visibility", &volume->lowerResMoments);
+        if (prevMomentRes != volume->lowerResMoments) {
+            volume->SetMomentsResolution(volume->lowerResMoments);
+        }
+
+        bool prevRadianceRes = volume->lowerResRadiance;
+        ImGui::Checkbox("Lower resolution radiance", &volume->lowerResRadiance);
+        if (prevRadianceRes != volume->lowerResRadiance) {
+            volume->SetRadianceResolution(volume->lowerResRadiance);
         }
 
         ImGui::Checkbox("Opacity check", &volume->opacityCheck);
@@ -63,12 +75,12 @@ namespace Atlas::ImguiExtension {
 
         if (currentItem != prevItem) {
             switch (currentItem) {
-                case 0: volume->SetRayCount(32, 32); break;
-                case 1: volume->SetRayCount(64, 32); break;
-                case 2: volume->SetRayCount(96, 32); break;
-                case 3: volume->SetRayCount(128, 32); break;
-                case 4: volume->SetRayCount(256, 32); break;
-                case 5: volume->SetRayCount(512, 32); break;
+                case 0: volume->SetRayCount(32, 16); break;
+                case 1: volume->SetRayCount(64, 16); break;
+                case 2: volume->SetRayCount(96, 16); break;
+                case 3: volume->SetRayCount(128, 16); break;
+                case 4: volume->SetRayCount(256, 16); break;
+                case 5: volume->SetRayCount(512, 16); break;
             }
         }
 

@@ -81,7 +81,8 @@ namespace Atlas {
         public:
             IrradianceVolume() = default;
 
-            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = 1, bool lowerResMoments = true);
+            IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount = 1, 
+                bool lowerResMoments = true, bool lowerResRadiance = false);
 
             ivec3 GetIrradianceArrayOffset(ivec3 probeIndex, int32_t cascadeIndex);
 
@@ -98,6 +99,10 @@ namespace Atlas {
             void ClearProbes();
 
             void ResetProbeOffsets();
+
+            void SetMomentsResolution(bool lowerResMoments);
+
+            void SetRadianceResolution(bool lowerResRadiance);
 
             struct Cascade {
                 Volume::AABB aabb;
@@ -132,8 +137,10 @@ namespace Atlas {
             bool optimizeProbes = true;
             bool useShadowMap = false;
             bool lowerResMoments = false;
+            bool lowerResRadiance = false;
             bool opacityCheck = false;
             bool visibility = true;
+            bool radiance = true;
             bool scroll = false;
 
             InternalIrradianceVolume internal;
@@ -143,7 +150,7 @@ namespace Atlas {
             friend Renderer::MainRenderer;
 
             int32_t irrRes = 6;
-            int32_t radRes = 1;
+            int32_t radRes = 30;
             int32_t momRes = 14;
 
         };

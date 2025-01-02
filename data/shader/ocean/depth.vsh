@@ -7,8 +7,6 @@
 
 layout(location=0) in vec3 vPosition;
 
-layout(location=1) out vec3 fPosition;
-
 vec3 stitch(vec3 position) {
     
     // Note: This only works because our grid has a constant size
@@ -40,7 +38,7 @@ vec3 stitch(vec3 position) {
 
 void main() {
     
-    fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
+    vec3 fPosition = stitch(vPosition) * PushConstants.nodeSideLength +
         vec3(PushConstants.nodeLocation.x, 0.0, PushConstants.nodeLocation.y)
         + Uniforms.translation.xyz;
     

@@ -102,7 +102,7 @@ namespace Atlas {
 
             commandList->BindImage(target->lightingTexture.image, 3, 0);
 
-            if (sss && sss->enable) {
+            if (sss && sss->enable && GetMainLightEntity(scene).IsValid()) {
                 commandList->BindImage(target->sssTexture.image, target->sssTexture.sampler, 3, 1);
             }
 

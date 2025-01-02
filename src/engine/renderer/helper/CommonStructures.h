@@ -156,6 +156,7 @@ namespace Atlas {
             float volumeBias;
 
             int32_t volumeIrradianceRes;
+            int32_t volumeRadianceRes;
             int32_t volumeMomentsRes;
 
             uint32_t rayCount;

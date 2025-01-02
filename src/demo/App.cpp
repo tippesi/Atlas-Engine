@@ -1117,7 +1117,7 @@ void App::CheckLoadScene() {
     }
     else if (sceneSelection == SPONZA) {
         scene->irradianceVolume = std::make_shared<Atlas::Lighting::IrradianceVolume>(
-            sceneAABB.Scale(0.9f), glm::ivec3(20));
+            sceneAABB.Scale(1.1f), glm::ivec3(20));
         scene->irradianceVolume->SetRayCount(128, 32);
         scene->irradianceVolume->strength = 1.5f;
     }

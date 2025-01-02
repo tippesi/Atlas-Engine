@@ -132,7 +132,7 @@ namespace Atlas {
 			}
 
 			if (scene->irradianceVolume) {
-				commandList->BindBuffer(ddgiUniformBuffer, 2, 26);
+				commandList->BindBuffer(ddgiUniformBuffer, 2, 27);
 			}
 
 			volumetricCloudRenderer.RenderShadow(target, scene, commandList);
@@ -1044,6 +1044,7 @@ namespace Atlas {
 					.cascadeCount = volume->cascadeCount,
 					.volumeBias = volume->bias,
 					.volumeIrradianceRes = volume->irrRes,
+					.volumeRadianceRes = volume->radRes,
 					.volumeMomentsRes = volume->momRes,
 					.rayCount = volume->rayCount,
 					.inactiveRayCount = volume->rayCountInactive,

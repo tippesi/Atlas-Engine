@@ -101,12 +101,18 @@ namespace Atlas::Lighting {
             {"opacityCheck", p.opacityCheck},
             {"scroll", p.scroll},
             {"splitCorrection", p.splitCorrection},
+            {"visibility", p.visibility},
+            {"radiance", p.radiance},
+            {"lowerResRadiance", p.lowerResRadiance},
         };
     }
 
     void from_json(const json& j, IrradianceVolume& p) {
+        bool lowerResRadiance = false;
+        try_get_json(j, "lowerResRadiance", lowerResRadiance);
+
         p = IrradianceVolume(j["aabb"].get<Volume::AABB>(), j["probeCount"].get<ivec3>(), 
-            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>());
+            j["cascadeCount"].get<int32_t>(), j["lowerResMoments"].get<bool>(), lowerResRadiance);
         j.at("enable").get_to(p.enable);
         j.at("rayCount").get_to(p.rayCount);
         j.at("rayCountInactive").get_to(p.rayCountInactive);
@@ -121,6 +127,11 @@ namespace Atlas::Lighting {
         j.at("opacityCheck").get_to(p.opacityCheck);
         j.at("scroll").get_to(p.scroll);
         j.at("splitCorrection").get_to(p.splitCorrection);
+
+        try_get_json(j, "radiance", p.radiance);
+        try_get_json(j, "visibility", p.visibility);
+
+        p.SetRayCount(p.rayCount, p.rayCountInactive);
     }
 
     void to_json(json& j, const Reflection& p) {

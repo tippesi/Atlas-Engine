@@ -56,9 +56,14 @@ void main() {
             radiance = EvaluateHit(ray);
         
             RayHit hit;
+#ifndef AE_HALF_FLOAT
             hit.radiance = radiance;
             hit.direction = ray.direction;
             hit.hitDistance = ray.hitDistance;
+#else
+            hit.radiance = AeF16x4(radiance, ray.hitDistance);
+            hit.direction = AeF16x4(ray.direction, 1.0);
+#endif
 
             hits[ray.ID] = PackRayHit(hit);
         }
@@ -92,11 +97,21 @@ vec3 EvaluateHit(inout Ray ray) {
     radiance += surface.material.emissiveColor;
 
     // Evaluate direct light
-    radiance += EvaluateDirectLight(surface);
+    radiance += EvaluateDirectLight(surface);    
+
+    vec4 probeIrradiance, probeRadiance;
+    GetLocalProbeLighting(surface.P, surface.V, surface.N, surface.N, surface.geometryNormal, probeIrradiance, probeRadiance);
+
+    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
+        EvaluateIndirectSpecularBRDF(surface) * probeRadiance.rgb;
 
     // Need to sample the volume later for infinite bounces:
-    vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
-        GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    //vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) *
+    //    GetLocalIrradiance(surface.P, surface.V, surface.N).rgb;
+    
+    //indirect += EvaluateIndirectSpecularBRDF(surface) * 
+    //    GetLocalRadiance(surface.P, surface.V, surface.N).rgb;
+
     radiance += IsInsideVolume(surface.P) ? indirect : vec3(0.0);
     return radiance;
 

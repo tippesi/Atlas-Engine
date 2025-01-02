@@ -7,8 +7,9 @@ namespace Atlas {
     namespace Lighting {
 
         IrradianceVolume::IrradianceVolume(Volume::AABB aabb, ivec3 probeCount, int32_t cascadeCount,
-            bool lowerResMoments) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
-            momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments) {
+            bool lowerResMoments, bool lowerResRadiance) : probeCount(probeCount), cascadeCount(std::min(cascadeCount, MAX_IRRADIANCE_VOLUME_CASCADES)), 
+            momRes(lowerResMoments ? 6 : 14), lowerResMoments(lowerResMoments), radRes(lowerResRadiance ? 14 : 30), 
+            lowerResRadiance(lowerResRadiance) {
 
             auto irrFullRes = ivec2(this->irrRes + 2);
             irrFullRes.x *= probeCount.x;
@@ -139,6 +140,48 @@ namespace Atlas {
         void IrradianceVolume::ResetProbeOffsets() {
 
             internal.ResetProbeOffsets();
+
+        }
+
+        void IrradianceVolume::SetMomentsResolution(bool lowerResMoments) {
+
+            momRes = lowerResMoments ? 6 : 14;
+
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
+
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
+
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
+            internal.SetRayCount(rayCount, rayCountInactive);
+
+        }
+
+        void IrradianceVolume::SetRadianceResolution(bool lowerResRadiance) {
+
+            radRes = lowerResRadiance ? 14 : 30;
+
+            auto irrFullRes = ivec2(irrRes + 2);
+            irrFullRes.x *= probeCount.x;
+            irrFullRes.y *= probeCount.z;
+
+            auto radFullRes = ivec2(radRes + 2);
+            radFullRes.x *= probeCount.x;
+            radFullRes.y *= probeCount.z;
+
+            auto momFullRes = ivec2(momRes + 2);
+            momFullRes.x *= probeCount.x;
+            momFullRes.y *= probeCount.z;
+
+            internal = InternalIrradianceVolume(irrFullRes, radFullRes, momFullRes, probeCount, cascadeCount);
+            internal.SetRayCount(rayCount, rayCountInactive);
 
         }
 

@@ -23,8 +23,11 @@ namespace Atlas {
 
             probeStatePipelineConfig = PipelineConfig("ddgi/probeState.csh");
             probeIrradianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"IRRADIANCE"});
+            probeRadianceUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh", {"RADIANCE"});
             probeMomentsUpdatePipelineConfig = PipelineConfig("ddgi/probeUpdate.csh");
+
             irradianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"IRRADIANCE"});
+            radianceCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh", {"RADIANCE"});
             momentsCopyEdgePipelineConfig = PipelineConfig("ddgi/copyEdge.csh");
 
             auto samplerDesc = Graphics::SamplerDesc {
@@ -92,6 +95,8 @@ namespace Atlas {
 
             Graphics::Profiler::EndAndBeginQuery("Ray generation");
 
+            commandList->BufferMemoryBarrier(historyProbeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
             auto rayGenPipeline = PipelineManager::GetPipeline(rayGenPipelineConfig);
             helper.DispatchRayGen(scene, commandList, rayGenPipeline, probeCount, false,
                 [&]() {
@@ -122,12 +127,17 @@ namespace Atlas {
                 }
             );
 
+            commandList->BufferMemoryBarrier(historyProbeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+
             Graphics::Profiler::EndAndBeginQuery("Ray evaluation");
 
             commandList->BindImage(lastIrradianceArray.image, lastIrradianceArray.sampler, 2, 24);
-            commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 25);
+            commandList->BindImage(lastRadianceArray.image, lastRadianceArray.sampler, 2, 25);
+            commandList->BindImage(lastMomentsArray.image, lastMomentsArray.sampler, 2, 26);
 
             auto rayHitPipeline = PipelineManager::GetPipeline(rayHitPipelineConfig);
+            rayHitPipelineConfig.ManageMacro("RADIANCE_VOLUME", volume->radiance);
+
             helper.DispatchHitClosest(scene, commandList, rayHitPipeline, false, volume->opacityCheck,
                 [&]() {
                     RayHitUniforms uniforms;
@@ -181,7 +191,23 @@ namespace Atlas {
             historyProbeStateBuffer.Bind(commandList, 3, 2);
             historyProbeOffsetBuffer.Bind(commandList, 3, 3);
 
+            Graphics::Profiler::EndAndBeginQuery("Update probe states");
+
+            // Update the states of the probes
+            {
+                commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                auto pipeline = PipelineManager::GetPipeline(probeStatePipelineConfig);
+                commandList->BindPipeline(pipeline);
+
+                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+
+                commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT);
+            }
+
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            commandList->ImageMemoryBarrier(radianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
@@ -199,6 +225,18 @@ namespace Atlas {
 
                 commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
 
+                if (volume->radiance) {
+                    Graphics::Profiler::EndAndBeginQuery("Update radiance");
+
+                    commandList->BindImage(radianceArray.image, 3, 0);
+
+                    probeRadianceUpdatePipelineConfig.ManageMacro("LOWER_RES_RADIANACE", volume->lowerResRadiance);
+                    pipeline = PipelineManager::GetPipeline(probeRadianceUpdatePipelineConfig);
+                    commandList->BindPipeline(pipeline);
+
+                    commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
+                }
+
                 if (volume->visibility) {
                     Graphics::Profiler::EndAndBeginQuery("Update moments");
 
@@ -212,18 +250,6 @@ namespace Atlas {
                 }
 
                 Graphics::Profiler::EndQuery();
-            }
-
-            Graphics::Profiler::EndAndBeginQuery("Update probe states");
-
-            // Update the states of the probes
-            {
-                commandList->BufferMemoryBarrier(probeStateBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-
-                auto pipeline = PipelineManager::GetPipeline(probeStatePipelineConfig);
-                commandList->BindPipeline(pipeline);
-
-                commandList->Dispatch(probeCount.x, probeCount.y, probeCount.z);
             }
 
             Graphics::Profiler::EndAndBeginQuery("Update probe edges");
@@ -246,12 +272,29 @@ namespace Atlas {
 
                 commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
                 commandList->BindImage(irradianceArray.image, 3, 0);
-                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
+                commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);               
 
-                commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+                if (volume->radiance) {
+                    commandList->ImageMemoryBarrier(radianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                    probeRes = volume->radRes;
+
+                    res = ivec2(radianceArray.width, radianceArray.height);
+                    groupCount = res / 8;
+
+                    groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
+                    groupCount.y += ((groupCount.y * 8 == res.y) ? 0 : 1);
+
+                    commandList->PushConstants("constants", &probeRes, sizeof(int32_t));
+                    commandList->BindImage(radianceArray.image, 3, 0);
+                    commandList->Dispatch(groupCount.x, groupCount.y, probeCount.y);
+                }
 
                 if (volume->visibility) {
+                    commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_GENERAL,
+                        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
                     pipeline = PipelineManager::GetPipeline(momentsCopyEdgePipelineConfig);
                     commandList->BindPipeline(pipeline);
 
@@ -280,11 +323,14 @@ namespace Atlas {
             commandList->BufferMemoryBarrier(probeOffsetBuffer.Get(), VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
             commandList->ImageMemoryBarrier(irradianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destinationShaderStage);
+            commandList->ImageMemoryBarrier(radianceArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destinationShaderStage);
             commandList->ImageMemoryBarrier(momentsArray.image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, destinationShaderStage);
 
             commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
-            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
+            commandList->BindImage(radianceArray.image, radianceArray.sampler, 2, 25);
+            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 26);
 
             Graphics::Profiler::EndQuery();
             Graphics::Profiler::EndQuery();

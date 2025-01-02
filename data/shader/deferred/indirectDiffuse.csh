@@ -148,8 +148,8 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
     //result.gi = gi[maxMemoryIdx];
 
-    if (totalWeight < 1e-6) {
-        //result.gi = gi[maxMemoryIdx];
+    if (totalWeight < 1e-3) {
+        result.gi = gi[maxMemoryIdx];
     }
 
     result.gi = max(result.gi, vec4(0.0));

@@ -57,9 +57,11 @@ namespace Atlas {
 
             PipelineConfig probeStatePipelineConfig;
             PipelineConfig probeIrradianceUpdatePipelineConfig;
+            PipelineConfig probeRadianceUpdatePipelineConfig;
             PipelineConfig probeMomentsUpdatePipelineConfig;
 
             PipelineConfig irradianceCopyEdgePipelineConfig;
+            PipelineConfig radianceCopyEdgePipelineConfig;
             PipelineConfig momentsCopyEdgePipelineConfig;
 
             Ref<Graphics::Sampler> shadowSampler;

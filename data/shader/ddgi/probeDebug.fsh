@@ -61,6 +61,6 @@ void main() {
 
     materialIdxFS = GetProbeState(instanceID) == PROBE_STATE_ACTIVE ?
         pushConstants.probeActiveMaterialIdx : pushConstants.probeInactiveMaterialIdx;
-    //materialIdxFS = probeAge > 32 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
+    materialIdxFS = probeAge < 32 ? pushConstants.probeOffsetMaterialIdx : materialIdxFS;
     
 }

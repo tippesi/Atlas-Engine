@@ -93,6 +93,8 @@ namespace Atlas {
             static uint32_t frameCount = 0;
             frameCount++;
 
+            auto radianceVolume = scene->irradianceVolume && scene->irradianceVolume->radiance;
+
             RTRUniforms uniforms;
             uniforms.radianceLimit = reflection->radianceLimit;
             uniforms.bias = reflection->bias;
@@ -187,20 +189,7 @@ namespace Atlas {
             }
 
             // Should be reflection resolution
-            auto depthTexture = downsampledRT->depthTexture;
-            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
-            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
-            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
-            auto offsetTexture = downsampledRT->offsetTexture;
-            auto materialIdxTexture = downsampledRT->materialIdxTexture;
-
-            // Bind the geometry normal texure and depth texture
-            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
-            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
-            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
-            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
-            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
-
+           
             Graphics::Profiler::BeginQuery("Trace rays");
 
             // Cast rays and calculate radiance
@@ -209,16 +198,34 @@ namespace Atlas {
                 groupCount.x += ((groupCount.x * 8 == rayRes.x) ? 0 : 1);
                 groupCount.y += ((groupCount.y * 4 == rayRes.y) ? 0 : 1);
 
-                auto clouds = scene->sky.clouds;               
+                auto clouds = scene->sky.clouds;
+
+                auto rt = reflection->upsampleBeforeFiltering ? target->GetData(FULL_RES) : downsampledRT;
+
+                auto depthTexture = rt->depthTexture;
+                auto normalTexture = reflection->useNormalMaps ? rt->normalTexture : rt->geometryNormalTexture;
+                auto geometryNormalTexture = rt->geometryNormalTexture;
+                auto roughnessTexture = rt->roughnessMetallicAoTexture;
+                auto offsetTexture = downsampledRT->offsetTexture;
+                auto materialIdxTexture = rt->materialIdxTexture;
+
+                // Bind the geometry normal texure and depth texture
+                commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+                commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+                commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+                commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+                commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
 
                 auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
+                
                 auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
                 rtrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 rtrPipelineConfig.ManageMacro("SSR", reflection->ssr);
-                rtrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
-                rtrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
+                rtrPipelineConfig.ManageMacro("IRRADIANCE_VOLUME", reflection->ddgi && ddgiEnabled);
+                rtrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility); 
+                rtrPipelineConfig.ManageMacro("RADIANCE_VOLUME", radianceVolume);
                 rtrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);             
                 rtrPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
                 rtrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
@@ -243,6 +250,22 @@ namespace Atlas {
                 commandList->ImageMemoryBarrier(reflectionTexture->image,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
             }
+
+            // Should be reflection resolution
+            auto depthTexture = downsampledRT->depthTexture;
+            auto normalTexture = reflection->useNormalMaps ? downsampledRT->normalTexture : downsampledRT->geometryNormalTexture;
+            auto geometryNormalTexture = downsampledRT->geometryNormalTexture;
+            auto roughnessTexture = downsampledRT->roughnessMetallicAoTexture;
+            auto offsetTexture = downsampledRT->offsetTexture;
+            auto materialIdxTexture = downsampledRT->materialIdxTexture;
+
+            // Bind the geometry normal texure and depth texture
+            commandList->BindImage(normalTexture->image, normalTexture->sampler, 3, 1);
+            commandList->BindImage(depthTexture->image, depthTexture->sampler, 3, 2);
+            commandList->BindImage(roughnessTexture->image, roughnessTexture->sampler, 3, 3);
+            commandList->BindImage(offsetTexture->image, offsetTexture->sampler, 3, 4);
+            commandList->BindImage(materialIdxTexture->image, materialIdxTexture->sampler, 3, 5);
+
 
             if (reflection->upsampleBeforeFiltering && reflection->halfResolution) {
                 Graphics::Profiler::EndAndBeginQuery("Upscaling");
@@ -307,12 +330,13 @@ namespace Atlas {
                 auto pipeline = PipelineManager::GetPipeline(temporalPipelineConfig);
                 commandList->BindPipeline(pipeline);
 
+                // Note: We need to also denoise the radiance volume sampling, so increase cutoff value to one
                 TemporalConstants constants = {
                     .cameraLocationLast = vec4(scene->GetMainCamera().GetLastLocation(), 1.0),
                     .temporalWeight = reflection->temporalWeight,
                     .historyClipMax = reflection->historyClipMax,
                     .currentClipFactor = reflection->currentClipFactor,
-                    .roughnessCutoff = reflection->roughnessCutoff,
+                    .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
                     .resetHistory = !target->HasHistory() ? 1 : 0,
                     .frameCount = frameCount,
                 };
@@ -392,7 +416,7 @@ namespace Atlas {
                     AtrousConstants constants = {
                         .stepSize = 1 << i,
                         .strength = reflection->spatialFilterStrength,
-                        .roughnessCutoff = reflection->roughnessCutoff
+                        .roughnessCutoff = radianceVolume ? 1.0f : reflection->roughnessCutoff,
                     };
                     commandList->PushConstants("constants", &constants);
 

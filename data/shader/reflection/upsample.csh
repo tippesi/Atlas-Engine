@@ -80,7 +80,6 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
 
     referenceDepth = ConvertDepthToViewSpaceDepth(referenceDepth);
 
-   
     float maxWeight = 0.0;
     int closestMemoryOffset = 0;
 
@@ -89,7 +88,7 @@ vec4 Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
         float depth = depths[sharedMemoryOffset];
 
         float depthDiff = abs(referenceDepth - depth);
-        float depthWeight = min(exp(-depthDiff * 32.0 / referenceDepth), 1.0);
+        float depthWeight = min(exp(-depthDiff * 32.0 / abs(referenceDepth)), 1.0);
 
         float normalWeight = min(pow(max(dot(referenceNormal, normals[sharedMemoryOffset]), 0.0), 256.0), 1.0);
 

@@ -16,7 +16,7 @@ namespace Atlas {
             layoutBindings.resize(desc.bindingCount);
             layoutBindingFlags.resize(desc.bindingCount, defaultBindingFlags);
 
-            bool bindlessAllowed = true;
+            bool bindlessAllowed = device->support.bindless;
             bool bindlessNeeded = false;
 
             for (uint32_t i = 0; i < desc.bindingCount; i++) {
