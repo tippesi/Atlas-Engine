@@ -36,7 +36,7 @@ namespace Atlas {
             size_t dataSize = 0;
 
             size_t size;
-            size_t alignment = 0;
+            size_t alignment = 16;
 
             bool dedicatedMemory = false;
             float priority = 0.5f;

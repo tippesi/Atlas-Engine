@@ -1070,6 +1070,11 @@ namespace Atlas {
             features.features.shaderInt16 = availableFeatures.features.shaderInt16;
             features.features.independentBlend = availableFeatures.features.independentBlend;
 
+            features11.storageBuffer16BitAccess = availableFeatures11.storageBuffer16BitAccess;
+            features11.storagePushConstant16 = availableFeatures11.storagePushConstant16;
+            features11.storageInputOutput16 = availableFeatures11.storageInputOutput16;
+            features11.uniformAndStorageBuffer16BitAccess = availableFeatures11.uniformAndStorageBuffer16BitAccess;
+
             features12.descriptorIndexing = availableFeatures12.descriptorIndexing;
             features12.shaderUniformBufferArrayNonUniformIndexing = availableFeatures12.shaderUniformBufferArrayNonUniformIndexing;
             features12.shaderSampledImageArrayNonUniformIndexing = availableFeatures12.shaderSampledImageArrayNonUniformIndexing;
@@ -1092,6 +1097,7 @@ namespace Atlas {
                 supportedExtensions.contains(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
 
                 accelerationStructureFeature.accelerationStructure = VK_TRUE;
+                accelerationStructureFeature.descriptorBindingAccelerationStructureUpdateAfterBind = VK_TRUE;
                 rtPipelineFeature.rayTracingPipeline = VK_TRUE;
                 rayQueryFeature.rayQuery = VK_TRUE;
 
