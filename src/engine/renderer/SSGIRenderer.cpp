@@ -120,7 +120,8 @@ namespace Atlas {
                 groupCount.x += ((res.x % 8 == 0) ? 0 : 1);
                 groupCount.y += ((res.y % 4 == 0) ? 0 : 1);
 
-                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable;
+                auto rtDataValid = scene->IsRtDataValid();
+                auto ddgiEnabled = scene->irradianceVolume && scene->irradianceVolume->enable && rtDataValid;
                 auto ddgiVisibility = ddgiEnabled && scene->irradianceVolume->visibility;
 
                 ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
