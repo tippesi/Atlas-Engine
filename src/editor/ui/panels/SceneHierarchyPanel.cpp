@@ -479,10 +479,10 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::DeleteSelectedEntities(Ref<Scene::Scene>& scene) {
 
-        for (auto entity : selectedEntities) {
-            Scene::Entity selectedEntity(entity, &scene->entityManager);
-            if (selectedEntity.IsValid())
-                scene->DestroyEntity(selectedEntity);
+        for (auto ecsEntity : selectedEntities) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            if (entity.IsValid())
+                scene->DestroyEntity(entity);
         }
 
         ClearSelection();
@@ -495,16 +495,16 @@ namespace Atlas::Editor::UI {
 
         ClearSelection();
 
-        for (auto entity : oldSelectedEntites) {
-            Scene::Entity selectedEntity(entity, &scene->entityManager);
-            if (!selectedEntity.IsValid())
+        for (auto ecsEntity : oldSelectedEntites) {
+            Scene::Entity entity(ecsEntity, &scene->entityManager);
+            if (!entity.IsValid())
                 continue;
 
-            auto parentEntity = scene->GetParentEntity(selectedEntity);
+            auto parentEntity = scene->GetParentEntity(entity);
 
             // Create new hierarchy before retrieving other components since they might become
             // invalid when internal ECS storage resizes
-            auto newEntity = scene->DuplicateEntity(selectedEntity);
+            auto newEntity = scene->DuplicateEntity(entity);
 
             HierarchyComponent* component;
             if (parentEntity.IsValid()) {

@@ -187,8 +187,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
     
     vec3 viewDir = normalize(position - globalData.cameraLocation.xyz);
     float NdotV = abs(dot(viewDir, worldNormal));
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = max(1.0, NdotV * 16.0 / max(1.0, abs(linearDepth)));
+    float linearDepth = depth;
+    float depthPhi = max(1.0, NdotV * 32.0 *  abs(ConvertDepthToViewSpaceDepth(depth)));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     for (int i = 0; i < 4; i++) {
@@ -199,8 +199,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
-        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
-        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float depthWeight = min(1.0 , exp(-abs(depth - historyDepth) * depthPhi));
 
         float confidence = normalWeight * depthWeight;
 
@@ -225,8 +225,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out vec4 hi
         vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, offsetPixel, 0).rg);
         float normalWeight = GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
-        float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, offsetPixel, 0).r);
-        float depthWeight = min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+        float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
+        float depthWeight = min(1.0 , exp(-abs(depth - historyDepth) * depthPhi));
 
         float confidence = normalWeight * depthWeight;
 
@@ -258,7 +258,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal, float dep
     confidence *= GetEdgePreservingNormalWeight(normal, historyNormal, 1.0);
 
     float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
-    confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth) * depthPhi));
+    confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth)));
 
     return confidence > 0.5 ? 1.0 : 0.0;
 

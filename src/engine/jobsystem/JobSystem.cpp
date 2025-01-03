@@ -259,7 +259,7 @@ namespace Atlas {
 
                 // Help pool
                 if (poolHasWork) {
-                    auto& worker = priorityPool.GetNextWorker();
+                    const auto& worker = priorityPool.GetNextWorker();
                     priorityPool.Work(worker.workerId);                    
                 }
 

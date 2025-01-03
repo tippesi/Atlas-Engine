@@ -150,7 +150,7 @@ void main() {
                     bool insideVolume = IsInsideVolume(worldPos);
                     float rayLength = length(GetCellSize(worldPos));
                     // Outside the volume we can scale the ray by 2x again
-                    rayLength = insideVolume ? 2.0 * rayLength : 2.0 * rayLength;
+                    rayLength = insideVolume ? 2.0 * rayLength : INF;
 #else
                     float rayLength = INF;
 #endif
@@ -175,6 +175,9 @@ void main() {
                     }
 #else
                     radiance = EvaluateHit(ray);
+                    float radianceMax = max(max(max(radiance.r, 
+                            max(radiance.g, radiance.b)), radianceLimit), 1e-12);
+                    radiance *= (radianceLimit / radianceMax);
 #endif
                     
                     reflection += radiance;

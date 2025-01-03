@@ -502,7 +502,7 @@ namespace Atlas::Editor::UI {
                         // e.g. physics only updated the global matrix
                         auto prevGlobalMatrix = transform.globalMatrix;
                         auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
-                        auto globalMatrix = globalDecomp.Compose();
+                        auto newGlobalMatrix = globalDecomp.Compose();
 
                         for (auto& entity : sceneHierarchyPanel.selectedEntities) {
                             Scene::Entity transformEntity(entity, &scene->entityManager);
@@ -511,7 +511,7 @@ namespace Atlas::Editor::UI {
                                 continue;
 
                             auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
-                            selectedTransform.globalMatrix = globalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
+                            selectedTransform.globalMatrix = newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
 
                             auto parentEntity = scene->GetParentEntity(transformEntity);
                             selectedTransform.ReconstructLocalMatrix(parentEntity);

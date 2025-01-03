@@ -55,7 +55,7 @@ namespace Atlas {
             auto cloudShadowEnabled = clouds && clouds->enable && clouds->castShadow;
 
             rayHitPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
-            rayHitPipelineConfig.ManageMacro("DDGI_VISIBILITY", volume->visibility);
+            rayHitPipelineConfig.ManageMacro("VISIBILITY_VOLUME", volume->visibility);
             rayHitPipelineConfig.ManageMacro("USE_SHADOW_MAP", shadow && volume->useShadowMap);
             
             auto& internalVolume = volume->internal;
@@ -277,6 +277,9 @@ namespace Atlas {
                 if (volume->radiance) {
                     commandList->ImageMemoryBarrier(radianceArray.image, VK_IMAGE_LAYOUT_GENERAL,
                         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+
+                    pipeline = PipelineManager::GetPipeline(radianceCopyEdgePipelineConfig);
+                    commandList->BindPipeline(pipeline);
 
                     probeRes = volume->radRes;
 

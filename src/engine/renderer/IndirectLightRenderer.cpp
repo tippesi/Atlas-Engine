@@ -35,7 +35,7 @@ namespace Atlas {
             diffusePipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             diffusePipelineConfig.ManageMacro("DDGI", ddgiEnabled);
             diffusePipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
-            diffusePipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
+            diffusePipelineConfig.ManageMacro("VISIBILITY_VOLUME", ddgiVisibility);
             diffusePipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
             diffusePipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 
@@ -93,7 +93,7 @@ namespace Atlas {
             specularPipelineConfig.ManageMacro("RTGI", rtgiEnabled);
             specularPipelineConfig.ManageMacro("DDGI", ddgiEnabled);
             specularPipelineConfig.ManageMacro("DDGI_SCROLL", ddgiEnabled && volume->scroll);
-            specularPipelineConfig.ManageMacro("DDGI_VISIBILITY", ddgiVisibility);
+            specularPipelineConfig.ManageMacro("VISIBILITY_VOLUME", ddgiVisibility);
             specularPipelineConfig.ManageMacro("REFLECTION", reflectionEnabled);
             specularPipelineConfig.ManageMacro("SSGI", ssgiEnabled);
 

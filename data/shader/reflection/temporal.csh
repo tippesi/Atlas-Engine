@@ -194,9 +194,12 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
         confidence *= pow(max(dot(historyNormal, normal), 0.0), normalPhi);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
 
         if (confidence > 0.2) {
             totalWeight += weights[i];
@@ -223,6 +226,9 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, float normalPhi, out vec4 his
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
         float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
+
+        uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, offsetPixel, 0).r;
+        confidence *= historyMaterialIdx == materialIdx ? 1.0 : 0.0;
 
         if (confidence > 0.2) {
             totalWeight += 1.0;
@@ -468,8 +474,8 @@ void main() {
         ComputeVarianceMinMax(roughness, radius, mean, std);
     }
     else {
-        // Don't need much denoising here
-        ComputeVarianceMinMax(roughness, 1, mean, std);
+        // Don't need much denoising here (except for roughness = 1. looks noisy for metallic surfaces)
+        ComputeVarianceMinMax(roughness, 3, mean, std);
     }
 
     ivec2 velocityPixel = pixel;

@@ -184,8 +184,8 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     vec3 normal = DecodeNormal(texelFetch(normalTexture, pixel, 0).rg);
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
-    float depthPhi = 16.0 / abs(linearDepth);
+    float linearDepth = depth;
+    float depthPhi = 64.0 * abs(linearDepth);
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges
@@ -199,7 +199,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {
@@ -225,7 +225,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
         confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
         float historyDepth = texelFetch(historyDepthTexture, offsetPixel, 0).r;
-        float historyLinearDepth = ConvertDepthToViewSpaceDepth(historyDepth);
+        float historyLinearDepth = historyDepth;
         confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
 
         if (confidence > 0.2) {

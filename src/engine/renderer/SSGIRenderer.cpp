@@ -126,7 +126,7 @@ namespace Atlas {
 
                 ssgiPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
                 ssgiPipelineConfig.ManageMacro("DDGI", ssgi->ddgi && ddgiEnabled);
-                ssgiPipelineConfig.ManageMacro("DDGI_VISIBILITY", ssgi->ddgi && ddgiVisibility);
+                ssgiPipelineConfig.ManageMacro("VISIBILITY_VOLUME", ssgi->ddgi && ddgiVisibility);
 
                 auto pipeline = PipelineManager::GetPipeline(ssgiPipelineConfig);
                 commandList->BindPipeline(pipeline);

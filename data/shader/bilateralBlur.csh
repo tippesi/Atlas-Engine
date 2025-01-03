@@ -78,7 +78,7 @@ void LoadGroupSharedData() {
         inputs[i] = localInput;
 #ifdef DEPTH_WEIGHT
         float localDepth = texelFetch(depthTexture, localOffset, 0).r;
-        depths[i] = ConvertDepthToViewSpaceDepth(localDepth);
+        depths[i] = localDepth;
 #endif
 #ifdef NORMAL_WEIGHT
         vec3 localNormal = DecodeNormal(texelFetch(normalTexture, localOffset, 0).rg);
@@ -131,7 +131,7 @@ void main() {
 #else
     float NdotV = 1.0;
 #endif
-    const float depthPhi = max(2.0, NdotV * 32.0 / max(1.0, abs(centerLinearDepth)));
+    const float depthPhi = max(32.0, NdotV * 1024.0);
 #endif
 
     // First sum and weight left kernel extend

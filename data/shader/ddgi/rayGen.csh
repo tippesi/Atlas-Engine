@@ -79,7 +79,7 @@ void main() {
 
     if (gl_LocalInvocationIndex == 0u) {
         probeState = floatBitsToUint(historyProbeStates[historyBaseIdx].x);
-        probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) :vec3(0.0);
+        probeOffset = probeState == PROBE_STATE_NEW || reset ? vec3(0.0) : historyProbeOffsets[historyBaseIdx].xyz;
     }
 
     barrier();

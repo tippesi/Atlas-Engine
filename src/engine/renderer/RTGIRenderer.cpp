@@ -122,7 +122,7 @@ namespace Atlas {
 
                 rtPipelineConfig.ManageMacro("USE_SHADOW_MAP", rtgi->useShadowMap && shadow);
                 rtPipelineConfig.ManageMacro("DDGI", rtgi->ddgi && ddgiEnabled);
-                rtPipelineConfig.ManageMacro("DDGI_VISIBILITY", rtgi->ddgi && ddgiVisibility);
+                rtPipelineConfig.ManageMacro("VISIBILITY_VOLUME", rtgi->ddgi && ddgiVisibility);
                 rtPipelineConfig.ManageMacro("OPACITY_CHECK", rtgi->opacityCheck);
                 rtPipelineConfig.ManageMacro("CLOUD_SHADOWS", cloudShadowEnabled && scene->HasMainLight());
                 rtPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);

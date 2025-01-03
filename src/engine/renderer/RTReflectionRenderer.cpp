@@ -168,7 +168,7 @@ namespace Atlas {
                 ssrPipelineConfig.ManageMacro("USE_SHADOW_MAP", reflection->useShadowMap && shadow);
                 ssrPipelineConfig.ManageMacro("DDGI", reflection->ddgi && ddgiEnabled);
                 ssrPipelineConfig.ManageMacro("RT", reflection->rt);
-                ssrPipelineConfig.ManageMacro("DDGI_VISIBILITY", reflection->ddgi && ddgiVisibility);
+                ssrPipelineConfig.ManageMacro("VISIBILITY_VOLUME", reflection->ddgi && ddgiVisibility);
                 ssrPipelineConfig.ManageMacro("OPACITY_CHECK", reflection->opacityCheck);
                 ssrPipelineConfig.ManageMacro("UPSCALE", reflection->upsampleBeforeFiltering&& reflection->halfResolution);
                 ssrPipelineConfig.ManageMacro("AUTO_EXPOSURE", scene->postProcessing.autoExposure.enable);
