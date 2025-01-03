@@ -57,9 +57,9 @@ void main() {
         
             RayHit hit;
 #ifndef AE_HALF_FLOAT
-            hit.radiance = radiance;
-            hit.direction = ray.direction;
-            hit.hitDistance = ray.hitDistance;
+            hit.radiance.rgb = radiance;
+            hit.direction.xyz = ray.direction;
+            hit.radiance.a = ray.hitDistance;
 #else
             hit.radiance = AeF16x4(radiance, ray.hitDistance);
             hit.direction = AeF16x4(ray.direction, 1.0);

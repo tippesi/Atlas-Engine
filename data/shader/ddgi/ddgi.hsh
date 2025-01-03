@@ -63,9 +63,8 @@ layout(std140, set = 2, binding = 27) uniform DDGIBuffer {
 
 struct RayHit {
 #ifndef AE_HALF_FLOAT
-    vec3 direction;
-    vec3 radiance;
-    float hitDistance;
+    vec4 direction;
+    vec4 radiance;
 #else
     AeF16x4 direction;
     AeF16x4 radiance;
@@ -92,7 +91,7 @@ RayHit UnpackRayHit(PackedRayHit compressed) {
     hit.direction.z = comn.x;
     hit.radiance.z = comn.y;
 
-    hit.hitDistance = compressed.data.w;
+    hit.radiance.w = compressed.data.w;
 #else
     hit.direction = compressed.direction;
     hit.radiance = compressed.radiance;
@@ -111,7 +110,7 @@ PackedRayHit PackRayHit(RayHit hit) {
     compressed.data.x = uintBitsToFloat(packHalf2x16(hit.direction.xy));
     compressed.data.y = uintBitsToFloat(packHalf2x16(hit.radiance.xy));
     compressed.data.z = uintBitsToFloat(packHalf2x16(comn));
-    compressed.data.w = hit.hitDistance;
+    compressed.data.w = hit.radiance.a;
 #else
     compressed.direction = hit.direction;
     compressed.radiance = hit.radiance;

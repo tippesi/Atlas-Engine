@@ -197,11 +197,11 @@ void main() {
         for (uint j = 0; j < loadRayCount; j++) {
             
 #if defined(IRRADIANCE)
-            AeF16 weight = max(0.0hf, dot(N, rayData[j].direction.rgb));
+            AeF16 weight = max(AeF16(0.0), dot(N, rayData[j].direction.rgb));
 
-            if (weight >= 0.00001hf) {
+            if (weight >= AeF16(0.00001)) {
                 AeF16x3 radiance = AeF16x3(rayData[j].radiance);
-                result += AeF16x4(radiance, 1.0hf) * weight;    
+                result += AeF16x4(radiance, AeF16(1.0)) * weight;    
             }
 
             const float probeOffsetDistance = max(ddgiData.cascades[cascadeIndex].cellSize.w * 0.05, 0.5);
@@ -224,21 +224,21 @@ void main() {
                 }
             }
 #elif defined(RADIANCE)            
-            AeF16 weight = max(0.0hf, dot(N, rayData[j].direction.rgb));
-            weight = pow(weight, 256.0hf);            
+            AeF16 weight = max(AeF16(0.0), dot(N, rayData[j].direction.rgb));
+            weight = pow(weight, AeF16(256.0));            
 
             AeF16x3 radiance = rayData[j].radiance.xyz;
 
             if (weight > 0.15)
-                result += AeF16x4(radiance, 1.0hf) * weight;
+                result += AeF16x4(radiance, AeF16(1.0)) * weight;
 #else
-            AeF16 weight = max(0.0hf, dot(N, rayData[j].direction.xyz));
+            AeF16 weight = max(AeF16(0.0), dot(N, rayData[j].direction.xyz));
 
             AeF16 hitDistance = rayData[j].direction.w;
 
             weight = pow(weight, depthSharpness);
-            if (weight >= 0.00000001hf) {
-                result += AeF16x4(hitDistance, sqr(hitDistance), 0.0hf, 1.0hf) * weight;
+            if (weight >= AeF16(0.00000001)) {
+                result += AeF16x4(hitDistance, sqr(hitDistance), AeF16(0.0), AeF16(1.0)) * weight;
             }
 #endif
         }
