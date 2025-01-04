@@ -25,8 +25,8 @@ namespace Atlas {
         std::scoped_lock lock(mutex);
         this->scene = scene;
 
-        doneProcessingShadows = false;
-        processedPasses.clear();
+        processedMainPasses.clear();
+        processedShadowPasses.clear();
 
         JobSystem::Wait(clearJob);
         wasCleared = false;
@@ -50,8 +50,6 @@ namespace Atlas {
             .scene = scene,
             .wasUsed = true,
         };
-
-        doneProcessingShadows = true;
 
         passes.push_back(CreateRef(pass));
         return passes.back();
@@ -77,7 +75,6 @@ namespace Atlas {
     Ref<RenderList::Pass> RenderList::GetMainPass() {
 
         std::scoped_lock lock(mutex);
-        doneProcessingShadows = true;
 
         for (auto& pass : passes) {
             if (pass->type == RenderPassType::Main) {
@@ -107,16 +104,24 @@ namespace Atlas {
 
     }
 
-    void RenderList::FinishPass(const Ref<Pass>& pass) {
+    void RenderList::FinishPass(const Ref<Pass>& pass, RenderPassType type) {
 
         std::scoped_lock lock(mutex);
-        processedPasses.push_back(pass);
+
+        if (type == RenderPassType::Main) {
+            processedMainPasses.push_back(pass);
+        }
+        else {
+            processedShadowPasses.push_back(pass);
+        }
 
     }
 
     Ref<RenderList::Pass> RenderList::PopPassFromQueue(RenderPassType type) {
 
         std::scoped_lock lock(mutex);
+        auto& processedPasses = type == RenderPassType::Main ? processedMainPasses : processedShadowPasses;
+
         if (processedPasses.empty())
             return nullptr;
 

@@ -20,7 +20,7 @@ namespace Atlas {
 
             Graphics::Profiler::BeginQuery("Opaque geometry");
 
-            auto mainPass = renderList->GetMainPass();
+            auto mainPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Main);
             if (!mainPass)
                 return;
 

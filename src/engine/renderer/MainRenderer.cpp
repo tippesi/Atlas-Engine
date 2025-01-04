@@ -204,9 +204,6 @@ namespace Atlas {
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
 
-			// Only here does the main pass need to be ready
-			JobSystem::Wait(renderState->fillRenderListJob);
-
 			{
 				Graphics::Profiler::BeginQuery("Main render pass");
 

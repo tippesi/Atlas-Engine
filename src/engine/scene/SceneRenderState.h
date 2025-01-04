@@ -29,6 +29,8 @@ namespace Atlas::Scene {
         
         ~SceneRenderState();
 
+        void NewFrame();
+
         void PrepareMaterials();
 
         void UpdateBlasBindlessData();
@@ -37,7 +39,9 @@ namespace Atlas::Scene {
 
         void UpdateOtherTextureBindlessData();
 
-        void FillRenderList();
+        void FillMainRenderPass();
+
+        void FillShadowRenderPass(Entity entity);
 
         void CullAndSortLights();
 
@@ -59,6 +63,7 @@ namespace Atlas::Scene {
         std::vector<Ref<Graphics::Buffer>> bvhTriangleBuffers;
         std::vector<Ref<Graphics::Buffer>> triangleOffsetBuffers;
 
+        std::vector<ResourceHandle<Mesh::Mesh>> meshes;
         std::vector<Terrain::TerrainNode*> terrainLeafNodes;
         std::vector<Renderer::PackedMaterial> materials;
         std::unordered_map<void*, uint16_t> materialMap;
@@ -78,7 +83,9 @@ namespace Atlas::Scene {
         JobGroup bindlessTextureMapUpdateJob{ JobPriority::High };
         JobGroup bindlessOtherTextureMapUpdateJob{ JobPriority::High };
         JobGroup prepareBindlessBlasesJob{ JobPriority::High };
-        JobGroup fillRenderListJob{ JobPriority::High };
+        JobGroup newFrameRenderListJob { JobPriority::High };
+        JobGroup fillMainRenderPassJob{ JobPriority::High };
+        JobGroup fillShadowRenderPassesJob{ JobPriority::High };
         JobGroup cullAndSortLightsJob{ JobPriority::High };
 
     };

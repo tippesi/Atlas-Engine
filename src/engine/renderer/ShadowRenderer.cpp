@@ -22,7 +22,7 @@ namespace Atlas {
             lightMap.clear();
 
             Ref<RenderList::Pass> shadowPass = renderList->PopPassFromQueue(RenderList::RenderPassType::Shadow);
-            while (!renderList->doneProcessingShadows || shadowPass != nullptr) {
+            while (!scene->renderState.fillShadowRenderPassesJob.HasFinished() || shadowPass != nullptr) {
                 if (!shadowPass) {
                     // We might need to wait for the next pass to be processed and culled
                     std::this_thread::yield();

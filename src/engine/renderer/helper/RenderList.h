@@ -96,7 +96,7 @@ namespace Atlas {
 
         Ref<Pass> GetShadowPass(const ECS::Entity lightEntity, const uint32_t layer);
 
-        void FinishPass(const Ref<Pass>& pass);
+        void FinishPass(const Ref<Pass>& pass, RenderPassType type);
 
         Ref<Pass> PopPassFromQueue(RenderPassType type);
 
@@ -105,10 +105,11 @@ namespace Atlas {
         Scene::Scene* scene = nullptr;
 
         std::vector<Ref<Pass>> passes;
-        std::deque<Ref<Pass>> processedPasses;
+
+        std::deque<Ref<Pass>> processedMainPasses;
+        std::deque<Ref<Pass>> processedShadowPasses;
 
         std::mutex mutex;
-        std::atomic_bool doneProcessingShadows;
         std::atomic_bool wasCleared = false;
 
         std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;

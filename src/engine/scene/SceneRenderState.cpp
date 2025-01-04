@@ -25,6 +25,16 @@ namespace Atlas::Scene {
         
     }
 
+    void SceneRenderState::NewFrame() {
+
+        JobSystem::Execute(newFrameRenderListJob, [&](JobData&) {
+            renderList.NewFrame(scene);
+        });
+
+        meshes = scene->GetMeshes();
+
+    }
+
     void SceneRenderState::PrepareMaterials() {
 
         JobSystem::Wait(materialUpdateJob);
@@ -99,8 +109,6 @@ namespace Atlas::Scene {
 
                 materialMap[material.Get().get()] = idx++;
             }
-
-            auto meshes = scene->GetMeshes();
 
             for (auto mesh : meshes) {
                 if (!mesh.IsLoaded())
@@ -195,7 +203,6 @@ namespace Atlas::Scene {
             };
 
         auto bindlessBlasMapUpdate = [&, bindlessBlasBuffersUpdate](JobData&) {
-            auto meshes = scene->GetMeshes();
 
             blasToBindlessIdx.clear();
 
@@ -231,7 +238,6 @@ namespace Atlas::Scene {
     void SceneRenderState::UpdateTextureBindlessData() {
 
         auto bindlessTextureMapUpdate = [&](JobData&) {
-            auto meshes = scene->GetMeshes();
             textureToBindlessIdx.clear();
             textures.clear();
 
@@ -326,63 +332,66 @@ namespace Atlas::Scene {
 
     }
 
-    void SceneRenderState::FillRenderList() {
+    void SceneRenderState::FillMainRenderPass() {
 
         if (!scene->HasMainCamera())
             return;
 
-        JobSystem::Wait(fillRenderListJob);
-        
-        auto lightSubset = scene->GetSubset<LightComponent>();
-        auto camera = scene->GetMainCamera();
-        auto cameraFrustum = camera.frustum;
+        JobSystem::Execute(fillMainRenderPassJob, [&](JobData&) {
+            JobSystem::Wait(newFrameRenderListJob);
 
-        JobSystem::Execute(fillRenderListJob, [&, lightSubset, camera, cameraFrustum](JobData&) {           
-
-            auto meshes = scene->GetMeshes();
-            renderList.NewFrame(scene);
-
-            JobGroup group{ JobPriority::High };
-            for (auto& lightEntity : lightSubset) {
-
-                auto& light = lightEntity.GetComponent<LightComponent>();
-                if (!light.shadow || !light.shadow->update)
-                    continue;
-
-                auto& shadow = light.shadow;
-
-                auto componentCount = shadow->longRange ?
-                    shadow->viewCount - 1 : shadow->viewCount;
-
-                JobSystem::ExecuteMultiple(group, componentCount,
-                    [&, shadow = shadow, lightEntity = lightEntity](JobData& data) {
-                        auto component = &shadow->views[data.idx];
-                        auto frustum = Volume::Frustum(component->frustumMatrix);
-
-                        auto shadowPass = renderList.GetShadowPass(lightEntity, data.idx);
-                        if (shadowPass == nullptr)
-                            shadowPass = renderList.NewShadowPass(lightEntity, data.idx);
-
-                        shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
-                        scene->GetRenderList(frustum, shadowPass);
-                        shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
-                        shadowPass->FillBuffers();
-                        renderList.FinishPass(shadowPass);
-                    });
-            }
-
-            JobSystem::Wait(group);
+            auto& camera = scene->GetMainCamera();
 
             auto mainPass = renderList.GetMainPass();
             if (mainPass == nullptr)
                 mainPass = renderList.NewMainPass();
 
             mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
-            scene->GetRenderList(cameraFrustum, mainPass);
+            scene->GetRenderList(camera.frustum, mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
-            renderList.FinishPass(mainPass);
-            });
+            renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
+        });
+
+    }
+
+    void SceneRenderState::FillShadowRenderPass(Entity entity) {
+
+        if (!scene->HasMainCamera())
+            return;
+
+        // There reference will stay intact even after the method is exited, the source should be immutable until 
+        // the current frame has ended...
+        auto& light = entity.GetComponent<LightComponent>();
+        if (!light.shadow || !light.shadow->update)
+            return;
+
+        JobSystem::Execute(fillShadowRenderPassesJob, [&, entity = entity](JobData&) {
+            JobSystem::Wait(newFrameRenderListJob);
+
+            auto& camera = scene->GetMainCamera();
+            auto& shadow = light.shadow;
+
+            auto componentCount = shadow->longRange ?
+                shadow->viewCount - 1 : shadow->viewCount;
+
+            JobSystem::ExecuteMultiple(fillShadowRenderPassesJob, componentCount,
+                [&, shadow = shadow, entity = entity](JobData& data) {
+                    auto component = &shadow->views[data.idx];
+                    auto frustum = Volume::Frustum(component->frustumMatrix);
+
+                    auto shadowPass = renderList.GetShadowPass(entity, data.idx);
+                    if (shadowPass == nullptr)
+                        shadowPass = renderList.NewShadowPass(entity, data.idx);
+
+                    shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
+                    scene->GetRenderList(frustum, shadowPass);
+                    shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
+                    shadowPass->FillBuffers();
+                    renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);
+                });
+        });
+
     }
 
     void SceneRenderState::CullAndSortLights() {
@@ -593,13 +602,15 @@ namespace Atlas::Scene {
 
     void SceneRenderState::WaitForAsyncWorkCompletion() {
 
+        JobSystem::Wait(newFrameRenderListJob);
         JobSystem::Wait(bindlessBlasMapUpdateJob);
         JobSystem::Wait(bindlessTextureMapUpdateJob);
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);
         JobSystem::Wait(materialUpdateJob);
         JobSystem::Wait(rayTracingWorldUpdateJob);
         JobSystem::Wait(prepareBindlessBlasesJob);
-        JobSystem::Wait(fillRenderListJob);
+        JobSystem::Wait(fillMainRenderPassJob);
+        JobSystem::Wait(fillShadowRenderPassesJob);
         JobSystem::Wait(cullAndSortLightsJob);
 
         if (!renderList.wasCleared)

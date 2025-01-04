@@ -118,7 +118,26 @@ namespace Atlas {
 
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup terrainOceanJobGroup { JobPriority::High };
+
+             // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
+            if (HasMainCamera()) {
+                auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
+
+                if (terrain.IsLoaded()) {
+                    JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
+                        terrain->Update(mainCamera);
+                    });
+                }
+
+                if (ocean) {
+                    JobSystem::Execute(terrainOceanJobGroup, [&](JobData&) {
+                        ocean->Update(mainCamera, deltaTime);
+                    });
+                }
+            }    
+
+            JobGroup jobGroup{ JobPriority::High };        
 
             // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
@@ -141,24 +160,10 @@ namespace Atlas {
                 }
             }
 
-            // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
-            if (HasMainCamera()) {
-                auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
-
-                if (terrain.IsLoaded()) {
-                    JobSystem::Execute(jobGroup, [&](JobData&) {
-                        terrain->Update(mainCamera);
-                    });
-                }
-
-                if (ocean) {
-                    JobSystem::Execute(jobGroup, [&](JobData&) {
-                        ocean->Update(mainCamera, deltaTime);
-                    });
-                }
-            }            
+            JobSystem::WaitSpin(terrainOceanJobGroup);
 
             // Can only update after scripts were run
+            renderState.NewFrame();
 #ifdef AE_BINDLESS
             renderState.UpdateBlasBindlessData();
             renderState.UpdateTextureBindlessData();
@@ -370,8 +375,10 @@ namespace Atlas {
                 }
             }
 
+            renderState.FillMainRenderPass();
+
             JobGroup lightJobGroup {JobPriority::High};
-            auto lightComponentPool = entityManager.GetPool<LightComponent>();
+            auto& lightComponentPool = entityManager.GetPool<LightComponent>();
             JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                 auto& lightComponent = lightComponentPool.GetByIndex(idx);
                 auto entity = lightComponentPool[idx];
@@ -411,24 +418,37 @@ namespace Atlas {
 
                 JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                     auto& lightComponent = lightComponentPool.GetByIndex(idx);
-                    
+                    auto entity = lightComponentPool[idx];
+
                     lightComponent.Update(mainCamera);
+
+                    renderState.FillShadowRenderPass(Entity(entity, &entityManager));
                     });
 
-                auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
-                for (auto entity : audioSubset) {
-                    const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
+                auto& audioComponentPool = entityManager.GetPool<AudioComponent>();
+                JobSystem::ParallelFor(jobGroup, int32_t(audioComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                    auto entity = audioComponentPool[idx];
+                    auto& audioComponent = audioComponentPool.GetByIndex(idx);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
 
-                    audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
+                    if (!transformComponent)
+                        return;
+
+                    audioComponent.Update(deltaTime, *transformComponent, mainCamera.GetLocation(),
                         mainCamera.GetLastLocation(), mainCamera.right);
-                }
+                });
 
-                auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
-                for (auto entity : audioVolumeSubset) {
-                    const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
+                auto& audioVolumeComponentPool = entityManager.GetPool<AudioVolumeComponent>();
+                JobSystem::ParallelFor(jobGroup, int32_t(audioVolumeComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                    auto entity = audioVolumeComponentPool[idx];
+                    auto& audioComponent = audioVolumeComponentPool.GetByIndex(idx);
+                    auto transformComponent = transformComponentPool.TryGet(entity);
 
-                    audioComponent.Update(transformComponent, mainCamera.GetLocation());
-                }
+                    if (!transformComponent)
+                        return;
+
+                    audioComponent.Update(*transformComponent, mainCamera.GetLocation());
+                });
             }
 
             // After everything we need to reset transform component changed and prepare the updated for next frame
@@ -450,7 +470,6 @@ namespace Atlas {
 
             JobSystem::Wait(lightJobGroup);
 
-            renderState.FillRenderList();
             renderState.CullAndSortLights();
 
             auto textSubset = entityManager.GetSubset<TextComponent, TransformComponent>();
@@ -465,7 +484,7 @@ namespace Atlas {
             JobSystem::Wait(jobGroup);
 
         }
-        
+
         std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {
 
             std::vector<ResourceHandle<Mesh::Mesh>> meshes;

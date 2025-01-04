@@ -173,6 +173,9 @@ namespace Atlas {
     void JobSystem::ParallelFor(JobGroup& group, int32_t count, int32_t jobCount, 
         std::function<void(JobData&, int32_t)> func, void* userData) {
 
+        if (!count || !jobCount)
+            return;
+
         int32_t iterationsPerJob = count / jobCount;
         if (count < jobCount) {
             jobCount = 1;
