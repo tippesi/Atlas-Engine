@@ -375,8 +375,6 @@ namespace Atlas {
                 }
             }
 
-            renderState.FillMainRenderPass();
-
             JobGroup lightJobGroup {JobPriority::High};
             auto& lightComponentPool = entityManager.GetPool<LightComponent>();
             JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
@@ -390,9 +388,16 @@ namespace Atlas {
                 auto transformComponent = transformComponentPool.TryGet(entity);
 
                 lightComponent.Update(transformComponent);
+
+                auto& mainCamera = GetMainCamera();
+                lightComponent.Update(mainCamera);
+
+                renderState.FillShadowRenderPass(Entity(entity, &entityManager));
                 });
 
             JobSystem::Wait(lightJobGroup);
+
+            renderState.FillMainRenderPass();
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
@@ -415,15 +420,6 @@ namespace Atlas {
 
             if (HasMainCamera()) {
                 auto& mainCamera = GetMainCamera();
-
-                JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
-                    auto& lightComponent = lightComponentPool.GetByIndex(idx);
-                    auto entity = lightComponentPool[idx];
-
-                    lightComponent.Update(mainCamera);
-
-                    renderState.FillShadowRenderPass(Entity(entity, &entityManager));
-                    });
 
                 auto& audioComponentPool = entityManager.GetPool<AudioComponent>();
                 JobSystem::ParallelFor(jobGroup, int32_t(audioComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
@@ -467,8 +463,6 @@ namespace Atlas {
 
                 hierarchyComponent.updated = false;
                 });
-
-            JobSystem::Wait(lightJobGroup);
 
             renderState.CullAndSortLights();
 
