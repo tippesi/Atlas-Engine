@@ -454,8 +454,9 @@ void main() {
         currentMoments.r = 0.0;
     }
 
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
     factor = min(factor, historyLength / (historyLength + 1.0));
-
+    
     vec3 resolve = factor <= 0.0 ? currentColor : mix(currentColor, historyColor, factor);
     vec2 momentsResolve = factor <= 0.0 ? currentMoments : mix(currentMoments, historyMoments.rg, factor);
 

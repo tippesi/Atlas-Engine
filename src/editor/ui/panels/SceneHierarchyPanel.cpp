@@ -351,8 +351,8 @@ namespace Atlas::Editor::UI {
                 hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
             }
 
-            for (auto selectedEntity : selectedEntities) {
-                Scene::Entity dropEntity(selectedEntity, &scene->entityManager);
+            for (auto ecsEntity : selectedEntities) {
+                Scene::Entity dropEntity(ecsEntity, &scene->entityManager);
 
                 if (entity == dropEntity)
                     continue;

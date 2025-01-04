@@ -304,6 +304,7 @@ void main() {
          || uv.y > 1.0) ? 0.0 : factor;
     
     factor = pushConstants.resetHistory > 0 ? 0.0 : factor;
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
 
     if (factor == 0.0 || !valid) {
         historyLength = 0.0;

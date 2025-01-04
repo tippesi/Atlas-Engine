@@ -237,22 +237,22 @@ namespace Atlas {
                     minProj.z = glm::min(minProj.z, corner.z);
                 }
 
+                maxLength = glm::ceil(maxLength);
+
                 // Tighter frustum for normal meshes
                 cascade.frustumMatrix = glm::ortho(minProj.x,
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
-                    -maxProj.z - 1250.0f, // We need to render stuff behind the camera
-                    -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
+                    -maxProj.z - 1200.0f, // We need to render stuff behind the camera
+                    -minProj.z + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
                 cascade.terrainFrustumMatrix = glm::ortho(minProj.x,
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
                     -maxProj.z - 2500.0f, // We need to render stuff behind the camera
-                    -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
-
-                maxLength = glm::ceil(maxLength);
+                    -minProj.z + 10.0f); // We need to extend a bit to hide seams at cascade splits
 
                 cascade.projectionMatrix = glm::ortho(-maxLength,
                     maxLength,
@@ -274,9 +274,11 @@ namespace Atlas {
 
                 glm::mat4 shadowProj = cascade.projectionMatrix;
                 shadowProj[3] += roundOffset;
+                cascade.frustumMatrix[3] += roundOffset;
+                cascade.terrainFrustumMatrix[3] += roundOffset;
                 cascade.projectionMatrix = clipMatrix * shadowProj;
-                cascade.frustumMatrix = clipMatrix * cascade.frustumMatrix;
-                cascade.terrainFrustumMatrix = clipMatrix * cascade.terrainFrustumMatrix;
+                cascade.frustumMatrix = cascade.projectionMatrix * cascade.viewMatrix;
+                cascade.terrainFrustumMatrix = clipMatrix * cascade.terrainFrustumMatrix * cascade.viewMatrix;;
 
             }
 

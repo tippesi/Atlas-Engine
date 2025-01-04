@@ -580,6 +580,7 @@ void main() {
         currentMoments.r = 0.0;
     }
 
+    factor = max(0.75, factor - 20.0 * max(abs(velocity.x), abs(velocity.y)));
     factor = min(factor, historyLength / (historyLength + 1.0));
 
 #ifdef UPSCALE

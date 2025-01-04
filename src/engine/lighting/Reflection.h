@@ -17,7 +17,7 @@ namespace Atlas {
             int32_t lightSampleCount = 2;
 
             float radianceLimit = 10.0f;
-            float roughnessCutoff = 0.6f;
+            float roughnessCutoff = 0.4f;
             float bias = 0.15f;
             float spatialFilterStrength = 5.0f;
 
