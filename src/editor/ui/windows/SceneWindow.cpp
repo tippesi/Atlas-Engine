@@ -44,8 +44,7 @@ namespace Atlas::Editor::UI {
 
         // If we're playing we can update here since we don't expect values to change from the UI side
         if (isPlaying) {
-            scene->Timestep(deltaTime);
-            scene->Update();
+            scene->Update(deltaTime);
         }
         else {
             auto& camera = cameraEntity.GetComponent<CameraComponent>();
@@ -184,8 +183,7 @@ namespace Atlas::Editor::UI {
             // Path tracing needs history while ray tracing
             scene->rayTracingWorld->includeObjectHistory = Singletons::config->pathTrace;
 
-            scene->Timestep(Clock::GetDelta());
-            scene->Update();
+            scene->Update(Clock::GetDelta());
 
             // Restore all previous camera main values
             for (auto entity : cameraSubset) {

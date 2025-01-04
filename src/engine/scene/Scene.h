@@ -93,9 +93,7 @@ namespace Atlas {
 
             std::unordered_map<ECS::Entity, Entity> Merge(const Ref<Scene>& other);
 
-            void Timestep(float deltaTime);
-
-            void Update();
+            void Update(float deltaTime);
 
             std::vector<ResourceHandle<Mesh::Mesh>> GetMeshes();
 

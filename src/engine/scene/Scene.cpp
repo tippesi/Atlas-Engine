@@ -88,7 +88,7 @@ namespace Atlas {
 
         }
 
-        void Scene::Timestep(float deltaTime) {
+        void Scene::Update(float deltaTime) {
 
             this->deltaTime = deltaTime;
 
@@ -145,11 +145,16 @@ namespace Atlas {
             if (HasMainCamera()) {
                 auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
 
-                if (terrain.IsLoaded())
-                    terrain->Update(mainCamera);
+                if (terrain.IsLoaded()) {
+                    JobSystem::Execute(jobGroup, [&](JobData&) {
+                        terrain->Update(mainCamera);
+                    });
+                }
 
                 if (ocean) {
-                    ocean->Update(mainCamera, deltaTime);
+                    JobSystem::Execute(jobGroup, [&](JobData&) {
+                        ocean->Update(mainCamera, deltaTime);
+                    });
                 }
             }            
 
@@ -344,38 +349,43 @@ namespace Atlas {
                 meshComponent.inserted = true;
             }
 
-            // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+            // Don't do anything in parallel here, we don't expect to have many cameras
+            mainCameraEntity = Entity();
+            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+            // Attempt to find a main camera
+            for (auto entity : cameraSubset) {
+                auto& camera = cameraSubset.Get(entity);
 
-                if (transformComponent.updated) {
-                    transformComponent.changed = false;
-                    transformComponent.updated = false;
+                mat4 transformMatrix = mat4(1.0f);
+                auto transform = entityManager.TryGet<TransformComponent>(entity);
+                if (transform) {
+                    camera.parentTransform = transform->globalMatrix;
+                    transformMatrix = transform->globalMatrix;
                 }
-                });
 
-            // After everything we need to reset transform component changed and prepare the updated for next frame
-            JobSystem::ParallelFor(jobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
-                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
+                camera.Update(transformMatrix);
 
-                hierarchyComponent.updated = false;
-                });
+                if (camera.isMain && !mainCameraEntity.IsValid()) {
+                    mainCameraEntity = { entity, &entityManager };
+                }
+            }
 
-            JobSystem::Wait(jobGroup);
+            JobGroup lightJobGroup {JobPriority::High};
+            auto lightComponentPool = entityManager.GetPool<LightComponent>();
+            JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& lightComponent = lightComponentPool.GetByIndex(idx);
+                auto entity = lightComponentPool[idx];
 
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
+                // This will lead to threading issues if there are several main lights (which there shouldn't be!)
                 if (lightComponent.isMain && lightComponent.type == LightType::DirectionalLight)
                     mainLightEntity = Entity(entity, &entityManager);
 
                 auto transformComponent = transformComponentPool.TryGet(entity);
 
                 lightComponent.Update(transformComponent);
-            }
+                });
 
-            renderState.mainCameraSignal.Reset();
+            JobSystem::Wait(lightJobGroup);
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
@@ -396,14 +406,52 @@ namespace Atlas {
                 });          
 #endif
 
-            // Everything below assumes that entities themselves have a transform
-            // Without it they won't be transformed when they are in a hierarchy
-            auto cameraSubset = entityManager.GetSubset<CameraComponent, TransformComponent>();
-            for (auto entity : cameraSubset) {
-                const auto& [cameraComponent, transformComponent] = cameraSubset.Get(entity);
+            if (HasMainCamera()) {
+                auto& mainCamera = GetMainCamera();
 
-                cameraComponent.parentTransform = transformComponent.globalMatrix;
+                JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                    auto& lightComponent = lightComponentPool.GetByIndex(idx);
+                    
+                    lightComponent.Update(mainCamera);
+                    });
+
+                auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
+                for (auto entity : audioSubset) {
+                    const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
+
+                    audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
+                        mainCamera.GetLastLocation(), mainCamera.right);
+                }
+
+                auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
+                for (auto entity : audioVolumeSubset) {
+                    const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
+
+                    audioComponent.Update(transformComponent, mainCamera.GetLocation());
+                }
             }
+
+            // After everything we need to reset transform component changed and prepare the updated for next frame
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData&, int32_t idx) {
+                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+
+                if (transformComponent.updated) {
+                    transformComponent.changed = false;
+                    transformComponent.updated = false;
+                }
+                });
+
+            // After everything we need to reset transform component changed and prepare the updated for next frame
+            JobSystem::ParallelFor(jobGroup, int32_t(hierarchyComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
+                auto& hierarchyComponent = hierarchyComponentPool.GetByIndex(idx);
+
+                hierarchyComponent.updated = false;
+                });
+
+            JobSystem::Wait(lightJobGroup);
+
+            renderState.FillRenderList();
+            renderState.CullAndSortLights();
 
             auto textSubset = entityManager.GetSubset<TextComponent, TransformComponent>();
             for (auto entity : textSubset) {
@@ -414,67 +462,10 @@ namespace Atlas {
 
             firstTimestep = false;
 
-        }
-
-        void Scene::Update() {
-
-            mainCameraEntity = Entity();
-
-            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
-
-            // Attempt to find a main camera
-            for (auto entity : cameraSubset) {
-                auto& camera = cameraSubset.Get(entity);
-
-                mat4 transformMatrix = mat4(1.0f);
-                auto transform = entityManager.TryGet<TransformComponent>(entity);
-                if (transform) {
-                    transformMatrix = transform->globalMatrix;
-                }
-
-                camera.Update(transformMatrix);
-
-                if (camera.isMain && !mainCameraEntity.IsValid()) {
-                    mainCameraEntity = { entity, &entityManager };
-                }
-            }             
-
-            renderState.mainCameraSignal.Release();
-
-            AE_ASSERT(mainCameraEntity.IsValid() && "Couldn't find main camera component");
-
-            if (!mainCameraEntity.IsValid())
-                return;
-
-            auto& mainCamera = mainCameraEntity.GetComponent<CameraComponent>();
-
-            auto audioSubset = entityManager.GetSubset<AudioComponent, TransformComponent>();
-            for (auto entity : audioSubset) {
-                const auto& [audioComponent, transformComponent] = audioSubset.Get(entity);
-
-                audioComponent.Update(deltaTime, transformComponent, mainCamera.GetLocation(),
-                    mainCamera.GetLastLocation(), mainCamera.right);
-            }
-
-            auto audioVolumeSubset = entityManager.GetSubset<AudioVolumeComponent, TransformComponent>();
-            for (auto entity : audioVolumeSubset) {
-                const auto& [audioComponent, transformComponent] = audioVolumeSubset.Get(entity);
-
-                audioComponent.Update(transformComponent, mainCamera.GetLocation());
-            }
-
-            auto lightSubset = entityManager.GetSubset<LightComponent>();
-            for (auto entity : lightSubset) {
-                auto& lightComponent = lightSubset.Get(entity);
-
-                lightComponent.Update(mainCamera);
-            }
-
-            renderState.FillRenderList();
-            renderState.CullAndSortLights();
+            JobSystem::Wait(jobGroup);
 
         }
-
+        
         std::vector<ResourceHandle<Mesh::Mesh>> Scene::GetMeshes() {
 
             std::vector<ResourceHandle<Mesh::Mesh>> meshes;

@@ -180,8 +180,7 @@ void App::Update(float deltaTime) {
         camera.location += camera.right * moveCameraSpeed * cos(Atlas::Clock::Get());
     }
 
-    scene->Timestep(deltaTime);
-    scene->Update();
+    scene->Update(deltaTime);
 
     CheckLoadScene();
 
@@ -331,7 +330,7 @@ bool App::LoadScene() {
         meshCount++;
     }
 
-    scene->Timestep(1.0f);
+    scene->Update(1.0f);
 
     Atlas::Clock::ResetAverage();
 

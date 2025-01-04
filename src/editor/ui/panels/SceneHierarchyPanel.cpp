@@ -236,8 +236,8 @@ namespace Atlas::Editor::UI {
             }
 
             if (ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload(typeid(Scene::Entity).name(), nullptr, 0);
-                ImGui::Text("Drag to other entity in hierarchy");
+                ImGui::SetDragDropPayload(typeid(Scene::Entity).name(), &entity, sizeof(Scene::Entity));
+                ImGui::Text("Drag to other entity in hierarchy or into content browser to create a prefab");
 
                 ImGui::EndDragDropSource();
             }

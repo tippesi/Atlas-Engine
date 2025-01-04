@@ -593,9 +593,6 @@ namespace Atlas::Scene {
 
     void SceneRenderState::WaitForAsyncWorkCompletion() {
 
-        // Assume scene work was done
-        mainCameraSignal.Release();
-
         JobSystem::Wait(bindlessBlasMapUpdateJob);
         JobSystem::Wait(bindlessTextureMapUpdateJob);
         JobSystem::Wait(bindlessOtherTextureMapUpdateJob);

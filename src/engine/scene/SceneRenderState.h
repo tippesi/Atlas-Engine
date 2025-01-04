@@ -72,8 +72,6 @@ namespace Atlas::Scene {
         std::vector<Renderer::VolumetricLight> volumetricLights;
         std::vector<Renderer::Shadow> volumetricShadows;
 
-        JobSignal mainCameraSignal;
-
         JobGroup materialUpdateJob{ JobPriority::High };
         JobGroup rayTracingWorldUpdateJob{ JobPriority::High };
         JobGroup bindlessBlasMapUpdateJob{ JobPriority::High };

@@ -131,8 +131,6 @@ namespace Atlas {
 
             UpdateMaterials();
 
-            JobSystem::Wait(renderState->mainCameraSignal, JobPriority::High);
-
             vec3 cameraLocation;
             auto hasCamera = scene->HasMainCamera();
             if (hasCamera) {

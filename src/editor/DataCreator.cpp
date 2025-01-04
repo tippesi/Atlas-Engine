@@ -122,8 +122,7 @@ namespace Atlas::Editor {
         scene->rayTracingWorld = CreateRef<RayTracing::RayTracingWorld>();
         scene->postProcessing.fsr2 = true;
 
-        scene->Timestep(1.0f);
-        scene->Update();
+        scene->Update(1.0f);
 
         min = glm::vec3(std::numeric_limits<float>::max());
         max = glm::vec3(-std::numeric_limits<float>::max());
