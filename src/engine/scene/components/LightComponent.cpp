@@ -214,7 +214,7 @@ namespace Atlas {
                 vec3 up = vec3(1e-12f, 1.0f, 1e-12f);
                 cascade.viewMatrix = glm::lookAt(cascadeCenter, cascadeCenter + lightDirection, up);
 
-                auto corners = camera.GetFrustumCorners(cascade.nearDistance,
+                auto corners = camera.GetFrustumCorners(cascade.nearDistance - shadow->cascadeBlendDistance,
                     cascade.farDistance + shadow->cascadeBlendDistance);
 
                 vec3 maxProj = vec3(cascade.viewMatrix * vec4(corners.at(0), 1.0f));
@@ -237,22 +237,22 @@ namespace Atlas {
                     minProj.z = glm::min(minProj.z, corner.z);
                 }
 
-                maxLength = glm::ceil(maxLength);
-
                 // Tighter frustum for normal meshes
                 cascade.frustumMatrix = glm::ortho(minProj.x,
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
-                    -maxProj.z - 1200.0f, // We need to render stuff behind the camera
-                    -minProj.z + 10.0f); // We need to extend a bit to hide seams at cascade splits
+                    -maxProj.z - 1250.0f, // We need to render stuff behind the camera
+                    -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
 
                 cascade.terrainFrustumMatrix = glm::ortho(minProj.x,
                     maxProj.x,
                     minProj.y,
                     maxProj.y,
                     -maxProj.z - 2500.0f, // We need to render stuff behind the camera
-                    -minProj.z + 10.0f); // We need to extend a bit to hide seams at cascade splits
+                    -minProj.z + 10.0f) * cascade.viewMatrix; // We need to extend a bit to hide seams at cascade splits
+
+                maxLength = glm::ceil(maxLength);
 
                 cascade.projectionMatrix = glm::ortho(-maxLength,
                     maxLength,
@@ -274,11 +274,9 @@ namespace Atlas {
 
                 glm::mat4 shadowProj = cascade.projectionMatrix;
                 shadowProj[3] += roundOffset;
-                cascade.frustumMatrix[3] += roundOffset;
-                cascade.terrainFrustumMatrix[3] += roundOffset;
                 cascade.projectionMatrix = clipMatrix * shadowProj;
-                cascade.frustumMatrix = cascade.projectionMatrix * cascade.viewMatrix;
-                cascade.terrainFrustumMatrix = clipMatrix * cascade.terrainFrustumMatrix * cascade.viewMatrix;;
+                cascade.frustumMatrix = clipMatrix * cascade.frustumMatrix;
+                cascade.terrainFrustumMatrix = clipMatrix * cascade.terrainFrustumMatrix;
 
             }
 

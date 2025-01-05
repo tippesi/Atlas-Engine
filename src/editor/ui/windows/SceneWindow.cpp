@@ -371,9 +371,6 @@ namespace Atlas::Editor::UI {
 
                 ImGui::DragFloat("Resolution scale##Rendering", &resolutionScale, 0.01f, 0.1f, 1.0f);
 
-                if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
-                    Singletons::renderTarget->SetScalingFactor(resolutionScale);
-
                 ImGui::Separator();
                 ImGui::Text("Path traces samples");
                 // ImGui::Checkbox("Realtime", &Singletons::mainRenderer->pathTracingRenderer.realTime);
@@ -387,6 +384,9 @@ namespace Atlas::Editor::UI {
 
                 ImGui::EndPopup();
             }
+
+            if (Singletons::renderTarget->GetScalingFactor() != resolutionScale)
+                Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
             auto& eyeIcon = Singletons::icons->Get(IconType::Visibility);
             set = Singletons::imguiWrapper->GetTextureDescriptorSet(&eyeIcon);

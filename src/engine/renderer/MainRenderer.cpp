@@ -161,6 +161,28 @@ namespace Atlas {
 				commandList->BindBuffers(renderState->bvhTriangleBuffers, 0, 2);
 			}
 
+			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
+
+			{
+				Graphics::Profiler::BeginQuery("Main render pass");
+
+				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
+
+				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
+
+				ddgiRenderer.DebugProbes(target, scene, commandList, renderState->materialMap);
+
+				vegetationRenderer.Render(target, scene, commandList, renderState->materialMap);
+
+				terrainRenderer.Render(target, scene, commandList, renderState->materialMap);
+
+				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
+
+				commandList->EndRenderPass();
+
+				Graphics::Profiler::EndQuery();
+			}
+
 			{
 				shadowRenderer.Render(target, scene, commandList, &renderState->renderList);
 
@@ -203,28 +225,6 @@ namespace Atlas {
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
-            
-            JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
-
-			{
-				Graphics::Profiler::BeginQuery("Main render pass");
-
-				commandList->BeginRenderPass(target->gBufferRenderPass, target->gBufferFrameBuffer, true);
-
-				opaqueRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
-
-				ddgiRenderer.DebugProbes(target, scene, commandList, renderState->materialMap);
-
-				vegetationRenderer.Render(target, scene, commandList, renderState->materialMap);
-
-				terrainRenderer.Render(target, scene, commandList, renderState->materialMap);
-
-				impostorRenderer.Render(target, scene, commandList, &renderState->renderList, renderState->materialMap);
-
-				commandList->EndRenderPass();
-
-				Graphics::Profiler::EndQuery();
-			}
 
 			oceanRenderer.RenderDepthOnly(target, scene, commandList);
 

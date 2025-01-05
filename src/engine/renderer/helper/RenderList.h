@@ -48,6 +48,10 @@ namespace Atlas {
             }
         };
 
+        struct RenderPassThreadContext {
+            std::vector<std::pair<ECS::Entity, Hash>> entities;
+        };
+
         struct Pass {
             RenderPassType type;
 
@@ -69,10 +73,16 @@ namespace Atlas {
             Ref<Graphics::MultiBuffer> lastMatricesBuffer;
             Ref<Graphics::MultiBuffer> impostorMatricesBuffer;
 
+            RenderPassThreadContext contexts[8];
+
             void NewFrame(Scene::Scene* scene, const std::vector<ResourceHandle<Mesh::Mesh>>& meshes,
                 const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
 
             void Add(const ECS::Entity& entity, const MeshComponent& meshComponent);
+
+            void Add(int32_t threadIdx, const ECS::Entity& entity, const MeshComponent& meshComponent);
+
+            void Finalize();
 
             void Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap);
 

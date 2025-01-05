@@ -29,6 +29,10 @@ namespace Atlas::Scene {
 
         JobSystem::Execute(newFrameRenderListJob, [&](JobData&) {
             renderList.NewFrame(scene);
+
+            for (auto& pass : renderList.passes) {
+                pass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
+            }
         });
 
         meshes = scene->GetMeshes();
@@ -343,11 +347,13 @@ namespace Atlas::Scene {
             auto& camera = scene->GetMainCamera();
 
             auto mainPass = renderList.GetMainPass();
-            if (mainPass == nullptr)
+            if (mainPass == nullptr) {
                 mainPass = renderList.NewMainPass();
+                // Usually this gets done by the newFrameRenderListJob for existing passes
+                mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
+            }
 
-            mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
-            scene->GetRenderList(camera.frustum, mainPass);
+            scene->GetRenderList(fillMainRenderPassJob, camera.frustum, mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
@@ -381,11 +387,13 @@ namespace Atlas::Scene {
                     auto frustum = Volume::Frustum(component->frustumMatrix);
 
                     auto shadowPass = renderList.GetShadowPass(entity, data.idx);
-                    if (shadowPass == nullptr)
+                    if (shadowPass == nullptr) {
                         shadowPass = renderList.NewShadowPass(entity, data.idx);
+                        // Usually this gets done by the newFrameRenderListJob for existing passes
+                        shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
+                    }
 
-                    shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
-                    scene->GetRenderList(frustum, shadowPass);
+                    scene->GetRenderList(fillShadowRenderPassesJob, frustum, shadowPass);
                     shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);

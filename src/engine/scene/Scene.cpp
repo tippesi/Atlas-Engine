@@ -375,6 +375,8 @@ namespace Atlas {
                 }
             }
 
+            renderState.FillMainRenderPass();
+
             JobGroup lightJobGroup {JobPriority::High};
             auto& lightComponentPool = entityManager.GetPool<LightComponent>();
             JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
@@ -398,8 +400,6 @@ namespace Atlas {
                 });
 
             JobSystem::Wait(lightJobGroup);
-
-            renderState.FillMainRenderPass();
 
 #ifdef AE_BINDLESS
             auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
@@ -678,7 +678,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
+        void Scene::GetRenderList(JobGroup& group, Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
 
             if (!mainCameraEntity.IsValid())
                 return;
@@ -710,6 +710,26 @@ namespace Atlas {
                     if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
                         pass->Add(entity, comp);
                 }
+                
+
+                /*
+                JobGroup lightJobGroup{ JobPriority::High };
+                auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+                JobSystem::ParallelFor(lightJobGroup, int32_t(meshComponentPool.GetCount()), 4, [&](JobData& data, int32_t idx) {
+                    auto& comp = meshComponentPool.GetByIndex(idx);
+                    auto entity = meshComponentPool[idx];
+
+                    if (!comp.mesh.IsLoaded())
+                        return;
+
+                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
+                        pass->Add(data.idx, entity, comp);
+                    });
+
+                JobSystem::Wait(lightJobGroup);
+                pass->Finalize();
+                */
+
             }
             else {
                 std::vector<Entity> entities;

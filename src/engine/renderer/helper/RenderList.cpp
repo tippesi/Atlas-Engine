@@ -189,6 +189,33 @@ namespace Atlas {
 
     }
 
+    void RenderList::Pass::Add(int32_t threadIdx, const ECS::Entity& entity, const MeshComponent& meshComponent) {
+
+        auto& context = contexts[threadIdx];
+
+        context.entities.push_back({ entity, meshComponent.mesh.GetID() });
+
+    }
+
+    void RenderList::Pass::Finalize() {
+
+        for (const auto& context : contexts) {
+            for (const auto& [entity, meshId] : context.entities) {
+                auto item = meshToEntityMap.find(meshId);
+                if (item != meshToEntityMap.end()) {
+                    item->second.Add(entity);
+                }
+                else {
+                    EntityBatch batch;
+                    batch.Add(entity);
+
+                    meshToEntityMap[meshId] = batch;
+                }
+            }
+        }
+
+    }
+
     void RenderList::Pass::Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
 
         size_t maxActorCount = 0;
@@ -327,6 +354,9 @@ namespace Atlas {
 
         // Need to clear this to free the references
         meshToInstancesMap.clear();
+
+        for (auto& context : contexts)
+            context.entities.clear();
 
         wasUsed = false;
         scene = nullptr;
