@@ -389,10 +389,12 @@ namespace Atlas {
 
                 lightComponent.Update(transformComponent);
 
-                auto& mainCamera = GetMainCamera();
-                lightComponent.Update(mainCamera);
+                if (mainCameraEntity.IsValid()) {
+                    auto& mainCamera = GetMainCamera();
+                    lightComponent.Update(mainCamera);
 
-                renderState.FillShadowRenderPass(Entity(entity, &entityManager));
+                    renderState.FillShadowRenderPass(Entity(entity, &entityManager));
+                }
                 });
 
             JobSystem::Wait(lightJobGroup);

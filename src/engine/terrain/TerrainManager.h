@@ -14,7 +14,7 @@ namespace Atlas::Terrain {
 
 		static void WaitForJobCompletion();
 
-		static bool enable;
+		static std::atomic_bool enable;
 
 	private:
 		static JobGroup loadTerrainCellGroup;

@@ -203,6 +203,8 @@ namespace Atlas {
 			commandList->BindBuffer(cloudShadowUniformBuffer, 1, 19);
 
 			ddgiRenderer.TraceAndUpdateProbes(target, scene, commandList);
+            
+            JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
 
 			{
 				Graphics::Profiler::BeginQuery("Main render pass");

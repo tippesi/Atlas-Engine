@@ -46,6 +46,9 @@ namespace Atlas::Editor::UI {
     }
 
     void VegetationGeneratorPanel::RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator) {
+        
+        if (Singletons::blockingOperation->block)
+            return;
 
         const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
             | ImGuiTreeNodeFlags_AllowOverlap;

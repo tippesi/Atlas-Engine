@@ -6,7 +6,7 @@
 
 namespace Atlas::Terrain {
 
-    bool TerrainManager::enable = true;
+    std::atomic_bool TerrainManager::enable = true;
     JobGroup TerrainManager::loadTerrainCellGroup;
 
     void TerrainManager::Update() {
