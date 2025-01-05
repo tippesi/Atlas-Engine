@@ -17,6 +17,10 @@ namespace Atlas {
 				scene->childToParentMap[entity] = owningEntity;
 				entities.push_back(entity);
 
+				auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+				if (hierarchyComponent) {
+					hierarchyComponent->UpdateHierarchyLevel(level + 1);
+				}
 			}
 
 			void HierarchyComponent::RemoveChild(Entity entity) {
@@ -26,6 +30,11 @@ namespace Atlas {
 				if (it != entities.end()) {
 					scene->childToParentMap.erase(entity);
 					entities.erase(it);
+
+					auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+					if (hierarchyComponent) {
+						hierarchyComponent->UpdateHierarchyLevel(0);
+					}
 				}
 
 			}
@@ -53,7 +62,7 @@ namespace Atlas {
 
 					if (transformComponent) {
 						transformChanged |= transformComponent->changed;
-						transformComponent->Update(transform, parentChanged);
+						transformComponent->Update(globalMatrix, parentChanged);
 					}
 
 					if (hierarchyComponent) {
@@ -84,7 +93,7 @@ namespace Atlas {
 
 						if (transformComponent) {
 							transformChanged |= transformComponent->changed;
-							transformComponent->Update(transform, parentChanged);
+							transformComponent->Update(globalMatrix, parentChanged);
 						}
 
 						if (hierarchyComponent) {
@@ -106,7 +115,7 @@ namespace Atlas {
 
 							if (transformComponent) {
 								transformChanged |= transformComponent->changed;
-								transformComponent->Update(transform, parentChanged);
+								transformComponent->Update(globalMatrix, parentChanged);
 							}
 
 							if (hierarchyComponent) {
@@ -119,11 +128,18 @@ namespace Atlas {
 
 			}
 
-			void HierarchyComponent::ProcessChild(Entity entity, const TransformComponent& transform, bool parentChanged, 
-				JobGroup& jobGroup, ECS::Pool<TransformComponent>& transformComponentPool,
-				ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool) {
+			void HierarchyComponent::UpdateHierarchyLevel(int32_t newLevel) {
 
-				
+				level = newLevel;
+
+				for (auto entity : entities) {
+					auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+
+					if (!hierarchyComponent)
+						continue;
+
+					hierarchyComponent->UpdateHierarchyLevel(newLevel + 1);
+				}
 
 			}
 

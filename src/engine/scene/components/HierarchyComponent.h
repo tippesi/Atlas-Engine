@@ -30,6 +30,7 @@ namespace Atlas {
                 std::vector<Entity>& GetChildren();
 
                 bool root = false;
+                int32_t level = 0;
 
                 glm::mat4 globalMatrix {1.0f};            
 
@@ -40,9 +41,7 @@ namespace Atlas {
                 void Update(JobGroup& jobGroup, const TransformComponent& transform, bool parentChanged, ECS::Pool<TransformComponent>& transformComponentPool,
                     ECS::Pool<HierarchyComponent>& hierarchyComponentPool, ECS::Pool<CameraComponent>& cameraComponentPool);
 
-                void ProcessChild(Entity entity, const TransformComponent& transform, bool parentChanged, 
-                    JobGroup& jobGroup, ECS::Pool<TransformComponent>& transformComponentPool,
-                    ECS::Pool<HierarchyComponent>& hierarchyComponentPool,  ECS::Pool<CameraComponent>& cameraComponentPool);
+                void UpdateHierarchyLevel(int32_t level);
 
                 std::vector<Entity> entities;
 
@@ -50,8 +49,6 @@ namespace Atlas {
                 Entity owningEntity;
 
                 Scene* scene = nullptr;
-
-                inline static const int32_t batchSize = 16;
 
             };
 

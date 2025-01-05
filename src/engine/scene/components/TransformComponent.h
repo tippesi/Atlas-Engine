@@ -56,7 +56,7 @@ namespace Atlas {
                 mat4x3 inverseGlobalMatrix = mat4x3{ 1.0f };
 
             protected:
-                void Update(const TransformComponent& parentTransform, bool parentChanged);
+                void Update(const glm::mat4& parentMatrix, bool parentChanged);
 
                 Entity entity;
 

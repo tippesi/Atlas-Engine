@@ -158,6 +158,10 @@ namespace Atlas {
             ECS::EntityManager entityManager = ECS::EntityManager(this);
 
         private:
+            struct ThreadContext {
+                std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
+            }threadContexts[8];
+            
             Entity ToSceneEntity(ECS::Entity entity);
 
             void RegisterSubscribers();
@@ -187,6 +191,8 @@ namespace Atlas {
             bool hasChanged = true;
             bool rtDataValid = false;
             bool vegetationChanged = false;
+
+            std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
