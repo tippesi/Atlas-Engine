@@ -73,12 +73,23 @@ namespace Atlas {
             commandList->BindImage(geometryNormal->image, geometryNormal->sampler, 3, 2);            
             commandList->BindImage(materialIdx->image, materialIdx->sampler, 3, 3);
 
-            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
-            commandList->ImageMemoryBarrier(roughnessMetallicAo->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+            Graphics::ImageBarrier prePatchBarriers[] = {
+                {normal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {geometryNormal->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+                {materialIdx->image, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT},
+            };
+            commandList->PipelineBarrier(prePatchBarriers, {});
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
-            commandList->ImageMemoryBarrier(normal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT);
+            Graphics::ImageBarrier postPatchBarriers[] = {
+                {normal->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
+                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {geometryNormal->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {materialIdx->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+            };
+            commandList->PipelineBarrier(postPatchBarriers, {});
 
             Graphics::Profiler::EndQuery();
 

@@ -150,7 +150,7 @@ void main() {
                     bool insideVolume = IsInsideVolume(worldPos);
                     float rayLength = length(GetCellSize(worldPos));
                     // Outside the volume we can scale the ray by 2x again
-                    rayLength = insideVolume ? 2.0 * rayLength : INF;
+                    rayLength = insideVolume ? 2.0 * rayLength : 4.0 * rayLength;
 #else
                     float rayLength = INF;
 #endif

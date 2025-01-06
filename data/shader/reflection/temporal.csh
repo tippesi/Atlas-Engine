@@ -595,7 +595,7 @@ void main() {
     float variance = max(0.0, momentsResolve.g - momentsResolve.r * momentsResolve.r);
     variance *= varianceBoost;
 
-    variance = roughness <= 0.1 ? variance * roughness : variance;
+    variance = roughness <= 0.1 ? max(variance * roughness, roughness * 1e-6) : variance;
 
     imageStore(momentsImage, pixel, vec4(momentsResolve, historyLength + 1.0, 0.0));
     imageStore(resolveImage, pixel, vec4(vec3(resolve), variance));

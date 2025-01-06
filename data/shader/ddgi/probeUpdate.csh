@@ -251,8 +251,7 @@ void main() {
     ivec3 historyVolumeCoord = ivec3(historyResOffset + pix, int(historyProbeCoord.y));
 
     // Use a dynamic hysteris based on probe age to accumulate more efficiently at the beginning of a probes life
-    float hysteresis = clamp(probeAge / (probeAge + 1.0), 0.9, ddgiData.hysteresis);
-    hysteresis = ddgiData.hysteresis;
+    float hysteresis = clamp(probeAge / (probeAge + 1.0), 0.0, ddgiData.hysteresis);
 
 #if defined(IRRADIANCE)
     vec3 lastResult = texelFetch(irradianceVolume, historyVolumeCoord, 0).rgb;
@@ -307,11 +306,12 @@ void main() {
     vec2 resultOut = lastResult;
     if (result.w > 0.0) {
         vec4 fullResult = vec4(result);
+        fullResult.xy /= fullResult.w;
         if (probeState == PROBE_STATE_NEW || reset) {
-            resultOut = fullResult.xy / fullResult.w;
+            resultOut = mix(fullResult.xy, lastResult, hysteresis);
         }
         else {
-            resultOut = mix(fullResult.xy / fullResult.w, lastResult, hysteresis);
+            resultOut = mix(fullResult.xy, lastResult, hysteresis);
         }
     }
 

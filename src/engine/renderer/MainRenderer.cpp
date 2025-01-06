@@ -163,6 +163,8 @@ namespace Atlas {
 
 			JobSystem::WaitSpin(scene->renderState.fillMainRenderPassJob);
 
+			// The reordering has cost us some rendering performance (not the case with validation layers active!?)
+			// Better orders are: Shadow, DDGI, Main or. DDGI, Shadow, Main or DDGI Main, Shadow
 			{
 				Graphics::Profiler::BeginQuery("Main render pass");
 

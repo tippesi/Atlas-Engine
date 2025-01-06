@@ -28,7 +28,7 @@ namespace Atlas {
             appInfo.pApplicationName = name.c_str();
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
-            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 0);
+            appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 1);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 
             LoadSupportedLayersAndExtensions();
