@@ -708,7 +708,6 @@ namespace Atlas {
                         pass->Add(entity, comp);
                 }
                 */
-
                 
                 JobGroup lightJobGroup{ JobPriority::High };
                 auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
@@ -725,7 +724,6 @@ namespace Atlas {
 
                 JobSystem::Wait(lightJobGroup);
                 pass->Finalize();
-                
 
             }
             else {

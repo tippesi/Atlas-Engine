@@ -218,23 +218,6 @@ namespace Atlas {
 
     void RenderList::Pass::Update(vec3 cameraLocation, const std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>>& meshIdToMeshMap) {
 
-        size_t maxActorCount = 0;
-        size_t maxImpostorCount = 0;
-
-        for (auto& [meshId, batch] : meshToEntityMap) {
-            auto item = meshIdToMeshMap.find(meshId);
-            // This happens when meshes are loaded async
-            if (item == meshIdToMeshMap.end())
-                continue;
-            auto mesh = item->second;
-            if (!mesh->castShadow && type == RenderPassType::Shadow)
-                continue;
-
-            auto hasImpostor = mesh->impostor.IsLoaded() && mesh->impostor->isGenerated;
-            maxActorCount += batch.count;
-            maxImpostorCount += hasImpostor ? batch.count : 0;
-        }
-
         auto& transformPool = scene->entityManager.GetPool<TransformComponent>();
         for (auto& [meshId, batch] : meshToEntityMap) {
             auto item = meshIdToMeshMap.find(meshId);

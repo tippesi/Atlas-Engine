@@ -177,20 +177,21 @@ namespace Atlas {
             return;
 
         int32_t iterationsPerJob = count / jobCount;
-        if (count < jobCount) {
+        if (count < jobCount || jobCount == 1) {
             jobCount = 1;
             iterationsPerJob = count;
         }
         else {
             iterationsPerJob = count % jobCount == 0 ? iterationsPerJob : iterationsPerJob + 1;
         }
-        JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func](JobData& data) mutable {
+        JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func = std::move(func)]
+            (JobData& data) mutable {
 
             int32_t offset = data.idx * iterationsPerJob;
             for (int32_t i = offset; i < iterationsPerJob + offset && i < count; i++) {
                 func(data, i);
             }
-            });
+            }, userData);
 
     }
 
