@@ -230,7 +230,7 @@ namespace Atlas {
 
                     commandList->BindImage(radianceArray.image, 3, 0);
 
-                    probeRadianceUpdatePipelineConfig.ManageMacro("LOWER_RES_RADIANACE", volume->lowerResRadiance);
+                    probeRadianceUpdatePipelineConfig.ManageMacro("LOWER_RES_RADIANCE", volume->lowerResRadiance);
                     pipeline = PipelineManager::GetPipeline(probeRadianceUpdatePipelineConfig);
                     commandList->BindPipeline(pipeline);
 

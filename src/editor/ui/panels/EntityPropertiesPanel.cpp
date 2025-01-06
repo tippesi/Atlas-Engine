@@ -15,6 +15,11 @@ namespace Atlas::Editor::UI {
             nameComponentPanel.Render(scene, entity, *nameComponent);
         }
 
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (hierarchyComponent) {
+            hierarchyComponentPanel.Render(scene, entity, *hierarchyComponent);
+        }
+
         std::string nodeName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
         bool rootNode = nodeName == "Root";
 

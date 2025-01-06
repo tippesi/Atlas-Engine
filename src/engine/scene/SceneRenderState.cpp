@@ -353,7 +353,7 @@ namespace Atlas::Scene {
                 mainPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
             }
 
-            scene->GetRenderList(fillMainRenderPassJob, camera.frustum, mainPass);
+            scene->GetRenderList(camera.frustum, mainPass);
             mainPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
             mainPass->FillBuffers();
             renderList.FinishPass(mainPass, RenderList::RenderPassType::Main);
@@ -393,7 +393,7 @@ namespace Atlas::Scene {
                         shadowPass->NewFrame(scene, meshes, renderList.meshIdToMeshMap);
                     }
 
-                    scene->GetRenderList(fillShadowRenderPassesJob, frustum, shadowPass);
+                    scene->GetRenderList(frustum, shadowPass);
                     shadowPass->Update(camera.GetLocation(), renderList.meshIdToMeshMap);
                     shadowPass->FillBuffers();
                     renderList.FinishPass(shadowPass, RenderList::RenderPassType::Shadow);

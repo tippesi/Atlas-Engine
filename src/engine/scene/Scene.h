@@ -113,7 +113,7 @@ namespace Atlas {
             std::vector<Entity> QueryAABB(const Volume::AABB& aabb, 
                 SceneQueryComponents queryComponents = SceneQueryComponentBits::AllComponentsBit);
 
-            void GetRenderList(JobGroup& group, Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
+            void GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass);
 
             void ClearRTStructures();
 

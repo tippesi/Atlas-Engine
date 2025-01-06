@@ -674,7 +674,7 @@ namespace Atlas {
 
         }
 
-        void Scene::GetRenderList(JobGroup& group, Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
+        void Scene::GetRenderList(Volume::Frustum frustum, const Ref<RenderList::Pass>& pass) {
 
             if (!mainCameraEntity.IsValid())
                 return;
@@ -696,22 +696,10 @@ namespace Atlas {
             // For the main pass we use the "dumb" method of just iterating over all the data, since we expect most things to
             // be visible and are exploiting the cache coherency in the meantime
             if (mainPass) {
-                auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
-
-                /*
-                for (auto& entity : subset) {
-                    auto& comp = entityManager.Get<MeshComponent>(entity);
-                    if (!comp.mesh.IsLoaded())
-                        continue;
-
-                    if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
-                        pass->Add(entity, comp);
-                }
-                */
                 
-                JobGroup lightJobGroup{ JobPriority::High };
+                JobGroup jobGroup{ JobPriority::High };
                 auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
-                JobSystem::ParallelFor(lightJobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
                     auto& comp = meshComponentPool.GetByIndex(idx);
                     auto entity = meshComponentPool[idx];
 
@@ -722,7 +710,7 @@ namespace Atlas {
                         pass->Add(data.idx, entity, comp);
                     });
 
-                JobSystem::Wait(lightJobGroup);
+                JobSystem::Wait(jobGroup);
                 pass->Finalize();
 
             }

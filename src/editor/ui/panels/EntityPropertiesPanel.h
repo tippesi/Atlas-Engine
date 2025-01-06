@@ -14,6 +14,7 @@
 #include "components/PlayerComponentPanel.h"
 #include "components/CameraComponentPanel.h"
 #include "components/TextComponentPanel.h"
+#include "components/HierarchyComponentPanel.h"
 
 #include "tools/CopyPasteHelper.h"
 #include "Notifications.h"
@@ -54,6 +55,7 @@ namespace Atlas::Editor::UI {
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
         TextComponentPanel textComponentPanel;
+        HierarchyComponentPanel hierarchyComponentPanel;
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,
