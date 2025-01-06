@@ -215,12 +215,13 @@ namespace Atlas {
         return;
 #endif
 
-        if (!group.HasFinished()) {
-            auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+        if (group.HasFinished())
+            return;
 
-            auto& worker = priorityPool.GetNextWorker();
-            priorityPool.Work(worker.workerId);
-        }
+        auto& priorityPool = priorityPools[static_cast<int>(group.priority)];
+
+        auto& worker = priorityPool.GetNextWorker();
+        priorityPool.Work(worker.workerId);
 
         while (!group.HasFinished())
             std::this_thread::yield();

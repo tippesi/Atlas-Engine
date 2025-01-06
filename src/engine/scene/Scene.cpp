@@ -115,6 +115,7 @@ namespace Atlas {
             auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
             auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
             auto& cameraComponentPool = entityManager.GetPool<CameraComponent>();
+            auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
 
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
 
@@ -137,55 +138,26 @@ namespace Atlas {
                 }
             }
 
-            JobGroup jobGroup{ JobPriority::High };
+            // Kick of all the jobs while we find the changed transforms
+            FindChangedTransforms([&]() {
+                JobSystem::WaitSpin(terrainOceanJobGroup);
 
-            changedTransforms.clear();
-            for (auto& context : threadContexts) {
-                context.changedTransforms.clear();
-            }
-
-            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
-                auto& transformComponent = transformComponentPool.GetByIndex(idx);
-                if (!transformComponent.changed)
-                    return;
-
-                auto entity = transformComponentPool[idx];
-                auto hierarchy = hierarchyComponentPool.TryGet(entity);
-
-                int32_t level = hierarchy ? hierarchy->level : -1;
-
-                threadContexts[data.idx].changedTransforms.push_back({ entity, level });
-                });
-
-            JobSystem::Wait(jobGroup);
-
-            for (const auto& context : threadContexts) {
-                changedTransforms.insert(changedTransforms.end(), context.changedTransforms.begin(), context.changedTransforms.end());
-            }
-
-            std::sort(changedTransforms.begin(), changedTransforms.end(), [&]
-                (const auto& entity0, const auto& entity1) {
-                    if (entity0.second == -1)
-                        return false;
-
-                    if (entity1.second == -1)
-                        return true;
-
-                    return entity0.second < entity1.second;
-                });
-
-            // Can only update after scripts were runxx
-            renderState.NewFrame();
+                // Can only update after scripts were runxx
+                renderState.NewFrame();
 #ifdef AE_BINDLESS
-            renderState.UpdateBlasBindlessData();
-            renderState.UpdateTextureBindlessData();
-            renderState.UpdateOtherTextureBindlessData();
+                renderState.UpdateBlasBindlessData();
+                renderState.UpdateTextureBindlessData();
+                renderState.UpdateOtherTextureBindlessData();
 #endif
-            renderState.PrepareMaterials();
+                renderState.PrepareMaterials();
+
+                });
+
+            JobGroup jobGroup{ JobPriority::High };
 
             // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
-            for (const auto& [entity, level] : changedTransforms) {
+            for (const auto& [entity, level] : changedTransformSet) {
                 if (level < 0)
                     break;
 
@@ -200,7 +172,7 @@ namespace Atlas {
                     parentMatrix = hierarchyComponent.globalMatrix;
                 }
                 
-                auto transformComponent = transformComponentPool.Get(entity);
+                auto& transformComponent = transformComponentPool.Get(entity);
                 transformComponent.Update(parentMatrix, true);
                 hierarchyComponent.Update(jobGroup, transformComponent, true,
                     transformComponentPool, hierarchyComponentPool, cameraComponentPool);
@@ -208,10 +180,8 @@ namespace Atlas {
                 JobSystem::Wait(jobGroup);
             }
 
-            JobSystem::WaitSpin(terrainOceanJobGroup);
-
-            JobSystem::ParallelFor(jobGroup, int32_t(changedTransforms.size()), 4, [&](JobData&, int32_t idx) {
-                const auto& [entity, level] = changedTransforms[idx];
+            JobSystem::ParallelFor(jobGroup, int32_t(changedTransformSet.size()), 8, [&](JobData&, int32_t idx) {
+                const auto& [entity, level] = changedTransformSet[idx];
                 if (level >= 0)
                     return;
 
@@ -363,18 +333,34 @@ namespace Atlas {
                 }
             }
 
-            // Do the space partitioning update here (ofc also update AABBs)
-            auto meshSubset = entityManager.GetSubset<MeshComponent, TransformComponent>();
-            for (auto entity : meshSubset) {
-                const auto& [meshComponent, transformComponent] = meshSubset.Get(entity);
-                if (!meshComponent.mesh.IsLoaded()) {
-                    // We can't update the transform yet
-                    transformComponent.updated = false;
-                    continue;
-                }
+            // Do camera update while we find changed meshes
+            FindChangedMeshes([&]() {
+                // Don't do anything in parallel here, we don't expect to have many cameras
+                mainCameraEntity = Entity();
+                auto cameraSubset = entityManager.GetSubset<CameraComponent>();
+                // Attempt to find a main camera
+                for (auto entity : cameraSubset) {
+                    auto& camera = cameraSubset.Get(entity);
 
-                if (!transformComponent.changed && meshComponent.inserted)
-                    continue;
+                    mat4 transformMatrix = mat4(1.0f);
+                    auto transform = entityManager.TryGet<TransformComponent>(entity);
+                    if (transform) {
+                        camera.parentTransform = transform->globalMatrix;
+                        transformMatrix = transform->globalMatrix;
+                    }
+
+                    camera.Update(transformMatrix);
+
+                    if (camera.isMain && !mainCameraEntity.IsValid()) {
+                        mainCameraEntity = { entity, &entityManager };
+                    }
+                }
+                });
+
+            // Do the space partitioning update here (ofc also update AABBs)
+            for (auto entity : changedMeshSet) {
+                auto& meshComponent = meshComponentPool.Get(entity);
+                auto& transformComponent = transformComponentPool.Get(entity);
 
                 if (meshComponent.inserted)
                     SpacePartitioning::RemoveRenderableEntity(ToSceneEntity(entity), meshComponent);
@@ -383,27 +369,6 @@ namespace Atlas {
 
                 SpacePartitioning::InsertRenderableEntity(ToSceneEntity(entity), meshComponent);
                 meshComponent.inserted = true;
-            }
-
-            // Don't do anything in parallel here, we don't expect to have many cameras
-            mainCameraEntity = Entity();
-            auto cameraSubset = entityManager.GetSubset<CameraComponent>();
-            // Attempt to find a main camera
-            for (auto entity : cameraSubset) {
-                auto& camera = cameraSubset.Get(entity);
-
-                mat4 transformMatrix = mat4(1.0f);
-                auto transform = entityManager.TryGet<TransformComponent>(entity);
-                if (transform) {
-                    camera.parentTransform = transform->globalMatrix;
-                    transformMatrix = transform->globalMatrix;
-                }
-
-                camera.Update(transformMatrix);
-
-                if (camera.isMain && !mainCameraEntity.IsValid()) {
-                    mainCameraEntity = { entity, &entityManager };
-                }
             }
 
             renderState.FillMainRenderPass();
@@ -733,6 +698,7 @@ namespace Atlas {
             if (mainPass) {
                 auto subset = entityManager.GetSubset<MeshComponent, TransformComponent>();
 
+                /*
                 for (auto& entity : subset) {
                     auto& comp = entityManager.Get<MeshComponent>(entity);
                     if (!comp.mesh.IsLoaded())
@@ -741,12 +707,12 @@ namespace Atlas {
                     if (comp.dontCull || comp.visible && !isDistCulled(comp) && frustum.Intersects(comp.aabb))
                         pass->Add(entity, comp);
                 }
+                */
 
-
-                /*
+                
                 JobGroup lightJobGroup{ JobPriority::High };
                 auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
-                JobSystem::ParallelFor(lightJobGroup, int32_t(meshComponentPool.GetCount()), 4, [&](JobData& data, int32_t idx) {
+                JobSystem::ParallelFor(lightJobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
                     auto& comp = meshComponentPool.GetByIndex(idx);
                     auto entity = meshComponentPool[idx];
 
@@ -759,7 +725,7 @@ namespace Atlas {
 
                 JobSystem::Wait(lightJobGroup);
                 pass->Finalize();
-                */
+                
 
             }
             else {
@@ -1057,6 +1023,95 @@ namespace Atlas {
                 auto otherComp = srcEntity.GetComponent<TextComponent>();
                 auto& comp = dstEntity.AddComponent<TextComponent>(otherComp.font, otherComp.text);
                 comp = otherComp;
+            }
+
+        }
+
+        void Scene::FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction) {
+
+            JobGroup jobGroup{ JobPriority::High };
+
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+            auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
+
+            changedTransformSet.clear();
+            for (auto& context : threadContexts) {
+                context.changedTransforms.clear();
+            }
+
+            JobSystem::ParallelFor(jobGroup, int32_t(transformComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                auto& transformComponent = transformComponentPool.GetByIndex(idx);
+                if (!transformComponent.changed)
+                    return;
+
+                auto entity = transformComponentPool[idx];
+                auto hierarchy = hierarchyComponentPool.TryGet(entity);
+
+                int32_t level = hierarchy ? hierarchy->level : -1;
+
+                threadContexts[data.idx].changedTransforms.push_back({ entity, level });
+                });
+
+            if (waitFunction.has_value())
+                waitFunction.value()();
+
+            JobSystem::Wait(jobGroup);
+
+            for (const auto& context : threadContexts) {
+                changedTransformSet.insert(changedTransformSet.end(), context.changedTransforms.begin(), context.changedTransforms.end());
+            }
+
+            std::sort(changedTransformSet.begin(), changedTransformSet.end(),
+                [&](const auto& entity0, const auto& entity1) {
+                    if (entity0.second == -1)
+                        return false;
+
+                    if (entity1.second == -1)
+                        return true;
+
+                    return entity0.second < entity1.second;
+                });
+
+        }
+
+        void Scene::FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction) {
+
+            JobGroup jobGroup{ JobPriority::High };
+
+            changedMeshSet.clear();
+            for (auto& context : threadContexts) {
+                context.changedMeshes.clear();
+            }
+
+            auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
+            auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
+
+            JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
+                auto entity = meshComponentPool[idx];
+                auto transformComponent = transformComponentPool.TryGet(entity);
+                if (!transformComponent)
+                    return;
+
+                auto& meshComponent = meshComponentPool.GetByIndex(idx);
+                if (!meshComponent.mesh.IsLoaded()) {
+                    // We can't update the transform yet
+                    transformComponent->updated = false;
+                    return;
+                }
+
+                if (!transformComponent->changed && meshComponent.inserted)
+                    return;
+
+                threadContexts[data.idx].changedMeshes.push_back(entity);
+                });
+
+            if (waitFunction.has_value())
+                waitFunction.value()();
+
+            JobSystem::Wait(jobGroup);
+
+            for (const auto& context : threadContexts) {
+                changedMeshSet.insert(changedMeshSet.end(), context.changedMeshes.begin(), context.changedMeshes.end());
             }
 
         }

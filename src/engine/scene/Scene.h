@@ -160,6 +160,7 @@ namespace Atlas {
         private:
             struct ThreadContext {
                 std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
+                std::vector<ECS::Entity> changedMeshes;
             }threadContexts[8];
             
             Entity ToSceneEntity(ECS::Entity entity);
@@ -179,6 +180,10 @@ namespace Atlas {
             template<class T>
             void CleanupUnusedResources(std::map<Hash, RegisteredResource<T>>& registeredResources);           
 
+            void FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
+            void FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction = std::nullopt);
+
             std::unordered_map<ECS::Entity, ECS::Entity> childToParentMap;
             std::map<Hash, RegisteredResource<Mesh::Mesh>> registeredMeshes;
             std::map<Hash, RegisteredResource<Audio::AudioData>> registeredAudios;
@@ -192,7 +197,8 @@ namespace Atlas {
             bool rtDataValid = false;
             bool vegetationChanged = false;
 
-            std::vector<std::pair<ECS::Entity, int32_t>> changedTransforms;
+            std::vector<std::pair<ECS::Entity, int32_t>> changedTransformSet;
+            std::vector<ECS::Entity> changedMeshSet;
 
             Scripting::LuaScriptManager luaScriptManager = Scripting::LuaScriptManager(this);
 
