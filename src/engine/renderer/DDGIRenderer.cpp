@@ -347,13 +347,16 @@ namespace Atlas {
             if (!volume || !volume->enable || !volume->update || !volume->debug)
                 return;
 
-            // Need additional barrier, since in the normal case DDGI is made to be sampled just in compute shader
-            auto& internalVolume = volume->internal;
+            const auto& internalVolume = volume->internal;
+            auto [probeStateBuffer, probeOffsetBuffer] = internalVolume.GetCurrentProbeBuffers();
             auto [irradianceArray, radianceArray, momentsArray] = internalVolume.GetCurrentProbes();
 
-            // Need to rebind after barrier
+            probeStateBuffer.Bind(commandList, 2, 19);
+            probeOffsetBuffer.Bind(commandList, 2, 20);
+
             commandList->BindImage(irradianceArray.image, irradianceArray.sampler, 2, 24);
-            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 25);
+            commandList->BindImage(radianceArray.image, radianceArray.sampler, 2, 25);
+            commandList->BindImage(momentsArray.image, momentsArray.sampler, 2, 26);
 
             auto shaderConfig = ShaderConfig {
                 {"ddgi/probeDebug.vsh", VK_SHADER_STAGE_VERTEX_BIT},

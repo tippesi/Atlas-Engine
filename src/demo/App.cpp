@@ -737,7 +737,7 @@ bool App::LoadScene() {
 
     auto& camera = cameraEntity.GetComponent<CameraComponent>();
 
-    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>();
+    scene->sky.clouds = Atlas::CreateRef<Atlas::Lighting::VolumetricClouds>(512, 128, 32);
     scene->sky.clouds->minHeight = 1400.0f;
     scene->sky.clouds->maxHeight = 1700.0f;
     scene->sky.clouds->castShadow = false;

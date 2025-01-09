@@ -122,10 +122,9 @@ namespace Atlas::Scene {
             // We need to first push back to a temporary vector to not invalidate
             // component references (i.e. when directly getting the hierarchy component).
             // That way all children will have components created before the parent creates its own
-            std::vector<json> jEntities = j["entities"];
             std::vector<Entity> entities;
-            entities.reserve(jEntities.size());
-            for (auto jEntity : jEntities) {
+            entities.reserve(j["entities"].size());
+            for (const auto& jEntity : j["entities"]) {
                 Entity entity;
                 if (containsEntityManager)
                     entity = Entity(jEntity["id"], &scene->entityManager);
@@ -225,8 +224,7 @@ namespace Atlas::Scene {
                 j["terrain"], Loader::TerrainLoader::LoadTerrain, false);
         }
 
-        std::vector<json> jEntities = j["entities"];
-        for (auto jEntity : jEntities) {
+        for (const auto& jEntity : j["entities"]) {
             Entity entity;
             if (containsEntityManager)
                 entity = Entity(jEntity["id"], &scene->entityManager);

@@ -59,12 +59,12 @@ namespace Atlas {
             json j;
             if (binaryJson) {
                 auto data = Loader::AssetLoader::GetFileContent(fileStream);
-                j = json::from_msgpack(data);
+                j = std::move(json::from_msgpack(data));
             }
             else {
                 std::string serialized((std::istreambuf_iterator<char>(fileStream)),
                     std::istreambuf_iterator<char>());
-                j = json::parse(serialized);
+                j = std::move(json::parse(serialized));
             }
             
             fileStream.close();

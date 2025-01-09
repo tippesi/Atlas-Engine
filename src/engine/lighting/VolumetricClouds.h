@@ -13,8 +13,10 @@ namespace Atlas {
         class VolumetricClouds {
 
         public:
-            VolumetricClouds(int32_t coverageResolution = 512, int32_t shapeResolution = 128,
-                int32_t detailResolution = 32, int32_t shadowResolution = 1024);
+            VolumetricClouds() = default;
+
+            VolumetricClouds(int32_t coverageResolution, int32_t shapeResolution,
+                int32_t detailResolution, int32_t shadowResolution = 1024);
 
             void GetShadowMatrices(const CameraComponent& camera, vec3 lightDirection, mat4& viewMatrix, mat4& projectionMatrix);
 

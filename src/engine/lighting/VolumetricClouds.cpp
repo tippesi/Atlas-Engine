@@ -19,7 +19,7 @@ namespace Atlas {
 
             Common::Image<float> noiseImage(coverageResolution, coverageResolution, 1);
             std::vector<float> amplitudes = {0.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.25f, 0.125f};
-            Common::NoiseGenerator::GeneratePerlinNoise2D(noiseImage, amplitudes, 0);
+            Common::NoiseGenerator::GeneratePerlinNoise2DParallel(noiseImage, amplitudes, 0, JobPriority::Medium);
 
             auto data = noiseImage.ConvertData<float16>();
             coverageTexture.SetData(data);
