@@ -8,7 +8,7 @@
 
 namespace Atlas::RayTracing {
 
-	JobGroup RayTracingManager::bvhUpdateGroup;
+    JobGroup RayTracingManager::bvhUpdateGroup{ "Bvh manager update" };
 	std::vector<Ref<Graphics::BLAS>> RayTracingManager::blases;
 
 	void RayTracingManager::Update() {
@@ -19,7 +19,7 @@ namespace Atlas::RayTracing {
         auto buildRTStructure = [&](JobData) {
             auto meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
 
-            JobGroup bvhBuildGroup;
+            JobGroup bvhBuildGroup{ "Bvh build" };
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded())
                     continue;

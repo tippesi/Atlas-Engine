@@ -491,6 +491,6 @@ namespace Atlas {
     std::atomic_int ResourceManager<T>::subscriberCount = 0;
 
     template<typename T>
-    JobGroup ResourceManager<T>::deallocationJobs{ JobPriority::Low };
+    JobGroup ResourceManager<T>::deallocationJobs{ "Deallocate resources", JobPriority::Low };
 
 }

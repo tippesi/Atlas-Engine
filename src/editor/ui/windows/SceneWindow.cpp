@@ -205,6 +205,9 @@ namespace Atlas::Editor::UI {
 
         End();
 
+        
+        
+
         lockSelection = false;
 
     }
@@ -284,6 +287,9 @@ namespace Atlas::Editor::UI {
                     ImGui::DragFloat("Translation snap", &translationSnap, 0.01f, 0.1f, 100.0f);
                     ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
                     ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
+
+                    ImGui::Text("Manipulate");
+                    ImGui::Checkbox("Object space", &guizmoObjectSpace);
 
                     ImGui::Text("Bounding volumes");
                     ImGui::Checkbox("Test depth", &depthTestBoundingVolumes);
@@ -485,7 +491,7 @@ namespace Atlas::Editor::UI {
                     auto size = drawList->VtxBuffer.Size;
 
                     bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                        static_cast<ImGuizmo::OPERATION>(guizmoMode), ImGuizmo::MODE::WORLD,
+                        static_cast<ImGuizmo::OPERATION>(guizmoMode), guizmoObjectSpace ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD,
                         glm::value_ptr(globalMatrix), nullptr, snappingPtr);
 
                     // Only visible if something was drawn

@@ -402,7 +402,7 @@ namespace Atlas::Editor::UI {
         bool nodeOpen = ImGui::TreeNodeEx(directory->name.c_str(), nodeFlags, "");
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) { 
-            currentDirectory = directory->path.string();
+            currentDirectory = Common::Path::Normalize(directory->path.string());
         }
 
         ImGui::SameLine();

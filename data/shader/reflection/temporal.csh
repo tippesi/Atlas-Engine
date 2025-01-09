@@ -255,9 +255,9 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal) {
     float confidence = 1.0;
 
     vec3 historyNormal = DecodeNormal(texelFetch(historyNormalTexture, pixel, 0).rg);
-    //confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
+    confidence *= pow(max(dot(historyNormal, normal), 0.0), 16.0);
 
-    float depthPhi = 16.0 / abs(linearDepth);
+    float depthPhi = 128.0 / abs(linearDepth);
     float historyDepth = texelFetch(historyDepthTexture, pixel, 0).r;
     float historyLinearDepth = historyDepth;
     confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));

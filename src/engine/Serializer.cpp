@@ -149,7 +149,7 @@ namespace Atlas {
                 return mesh0->data.GetVertexCount() > mesh1->data.GetVertexCount();
             });
 
-            JobGroup group{ JobPriority::Medium };
+            JobGroup group{ "Serialize scene dependencies", JobPriority::Medium};
             if (multithreaded) {                
                 JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), 
                     [&](JobData& data) {

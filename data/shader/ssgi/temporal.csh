@@ -77,7 +77,7 @@ void LoadGroupSharedData() {
         texel = clamp(texel, ivec2(0), ivec2(resolution) - ivec2(1));
 
         sharedGiAo[i] = FetchTexel(texel);
-        sharedDepth[i] = ConvertDepthToViewSpaceDepth(texelFetch(depthTexture, texel, 0).r);
+        sharedDepth[i] = texelFetch(depthTexture, texel, 0).r;
     }
 
     barrier();
@@ -139,7 +139,9 @@ void ComputeVarianceMinMax(out vec4 mean, out vec4 std) {
     uint materialIdx = texelFetch(materialIdxTexture, pixel, 0).r;
 
     float depth = texelFetch(depthTexture, pixel, 0).r;
-    float linearDepth = ConvertDepthToViewSpaceDepth(depth);
+    float linearDepth = depth;
+
+     float depthPhi = 64.0 * abs(ConvertDepthToViewSpaceDepth(linearDepth));
 
     float totalWeight = 0.0;
 
@@ -152,9 +154,7 @@ void ComputeVarianceMinMax(out vec4 mean, out vec4 std) {
 
             vec4 sampleAll = vec4(sampleGi, sampleAo);
             float sampleLinearDepth = FetchDepth(sharedMemoryIdx);
-
-            float depthPhi = max(1.0, abs(0.025 * linearDepth));
-            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth)));
+            float weight = min(1.0 , exp(-abs(linearDepth - sampleLinearDepth) * depthPhi));
         
             m1 += sampleAll * weight;
             m2 += sampleAll * sampleAll * weight;
@@ -185,7 +185,7 @@ bool SampleHistory(ivec2 pixel, vec2 historyPixel, out vec4 history, out float h
     float depth = texelFetch(depthTexture, pixel, 0).r;
 
     float linearDepth = depth;
-    float depthPhi = 64.0 * abs(linearDepth);
+    float depthPhi = 64.0 * abs(ConvertDepthToViewSpaceDepth(linearDepth));
 
     // Calculate confidence over 2x2 bilinear neighborhood
     // Note that 3x3 neighborhoud could help on edges

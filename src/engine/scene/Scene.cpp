@@ -119,7 +119,7 @@ namespace Atlas {
 
             auto hierarchySubset = entityManager.GetSubset<HierarchyComponent>();
 
-            JobGroup terrainOceanJobGroup{ JobPriority::High };
+            JobGroup terrainOceanJobGroup{ "Terrain and ocean update", JobPriority::High};
 
             // Do these updates before anything else (doesn't have newest camera position, but that doesn't matter too much
             if (HasMainCamera()) {
@@ -153,7 +153,7 @@ namespace Atlas {
 
                 });
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup jobGroup{ "Scene update", JobPriority::High};
 
             // Start the hierarchy update as early as possible in the frame (we need to move this further down if we need terrain info in the future)
             // Update hierarchy and their entities
@@ -373,7 +373,7 @@ namespace Atlas {
 
             renderState.FillMainRenderPass();
 
-            JobGroup lightJobGroup{ JobPriority::High };
+            JobGroup lightJobGroup{ "Lights update", JobPriority::High };
             auto& lightComponentPool = entityManager.GetPool<LightComponent>();
             JobSystem::ParallelFor(lightJobGroup, int32_t(lightComponentPool.GetCount()), 4, [&](JobData&, int32_t idx) {
                 auto& lightComponent = lightComponentPool.GetByIndex(idx);
@@ -697,7 +697,7 @@ namespace Atlas {
             // be visible and are exploiting the cache coherency in the meantime
             if (mainPass) {
                 
-                JobGroup jobGroup{ JobPriority::High };
+                JobGroup jobGroup{ "Main pass culling", JobPriority::High};
                 auto& meshComponentPool = entityManager.GetPool<MeshComponent>();
                 JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), 8, [&](JobData& data, int32_t idx) {
                     auto& comp = meshComponentPool.GetByIndex(idx);
@@ -1015,7 +1015,7 @@ namespace Atlas {
 
         void Scene::FindChangedTransforms(std::optional<std::function<void(void)>> waitFunction) {
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup jobGroup{ "Find changed transforms", JobPriority::High};
 
             auto& transformComponentPool = entityManager.GetPool<TransformComponent>();
             auto& hierarchyComponentPool = entityManager.GetPool<HierarchyComponent>();
@@ -1062,7 +1062,7 @@ namespace Atlas {
 
         void Scene::FindChangedMeshes(std::optional<std::function<void(void)>> waitFunction) {
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup jobGroup{ "Find changed meshes", JobPriority::High};
 
             changedMeshSet.clear();
             for (auto& context : threadContexts) {

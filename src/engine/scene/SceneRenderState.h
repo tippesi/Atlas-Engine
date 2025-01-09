@@ -77,16 +77,16 @@ namespace Atlas::Scene {
         std::vector<Renderer::VolumetricLight> volumetricLights;
         std::vector<Renderer::Shadow> volumetricShadows;
 
-        JobGroup materialUpdateJob{ JobPriority::High };
-        JobGroup rayTracingWorldUpdateJob{ JobPriority::High };
-        JobGroup bindlessBlasMapUpdateJob{ JobPriority::High };
-        JobGroup bindlessTextureMapUpdateJob{ JobPriority::High };
-        JobGroup bindlessOtherTextureMapUpdateJob{ JobPriority::High };
-        JobGroup prepareBindlessBlasesJob{ JobPriority::High };
-        JobGroup newFrameRenderListJob { JobPriority::High };
-        JobGroup fillMainRenderPassJob{ JobPriority::High };
-        JobGroup fillShadowRenderPassesJob{ JobPriority::High };
-        JobGroup cullAndSortLightsJob{ JobPriority::High };
+        JobGroup materialUpdateJob{ "Material update", JobPriority::High};
+        JobGroup rayTracingWorldUpdateJob{ "Ray tracing world update", JobPriority::High};
+        JobGroup bindlessBlasMapUpdateJob{ "Blas map update", JobPriority::High};
+        JobGroup bindlessTextureMapUpdateJob{ "Texture map update", JobPriority::High };
+        JobGroup bindlessOtherTextureMapUpdateJob{ "Other texture map update", JobPriority::High };
+        JobGroup prepareBindlessBlasesJob{ "Prepare blases", JobPriority::High };
+        JobGroup newFrameRenderListJob { "New frame render list", JobPriority::High};
+        JobGroup fillMainRenderPassJob{ "Main render pass update", JobPriority::High};
+        JobGroup fillShadowRenderPassesJob{ "Shadow render pass update", JobPriority::High};
+        JobGroup cullAndSortLightsJob{ "Cull and sort lights", JobPriority::High};
 
     };
 

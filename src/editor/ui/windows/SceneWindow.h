@@ -61,6 +61,7 @@ namespace Atlas::Editor::UI {
         // Imguizmo translate mode
         int32_t guizmoMode = 7;
         bool needGuizmoEnabled = false;
+        bool guizmoObjectSpace = false;
 
         bool depthTestBoundingVolumes = false;
 

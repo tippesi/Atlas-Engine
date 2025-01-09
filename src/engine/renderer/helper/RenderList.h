@@ -124,7 +124,7 @@ namespace Atlas {
 
         std::unordered_map<size_t, ResourceHandle<Mesh::Mesh>> meshIdToMeshMap;
 
-        JobGroup clearJob { JobPriority::High };
+        JobGroup clearJob { "Clear render list", JobPriority::High };
     };
 
 }

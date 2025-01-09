@@ -72,6 +72,8 @@ namespace Atlas {
 
             void PreintegrateBRDF();
 
+            void UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList);
+
             PipelineConfig GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer>& frameBuffer,
                 Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth);
 

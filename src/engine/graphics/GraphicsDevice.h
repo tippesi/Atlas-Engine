@@ -318,7 +318,7 @@ namespace Atlas {
             std::shared_mutex queueMutex;
 
             std::atomic_bool frameSubmissionComplete = true;
-            JobGroup submitFrameJob { JobPriority::High };
+            JobGroup submitFrameJob { "Submit frame", JobPriority::High};
 
         };
 

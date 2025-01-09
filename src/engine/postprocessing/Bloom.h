@@ -17,7 +17,7 @@ namespace Atlas::PostProcessing {
         float dirtStrength = 2.0f;
         float threshold = 1.0f;
 
-        float filterSize = 0.02f;
+        float filterSize = 0.015f;
         uint32_t mipLevels = 6;
 
         ResourceHandle<Texture::Texture2D> dirtMap;

@@ -28,7 +28,7 @@ namespace Atlas {
         processedMainPasses.clear();
         processedShadowPasses.clear();
 
-        JobSystem::Wait(clearJob);
+        JobSystem::WaitSpin(clearJob);
         wasCleared = false;
 
         auto meshes = scene->GetMeshes();

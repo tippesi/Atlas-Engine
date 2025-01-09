@@ -28,6 +28,7 @@ namespace Atlas {
                 TransformComponent() = default;
                 TransformComponent(Scene* scene, Entity entity) : entity(entity) {}
                 TransformComponent(Scene* scene, Entity entity, const TransformComponent& that);
+
                 explicit TransformComponent(Scene* scene, Entity entity, 
                     mat4 matrix, bool isStatic = true) : isStatic(isStatic), entity(entity) {
                     Set(matrix);
@@ -63,6 +64,7 @@ namespace Atlas {
                 bool changed = true;
                 bool updated = false;
                 bool wasStatic = true;
+                bool initialized = false;
 
             };
 

@@ -242,7 +242,7 @@ void main() {
 #else
                     bool stopBehindGeometry = false;
 #endif
-                    if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, stepSize, 0.5, maxSteps, 
+                    if (traceScreenSpaceAdvanced(viewRayOrigin, viewDir, depthTexture, 1.0, stepSize, 0.9, maxSteps, 
                         rayLength, false, stopBehindGeometry, hitPixel, hitPoint)) {
                         vec2 hitTexCoord = vec2(hitPixel + 0.5) / vec2(textureSize(lightingTexture, 0));
 

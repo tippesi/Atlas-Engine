@@ -102,6 +102,7 @@ void main() {
 
         vec3 irradiance = vec3(0.0);
         float hits = 0.0;
+        float aoHits = 0.0;
 
         if (depth < 1.0) {
 
@@ -156,6 +157,9 @@ void main() {
                     if (NdotV > 0.0) {
                         irradiance += textureLod(directLightTexture, hitTexCoord, 0).rgb;
                     }
+                    else {
+                        aoHits += 1.0;
+                    }
                     hits += 1.0;
                 }
             }
@@ -170,7 +174,7 @@ void main() {
             
         }
 
-        float ao = max(1.0 - (hits / float(uniforms.rayCount)), 0.0);
+        float ao = max(1.0 - (aoHits / float(uniforms.rayCount)), 0.0);
 
         imageStore(giImage, pixel, vec4(vec3(irradiance), ao));
     }

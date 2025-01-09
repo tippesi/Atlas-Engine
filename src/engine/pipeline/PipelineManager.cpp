@@ -14,7 +14,7 @@ namespace Atlas {
     std::shared_mutex PipelineManager::shaderToVariantsMutex;
     std::unordered_map<size_t, Ref<PipelineManager::PipelineVariants>> PipelineManager::shaderToVariantsMap;
     Ref<Graphics::DescriptorSetLayout> PipelineManager::globalDescriptorSetLayoutOverrides[DESCRIPTOR_SET_COUNT];
-    JobGroup PipelineManager::hotReloadGroup;
+    JobGroup PipelineManager::hotReloadGroup{ "Shader hot reload" };
 
     void PipelineManager::Init() {
 

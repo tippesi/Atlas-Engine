@@ -4,6 +4,7 @@
 #include "mesh/MeshData.h"
 #include "volume/BVH.h"
 #include "graphics/ASBuilder.h"
+#include "graphics/Profiler.h"
 #include "common/ColorConverter.h"
 
 #include <unordered_map>
@@ -138,7 +139,7 @@ namespace Atlas {
                 cameraLocation = camera.GetLocation();
             }            
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup jobGroup{ "Ray tracing world mesh update", JobPriority::High};
             JobSystem::ParallelFor(jobGroup, int32_t(meshComponentPool.GetCount()), int32_t(jobContexts.size()),
                 [&](JobData& data, int32_t idx) {
                     auto& jobContext = jobContexts[data.idx];
@@ -314,7 +315,7 @@ namespace Atlas {
             for (size_t i = 0; i < std::size(iterators); i++)
                 iterators[i] = blasInfos.begin();
 
-            JobGroup jobGroup{ JobPriority::High };
+            JobGroup jobGroup{ "Ray tracing world material update", JobPriority::High};
             JobSystem::ParallelFor(jobGroup, int32_t(blasInfos.size()), int32_t(std::size(iterators)), 
                 [&](JobData& data, int32_t idx) {
 
@@ -476,11 +477,25 @@ namespace Atlas {
             TransformComponent>& entitySubset, size_t instanceCount) {
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
-;
-            auto tlasDesc = Graphics::TLASDesc();
+
+            auto commandList = device->GetCommandList(Graphics::GraphicsQueue);
+            commandList->BeginCommands();
+
+            Graphics::Profiler::BeginThread("Acceleration structures", commandList);
+            Graphics::Profiler::BeginQuery("TLAS update");
+
+            auto tlasDesc = Graphics::TLASDesc{
+                .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
+            };
             tlas = device->CreateTLAS(tlasDesc);
 
-            tlasBuilder.BuildTLAS(tlas, hardwareInstances);
+            tlasBuilder.BuildTLAS(tlas, hardwareInstances, commandList);
+
+            Graphics::Profiler::EndQuery();
+            Graphics::Profiler::EndThread();
+
+            commandList->EndCommands();
+            device->SubmitCommandList(commandList);
 
         }
 

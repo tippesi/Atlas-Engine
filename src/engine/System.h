@@ -40,6 +40,12 @@
 // GLM
 // #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
+#define GLM_ENABLE_EXPERIMENTAL
+
+#if !defined(__arm__) 
+#define GLM_FORCE_SSE2
+#endif
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/common.hpp>

@@ -257,7 +257,7 @@ namespace Atlas {
             
             std::mutex vertexColorMutex;
 
-            JobGroup group;
+            JobGroup group{ "Mesh import" };
             JobSystem::ExecuteMultiple(group, int32_t(meshes.size()), [&](const JobData& data) {
                 auto i = data.idx;
 
@@ -545,7 +545,7 @@ namespace Atlas {
 
         std::vector<ResourceHandle<Material>> ModelImporter::ImportMaterials(ImporterState& state, int32_t maxTextureResolution, bool saveToDisk) {
 
-            JobGroup group;
+            JobGroup group{ "Material import" };
             JobSystem::ExecuteMultiple(group, state.scene->mNumMaterials, [&](const JobData& data) {
                 LoadMaterialImages(state, state.scene->mMaterials[data.idx], true, maxTextureResolution);
                 });

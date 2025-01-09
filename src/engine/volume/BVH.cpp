@@ -33,7 +33,7 @@ namespace Atlas {
             auto minOverlap = aabb.GetSurfaceArea() * 10e-6f;
             auto builder = new BVHBuilder(aabb, 0, refs.size(), minOverlap, 256);
 
-            JobGroup group { JobPriority::Low };
+            JobGroup group { "Build blas structure", JobPriority::Low};
             builder->Build(refs, data, group, parallelBuild);
             JobSystem::Wait(group);
 
@@ -106,7 +106,7 @@ namespace Atlas {
 
             auto builder = new BVHBuilder(aabb, 0, refs.size(), 128);
 
-            JobGroup group { JobPriority::Medium };
+            JobGroup group { "Build tlas structure", JobPriority::Medium};
             builder->Build(refs, group, parallelBuild);
             JobSystem::Wait(group);
 

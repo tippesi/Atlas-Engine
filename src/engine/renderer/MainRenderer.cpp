@@ -200,26 +200,7 @@ namespace Atlas {
             
             JobSystem::WaitSpin(renderState->cullAndSortLightsJob);
 
-			{
-				VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
-
-				auto lightSubset = scene->GetSubset<LightComponent>();
-				shadowImageBarriers.clear();
-
-				for (auto& lightEntity : lightSubset) {
-					auto& light = lightEntity.GetComponent<LightComponent>();
-					if (!light.shadow || !light.shadow->update)
-						continue;
-
-					auto shadow = light.shadow;
-					shadow->update = false;
-					shadowImageBarriers.push_back({ shadow->useCubemap ?
-						shadow->cubemap->image : shadow->maps->image, layout, access });
-				}
-
-				commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
-			}
+			UpdateShadowImageLayouts(scene, commandList);
 
 			JobSystem::WaitSpin(scene->renderState.rayTracingWorldUpdateJob);
 
@@ -498,6 +479,8 @@ namespace Atlas {
 			}
 
 			Graphics::Profiler::EndQuery();
+
+			UpdateShadowImageLayouts(scene, commandList);
 
 			// No probe filtering required
 			if (scene->sky.atmosphere) {
@@ -1149,6 +1132,30 @@ namespace Atlas {
 
 			commandList->EndCommands();
 			device->FlushCommandList(commandList);
+
+		}
+
+		void MainRenderer::UpdateShadowImageLayouts(const Ref<Scene::Scene>& scene, Graphics::CommandList* commandList) {
+
+			
+			VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
+
+			auto lightSubset = scene->GetSubset<LightComponent>();
+			shadowImageBarriers.clear();
+
+			for (auto& lightEntity : lightSubset) {
+				auto& light = lightEntity.GetComponent<LightComponent>();
+				if (!light.shadow || !light.shadow->update)
+					continue;
+
+				auto shadow = light.shadow;
+				shadow->update = false;
+				shadowImageBarriers.push_back({ shadow->useCubemap ?
+					shadow->cubemap->image : shadow->maps->image, layout, access });
+			}
+
+			commandList->PipelineBarrier(shadowImageBarriers, {}, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);			
 
 		}
 
