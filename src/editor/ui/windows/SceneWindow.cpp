@@ -563,10 +563,12 @@ namespace Atlas::Editor::UI {
 
         auto testDepth = depthTestBoundingVolumes;
 
+        auto& wrapper = viewportPanel.primitiveBatchWrapper;
+
         if (entity.HasComponent<MeshComponent>()) {
             const auto& meshComponent = entity.GetComponent<MeshComponent>();
             auto aabb = meshComponent.aabb;
-            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f), testDepth);
+            wrapper.RenderLineAABB(aabb, vec3(1.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<AudioComponent>()) {
             const auto& audioComponent = entity.GetComponent<AudioComponent>();
@@ -578,29 +580,64 @@ namespace Atlas::Editor::UI {
 
             // After this the audio will be cutoff
             float radius = powf(audioComponent.falloffFactor / audioComponent.cutoff, 1.0f / audioComponent.falloffPower);
-            viewportPanel.primitiveBatchWrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.RenderLineSphere(position, radius, vec3(0.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<AudioVolumeComponent>()) {
             const auto& audioVolumeComponent = entity.GetComponent<AudioVolumeComponent>();
             auto aabb = audioVolumeComponent.GetTransformedAABB();
-            viewportPanel.primitiveBatchWrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f), testDepth);
+            wrapper.RenderLineAABB(aabb, vec3(0.0f, 1.0f, 0.0f), testDepth);
         }
         if (entity.HasComponent<CameraComponent>()) {
             const auto& cameraComponent = entity.GetComponent<CameraComponent>();
-            viewportPanel.primitiveBatchWrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f), testDepth);
+            wrapper.RenderLineFrustum(cameraComponent.frustum, vec3(1.0f, 0.0f, 1.0f), testDepth);
         }
         if (entity.HasComponent<LightComponent>()) {
             const auto& lightComponent = entity.GetComponent<LightComponent>();
             if (lightComponent.shadow) {
                 for (const auto& component : lightComponent.shadow->views)
-                    viewportPanel.primitiveBatchWrapper.RenderLineFrustum(
+                    wrapper.RenderLineFrustum(
                         Volume::Frustum(component.frustumMatrix), vec3(1.0f, 0.0f, 0.0f), testDepth);
             }
         }
         if (entity.HasComponent<TextComponent>()) {
             const auto& textComponent = entity.GetComponent<TextComponent>();
             auto rectangle = textComponent.GetRectangle();
-            viewportPanel.primitiveBatchWrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f), testDepth);
+            wrapper.RenderLineRectangle(rectangle,vec3(0.0f, 0.0f, 1.0f), testDepth);
+        }
+        if (entity.HasComponent<SplineComponent>()) {
+            const auto& splineComponent = entity.GetComponent<SplineComponent>();
+            auto transformComponent = entity.TryGetComponent<TransformComponent>();
+
+            glm::mat4 globalMatrix{1.0f};
+            auto parentEntity = scene->GetParentEntity(entity);
+            if (transformComponent) {
+                globalMatrix = transformComponent->globalMatrix;
+            }
+            else if (parentEntity.IsValid()) {
+                const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
+                globalMatrix = parentHierarchy.globalMatrix;
+            }
+
+            SplinePoint lastSplinePoint = splineComponent.GetInterpolated(0, 0.0f);
+            lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
+
+            wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.2f, 0.0f), testDepth);
+
+            const int32_t linesPerSegment = 20;
+            for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
+                for (int32_t j = 0; j < linesPerSegment; j++) {
+                    auto t = float(j + 1) / float(linesPerSegment);
+                    auto splinePoint = splineComponent.GetInterpolated(i, t);
+                    splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
+
+                    wrapper.RenderLine(lastSplinePoint.position, splinePoint.position, 
+                        vec3(1.0f, 0.2f, 0.0f), testDepth);
+
+                    lastSplinePoint = splinePoint;
+                }
+
+                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.2f, 0.0f), testDepth);
+            }
         }
 
     }

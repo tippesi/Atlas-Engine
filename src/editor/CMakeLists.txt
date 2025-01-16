@@ -45,6 +45,8 @@ add_executable(${PROJECT_NAME} ${EDITOR_SOURCE_FILES} ${ATLAS_ENGINE_MAIN_FILE})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 endif()
 
+target_precompile_headers(${PROJECT_NAME} REUSE_FROM AtlasEngine)
+
 # We want to use both ImGui and the AtlasEngine. For ImGui, the ATLAS_IMGUI option
 # needs to be turned on.
 target_link_libraries (${PROJECT_NAME} AtlasEngine ImguiExtension 

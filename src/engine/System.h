@@ -43,7 +43,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #if !defined(__arm__) 
-#define GLM_FORCE_SSE2
+//#define GLM_FORCE_SSE2
 #endif
 
 #include <glm/glm.hpp>

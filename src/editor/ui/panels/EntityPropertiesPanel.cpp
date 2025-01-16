@@ -95,6 +95,12 @@ namespace Atlas::Editor::UI {
                 newComp.fastVelocity = comp.fastVelocity;
                 newComp.jumpVelocity = comp.jumpVelocity;
             }
+
+            if (entity.HasComponent<SplineComponent>()) {
+                auto& comp = entity.GetComponent<SplineComponent>();
+                RenderComponentPanel("Spline component", scene,
+                    entity, splineComponentPanel, comp);
+            }
         }
 
         // Add components
@@ -121,6 +127,8 @@ namespace Atlas::Editor::UI {
                     entity.AddComponent<TextComponent>();
 				if (!entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Add lua script component"))
                     entity.AddComponent<LuaScriptComponent>();
+                if (!entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Add spline component"))
+                    entity.AddComponent<SplineComponent>();
 
                 // Just make the player component addable if there is a transform component
                 if (entity.HasComponent<TransformComponent>() &&
@@ -178,6 +186,8 @@ namespace Atlas::Editor::UI {
                     entity.RemoveComponent<TextComponent>();
                 if (entity.HasComponent<LuaScriptComponent>() && ImGui::MenuItem("Remove lua script component"))
                     entity.RemoveComponent<LuaScriptComponent>();
+                if (entity.HasComponent<SplineComponent>() && ImGui::MenuItem("Remove spline component"))
+                    entity.RemoveComponent<SplineComponent>();
                 if (entity.HasComponent<PlayerComponent>() && ImGui::MenuItem("Remove player component")) 
                     entity.RemoveComponent<PlayerComponent>();
                 if (entity.HasComponent<RigidBodyComponent>() && ImGui::MenuItem("Remove rigid body component")) 
@@ -198,6 +208,7 @@ namespace Atlas::Editor::UI {
                 else if (HandleComponentPaste<CameraComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<TextComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<LuaScriptComponent>(scene, entity)) {}
+                else if (HandleComponentPaste<SplineComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<PlayerComponent>(scene, entity)) {}
                 else if (HandleComponentPaste<RigidBodyComponent>(scene, entity)) {}
                 else {

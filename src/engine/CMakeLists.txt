@@ -161,6 +161,20 @@ if (ATLAS_BINDLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BINDLESS)
 endif()
 
+# Precompile otherwise slow headers ###############################################################
+target_precompile_headers(${PROJECT_NAME}
+  PUBLIC
+    <unordered_map>
+    <filesystem>
+    <chrono>
+    <string>
+    <set>
+    <vector>
+    <glm/glm.hpp>
+    <algorithm>
+    "System.h"
+)
+
 # Include directories and definitions #############################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${ATLAS_ENGINE_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} 

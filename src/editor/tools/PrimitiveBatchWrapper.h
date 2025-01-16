@@ -12,6 +12,8 @@ namespace Atlas::Editor {
     public:
         PrimitiveBatchWrapper();
 
+        void RenderLine(vec3 p0, vec3 p1, vec3 color, bool depthTest);
+
         void RenderLineAABB(Volume::AABB aabb, vec3 color, bool depthTest);
 
         void RenderLineFrustum(Volume::Frustum frustum, vec3 color, bool depthTest);

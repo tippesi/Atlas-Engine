@@ -18,6 +18,14 @@ namespace Atlas::Editor {
 
     }
 
+    void PrimitiveBatchWrapper::RenderLine(vec3 p0, vec3 p1, vec3 color, bool depthTest) {
+
+        auto& primitiveBatch = depthTest ? primitiveBatchDepthTest : primitiveBatchNoDepthTest;
+
+        primitiveBatch->AddLine(p0, p1, color, color);
+
+    }
+
     void PrimitiveBatchWrapper::RenderLineAABB(Volume::AABB aabb, glm::vec3 color, bool depthTest) {
 
         auto corners = aabb.GetCorners();
