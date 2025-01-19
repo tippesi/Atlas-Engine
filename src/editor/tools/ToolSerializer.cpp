@@ -120,7 +120,7 @@ namespace Atlas::Editor {
             for (const auto& m : j["materials"]) {
                 p.materials.emplace_back(
                     FileImporter::ImportFile<Material>(m["material"]), m["color"]
-                    );
+                );
             }
         }
 
@@ -158,12 +158,10 @@ namespace Atlas::Editor {
            {"growthMinScale", p.growthMinScale},
            {"growthMaxScale", p.growthMaxScale},
            {"attachMeshPhysicsComponent", p.attachMeshPhysicsComponent},
+           {"entity", p.entity},
            {"parentEntity", p.parentEntity},
            {"entities", p.entities}
         };
-
-        if (p.mesh.IsValid())
-            j["mesh"] = p.mesh.GetResource()->path;
 
     }
 
@@ -201,8 +199,8 @@ namespace Atlas::Editor {
         j.at("parentEntity").get_to(p.parentEntity);
         j.at("entities").get_to(p.entities);
 
-        if (j.contains("mesh"))
-            p.mesh = FileImporter::ImportFile<Mesh::Mesh>(j["mesh"]);
+        if (j.contains("entity"))
+            p.entity = j["entity"];
 
     }
 

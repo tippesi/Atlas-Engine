@@ -1,4 +1,5 @@
 #include "SplineComponentPanel.h"
+#include <Singletons.h>
 
 #include <imgui_stdlib.h>
 
@@ -23,8 +24,29 @@ namespace Atlas::Editor::UI {
         auto& controlPoints = splineComponent.controlPoints;
 
         size_t counter = 0;
+        size_t modifyIdx = 0;
+        ControlPointAction action = ControlPointAction::None;
         for (auto& controlPoint : controlPoints) {
-            RenderControlPoint(controlPoint, counter++);
+            ControlPointAction currentAction = ControlPointAction::None;
+            RenderControlPoint(controlPoint, counter++, currentAction);
+
+            if (currentAction != ControlPointAction::None) {
+                action = currentAction;
+                modifyIdx = counter - 1;
+            }
+        }
+
+        switch(action) {
+            case ControlPointAction::Delete: 
+                controlPoints.erase(controlPoints.begin() + modifyIdx);
+                break;
+            case ControlPointAction::MoveUp:
+                std::swap(controlPoints[std::max(0lu, modifyIdx - 1)], controlPoints[modifyIdx]);
+                break;
+            case ControlPointAction::MoveDown:
+                std::swap(controlPoints[std::min(controlPoints.size() - 1, modifyIdx + 1)], controlPoints[modifyIdx]);
+                break;
+            default: break;
         }
 
         auto region = ImGui::GetContentRegionAvail();
@@ -39,11 +61,33 @@ namespace Atlas::Editor::UI {
 
     }
 
-    bool SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx) {
+    void SplineComponentPanel::RenderControlPoint(SplineControlPoint& point, size_t idx, ControlPointAction& action) {
 
-        bool open = ImGui::TreeNode((void*)idx, "Control point %d", int32_t(idx));
+        const float padding = 8.0f;
+        const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding
+            | ImGuiTreeNodeFlags_AllowOverlap;
+
+        auto region = ImGui::GetContentRegionAvail();
+        auto lineHeight = ImGui::GetTextLineHeight();
+        auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
+
+        auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+
+        auto treeNodeSize = region.x - deleteButtonSize.x + 2.0f * padding;
+        ImGui::SetNextItemWidth(treeNodeSize);
+
+        bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "Control point %d", int32_t(idx));
+        ImGui::SameLine();
+        
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            action = ControlPointAction::Delete;
+        }
+        ImGui::PopStyleColor();
+
         if (!open)
-            return false;
+            return;
 
          // The matrix decomposition/composition code is a bit unstable and
         // we work with fixed information that is recomposed when changed,
@@ -80,8 +124,6 @@ namespace Atlas::Editor::UI {
         }
 
         ImGui::TreePop();
-
-        return false;
 
     }
 

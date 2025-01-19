@@ -20,7 +20,14 @@ namespace Atlas::Editor::UI {
         void ConfirmRayIntersection();
 
     private:
-        bool RenderControlPoint(SplineControlPoint& point, size_t idx);
+        enum class ControlPointAction {
+            None = 0,
+            Delete,
+            MoveUp,
+            MoveDown
+        };
+
+        void RenderControlPoint(SplineControlPoint& point, size_t idx, ControlPointAction& action);
 
     };
 

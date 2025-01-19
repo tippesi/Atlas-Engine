@@ -28,7 +28,7 @@ namespace Atlas::Editor::UI {
 
         ImGui::DragInt("Seed", &vegetationGenerator.seed, 1.0f, 1, 255);
 
-        RenderBiomeVegetationTypes(scene->terrain.Get(), terrainGenerator);
+        RenderBiomeVegetationTypes(scene, scene->terrain.Get(), terrainGenerator);
 
         if (ImGui::Button("Generate", ImVec2(width, 0.0f))) {
 
@@ -45,7 +45,8 @@ namespace Atlas::Editor::UI {
 
     }
 
-    void VegetationGeneratorPanel::RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator) {
+    void VegetationGeneratorPanel::RenderBiomeVegetationTypes(Ref<Scene::Scene>& scene,
+        Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator) {
         
         if (Singletons::blockingOperation->block)
             return;
@@ -86,10 +87,31 @@ namespace Atlas::Editor::UI {
 
             ImGui::InputText("Name", &type.name);
 
-            ImGui::SeparatorText("Mesh");
+            ImGui::SeparatorText("Entity");
 
-            bool meshChanged = false;
-            type.mesh = meshSelectionPanel.Render(type.mesh, meshChanged);
+            std::string buttonName = "Drop entity with transform component here";
+
+            Scene::Entity entity = Scene::Entity(type.entity, &scene->entityManager);
+            if (entity.IsValid() && entity.HasComponent<NameComponent>())
+                buttonName = entity.GetComponent<NameComponent>().name;
+            ImGui::Button(buttonName.c_str(), { -FLT_MIN, 0 });
+
+            Scene::Entity dropEntity;
+            if (ImGui::BeginDragDropTarget()) {
+                auto dropPayload = ImGui::GetDragDropPayload();
+                if (dropPayload->IsDataType(typeid(Scene::Entity).name())) {
+                    std::memcpy(&dropEntity, dropPayload->Data, dropPayload->DataSize);
+                    bool validEntity = dropEntity.HasComponent<TransformComponent>();
+
+                    if (validEntity && ImGui::AcceptDragDropPayload(typeid(Scene::Entity).name())) {
+                        entity = dropEntity;
+                    }
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            type.entity = entity;
 
             type.iterations = std::max(0, type.iterations);
             type.growthMaxAge = std::max(0, type.growthMaxAge);

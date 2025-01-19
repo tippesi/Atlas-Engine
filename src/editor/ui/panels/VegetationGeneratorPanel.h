@@ -15,7 +15,8 @@ namespace Atlas::Editor::UI {
         VegetationGenerator vegetationGenerator;
 
     private:
-        void RenderBiomeVegetationTypes(Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator);
+        void RenderBiomeVegetationTypes(Ref<Scene::Scene>& scene,
+            Ref<Terrain::Terrain>& terrain, TerrainGenerator& terrainGenerator);
 
         UI::ResourceSelectionPanel<Mesh::Mesh> meshSelectionPanel;
 

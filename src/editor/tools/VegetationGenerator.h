@@ -72,7 +72,7 @@ namespace Atlas::Editor {
             float growthMinScale = 1.0f;
             float growthMaxScale = 1.5f;
 
-            ResourceHandle<Mesh::Mesh> mesh;
+            ECS::Entity entity;
             bool attachMeshPhysicsComponent = false;
 
             ECS::Entity parentEntity = ECS::EntityConfig::InvalidEntity;

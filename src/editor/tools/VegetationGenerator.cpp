@@ -63,7 +63,7 @@ namespace Atlas::Editor {
     void VegetationGenerator::BeginGenerationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
         Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type) {
 
-        if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
+        if (!scene->terrain.IsLoaded() || !scene->entityManager.Valid(type.entity))
             return;
 
         type.randGenerator = std::mt19937(type.seed * glm::clamp(seed, 0, 255));
@@ -91,9 +91,10 @@ namespace Atlas::Editor {
     void VegetationGenerator::EndGenerationOnType(Ref<Scene::Scene>& scene, TerrainGenerator& terrainGenerator,
         Common::Image<uint16_t>& heightImg, Common::Image<uint16_t>& moistureImg, VegetationType& type) {
 
-        if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
+        if (!scene->terrain.IsLoaded() || !scene->entityManager.Valid(type.entity))
             return;
 
+        Scene::Entity sourceEntity(type.entity, &scene->entityManager);
         Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
         auto& hierachy = parentEntity.GetComponent<HierarchyComponent>();
 
@@ -101,7 +102,7 @@ namespace Atlas::Editor {
 
         for (auto& instance : type.instances) {
 
-            auto entity = scene->CreateEntity();
+            auto entity = scene->DuplicateEntity(sourceEntity);
 
             vec3 scale = mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(type.randGenerator));
 
@@ -133,10 +134,12 @@ namespace Atlas::Editor {
             matrix *= rot;
             matrix = glm::scale(matrix, instance.scale);
 
-            auto& transform = entity.AddComponent<TransformComponent>(matrix);
-            transform.globalMatrix = matrix;
+            if (!entity.HasComponent<TransformComponent>())
+                entity.AddComponent<TransformComponent>();
 
-            entity.AddComponent<MeshComponent>(type.mesh);
+            auto& transform = entity.GetComponent<TransformComponent>();
+            transform.Set(matrix);
+            transform.globalMatrix = matrix;
 
             type.entities.push_back(entity);
 
@@ -151,7 +154,7 @@ namespace Atlas::Editor {
         Common::Image<uint16_t>& moistureImg, Common::Image<uint8_t>& splatImage, std::mt19937& randGenerator,
         VegetationType& type) {
 
-        if (!scene->terrain.IsLoaded() || !type.mesh.IsLoaded())
+        if (!scene->terrain.IsLoaded() || !scene->entityManager.Valid(type.entity))
             return;
 
         struct SpawnPoint {
@@ -159,6 +162,7 @@ namespace Atlas::Editor {
             vec3 normal;
         };
 
+        Scene::Entity entity(type.entity, &scene->entityManager);
         Scene::Entity parentEntity(type.parentEntity, &scene->entityManager);
 
         auto& terrain = scene->terrain;
@@ -170,6 +174,8 @@ namespace Atlas::Editor {
         auto heightScale = terrain->heightScale * float(heightImg.width) / float(terrainGenerator.previewSize);
 
         auto biomes = terrainGenerator.SortBiomes();
+        auto mesh = entity.HasComponent<MeshComponent>() ?
+               entity.GetComponent<MeshComponent>().mesh : ResourceHandle<Mesh::Mesh>();
 
         // Proposal spawner
         auto spawnProposalInstance = [&](vec2 offset, float scale, ProposalVegetationInstance& propInstance) -> bool {
@@ -194,13 +200,13 @@ namespace Atlas::Editor {
             instance.rotation = glm::mix(type.rotationMin, type.rotationMax, GenerateUniformRandom(randGenerator));
             instance.scale = glm::mix(type.scaleMin, type.scaleMax, GenerateUniformRandom(randGenerator));
 
-            if (type.excludeBasedOnCorners) {
+            if (type.excludeBasedOnCorners && mesh.IsLoaded()) {
                 glm::mat4 transform {1.0f};
                 transform = translate(transform, instance.position);
                 transform *= glm::rotate(instance.rotation, vec3(0.0f, 1.0f, 0.0f));
                 transform = glm::scale(transform, instance.scale);
 
-                propInstance.aabb = type.mesh->data.aabb.Transform(transform);
+                propInstance.aabb = mesh->data.aabb.Transform(transform);
 
                 auto min = propInstance.aabb.min;
                 auto max = propInstance.aabb.max;

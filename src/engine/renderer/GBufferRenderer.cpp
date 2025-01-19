@@ -84,10 +84,10 @@ namespace Atlas {
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 
             Graphics::ImageBarrier postPatchBarriers[] = {
-                {normal->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
-                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {geometryNormal->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
-                {materialIdx->image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {normal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT },
+                {roughnessMetallicAo->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {geometryNormal->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
+                {materialIdx->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT},
             };
             commandList->PipelineBarrier(postPatchBarriers, {});
 
