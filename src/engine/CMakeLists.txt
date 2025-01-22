@@ -171,6 +171,7 @@ target_precompile_headers(${PROJECT_NAME}
     <set>
     <vector>
     <glm/glm.hpp>
+    <sol/state.hpp>
     <algorithm>
     "System.h"
 )

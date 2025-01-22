@@ -20,6 +20,7 @@ namespace Atlas::Editor {
         Font,
         Settings,
         ArrowUp,
+        ArrowDown,
         ArrowLeft,
         ArrowRight,
         Prefab,

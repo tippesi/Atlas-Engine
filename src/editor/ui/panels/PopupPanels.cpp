@@ -64,7 +64,7 @@ namespace Atlas::Editor::UI {
                 auto scene = DataCreator::CreateScene(name, minSize, maxSize, octreeDepth);
 
                 bool alreadyExisted;
-                Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
+                Atlas::ResourceManager<Scene::Scene>::AddResource("scenes/" + name + ".aescene", scene, alreadyExisted);
 
                 if (alreadyExisted) {
                     Log::Warning("Scene couldn't be created due to scene with same name existing already");
@@ -137,7 +137,7 @@ namespace Atlas::Editor::UI {
                         scene->name = name;
 
                         bool alreadyExisted;
-                        Atlas::ResourceManager<Scene::Scene>::AddResource(name, scene, alreadyExisted);
+                        Atlas::ResourceManager<Scene::Scene>::AddResource("scenes/" + name + ".aescene", scene, alreadyExisted);
 
                         if (alreadyExisted) {
                             Log::Warning("Scene couldn't be created due to scene with same name existing already");

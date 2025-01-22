@@ -38,26 +38,26 @@ namespace Atlas::Editor::UI {
 
         void Render(Ref<Scene::Scene>& scene, EntityProperties entityProperties);
 
-    private:
-        template<class T>
-        struct ComponentCopy {
-            Scene::Scene* scene;
-            T component;
-        };
-
         NameComponentPanel nameComponentPanel;
         TransformComponentPanel transformComponentPanel;
         MeshComponentPanel meshComponentPanel;
         LightComponentPanel lightComponentPanel;
         AudioComponentPanel audioComponentPanel;
         AudioVolumeComponentPanel audioVolumeComponentPanel;
-		LuaScriptComponentPanel luaScriptComponentPanel;
+        LuaScriptComponentPanel luaScriptComponentPanel;
         RigidBodyComponentPanel rigidBodyComponentPanel;
         PlayerComponentPanel playerComponentPanel;
         CameraComponentPanel cameraComponentPanel;
         TextComponentPanel textComponentPanel;
         SplineComponentPanel splineComponentPanel;
         HierarchyComponentPanel hierarchyComponentPanel;
+
+    private:
+        template<class T>
+        struct ComponentCopy {
+            Scene::Scene* scene;
+            T component;
+        };
 
         template<class S, class T>
         bool RenderComponentPanel(const std::string& name, Ref<Scene::Scene>& scene,

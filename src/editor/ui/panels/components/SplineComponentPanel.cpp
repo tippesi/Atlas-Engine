@@ -41,7 +41,7 @@ namespace Atlas::Editor::UI {
                 controlPoints.erase(controlPoints.begin() + modifyIdx);
                 break;
             case ControlPointAction::MoveUp:
-                std::swap(controlPoints[std::max(0lu, modifyIdx - 1)], controlPoints[modifyIdx]);
+                std::swap(controlPoints[std::max(size_t(0), modifyIdx - 1)], controlPoints[modifyIdx]);
                 break;
             case ControlPointAction::MoveDown:
                 std::swap(controlPoints[std::min(controlPoints.size() - 1, modifyIdx + 1)], controlPoints[modifyIdx]);
@@ -69,10 +69,7 @@ namespace Atlas::Editor::UI {
 
         auto region = ImGui::GetContentRegionAvail();
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
-
-        auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+        auto deleteButtonSize = ImVec2(lineHeight, lineHeight);        
 
         auto treeNodeSize = region.x - deleteButtonSize.x + 2.0f * padding;
         ImGui::SetNextItemWidth(treeNodeSize);
@@ -80,11 +77,30 @@ namespace Atlas::Editor::UI {
         bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(idx), nodeFlags, "Control point %d", int32_t(idx));
         ImGui::SameLine();
         
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+        auto upArrowIcon = Singletons::icons->Get(IconType::ArrowUp);
+        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&upArrowIcon);
+        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            action = ControlPointAction::MoveUp;
+        }
+        ImGui::SameLine();
+
+        auto downArrowIcon = Singletons::icons->Get(IconType::ArrowDown);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&downArrowIcon);
+        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            action = ControlPointAction::MoveDown;
+        }
+        ImGui::SameLine();
+
+        auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
+        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
         if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
             action = ControlPointAction::Delete;
         }
         ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
 
         if (!open)
             return;

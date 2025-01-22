@@ -406,6 +406,9 @@ namespace Atlas::Scene {
 
         JobSystem::Wait(cullAndSortLightsJob);
 
+        if (!scene->HasMainCamera())
+            return;
+
         auto& camera = scene->GetMainCamera();
         auto cameraFrustum = camera.frustum;
 

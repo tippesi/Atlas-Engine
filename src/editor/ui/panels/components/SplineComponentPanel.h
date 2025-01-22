@@ -15,9 +15,7 @@ namespace Atlas::Editor::UI {
 
         bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, SplineComponent& splineComponent);
 
-        bool CheckRayIntersection();
-
-        void ConfirmRayIntersection();
+        int32_t selectControlPointIdx = -1;
 
     private:
         enum class ControlPointAction {

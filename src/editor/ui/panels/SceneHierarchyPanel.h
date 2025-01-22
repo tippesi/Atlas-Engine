@@ -20,6 +20,11 @@ namespace Atlas::Editor::UI {
         bool postProcessing = false;
     };
 
+    enum class EntitySelectionType {
+        Entity = 0,
+        Spline
+    };
+
     class SceneHierarchyPanel : public Panel {
 
     public:
@@ -38,7 +43,7 @@ namespace Atlas::Editor::UI {
             ScriptBit = (1 << 9),
             LightBit = (1 << 10),
             AllBit = (1 << 11) - 1
-        } HierarchyFilterBits;
+        } HierarchyFilterBits;       
 
         SceneHierarchyPanel() : Panel("Scene hierarchy") {}
 
@@ -53,6 +58,8 @@ namespace Atlas::Editor::UI {
         void ClearSelection();
 
         Scene::Entity selectedEntity;
+        EntitySelectionType selectedType;
+
         std::unordered_set<ECS::Entity> selectedEntities;
         SelectedProperty selectedProperty;
 

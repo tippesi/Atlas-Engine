@@ -238,11 +238,11 @@ namespace Atlas::Editor::UI {
             if (!isPlaying) {
                 auto& moveIcon = Singletons::icons->Get(IconType::Move);
                 auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moveIcon);
-                bool selected = guizmoMode == ImGuizmo::OPERATION::TRANSLATE;
+                bool selected = guizmo.mode == ImGuizmo::OPERATION::TRANSLATE;
                 ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
                 if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                    guizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                    guizmo.mode = ImGuizmo::OPERATION::TRANSLATE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into translation mode");
                 ImGui::PopStyleColor();
@@ -250,11 +250,11 @@ namespace Atlas::Editor::UI {
                 ImGui::SameLine();
                 auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
                 set = Singletons::imguiWrapper->GetTextureDescriptorSet(&rotateIcon);
-                selected = guizmoMode == ImGuizmo::OPERATION::ROTATE;
+                selected = guizmo.mode == ImGuizmo::OPERATION::ROTATE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
                 if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                    guizmoMode = ImGuizmo::OPERATION::ROTATE;
+                    guizmo.mode = ImGuizmo::OPERATION::ROTATE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
                 ImGui::PopStyleColor();
@@ -262,11 +262,11 @@ namespace Atlas::Editor::UI {
                 ImGui::SameLine();
                 auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
                 set = Singletons::imguiWrapper->GetTextureDescriptorSet(&scaleIcon);
-                selected = guizmoMode == ImGuizmo::OPERATION::SCALE;
+                selected = guizmo.mode == ImGuizmo::OPERATION::SCALE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
                 if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
-                    guizmoMode = ImGuizmo::OPERATION::SCALE;
+                    guizmo.mode = ImGuizmo::OPERATION::SCALE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
                 ImGui::PopStyleColor();
@@ -283,13 +283,16 @@ namespace Atlas::Editor::UI {
                 if (ImGui::BeginPopup("Guizmo settings")) {
                     ImGui::Text("Snapping");
 
-                    ImGui::Checkbox("Enabled", &snappingEnabled);
+                    float translationSnap = guizmo.translationSnap.x;
+                    ImGui::Checkbox("Enabled", &guizmo.snappingEnabled);
                     ImGui::DragFloat("Translation snap", &translationSnap, 0.01f, 0.1f, 100.0f);
-                    ImGui::DragFloat("Rotation snap", &rotationSnap, 0.1f, 0.1f, 10.0f);
-                    ImGui::DragFloat("Scale snap", &scaleSnap, 0.01f, 0.1f, 10.0f);
+                    ImGui::DragFloat("Rotation snap", &guizmo.rotationSnap, 0.1f, 0.1f, 10.0f);
+                    ImGui::DragFloat("Scale snap", &guizmo.scaleSnap, 0.01f, 0.1f, 10.0f);
+
+                    guizmo.translationSnap = vec3(translationSnap);
 
                     ImGui::Text("Manipulate");
-                    ImGui::Checkbox("Object space", &guizmoObjectSpace);
+                    ImGui::Checkbox("Object space", &guizmo.objectSpace);
 
                     ImGui::Text("Bounding volumes");
                     ImGui::Checkbox("Test depth", &depthTestBoundingVolumes);
@@ -442,12 +445,12 @@ namespace Atlas::Editor::UI {
             });
 
         viewportPanel.DrawOverlay([&]() {
-            needGuizmoEnabled = false;
+            guizmo.needEnabled = false;
             auto selectedEntity = sceneHierarchyPanel.selectedEntity;
 
             if (cameraEntity.IsValid() && isActiveWindow && !isPlaying) {
 
-                needGuizmoEnabled = true;
+                guizmo.needEnabled = true;
                 ImGuizmo::SetDrawlist();
 
                 const mat4 clip = mat4(1.0f, 0.0f, 0.0f, 0.0f,
@@ -465,67 +468,85 @@ namespace Atlas::Editor::UI {
 
                 ImGuizmo::SetRect(viewport->x, viewport->y, viewport->width, viewport->height);
 
-                if (selectedEntity.IsValid() && selectedEntity.HasComponent<TransformComponent>()) {
+                bool renderGuizmo = true;
+                auto& entityPropPanel = scenePropertiesPanel.entityPropertiesPanel;
+                auto selectionType = sceneHierarchyPanel.selectedType;
+
+                auto globalMatrix = GetGlobalMatrix(selectedEntity);
+
+                if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
                     auto& transform = selectedEntity.GetComponent<TransformComponent>();
                     auto mesh = selectedEntity.TryGetComponent<MeshComponent>();
 
                     auto globalDecomp = Common::MatrixDecomposition(transform.globalMatrix);
-
-                    glm::vec3 offset = vec3(0.0f);
                     if (mesh)
-                        offset = (0.5f * (mesh->aabb.min + mesh->aabb.max)) - globalDecomp.translation;
+                        guizmo.offset = (0.5f * (mesh->aabb.min + mesh->aabb.max)) - globalDecomp.translation;
+                    guizmo.transform = transform.globalMatrix;
+                }
+                else if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
+                    auto& spline = selectedEntity.GetComponent<SplineComponent>();
 
-                    globalDecomp.translation += offset;
-                    auto globalMatrix = globalDecomp.Compose();
+                    auto splineControlIdx = entityPropPanel.splineComponentPanel.selectControlPointIdx;
+                    auto& controlPoint = spline.controlPoints[splineControlIdx];
 
-                    float* snappingPtr = nullptr;
-                    glm::vec3 translation = vec3(translationSnap);
-                    // Expects a 3-comp vector for translation
-                    if (guizmoMode == ImGuizmo::OPERATION::TRANSLATE && snappingEnabled)
-                        snappingPtr = glm::value_ptr(translation);
-                    else if (guizmoMode == ImGuizmo::OPERATION::ROTATE && snappingEnabled)
-                        snappingPtr = &rotationSnap;
-                    else if (guizmoMode == ImGuizmo::OPERATION::SCALE && snappingEnabled)
-                        snappingPtr = &scaleSnap;
+                    guizmo.offset = vec3(0.0f);
+                    guizmo.transform = globalMatrix * controlPoint.transform;
+                }
+                else {
+                    renderGuizmo = false;
+                }
+
+                if (renderGuizmo) {
+                    guizmo.ApplyOffsetToTransform();
+
                     ImDrawList* drawList = ImGui::GetWindowDrawList();
                     auto size = drawList->VtxBuffer.Size;
 
+                    auto snappingPtr = guizmo.GetSnappingPtr();
                     bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
-                        static_cast<ImGuizmo::OPERATION>(guizmoMode), guizmoObjectSpace ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD,
-                        glm::value_ptr(globalMatrix), nullptr, snappingPtr);
+                        static_cast<ImGuizmo::OPERATION>(guizmo.mode), guizmo.objectSpace ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD,
+                        glm::value_ptr(guizmo.transform), nullptr, snappingPtr);
+
+                    guizmo.RemoveOffsetFromTransform();
 
                     // Only visible if something was drawn
                     bool visible = drawList->VtxBuffer.Size != size;
 
-                    if (ImGuizmo::IsUsing()) {
-                        globalDecomp = Common::MatrixDecomposition(globalMatrix);
-                        globalDecomp.translation -= offset;
-
-                        // Update both the local and global matrix, since e.g. the transform component
-                        // panel recovers the local matrix from the global one (needs to do this after
-                        // e.g. physics only updated the global matrix
-                        auto prevGlobalMatrix = transform.globalMatrix;
-                        auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
-                        auto newGlobalMatrix = globalDecomp.Compose();
-
-                        for (auto& entity : sceneHierarchyPanel.selectedEntities) {
-                            Scene::Entity transformEntity(entity, &scene->entityManager);
-
-                            if (!transformEntity.HasComponent<TransformComponent>())
-                                continue;
-
-                            auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
-                            selectedTransform.globalMatrix = newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
-
-                            auto parentEntity = scene->GetParentEntity(transformEntity);
-                            selectedTransform.ReconstructLocalMatrix(parentEntity);
-                        }
-                    }
-
                     // Need to disable here, otherwise we can't move around anymore
                     if (!visible) {
-                        needGuizmoEnabled = false;
+                        guizmo.needEnabled = false;
                     }
+                }
+
+                if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Entity && selectedEntity.HasComponent<TransformComponent>()) {
+                    auto& transform = selectedEntity.GetComponent<TransformComponent>();
+                    // Update both the local and global matrix, since e.g. the transform component
+                    // panel recovers the local matrix from the global one (needs to do this after
+                    // e.g. physics only updated the global matrix
+                    auto prevGlobalMatrix = transform.globalMatrix;
+                    auto invPrevGlobalMatrix = glm::inverse(transform.globalMatrix);
+                    auto newGlobalMatrix = guizmo.transform;
+
+                    for (auto& entity : sceneHierarchyPanel.selectedEntities) {
+                        Scene::Entity transformEntity(entity, &scene->entityManager);
+
+                        if (!transformEntity.HasComponent<TransformComponent>())
+                            continue;
+
+                        auto& selectedTransform = transformEntity.GetComponent<TransformComponent>();
+                        selectedTransform.globalMatrix = newGlobalMatrix * invPrevGlobalMatrix * selectedTransform.globalMatrix;
+
+                        auto parentEntity = scene->GetParentEntity(transformEntity);
+                        selectedTransform.ReconstructLocalMatrix(parentEntity);
+                    }
+                }
+                else if (ImGuizmo::IsUsing() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
+                    auto& spline = selectedEntity.GetComponent<SplineComponent>();
+
+                    auto splineControlIdx = entityPropPanel.splineComponentPanel.selectControlPointIdx;
+                    auto& controlPoint = spline.controlPoints[splineControlIdx];
+
+                    controlPoint.transform = glm::inverse(globalMatrix) * guizmo.transform;
                 }
 
                 const auto& io = ImGui::GetIO();
@@ -540,16 +561,8 @@ namespace Atlas::Editor::UI {
                 
                 if (ImGui::IsKeyPressed(ImGuiKey_MouseRight, false) && inViewport && !lockSelection && !brushActive) {
 
-                    auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
-                    auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
+                    PerformEntitySelection();
 
-                    Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
-
-                    auto rayCastResult = scene->CastRay(ray);                    
-                    if (rayCastResult.valid) {
-                        bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
-                        sceneHierarchyPanel.SelectEntity(rayCastResult.data, shiftPressed);
-                    }
                 }
             }
             });
@@ -608,20 +621,12 @@ namespace Atlas::Editor::UI {
             const auto& splineComponent = entity.GetComponent<SplineComponent>();
             auto transformComponent = entity.TryGetComponent<TransformComponent>();
 
-            glm::mat4 globalMatrix{1.0f};
-            auto parentEntity = scene->GetParentEntity(entity);
-            if (transformComponent) {
-                globalMatrix = transformComponent->globalMatrix;
-            }
-            else if (parentEntity.IsValid()) {
-                const auto& parentHierarchy = parentEntity.GetComponent<HierarchyComponent>();
-                globalMatrix = parentHierarchy.globalMatrix;
-            }
+            glm::mat4 globalMatrix = GetGlobalMatrix(entity);
 
             SplinePoint lastSplinePoint = splineComponent.GetInterpolated(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
 
-            wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.2f, 0.0f), testDepth);
+            wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
 
             const int32_t linesPerSegment = 20;
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
@@ -631,12 +636,12 @@ namespace Atlas::Editor::UI {
                     splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
 
                     wrapper.RenderLine(lastSplinePoint.position, splinePoint.position, 
-                        vec3(1.0f, 0.2f, 0.0f), testDepth);
+                        vec3(1.0f, 0.15f, 0.0f), testDepth);
 
                     lastSplinePoint = splinePoint;
                 }
 
-                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.2f, 0.0f), testDepth);
+                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
             }
         }
 
@@ -849,6 +854,84 @@ namespace Atlas::Editor::UI {
 
             
         }
+
+    }
+
+    void SceneWindow::PerformEntitySelection() {       
+
+        const auto& io = ImGui::GetIO();
+        auto mousePos = vec2(io.MousePos.x, io.MousePos.y);
+
+        auto viewport = viewportPanel.viewport;
+        const auto& camera = cameraEntity.GetComponent<CameraComponent>();
+     
+        auto nearPoint = viewport->Unproject(vec3(mousePos, 0.0f), camera);
+        auto farPoint = viewport->Unproject(vec3(mousePos, 1.0f), camera);
+
+        Atlas::Volume::Ray ray(camera.GetLocation(), glm::normalize(farPoint - nearPoint));
+
+        auto rayCastResult = scene->CastRay(ray);
+
+        EntitySelectionType selectionType = EntitySelectionType::Entity;
+
+        auto selectedEntity = sceneHierarchyPanel.selectedEntity;
+        auto parentEntity = scene->GetParentEntity(selectedEntity);
+        auto selectedIdx = -1;
+
+        // Check if current selected entity has a component that can be selected
+        if (selectedEntity.IsValid() && selectedEntity.HasComponent<SplineComponent>()) {
+            auto& splineComponent = selectedEntity.GetComponent<SplineComponent>();
+            
+            auto globalMatrix = GetGlobalMatrix(selectedEntity);
+            for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()); i++) {
+                auto controlPoint = splineComponent.controlPoints[i];
+                controlPoint.transform = globalMatrix * controlPoint.transform;
+
+                auto pos = vec3(controlPoint.transform[3]);
+
+                Volume::AABB aabb(pos - vec3(0.025f), pos + vec3(0.025f));
+                float distance;
+                bool intersects = ray.Intersects(aabb, distance);
+                if (intersects && distance < rayCastResult.hitDistance) {
+                    selectedIdx = i;
+                    selectionType = EntitySelectionType::Spline;
+                }
+            }
+        }
+
+        auto& entityPropPanel = scenePropertiesPanel.entityPropertiesPanel;
+
+        // Reset previous selection where possible
+        entityPropPanel.splineComponentPanel.selectControlPointIdx = -1;
+
+        if (rayCastResult.valid && selectionType == EntitySelectionType::Entity) {
+            bool shiftPressed = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+            sceneHierarchyPanel.SelectEntity(rayCastResult.data, shiftPressed);
+        }
+        else if (selectionType == EntitySelectionType::Spline) {
+            entityPropPanel.splineComponentPanel.selectControlPointIdx = selectedIdx;
+        }
+        
+        sceneHierarchyPanel.selectedType = selectionType;
+    
+    }
+
+    mat4 SceneWindow::GetGlobalMatrix(Scene::Entity entity) {
+
+        if (!entity.IsValid())
+            return mat4(1.0f);
+
+        auto transformComponent = entity.TryGetComponent<TransformComponent>();
+        if (transformComponent) {
+            return transformComponent->globalMatrix;
+        }
+
+        auto hierarchyComponent = entity.TryGetComponent<HierarchyComponent>();
+        if (hierarchyComponent) {
+            return hierarchyComponent->globalMatrix;
+        }
+
+        return mat4(1.0f);
 
     }
 

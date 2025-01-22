@@ -62,13 +62,13 @@ namespace Atlas::Scene {
         if (p.HasComponent<HierarchyComponent>()) {
             // Need to check how to get this to work
             auto& hierarchyComponent = p.GetComponent<HierarchyComponent>();
-            std::vector<json> entities;
-            entities.reserve(hierarchyComponent.GetChildren().size());
+            j["entities"] = json::array();
+            auto& entities = j["entities"];
+
             for (auto entity : hierarchyComponent.GetChildren()) {
                 entities.emplace_back();
                 EntityToJson(entities.back(), entity, scene, insertedEntities);
             }
-            j["entities"] = entities;
             j["root"] = hierarchyComponent.root;
         }
     }
@@ -144,8 +144,10 @@ namespace Atlas::Scene {
 
     void SceneToJson(json& j, Scene* scene) {
 
-        std::vector<json> entities;
         std::set<ECS::Entity> insertedEntities;
+
+        j["entities"] = json::array();
+        auto& entities = j["entities"];
 
         auto hierarchySubset = scene->GetSubset<HierarchyComponent>();
         for (auto entity : hierarchySubset) {
@@ -174,7 +176,6 @@ namespace Atlas::Scene {
         j["name"] = scene->name;
         j["aabb"] = scene->aabb;
         j["depth"] = scene->depth;
-        j["entities"] = entities;
         j["sky"] = scene->sky;
         j["postProcessing"] = scene->postProcessing;
         j["wind"] = scene->wind;

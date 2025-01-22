@@ -215,7 +215,7 @@ namespace Atlas::Editor {
             sceneWindow->Update(deltaTime);
         }
 
-        ImGuizmo::Enable(activeSceneWindow->needGuizmoEnabled);
+        ImGuizmo::Enable(activeSceneWindow->guizmo.needEnabled);
 
     }
 
