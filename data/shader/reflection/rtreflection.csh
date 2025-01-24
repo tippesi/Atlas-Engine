@@ -44,6 +44,8 @@ layout(set = 3, binding = 9) uniform sampler2D cloudMap;
 layout(set = 3, binding = 11) uniform sampler2D exposureTexture;
 #endif
 
+layout(set = 1, binding = 11) uniform samplerCube specularProbe;
+
 const ivec2 offsets[9] = ivec2[9](
     ivec2(-1, -1),
     ivec2(0, -1),
@@ -79,7 +81,7 @@ layout(std140, set = 3, binding = 10) uniform UniformBuffer {
     Shadow shadow;
 } uniforms;
 
-vec3 EvaluateHit(inout Ray ray);
+vec3 EvaluateHit(inout Ray ray, float rand);
 vec3 EvaluateDirectLight(inout Surface surface, inout float seed);
 float CheckVisibility(Surface surface, float lightDistance);
 
@@ -139,6 +141,13 @@ void main() {
 
         if (material.roughness <= 1.0 && depth < 1.0 && reflection.a == 0.0) {
 
+            vec3 V = normalize(-viewVec);
+            vec3 N = worldNorm;
+
+            vec3 R = normalize(reflect(-V, N));
+            float mipLevel = material.roughness * float(4 - 1);
+            vec3 prefilteredSpecular = textureLod(specularProbe, R, 0.0).rgb;
+
             const int sampleCount = uniforms.sampleCount;
 
             for (int i = 0; i < sampleCount; i++) {
@@ -147,15 +156,13 @@ void main() {
 #else
                 int sampleIdx = int(uniforms.frameSeed) * sampleCount + i;
 #endif
-                vec2 blueNoiseVec = vec2(
+                vec3 blueNoiseVec = vec3(
                     SampleBlueNoise(highResPixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
-                    SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture)
+                    SampleBlueNoise(highResPixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
+                    SampleBlueNoise(highResPixel, sampleIdx, 2, scramblingRankingTexture, sobolSequenceTexture)
                     );
 
                 float alpha = sqr(max(0.0, material.roughness));
-
-                vec3 V = normalize(-viewVec);
-                vec3 N = worldNorm;
 
                 Ray ray;
                 ray.ID = i;
@@ -164,11 +171,11 @@ void main() {
                 float pdf = 1.0;
                 BRDFSample brdfSample;
                 if (material.roughness >= 0.0) {
-                    ImportanceSampleGGXVNDF(blueNoiseVec, N, V, alpha,
+                    ImportanceSampleGGXVNDF(blueNoiseVec.xy, N, V, alpha,
                         ray.direction, pdf);
                 }
                 else {
-                    ray.direction = normalize(reflect(-V, N));
+                    ray.direction = R;
                 }
 
                 Surface surface = CreateSurface(V, N, ray.direction, material);
@@ -193,15 +200,16 @@ void main() {
                         HitClosest(ray, INSTANCE_MASK_ALL, 0.0, INF);
 #endif
                         hitDistance = ray.hitDistance;
-                        radiance = EvaluateHit(ray);
+                        radiance = EvaluateHit(ray, blueNoiseVec.z);
                     }
                     else {
+                        vec4 probeIrradiance, probeRadiance;
+                        GetLocalProbeLighting(worldPos, V, N, ray.direction, N, blueNoiseVec.z, 
+                            prefilteredSpecular, prefilteredSpecular, probeIrradiance, probeRadiance);
 #if defined(RADIANCE_VOLUME)
-                        radiance = GetLocalRadiance(worldPos, V, ray.direction, N).rgb;
-                        radiance = IsInsideVolume(worldPos) ? radiance : vec3(0.0);
+                        radiance = probeRadiance.rgb;
 #elif defined(IRRADIANCE_VOLUME)
-                        radiance = GetLocalIrradiance(worldPos, V, ray.direction, N).rgb;
-                        radiance = IsInsideVolume(worldPos) ? radiance : vec3(0.0);
+                        radiance = IsInsideVolume(worldPos) ? probeIrradiance.rgb : vec3(0.0);
 #endif
                         hitDistance = 1.0;
                     }
@@ -227,7 +235,7 @@ void main() {
 
 }
 
-vec3 EvaluateHit(inout Ray ray) {
+vec3 EvaluateHit(inout Ray ray, float rand) {
 
     vec3 radiance = vec3(0.0);
     
@@ -249,7 +257,8 @@ vec3 EvaluateHit(inout Ray ray) {
     // Trick: Offset on secondary bounce towards camera, avoids light leaking (introducing innacuracies ofc)
     vec3 V = normalize(globalData.cameraLocation.xyz - surface.P);
     vec4 probeIrradiance, probeRadiance;
-    GetLocalProbeLighting(surface.P, V, surface.N, surface.N, surface.geometryNormal, probeIrradiance, probeRadiance);
+    GetLocalProbeLighting(surface.P, V, surface.N, surface.N, surface.geometryNormal, rand, 
+        vec3(0.0), vec3(0.0), probeIrradiance, probeRadiance);
     // Approximate indirect specular for ray by using the irradiance grid
     // This enables metallic materials to have some kind of secondary reflection
     float ddgiDistanceDamp = min(1.0, sqr(distance(surface.P, ray.origin)));

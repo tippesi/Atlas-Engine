@@ -148,7 +148,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
 
     //result.gi = gi[maxMemoryIdx];
 
-    if (totalWeight < 1e-3) {
+    if (maxWeight > totalWeight) {
         result.gi = gi[maxMemoryIdx];
     }
 
@@ -198,7 +198,7 @@ void main() {
         vec3 prefilteredDiffuse = textureLod(diffuseProbe, worldNormal, 0).rgb;
 #ifdef DDGI_SCROLL
         vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
-            GetLocalIrradianceInterpolated(worldPosition, worldView, worldNormal, geometryWorldNormal, prefilteredDiffuse) : vec4(0.0, 0.0, 0.0, 1.0);
+            GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal, prefilteredDiffuse) : vec4(0.0, 0.0, 0.0, 1.0);
 #else
         vec4 prefilteredDiffuseLocal = ddgiData.volumeEnabled > 0 ?
             GetLocalIrradiance(worldPosition, worldView, worldNormal, geometryWorldNormal) : vec4(0.0, 0.0, 0.0, 1.0);

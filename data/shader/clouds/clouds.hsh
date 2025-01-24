@@ -5,10 +5,11 @@ layout(set = 3, binding = 1) uniform sampler2D depthTexture;
 layout(set = 3, binding = 2) uniform sampler3D shapeTexture;
 layout(set = 3, binding = 3) uniform sampler3D detailTexture;
 layout(set = 3, binding = 4) uniform sampler2D coverageTexture;
+layout(set = 3, binding = 5) uniform sampler2D heightTexture;
 
 layout(set = 1, binding = 12) uniform samplerCube diffuseProbe;
 
-layout(std140, set = 3, binding = 5) uniform CloudUniformBuffer {
+layout(std140, set = 3, binding = 6) uniform CloudUniformBuffer {
     Light light;
 
     float planetRadius;
@@ -91,7 +92,7 @@ float Worley(vec3 pos, float scale, float seed) {
         }
     }
 
-    return 1.0 - dist;
+    return dist;
 
 }
 
@@ -202,7 +203,7 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
     float ct2 = dot(L, L) - DT * DT;
 
     if (ct2 > r2)
-    return vec2(-1.0);
+        return vec2(-1.0);
 
     float AT = sqrt(r2 - ct2);
     float BT = AT;
@@ -216,6 +217,14 @@ vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 pos, float radius) {
     return vec2(minDist, maxDist);
 }
 
+float GetHeightDensity(float heightFraction) {
+    float texCoord = 1.0 - heightFraction;
+
+    float densityHeightGradient = textureLod(heightTexture, vec2(0.5, texCoord), 0.0).r;
+
+    return densityHeightGradient;
+}
+
 float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     vec2 coverageTexCoords, vec3 weatherData, float lod, bool sampleDetail) {
 
@@ -224,13 +233,24 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
     float distFromCenter = distance(pos, cloudPlanetCenter);
     float heightFraction = (distFromCenter - cloudUniforms.innerRadius) /
         (cloudUniforms.outerRadius - cloudUniforms.innerRadius);
-    float densityHeightGradient = exp(-sqr(heightFraction * 2.0 - 1.0) / (4.0 * cloudUniforms.heightStretch));
+    //float densityHeightGradient = exp(-sqr(heightFraction * 2 - 0.3) / (4.0 * cloudUniforms.heightStretch));
+
+    /*
+    const float negativeRange = 0.2;
+    float negtiveFraction = heightFraction - negativeRange;
+    heightFraction -= negativeRange;
+    float negativeHeigthGradient = max(0.0, pow((negtiveFraction + negativeRange) / negativeRange, 1.0 / (8.0 * cloudUniforms.heightStretch)));
+    float densityHeightGradient = heightFraction > 0.0 ? min(negativeHeigthGradient ,
+        pow(1.0 - 1.5 * heightFraction - negativeRange, 1.0 / (8.0 * cloudUniforms.heightStretch))) :
+        negativeHeigthGradient;
+    */
+    float densityHeightGradient = GetHeightDensity(heightFraction);
 
     baseCloudDensity *= saturate(densityHeightGradient);
 
     const float cloudCoverage = min(cloudUniforms.densityMultiplier *
-        (textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.5), 1.0);
-    baseCloudDensity = Remap(baseCloudDensity, cloudCoverage, 1.0, 0.0, 1.0);
+        min(textureLod(coverageTexture, coverageTexCoords, 0.0).r + 0.0, 1.0), 1.0);
+    baseCloudDensity = Remap(baseCloudDensity, 1.0 - cloudCoverage, 1.0, 0.0, 1.0);
     float finalCloudDensity = baseCloudDensity;
 
     if (baseCloudDensity > 0.0 && sampleDetail) {
@@ -240,7 +260,7 @@ float SampleDensity(vec3 pos, vec3 shapeTexCoords, vec3 detailTexCoords,
         1.0 - highFrequencyFBM, saturate(heightFraction * 10.0));
 
         finalCloudDensity = Remap(baseCloudDensity,
-        highFrequencyNoiseModifier * cloudUniforms.detailStrength, 1.0, 0.0, 1.0);
+            highFrequencyNoiseModifier * cloudUniforms.detailStrength, 1.0, 0.0, 1.0);
     }
 
     return saturate(finalCloudDensity);

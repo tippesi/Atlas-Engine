@@ -28,7 +28,8 @@ void main() {
                             + noise.b * 0.250
                             + noise.a * 0.125;
 
-    float lowFrequencyBaseNoise = Perlin2Octaves(pos, baseScale, vec2(1.0, 0.5));
+    float perlin = Perlin2Octaves(pos, baseScale, vec2(1.0, 0.5));
+    float lowFrequencyBaseNoise = Remap(perlin, noise.r, 1.0, 0.0, 1.0);
 
     float shapeDensity = Remap(lowFrequencyBaseNoise, -(1.0 - lowFrequencyFBM), 1.0, 0.0, 1.0);
 

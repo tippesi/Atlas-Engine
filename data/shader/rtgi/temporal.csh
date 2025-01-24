@@ -260,7 +260,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, vec3 normal, float dep
     float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
     confidence *= min(1.0 , exp(-abs(linearDepth - historyDepth)));
 
-    return confidence > 0.5 ? 1.0 : 0.0;
+    return confidence > 0.1 ? 1.0 : 0.0;
 
 }
 

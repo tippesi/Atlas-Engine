@@ -22,7 +22,10 @@ namespace Atlas {
 
             void SetShadowResolution(int32_t shadowResolution);
 
+            void GenerateCoverageTexture();
+
             Texture::Texture2D coverageTexture;
+            Texture::Texture2D heightTexture;
             Texture::Texture3D shapeTexture;
             Texture::Texture3D detailTexture;
             Texture::Texture2D shadowTexture;

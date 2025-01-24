@@ -178,7 +178,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         }
     }
 
-    if (totalWeight < 10e-3) {
+    if (totalWeight < maxWeight) {
         result.ao = aos[maxMemoryIdx];
         result.reflection = reflections[maxMemoryIdx];
     }

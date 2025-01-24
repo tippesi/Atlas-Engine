@@ -215,12 +215,12 @@ void main() {
             if (probeOffset.w > 0.0) {
                 float sig = sign(dist);
                 if (dist < 0.0 && -dist < probeOffsetDistance && ddgiData.optimizeProbes > 0) {
-                    newProbeOffset -= rayData[j].direction.xyz * (sig * probeOffsetDistance - dist) * 0.02 * probeOffset.w / probeOffsetDistance;
+                    //newProbeOffset -= rayData[j].direction.xyz * (sig * probeOffsetDistance - dist) * 0.02 * probeOffset.w / probeOffsetDistance;
                 }
 
                 // This might be used to move probes closer to geometry and make the visibility test more effective, disabled for now
                 if (dist > 0.0 && dist < probeOffsetDistance && ddgiData.optimizeProbes > 0) {
-                    //newProbeOffset -= rayData[j].direction.xyz * (probeOffsetDistance - dist) * 0.001 * probeOffset.w / probeOffsetDistance;
+                    newProbeOffset -= rayData[j].direction.xyz * (probeOffsetDistance - dist) * 0.001 * probeOffset.w / probeOffsetDistance;
                 }
             }
 #elif defined(RADIANCE)            
@@ -229,7 +229,7 @@ void main() {
 
             AeF16x3 radiance = rayData[j].radiance.xyz;
 
-            if (weight > 0.15)
+            if (reset ||weight > 0.15)
                 result += AeF16x4(radiance, AeF16(1.0)) * weight;
 #else
             AeF16 weight = max(AeF16(0.0), dot(N, rayData[j].direction.xyz));
@@ -276,8 +276,8 @@ void main() {
     if (gl_LocalInvocationIndex == 0) {
         vec3 maxOffset = ddgiData.cascades[cascadeIndex].cellSize.xyz * 0.5;
         probeOffset.xyz = clamp(newProbeOffset, -maxOffset, maxOffset);
-        probeOffset.w = max(0.0, reset ? 1.0 : probeOffset.w - 0.01);
-        probeOffsets[baseIdx] = ddgiData.optimizeProbes > 0 ? probeOffset : vec4(0.0, 0.0, 0.0, 1.0);
+        probeOffset.w = 1.0;
+        probeOffsets[baseIdx] = probeOffset;
     }
 #elif defined(RADIANCE)
     vec3 lastResult = texelFetch(radianceVolume, historyVolumeCoord, 0).rgb;

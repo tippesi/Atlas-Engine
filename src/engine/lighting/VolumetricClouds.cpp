@@ -1,6 +1,9 @@
 #include "VolumetricClouds.h"
 
 #include "../common/NoiseGenerator.h"
+#include "../common/Noise.h"
+
+#include "loader/ImageLoader.h"
 
 namespace Atlas {
 
@@ -10,7 +13,7 @@ namespace Atlas {
             int32_t detailResolution, int32_t shadowResolution) :
             coverageTexture(coverageResolution, coverageResolution,
                 VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::Linear),
-            shapeTexture(shapeResolution, shapeResolution / 4, shapeResolution,
+            shapeTexture(shapeResolution, shapeResolution, shapeResolution,
                 VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear),
             detailTexture(detailResolution, detailResolution, detailResolution,
                 VK_FORMAT_R16_SFLOAT, Texture::Wrapping::Repeat, Texture::Filtering::MipMapLinear),
@@ -23,6 +26,13 @@ namespace Atlas {
 
             auto data = noiseImage.ConvertData<float16>();
             coverageTexture.SetData(data);
+
+            auto heightImage = Loader::ImageLoader::LoadImage<uint8_t>("cloudHeight.png", false, 4);
+            heightTexture = Texture::Texture2D(heightImage->width, heightImage->height,
+                VK_FORMAT_R8G8B8A8_UNORM);
+            heightTexture.SetData(heightImage->GetData());
+
+            GenerateCoverageTexture();
 
         }
 
@@ -78,6 +88,66 @@ namespace Atlas {
 
             shadowTexture = Texture::Texture2D(shadowResolution, shadowResolution,
                 VK_FORMAT_R16G16_SFLOAT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Linear);
+
+        }
+
+        void VolumetricClouds::GenerateCoverageTexture() {
+
+            auto remap = [](float originalValue, float originalMin, float originalMax, float newMin, float newMax) -> float {
+                return newMin + ((glm::max(0.0f, originalValue - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
+                };
+
+            auto perlin = [](vec2 pos, float scale) -> float {
+                return (0.5f * glm::perlin(pos, vec2(scale)) + 0.5) * 0.9f;
+                };
+
+            auto perlin2 = [&](vec2 pos, float scale, vec2 weights) -> float {
+                float octaves = perlin(pos * scale, scale) * weights.x
+                    + perlin(2.0f * pos * scale, 2.0f * scale) * weights.y;
+
+                return octaves / (weights.x + weights.y);
+                };
+
+            auto worley4 = [](vec3 pos, float scale, float seed, vec4 weights) -> float {
+                float octave0 = Common::Worley(pos, 1.0f * scale, seed) * weights.x;
+                float octave1 = Common::Worley(pos, 2.0f * scale, seed) * weights.y;
+                float octave2 = Common::Worley(pos, 4.0f * scale, seed) * weights.z;
+                float octave3 = Common::Worley(pos, 8.0f * scale, seed) * weights.w;
+
+                return (octave0 + octave1 + octave2 + octave3) / 
+                    (weights.x + weights.y + weights.z + weights.w);
+                };
+
+            Common::Image<float> noiseImage(coverageTexture.width, coverageTexture.height, 1);
+
+            const float scale = 3.0f;
+            for (int32_t y = 0; y < coverageTexture.height; y++) {
+                for (int32_t x = 0; x < coverageTexture.width; x++) {
+
+                    vec3 pos = vec3(
+                        float(x) / float(noiseImage.width),
+                        float(y) / float(noiseImage.height),
+                        0.0f
+                    );
+
+                    float perlin = perlin2(vec2(pos), scale, vec2(1.0f, 0.5f));
+
+                    vec4 weights = vec4(1.0f, 0.5f, 0.25f, 0.125f);
+                    float worley = worley4(pos, scale, 4387535.0f, weights);
+                    //float worley = glm::min(1.0f, Common::Worley(pos, scale, 4387535.0f));
+
+                    float noise = remap(perlin, worley, 1.0f, 0.0f, 1.0f);
+                    noiseImage.SetData(x, y, 0, noise);
+
+                }
+            }
+
+            auto ref = CreateRef(noiseImage);
+            ref->fileFormat = Common::ImageFormat::HDR;
+            Loader::ImageLoader::SaveImage(ref, "noise.hdr");
+
+            auto data = noiseImage.ConvertData<float16>();
+            coverageTexture.SetData(data);
 
         }
 

@@ -96,14 +96,15 @@ namespace Atlas {
                 commandList->BindImage(clouds->shapeTexture.image, clouds->shapeTexture.sampler, 3, 2);
                 commandList->BindImage(clouds->detailTexture.image, clouds->detailTexture.sampler, 3, 3);
                 commandList->BindImage(clouds->coverageTexture.image, clouds->coverageTexture.sampler, 3, 4);
-                volumetricUniformBuffer.Bind(commandList, 3, 5);
+                commandList->BindImage(clouds->heightTexture.image, clouds->heightTexture.sampler, 3, 5);
+                volumetricUniformBuffer.Bind(commandList, 3, 6);
 
-                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 6);
-                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 7);               
+                commandList->BindImage(scramblingRankingTexture.image, scramblingRankingTexture.sampler, 3, 7);
+                commandList->BindImage(sobolSequenceTexture.image, sobolSequenceTexture.sampler, 3, 8);               
 
                 if (oceanEnabled) {
-                    target->oceanDepthTexture.Bind(commandList, 3, 8);
-                    target->oceanStencilTexture.Bind(commandList, 3, 9);
+                    target->oceanDepthTexture.Bind(commandList, 3, 9);
+                    target->oceanStencilTexture.Bind(commandList, 3, 10);
                 }                
 
                 commandList->Dispatch(groupCount.x, groupCount.y, 1);
@@ -207,6 +208,7 @@ namespace Atlas {
             clouds->shapeTexture.Bind(commandList, 3, 2);
             clouds->detailTexture.Bind(commandList, 3, 3);
             clouds->coverageTexture.Bind(commandList, 3, 4);
+            clouds->heightTexture.Bind(commandList, 3, 5);
 
             CloudShadowUniforms shadowUniforms;
             clouds->GetShadowMatrices(camera, glm::normalize(light.transformedProperties.directional.direction),
@@ -222,8 +224,8 @@ namespace Atlas {
             uniforms.distanceLimit = 10e9f;
             shadowVolumetricUniformBuffer.SetData(&uniforms, 0);
 
-            shadowVolumetricUniformBuffer.Bind(commandList, 3, 5);
-            shadowUniformBuffer.Bind(commandList, 3, 8);
+            shadowVolumetricUniformBuffer.Bind(commandList, 3, 6);
+            shadowUniformBuffer.Bind(commandList, 3, 9);
 
             commandList->Dispatch(groupCount.x, groupCount.y, 1);
 

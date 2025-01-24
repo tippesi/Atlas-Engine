@@ -6,7 +6,13 @@
 namespace Atlas::Scene::Components {
 
     struct SplineControlPoint {
+        SplineControlPoint(glm::mat4 matrix) {
+            transform = matrix;
+            matrixDecomposition = Common::MatrixDecomposition(matrix);
+        }
+
         glm::mat4 transform{1.0f};
+        Common::MatrixDecomposition matrixDecomposition;
 
         vec3 tangent{1.0f};
 
@@ -39,7 +45,7 @@ namespace Atlas::Scene::Components {
 
         void Bake();
 
-        SplinePoint GetInterpolated(float time, const glm::mat4& parentMatrix);
+        SplinePoint GetInterpolated(float time, const glm::mat4& parentMatrix) const;
 
         SplinePoint GetInterpolated(int32_t idx, float t) const;
 

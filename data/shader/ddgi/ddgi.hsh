@@ -324,7 +324,7 @@ vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 }
 
-vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
+vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
 
     // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
     int cascadeIndex = 0;
@@ -367,11 +367,6 @@ vec4 GetLocalIrradianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal,
 
     return irradiance;
 
-}
-
-vec4 GetLocalIrradiance(vec3 P, vec3 V, vec3 N) {
-    // Use "normal" normal as geometry normal 
-    return GetLocalIrradiance(P, V, N, N);
 }
 
 vec4 GetLocalRadianceFromCascade(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, int cascadeIndex) {
@@ -487,7 +482,7 @@ vec4 GetLocalRadiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal) {
 
 }
 
-vec4 GetLocalIRadianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
+vec4 GetLocalRadiance(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, vec3 globalProbeIrradiance) {
 
     // Note: Cascades are orderd from biggest (index 0) to smallest (index cascadeCount - 1)
     int cascadeIndex = 0;
@@ -530,11 +525,6 @@ vec4 GetLocalIRadianceInterpolated(vec3 P, vec3 V, vec3 N, vec3 geometryNormal, 
 
     return irradiance;
 
-}
-
-vec4 GetLocalRadiance(vec3 P, vec3 V, vec3 N) {
-    // Use "normal" normal as geometry normal 
-    return GetLocalRadiance(P, V, N, N);
 }
 
 void GetLocalProbeLightingFromCascade(vec3 P, vec3 V, vec3 N, vec3 L, vec3 geometryNormal, int cascadeIndex, out vec4 irradiance, out vec4 radiance) {
@@ -665,5 +655,45 @@ void GetLocalProbeLighting(vec3 P, vec3 V, vec3 N, vec3 L, vec3 geometryNormal, 
     }
 
     GetLocalProbeLightingFromCascade(P, V, N, L, geometryNormal, max(cascadeIndex - 1, 0), irradiance, radiance);
+
+}
+
+void GetLocalProbeLighting(vec3 P, vec3 V, vec3 N, vec3 L, vec3 geometryNormal, float rand,
+    vec3 globalProbeIrradiance, vec3 globalProbeRadiance, out vec4 irradiance, out vec4 radiance) {
+
+    int cascadeIndex = 0;
+    while (cascadeIndex < ddgiData.cascadeCount) {
+
+        bool isInside = IsInsideCascade(P, cascadeIndex);
+        if (!isInside)
+            break;
+
+        cascadeIndex++;
+    }
+
+    cascadeIndex = max(cascadeIndex - 1, 0);
+
+    vec3 cascadeSize = ddgiData.cascades[cascadeIndex].cellSize.xyz * vec3(ddgiData.volumeProbeCount.xyz - ivec3(3));
+
+    // Shrink AABB to get a proper blend distance
+    vec3 aabbMin = ddgiData.volumeCenter.xyz - cascadeSize * 0.5;
+    vec3 aabbMax = ddgiData.volumeCenter.xyz + cascadeSize * 0.5;
+
+    vec3 closestPoint = clamp(P, aabbMin, aabbMax);
+    float distanceToAABB = distance(P, closestPoint);
+
+    float minAxialDistance = min3(ddgiData.cascades[cascadeIndex].cellSize.xyz);
+    float alpha = min(distanceToAABB / minAxialDistance, 1.0);
+
+    int sampledCascadeIndex = rand > alpha ? cascadeIndex : max(cascadeIndex - 1, 0);
+
+    GetLocalProbeLightingFromCascade(P, V, N, L, geometryNormal, sampledCascadeIndex, irradiance, radiance);
+
+    if (cascadeIndex == 0 && alpha > 0.0) {
+
+        irradiance = mix(irradiance, vec4(globalProbeIrradiance, 0.0), max(0.0, 2.0 * (alpha - 0.5)));
+        radiance = mix(radiance, vec4(globalProbeRadiance, 0.0), max(0.0, 2.0 * (alpha - 0.5)));
+
+    }
 
 }

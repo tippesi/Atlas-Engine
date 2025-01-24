@@ -10,6 +10,7 @@
 #include <../common/normalencode.hsh>
 #include <../common/PI.hsh>
 #include <../common/bluenoise.hsh>
+#include <../common/ign.hsh>
 #include <../common/traceScreenSpace.hsh>
 
 #include <../brdf/brdfEval.hsh>
@@ -92,9 +93,11 @@ void main() {
         
         vec3 globalProbeFallback = textureLod(diffuseProbe, worldNorm, 0).rgb;
 #ifdef DDGI
-        //rayIrradiance = GetLocalIrradianceInterpolated(worldPos, -V, N, N, globalProbeFallback).rgb * ddgiData.volumeStrength;
-        vec3 probeIrradiance = GetLocalIrradianceInterpolated(worldPos, worldView, worldNorm,
-             worldNorm, globalProbeFallback).rgb * ddgiData.volumeStrength;
+        float noise = GetInterleavedGradientNoise(vec2(pixel));
+        vec4 localIrradiance, localRadiance;
+        GetLocalProbeLighting(worldPos, worldView, worldNorm, worldNorm, worldNorm, noise, 
+            globalProbeFallback, vec3(0.0), localIrradiance, localRadiance);
+        vec3 probeIrradiance = localIrradiance.rgb * ddgiData.volumeStrength;
         probeIrradiance = IsInsideVolume(worldPos) ? probeIrradiance : globalProbeFallback;
 #else
         vec3 probeIrradiance = globalProbeFallback;

@@ -5,6 +5,12 @@
 
 namespace Atlas::Scene::Components {
 
+    SplinePoint SplineComponent::GetInterpolated(float time, const glm::mat4& parentMatrix) const {
+
+
+
+    }
+
     SplinePoint SplineComponent::GetInterpolated(int32_t idx, float t) const {
 
         if (controlPoints.empty())

@@ -15,10 +15,10 @@ layout (local_size_x = 8, local_size_y = 4) in;
 
 layout(set = 3, binding = 0, rgba16f) writeonly uniform image2D volumetricCloudImage;
 
-layout(set = 3, binding = 6) uniform sampler2D scramblingRankingTexture;
-layout(set = 3, binding = 7) uniform sampler2D sobolSequenceTexture;
-layout(set = 3, binding = 8) uniform sampler2D oceanDepthTexture;
-layout(set = 3, binding = 9) uniform usampler2D oceanStencilTexture;
+layout(set = 3, binding = 7) uniform sampler2D scramblingRankingTexture;
+layout(set = 3, binding = 8) uniform sampler2D sobolSequenceTexture;
+layout(set = 3, binding = 9) uniform sampler2D oceanDepthTexture;
+layout(set = 3, binding = 10) uniform usampler2D oceanStencilTexture;
 
 vec4 blueNoiseVec = vec4(0.0);
 
@@ -50,7 +50,7 @@ void main() {
 
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    int sampleIdx = int(cloudUniforms.frameSeed);
+    int sampleIdx = int(globalData.frameCount);
     blueNoiseVec = vec4(
             SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
@@ -77,9 +77,9 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth) {
     if (length(fragPos) < inDist && depth != 1.0)
         return vec4(0.0, 0.0, 0.0, 1.0);
 
-    float rayLength = depth < 1.0 ? min(length(fragPos) - inDist, outDist - inDist) : outDist - inDist;
+    float rayLength = cloudUniforms.distanceLimit;
 
-    return IntegrateVolumetricClouds(rayOrigin, rayDirection, inDist,
+    return IntegrateVolumetricClouds(globalData.cameraLocation.xyz, rayDirection, 0.0,
         rayLength, blueNoiseVec);
 
 }

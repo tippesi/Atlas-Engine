@@ -3,6 +3,7 @@
 #include "../System.h"
 #include "../texture/Texture2D.h"
 #include "Image.h"
+#include "Noise.h"
 #include "RandomHelper.h"
 
 #include <perlin noise/PerlinNoise.h>
