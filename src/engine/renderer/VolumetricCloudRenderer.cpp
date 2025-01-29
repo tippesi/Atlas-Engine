@@ -381,7 +381,7 @@ namespace Atlas {
 
             if (mainLightEntity.IsValid()) {
                 auto& light = mainLightEntity.GetComponent<LightComponent>();
-                uniforms.light.direction = vec4(light.transformedProperties.directional.direction, 0.0f);
+                uniforms.light.direction = vec4(normalize(light.transformedProperties.directional.direction), 0.0f);
                 uniforms.light.color = vec4(Common::ColorConverter::ConvertSRGBToLinear(light.color), 1.0f);
                 uniforms.light.intensity = light.intensity;
             }

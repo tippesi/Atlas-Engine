@@ -110,11 +110,12 @@ void main() {
 
         ivec2 highResPixel;
         vec2 recontructTexCoord;
-        if (uniforms.halfRes > 0) {
-            recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
+        if (uniforms.halfRes > 0) {            
 #ifdef UPSCALE
+            recontructTexCoord = (2.0 * (vec2(pixel)) + offset + 0.5) / (2.0 * vec2(resolution));
             highResPixel = 2 * pixel + offset;
 #else
+            recontructTexCoord = (vec2(pixel) + 0.5) / vec2(resolution);
             highResPixel = pixel;
 #endif
         }

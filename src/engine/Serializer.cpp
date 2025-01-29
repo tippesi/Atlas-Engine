@@ -26,6 +26,13 @@ namespace Atlas {
                 return;
             }
 
+            JobGroup saveDependenciesGroup{ "Save scene dependencies", JobPriority::Medium };
+            if (saveDependencies) {
+                JobSystem::Execute(saveDependenciesGroup, [&](JobData&) {
+                    SaveDependencies(scene);
+                    });
+            }
+
             json j;
             Scene::SceneToJson(j, scene.get());
 
@@ -39,9 +46,7 @@ namespace Atlas {
 
             fileStream.close();
 
-            if (saveDependencies) {
-                SaveDependencies(scene);
-            }           
+            JobSystem::Wait(saveDependenciesGroup);
 
         }
 
@@ -167,8 +172,6 @@ namespace Atlas {
                 Loader::TerrainLoader::SaveTerrain(scene->terrain.Get(), scene->terrain.GetResource()->path);
             }
 
-            JobSystem::Wait(group);
-
             for (const auto& mesh : meshes) {
                 if (!mesh.IsLoaded()) continue;
 
@@ -179,14 +182,13 @@ namespace Atlas {
                     materials[material.GetID()] = material;
             }
 
+            JobSystem::Wait(group);
+
             for (const auto& [_, material] : materials) {
                 if (!material.IsLoaded() || material.IsGenerated()) continue;
 
                 Loader::MaterialLoader::SaveMaterial(material.Get(), material.GetResource()->path);
             }
-
-            
-
         }
 
 }

@@ -55,6 +55,7 @@ namespace Atlas::Scripting::Bindings {
             "AddTextComponent", &Scene::Entity::AddComponent<TextComponent, ResourceHandle<Font>&, std::string>,
             "AddTransformComponent", &Scene::Entity::AddComponent<TransformComponent, glm::mat4&, bool>,
             "AddLuaScriptComponent", &Scene::Entity::AddComponent<LuaScriptComponent, ResourceHandle<Script>&>,
+            "AddSplineComponent", &Scene::Entity::AddComponent<SplineComponent>,
 
             // Remove components
             "RemoveAudioComponent", &Scene::Entity::RemoveComponent<AudioComponent>,
@@ -69,6 +70,7 @@ namespace Atlas::Scripting::Bindings {
             "RemoveTextComponent", &Scene::Entity::RemoveComponent<TextComponent>,
             "RemoveTransformComponent", &Scene::Entity::RemoveComponent<TransformComponent>,
             "RemoveLuaScriptComponent", &Scene::Entity::RemoveComponent<LuaScriptComponent>,
+            "RemoveSplineComponent", &Scene::Entity::RemoveComponent<SplineComponent>,
 
             // Get components
             "GetAudioComponent", &Scene::Entity::TryGetComponent<AudioComponent>,
@@ -82,7 +84,8 @@ namespace Atlas::Scripting::Bindings {
             "GetRigidBodyComponent", &Scene::Entity::TryGetComponent<RigidBodyComponent>,
             "GetTextComponent", &Scene::Entity::TryGetComponent<TextComponent>,
             "GetTransformComponent", &Scene::Entity::TryGetComponent<TransformComponent>,
-            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>
+            "GetLuaScriptComponent", &Scene::Entity::TryGetComponent<LuaScriptComponent>,
+            "GetSplineComponent", &Scene::Entity::TryGetComponent<SplineComponent>
         );
 
     }
@@ -282,6 +285,26 @@ namespace Atlas::Scripting::Bindings {
             "GetPropertyBool", &LuaScriptComponent::GetPropertyValue<bool>,
             "permanentExecution", &LuaScriptComponent::permanentExecution,
             "script", &LuaScriptComponent::script
+        );
+
+        ns->new_enum<SplineType>("SplineType", {
+            { "Linear", SplineType::Linear },
+            { "CatmullRom", SplineType::CatmullRom },
+            { "Hermite", SplineType::Hermite }
+            });
+
+        ns->new_usertype<SplinePoint>("SplinePoint",
+            "position", &SplinePoint::position,
+            "rotation", &SplinePoint::rotation,
+            "scale", &SplinePoint::scale,
+            "tangent", &SplinePoint::tangent,
+            "time", &SplinePoint::time
+        );
+
+        ns->new_usertype<SplineComponent>("SplineComponent",
+            "Bake", &SplineComponent::Bake,
+            "GetInterpolated", &SplineComponent::GetInterpolated,
+            "type", &SplineComponent::type
         );
 
     }

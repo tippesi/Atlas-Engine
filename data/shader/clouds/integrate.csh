@@ -50,7 +50,7 @@ void main() {
 
     vec3 pixelPos = ConvertDepthToViewSpace(depth, texCoord);
 
-    int sampleIdx = int(globalData.frameCount);
+    int sampleIdx = int(cloudUniforms.frameSeed);
     blueNoiseVec = vec4(
             SampleBlueNoise(pixel, sampleIdx, 0, scramblingRankingTexture, sobolSequenceTexture),
             SampleBlueNoise(pixel, sampleIdx, 1, scramblingRankingTexture, sobolSequenceTexture),
@@ -78,8 +78,10 @@ vec4 ComputeVolumetricClouds(vec3 fragPos, float depth) {
         return vec4(0.0, 0.0, 0.0, 1.0);
 
     float rayLength = cloudUniforms.distanceLimit;
+    rayLength = outDist - inDist;
+    rayLength = depth < 1.0 ? min(length(fragPos) - inDist, outDist - inDist) : outDist - inDist;
 
-    return IntegrateVolumetricClouds(globalData.cameraLocation.xyz, rayDirection, 0.0,
+    return IntegrateVolumetricClouds(globalData.cameraLocation.xyz, rayDirection, inDist,
         rayLength, blueNoiseVec);
 
 }

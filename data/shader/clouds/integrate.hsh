@@ -86,7 +86,7 @@ vec4 GetExtinctionToLight(vec3 pos, int ditherIdx, vec4 noiseVector) {
     float inDist, outDist;
     CalculateRayLength(pos, rayDirection, inDist, outDist);
 
-    float rayLength = (outDist - inDist) * 0.25;
+    float rayLength = (outDist - inDist) * 0.5;
     float stepLength = rayLength / float(lightSampleCount);
 
 #ifdef STOCHASTIC_OCCLUSION_SAMPLING
@@ -154,14 +154,16 @@ float DualPhaseFunction(float g0, float g1, float alpha, float LDotV) {
 
 vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart, float rayLength, vec4 noiseVector) {
 
+    const int smallStepFraction = 2;
     const int sampleCount = cloudUniforms.sampleCount;
     int raySampleCount = max(sampleCount, int((rayLength / cloudUniforms.distanceLimit) * float(sampleCount)));
     float stepLength = rayLength / float(raySampleCount);
+    float smallStepLength = stepLength / float(smallStepFraction);
     vec3 stepVector = rayDirection * stepLength;
 
     // Primary noise always uses index 0
     float noiseValue = noiseVector[0];
-    rayOrigin += 2.0 * stepVector * noiseValue;
+    rayOrigin += stepVector * noiseValue;
 
     vec3 integration = vec3(0.0);
     vec3 rayPos = rayOrigin + rayDirection * rayStart;
@@ -173,6 +175,7 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
     float lodOffset = 4.0 / float(raySampleCount);
 
     int noiseIdx = 0;
+    int zeroDensity = 1;
     for (int i = 0; i < raySampleCount; i++) {
 
         if (extinction.a > epsilon) {
@@ -196,6 +199,12 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
             float density = saturate(SampleDensity(rayPos, shapeTexCoords, detailTexCoords,
                 coverageTexCoords, vec3(1.0), floor(lod), true));
 
+            if (zeroDensity <= 0 && density > 0.0) {
+                rayPos -= stepVector;
+                zeroDensity = smallStepFraction;
+                continue;
+            }
+
             if (density > 0.0) {
                 vec3 scatteringCoefficient = cloudUniforms.scatteringFactor *
                     cloudUniforms.extinctionCoefficients.rgb * density;
@@ -208,9 +217,9 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
                 float ambientAlbedo = 1.0 - darkEdgeFactor * cloudUniforms.darkEdgeAmbient;
 
                 vec4 clampedExtinction = max(extinctionCoefficient, 0.0000001);
-                vec4 stepExtinction = exp(-extinctionCoefficient * stepLength);
+                vec4 stepExtinction = exp(-extinctionCoefficient * smallStepLength);
 
-                float lightDotView = dot(normalize(cloudUniforms.light.direction.xyz), normalize(rayDirection));
+                float lightDotView = dot(cloudUniforms.light.direction.xyz, rayDirection);
                 vec3 lightColor = cloudUniforms.light.color.rgb * cloudUniforms.light.intensity;
                 vec4 lightExtinction =  GetExtinctionToLight(rayPos, i % 4, noiseVector);
 
@@ -222,13 +231,18 @@ vec4 IntegrateVolumetricClouds(vec3 rayOrigin, vec3 rayDirection, float rayStart
                 vec3 luminanceIntegral = (stepScattering - stepScattering * stepExtinction.rgb) / clampedExtinction.rgb;
                 scattering += luminanceIntegral * extinction.rgb;
                 extinction *= stepExtinction;
+
+                rayPos += rayDirection * smallStepLength;
+                zeroDensity = smallStepFraction;
             }
+            else {
+                rayPos += stepVector;
+                zeroDensity -= 1;
 
-            lod += lodOffset;
-            lod = min(lod, 0.0);
+                lod += lodOffset;
+                lod = min(lod, 0.0);
+            }
         }
-
-        rayPos += stepVector;
     }
 
     return vec4(scattering, extinction.a);

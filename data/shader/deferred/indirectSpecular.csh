@@ -128,7 +128,7 @@ float GetPixelEdgeWeight(int sharedMemoryOffset, float referenceDepth, vec3 refe
     return depthWeight * normalWeight;
 }
 
-UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highResPixel) {
+UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, float referenceRoughness, vec2 highResPixel) {
 
     UpsampleResult result;
 
@@ -178,7 +178,7 @@ UpsampleResult Upsample(float referenceDepth, vec3 referenceNormal, vec2 highRes
         }
     }
 
-    if (totalWeight < maxWeight) {
+    if (totalWeight < maxWeight && referenceRoughness > 0.01) {
         result.ao = aos[maxMemoryIdx];
         result.reflection = reflections[maxMemoryIdx];
     }
@@ -219,7 +219,7 @@ void main() {
         vec3 worldNormal = normalize(vec3(globalData.ivMatrix * vec4(surface.N, 0.0)));
         vec3 geometryWorldNormal = normalize(vec3(globalData.ivMatrix * vec4(geometryNormal, 0.0)));
 
-        upsampleResult = Upsample(depth, surface.N, vec2(pixel));
+        upsampleResult = Upsample(depth, surface.N, surface.material.roughness, vec2(pixel));
 
         // Indirect specular BRDF
         vec3 R = normalize(mat3(globalData.ivMatrix) * reflect(-surface.V, surface.N));

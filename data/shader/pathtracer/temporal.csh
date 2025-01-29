@@ -181,7 +181,7 @@ float IsHistoryPixelValid(ivec2 pixel, float linearDepth, uint materialIdx, vec3
     uint historyMaterialIdx = texelFetch(historyMaterialIdxTexture, pixel, 0).r;
     confidence *= historyMaterialIdx != materialIdx ? 0.0 : 1.0;
 
-    float depthPhi = 16.0 / abs(linearDepth);
+    float depthPhi = 128.0 / abs(linearDepth);
     float historyDepth = ConvertDepthToViewSpaceDepth(texelFetch(historyDepthTexture, pixel, 0).r);
     float historyLinearDepth = historyDepth;
     confidence *= min(1.0 , exp(-abs(linearDepth - historyLinearDepth) * depthPhi));
@@ -313,7 +313,7 @@ bool SampleCatmullRom(ivec2 pixel, vec2 uv, out vec4 history) {
         }
     }
     
-    if (totalWeight > 0.5) {
+    if (totalWeight > 0.2) {
         history /= totalWeight;
         history = max(history, 0.0);
    
@@ -400,6 +400,8 @@ void main() {
     historyRadiance = RGBToYCoCg(historyRadiance);
     currentRadiance = RGBToYCoCg(currentRadiance);
 
+    float maxVelocity = max(abs(velocity.x), abs(velocity.y));
+
     vec3 historyNeighbourhoodMin = mean - std;
     vec3 historyNeighbourhoodMax = mean + std;
 
@@ -419,7 +421,7 @@ void main() {
     currentRadiance = YCoCgToRGB(currentRadiance);
 
     float temporalWeight = (pushConstants.maxHistoryLength - 1.0) / pushConstants.maxHistoryLength;
-    float factor = mix(0.0, temporalWeight, 1.0 - adjClipBlend);
+    float factor = mix(0.0, temporalWeight - maxVelocity, 1.0 - adjClipBlend);
     factor = (historyUV.x < 0.0 || historyUV.y < 0.0 || historyUV.x > 1.0
          || historyUV.y > 1.0) ? 0.0 : factor;
 

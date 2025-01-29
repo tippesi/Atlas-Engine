@@ -63,7 +63,7 @@ namespace Atlas::Editor::UI {
             SaveScene();
         }
         
-        if (controlDown && playMaximized && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
+        if (controlDown && isPlaying && ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
             StopPlaying();
         }   
 
@@ -623,16 +623,17 @@ namespace Atlas::Editor::UI {
 
             glm::mat4 globalMatrix = GetGlobalMatrix(entity);
 
-            SplinePoint lastSplinePoint = splineComponent.GetInterpolated(0, 0.0f);
+            SplinePoint lastSplinePoint = splineComponent.GetInterpolatedFromIndex(0, 0.0f);
             lastSplinePoint.position = vec3(globalMatrix * vec4(lastSplinePoint.position, 1.0f));
 
-            wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
+            if (!splineComponent.controlPoints.empty())
+                wrapper.RenderLineSphere(lastSplinePoint.position, 0.025f, vec3(1.0f, 0.15f, 0.0f), testDepth);
 
             const int32_t linesPerSegment = 20;
             for (int32_t i = 0; i < int32_t(splineComponent.controlPoints.size()) - 1; i++) {
                 for (int32_t j = 0; j < linesPerSegment; j++) {
                     auto t = float(j + 1) / float(linesPerSegment);
-                    auto splinePoint = splineComponent.GetInterpolated(i, t);
+                    auto splinePoint = splineComponent.GetInterpolatedFromIndex(i, t);
                     splinePoint.position = vec3(globalMatrix * vec4(splinePoint.position, 1.0f));
 
                     wrapper.RenderLine(lastSplinePoint.position, splinePoint.position, 

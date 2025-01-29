@@ -314,28 +314,38 @@ namespace Atlas::Scene::Components {
         AE_ASSERT(scriptEnvironment.has_value());
         auto& state = scriptEnvironment.value();
 
+        sol::optional<sol::table> scriptPropertyTable = state["ScriptProperties"];
+        if (!scriptPropertyTable.has_value()) {
+            return;
+        }
+
         for (const auto& [propertyName, property] : properties) {
+            sol::optional<sol::table> propertyTable = scriptPropertyTable.value()[propertyName];
+            if (!propertyTable.has_value()) {
+                continue;
+            }
+
             switch (property.type) {
             case PropertyType::String:
-                state["ScriptProperties"][propertyName]["value"] = property.stringValue;
+                propertyTable.value()["value"] = property.stringValue;
                 break;
             case PropertyType::Double:
-                state["ScriptProperties"][propertyName]["value"] = property.doubleValue;
+                propertyTable.value()["value"] = property.doubleValue;
                 break;
             case PropertyType::Integer:
-                state["ScriptProperties"][propertyName]["value"] = property.integerValue;
+                propertyTable.value()["value"] = property.integerValue;
                 break;
             case PropertyType::Boolean:
-                state["ScriptProperties"][propertyName]["value"] = property.booleanValue;
+                propertyTable.value()["value"] = property.booleanValue;
                 break;
             case PropertyType::Vec2:
-                state["ScriptProperties"][propertyName]["value"] = property.vec2Value;
+                propertyTable.value()["value"] = property.vec2Value;
                 break;
             case PropertyType::Vec3:
-                state["ScriptProperties"][propertyName]["value"] = property.vec3Value;
+                propertyTable.value()["value"] = property.vec3Value;
                 break;
             case PropertyType::Vec4:
-                state["ScriptProperties"][propertyName]["value"] = property.vec4Value;
+                propertyTable.value()["value"] = property.vec4Value;
                 break;
             case PropertyType::Undefined:
                 break;

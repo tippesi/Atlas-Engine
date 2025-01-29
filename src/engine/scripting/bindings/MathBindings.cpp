@@ -1,5 +1,7 @@
 #include "MathBindings.h"
 
+#include <glm/gtx/polar_coordinates.hpp>
+
 namespace Atlas::Scripting::Bindings {
 
     void GenerateMathBindings(sol::table* ns) {
@@ -99,6 +101,9 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->set_function("EulerAngles", [](const glm::quat& quaternion) { return glm::eulerAngles(quaternion); });
+
+        ns->set_function("Euclidean", [](const glm::vec2& vec) { return glm::euclidean(vec); });
+        ns->set_function("Polar", [](const glm::vec3& vec) { return vec2(glm::polar(vec)); });
 
     }
 

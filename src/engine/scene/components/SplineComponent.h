@@ -3,10 +3,14 @@
 #include "../Entity.h"
 #include "../../System.h"
 
+#include "common/MatrixDecomposition.h"
+
 namespace Atlas::Scene::Components {
 
     struct SplineControlPoint {
-        SplineControlPoint(glm::mat4 matrix) {
+        SplineControlPoint() {}
+
+        SplineControlPoint(glm::mat4 matrix, float time = 0.0f) : transform(matrix), time(time) {
             transform = matrix;
             matrixDecomposition = Common::MatrixDecomposition(matrix);
         }
@@ -29,16 +33,21 @@ namespace Atlas::Scene::Components {
         float time = 0.0f;
     };
 
+    enum class SplineType {
+        Linear = 0,
+        CatmullRom,
+        Hermite
+    };
+
+    enum class SplineBakeMode {
+        NoBake = 0,
+        EqualSpacingBake,
+        DistanceSpacingBake
+    };
 
     class SplineComponent {
 
     public:
-        enum class SplineType {
-            Linear = 0,
-            CatmullRom,
-            Hermite
-        };
-
         SplineComponent() = default;
         SplineComponent(const SplineComponent& that) = default;
         explicit SplineComponent(const SplineType type) : type(type) {}
@@ -47,14 +56,16 @@ namespace Atlas::Scene::Components {
 
         SplinePoint GetInterpolated(float time, const glm::mat4& parentMatrix) const;
 
-        SplinePoint GetInterpolated(int32_t idx, float t) const;
+        SplinePoint GetInterpolatedFromIndex(int32_t idx, float t) const;
 
         SplineType type = SplineType::Linear;
+        SplineBakeMode bakeMode = SplineBakeMode::EqualSpacingBake;
+
         std::vector<SplineControlPoint> controlPoints;
         std::vector<SplinePoint> bakedPoints;
 
     private:
-        void TransformSplinePoint(SplinePoint& point, const glm::mat4& transform);
+        void TransformSplinePoint(SplinePoint& point, const glm::mat4& transform) const;
 
     };
 

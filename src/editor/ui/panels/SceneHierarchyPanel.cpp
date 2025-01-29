@@ -165,6 +165,7 @@ namespace Atlas::Editor::UI {
         selectedEntity = Scene::Entity();
         selectedEntities.clear();
         selectedProperty = SelectedProperty();
+        selectedType = EntitySelectionType::Entity;
 
     }
 

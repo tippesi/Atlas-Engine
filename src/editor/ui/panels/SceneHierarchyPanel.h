@@ -58,7 +58,7 @@ namespace Atlas::Editor::UI {
         void ClearSelection();
 
         Scene::Entity selectedEntity;
-        EntitySelectionType selectedType;
+        EntitySelectionType selectedType = EntitySelectionType::Entity;
 
         std::unordered_set<ECS::Entity> selectedEntities;
         SelectedProperty selectedProperty;

@@ -411,4 +411,41 @@ namespace Atlas::Scene::Components {
             }
         }
     }
+
+    void to_json(json& j, const SplineComponent& p) {
+
+        int type = static_cast<int>(p.type);
+        int bakeMode = static_cast<int>(p.bakeMode);
+
+        j = json{
+            {"type", type},
+            {"bakeMode", bakeMode}
+        };
+
+        auto& controlPoints = j["controlPoints"];
+        for (const auto& controlPoint : p.controlPoints) {
+            controlPoints.emplace_back(json {
+                {"transform", controlPoint.transform},
+                {"tangent", controlPoint.tangent},
+                {"time", controlPoint.time}
+                });
+        }
+    }
+
+    void from_json(const json& j, SplineComponent& p) {
+        json typeProperties;
+        int type, bakeMode;
+
+        j.at("type").get_to(type);
+        j.at("bakeMode").get_to(bakeMode);
+
+        p.type = static_cast<SplineType>(type);
+        p.bakeMode = static_cast<SplineBakeMode>(type);
+
+        auto& controlPoints = j["controlPoints"];
+        for (const auto& cp : controlPoints) {
+            p.controlPoints.emplace_back(cp["transform"], cp["time"]);
+            p.controlPoints.back().tangent = cp["tangent"];
+        }
+    }
 }

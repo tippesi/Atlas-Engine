@@ -36,7 +36,7 @@ void LoadGroupSharedData() {
     if (gl_LocalInvocationIndex < depthDataSize) {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - 1);
         depths[gl_LocalInvocationIndex] = ConvertDepthToViewSpaceDepth(texelFetch(lowResDepthTexture, offset, 0).r);
 
         vec3 normal = DecodeNormal(texelFetch(lowResNormalTexture, offset, 0).rg);
