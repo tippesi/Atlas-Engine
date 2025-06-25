@@ -237,11 +237,11 @@ namespace Atlas::Editor::UI {
 
             if (!isPlaying) {
                 auto& moveIcon = Singletons::icons->Get(IconType::Move);
-                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moveIcon);
+                auto set = Singletons::imguiWrapper->GetTextureId(&moveIcon);
                 bool selected = guizmo.mode == ImGuizmo::OPERATION::TRANSLATE;
                 ImVec4 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                if (ImGui::ImageButton("Translate button", set, buttonSize, uvMin, uvMax)) {
                     guizmo.mode = ImGuizmo::OPERATION::TRANSLATE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into translation mode");
@@ -249,11 +249,11 @@ namespace Atlas::Editor::UI {
 
                 ImGui::SameLine();
                 auto& rotateIcon = Singletons::icons->Get(IconType::Rotate);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&rotateIcon);
+                set = Singletons::imguiWrapper->GetTextureId(&rotateIcon);
                 selected = guizmo.mode == ImGuizmo::OPERATION::ROTATE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                if (ImGui::ImageButton("Rotate button", set, buttonSize, uvMin, uvMax)) {
                     guizmo.mode = ImGuizmo::OPERATION::ROTATE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into rotation mode");
@@ -261,11 +261,11 @@ namespace Atlas::Editor::UI {
 
                 ImGui::SameLine();
                 auto& scaleIcon = Singletons::icons->Get(IconType::Scale);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&scaleIcon);
+                set = Singletons::imguiWrapper->GetTextureId(&scaleIcon);
                 selected = guizmo.mode == ImGuizmo::OPERATION::SCALE;
                 backgroundColor = selected ? selectedColor : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, backgroundColor);
-                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                if (ImGui::ImageButton("Scale button", set, buttonSize, uvMin, uvMax)) {
                     guizmo.mode = ImGuizmo::OPERATION::SCALE;
                 }
                 ImGui::SetItemTooltip("Sets the gizmo into scaling mode");
@@ -274,9 +274,9 @@ namespace Atlas::Editor::UI {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
                 auto& moreHorizIcon = Singletons::icons->Get(IconType::MoreHorizontal);
-                set = Singletons::imguiWrapper->GetTextureDescriptorSet(&moreHorizIcon);
+                set = Singletons::imguiWrapper->GetTextureId(&moreHorizIcon);
                 ImGui::SameLine();
-                if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+                if (ImGui::ImageButton("More button", set, buttonSize, uvMin, uvMax)) {
                     ImGui::OpenPopup("Guizmo settings");
                 }
 
@@ -330,31 +330,31 @@ namespace Atlas::Editor::UI {
             uvMax = ImVec2(0.75f, 0.75f);
 
             auto& playIcon = Singletons::icons->Get(IconType::Play);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&playIcon);
+            auto set = Singletons::imguiWrapper->GetTextureId(&playIcon);
 
             auto offset = region.x / 2.0f - buttonSize.x - padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
+            if (ImGui::ImageButton("Play button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && !isPlaying) {
                 StartPlaying();
             }
 
             auto& stopIcon = Singletons::icons->Get(IconType::Stop);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&stopIcon);
+            set = Singletons::imguiWrapper->GetTextureId(&stopIcon);
 
             offset = region.x / 2.0f + padding;
             ImGui::SetCursorPos(ImVec2(offset, 0.0f));
-            if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
+            if (ImGui::ImageButton("Stop button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded() && isPlaying) {
                 StopPlaying();
             }
 
             auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&settingsIcon);
+            set = Singletons::imguiWrapper->GetTextureId(&settingsIcon);
 
             uvMin = ImVec2(0.1f, 0.1f);
             uvMax = ImVec2(0.9f, 0.9f);
 
             ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
-            if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+            if (!isPlaying && ImGui::ImageButton("Viewport settings button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 ImGui::OpenPopup("Viewport settings");
             }
 
@@ -398,10 +398,10 @@ namespace Atlas::Editor::UI {
                 Singletons::renderTarget->SetScalingFactor(resolutionScale);
 
             auto& eyeIcon = Singletons::icons->Get(IconType::Visibility);
-            set = Singletons::imguiWrapper->GetTextureDescriptorSet(&eyeIcon);
+            set = Singletons::imguiWrapper->GetTextureId(&eyeIcon);
 
             ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
-            if (!isPlaying && ImGui::ImageButton(set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
+            if (!isPlaying && ImGui::ImageButton("Visualization settings button", set, buttonSize, uvMin, uvMax) && scene.IsLoaded()) {
                 ImGui::OpenPopup("Visualization settings");
             }
 

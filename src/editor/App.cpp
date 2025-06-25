@@ -177,7 +177,7 @@ namespace Atlas::Editor {
 
         auto& activeSceneWindow = sceneWindows[activeSceneIdx];
 
-        auto lockMovement = io.KeysDown[ImGuiKey_LeftCtrl] || io.KeysDown[ImGuiKey_LeftSuper];
+        auto lockMovement = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftSuper);
 
         auto cameraEntity = activeSceneWindow->cameraEntity;
         if (cameraEntity.IsValid() && activeSceneWindow->viewportPanel.isFocused && !lockMovement &&
@@ -377,7 +377,7 @@ namespace Atlas::Editor {
         auto renderArea = ImGui::GetContentRegionAvail();
         activeSceneWindow->viewportPanel.RenderScene(activeSceneWindow->scene.Get(),
             ivec2(0), ivec2(int32_t(renderArea.x), int32_t(renderArea.y)), true);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&activeSceneWindow->viewportPanel.viewportTexture);
+        auto set = Singletons::imguiWrapper->GetTextureId(&activeSceneWindow->viewportPanel.viewportTexture);
         ImGui::Image(set, renderArea);
 
         if (activeSceneWindow->perfOverlayMaximized) {

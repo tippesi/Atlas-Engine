@@ -167,7 +167,7 @@ namespace Atlas::Editor {
             auto deleteButtonSize = ImVec2(lineHeight, lineHeight);
 
             auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+            auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 
             int32_t matCount = 0;
             int32_t loopCount = 0;
@@ -182,7 +182,7 @@ namespace Atlas::Editor {
                 ImGui::SameLine();
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                if (ImGui::ImageButton("Material delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     material.Reset();
                 }
                 ImGui::PopStyleColor();
@@ -246,7 +246,7 @@ namespace Atlas::Editor {
 
                 ImGui::SetCursorPosX(eleRegion.x - deleteButtonSize.x - padding);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                if (ImGui::ImageButton("Biome delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     deleteElevationElement = eleBiomeCount - 1;
                 }
                 ImGui::PopStyleColor();

@@ -189,7 +189,7 @@ namespace Atlas::ImguiExtension {
 
     }
 
-    VkDescriptorSet ImguiWrapper::GetTextureDescriptorSet(const Atlas::Texture::Texture* texture,
+    ImTextureID ImguiWrapper::GetTextureId(const Atlas::Texture::Texture* texture,
         VkImageLayout layout) {
 
         if (!imageViewToDescriptorSetMap.contains(texture->image->view)) {
@@ -203,7 +203,7 @@ namespace Atlas::ImguiExtension {
         auto &handle = imageViewToDescriptorSetMap[texture->image->view];
         handle.lastAccess = 0;
 
-        return handle.set;
+        return (unsigned long long)handle.set;
 
     }
 

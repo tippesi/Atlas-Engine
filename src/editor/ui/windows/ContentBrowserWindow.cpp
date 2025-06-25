@@ -176,11 +176,11 @@ namespace Atlas::Editor::UI {
         ImGui::SetWindowFontScale(1.5f);
 
         auto lineHeight = ImGui::GetTextLineHeight();
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&Singletons::icons->Get(IconType::ArrowLeft));
+        auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(IconType::ArrowLeft));
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        if (ImGui::ImageButton(set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0)) {
+        if (ImGui::ImageButton("Back button", set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f))) {
             if (currentDirectory != assetDirectory) {
                 auto parentPath = std::filesystem::path(currentDirectory).parent_path();
                 currentDirectory = Common::Path::Normalize(parentPath.string());
@@ -217,14 +217,14 @@ namespace Atlas::Editor::UI {
 
         region = ImGui::GetContentRegionAvail();
         auto& filterIcon = Singletons::icons->Get(IconType::Filter);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&filterIcon);
+        set = Singletons::imguiWrapper->GetTextureId(&filterIcon);
 
         auto uvMin = ImVec2(0.1f, 0.1f);
         auto uvMax = ImVec2(0.9f, 0.9f);
 
         ImGui::SetCursorPos(ImVec2(region.x - 2.0f * (buttonSize.x + 2.0f * padding), 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+        if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Content browser filter settings");
         }
         ImGui::PopStyleColor();
@@ -263,11 +263,11 @@ namespace Atlas::Editor::UI {
 
         region = ImGui::GetContentRegionAvail();
         auto& settingsIcon = Singletons::icons->Get(IconType::Settings);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&settingsIcon);
+        set = Singletons::imguiWrapper->GetTextureId(&settingsIcon);
 
         ImGui::SetCursorPos(ImVec2(region.x - (buttonSize.x + 2.0f * padding), 0.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+        if (ImGui::ImageButton("Settings button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Content browser settings");
         }
         ImGui::PopStyleColor();
@@ -408,7 +408,7 @@ namespace Atlas::Editor::UI {
         ImGui::SameLine();
 
         auto folderIcon = Singletons::icons->Get(IconType::Folder);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&folderIcon);
+        auto set = Singletons::imguiWrapper->GetTextureId(&folderIcon);
 
         ImGui::Image(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f));
 
@@ -448,7 +448,7 @@ namespace Atlas::Editor::UI {
             iconTexture = Singletons::icons->Get(IconType::Folder);
         else
             iconTexture = GetIcon(contentType);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&iconTexture);
+        auto set = Singletons::imguiWrapper->GetTextureId(&iconTexture);
 
         bool highlight = assetPath == hightlightPath;
         if (highlight) {

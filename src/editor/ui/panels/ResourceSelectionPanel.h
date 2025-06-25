@@ -69,10 +69,10 @@ namespace Atlas::Editor::UI {
                 ImGui::SameLine();
                 
                 auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-                auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+                auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-                if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+                if (ImGui::ImageButton("Resource delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                     resourceHandle = ResourceHandle<T>();
                     resourceChanged = true;
                 }

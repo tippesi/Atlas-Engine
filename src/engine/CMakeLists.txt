@@ -54,7 +54,7 @@ if(WIN32)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SPIRV-Tools-opt
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator
             unofficial::spirv-reflect glslang::SPIRV Jolt::Jolt
-            ${LUA_LIBRARIES} sol2 fsr2)
+            ${LUA_LIBRARIES} fsr2)
 endif()
 
 if (MINGW)
@@ -69,14 +69,14 @@ if(APPLE)
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static
             volk::volk SPIRV-Tools-opt Jolt::Jolt fsr2
             GPUOpen::VulkanMemoryAllocator Vulkan::Vulkan Vulkan::Headers
-            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES} sol2)
+            unofficial::spirv-reflect glslang::SPIRV ${LUA_LIBRARIES})
 endif()
 
 if(ANDROID)
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_OS_ANDROID)
 
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static hidapi
-            ${LUA_LIBRARIES} sol2 fsr2)
+            ${LUA_LIBRARIES} fsr2)
     set(ATLAS_ENGINE_SYSTEM_LIBS android m)
 endif()
 
@@ -88,7 +88,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     
     set(ATLAS_ENGINE_LIBS assimp::assimp SDL2::SDL2 SDL2::SDL2main SDL2::SDL2-static fsr2
             volk::volk volk::volk_headers GPUOpen::VulkanMemoryAllocator Jolt::Jolt
-            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES} sol2)
+            unofficial::spirv-reflect SPIRV-Tools-opt glslang::SPIRV ${LUA_LIBRARIES})
 
     if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 14.0)
         message("USe gcc14!")
@@ -152,6 +152,7 @@ endif()
 find_path(GLM_INCLUDE_DIRS "glm/common.hpp")
 find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
 find_path(VULKAN_HEADERS_INCLUDE_DIRS "vk_video/vulkan_video_codec_h264std.h")
+find_path(SOL2_INCLUDE_DIRS "sol/abort.hpp")
 
 if (ATLAS_HEADLESS)
 set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_HEADLESS)
@@ -184,6 +185,7 @@ target_include_directories(${PROJECT_NAME}
     ${STB_INCLUDE_DIRS}
     ${GLM_INCLUDE_DIRS}
     ${LUA_INCLUDE_DIR}
+    ${SOL2_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs)
 

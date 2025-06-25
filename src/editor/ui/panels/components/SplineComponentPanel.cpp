@@ -94,22 +94,22 @@ namespace Atlas::Editor::UI {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         auto upArrowIcon = Singletons::icons->Get(IconType::ArrowUp);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&upArrowIcon);
-        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        auto set = Singletons::imguiWrapper->GetTextureId(&upArrowIcon);
+        if (ImGui::ImageButton("Move up button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
             action = ControlPointAction::MoveUp;
         }
         ImGui::SameLine();
 
         auto downArrowIcon = Singletons::icons->Get(IconType::ArrowDown);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&downArrowIcon);
-        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        set = Singletons::imguiWrapper->GetTextureId(&downArrowIcon);
+        if (ImGui::ImageButton("Move down button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
             action = ControlPointAction::MoveDown;
         }
         ImGui::SameLine();
 
         auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
-        set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
-        if (ImGui::ImageButton(set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+        set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
+        if (ImGui::ImageButton("Delete button", set, deleteButtonSize, ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
             action = ControlPointAction::Delete;
         }
         ImGui::PopStyleColor();

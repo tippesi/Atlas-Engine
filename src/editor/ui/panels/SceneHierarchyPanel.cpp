@@ -270,7 +270,7 @@ namespace Atlas::Editor::UI {
 
             bool isNodeVisible = !nodeInvisibleSet.contains(entity);
             auto visibilityIcon = Singletons::icons->Get(IconType::Visibility);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&visibilityIcon);
+            auto set = Singletons::imguiWrapper->GetTextureId(&visibilityIcon);
 
             float buttonSize = ImGui::GetTextLineHeight();
             auto width = ImGui::GetContentRegionAvail().x;
@@ -281,7 +281,7 @@ namespace Atlas::Editor::UI {
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
-            if (ImGui::ImageButton(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            if (ImGui::ImageButton("Visibility button", set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                 isNodeVisible = !isNodeVisible;
 
                 ToggleHierarchyVisibility(entity, isNodeVisible);
@@ -429,14 +429,14 @@ namespace Atlas::Editor::UI {
         auto buttonSize = ImVec2(lineHeight, lineHeight);
 
         auto& filterIcon = Singletons::icons->Get(IconType::Filter);
-        auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&filterIcon);
+        auto set = Singletons::imguiWrapper->GetTextureId(&filterIcon);
 
         auto uvMin = ImVec2(0.1f, 0.1f);
         auto uvMax = ImVec2(0.9f, 0.9f);
 
         //ImGui::SetCursorPosX(ImVec2(region.x - (buttonSize.x + 2.0f * padding), ImGui::GetCursorPosY()));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        if (ImGui::ImageButton(set, buttonSize, uvMin, uvMax)) {
+        if (ImGui::ImageButton("Filter button", set, buttonSize, uvMin, uvMax)) {
             ImGui::OpenPopup("Hierarchy filter settings");
         }
         ImGui::PopStyleColor();

@@ -267,9 +267,9 @@ namespace Atlas {
 
             Volume::RayResult<Body> result;
 
-            JPH::RayCastSettings rayCastSettings = {
-                .mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces
-            };
+            JPH::RayCastSettings rayCastSettings = {};
+
+            rayCastSettings.SetBackFaceMode(JPH::EBackFaceMode::CollideWithBackFaces);
 
             if (system->GetNarrowPhaseQuery().CastRay(rayCast, hit)) {
                 auto& bodyLockInterface = system->GetBodyLockInterface();

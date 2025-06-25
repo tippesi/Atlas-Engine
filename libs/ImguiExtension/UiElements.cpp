@@ -5,7 +5,7 @@ namespace Atlas::ImguiExtension {
     void UIElements::TexturePreview(Ref<ImguiWrapper>& wrapper, const Texture::Texture* texture) {
 
         auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
-        auto set = wrapper->GetTextureDescriptorSet(texture);
+        auto set = wrapper->GetTextureId(texture);
         ImGui::Image(set, ImVec2(lineHeight, lineHeight));
 
         if (ImGui::IsItemHovered() && ImGui::BeginItemTooltip()) {
@@ -28,7 +28,7 @@ namespace Atlas::ImguiExtension {
         auto pos = (region.x - size) / 2.0f;
         ImGui::SetCursorPosX(pos);
 
-        auto set = wrapper->GetTextureDescriptorSet(texture);
+        auto set = wrapper->GetTextureId(texture);
         ImGui::Image(set, ImVec2(size, size));
 
         /*

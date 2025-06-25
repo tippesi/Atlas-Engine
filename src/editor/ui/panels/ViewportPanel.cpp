@@ -55,7 +55,7 @@ namespace Atlas::Editor::UI {
         RenderScene(scene, pos, size, isActiveWindow);
 
         if (viewportTexture.IsValid() && viewportTexture.image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&viewportTexture);
+            auto set = Singletons::imguiWrapper->GetTextureId(&viewportTexture);
             ImGui::Image(set, region);
         }
 

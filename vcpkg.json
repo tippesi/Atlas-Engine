@@ -53,7 +53,7 @@
     },
     {
       "name": "assimp",
-      "version": "5.4.3#0"
+      "version": "6.0.2#0"
     },
     {
       "name": "spirv-tools",
@@ -73,7 +73,7 @@
     },
     {
       "name": "imgui",
-      "version": "1.91.0#0"
+      "version": "1.91.9#0"
     },
     {
       "name": "imguizmo",
@@ -97,15 +97,15 @@
     },
     {
       "name": "joltphysics",
-      "version": "5.1.0#0"
+      "version": "5.3.0#0"
     },
     {
       "name": "lua",
-      "version": "5.4.6"
+      "version": "5.4.8"
     },
     {
       "name": "sol2",
-      "version": "3.3.1#0"
+      "version": "3.5.0#0"
     }
   ]
 }

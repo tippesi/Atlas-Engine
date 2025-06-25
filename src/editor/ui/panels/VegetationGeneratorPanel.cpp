@@ -61,7 +61,7 @@ namespace Atlas::Editor::UI {
             bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(type.id), nodeFlags, "%s", type.name.c_str());
 
             auto deleteIcon = Singletons::icons->Get(IconType::Trash);
-            auto set = Singletons::imguiWrapper->GetTextureDescriptorSet(&deleteIcon);
+            auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 
             ImGui::SameLine();
 
@@ -74,7 +74,7 @@ namespace Atlas::Editor::UI {
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
-            if (ImGui::ImageButton(set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
+            if (ImGui::ImageButton("Vegetationtype delete button", set, ImVec2(buttonSize, buttonSize), ImVec2(0.1f, 0.1f), ImVec2(0.9f, 0.9f))) {
                 deleteIdx = i;
             }
 
