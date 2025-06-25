@@ -67,7 +67,7 @@ jobs:
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.1.1
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
           version: 1.3.261.1
           cache: true
@@ -216,7 +216,7 @@ jobs:
           version: 1.10.0
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.1.1
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
           version: 1.3.261.1
           cache: true
@@ -349,7 +349,7 @@ jobs:
           version: 1.10.0
 
       - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.1.1
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
           version: 1.3.261.1
           cache: true
