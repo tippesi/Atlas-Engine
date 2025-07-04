@@ -204,7 +204,7 @@ namespace Atlas {
 
             {
                 Graphics::Profiler::BeginQuery("Generate exposure histogram");
-                struct HistogramPushConstants {
+                struct alignas(16) HistogramPushConstants {
                     float logLuminanceMin;
                     float invLogLuminanceRange;
                     float blackLevel;
@@ -247,7 +247,7 @@ namespace Atlas {
             {
                 Graphics::Profiler::BeginQuery("Generate exposure texture");
 
-                struct TemporalPushConstants {
+                struct alignas(16) TemporalPushConstants {
                     float logLuminanceMin;
                     float logLuminanceRange;
                     float timeCoefficient;
@@ -312,7 +312,7 @@ namespace Atlas {
             {
                 Graphics::Profiler::EndAndBeginQuery("Downsample");
 
-                struct PushConstants {
+                struct alignas(16) PushConstants {
                     int mipLevel;
                     float threshold;
                 };
@@ -358,7 +358,7 @@ namespace Atlas {
             {
                 Graphics::Profiler::EndAndBeginQuery("Upsample");
 
-                struct PushConstants {
+                struct alignas(16) PushConstants {
                     int additive;
                     int mipLevel;
                     float filterSize = 2.0f;

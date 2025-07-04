@@ -31,8 +31,6 @@ if (DEFINED CMAKE_BUILD_TYPE)
         set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_RELWITHDEBINFO SOL_ALL_SAFETIES_ON)
     else()
         set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} AE_BUILDTYPE_DEBUG SOL_ALL_SAFETIES_ON)
-        # We need additional defines to match what Jolt compiled with as a vcpkg package (ignore this for now for other build types)
-        set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} JPH_PROFILE_ENABLED JPH_DEBUG_RENDERER)
     endif()
 else()
     # This is for non-single config generators like XCode
@@ -44,7 +42,7 @@ else()
         "$<$<CONFIG:RelWithDebInfo>:SOL_ALL_SAFETIES_ON>")
     # Debug compile definitions
     set(ATLAS_ENGINE_COMPILE_DEFINITIONS ${ATLAS_ENGINE_COMPILE_DEFINITIONS} "$<$<CONFIG:Debug>:AE_BUILDTYPE_DEBUG>" 
-        "$<$<CONFIG:Debug>:JPH_PROFILE_ENABLED>" "$<$<CONFIG:Debug>:JPH_DEBUG_RENDERER>" "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
+        "$<$<CONFIG:Debug>:SOL_ALL_SAFETIES_ON>")
 endif()
 
 # Configure platform specific stuff ###############################################################
