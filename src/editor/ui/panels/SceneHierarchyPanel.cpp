@@ -278,6 +278,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::SetCursorPosX(pos + width - buttonSize);
 
+            ImGui::PushID(reinterpret_cast<void*>(entityId));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
@@ -295,6 +296,7 @@ namespace Atlas::Editor::UI {
 
             ImGui::PopStyleColor();
             ImGui::PopStyleVar();
+            ImGui::PopID();
         }
         else {
             // Still need to display something here

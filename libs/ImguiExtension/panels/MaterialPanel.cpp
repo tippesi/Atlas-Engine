@@ -11,6 +11,9 @@ namespace Atlas::ImguiExtension {
         auto widthAfterImage = availableWidth - padding - ImGui::GetTextLineHeight();
 
         auto renderWithImagePreview = [&](ResourceHandle<Texture::Texture2D>& texture, std::function<void(void)> element) {
+
+            // If this will not be loaded it will return 0, so we can still use it
+            ImGui::PushID(texture.GetID());
             
             if (texture.IsLoaded()) {
                 UIElements::TexturePreview(wrapper, &texture);
@@ -21,8 +24,7 @@ namespace Atlas::ImguiExtension {
                 if (textureSelector.has_value()) {
                     texture = textureSelector.value()(texture);
                     ImGui::PopItemWidth();
-                }
-                ImGui::PushID(texture.GetID());
+                }                
             }
             else {
                 if (textureSelector.has_value())
@@ -32,6 +34,7 @@ namespace Atlas::ImguiExtension {
             if (texture.IsLoaded() && !textureSelector.has_value())
                 ImGui::PopItemWidth();
             ImGui::Separator();
+            ImGui::PopID();
         };
         
         renderWithImagePreview(material->baseColorMap, [&]() {
