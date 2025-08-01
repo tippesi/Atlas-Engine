@@ -93,7 +93,7 @@ namespace Atlas::Editor::UI {
         std::vector<Ref<ContentDirectory>> directories;
         std::vector<Content> files;
 
-        JobGroup searchAndFilterJob{ JobPriority::Medium };
+        JobGroup searchAndFilterJob{ "Content search and filter", JobPriority::Medium };
 
         ImGuiSelectionBasicStorage selectionStorage;
 

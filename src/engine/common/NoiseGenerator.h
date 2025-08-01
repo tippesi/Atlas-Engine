@@ -98,7 +98,7 @@ namespace Atlas {
 
                 auto workerCount = JobSystem::GetWorkerCount(JobPriority::High);
 
-                JobGroup perlinNoiseGroup(priority);
+                JobGroup perlinNoiseGroup("Perlin noise generation", priority);
                 std::atomic_int32_t tileCounter = 0;
 
                 JobSystem::ExecuteMultiple(perlinNoiseGroup, workerCount, [&](JobData&) {

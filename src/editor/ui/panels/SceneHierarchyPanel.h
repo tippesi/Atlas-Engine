@@ -99,7 +99,7 @@ namespace Atlas::Editor::UI {
 
         void ToggleHierarchyVisibility(Scene::Entity entity, bool visible);
 
-        JobGroup searchJob{ JobPriority::Low };
+        JobGroup searchJob{ "Scene hierarchy search", JobPriority::Low };
 
         std::string entitySearch;
         std::string transformedEntitySearch;

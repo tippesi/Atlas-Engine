@@ -97,8 +97,8 @@ namespace Atlas::Editor {
         Ref<Common::Image<uint16_t>> newHeightMapImage;
         Ref<Common::Image<uint16_t>> heightMapImage;
 
-        JobGroup previewMapGenerationJob;
-        JobGroup heightMapUpdateJob;
+        JobGroup previewMapGenerationJob { "Heightmap generation" };
+        JobGroup heightMapUpdateJob { "Heightmap update" };
 
         Texture::Texture2D previewHeightMap;
         Texture::Texture2D previewMoistureMap;

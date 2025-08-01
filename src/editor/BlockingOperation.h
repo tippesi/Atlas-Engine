@@ -29,7 +29,7 @@ namespace Atlas::Editor {
             blocker = {};
         }
 
-        JobGroup job;
+        JobGroup job { "Blocking operation" };
         std::optional<std::function<void()>> blocker;
         std::string blockText;
         bool block = false;

@@ -57,8 +57,6 @@ namespace Atlas::Editor {
 
         size_t activeSceneIdx = 0;
 
-        JobGroup bvhBuilderGroup;
-
         ImGuiID upperDockNodeID;
 
         bool resetDockspaceLayout = false;

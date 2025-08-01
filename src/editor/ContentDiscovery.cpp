@@ -11,7 +11,7 @@ namespace Atlas::Editor {
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::content = CreateRef<DiscoveredContent>();
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::nextContent = CreateRef<DiscoveredContent>();
-	JobGroup ContentDiscovery::contentDiscoveryJob;
+	JobGroup ContentDiscovery::contentDiscoveryJob { "Content discovery" };
 
 	std::atomic_bool ContentDiscovery::execute = false;
 	const float ContentDiscovery::discoverFrequency = 3.0f;
@@ -25,13 +25,13 @@ namespace Atlas::Editor {
 
 	const Ref<ContentDirectory> ContentDiscovery::GetContent() {
 
-		return content->rootDirectory;
+		return content ? content->rootDirectory : nullptr;
 
 	}
 
 	std::vector<Content> ContentDiscovery::GetContent(const ContentType type) {
 
-		if (!content->contentTypeToContentMap.contains(type))
+		if (!content || !content->contentTypeToContentMap.contains(type))
 			return {};
 
 		return content->contentTypeToContentMap.at(type);
@@ -39,6 +39,9 @@ namespace Atlas::Editor {
 	}
 
 	std::vector<Content> ContentDiscovery::GetAllContent() {
+
+		if (!content)
+			return {};
 
 		std::vector<Content> files;
 		for (const auto& [type, typeFiles] : content->contentTypeToContentMap) {
@@ -51,7 +54,7 @@ namespace Atlas::Editor {
 
 	const Ref<ContentDirectory> ContentDiscovery::GetDirectory(const std::string& path) {
 
-		if (!content->contentDirectories.contains(path))
+		if (!content || !content->contentDirectories.contains(path))
 			return {};
 
 		return content->contentDirectories.at(path);
@@ -60,7 +63,7 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::Update() {
 
-		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency 
+		bool canRediscover = (Clock::Get() - lastDiscoveryTime) >= discoverFrequency || !content
 			|| content->contentDirectories.empty() || execute;
 
 		if (contentDiscoveryJob.HasFinished() && canRediscover) {
@@ -72,9 +75,8 @@ namespace Atlas::Editor {
 				// Now release the swapped memory here in the job async
 				nextContent.reset();
 
-				nextContent = PerformContentDiscovery();
+				//nextContent = PerformContentDiscovery();
 			});
-
 
 			return;
 		}

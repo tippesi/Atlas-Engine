@@ -29,7 +29,7 @@ namespace Atlas {
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "Atlas Engine";
             appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 1);
-            appInfo.apiVersion = VK_API_VERSION_1_2;
+            appInfo.apiVersion = VK_API_VERSION_1_3;
 
             LoadSupportedLayersAndExtensions();
 
@@ -262,8 +262,7 @@ namespace Atlas {
 
             createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+                                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
             createInfo.pfnUserCallback = DebugCallback;
             createInfo.pUserData = static_cast<void*>(const_cast<char*>(name.c_str()));

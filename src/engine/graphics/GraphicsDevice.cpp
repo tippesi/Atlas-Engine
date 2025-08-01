@@ -984,10 +984,13 @@ namespace Atlas {
             availableFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             availableFeatures12 = {};
             availableFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            availableFeatures13 = {};
+            availableFeatures13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             // Point to the next features
             availableFeatures.pNext = &availableFeatures11;
             availableFeatures11.pNext = &availableFeatures12;
+            availableFeatures12.pNext = &availableFeatures13;
 
             // This queries all features in the chain
             vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures);
@@ -1005,9 +1008,11 @@ namespace Atlas {
             deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             deviceProperties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
             deviceProperties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+            deviceProperties13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
 
             propertiesBuilder.Append(deviceProperties11);
             propertiesBuilder.Append(deviceProperties12);
+            propertiesBuilder.Append(deviceProperties13);
 
             if (supportedExtensions.contains(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
                 propertiesBuilder.Append(rayTracingPipelineProperties);
@@ -1051,9 +1056,11 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 features = {};
             VkPhysicalDeviceVulkan11Features features11 = {};
             VkPhysicalDeviceVulkan12Features features12 = {};
+            VkPhysicalDeviceVulkan13Features features13 = {};
             features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
             features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
             features.features.multiDrawIndirect = availableFeatures.features.tessellationShader;
@@ -1089,6 +1096,10 @@ namespace Atlas {
             features12.hostQueryReset = availableFeatures12.hostQueryReset;
             features12.bufferDeviceAddress = availableFeatures12.bufferDeviceAddress;
             features12.shaderFloat16 = availableFeatures12.shaderFloat16;
+
+            features13.synchronization2 = availableFeatures13.synchronization2;
+            features13.dynamicRendering = availableFeatures13.dynamicRendering;
+            features13.maintenance4 = availableFeatures13.maintenance4;
 
             // Check for ray tracing extension support
             if (supportedExtensions.contains(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
@@ -1173,6 +1184,7 @@ namespace Atlas {
             featureBuilder.Append(features);
             featureBuilder.Append(features11);
             featureBuilder.Append(features12);
+            featureBuilder.Append(features13);
 
             VK_CHECK_MESSAGE(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Error creating graphics device")
 

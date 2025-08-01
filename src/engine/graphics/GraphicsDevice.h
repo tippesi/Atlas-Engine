@@ -71,7 +71,7 @@ namespace Atlas {
                     for (auto commandList : submittedCommandLists) {
                         fences.push_back(commandList->fence);
                     }
-                    auto result = vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 3000000000);
+                    auto result = vkWaitForFences(device, uint32_t(fences.size()), fences.data(), true, 30000000000);
                     // Try to recover here
                     if (result == VK_TIMEOUT)
                         vkDeviceWaitIdle(device);
@@ -186,6 +186,7 @@ namespace Atlas {
             VkPhysicalDeviceProperties2 deviceProperties = {};
             VkPhysicalDeviceVulkan11Properties deviceProperties11 = {};
             VkPhysicalDeviceVulkan12Properties deviceProperties12 = {};
+            VkPhysicalDeviceVulkan13Properties deviceProperties13 = {};
             VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties = {};
             VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties = {};
             VkPhysicalDeviceSubgroupSizeControlProperties subgroupSizeControlProperties = {};
@@ -193,6 +194,7 @@ namespace Atlas {
             VkPhysicalDeviceFeatures2 availableFeatures = {};
             VkPhysicalDeviceVulkan11Features availableFeatures11 = {};
             VkPhysicalDeviceVulkan12Features availableFeatures12 = {};
+            VkPhysicalDeviceVulkan13Features availableFeatures13 = {};
 
             DeviceSupport support;
             std::set<std::string> supportedExtensions;

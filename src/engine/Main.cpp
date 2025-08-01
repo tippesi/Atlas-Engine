@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
     }
 
 #if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
-    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
-    setenv("MVK_DEBUG", "0", 1);
+    //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
+    //setenv("MVK_DEBUG", "0", 1);
 #elif defined(AE_OS_MACOS) && defined(AE_BINDLESS)
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
 #endif

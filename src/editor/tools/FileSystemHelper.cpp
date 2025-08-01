@@ -8,9 +8,9 @@
 
 namespace Atlas::Editor {
 
-    JobGroup FileSystemHelper::copyGroup;
-    JobGroup FileSystemHelper::deleteGroup;
-    JobGroup FileSystemHelper::duplicateGroup;
+    JobGroup FileSystemHelper::copyGroup { "File copy" };
+    JobGroup FileSystemHelper::deleteGroup { "File delete" };
+    JobGroup FileSystemHelper::duplicateGroup { "File duplicate" };
 
     void FileSystemHelper::Copy(const std::string& path, const std::string& destination) {
 

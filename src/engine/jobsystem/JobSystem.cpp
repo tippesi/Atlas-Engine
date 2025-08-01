@@ -60,7 +60,8 @@ namespace Atlas {
             .priority = group.priority,
             .counter = &group.counter,
             .function = std::move(func),
-            .userData = userData
+            .userData = userData,
+            .name = group.name
         };
 
 #ifdef JOBS_SINGLE_THREADED
@@ -84,7 +85,8 @@ namespace Atlas {
             .priority = group.priority,
             .counter = &group.counter,
             .function = std::move(func),
-            .userData = userData
+            .userData = userData,
+            .name = group.name
         };
 
 #ifdef JOBS_SINGLE_THREADED
@@ -184,6 +186,7 @@ namespace Atlas {
         else {
             iterationsPerJob = count % jobCount == 0 ? iterationsPerJob : iterationsPerJob + 1;
         }
+
         JobSystem::ExecuteMultiple(group, jobCount, [iterationsPerJob, count, func = std::move(func)]
             (JobData& data) mutable {
 
