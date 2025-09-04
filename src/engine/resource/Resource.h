@@ -61,6 +61,10 @@ namespace Atlas {
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
+            catch (const std::exception exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = exception;
+            }
             catch(...) {
                 errorOnLoad = true;
                 exceptionOnLoad = std::runtime_error("Unknown issue occurred");
@@ -75,12 +79,16 @@ namespace Atlas {
                 data = loaderFunction(path, std::forward<Args>(args)...);
                 isLoaded = true;
             }
-            catch (const std::exception exception) {
+            catch (const ResourceLoadException exception) {
                 errorOnLoad = true;
                 exceptionOnLoad = exception;
                 Log::Error("Exception on load for resource " + path + ": " + std::string(exception.what()));
             }
-            catch(...) {
+            catch(const std::exception exception) {
+                errorOnLoad = true;
+                exceptionOnLoad = std::runtime_error("Unknown issue occurred");
+            }
+            catch (...) {
                 errorOnLoad = true;
                 exceptionOnLoad = std::runtime_error("Unknown issue occurred");
             }
