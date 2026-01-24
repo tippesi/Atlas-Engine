@@ -106,7 +106,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "cl"
           cxx: "cl"
-          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           parallel: 16
           build-type: MinSizeRel
 
@@ -241,7 +241,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "gcc"
           cxx: "g++"
-          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           parallel: 16
           build-type: MinSizeRel
 
@@ -371,7 +371,7 @@ jobs:
           source-dir: ${{ github.workspace }}/swiftshader
           cc: "clang"
           cxx: "clang++"
-          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF
+          configure-options:  -G Ninja -DSWIFTSHADER_BUILD_TESTS=OFF -DSWIFTSHADER_ENABLE_ASTC=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           parallel: 16
           build-type: MinSizeRel
 
