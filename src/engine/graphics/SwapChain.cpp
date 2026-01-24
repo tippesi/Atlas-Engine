@@ -42,7 +42,7 @@ namespace Atlas {
 
             surfaceFormat = ChooseSurfaceFormat(supportDetails.formats, preferredColorSpace);
             presentMode = ChoosePresentMode(supportDetails.presentModes, desiredMode);
-            extent = ChooseExtent(supportDetails.capabilities, 3200, 1938);
+            extent = ChooseExtent(supportDetails.capabilities, desiredWidth, desiredHeight);
 
             if (extent.width == 0 || extent.height == 0) {
                 return;
