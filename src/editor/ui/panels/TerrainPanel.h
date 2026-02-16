@@ -4,7 +4,6 @@
 #include "scene/Scene.h"
 #include "tools/TerrainGenerator.h"
 #include "VegetationGeneratorPanel.h"
-#include <ImguiExtension/panels/MaterialsPanel.h>
 
 namespace Atlas::Editor::UI {
 

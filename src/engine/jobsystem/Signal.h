@@ -1,7 +1,6 @@
 #pragma once
 
 #include <semaphore>
-#include <atomic>
 
 namespace Atlas {
 

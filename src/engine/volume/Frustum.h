@@ -6,7 +6,6 @@
 
 #include <vector>
 #include <array>
-#include <span>
 
 namespace Atlas {
 

@@ -6,7 +6,6 @@
 #include <input/Controller.h>
 #include <input/Touch.h>
 #include <loader/ModelImporter.h>
-#include <resource/ResourceManager.h>
 #include <ImguiExtension/ImguiWrapper.h>
 
 #include <renderer/PathTracingRenderer.h>

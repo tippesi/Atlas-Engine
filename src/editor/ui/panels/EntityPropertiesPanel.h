@@ -22,7 +22,6 @@
 
 #include <imgui.h>
 #include <optional>
-#include <functional>
 
 namespace Atlas::Editor::UI {
 
