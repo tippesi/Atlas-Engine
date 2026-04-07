@@ -135,10 +135,12 @@ namespace Atlas {
             imageLayouts.resize(imageCount);
             imageViews.resize(imageCount);
             frameBuffers.resize(imageCount);
+            presentationSemaphores.resize(imageCount);
 
             depthImageAllocations.resize(imageCount);
             depthImageViews.resize(imageCount);
             depthImageLayouts.resize(imageCount);
+            VkSemaphoreCreateInfo semaphoreInfo = Initializers::InitSemaphoreCreateInfo();
             for(size_t i = 0; i < images.size(); i++) {
                 VkImageViewCreateInfo imageViewCreateInfo{};
                 imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -178,6 +180,9 @@ namespace Atlas {
 
                 imageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
                 depthImageLayouts[i] = VK_IMAGE_LAYOUT_UNDEFINED;
+
+                VK_CHECK(vkCreateSemaphore(device->device, &semaphoreInfo, nullptr,
+                    &presentationSemaphores[i]))
             }
 
             isComplete = true;
@@ -194,6 +199,10 @@ namespace Atlas {
 
             for (auto& imageView : imageViews) {
                 vkDestroyImageView(device->device, imageView, nullptr);
+            }
+
+            for (auto& semaphore : presentationSemaphores) {
+                vkDestroySemaphore(device->device, semaphore, nullptr);
             }
 
             for (auto& depthImageView : depthImageViews) {
@@ -249,6 +258,14 @@ namespace Atlas {
                 default:
                     return true;
             }
+
+        }
+
+        VkSemaphore SwapChain::GetPresentationSemaphore() const {
+
+            AE_ASSERT(aquiredImageIndex < presentationSemaphores.size()
+                && "Acquired image index out of range");
+            return presentationSemaphores[aquiredImageIndex];
 
         }
 

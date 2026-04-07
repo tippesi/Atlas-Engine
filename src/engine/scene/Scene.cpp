@@ -144,11 +144,11 @@ namespace Atlas {
 
                 // Can only update after scripts were runxx
                 renderState.NewFrame();
-#ifdef AE_BINDLESS
-                renderState.UpdateBlasBindlessData();
-                renderState.UpdateTextureBindlessData();
-                renderState.UpdateOtherTextureBindlessData();
-#endif
+                if (Graphics::GraphicsDevice::DefaultDevice->support.bindless) {
+                    renderState.UpdateBlasBindlessData();
+                    renderState.UpdateTextureBindlessData();
+                    renderState.UpdateOtherTextureBindlessData();
+                }
                 renderState.PrepareMaterials();
 
                 });
@@ -397,24 +397,25 @@ namespace Atlas {
 
             JobSystem::Wait(lightJobGroup);
 
-#ifdef AE_BINDLESS
-            auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
-            JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
-                // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
-                auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
-                    (reflection && reflection->enable && reflection->rt) ||
-                    (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
-                    (rtgi && rtgi->enable);
-                // Need to wait before updating graphic resources
-                Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
-                if (rayTracingWorld && rtUpdateNeeded) {
-                    rayTracingWorld->scene = this;
-                    // Don't update triangle lights for now (second argument)
-                    rayTracingWorld->Update(rayTracingSubset, false);
-                }
-                rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
+            auto device = Graphics::GraphicsDevice::DefaultDevice;
+            if (device->support.bindless) {
+                auto rayTracingSubset = GetSubset<MeshComponent, TransformComponent>();
+                JobSystem::Execute(renderState.rayTracingWorldUpdateJob, [this, rayTracingSubset](JobData&) {
+                    // Check if any rt effects are running (pathtracing checked by rayTracingWorld->includeObjectHistory)
+                    auto rtUpdateNeeded = (irradianceVolume && irradianceVolume->enable) ||
+                        (reflection && reflection->enable && reflection->rt) ||
+                        (rayTracingWorld && rayTracingWorld->includeObjectHistory) ||
+                        (rtgi && rtgi->enable);
+                    // Need to wait before updating graphic resources
+                    Graphics::GraphicsDevice::DefaultDevice->WaitForPreviousFrameSubmission();
+                    if (rayTracingWorld && rtUpdateNeeded) {
+                        rayTracingWorld->scene = this;
+                        // Don't update triangle lights for now (second argument)
+                        rayTracingWorld->Update(rayTracingSubset, false);
+                    }
+                    rtDataValid = rayTracingWorld != nullptr && rayTracingWorld->IsValid();
                 });
-#endif
+            }
 
             if (HasMainCamera()) {
                 auto& mainCamera = GetMainCamera();

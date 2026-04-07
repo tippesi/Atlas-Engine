@@ -59,8 +59,10 @@ namespace Atlas {
 
         }
 
-        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList, 
+        void ShadowRenderer::ProcessPass(Ref<RenderTarget> target, Ref<Scene::Scene> scene, Graphics::CommandList* commandList,
             RenderList* renderList, Ref<RenderList::Pass> shadowPass) {
+
+            bool bindlessTextures = device->support.bindless;
 
             Graphics::Profiler::BeginQuery("Entity pass " + std::to_string(shadowPass->lightEntity) + " layer " + std::to_string(shadowPass->layer));
 
@@ -160,10 +162,8 @@ namespace Atlas {
                     prevMesh = meshID;
                 }
 
-#if !defined(AE_BINDLESS) || defined(AE_OS_MACOS)
-                if (material->HasOpacityMap())
+                if (!bindlessTextures && material->HasOpacityMap())
                     commandList->BindImage(material->opacityMap->image, material->opacityMap->sampler, 3, 1);
-#endif
 
                 auto pushConstants = PushConstants{
                     .lightSpaceMatrix = lightSpaceMatrix,
@@ -258,9 +258,9 @@ namespace Atlas {
                 macros.push_back("OPACITY_MAP");
             }
 
-#if defined(AE_BINDLESS) && !defined(AE_OS_MACOS)
-            macros.push_back("BINDLESS_TEXTURES");
-#endif
+            if (device->support.bindless) {
+                macros.push_back("BINDLESS_TEXTURES");
+            }
 
             return PipelineConfig(shaderConfig, pipelineDesc, macros);
 

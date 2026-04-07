@@ -13,10 +13,13 @@ namespace Atlas::RayTracing {
 
 	void RayTracingManager::Update() {
 
-#ifdef AE_BINDLESS
+        auto device = Graphics::GraphicsDevice::DefaultDevice;
+        if (!device->support.bindless)
+            return;
+
         // This crashes when we start with path tracing and do the bvh build async
         // Launch BVH builds asynchronously
-        auto buildRTStructure = [&](JobData) {
+        auto buildRTStructure = [](JobData) {
             auto meshes = ResourceManager<Mesh::Mesh>::GetOwnedResources();
 
             JobGroup bvhBuildGroup{ "Bvh build" };
@@ -67,7 +70,6 @@ namespace Atlas::RayTracing {
         if (bvhUpdateGroup.HasFinished()) {
             JobSystem::Execute(bvhUpdateGroup, buildRTStructure);
         }
-#endif
 
 	}
 

@@ -248,7 +248,7 @@ namespace Atlas {
             QueueRef SubmitAllCommandLists();
 
             void SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-                VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue);
+                VkSemaphore previousFrameSemaphore, const QueueRef& queue, VkSemaphore signalSemaphore);
 
             bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,
                 const std::vector<const char*>& requiredExtensions, std::vector<const char*>& optionalExtensions);

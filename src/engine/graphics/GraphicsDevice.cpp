@@ -522,7 +522,7 @@ namespace Atlas {
                     //for (auto cmd : frameData->submittedCommandLists)
                     //    semaphores.push_back(cmd->semaphore);
                     if (frame->submittedCommandLists.size()) {
-                        semaphores.push_back(frame->submittedCommandLists.back()->GetSemaphore(presenterQueue.queue));
+                        semaphores.push_back(swapChain->GetPresentationSemaphore());
                     }
                     else {
                         semaphores.push_back(frame->semaphore);
@@ -659,8 +659,13 @@ namespace Atlas {
                     nextQueue = FindAndLockQueue(QueueType::PresentationQueue);
                 }
 
-                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue, nextQueue);
-                previousSemaphore = submission->cmd->GetSemaphore(nextQueue.queue);
+                auto signalSemaphore = nextSubmission == nullptr && swapChain->isComplete ?
+                    swapChain->GetPresentationSemaphore() :
+                    submission->cmd->GetSemaphore(nextQueue.queue);
+
+                SubmitCommandList(submission, previousSemaphore, previousFrameSemaphore, queue,
+                    signalSemaphore);
+                previousSemaphore = signalSemaphore;
 
                 if (nextQueue.ref != queue.ref) {
                     queue.Unlock();
@@ -680,7 +685,7 @@ namespace Atlas {
         }
 
         void GraphicsDevice::SubmitCommandList(CommandListSubmission* submission, VkSemaphore previousSemaphore,
-            VkSemaphore previousFrameSemaphore, const QueueRef& queue, const QueueRef& nextQueue) {
+            VkSemaphore previousFrameSemaphore, const QueueRef& queue, VkSemaphore signalSemaphore) {
 
             // After the submission of a command list, we don't unlock it anymore
             // for further use in this frame. Instead, we will unlock it again
@@ -689,7 +694,7 @@ namespace Atlas {
             std::vector<VkPipelineStageFlags> waitStages = { submission->waitStage };
 
             std::vector<VkSemaphore> waitSemaphores;
-            std::vector<VkSemaphore> submitSemaphores = { cmd->GetSemaphore(nextQueue.queue) };
+            std::vector<VkSemaphore> submitSemaphores = { signalSemaphore };
 
             // Leave out any dependencies if the swap chain isn't complete
             if (swapChain->isComplete) {
