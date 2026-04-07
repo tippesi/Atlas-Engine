@@ -57,11 +57,15 @@
     },
     {
       "name": "spirv-tools",
-      "version": "1.3.296.0#0"
+      "version": "1.4.328.0#0"
+    },
+    {
+      "name": "spirv-headers",
+      "version": "1.4.328.0#0"
     },
     {
       "name": "spirv-reflect",
-      "version": "1.3.296.0#0"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "glslang",
@@ -89,15 +93,15 @@
     },
     {
       "name": "volk",
-      "version": "1.3.296#0"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "vulkan-headers",
-      "version": "1.3.296.0#0"
+      "version": "1.4.328.0#0"
     },
     {
       "name": "joltphysics",
-      "version": "5.3.0#0"
+      "version": "5.5.0#0"
     },
     {
       "name": "lua",
