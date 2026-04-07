@@ -62,14 +62,14 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: f75c836a67777a86a2c1116a28b179827f028b66
+          committish: d3a1e8c161275780ebf2eebd8c6b70d9fabc0a19
           cache: ${{ env.USE_CACHE }}
 
       # This doesn't work when the Visual Studio C++ CLI was set up first (maybe needs a setup with 2019 version)
       - name: Install Vulkan SDK
         uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          version: 1.4.309.0
+          version: 1.4.328.1
           cache: true
 
       - name: Delete MSVC tool version
@@ -206,7 +206,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: f75c836a67777a86a2c1116a28b179827f028b66
+          committish: d3a1e8c161275780ebf2eebd8c6b70d9fabc0a19
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
@@ -218,7 +218,7 @@ jobs:
       - name: Install Vulkan SDK
         uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          version: 1.4.309.0
+          version: 1.4.328.1
           cache: true
           
       - name: Run scripts
@@ -339,7 +339,7 @@ jobs:
         uses: friendlyanon/setup-vcpkg@v1
         # Committish: The commit sha of the vcpkg repo, same as in vcpkg.json
         with: 
-          committish: f75c836a67777a86a2c1116a28b179827f028b66
+          committish: d3a1e8c161275780ebf2eebd8c6b70d9fabc0a19
           cache: ${{ env.USE_CACHE }}
 
       - name: Setup Ninja
@@ -351,7 +351,7 @@ jobs:
       - name: Install Vulkan SDK
         uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          version: 1.4.309.0
+          version: 1.4.328.1
           cache: true
 
       - name: Run scripts
