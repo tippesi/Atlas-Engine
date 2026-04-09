@@ -169,7 +169,6 @@ namespace Atlas::Editor {
             auto& deleteIcon = Singletons::icons->Get(IconType::Trash);
             auto set = Singletons::imguiWrapper->GetTextureId(&deleteIcon);
 
-            int32_t matCount = 0;
             int32_t loopCount = 0;
             for (auto& [material, color] : materials) {
                 ImGui::PushID(loopCount);
@@ -690,7 +689,7 @@ namespace Atlas::Editor {
         std::vector<ElevationBiome> lessBiomes;
         std::vector<ElevationBiome> largerBiomes;
 
-        for (auto& biome : elevationBiomes) {
+        for (const auto& biome : elevationBiomes) {
             if (biome.less) {
                 lessBiomes.push_back(biome);
             }
@@ -713,11 +712,11 @@ namespace Atlas::Editor {
 
             });
 
-        for (auto& biome : lessBiomes) {
+        for (const auto& biome : lessBiomes) {
             biomes.push_back(biome);
         }
 
-        for (auto& biome : largerBiomes) {
+        for (const auto& biome : largerBiomes) {
             biomes.push_back(biome);
         }
 

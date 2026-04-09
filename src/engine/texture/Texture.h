@@ -108,7 +108,7 @@ namespace Atlas {
             /**
              *
              */
-            void GenerateMipmap(Graphics::MemoryTransferManager* transferManager = nullptr);
+            void GenerateMipmap(const Graphics::MemoryTransferManager* transferManager = nullptr);
 
             /**
              * Release all shared texture resources

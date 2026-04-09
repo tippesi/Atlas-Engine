@@ -130,13 +130,13 @@ namespace Atlas {
                         0.0f
                     );
 
-                    float perlin = perlin2(vec2(pos), scale, vec2(1.0f, 0.5f));
+                    float perlinNoise = perlin2(vec2(pos), scale, vec2(1.0f, 0.5f));
 
                     vec4 weights = vec4(1.0f, 0.5f, 0.25f, 0.125f);
                     float worley = worley4(pos, scale, 4387535.0f, weights);
                     //float worley = glm::min(1.0f, Common::Worley(pos, scale, 4387535.0f));
 
-                    float noise = remap(perlin, worley, 1.0f, 0.0f, 1.0f);
+                    float noise = remap(perlinNoise, worley, 1.0f, 0.0f, 1.0f);
                     noiseImage.SetData(x, y, 0, noise);
 
                 }

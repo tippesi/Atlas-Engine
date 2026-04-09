@@ -195,7 +195,7 @@ namespace Atlas {
                     auto& comp = renderState->lightEntities[i].comp;
 
                     if (comp.shadow) {
-                        auto& shadow = comp.shadow;
+                        const auto& shadow = comp.shadow;
                         if (shadow->useCubemap) {
                             cubeMaps.push_back(shadow->cubemap->image);
                         }

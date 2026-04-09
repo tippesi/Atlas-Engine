@@ -487,7 +487,7 @@ namespace Atlas::Editor::UI {
                     auto& spline = selectedEntity.GetComponent<SplineComponent>();
 
                     auto splineControlIdx = entityPropPanel.splineComponentPanel.selectControlPointIdx;
-                    auto& controlPoint = spline.controlPoints[splineControlIdx];
+                    const auto& controlPoint = spline.controlPoints[splineControlIdx];
 
                     guizmo.offset = vec3(0.0f);
                     guizmo.transform = globalMatrix * controlPoint.transform;
@@ -503,7 +503,7 @@ namespace Atlas::Editor::UI {
                     auto size = drawList->VtxBuffer.Size;
 
                     auto snappingPtr = guizmo.GetSnappingPtr();
-                    bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
+                    ImGuizmo::Manipulate(glm::value_ptr(vMatrix), glm::value_ptr(pMatrix),
                         static_cast<ImGuizmo::OPERATION>(guizmo.mode), guizmo.objectSpace ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD,
                         glm::value_ptr(guizmo.transform), nullptr, snappingPtr);
 

@@ -249,11 +249,17 @@ namespace Atlas {
                 std::getline(fileStream, body);
 
             auto basePosition = fileStream.tellg();
+            fileStream.seekg(0, std::ios::end);
+            auto fileEndPosition = fileStream.tellg();
+            fileStream.seekg(basePosition);
+
             auto tileResolution = 8 * terrain->patchSizeFactor + 1;
 
             // Height map + splat map
             auto nodeDataCount = (int64_t)tileResolution * tileResolution * 3;            
             auto normalDataResolution = int64_t(0);
+            auto baseOffset = std::streamoff(basePosition);
+            auto fileEndOffset = std::streamoff(fileEndPosition);
 
             auto device = Graphics::GraphicsDevice::DefaultDevice;
             Graphics::MemoryTransferManager transferManager(device, device->memoryManager);
@@ -270,8 +276,8 @@ namespace Atlas {
 
                 auto cell = cells[i];
 
-                auto isLeaf = cell->LoD == terrain->LoDCount - 1;
                 auto currPos = int64_t(0);
+                auto nodeSize = int64_t(0);
 
                 auto downsample = (int32_t)powf(2.0f, (float)terrain->LoDCount - 1.0f);
                 auto tileSideCount = (int64_t)sqrtf((float)terrain->storage->GetCellCount(0));
@@ -281,7 +287,7 @@ namespace Atlas {
                     auto sizeFactor = int64_t(glm::min(downsample,
                         terrain->bakeResolution / (tileResolution - 1)));
                     normalDataResolution = int64_t(tileResolution - 1) * sizeFactor + 3;
-                    auto nodeSize = nodeDataCount + normalDataResolution
+                    nodeSize = nodeDataCount + normalDataResolution
                         * normalDataResolution * 4;
 
                     if (cell->LoD == j) {
@@ -297,16 +303,30 @@ namespace Atlas {
 
                 cell->storage = terrain->storage.get();
 
-                fileStream.seekg(currPos + basePosition);
+                auto cellDataOffset = baseOffset + std::streamoff(currPos);
+                if (cellDataOffset < baseOffset || cellDataOffset + std::streamoff(nodeSize) > fileEndOffset) {
+                    throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+                }
+
+                fileStream.seekg(cellDataOffset);
+                if (!fileStream.good()) {
+                    throw ResourceLoadException(filename, "Couldn't seek terrain file " + filename);
+                }
+
+                auto readOrThrow = [&](void* data, std::streamsize byteCount, const std::string& dataName) {
+                    if (!fileStream.read(reinterpret_cast<char*>(data), byteCount)) {
+                        throw ResourceLoadException(filename, "Couldn't read terrain " + dataName + " data from " + filename);
+                    }
+                };
 
                 std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
-                fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightFieldData.size() * 2);
+                readOrThrow(heightFieldData.data(), std::streamsize(heightFieldData.size() * sizeof(uint16_t)), "height");
                 cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->heightField->SetData(heightFieldData, &transferManager);
 
                 Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
-                fileStream.read(reinterpret_cast<char*>(image.GetData().data()), image.GetData().size());
+                readOrThrow(image.GetData().data(), std::streamsize(image.GetData().size()), "normal");
                 cell->normalData = image.GetData();
 
                 cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
@@ -314,7 +334,7 @@ namespace Atlas {
                 cell->normalMap->SetData(image.GetData(), &transferManager);
 
                 std::vector<uint8_t> splatMapData(heightFieldData.size());
-                fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatMapData.size());
+                readOrThrow(splatMapData.data(), std::streamsize(splatMapData.size()), "splat");
                 cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->splatMap->SetData(splatMapData, &transferManager);

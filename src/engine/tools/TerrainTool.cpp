@@ -88,15 +88,15 @@ namespace Atlas::Tools {
                         int32_t yImage = j * (tileResolution - 1) + y;
 
                         auto hole = holeMap.Sample(xImage, yImage).r > 0;
-                        auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
+                        auto sampledHeight = (uint16_t)heightMap.Sample(xImage, yImage).r;
 
                         if (hole) {
                             cell->heightData[cellOffset] = FLT_MAX;
                             cellHeightData[cellOffset] = 65535;
                         }
                         else {
-                            cell->heightData[cellOffset] = (float)height / 65534.0f;
-                            cellHeightData[cellOffset] = height;
+                            cell->heightData[cellOffset] = (float)sampledHeight / 65534.0f;
+                            cellHeightData[cellOffset] = sampledHeight;
                         }
                         cell->materialIdxData[cellOffset] = 0;
 
@@ -212,7 +212,7 @@ namespace Atlas::Tools {
                         int32_t yImage = j * (tileResolution - 1) + y;
 
                         auto hole = holeMap.Sample(xImage, yImage).r > 0;
-                        auto height = (uint16_t)heightMap.Sample(xImage, yImage).r;
+                        auto sampledHeight = (uint16_t)heightMap.Sample(xImage, yImage).r;
                         auto splat = (uint8_t)splatMap.Sample(xImage, yImage).r;
 
                         if (hole) {
@@ -220,8 +220,8 @@ namespace Atlas::Tools {
                             cellHeightData[cellOffset] = 65535;
                         }
                         else {
-                            cell->heightData[cellOffset] = (float)height / 65534.0f;
-                            cellHeightData[cellOffset] = height;
+                            cell->heightData[cellOffset] = (float)sampledHeight / 65534.0f;
+                            cellHeightData[cellOffset] = sampledHeight;
                         }
                         cell->materialIdxData[cellOffset] = splat;
 
@@ -1224,9 +1224,8 @@ namespace Atlas::Tools {
                         int32_t dataOffset = y * 3 * (width - 1) + x;
                         int32_t cellOffset = k * width + l;
                         // Normals have a +1 pixel on all borders (offset by one pixel, add 2 to the width)
-                        int32_t cellNormalOffset = (k + 1) * (width + 2) + (l + 1);
-
                         if (!heightData.empty()) {
+                            int32_t cellNormalOffset = (k + 1) * (width + 2) + (l + 1);
                             cell->heightData[cellOffset] = heightData[dataOffset];
 
                             cell->normalData[cellNormalOffset * 4 + 0] = allNormalData[dataOffset * 3 + 0];

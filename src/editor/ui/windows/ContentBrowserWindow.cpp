@@ -25,7 +25,10 @@ namespace Atlas::Editor::UI {
 
     ContentBrowserWindow::ContentBrowserWindow(bool show) : Window("Content browser", show) {
 
-        selectionStorage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) { return uint32_t(idx); };
+        selectionStorage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* self, int idx) {
+            (void)self;
+            return uint32_t(idx);
+        };
 
     }
 

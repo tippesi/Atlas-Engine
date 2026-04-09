@@ -798,15 +798,6 @@ namespace Atlas {
 
 			Graphics::Profiler::BeginQuery("Filter probe");
 
-			mat4 projectionMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-			vec3 faces[] = { vec3(1.0f, 0.0f, 0.0f), vec3(-1.0f, 0.0f, 0.0f),
-							 vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-							 vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f) };
-
-			vec3 ups[] = { vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f),
-						   vec3(0.0f, 0.0f, 1.0f), vec3(0.0f, 0.0f, -1.0f),
-						   vec3(0.0f, -1.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f) };
-
 			Graphics::Profiler::BeginQuery("Filter diffuse probe");
 
 			auto pipelineConfig = PipelineConfig("brdf/filterProbe.csh", { "FILTER_DIFFUSE" });
@@ -866,7 +857,7 @@ namespace Atlas {
 			for (uint32_t i = 0; i < probe->filteredSpecular.image->mipLevels; i++) {
 				Graphics::Profiler::BeginQuery("Mip level " + std::to_string(i));
 
-				ivec2 res = ivec2(width, height);
+				ivec2 mipResolution = ivec2(width, height);
 
 				commandList->BindImage(probe->filteredSpecular.image, 3, 0, i);
 
@@ -877,11 +868,11 @@ namespace Atlas {
 				};
 				commandList->PushConstants("constants", &pushConstants);
 
-				ivec2 groupCount = ivec2(res.x / 8, res.y / 4);
-				groupCount.x += ((groupCount.x * 8 == res.x) ? 0 : 1);
-				groupCount.y += ((groupCount.y * 4 == res.y) ? 0 : 1);
+				ivec2 mipGroupCount = ivec2(mipResolution.x / 8, mipResolution.y / 4);
+				mipGroupCount.x += ((mipGroupCount.x * 8 == mipResolution.x) ? 0 : 1);
+				mipGroupCount.y += ((mipGroupCount.y * 4 == mipResolution.y) ? 0 : 1);
 
-				commandList->Dispatch(groupCount.x, groupCount.y, 6);
+				commandList->Dispatch(mipGroupCount.x, mipGroupCount.y, 6);
 
 				width /= 2;
 				height /= 2;
@@ -1159,7 +1150,7 @@ namespace Atlas {
 
 		}
 
-		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(Ref<Graphics::FrameBuffer>& frameBuffer,
+		PipelineConfig MainRenderer::GetPipelineConfigForPrimitives(const Ref<Graphics::FrameBuffer>& frameBuffer,
 			Buffer::VertexArray& vertexArray, VkPrimitiveTopology topology, bool testDepth) {
 
 			const auto shaderConfig = ShaderConfig{

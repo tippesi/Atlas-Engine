@@ -12,7 +12,7 @@ namespace Atlas::Editor::UI {
     public:
         HierarchyComponentPanel() : Panel("Hierarchy component") {}
 
-        bool Render(Ref<Scene::Scene>& scene, Scene::Entity entity, HierarchyComponent& component);
+        bool Render(const Ref<Scene::Scene>& scene, Scene::Entity entity, HierarchyComponent& component);
 
     };
 

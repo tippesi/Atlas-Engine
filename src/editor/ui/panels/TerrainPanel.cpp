@@ -124,7 +124,6 @@ namespace Atlas::Editor::UI {
         if (changed) {
             terrain->storage->BeginMaterialWrite();
 
-            int32_t count = 0;
             for (int32_t i = 0; i < int32_t(terrain->storage->materials.size()); i++) {
                 auto material = terrain->storage->materials[i];
                 if (!material.IsLoaded())

@@ -422,8 +422,6 @@ namespace Atlas::Editor::UI {
 
     void SceneHierarchyPanel::RenderFilterPopup() {
 
-        const float padding = 8.0f;
-
         ImGui::SameLine();
 
         auto region = ImGui::GetContentRegionAvail();

@@ -114,7 +114,7 @@ namespace Atlas {
             
             // Check for length > 1 since we might have just the filesystem root on Linux based OSes
             if (path.ends_with('/') && path.length() > 1)
-                path = path.substr(0, path.length() - 1);
+                path.pop_back();
 
             return path;
 

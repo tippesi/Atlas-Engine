@@ -274,7 +274,7 @@ namespace Atlas::Editor {
             ImGui::DockSpace(mainDsId, ImVec2(0.0f, 0.0f), dockspace_flags);
 
             if (ImGui::BeginMainMenuBar()) {
-                static bool openProject = false, saveProject = false, newScene = false, importFiles = false;
+                static bool newScene = false;
                 bool saveScene = false, exitEditor = false;
                 if (ImGui::BeginMenu("File")) {
                     /*

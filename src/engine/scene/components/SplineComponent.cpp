@@ -78,8 +78,9 @@ namespace Atlas::Scene::Components {
         if (controlPoints.empty())
             return SplinePoint {};
 
-        auto interpolateProperty = [type = type]<typename T>(T& p0, T& p1, T& p2, T& p3, float t) -> T {
-            if (type == SplineType::Linear) {
+        const auto splineType = type;
+        auto interpolateProperty = [splineType]<typename T>(const T& p0, const T& p1, const T& p2, const T& p3, float t) -> T {
+            if (splineType == SplineType::Linear) {
                 return mix(p1, p2, t);
             }
             else {

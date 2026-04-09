@@ -16,7 +16,7 @@ namespace Atlas {
 
         bool Empty();
 
-        void Push(Job& job);
+        void Push(const Job& job);
 
         void Push(Job&& job);
         

@@ -59,7 +59,7 @@ namespace Atlas {
 
         }
 
-        void Texture::GenerateMipmap(Graphics::MemoryTransferManager* transferManager) {
+        void Texture::GenerateMipmap(const Graphics::MemoryTransferManager* transferManager) {
 
             // TODO...
 

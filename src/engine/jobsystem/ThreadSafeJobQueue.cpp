@@ -9,7 +9,7 @@ namespace Atlas {
 
     }
 
-    void ThreadSafeJobQueue::Push(Job& job) {
+    void ThreadSafeJobQueue::Push(const Job& job) {
 
         std::scoped_lock lock(mutex);
         jobs.push_back(job);
