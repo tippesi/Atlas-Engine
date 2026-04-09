@@ -128,7 +128,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev
+          sudo apt-get install -y libgl1-mesa-dev autoconf autoconf-archive automake libtool libtool-bin pkg-config libltdl-dev
           cd ${{ github.workspace }}
           ${{ github.workspace }}/vcpkg/vcpkg install --clean-after-build --triplet=x64-linux
           rm -r vcpkg_installed
