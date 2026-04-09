@@ -192,7 +192,7 @@ namespace Atlas {
                 uniforms.lightCount = std::min(8, int32_t(renderState->lightEntities.size()));
                 uniforms.directionalLightCount = std::min(8, uniforms.directionalLightCount);
                 for (int32_t i = 0; i < uniforms.lightCount; i++) {
-                    auto& comp = renderState->lightEntities[i].comp;
+                    const auto& comp = renderState->lightEntities[i].comp;
 
                     if (comp.shadow) {
                         const auto& shadow = comp.shadow;

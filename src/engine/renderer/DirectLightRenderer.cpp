@@ -78,7 +78,7 @@ namespace Atlas {
                 std::vector<Ref<Graphics::Image>> cascadeMaps;
                 std::vector<Ref<Graphics::Image>> cubeMaps;
                 for (int32_t i = 0; i < pushConstants.lightCount; i++) {
-                    auto& comp = renderState->lightEntities[i].comp;
+                    const auto& comp = renderState->lightEntities[i].comp;
 
                     if (comp.shadow) {
                         const auto& shadow = comp.shadow;

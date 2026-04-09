@@ -484,7 +484,7 @@ namespace Atlas::Editor::UI {
                     guizmo.transform = transform.globalMatrix;
                 }
                 else if (selectedEntity.IsValid() && selectionType == EntitySelectionType::Spline && selectedEntity.HasComponent<SplineComponent>()) {
-                    auto& spline = selectedEntity.GetComponent<SplineComponent>();
+                    const auto& spline = selectedEntity.GetComponent<SplineComponent>();
 
                     auto splineControlIdx = entityPropPanel.splineComponentPanel.selectControlPointIdx;
                     const auto& controlPoint = spline.controlPoints[splineControlIdx];

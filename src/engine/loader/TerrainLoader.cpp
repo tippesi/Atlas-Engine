@@ -313,20 +313,20 @@ namespace Atlas {
                     throw ResourceLoadException(filename, "Couldn't seek terrain file " + filename);
                 }
 
-                auto readOrThrow = [&](void* data, std::streamsize byteCount, const std::string& dataName) {
-                    if (!fileStream.read(reinterpret_cast<char*>(data), byteCount)) {
-                        throw ResourceLoadException(filename, "Couldn't read terrain " + dataName + " data from " + filename);
-                    }
-                };
-
                 std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
-                readOrThrow(heightFieldData.data(), std::streamsize(heightFieldData.size() * sizeof(uint16_t)), "height");
+                auto heightDataSize = std::streamsize(heightFieldData.size() * sizeof(uint16_t));
+                if (!fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightDataSize)) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain height data from " + filename);
+                }
                 cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->heightField->SetData(heightFieldData, &transferManager);
 
                 Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
-                readOrThrow(image.GetData().data(), std::streamsize(image.GetData().size()), "normal");
+                auto normalDataSize = std::streamsize(image.GetData().size());
+                if (!fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize)) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain normal data from " + filename);
+                }
                 cell->normalData = image.GetData();
 
                 cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
@@ -334,7 +334,10 @@ namespace Atlas {
                 cell->normalMap->SetData(image.GetData(), &transferManager);
 
                 std::vector<uint8_t> splatMapData(heightFieldData.size());
-                readOrThrow(splatMapData.data(), std::streamsize(splatMapData.size()), "splat");
+                auto splatDataSize = std::streamsize(splatMapData.size());
+                if (!fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatDataSize)) {
+                    throw ResourceLoadException(filename, "Couldn't read terrain splat data from " + filename);
+                }
                 cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->splatMap->SetData(splatMapData, &transferManager);

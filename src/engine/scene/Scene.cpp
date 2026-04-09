@@ -192,7 +192,7 @@ namespace Atlas {
                 glm::mat4 parentMatrix(1.0f);
                 auto parentEntity = GetParentEntity(Entity(entity, &entityManager));
                 if (parentEntity.IsValid()) {
-                    auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);
+                    const auto& hierarchyComponent = hierarchyComponentPool.Get(parentEntity);
                     parentMatrix = hierarchyComponent.globalMatrix;
                 }
 
