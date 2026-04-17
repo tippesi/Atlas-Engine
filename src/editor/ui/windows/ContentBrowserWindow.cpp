@@ -177,6 +177,8 @@ namespace Atlas::Editor::UI {
         auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
 
         ImGui::SetWindowFontScale(1.5f);
+        // Since the but
+        ImGui::SetCursorPosY(-4.0f);
 
         auto lineHeight = ImGui::GetTextLineHeight();
         auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(IconType::ArrowLeft));

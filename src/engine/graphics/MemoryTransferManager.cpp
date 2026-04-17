@@ -67,6 +67,7 @@ namespace Atlas {
             void* destination;
             vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
             std::memcpy(destination, data, bufferCopyDesc.size);
+            vmaFlushAllocation(allocator, stagingAllocation.allocation, 0, bufferCopyDesc.size);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);            
 
             vkCmdCopyBuffer(localCommandList->commandBuffer, stagingAllocation.buffer,
@@ -99,34 +100,43 @@ namespace Atlas {
             }
 
             VmaAllocator allocator = memoryManager->allocator;
-            
+
             auto formatSize = GetFormatSize(image->format);
-            auto pixelCount = image->width * image->height * image->depth;
-            auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
+            auto pixelCount = size_t(extent.width) * size_t(extent.height) *
+                size_t(extent.depth) * size_t(layerCount);
+            auto stagingAllocationSize = pixelCount * formatSize;
+            auto stagingAllocation = CreateStagingBuffer(stagingAllocationSize);
 
             void* destination;
             vmaMapMemory(allocator, stagingAllocation.allocation, &destination);
-            std::memcpy(destination, data, pixelCount * formatSize);
+            std::memcpy(destination, data, stagingAllocationSize);
+            vmaFlushAllocation(allocator, stagingAllocation.allocation, 0, stagingAllocationSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
 
             auto mipLevels = image->mipLevels;
+            auto oldLayout = image->layout;
+            auto oldAccessMask = image->accessMask;
+            bool initializeWholeImage = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED;
+            bool transitionWholeImage = initializeWholeImage || mipLevels > 1;
 
             VkImageSubresourceRange range = {};
-            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            range.aspectMask = image->aspectFlags;
             range.baseMipLevel = 0;
             range.levelCount = mipLevels;
-            range.baseArrayLayer = 0;
-            range.layerCount = image->layers;
+            range.baseArrayLayer = transitionWholeImage ? 0 : layerOffset;
+            range.layerCount = transitionWholeImage ? image->layers : layerCount;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
             {
                 imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.oldLayout = oldLayout;
                 imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
                 imageBarrier.image = image->image;
                 imageBarrier.subresourceRange = range;
-                imageBarrier.srcAccessMask = 0;
+                imageBarrier.srcAccessMask = initializeWholeImage ? 0 : oldAccessMask;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
                 vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -139,7 +149,7 @@ namespace Atlas {
                 copyRegion.bufferOffset = 0;
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
-                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.imageSubresource.aspectMask = image->aspectFlags;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = layerOffset;
                 copyRegion.imageSubresource.layerCount = layerCount;
@@ -150,12 +160,12 @@ namespace Atlas {
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
             }
 
-            // Transition image again to make it shader readable
+            // Transition image again to make it usable
             {
                 auto newLayout = mipLevels > 1 ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL :
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    (initializeWholeImage ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : oldLayout);
                 auto dstAccessMask = mipLevels > 1 ? VK_ACCESS_TRANSFER_READ_BIT :
-                    VK_ACCESS_SHADER_READ_BIT;
+                    (initializeWholeImage ? VK_ACCESS_SHADER_READ_BIT : oldAccessMask);
                 auto dstStageMask = mipLevels > 1 ? VK_PIPELINE_STAGE_TRANSFER_BIT :
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
@@ -194,27 +204,35 @@ namespace Atlas {
             localCommandList->BeginCommands();
 
             auto formatSize = GetFormatSize(image->format);
-            auto pixelCount = image->width * image->height * image->depth;
-            auto stagingAllocation = CreateStagingBuffer(pixelCount * formatSize);
+            auto pixelCount = size_t(extent.width) * size_t(extent.height) *
+                size_t(extent.depth) * size_t(layerCount);
+            auto stagingAllocationSize = pixelCount * formatSize;
+            auto stagingAllocation = CreateStagingBuffer(stagingAllocationSize);
 
-            auto mipLevels = image->mipLevels;
+            auto oldLayout = image->layout;
+            auto oldAccessMask = image->accessMask;
+
+            AE_ASSERT(oldLayout != VK_IMAGE_LAYOUT_UNDEFINED &&
+                "Image data can't be retrieved from an undefined image layout");
 
             VkImageSubresourceRange range = {};
-            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            range.aspectMask = image->aspectFlags;
             range.baseMipLevel = 0;
-            range.levelCount = mipLevels;
-            range.baseArrayLayer = 0;
-            range.layerCount = image->layers;
+            range.levelCount = 1;
+            range.baseArrayLayer = layerOffset;
+            range.layerCount = layerCount;
 
             VkImageMemoryBarrier imageBarrier = {};
             // Create first barrier to transition image
             {
                 imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.oldLayout = oldLayout;
                 imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
                 imageBarrier.image = image->image;
                 imageBarrier.subresourceRange = range;
-                imageBarrier.srcAccessMask = 0;
+                imageBarrier.srcAccessMask = oldAccessMask;
                 imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
                 vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -227,7 +245,7 @@ namespace Atlas {
                 copyRegion.bufferOffset = 0;
                 copyRegion.bufferRowLength = 0;
                 copyRegion.bufferImageHeight = 0;
-                copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copyRegion.imageSubresource.aspectMask = image->aspectFlags;
                 copyRegion.imageSubresource.mipLevel = 0;
                 copyRegion.imageSubresource.baseArrayLayer = layerOffset;
                 copyRegion.imageSubresource.layerCount = layerCount;
@@ -238,21 +256,15 @@ namespace Atlas {
                     stagingAllocation.buffer, 1, &copyRegion);
             }
 
-            // Transition image again to make it shader readable
+            // Transition image back to its previous layout
             {
-                auto newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                auto dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                auto dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
                 imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                imageBarrier.newLayout = newLayout;
+                imageBarrier.newLayout = oldLayout;
                 imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                imageBarrier.dstAccessMask = dstAccessMask;
+                imageBarrier.dstAccessMask = oldAccessMask;
 
                 vkCmdPipelineBarrier(localCommandList->commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
-                image->layout = newLayout;
-                image->accessMask = dstAccessMask;
+                    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
             }
 
             // Buffer barrier so we can map it afterwards
@@ -270,8 +282,9 @@ namespace Atlas {
             device->WaitForIdle();
 
             void* src;
+            vmaInvalidateAllocation(allocator, stagingAllocation.allocation, 0, stagingAllocationSize);
             vmaMapMemory(allocator, stagingAllocation.allocation, &src);
-            std::memcpy(data, src, pixelCount * formatSize);
+            std::memcpy(data, src, stagingAllocationSize);
             vmaUnmapMemory(allocator, stagingAllocation.allocation);
             
             DestroyStagingBuffer(stagingAllocation);
@@ -302,7 +315,7 @@ namespace Atlas {
             imageBarrier.image = image->image;
             imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBarrier.subresourceRange.aspectMask = image->aspectFlags;
             imageBarrier.subresourceRange.baseArrayLayer = 0;
             imageBarrier.subresourceRange.layerCount = image->layers;
             imageBarrier.subresourceRange.levelCount = 1;
@@ -339,7 +352,7 @@ namespace Atlas {
                 VkImageBlit blit = {};
                 blit.srcOffsets[0] = { 0, 0, 0 };
                 blit.srcOffsets[1] = { mipWidth, mipHeight, mipDepth };
-                blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.srcSubresource.aspectMask = image->aspectFlags;
                 blit.srcSubresource.mipLevel = i - 1;
                 blit.srcSubresource.baseArrayLayer = 0;
                 blit.srcSubresource.layerCount = image->layers;
@@ -347,7 +360,7 @@ namespace Atlas {
                 blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1,
                                        mipHeight > 1 ? mipHeight / 2 : 1,
                                        mipDepth > 1 ? mipDepth / 2 : 1 };
-                blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                blit.dstSubresource.aspectMask = image->aspectFlags;
                 blit.dstSubresource.mipLevel = i;
                 blit.dstSubresource.baseArrayLayer = 0;
                 blit.dstSubresource.layerCount = image->layers;

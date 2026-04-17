@@ -62,7 +62,7 @@ namespace Atlas {
                 vec4 planetCenter;
             };
 
-            struct alignas(16) CloudTemporalPushConstants {
+            struct CloudTemporalPushConstants {
                 int32_t resetHistory;
                 int32_t downsampled2x;
             };

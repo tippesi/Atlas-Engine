@@ -340,7 +340,7 @@ namespace Atlas::Editor {
             else if (!selectedMaterial.IsLoaded() && !advanced) {
                 Notifications::Push({ "At least one material is required!", vec3(1.0f, 0.0f, 0.0f) });
             }
-            else if (heightMapSelection && !heightMapImage->HasData()) {
+            else if (heightMapSelection && (!heightMap.IsLoaded() || !heightMapImage->HasData())) {
                 Notifications::Push({ "No heightmap loaded!", vec3(1.0f, 0.0f, 0.0f) });
             }
             else {

@@ -118,8 +118,12 @@ namespace Atlas::Editor {
 
         if (j.contains("materials")) {
             for (const auto& m : j["materials"]) {
+                ResourceHandle<Material> material;
+                if (m.contains("material"))
+                    material = FileImporter::ImportFile<Material>(m["material"]);
+                    
                 p.materials.emplace_back(
-                    FileImporter::ImportFile<Material>(m["material"]), m["color"]
+                    material, m["color"]
                 );
             }
         }

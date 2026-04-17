@@ -61,7 +61,7 @@ namespace Atlas {
             if (domain == BufferDomain::Device) {
                 VkBufferCopy bufferCopy = {};
                 bufferCopy.srcOffset = 0;
-                bufferCopy.dstOffset = 0;
+                bufferCopy.dstOffset = offset;
                 bufferCopy.size = length;
 
                 transferManager->UploadBufferData(data, this, bufferCopy);
@@ -73,6 +73,7 @@ namespace Atlas {
 
                 void* offsetAddress = static_cast<uint8_t*>(mappedData) + offset;
                 std::memcpy(offsetAddress, data, length);
+                vmaFlushAllocation(memoryManager->allocator, allocation, offset, length);
 
                 if (needsMapping) Unmap();
             }

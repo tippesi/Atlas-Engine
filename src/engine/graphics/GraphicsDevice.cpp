@@ -774,7 +774,7 @@ namespace Atlas {
             vkGetPhysicalDeviceFeatures(device, &physicalDeviceFeatures);
 
             // This property has to outweigh any other
-            if (physicalDeviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            if (physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 score += 10000;
             }
 
@@ -1068,7 +1068,7 @@ namespace Atlas {
             features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
             features.features.tessellationShader = availableFeatures.features.tessellationShader;
-            features.features.multiDrawIndirect = availableFeatures.features.tessellationShader;
+            features.features.multiDrawIndirect = availableFeatures.features.multiDrawIndirect;
             features.features.depthBounds = availableFeatures.features.depthBounds;
             features.features.wideLines = availableFeatures.features.wideLines;
             features.features.samplerAnisotropy = availableFeatures.features.samplerAnisotropy;

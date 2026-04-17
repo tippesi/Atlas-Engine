@@ -18,7 +18,7 @@ namespace Atlas {
             trianglesData.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
             trianglesData.vertexData.deviceAddress = vertexAddress;
             trianglesData.vertexStride = vertexSize;
-            trianglesData.maxVertex = vertexCount;
+            trianglesData.maxVertex = vertexCount - 1;
             // Index data
             trianglesData.indexType = indexSize == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
             trianglesData.indexData.deviceAddress = indexAddress;
@@ -109,7 +109,6 @@ namespace Atlas {
                         blases[j]->isBuilt = true;
                     }
 
-                    return int32_t(i + 1);
                     // With one commandlist it only makes sense to create one batch per frame
                     if (commandList) {
                         return int32_t(i + 1);
