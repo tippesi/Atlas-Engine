@@ -481,15 +481,20 @@ namespace Atlas {
             AE_ASSERT(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT &&
                 "Only uniform buffers support dynamic bindings");
 
-            if (descriptorBindingData.buffers[set][binding].first == buffer.get())
+            auto [boundBuffer, boundOffset] = descriptorBindingData.buffers[set][binding];
+            if (boundBuffer == buffer.get() && boundOffset == uint32_t(offset))
                 return;
 
+            bool changed = boundBuffer != buffer.get();
+
             descriptorBindingData.ResetBinding(set, binding);
+
+            // Only indicate a change if the buffer changed, not just the offset
+            descriptorBindingData.changed[set] |= changed;
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = { buffer.get(), uint32_t(offset) };
             descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
-            descriptorBindingData.changed[set] = true;
 
         }
 
@@ -554,7 +559,7 @@ namespace Atlas {
 
             // Since the buffer is partially owned by the device, we can safely get the pointer for this frame
             descriptorBindingData.buffers[set][binding] = {buffer->GetCurrent(), uint32_t(offset)};
-            descriptorBindingData.maxTLASBinding[set] = std::max(descriptorBindingData.maxTLASBinding[set], binding);
+            descriptorBindingData.maxBufferBinding[set] = std::max(descriptorBindingData.maxBufferBinding[set], binding);
 
         }
 

@@ -8,6 +8,7 @@
 #include "../loader/ShaderLoader.h"
 #include "../loader/AssetLoader.h"
 
+#define SPIRV_REFLECT_USE_SYSTEM_SPIRV_H
 #include <spirv_reflect.h>
 #include <cassert>
 #include <unordered_map>

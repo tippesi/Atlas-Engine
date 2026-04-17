@@ -24,7 +24,7 @@ namespace Atlas {
             src = GetAbsolute(src);
             dest = GetAbsolute(dest);
             
-            return std::filesystem::relative(dest, src);
+            return std::filesystem::relative(dest, src).string();
 
         }
 

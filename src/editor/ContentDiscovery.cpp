@@ -75,7 +75,7 @@ namespace Atlas::Editor {
 				// Now release the swapped memory here in the job async
 				nextContent.reset();
 
-				//nextContent = PerformContentDiscovery();
+				nextContent = PerformContentDiscovery();
 			});
 
 			return;

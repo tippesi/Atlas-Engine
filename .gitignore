@@ -27,6 +27,7 @@ data/newsponza
 data/emeraldsquare
 data/forest
 CMakeSettings.json
+CMakeUserPresets.json
 .vscode/settings.json
 xcode
 bin
