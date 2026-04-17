@@ -157,6 +157,8 @@ namespace Atlas {
             std::vector<T> data(width * height * channels);
             
             auto device = Graphics::GraphicsDevice::DefaultDevice;
+
+            VkOffset3D offset = {};
             VkExtent3D extent = { uint32_t(width), uint32_t(height), 1 };
             device->memoryManager->transferManager->RetrieveImageData(data.data(), image.get(), offset,
                 extent, layerOffset, 1, true);
