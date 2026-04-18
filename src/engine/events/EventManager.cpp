@@ -15,6 +15,7 @@ namespace Atlas {
         EventDelegate<ControllerButtonEvent> EventManager::ControllerButtonEventDelegate;
         EventDelegate<ControllerDeviceEvent> EventManager::ControllerDeviceEventDelegate;
         EventDelegate<TouchEvent> EventManager::TouchEventDelegate;
+        EventDelegate<AppEvent> EventManager::AppEventDelegate;
         EventDelegate<TextInputEvent> EventManager::TextInputEventDelegate;
         EventDelegate<AudioDeviceEvent> EventManager::AudioDeviceEventDelegate;
         EventDelegate<DropEvent> EventManager::DropEventDelegate;
@@ -37,7 +38,15 @@ namespace Atlas {
 
             while (SDL_PollEvent(&e)) {
 
-                if (e.type == SDL_WINDOWEVENT) {
+                if (e.type == SDL_APP_TERMINATING || e.type == SDL_APP_LOWMEMORY ||
+                    e.type == SDL_APP_WILLENTERBACKGROUND || e.type == SDL_APP_DIDENTERBACKGROUND ||
+                    e.type == SDL_APP_WILLENTERFOREGROUND || e.type == SDL_APP_DIDENTERFOREGROUND) {
+
+                    AppEvent event(e);
+
+                    AppEventDelegate.Fire(event);
+
+                } else if (e.type == SDL_WINDOWEVENT) {
 
                     WindowEvent event(e.window);
 

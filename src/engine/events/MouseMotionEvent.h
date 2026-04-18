@@ -20,6 +20,7 @@ namespace Atlas {
                 y = event.y;
                 dx = event.xrel;
                 dy = event.yrel;
+                touch = event.which == SDL_TOUCH_MOUSEID;
 
             }
 
@@ -47,6 +48,8 @@ namespace Atlas {
              * The relative motion in y direction
              */
             int32_t dy;
+
+            bool touch;
 
         };
 
