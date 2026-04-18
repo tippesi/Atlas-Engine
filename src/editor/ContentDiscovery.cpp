@@ -84,15 +84,15 @@ namespace Atlas::Editor {
 
 	Ref<ContentDiscovery::DiscoveredContent> ContentDiscovery::PerformContentDiscovery() {
 
-		auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
 		auto rootDirectory = CreateRef<ContentDirectory>({
-			.path = assetDirectory
+			.path = dataDirectory
 		});
 		auto result = CreateRef<DiscoveredContent>({
 			.rootDirectory = rootDirectory,
 		});
-		result->contentDirectories[assetDirectory] = rootDirectory;
+		result->contentDirectories[dataDirectory] = rootDirectory;
 
 		DiscoverDirectory(rootDirectory, result);
 
@@ -102,11 +102,11 @@ namespace Atlas::Editor {
 
 	void ContentDiscovery::DiscoverDirectory(const Ref<ContentDirectory>& directory, const Ref<DiscoveredContent>& result) {
 
-		auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+		auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
 		for (const auto& dirEntry : std::filesystem::directory_iterator(directory->path)) {
 			auto path = Common::Path::Normalize(dirEntry.path().string());
-			auto assetPath = Common::Path::GetRelative(assetDirectory, path);
+			auto assetPath = Common::Path::GetRelative(dataDirectory, path);
 			if (assetPath.starts_with('/'))
 				assetPath.erase(assetPath.begin());
 			assetPath = Common::Path::Normalize(assetPath);

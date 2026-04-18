@@ -132,8 +132,8 @@ namespace Atlas::Editor::UI {
                     auto nameComponent = entity.TryGetComponent<NameComponent>();
                     auto entityName = nameComponent ? nameComponent->name : "Entity " + std::to_string(entity);
 
-                    auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
-                    auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory) + "/";
+                    auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
+                    auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory) + "/";
                     if (assetPath.starts_with('/'))
                         assetPath.erase(assetPath.begin());
 
@@ -150,7 +150,7 @@ namespace Atlas::Editor::UI {
         // We can only set this up for the next frame
         if (!contentToShowPath.empty()) {
             // We expect the content to show to be relative to the asset directory
-            currentDirectory =  Loader::AssetLoader::GetAssetDirectory() + "/" 
+            currentDirectory =  Loader::AssetLoader::GetDataDirectory() + "/" 
                 + Common::Path::GetDirectory(contentToShowPath);
             hightlightPath = contentToShowPath;
             selectionStorage.Clear();
@@ -174,7 +174,7 @@ namespace Atlas::Editor::UI {
 
     void ContentBrowserWindow::RenderDirectoryContentControl() {
 
-        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         ImGui::SetWindowFontScale(1.5f);
         // Since the but
@@ -186,7 +186,7 @@ namespace Atlas::Editor::UI {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         if (ImGui::ImageButton("Back button", set, ImVec2(lineHeight, lineHeight), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f))) {
-            if (currentDirectory != assetDirectory) {
+            if (currentDirectory != dataDirectory) {
                 auto parentPath = std::filesystem::path(currentDirectory).parent_path();
                 currentDirectory = Common::Path::Normalize(parentPath.string());
             }
@@ -199,7 +199,7 @@ namespace Atlas::Editor::UI {
         // Being in a child window offsets everything, need to align the // slashes
         ImGui::SetCursorPosY(-2.0f);
 
-        auto assetPath = Common::Path::GetRelative(assetDirectory, currentDirectory);
+        auto assetPath = Common::Path::GetRelative(dataDirectory, currentDirectory);
         assetPath = Common::Path::Normalize(assetPath);
         if (assetPath.starts_with('/'))
             assetPath.erase(assetPath.begin());
@@ -301,12 +301,12 @@ namespace Atlas::Editor::UI {
         if (!std::filesystem::exists(currentDirectory)) {
             auto message = "Content directory " + Common::Path::Normalize(currentDirectory) + " has been moved or deleted.";
             Notifications::Push({ .message = message, .color = vec3(1.0f, 1.0f, 0.0f) });
-            currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+            currentDirectory = Loader::AssetLoader::GetDataDirectory();
         }
 
         JobSystem::Wait(searchAndFilterJob);
 
-        auto assetDirectory = Loader::AssetLoader::GetAssetDirectory();
+        auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         nextDirectory = std::string();
 

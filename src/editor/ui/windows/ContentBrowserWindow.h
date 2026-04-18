@@ -42,7 +42,7 @@ namespace Atlas::Editor::UI {
 			AllBit = (1 << 11) - 1
 		} ContentFilterBits;
 
-        std::string currentDirectory = Loader::AssetLoader::GetAssetDirectory();
+        std::string currentDirectory = Loader::AssetLoader::GetDataDirectory();
 
         ContentFilter contentFilter = ContentFilterBits::AllBit;
         bool searchRecursively = true;
