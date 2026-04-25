@@ -177,8 +177,8 @@ namespace Atlas::Editor::UI {
         auto dataDirectory = Loader::AssetLoader::GetDataDirectory();
 
         ImGui::SetWindowFontScale(1.5f);
-        // Since the but
-        ImGui::SetCursorPosY(-4.0f);
+        // Since the buttom will be 50% the normal text size, we will move it a bit up
+        ImGui::SetCursorPosY(-3.0f);
 
         auto lineHeight = ImGui::GetTextLineHeight();
         auto set = Singletons::imguiWrapper->GetTextureId(&Singletons::icons->Get(IconType::ArrowLeft));

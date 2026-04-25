@@ -166,13 +166,12 @@ void main() {
                     HitClosest(ray, INSTANCE_MASK_ALL, 0.0, rayLength);
 #endif                    
 
-#ifdef DDGI                    
-                    radiance = EvaluateHit(ray, N, blueNoiseVec.z);
-
+#ifdef DDGI               
+                    radiance = EvaluateHit(ray, N, blueNoiseVec.z);     
                     if (ray.hitID == -1) {
                         vec4 probeIrradiance, probeRadiance;
                         GetLocalProbeLighting(worldPos, V, worldNorm, worldNorm, worldNorm, blueNoiseVec.z, 
-                            radiance, vec3(0.0), probeIrradiance, probeRadiance);
+                            radiance, vec3(0.0), probeIrradiance, probeRadiance) ;
                         radiance = probeIrradiance.rgb * ddgiData.volumeStrength;
                     }
                     else {
@@ -230,7 +229,7 @@ vec3 EvaluateHit(inout Ray ray, vec3 cubemapSamplingDirection, float rand) {
     // This enables metallic materials to have some kind of secondary reflection
     vec3 indirect = EvaluateIndirectDiffuseBRDF(surface) * probeIrradiance.rgb +
         EvaluateIndirectSpecularBRDF(surface) * probeIrradiance.rgb;
-    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength : vec3(0.0);
+    radiance += IsInsideVolume(surface.P) ? indirect * ddgiData.volumeStrength * min(1.0, sqr(ray.hitDistance)) : vec3(0.0);
 #endif
     
     radiance += surface.material.emissiveColor;
