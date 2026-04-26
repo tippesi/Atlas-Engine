@@ -1,0 +1,501 @@
+#include <../common/PI.hsh>
+#include <../common/utility.hsh>
+
+const float atmosphereEpsilon = 1e-6;
+const float atmosphereSunAngularRadius = 0.004675;
+const float atmosphereMieAnisotropy = 0.76;
+const float atmosphereIsotropicPhase = 1.0 / (4.0 * PI);
+const float atmosphereMultipleScatteringFactor = 1.0;
+const float atmosphereMultipleScatteringVisibilityRange = 0.08;
+const float atmosphereGroundIndirectFactor = 0.25;
+
+struct AtmosphereParameters {
+    vec3 rayleighScatteringCoeff;
+    vec3 groundAlbedo;
+    float mieScatteringCoeff;
+    float rayleighHeightScale;
+    float mieHeightScale;
+    float surfaceHeightOffset;
+    float planetRadius;
+    float atmosphereRadius;
+};
+
+float SafeAcos(float value) {
+
+    return acos(clamp(value, -1.0, 1.0));
+
+}
+
+float GetAtmosphereDensity(float height, float scaleHeight) {
+
+    return exp(-max(height, 0.0) / max(scaleHeight, atmosphereEpsilon));
+
+}
+
+float GetAtmosphereSampleDistribution(float x, float exponent) {
+
+    return pow(clamp(x, 0.0, 1.0), exponent);
+
+}
+
+float GetTextureCoordFromUnitRange(float value, int textureSize) {
+
+    return 0.5 / float(textureSize) + value * (1.0 - 1.0 / float(textureSize));
+
+}
+
+float GetUnitRangeFromTextureCoord(float value, int textureSize) {
+
+    return (value - 0.5 / float(textureSize)) / (1.0 - 1.0 / float(textureSize));
+
+}
+
+float DistanceToTopAtmosphereBoundary(float radius, float mu, float atmosphereRadius) {
+
+    float discriminant = radius * radius * (mu * mu - 1.0) + atmosphereRadius * atmosphereRadius;
+    return max(-radius * mu + sqrt(max(discriminant, 0.0)), 0.0);
+
+}
+
+vec2 IntersectSphere(vec3 origin, vec3 direction, vec3 center, float radius) {
+
+    vec3 relativeOrigin = origin - center;
+    float b = dot(relativeOrigin, direction);
+    float c = dot(relativeOrigin, relativeOrigin) - radius * radius;
+    float discriminant = b * b - c;
+
+    if (discriminant < 0.0)
+        return vec2(-1.0);
+
+    float distance = sqrt(discriminant);
+    return vec2(-b - distance, -b + distance);
+
+}
+
+void GetAtmosphereRaySegment(vec3 rayOrigin, vec3 rayDirection, vec3 planetCenter, float planetRadius,
+    float atmosphereRadius, out float minDistance, out float maxDistance) {
+
+    vec2 atmosphereIntersection = IntersectSphere(rayOrigin, rayDirection, planetCenter, atmosphereRadius);
+    vec2 planetIntersection = IntersectSphere(rayOrigin, rayDirection, planetCenter, planetRadius);
+
+    if (atmosphereIntersection.y < 0.0) {
+        minDistance = 0.0;
+        maxDistance = 0.0;
+        return;
+    }
+
+    minDistance = max(0.0, atmosphereIntersection.x);
+    maxDistance = atmosphereIntersection.y;
+
+    if (planetIntersection.x >= 0.0)
+        maxDistance = min(maxDistance, planetIntersection.x);
+
+    if (maxDistance < minDistance) {
+        minDistance = 0.0;
+        maxDistance = 0.0;
+    }
+
+}
+
+vec2 GetAtmosphereDensities(vec3 position, vec3 planetCenter, AtmosphereParameters atmosphere) {
+
+    float radius = length(position - planetCenter);
+    float height = max(radius - atmosphere.planetRadius - atmosphere.surfaceHeightOffset, 0.0);
+
+    return vec2(
+        GetAtmosphereDensity(height, atmosphere.rayleighHeightScale),
+        GetAtmosphereDensity(height, atmosphere.mieHeightScale)
+    );
+
+}
+
+vec3 GetAtmosphereExtinction(vec2 densities, AtmosphereParameters atmosphere) {
+
+    return atmosphere.rayleighScatteringCoeff * densities.x +
+        vec3(atmosphere.mieScatteringCoeff * densities.y);
+
+}
+
+float RayleighPhase(float cosTheta) {
+
+    float cosThetaSquared = cosTheta * cosTheta;
+    return 3.0 / (16.0 * PI) * (1.0 + cosThetaSquared);
+
+}
+
+float MiePhase(float cosTheta) {
+
+    float g = atmosphereMieAnisotropy;
+    float gg = g * g;
+    float denominator = pow(max(1.0 + gg - 2.0 * cosTheta * g, atmosphereEpsilon), 1.5);
+
+    return 3.0 / (8.0 * PI) * ((1.0 - gg) * (1.0 + cosTheta * cosTheta)) /
+        ((2.0 + gg) * denominator);
+
+}
+
+vec3 GetAtmospherePhaseScattering(vec2 densities, float cosTheta, AtmosphereParameters atmosphere) {
+
+    vec3 rayleigh = atmosphere.rayleighScatteringCoeff * densities.x * RayleighPhase(cosTheta);
+    vec3 mie = vec3(atmosphere.mieScatteringCoeff * densities.y * MiePhase(cosTheta));
+    return rayleigh + mie;
+
+}
+
+vec2 GetTransmittanceTextureUv(float radius, float mu, AtmosphereParameters atmosphere,
+    ivec2 textureResolution) {
+
+    float H = sqrt(atmosphere.atmosphereRadius * atmosphere.atmosphereRadius -
+        atmosphere.planetRadius * atmosphere.planetRadius);
+    float rho = sqrt(max(radius * radius - atmosphere.planetRadius * atmosphere.planetRadius, 0.0));
+
+    float distanceToAtmosphere = DistanceToTopAtmosphereBoundary(radius, mu,
+        atmosphere.atmosphereRadius);
+    float minDistance = atmosphere.atmosphereRadius - radius;
+    float maxDistance = rho + H;
+
+    float xMu = maxDistance > minDistance ?
+        (distanceToAtmosphere - minDistance) / (maxDistance - minDistance) : 0.0;
+    float xR = H > 0.0 ? rho / H : 0.0;
+
+    return vec2(
+        GetTextureCoordFromUnitRange(clamp(xMu, 0.0, 1.0), textureResolution.x),
+        GetTextureCoordFromUnitRange(clamp(xR, 0.0, 1.0), textureResolution.y)
+    );
+
+}
+
+void GetRadiusMuFromTransmittanceTextureUv(vec2 uv, AtmosphereParameters atmosphere,
+    ivec2 textureResolution, out float radius, out float mu) {
+
+    float xMu = GetUnitRangeFromTextureCoord(uv.x, textureResolution.x);
+    float xR = GetUnitRangeFromTextureCoord(uv.y, textureResolution.y);
+
+    float H = sqrt(atmosphere.atmosphereRadius * atmosphere.atmosphereRadius -
+        atmosphere.planetRadius * atmosphere.planetRadius);
+    float rho = H * xR;
+
+    radius = sqrt(rho * rho + atmosphere.planetRadius * atmosphere.planetRadius);
+
+    float minDistance = atmosphere.atmosphereRadius - radius;
+    float maxDistance = rho + H;
+    float distanceToAtmosphere = minDistance + xMu * (maxDistance - minDistance);
+
+    mu = distanceToAtmosphere == 0.0 ? 1.0 :
+        clamp((H * H - rho * rho - distanceToAtmosphere * distanceToAtmosphere) /
+            (2.0 * radius * distanceToAtmosphere), -1.0, 1.0);
+
+}
+
+vec3 GetTransmittanceToTopAtmosphereBoundary(sampler2D transmittanceTexture, float radius, float mu,
+    AtmosphereParameters atmosphere) {
+
+    ivec2 textureResolution = textureSize(transmittanceTexture, 0);
+    vec2 uv = GetTransmittanceTextureUv(radius, mu, atmosphere, textureResolution);
+    return textureLod(transmittanceTexture, uv, 0.0).rgb;
+
+}
+
+vec3 GetTransmittanceToSun(sampler2D transmittanceTexture, float radius, float muS,
+    AtmosphereParameters atmosphere) {
+
+    float sinThetaH = atmosphere.planetRadius / radius;
+    float cosThetaH = -sqrt(max(1.0 - sinThetaH * sinThetaH, 0.0));
+
+    return GetTransmittanceToTopAtmosphereBoundary(transmittanceTexture, radius, muS, atmosphere) *
+        smoothstep(-sinThetaH * atmosphereSunAngularRadius,
+            sinThetaH * atmosphereSunAngularRadius, muS - cosThetaH);
+
+}
+
+vec2 GetMultipleScatteringTextureUv(float radius, float muS, AtmosphereParameters atmosphere,
+    ivec2 textureResolution) {
+
+    return GetTransmittanceTextureUv(radius, muS, atmosphere, textureResolution);
+
+}
+
+void GetRadiusMuFromMultipleScatteringTextureUv(vec2 uv, AtmosphereParameters atmosphere,
+    ivec2 textureResolution, out float radius, out float muS) {
+
+    GetRadiusMuFromTransmittanceTextureUv(uv, atmosphere, textureResolution, radius, muS);
+
+}
+
+vec3 GetMultipleScattering(sampler2D multipleScatteringTexture, float radius, float muS,
+    AtmosphereParameters atmosphere) {
+
+    ivec2 textureResolution = textureSize(multipleScatteringTexture, 0);
+    vec2 uv = GetMultipleScatteringTextureUv(radius, muS, atmosphere, textureResolution);
+    return textureLod(multipleScatteringTexture, uv, 0.0).rgb;
+
+}
+
+vec3 GetAtmosphereSegmentIntegral(vec3 extinction, float segmentLength) {
+
+    vec3 stepTransmittance = exp(-extinction * segmentLength);
+    return (vec3(1.0) - stepTransmittance) / extinction;
+
+}
+
+bool GetGroundHit(vec3 rayOrigin, vec3 rayDirection, vec3 planetCenter, AtmosphereParameters atmosphere,
+    out float groundDistance, out vec3 groundPosition, out vec3 groundNormal) {
+
+    vec2 planetIntersection = IntersectSphere(rayOrigin, rayDirection, planetCenter,
+        atmosphere.planetRadius);
+
+    if (planetIntersection.x < 0.0)
+        return false;
+
+    groundDistance = planetIntersection.x;
+    groundPosition = rayOrigin + rayDirection * groundDistance;
+    groundNormal = normalize(groundPosition - planetCenter);
+    return true;
+
+}
+
+vec3 GetGroundRadiance(sampler2D transmittanceTexture, sampler2D multipleScatteringTexture,
+    vec3 groundPosition, vec3 groundNormal, vec3 sunDirection, vec3 planetCenter,
+    AtmosphereParameters atmosphere, vec3 sunRadiance) {
+
+    float groundRadius = length(groundPosition - planetCenter);
+    float sunZenithCosAngle = dot(groundNormal, sunDirection);
+    vec3 transmittanceToSun = GetTransmittanceToSun(transmittanceTexture, groundRadius,
+        sunZenithCosAngle, atmosphere);
+    vec3 directIrradiance = sunRadiance * transmittanceToSun * saturate(sunZenithCosAngle);
+    vec3 indirectIrradiance = GetMultipleScattering(multipleScatteringTexture, groundRadius,
+        sunZenithCosAngle, atmosphere) * PI * atmosphereGroundIndirectFactor;
+
+    return atmosphere.groundAlbedo * (directIrradiance + indirectIrradiance) / PI;
+
+}
+
+void IntegrateAtmosphereMultiScattering(sampler2D transmittanceTexture, vec3 rayOrigin, vec3 rayDirection,
+    vec3 sunDirection, vec3 planetCenter, AtmosphereParameters atmosphere, vec3 sunRadiance,
+    int sampleCount, float sampleDistributionExponent,
+    out vec3 luminance, out vec3 multiScatteringFactor) {
+
+    luminance = vec3(0.0);
+    multiScatteringFactor = vec3(0.0);
+
+    float minDistance;
+    float maxDistance;
+    GetAtmosphereRaySegment(rayOrigin, rayDirection, planetCenter, atmosphere.planetRadius,
+        atmosphere.atmosphereRadius, minDistance, maxDistance);
+
+    if (maxDistance <= minDistance)
+        return;
+
+    float rayLength = maxDistance - minDistance;
+    float cosTheta = dot(rayDirection, sunDirection);
+    vec3 throughput = vec3(1.0);
+
+    for (int i = 0; i < sampleCount; i++) {
+        float x0 = float(i) / float(sampleCount);
+        float x1 = float(i + 1) / float(sampleCount);
+        float t0 = minDistance + rayLength * GetAtmosphereSampleDistribution(x0, sampleDistributionExponent);
+        float t1 = minDistance + rayLength * GetAtmosphereSampleDistribution(x1, sampleDistributionExponent);
+        float sampleT = 0.5 * (t0 + t1);
+        float segmentLength = t1 - t0;
+
+        vec3 samplePosition = rayOrigin + rayDirection * sampleT;
+        vec2 densities = GetAtmosphereDensities(samplePosition, planetCenter, atmosphere);
+        vec3 extinction = GetAtmosphereExtinction(densities, atmosphere);
+        vec3 segmentIntegral = GetAtmosphereSegmentIntegral(extinction, segmentLength);
+        vec3 stepTransmittance = exp(-extinction * segmentLength);
+
+        vec3 sampleUp = samplePosition - planetCenter;
+        float sampleRadius = length(sampleUp);
+        float muS = dot(sampleUp, sunDirection) / max(sampleRadius, atmosphereEpsilon);
+        vec3 transmittanceToSun = GetTransmittanceToSun(transmittanceTexture, sampleRadius,
+            muS, atmosphere);
+        vec3 phaseScattering = GetAtmospherePhaseScattering(densities, cosTheta, atmosphere);
+
+        luminance += throughput * transmittanceToSun * phaseScattering * segmentIntegral *
+            sunRadiance;
+        multiScatteringFactor += throughput * extinction * atmosphereIsotropicPhase * segmentIntegral;
+
+        throughput *= stepTransmittance;
+    }
+
+}
+
+vec3 IntegrateAtmosphereScattering(sampler2D transmittanceTexture, sampler2D multipleScatteringTexture,
+    vec3 rayOrigin, vec3 rayDirection, vec3 sunDirection, vec3 planetCenter,
+    AtmosphereParameters atmosphere, vec3 sunRadiance, int sampleCount,
+    float sampleDistributionExponent) {
+
+    vec3 radiance = vec3(0.0);
+
+    float minDistance;
+    float maxDistance;
+    GetAtmosphereRaySegment(rayOrigin, rayDirection, planetCenter, atmosphere.planetRadius,
+        atmosphere.atmosphereRadius, minDistance, maxDistance);
+
+    if (maxDistance <= minDistance)
+        return radiance;
+
+    float rayLength = maxDistance - minDistance;
+    float cosTheta = dot(rayDirection, sunDirection);
+    vec3 throughput = vec3(1.0);
+    float groundDistance;
+    vec3 groundPosition;
+    vec3 groundNormal;
+    bool hitsGround = GetGroundHit(rayOrigin, rayDirection, planetCenter, atmosphere,
+        groundDistance, groundPosition, groundNormal) &&
+        groundDistance <= maxDistance + atmosphereEpsilon;
+
+    for (int i = 0; i < sampleCount; i++) {
+        float x0 = float(i) / float(sampleCount);
+        float x1 = float(i + 1) / float(sampleCount);
+        float t0 = minDistance + rayLength * GetAtmosphereSampleDistribution(x0, sampleDistributionExponent);
+        float t1 = minDistance + rayLength * GetAtmosphereSampleDistribution(x1, sampleDistributionExponent);
+        float sampleT = 0.5 * (t0 + t1);
+        float segmentLength = t1 - t0;
+
+        vec3 samplePosition = rayOrigin + rayDirection * sampleT;
+        vec2 densities = GetAtmosphereDensities(samplePosition, planetCenter, atmosphere);
+        vec3 extinction = GetAtmosphereExtinction(densities, atmosphere);
+        vec3 segmentIntegral = GetAtmosphereSegmentIntegral(extinction, segmentLength);
+        vec3 stepTransmittance = exp(-extinction * segmentLength);
+
+        vec3 sampleUp = samplePosition - planetCenter;
+        float sampleRadius = length(sampleUp);
+        float muS = dot(sampleUp, sunDirection) / max(sampleRadius, atmosphereEpsilon);
+        vec3 transmittanceToSun = GetTransmittanceToSun(transmittanceTexture, sampleRadius,
+            muS, atmosphere);
+        vec3 phaseScattering = GetAtmospherePhaseScattering(densities, cosTheta, atmosphere);
+        vec3 multipleScattering = GetMultipleScattering(multipleScatteringTexture, sampleRadius,
+            muS, atmosphere);
+        float shadowVisibility = max3(transmittanceToSun);
+        float multipleScatteringVisibility = shadowVisibility *
+            smoothstep(0.0, atmosphereMultipleScatteringVisibilityRange, shadowVisibility);
+        vec3 source = sunRadiance * transmittanceToSun * phaseScattering +
+            atmosphereMultipleScatteringFactor *
+            multipleScattering * extinction * multipleScatteringVisibility;
+
+        radiance += throughput * source * segmentIntegral;
+        throughput *= stepTransmittance;
+    }
+
+    if (hitsGround) {
+        radiance += throughput * GetGroundRadiance(transmittanceTexture, multipleScatteringTexture,
+            groundPosition, groundNormal, sunDirection, planetCenter, atmosphere, sunRadiance);
+    }
+
+    return radiance;
+
+}
+
+float GetSkyViewHorizonAngle(float radius, AtmosphereParameters atmosphere) {
+
+    if (radius <= atmosphere.planetRadius)
+        return -1.0;
+
+    return -sqrt(max(1.0 - sqr(atmosphere.planetRadius / radius), 0.0));
+
+}
+
+vec2 GetSkyViewTextureUv(float radius, float viewZenithCosAngle, float lightViewCosAngle,
+    AtmosphereParameters atmosphere, ivec2 textureResolution) {
+
+    float horizonCosAngle = GetSkyViewHorizonAngle(radius, atmosphere);
+    float u = SafeAcos(lightViewCosAngle) / PI;
+    float v = 0.0;
+
+    if (viewZenithCosAngle < horizonCosAngle) {
+        float coord = saturate((horizonCosAngle - viewZenithCosAngle) /
+            max(horizonCosAngle + 1.0, atmosphereEpsilon));
+        v = 0.5 - 0.5 * sqrt(coord);
+    }
+    else {
+        float coord = saturate((viewZenithCosAngle - horizonCosAngle) /
+            max(1.0 - horizonCosAngle, atmosphereEpsilon));
+        v = 0.5 + 0.5 * sqrt(coord);
+    }
+
+    return vec2(
+        GetTextureCoordFromUnitRange(clamp(u, 0.0, 1.0), textureResolution.x),
+        GetTextureCoordFromUnitRange(clamp(v, 0.0, 1.0), textureResolution.y)
+    );
+
+}
+
+void GetSkyViewParamsFromTextureUv(vec2 uv, float radius, AtmosphereParameters atmosphere,
+    ivec2 textureResolution, out float viewZenithCosAngle, out float lightViewCosAngle) {
+
+    float u = GetUnitRangeFromTextureCoord(uv.x, textureResolution.x);
+    float v = GetUnitRangeFromTextureCoord(uv.y, textureResolution.y);
+
+    float horizonCosAngle = GetSkyViewHorizonAngle(radius, atmosphere);
+
+    lightViewCosAngle = cos(clamp(u, 0.0, 1.0) * PI);
+
+    if (v < 0.5) {
+        float coord = sqr(clamp(1.0 - 2.0 * v, 0.0, 1.0));
+        viewZenithCosAngle = horizonCosAngle - coord * (horizonCosAngle + 1.0);
+    }
+    else {
+        float coord = sqr(clamp(2.0 * v - 1.0, 0.0, 1.0));
+        viewZenithCosAngle = horizonCosAngle + coord * (1.0 - horizonCosAngle);
+    }
+
+    viewZenithCosAngle = clamp(viewZenithCosAngle, -1.0, 1.0);
+
+}
+
+vec3 GetSkyViewDirection(float viewZenithCosAngle, float lightViewCosAngle, vec3 cameraUp, vec3 sunDirection) {
+
+    float sinViewZenithAngle = sqrt(max(1.0 - viewZenithCosAngle * viewZenithCosAngle, 0.0));
+    float sunZenithCosAngle = clamp(dot(cameraUp, sunDirection), -1.0, 1.0);
+    float sunZenithSinAngle = sqrt(max(1.0 - sunZenithCosAngle * sunZenithCosAngle, 0.0));
+
+    vec3 sunForward = sunDirection - cameraUp * sunZenithCosAngle;
+    if (length(sunForward) < atmosphereEpsilon) {
+        sunForward = abs(cameraUp.z) < 0.999 ?
+            normalize(cross(cameraUp, vec3(0.0, 0.0, 1.0))) :
+            normalize(cross(cameraUp, vec3(0.0, 1.0, 0.0)));
+    }
+    else {
+        sunForward = normalize(sunForward);
+    }
+
+    vec3 sunRight = normalize(cross(cameraUp, sunForward));
+    float cosPhi = 1.0;
+
+    if (sinViewZenithAngle > atmosphereEpsilon && sunZenithSinAngle > atmosphereEpsilon) {
+        cosPhi = clamp((lightViewCosAngle - viewZenithCosAngle * sunZenithCosAngle) /
+            (sinViewZenithAngle * sunZenithSinAngle), -1.0, 1.0);
+    }
+
+    float sinPhi = sqrt(max(1.0 - cosPhi * cosPhi, 0.0));
+
+    return normalize(cameraUp * viewZenithCosAngle +
+        sunForward * (sinViewZenithAngle * cosPhi) +
+        sunRight * (sinViewZenithAngle * sinPhi));
+
+}
+
+vec2 GetSkyViewTextureUv(vec3 viewDirection, vec3 cameraPosition, vec3 planetCenter, vec3 sunDirection,
+    AtmosphereParameters atmosphere, ivec2 textureResolution) {
+
+    vec3 cameraUp = normalize(cameraPosition - planetCenter);
+    float radius = length(cameraPosition - planetCenter);
+    float viewZenithCosAngle = dot(viewDirection, cameraUp);
+    float lightViewCosAngle = dot(viewDirection, sunDirection);
+
+    return GetSkyViewTextureUv(radius, viewZenithCosAngle, lightViewCosAngle, atmosphere,
+        textureResolution);
+
+}
+
+vec3 GetSkyView(sampler2D skyViewTexture, vec3 viewDirection, vec3 cameraPosition, vec3 planetCenter,
+    vec3 sunDirection, AtmosphereParameters atmosphere) {
+
+    ivec2 textureResolution = textureSize(skyViewTexture, 0);
+    vec2 uv = GetSkyViewTextureUv(viewDirection, cameraPosition, planetCenter, sunDirection,
+        atmosphere, textureResolution);
+
+    return textureLod(skyViewTexture, uv, 0.0).rgb;
+
+}

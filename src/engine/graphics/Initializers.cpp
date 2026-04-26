@@ -299,6 +299,10 @@ namespace Atlas {
                 info.subresourceRange.baseArrayLayer = 0;
                 info.subresourceRange.layerCount = uint32_t(layerCount);
                 info.subresourceRange.aspectMask = aspectFlags;
+                info.components.r = VK_COMPONENT_SWIZZLE_R;
+                info.components.g = VK_COMPONENT_SWIZZLE_G;
+                info.components.b = VK_COMPONENT_SWIZZLE_B;
+                info.components.a = VK_COMPONENT_SWIZZLE_A;
 
                 return info;
 

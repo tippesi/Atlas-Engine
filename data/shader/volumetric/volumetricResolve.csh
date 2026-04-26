@@ -48,7 +48,7 @@ void LoadGroupSharedData() {
     if (gl_LocalInvocationIndex < depthDataSize) {
         ivec2 offset = Unflatten2D(int(gl_LocalInvocationIndex), unflattenedDepthDataSize);
         offset += workGroupOffset;
-        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0));
+        offset = clamp(offset, ivec2(0), textureSize(lowResDepthTexture, 0) - ivec2(1));
         depths[gl_LocalInvocationIndex] = texelFetch(lowResDepthTexture, offset, 0).r;
         volumetrics[gl_LocalInvocationIndex] = texelFetch(lowResVolumetricTexture, offset, 0);
 #ifdef CLOUDS

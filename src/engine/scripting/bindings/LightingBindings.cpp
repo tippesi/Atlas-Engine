@@ -54,7 +54,13 @@ namespace Atlas::Scripting::Bindings {
             );
 
         ns->new_usertype<Lighting::Atmosphere>("Atmosphere",
-            "height", &Lighting::Atmosphere::height
+            "height", &Lighting::Atmosphere::height,
+            "rayleighScatteringCoeff", &Lighting::Atmosphere::rayleighScatteringCoeff,
+            "groundAlbedo", &Lighting::Atmosphere::groundAlbedo,
+            "mieScatteringCoeff", &Lighting::Atmosphere::mieScatteringCoeff,
+            "rayleighHeightScale", &Lighting::Atmosphere::rayleighHeightScale,
+            "mieHeightScale", &Lighting::Atmosphere::mieHeightScale,
+            "needsUpdate", &Lighting::Atmosphere::needsUpdate
         );
 
         ns->new_usertype<Lighting::SSS>("SSS",

@@ -624,6 +624,10 @@ bool ImGui_ImplVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
         info.image = bd->FontImage;
         info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        info.components.r = VK_COMPONENT_SWIZZLE_R;
+        info.components.g = VK_COMPONENT_SWIZZLE_G;
+        info.components.b = VK_COMPONENT_SWIZZLE_B;
+        info.components.a = VK_COMPONENT_SWIZZLE_A;
         info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         info.subresourceRange.levelCount = 1;
         info.subresourceRange.layerCount = 1;

@@ -29,6 +29,7 @@ namespace Atlas::Lighting {
         j = json {
             {"height", p.height},
             {"rayleighScatteringCoeff", p.rayleighScatteringCoeff},
+            {"groundAlbedo", p.groundAlbedo},
             {"mieScatteringCoeff", p.mieScatteringCoeff},
             {"rayleighHeightScale", p.rayleighHeightScale},
             {"mieHeightScale", p.mieHeightScale},
@@ -41,6 +42,7 @@ namespace Atlas::Lighting {
             j["probeResolution"].get<int32_t>());
 
         try_get_json(j, "rayleighScatteringCoeff", p.rayleighScatteringCoeff);
+        try_get_json(j, "groundAlbedo", p.groundAlbedo);
         try_get_json(j, "mieScatteringCoeff", p.mieScatteringCoeff);
         try_get_json(j, "rayleighHeightScale", p.rayleighHeightScale);
         try_get_json(j, "mieHeightScale", p.mieHeightScale);
