@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_macos.h>
 
-#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
 #include <stacktrace>
 #endif
 
@@ -174,7 +174,7 @@ namespace Atlas {
         void Instance::LoadSupportedLayersAndExtensions() {
 
             if (vkEnumerateInstanceExtensionProperties == nullptr)
-                Log::Warning("Stuff not loaded");
+                Log::Warning("Vulkan functions not loaded");
 
             unsigned int extensionCount = 0;
             bool success = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) == VK_SUCCESS;
@@ -320,7 +320,7 @@ namespace Atlas {
                 case Log::Type::TYPE_ERROR: Log::Error(pCallbackData->pMessage, logSeverity); break;
             }
 
-#if !defined(__clang__) && defined(AE_BUILDTYPE_DEBUG)
+#if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
             output.append("\nStack trace:\n" + std::to_string(std::stacktrace::current()));
 #endif
 

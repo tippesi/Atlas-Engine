@@ -315,7 +315,8 @@ namespace Atlas {
 
                 std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
                 auto heightDataSize = std::streamsize(heightFieldData.size() * sizeof(uint16_t));
-                if (!fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightDataSize)) {
+                auto& ret = fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightDataSize);
+                if (!ret || ret.gcount() != heightDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain height data from " + filename);
                 }
                 cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
@@ -324,7 +325,8 @@ namespace Atlas {
 
                 Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
                 auto normalDataSize = std::streamsize(image.GetData().size());
-                if (!fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize)) {
+                auto& ret = fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize);
+                if (!ret || ret.gcount() != normalDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain normal data from " + filename);
                 }
                 cell->normalData = image.GetData();
@@ -335,7 +337,8 @@ namespace Atlas {
 
                 std::vector<uint8_t> splatMapData(heightFieldData.size());
                 auto splatDataSize = std::streamsize(splatMapData.size());
-                if (!fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatDataSize)) {
+                auto& ret = fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatDataSize);
+				if (!ret || ret.gcount() != splatDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain splat data from " + filename);
                 }
                 cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
