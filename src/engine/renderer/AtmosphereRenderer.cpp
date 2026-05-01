@@ -123,7 +123,7 @@ namespace Atlas {
                 return;
             }
 
-            auto& light = mainLightEntity.GetComponent<LightComponent>();
+            const auto& light = mainLightEntity.GetComponent<LightComponent>();
             vec3 sunDirection = GetSunDirection(light);
             vec3 sunRadiance = GetSunRadiance(light);
             auto atmosphereParameters = GetAtmosphereParameters(*atmosphere, scene->sky);

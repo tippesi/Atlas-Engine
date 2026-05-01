@@ -41,6 +41,8 @@ namespace Atlas {
 
             static float ReadFloat(const char* ptr, std::string line, size_t& offset);
 
+            static void ValidateReadBounds(const std::string& filename, std::streamoff readDataOffset,
+                std::streamsize readSize, std::streamoff cellDataEndOffset, std::streamoff fileEndOffset);
 
         };
 

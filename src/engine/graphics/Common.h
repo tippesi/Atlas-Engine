@@ -39,7 +39,6 @@
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
         AE_LOG_STACKTRACE();                                                        \
-        throw std::runtime_error("Vulkan error: " + Atlas::Graphics::VkResultToString(err)); \
         AE_ASSERT(err == VK_SUCCESS);                                               \
     }                                                                               \
 }
@@ -51,7 +50,6 @@
         Atlas::Log::Error("Detected Vulkan error: " +                               \
             Atlas::Graphics::VkResultToString(err));                                \
         AE_LOG_STACKTRACE();                                                        \
-        throw std::runtime_error("Vulkan error: " + Atlas::Graphics::VkResultToString(err) + "\nMessage: " + y); \
         AE_ASSERT(err == VK_SUCCESS && (y));                                        \
     }                                                                               \
 }

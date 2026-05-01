@@ -313,22 +313,29 @@ namespace Atlas {
                     throw ResourceLoadException(filename, "Couldn't seek terrain file " + filename);
                 }
 
+                auto cellDataEndOffset = cellDataOffset + std::streamoff(nodeSize);
+                auto readDataOffset = cellDataOffset;
+
                 std::vector<uint16_t> heightFieldData(tileResolution * tileResolution);
                 auto heightDataSize = std::streamsize(heightFieldData.size() * sizeof(uint16_t));
+                ValidateReadBounds(filename, readDataOffset, heightDataSize, cellDataEndOffset, fileEndOffset);
                 auto& heightRet = fileStream.read(reinterpret_cast<char*>(heightFieldData.data()), heightDataSize);
                 if (!heightRet || heightRet.gcount() != heightDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain height data from " + filename);
                 }
+                readDataOffset += std::streamoff(heightDataSize);
                 cell->heightField = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R16_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->heightField->SetData(heightFieldData, &transferManager);
 
                 Common::Image<uint8_t> image(normalDataResolution, normalDataResolution, 4);
                 auto normalDataSize = std::streamsize(image.GetData().size());
+                ValidateReadBounds(filename, readDataOffset, normalDataSize, cellDataEndOffset, fileEndOffset);
                 auto& normalRet = fileStream.read(reinterpret_cast<char*>(image.GetData().data()), normalDataSize);
                 if (!normalRet || normalRet.gcount() != normalDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain normal data from " + filename);
                 }
+                readDataOffset += std::streamoff(normalDataSize);
                 cell->normalData = image.GetData();
 
                 cell->normalMap = CreateRef<Texture::Texture2D>(normalDataResolution, normalDataResolution,
@@ -337,10 +344,12 @@ namespace Atlas {
 
                 std::vector<uint8_t> splatMapData(heightFieldData.size());
                 auto splatDataSize = std::streamsize(splatMapData.size());
+                ValidateReadBounds(filename, readDataOffset, splatDataSize, cellDataEndOffset, fileEndOffset);
                 auto& splatRet = fileStream.read(reinterpret_cast<char*>(splatMapData.data()), splatDataSize);
-				if (!splatRet || splatRet.gcount() != splatDataSize) {
+                if (!splatRet || splatRet.gcount() != splatDataSize) {
                     throw ResourceLoadException(filename, "Couldn't read terrain splat data from " + filename);
                 }
+                readDataOffset += std::streamoff(splatDataSize);
                 cell->splatMap = CreateRef<Texture::Texture2D>(tileResolution, tileResolution,
                     VK_FORMAT_R8_UINT, Texture::Wrapping::ClampToEdge, Texture::Filtering::Nearest);
                 cell->splatMap->SetData(splatMapData, &transferManager);
@@ -363,6 +372,21 @@ namespace Atlas {
             transferManager.EndMultiTransfer();
 
             fileStream.close();
+
+        }
+
+        void TerrainLoader::ValidateReadBounds(const std::string& filename, std::streamoff readDataOffset,
+                std::streamsize readSize, std::streamoff cellDataEndOffset, std::streamoff fileEndOffset) {
+
+            if (readSize < 0) {
+                throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+            }
+
+            auto readEndOffset = readDataOffset + std::streamoff(readSize);
+            if (readEndOffset < readDataOffset || readEndOffset > cellDataEndOffset ||
+                    readEndOffset > fileEndOffset) {
+                throw ResourceLoadException(filename, "Terrain file is truncated or corrupted: " + filename);
+            }
 
         }
 
