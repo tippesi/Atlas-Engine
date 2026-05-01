@@ -24,7 +24,7 @@
 
 #define AtlasLog(...) __android_log_print(ANDROID_LOG_INFO, "ATLAS_LOG", __VA_ARGS__)
 
-#elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS)
+#elif defined(AE_OS_WINDOWS) || defined(AE_OS_LINUX) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
 
 #define AtlasLog(...) printf(__VA_ARGS__); printf("\n");
 

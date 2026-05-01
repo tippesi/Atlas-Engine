@@ -3,7 +3,7 @@
 #include "graphics/Instance.h"
 #include "common/Path.h"
 
-#if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_LINUX)
+#if defined(AE_OS_ANDROID) || defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE) || defined(AE_OS_LINUX)
 #include <zconf.h>
 #endif
 
@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
     
     // Automatically change working directory to load
     // shaders properly.
+#if !defined(AE_OS_APPLE_MOBILE)
     if (argc > 0) {
         auto workingDir = Atlas::Common::Path::GetDirectory(argv[0]);
 #ifdef AE_OS_WINDOWS
@@ -26,12 +27,16 @@ int main(int argc, char* argv[]) {
         chdir(workingDir.c_str());
 #endif
     }
+#endif
 
-#if defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+#if (defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)) && defined(AE_BINDLESS)
+    // Argument buffers are enabled by default in MoltenVk 
     //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
     //setenv("MVK_DEBUG", "0", 1);
-#elif defined(AE_OS_MACOS) && defined(AE_BINDLESS)
+#elif defined(AE_OS_MACOS)
     setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
+#elif defined(AE_OS_APPLE_MOBILE)
+    // setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
 #endif
     
     // To test with swiftshader locally, put in the path of the *_icd.json (note: on Windows use backslashes)

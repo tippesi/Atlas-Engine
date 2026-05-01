@@ -2,11 +2,13 @@
 #include "StructureChainBuilder.h"
 #include "../Log.h"
 
-#include <volk.h>
 #include <set>
 #include <iterator>
-#include <vulkan/vulkan.h>
+#ifdef AE_OS_APPLE_MOBILE
+#include <vulkan/vulkan_ios.h>
+#else
 #include <vulkan/vulkan_macos.h>
+#endif
 
 #if !defined(__clang__) && !defined(AE_BUILDTYPE_RELEASE)
 #include <stacktrace>
@@ -21,7 +23,10 @@ namespace Atlas {
         Instance::Instance(const InstanceDesc& desc) :  name(desc.instanceName), 
             validationLayersEnabled(desc.enableValidationLayers), validationLayerSeverity(desc.validationLayerSeverity) {
 
+#ifndef AE_OS_APPLE_MOBILE
+            // Volk is not needed on iPadOS and iOS, MoltenVK is bundled there
             VK_CHECK(volkInitialize());
+#endif
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -54,7 +59,7 @@ namespace Atlas {
                 requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             }
 #endif
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
             if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
                 requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             }
@@ -69,7 +74,7 @@ namespace Atlas {
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
             createInfo.enabledLayerCount = 0;
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
             if (supportedExtensions.contains(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
                 createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
             }
@@ -109,7 +114,9 @@ namespace Atlas {
 
             VK_CHECK_MESSAGE(vkCreateInstance(&createInfo, nullptr, &instance), "Error creating instance");
 
+#ifndef AE_OS_APPLE_MOBILE
             volkLoadInstance(instance);
+#endif
 
             RegisterDebugCallback();
             isComplete = true;

@@ -2,7 +2,9 @@
 
 #include "ImguiWrapper.h"
 
+#ifndef AE_OS_APPLE_MOBILE
 #define VK_NO_PROTOTYPES
+#endif
 #include <SDL2/SDL_mouse.h>
 #include <graphics/Instance.h>
 #include <ImguiVulkan.h>

@@ -40,7 +40,7 @@ namespace Atlas {
 #ifdef AE_BUILDTYPE_DEBUG
                 , VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
 #endif
-#ifdef AE_OS_MACOS
+#if defined(AE_OS_MACOS) || defined(AE_OS_APPLE_MOBILE)
                 , VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #endif
             };
