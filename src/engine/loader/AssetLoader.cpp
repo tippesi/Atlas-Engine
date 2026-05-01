@@ -224,6 +224,7 @@ namespace Atlas {
 
         void AssetLoader::UnpackFile(const std::string& filename) {
             
+#if defined(AE_OS_ANDROID) || defined(AE_OS_APPLE_MOBILE)
             std::string path;
             if (Common::Path::IsAbsolute(filename)) {
                 path = GetRelativePath(filename);
@@ -233,6 +234,7 @@ namespace Atlas {
             }
 
             std::lock_guard<std::mutex> guard(assetLoaderMutex);
+#endif
 
 #ifdef AE_OS_ANDROID
             auto assetPath = Common::Path::Normalize(GetAssetPath(filename));
